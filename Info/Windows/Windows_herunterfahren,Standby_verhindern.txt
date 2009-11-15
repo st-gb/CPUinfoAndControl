@@ -1,0 +1,7 @@
+http://software.intel.com/en-us/articles/power-management-designing-applications-to-conserve-battery-life/:
+
+"SetExecutionState – using this function, an application can prevent the 
+operating system from going into Suspend mode for as long as a stipulated 
+operation is still being performed. For example, Suspend can be delayed until a 
+given animation is finished being displayed."
+(SetExecutionState is a Windows API function?!)

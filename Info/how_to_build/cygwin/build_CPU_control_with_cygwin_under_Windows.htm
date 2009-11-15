@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.1  (Win32)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGED" CONTENT="20091114;17264300">
+</HEAD>
+<BODY LANG="de-DE" DIR="LTR">
+<P STYLE="margin-top: 0.42cm; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Build
+the CPU control with cygwin [,NetBeans] under Windows</FONT></FONT></P>
+<H2>f&uuml;r wstring</H2>
+<UL>
+	<LI><P>STLport 
+	</P>
+</UL>
+<OL>
+	<LI><P>herunterladen:
+	http://sourceforge.net/projects/stlport/files/STLport/STLport-5.2.1/STLport-5.2.1.tar.bz2/download</P>
+	<LI><P>configure: &bdquo;cmd.exe&ldquo; <BR>&rarr; &bdquo;bash&ldquo;
+	ausf&uuml;rhen<BR>innerhalb bash: &bdquo;./configure
+	--with-extra-cflags=-mno-cygwin &ndash;with-extra-cxxflags=-mno-cygwin&ldquo;<BR><BR>&rarr;
+	C:\Extras\STLport-5.2.1\STLport-5.2.1\build\Makefiles\gmake\config.mak
+	wird
+	ge&auml;ndert<BR>C:\Extras\STLport-5.2.1\STLport-5.2.1\build\lib\Makefile
+	wird ge&auml;ndert</P>
+	<LI><P></P>
+</OL>
+<UL>
+	<LI><P>cygwin\lib\gcc\i686-pc-cygwin\3.4.4\include\c++\i686-pc-cygwin\bits:</P>
+</UL>
+<UL>
+	<LI><P>c++config.h: add:</P>
+</UL>
+<UL>
+	<LI><P>#define _GLIBCXX_HAVE_FGETWC 1 <BR>directly below <BR>/*
+	#undef _GLIBCXX_HAVE_FGETWC */</P>
+	<LI><P>Pr&auml;pro.: &bdquo;_REENTRANT &bdquo;
+	(http://sourceforge.net/projects/stlport/forums/forum/490891/topic/1690561)http://sourceforge.net/projects/stlport/forums/forum/490891/topic/1690561)</P>
+</UL>
+<H2>General</H2>
+<UL>
+	<LI><P>avoid pathes with spaces (g++ has problems else)</P>
+</UL>
+<P>&nbsp;-<B>NetBeans</B>: context menu on Project <BR>&nbsp;
+-&gt;context menu entry &quot;<B>properties</B>&quot;<BR>&nbsp;&nbsp;
+-&gt;<B>Build</B><BR>&nbsp;&nbsp;&nbsp; -&gt;<B>C++ Compiler</B><BR>&nbsp;&nbsp;&nbsp;&nbsp;
+-&gt;I<B>nclude Directories</B>: Add<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- &gt;&gt;<I><B>WinRing-dir</B></I>&lt;&lt;/source/dll<BR><I>&gt;&gt;</I><I><B>CPUcontrol-root-dir</B></I><I>&lt;&lt;</I><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- &gt;&gt;<I><B>wxWidgets-dir</B></I>&lt;&lt;/include<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[ - &gt;&gt;Platform SDK dir&lt;&lt;/Include ]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[ - &gt;&gt;MSVisual Studio dir&lt;&lt;/VC/include ]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[&nbsp; - delete or rename the standard IO files like &quot;iostream&quot;
+from this dir<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+because the ones from cygwin should be taken! <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+]<BR>&nbsp;&nbsp; -Linker: <BR>&nbsp;-there should be no (visible)
+UNNECESSARY &quot;.cpp&quot; (e.g. &quot;thrimpl.cpp&quot;) files be
+added to <BR>&nbsp;&nbsp; the project NetBeans: else NetBeans tries
+to compile them with compile errors (<BR>&nbsp;&nbsp; there are
+missing include insode the cpp files: <BR>&nbsp;&nbsp; the needed
+includes are within other (header) files)<BR>&nbsp;-add include
+directories<BR>&nbsp; -caution: there must be no spaces in path
+name<BR>&nbsp; -for WinRing0 (&gt;&gt;winring-dir&lt;&lt;/source/dll)</P>
+<H2>add preprocessor definitions</H2>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">&quot;<B>NOMINMAX</B>&quot;<BR>for
+	g++ because of errors in std::min(...) and std::max(...) in
+	&lt;bits/stl_algobase.h&gt;:</P>
+	<LI><P STYLE="margin-bottom: 0cm">&quot;<B>_DEBUG</B>&quot; <BR>for/if
+	linking to DEBUG libraries; else an error when starting the created
+	&quot;.exe&quot; that the exe is linked to non-debug but the libs
+	are debug.</P>
+	<LI><P><B>__WXMSW__</B> <BR>for wxWidgets</P>
+	<LI><P><B>_GLIBCXX_USE_WCHAR_T</B> or <B>_GLIBCXX_USE_WSTRING</B>
+	for <B>std::wstring</B> declaration in include\c++\bits/stringfwd.h</P>
+</UL>
+<H2>add needed (import) libraries</H2>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">again: <B>avoid pathes with spaces</B>
+	(g++ has problems else)</P>
+	<LI><P STYLE="margin-bottom: 0cm">especially if the linker says
+	&quot;undefined reference to ...&quot;</P>
+	<LI><P STYLE="margin-bottom: 0cm">to find the needed lib search for
+	the string within the lib dirs of cywin etc. e.g. via the Windows
+	explorer to find the lib file for it</P>
+	<LI><P STYLE="margin-bottom: 0cm">maybe google for the undefined
+	function or etc. name in order to find the appropriate lib name to
+	import</P>
+	<LI><P STYLE="margin-bottom: 0cm">the&nbsp;<B>order</B> of the
+	libraries DOES MATTER:</P>
+	<UL>
+		<LI><P>the order that worked for ME (these are Debug libraries: the
+		have a &quot;d&quot; inside the name):</P>
+	</UL>
+</UL>
+<BLOCKQUOTE STYLE="margin-left: 4cm; margin-right: 4cm">&nbsp;&nbsp;&nbsp;&nbsp;
+(NetBeans: button &quot;Add Library...&quot;)<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+-1. wx_msw[d]_core[...]<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -2.
+wx_based (for wxThread, ...)<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -3.
+wx_mswd_adv-2.8<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -4.
+wxexpatd-2.8<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -5. libcomdlg32.a<BR>&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; -6. libgdi32.a<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+-7. libcomctl32.a<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -8. libole32.a
+(CoCreateInstance)<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -9. libuuid.a
+(_IID_PersistFile)<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+-10.liboleaut32.a<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+-11.libkernel32.a (for &quot;::Sleep(DWORD)&quot; )</BLOCKQUOTE>
+<P>&nbsp; -for Windows API:<BR>&nbsp;&nbsp; -from path
+&quot;&gt;&gt;cygwin-dir&lt;&lt;/lib/w32api&quot;<BR>&nbsp; -for
+wxWidgets:<BR>&nbsp;&nbsp; -&quot;&gt;&gt;wxWidgets-dir&lt;&lt;/lib<BR>&nbsp;-I
+copied setup.h from <BR>&nbsp;&nbsp;
+&gt;&gt;wxWidgets-dir&lt;&lt;/lib/wx/include/msw-ansi-debug-static-2.8/wx
+<BR>&nbsp;&nbsp; to<BR>&nbsp;&nbsp; &gt;&gt;wxWidgets-dir&lt;&lt;/include/wx<BR>&nbsp;&nbsp;
+because
+&quot;&gt;&gt;wxWidgets-dir&lt;&lt;/lib/wx/include/msw-ansi-debug-static-2.8/wx&quot;
+was in the<BR>&nbsp;&nbsp; include pathes but the setup.h was noct
+found though!</P>
+</BODY>
+</HTML>

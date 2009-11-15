@@ -1,0 +1,50 @@
+-MSVC++ under Windows
+	-preprocessor: "WIN32;__WXMSW__;_WINDOWS;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY"
+	-add needed ".cpp" files to MSCV project
+	-unter Projekt-Eigenschaften einstellen (sonst Fehler beim Erstellen)
+	 -C/C++ -> Codegenerierung: Laufzeitbibliothek "Multithreaded-DLL (/MD)"
+	 -for wxWidgets: 
+	  -bei "Linker"
+	   -unter "Allgemein" -> Zusätzliche Bibkiotheksverzeichnisse: "\lib"-Verzeichnis von wxWidgets:
+		-fallse Release-Version:\lib
+	   -unter "Eingabe" hinzufügen: "wxmsw28_core.lib wxbase28.lib comctl32.lib"
+	  -for Debug version: 
+	   -Rpcrt4.lib
+	   
+	-for xerces XML: 
+	  -bei Linker->Eingabe hinzufügen: "xerces-c_static_2.lib"
+	  -With Xerces < Version 2.8:
+		Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces statically (else many "LNK2001" and "LNK2019" and linker errors).
+	  -with Xerces 3.0: "XERCES_STATIC_LIBRARY"
+	  -add xercex include directory to C++
+	  -for linker: add "xerces\lib" dir
+	 -And: Add "Advapi32.lib" as additional dependancy for the linker.
+	 -zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst: "LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in MSVCRT.lib(MSVCR80.dll) definiert."
+	 
+	 -for power scheme access under Windows Vista (access is different from Windows XP):
+	   -download Windows SDK for Windows Vista for "powrprof.lib" etc.
+	   -add directory where "powerprof.lib" resides (e.g. D:\Programme\Microsoft SDKs\Windows\v6.1\Lib)
+	     from the directory from the Windows SDK for Windows Vista
+	   -bei Linker->Eingabe hinzufügen: "powrprof.lib" 
+
+ -64 bit
+  -for power profiles access in Windows Vista:
+	lib dir: D:\Programme\Microsoft SDKs\Windows\v6.1\Lib\x64
+  
+  -wenn C/C++ -> Codegenerierung: Laufzeitbibliothek "Multithreaded (/MT)"
+  -for power profiles access in Windows Vista:
+  
+  -for Debug version:
+   -Debug compiles and works with the wxWidgets DLL-linked version 2.8.5 from "BvLib"
+     -use defined preprocessor macro "WXUSINGDLL"
+   -C/C++ 
+     -"general": 
+      -"debug information format": "/ZI" (for pausing at breakpoints)
+     -optimization
+      -optimization: "/Od" (for pausing at breakpoints)
+     -code generaion
+      -"runtime library": "Multithreaded-Debug-DLL (/MDd)"
+   -linker
+    -debugging
+     -"generate debug info": "Ja (/DEBUG)"
+   -

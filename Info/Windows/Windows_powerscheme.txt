@@ -1,0 +1,78 @@
+
+-for Client Requires Windows XP, Windows 2000 Professional, Windows Me, or Windows 98. 
+Server Requires Windows Server 2003 or Windows 2000 Server. 
+
+	BOOLEAN CanUserWritePwrScheme(void);
+
+	BOOLEAN GetActivePwrScheme(
+	  PUINT puiID
+	);
+	
+	BOOLEAN SetActivePwrScheme(
+	  UINT uiID,
+	  PGLOBAL_POWER_POLICY lpGlobalPowerPolicy,
+	  PPOWER_POLICY lpPowerPolicy
+	);
+
+	only Windows XP., Windows Server 2003
+	BOOLEAN ReadProcessorPwrScheme(
+	  UINT uiID,
+	  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
+	);
+
+	only Windows XP., Windows Server 2003
+	BOOLEAN WriteProcessorPwrScheme(
+	  UINT ID,
+	  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
+	);
+		Remarks
+		This change does not affect the current system power policy. 
+		To apply this change to the current system power policy, 
+		
+		call the SetActivePwrScheme function
+		
+		, using the index of this power scheme.
+		
+		typedef struct _MACHINE_PROCESSOR_POWER_POLICY {  
+			ULONG Revision;  
+			PROCESSOR_POWER_POLICY ProcessorPolicyAc;  
+			PROCESSOR_POWER_POLICY ProcessorPolicyDc;
+		} MACHINE_PROCESSOR_POWER_POLICY, *PMACHINE_PROCESSOR_POWER_POLICY;
+
+			typedef struct _PROCESSOR_POWER_POLICY {  
+				DWORD Revision;  
+				BYTE DynamicThrottle;  
+				BYTE Spare[3];  
+				DWORD DisableCStates  :1;  
+				DWORD Reserved  :31;  
+				DWORD PolicyCount;  
+				PROCESSOR_POWER_POLICY_INFO Policy[3];
+			} PROCESSOR_POWER_POLICY, *PPROCESSOR_POWER_POLICY;
+			
+				Revision 
+				Current structure revision level. Set this value by calling 
+				ReadProcessorPwrScheme before using a PROCESSOR_POWER_POLICY 
+				structure to set power policy. 
+
+				DynamicThrottle 
+				Current processor performance state policy. This member 
+				must be one of the values described in Processor 
+				Performance Control Policy Constants. 
+					PO_THROTTLE_ADAPTIVE  3: performance of the processor 
+						to the current demand.
+					PO_THROTTLE_CONSTANT  1: any high voltage performance states. 
+						will not engage processor clock throttling
+					PO_THROTTLE_DEGRADE 2 : clock throttling when the 
+						battery is below a certain threshold
+					PO_THROTTLE_NONE 0 : No processor performance control.
+						highest possible performance level
+
+				Policy 
+				An array of PROCESSOR_POWER_POLICY_INFO structures that 
+				defines values used to apply processor C-state policy settings. 
+				Policy[0] corresponds to ACPI C-state C1, Policy[1] 
+				corresponds to C2, and Policy[2] corresponds to C3. 
+				The AllowPromotion member determines whether the processor 
+				can be promoted to the state. For example, if 
+				Policy[0].AllowPromotion is 0, the computer cannot 
+				transition from C0 to C1. 

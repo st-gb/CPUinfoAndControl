@@ -1,0 +1,10 @@
+SideBySide:
+ bei einem frisch installiertem WinXP mit 
+ bei einem frisch installiertem Win7 Enterprise Trial x64 
+   kam es zu EventID "33": "SideBySide" ->"MFC_VC80" DLLs fehlen?
+   -> "Microsoft Visual C++ 2005 Redistributable Package (x64)" (vcredist_x64.exe) installieren.
+
+Windows Ereignisanzeige: 
+  -englisch, Windwows 7 64 bit: "Windows logs"->"System"
+  -deutsch, WinXP 32bit: Systemsteuerung->Verwaltung->Ereignisanzeige->System:
+    Quelle: "Service Control Manager"

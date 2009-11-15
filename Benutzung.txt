@@ -1,0 +1,38 @@
+Dieses Tool funktioniert (nur) mit AMD-Prozessoren der Puma-Plattform der Familie 11h (=17dezimal) 
+(z.B. mit der CPU "ZM-82").
+Wenn man dieses Tool mit anderen CPUs einsetzt, könnten diese Schaden nehmen.
+
+-am einfachsten, falls das Setzen der Performance-States wiederkehrend erfolgen soll, ist
+das Erzeugen einer Konfigurationsdtei im XML-Format. 
+ Diese übergibt man dann per "PumaStateCtrl -config=>>Pfad zur Konfigurations-Datei<<"
+ Die Konfigurationsdatei sollte folgenden Aufbau haben:
+ 
+  <p_states>
+    <pstate number="0" VID="40" />
+    <pstate number="1" VID="57" />
+    <pstate number="2" VID="63" />
+  </p_states>
+  
+  ->für alle 3 Nummern von 0 bis 2 kann man also Angaben machen. Ich schätze, dass auch 
+    nur die 3 P-States von Windows verwendet werden.
+  
+  Je höher die "VID", desto GERINGER die Spannnung.
+  Je geringer die CPU-Frequenzen sind, desto geringer kann auch die Spannung sein<=>
+  desto höher kann auch die VID sein.
+  
+-Wenn die Spannung für eine Frequenz zu gering ist, friert das Betriebssystem ein.
+  
+  Es kann aus Sicherheitsgründen (um Overvolting zu verhindern) nur für die Frequenzen 
+  -550 MHz ( bei mir: pstate number="2")
+  -1100 MHz ( bei mir: pstate number="1")
+  -2200 MHz ( bei mir: pstate number="0")
+  die Voltage ID festgelegt werden.
+  
+-das Tool muss leider mit Admin-Rechten ausgeführt werden, da es Ring0-Code ausführt, um
+ die Werte der CPU setzen zu können.
+-Das Tool muss für jeden KALTStart neu ausgeführt werden, damit die Änderungen wirksam werden
+  
+-Wenn man eine geringere Spannung als die Standard-Spannung setzen will, sollte man diese
+ Einstellung mit einer hohen CPU-Auslastung (für beide/alle CPU-Cores) testen, 
+ um die Funktionsfähigkeit sicherzustellen. 
+ Das tut man z.B. mit "Prime95" mit 2 oder mehr Threads.

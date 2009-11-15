@@ -1,0 +1,68 @@
+cygwin under Windows
+ -"make makefile.gcc"/ "gnuwin32-make makefile.gcc" didn't work
+ -1. download wxWidgets for WIndows, run setup
+ -1.1 Ensure that there are NO spaces in the dir pathes!
+ -2. inside the WIndows-Shell, start the Unix-Shell "sh"
+ -2.1 run the script ">>wxwidgets-dir<</configure ..."
+ -2.2 executing "make" failed at ">>wxwidgets-dir<</utils/wxrc" if I recall correctly
+ -avoid pathes with spaces (g++ has problems then)
+ -context menu on Project 
+  ->context menu entry "properties"
+   ->Build
+    ->C++ Compiler
+     ->Include Directories: Add
+      - >>WinRing-dir<</source/dll
+      - >>wxWidgets-dir<</include
+      [ - >>Platform SDK dir<</Include ]
+      [ - >>MSVisual Studio dir<</VC/include ]
+      [  - delete or rename the standard IO files like "iostream" from this dir
+         because the ones from cygwin should be taken! 
+         ]
+   -Linker: 
+ -there should be no (visible) UNNECESSARY ".cpp" (e.g. "thrimpl.cpp") files be added to 
+   the project NetBeans: else NetBeans tries to compile them with compile errors (
+   there are missing include insode the cpp files: 
+   the needed includes are within other (header) files)
+ -add include directories
+  -caution: there must be no spaces in path name
+  -for WinRing0 (>>winring-dir<</source/dll)
+ -add preprocessor definitions:
+   -"NOMINMAX" 
+     because of errors in std::min(...) and std::max(...) in <bits/stl_algobase.h>:
+   -"_DEBUG" for/if linking to DEBUG libraries
+     else an error when starting the created ".exe" that the exe is linked to non-debug
+     but the libs are debug.
+   -__WXMSW__
+   -__GNUWIN32__ for include/wx/string.h: to avoid the error
+      "#error  "Please define string case-insensitive compare for your OS/compiler" "
+      in function "inline int Stricmp(const char *psz1, const char *psz2)"
+ -add needed (import) libraries
+  -especially if the linker says "undefined reference to ..."
+	  -search for the string within the lib dirs of cywin etc. e.g. 
+	   via the Windows explorer to find the lib file for it
+  -maybe google for the undefined function or etc. name in order to find
+   the appropriate lib name to import
+  -the ORDER of the libraries DOES MATTER:
+   -the order that worked for ME (these are Debug libraries: the have a "d" inside the name):
+     (NetBeans: button "Add Library...")
+	   -1. wx_msw[d]_core[...]
+	   -2. wx_based (for wxThread, ...)
+	   -3. wx_mswd_adv-2.8
+	   -4. wxexpatd-2.8
+	   -5. libcomdlg32.a
+	   -6. libgdi32.a
+	   -7. libcomctl32.a
+	   -8. libole32.a (CoCreateInstance)
+	   -9. libuuid.a (_IID_PersistFile)
+	   -10.liboleaut32.a
+	   -11.libkernel32.a (for "::Sleep(DWORD)" )
+  -for Windows API:
+   -from path ">>cygwin-dir<</lib/w32api"
+  -for wxWidgets:
+   -">>wxWidgets-dir<</lib
+ -I copied setup.h from 
+   >>wxWidgets-dir<</lib/wx/include/msw-ansi-debug-static-2.8/wx 
+   to
+   >>wxWidgets-dir<</include/wx
+   because ">>wxWidgets-dir<</lib/wx/include/msw-ansi-debug-static-2.8/wx" was in the
+   include pathes but the setup.h was noct found though!

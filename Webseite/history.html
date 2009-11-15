@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>History of undervolting program evolution</title></head>
+<body><h1>History</h1><br>In the begining of October 2008 I got my tx2550eg.
+Shortly after I began to measure the power because of my interest. When
+I saw that the AMD CPU consumed very much of electrical power I was
+interested in which power savings are possible.<br><br>But I couldn't find
+any Griffin undervolting application. I didn't want to wait until there
+is such a tool for Griffin and developed it myself.<br><br>At first I
+used a Ubuntu 8.04 live CD and took source code of a Linux undervolting
+program and adapted it. So the first (as far as I know;&nbsp;there may
+be others that did it before me and didn't make it public) Griffin
+undervolting happened on Linux.<br>Because the laptop freezed when
+writing via the COFVID control register (that I think is intended to
+change voltage-frequency operating points) too often I had the idea to
+simply patch the p-state registers (nowadays this approach is used by a
+lot of tools).<br><br>The source code of the Linux&nbsp;undervolting
+program was written in C and because I avoid using C where possible I
+decided to completely rewrite it in &nbsp;C++ under Windows (this was
+possible because I found the WinRing0 library). This first Windows
+version came on 27th October 2008 or even before.<br><br>Then I tried
+to undervolt the Northbridge. This was not very easy because I had to
+understand the documentation nomenclature and so it took me some days
+(well, that may be another evidence for my copyist speculation). On
+November 6th 2008 or even before I got the Northbridge undervolting
+working under Windows (and before Windows I got it working under
+Linux). But the saving was just about 0.5 W so there is no real need
+for it.<br><br>The initial name of the tool was "PumaStateCtrl" because
+it was intended to possibly also undervolt the graphics chip. Also, I
+found the name funny because if you only take the 1st letter of
+"PumaStateCtrl" you have the word "PStateCtrl" and p-state is the
+abbreviation for the CPU core performance state.<br>At first this
+software was just for exactly 1 CPU model: Turion Ultra X2 ZM-82 (2200
+MHz), but before publishing/ announcing the software I decided to add
+support for other ZM-CPUs. Then a member of tabletpcreview.com informed
+me that the RM models are similar and yes I checked that they are from
+the same CPU family then and included support for the whole family 17
+as this was hard no more because of the relationship to the ZMs. <br>But
+the support for the Radeon HD is dropped because it is not documented
+very well by AMD/ATi and I do not want to waste my time with it. And so
+now I do not want to have the platform name inside the program
+name&ndash;this would be misleading.<br></body></html>

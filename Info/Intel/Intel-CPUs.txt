@@ -1,0 +1,55 @@
+aus "Intel® 64 and IA-32 Architectures sotfw. dev. manual vol. 3B (253669).pdf":
+	
+  Kapitel "A.1 ARCHITECTURAL PERFORMANCE-MONITORING EVENTS":
+  
+    "Table A-1. Architectural Performance Events":
+    
+	Event Num.|Event   Mask Mnemonic|Umask Value|Description         |Comment
+	----------+---------------------+-----------+--------------------+-------
+	3CH       |UnHalted Core Cycles |00H        |Unhalted core cycles|
+
+CPUID 06h: Thermal Sensor
+CPUID 0Ah: Perf. Mon. Features
+
+
+Intel® 64 and IA-32 Architectures sotfw. dev. manual vol. 3B (253669).pdf:
+ -30.15.1 PerfEvtSel0 and PerfEvtSel1 MSRs
+  -Clocks 79H CPU_CLK_UNHALTED
+	UnitMask : 00H 
+	descr.: Number of cycles during which the processor is not halted.
+ -Table A-18. Performance Monitoring Events Modified on Intel® Pentium® M
+Processors:
+	CPU_CLK_UNHALTED 79H Number of cycles during which the processor is not
+halted, and not in a thermal trip.
+ -Table A-1. Architectural Performance Events:
+   -3CH UnHalted Core Cycles 00H Unhalted core cycles
+   -C0H Instruction Retired 00H Instruction retired
+ -B.1 ARCHITECTURAL MSRS
+  -gelten für mehrere Generationen von Intel-CPUs gleichermassen
+ 
+186H 390 IA32_PERFEVTSEL0 (PERFEVTSEL0)
+Performance Event Select Register 0 (R/W)
+If CPUID.0AH: EAX[15:8] > 0
+
+187H 391 IA32_PERFEVTSEL1 (PERFEVTSEL1)
+Performance Event Select Register 1 (R/W)
+
+198H 408 IA32_PERF_STATUS (RO)
+199H 409 IA32_PERF_CTL (R/W)
+19AH 410 IA32_CLOCK_MODULATION
+Clock Modulation Control (R/W)
+See Section 14.5.3, “Software Controlled Clock Modulation.”
+
+19BH 411 IA32_THERM_INTERRUPT Thermal Interrupt Control (R/W)
+Enables and disables the generation of an interrupt on temperature 
+transitions detected with the processor’s thermal sensors
+and thermal monitor.
+See Section 14.5.2, “Thermal Monitor.”
+
+19CH 412 IA32_THERM_STATUS Thermal Status Information (RO)
+Contains status information about the processor’s
+thermal sensor and automatic thermal monitoring facilities.
+See Section 14.5.2, “Thermal Monitor”
+
+1A0H 416 IA32_MISC_ENABLE Enable Misc. Processor Features. (R/W)
+Allows a variety of processor functions to be enabled and disabled.

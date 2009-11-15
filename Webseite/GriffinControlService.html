@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><title>GriffinControlService description</title></head>
+<body><h1>Installing
+and starting the Griffin (AMD family 17)&nbsp;undervolting service.</h1>last edit: 05th Sep 2009 GMT+1<br><br>Table
+Of Contents<br><ol><li><a href="#installation">Installation</a></li><li><a href="#additionally_needed_files">Additionally needed files
+for setting the CPU voltage</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#2._Prerequisites_to_start_the_service">Prerequisites
+to start the service <b>before</b> the next reboot</a></li><li><a href="#how_to_start_the_service_manually">How to start the
+service manually</a><br></li></ol><h2><a name="installation"></a>1. Installation</h2>The
+installation of the service is very easy: start the program (usually by double
+clicking on it).<br><img title="image showing the concole window after successfull installation" alt="GriffinControlService: console output after installing" src="Screenshots/service/GriffinControlService--console_output_after_installing.png" height="331" width="668"><br>The created Windows service now refers to path of the service's executable file. <br>If you move the service executable and want it to be runnable you have to either:<br><ul><li>change the service's path (must be saved somewhere in the system registry or somewhere else; don't know how to change it)</li><li>deinstall the service and install it again</li></ul><h2><a name="additionally_needed_files"></a>2. Additionally
+needed files for setting the CPU voltage</h2><ul><li><a href="configuration_file.html">GriffinControl_config.xml</a>
+: (<u>exactly</u> this file name); contains the voltages
+to&nbsp;set etc. </li><li>CPU access driver file</li><li>DLL
+file that calls the driver</li></ul><h2><a name="troubleshooting"></a>3. Troubleshooting</h2><ul><li>Windows <b>boot</b> problems:<br>If Windows can't boot because e.g. the voltages are set too low start Windows in safe mode:<br>Press F8 key at Windows boot. In safe mode the service is not started.<br>So either remove automatic service start or change the&nbsp;values in the config file.</li><li>the <b>service</b> <b>hangs</b><br>set the start type to "delayed
+start" if the service hangs (and creates a Windows log event):</li></ul><ol><ol><li><a href="#start_SCM">start the service control manager</a></li><li>context
+menu on "GriffinControlService" -&gt; select "properties</li><li>select "delay start" (topmost/ first entry of the
+pulldown list) :</li></ol><img alt="delayed start type" src="Screenshots/service/GriffinControlService_delayed_start_type_selected.png" height="461" width="410"></ol><h2>4.
+Prerequisites to start the service <b>before</b> the next
+reboot</h2><blockquote>Note: <br><ul><li>this
+chapter should be only necessary if the service control manager was <b>not</b>
+open before end of installing the service.</li><li>The
+service should be automatically started after a reboot. So
+you only need to read the following text if &nbsp;you want to start
+it
+before the next reboot and you do not know how to start Windows(R)
+services.<br></li></ul><big><a name="start_SCM"></a>1.
+To <b>start the services control manager</b> either:</big>
+<ul><li>via Windows' (R) graphical user interface:</li></ul><blockquote><ol><li>Start
+menu-&gt;</li><li>control panel-&gt;</li><li>[maintainance/management/administration]
+-&gt;&nbsp;</li><li>start "services" (to start:
+double click / mark and hit "return" key etc.)</li></ol></blockquote><ul><li>via
+console</li></ul><blockquote><ol><li>open
+a shell / system prompt (e.g. Windows' "cmd.exe"):<br><ul><li>press
+"Windows"-key &amp; the "r"-key at the same time</li><li>or
+start menu-&gt;"run..."<br>open: "cmd"</li></ul></li><li>possibly
+you have to change
+current dir to "<i>%WINDIR%</i><b>/System32</b>"
+&nbsp;(e.g. "C:\WINDOWS\System32" )</li><li></li></ol><blockquote><ul><li>cmd.exe:
+e.g. type "cd&nbsp;C:\WINDOWS\System32" and press "Enter"</li></ul></blockquote><ol><li><br></li></ol><blockquote><ul><li>cmd.exe:
+type "mmc
+services.msc" and press "Enter"</li></ul></blockquote></blockquote><br><big>2.
+The view of the service control manager may not be up-to-date
+(especially if the it was opened before the installation yet) after
+installing the service:</big><br><img alt="d" src="Screenshots/service/GriffinControlService_after_installing--Service_Control_Manager_no_service_highlighted,view_not_updated_yet.png" height="298" width="906"><br><br><big>3.
+So if no service is marked (as shown above), mark any of the services
+shown in order <b>to display the update button</b>:</big><br><img alt="bla" src="Screenshots/service/GriffinControlService_after_installing--Service_Control_Manager_1_service_highlighted,view_not_updated_yet.png" height="298" width="906"><br><br><big>4.
+and hit the "<b>update</b>"&nbsp;button:</big><br><img alt="update Service CM view" src="Screenshots/service/GriffinControlService_after_installing--Service_Control_Manager_1_service_highlighted,view_not_updated_yet,update_button_marked.png" height="298" width="906"><br><br><big>5.
+Afterwards
+you should <b>see the service</b> inside the "services"
+window of the management console:</big><br><img alt="GriffinControlService within the control panel's service item" src="Screenshots/service/GriffinControlService--Service_Control_Manager.png" height="253" width="687"><br><br></blockquote><h2><a name="how_to_start_the_service_manually"></a>5. How to
+start the service&nbsp;manually </h2><blockquote>Note:
+the service should be automatically started after a reboot. So
+you only need to read the following text if &nbsp;you want to start
+it
+before and you do not know how to start Windows(R) services.<br><br><big>1.
+The service should be automatically
+started at boot time after a reboot. You can also <b>press</b>
+the <b>start
+button</b> (green triangle) <b>to start the service before
+the next reboot</b>:</big><br><img alt="start GriffinControlService" src="Screenshots/service/GriffinControlService--Service_Control_Manager_start_button_highlighted.png" height="298" width="906"><br><br>2. now
+the service's state should have changed to "started":<br><img alt="GriffinControlService 'started' state" src="Screenshots/service/GriffinControlService_started--Service_Control.png" height="254" width="947"></blockquote></body></html>

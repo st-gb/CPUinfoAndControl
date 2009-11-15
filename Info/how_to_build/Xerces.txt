@@ -1,0 +1,16 @@
+
+-for xerces XML: 
+  -Linker->Eingabe hinzufügen: 
+    -Xerces 2: "xerces-c_static_2.lib"
+    -Xerces 3: "xerces-c_static_3.lib"
+  -"Preprocessor Definitions" 
+   -With Xerces < Version 2.8:
+	Add "XML_LIBRARY"
+	  to compile with Xerces statically (else many "LNK2001" and "LNK2019" and linker errors).
+   -with Xerces 3.0: "XERCES_STATIC_LIBRARY"
+  -add include directory to C++
+     >>xerces -dir<</include
+  -for linker directory: 
+     add "xerces\lib" dir
+ -And: Add "Advapi32.lib" as additional dependancy for the linker.
+ -zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst: "LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in MSVCRT.lib(MSVCR80.dll) definiert."

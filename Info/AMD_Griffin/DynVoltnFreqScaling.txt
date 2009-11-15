@@ -1,0 +1,109 @@
+-Grundlage für dyn. Frequ- Skalierung: get CPU usage per core
+-P-state 7 soll man laut "blackshard83" ueberscheiben mit den Werten (VID,DID, FID)
+ von p-state 0: funktioniert nicht: Rechner spinnte: Maus konnte man noch bewegeen, 
+ aber ansonsten reagierte der Rechner nicht mehr auf Tastatur
+
+-bei Energieoptionen, CPU: 
+  wenn min und max = 50%, dann kein anderer p-state zwischendurch (anders als bei 25%).
+-1600 (FID 8, DID 0) MHz
+	-VID: 42 (1,025 Volt): sofort freeze
+  
+-1700 MHz
+	-VID: 43 (1,0125 Volt): sofort freeze
+-1800 MHz (DID:0, FID: 10):
+ -1.0375 Volt: 
+   -lief mehrere Sekunden bei niedriger Auslastung
+   -freeze bei hoher Auslastung
+ -1.025 Volt: 
+  -sofortiger freeze bei niedriger Auslastung
+-2000 MHz (FID 12, DID 0):
+  -VID: 39 (1,0625 V): stabil
+  -VID: 40 (1,05 V): stabil bei Volllast
+  -VID: 41 (1,0375 V): 
+    -stabil bei Volllast
+    -ohne Vollast: nachdem das Spiel "RoR" gestartet wurde: 
+      im COFVID Status Register stand: 
+      1,0375 V  bei 1100 MHz: das könnte das Problem sein: dass zwischendurch 1100 MHz
+      bei zu hoher Spannung
+-wenn man die Takfrequenz BEIM START gesetzt hat, hatte das auch Auswirkung 
+auf die Performance (gesehen an den Frames per Second beim CPU Rightmark Lite):
+	-erfolgreich getestet: p-state 0, FID: 13 (2100 MHz), VID: 40
+	-erfolgreich getestet: p-state 0, FID: 12 (2000 MHz), VID: 40
+	-p-state 0, 2000 MHz, 1,037 Volt: freeze nach wenigen Sekunden
+	-erfolgreich getestet: p-state 0, FID: 13, DID:1 (1050 MHz), VID: 60
+	-erfolgreich getestet: p-state 0, FID: 12, DID:1 (1000 MHz), VID: 60
+	-erfolgreich getestet: 
+	  -Standardeinstellungen, ansonsten:
+	  -640x480
+	  -Solver Instruction Set: SSE3, 
+	  -Renderer Instruction Set: SSE3/EMMX: 
+	  -Rendering Threads: 2
+	  -Rightmark-Fenster war inaktiv
+	  über mind. 10 Sekunden beobachtet: wenn beide cores: 
+	  p-state 0, FID: 11, DID:0 (1900 MHz), VID: 40: max. 15.3 fps
+	  p-state 0, FID: 10, DID:0 (1800 MHz), VID: 39 (enable_overvoltage_protection="false"): 
+	    -1 Mal: freeze
+	    -max. ca. 15.0  fps:
+	     -war zuerst auf dyn. freq und volt. scaling durch OS, 
+	      ->(dann PumaStateCtrl gestartetund ) ?
+	      dann während PumaStateCtrl lief auf "Energiesparmodus" gestellt
+	     -lief ca. 3 min lang stabil als voll ausgelastet durch 
+	     CPU Rightmark und google Chrome, nachdem Chrome beendet und nur noch ca. 
+	     70 % durchshcnittliche Auslastung: freeze
+	  p-state 0, FID: 10 oder 8, DID:0 (1600/1800 MHz), VID: 48: 
+	    sofort: KlötzchenBildung bei Grafik, freeze
+	  p-state 0, FID: 10, DID:0 (1800 MHz), VID: 40: 
+	   -bei 1 Mal (Vollast mit Rightmark) : schwarzer Bildschirm (freeze)
+	   -lief unter durchschnittlich mäßiger Last mehrere Minuten
+	  p-state 0, FID: 10, DID:0 (1800 MHz), VID: 41:
+	    -zwischendurch war 1100 MHz im AMD Power Monitor zu sehen
+	    -lief mehrere (ca. 30) Sekunden mit mäßiger Last, danach: schwarzer Bildschirm (freeze), nur Mauszeiger zu sehen
+	  p-state 0, FID: 10, DID:0 (1800 MHz), VID: 43: sofort schwarzer Bildschirm (freeze)
+	  p-state 0, FID: 8, DID:0 (1600 MHz), VID: 42(niedrigste Spannung, um overvoltage protection zu vermeiden): 
+	    max. 15.3 fps
+	    -zwischendurch war 1100 MHz im AMD Power Monitor zu sehen
+	  
+	  p-state 1, FID: 4, DID:0 (1200 MHz), VID: 48: schwarzer Bildschirm (freeze)
+	  p-state 1, FID: 4, DID:0 (1200 MHz), VID: 55: eingefrorener (kein schwarzer) Bildschirm
+	  p-state 0, FID: 14, DID:1 (1100 MHz), VID: 60: max. 9.0 fps
+	  p-state 0, FID: 11, DID:1 (950 MHz), VID: 60: max. 8.0 fps
+	  p-state 0, FID: 10, DID:1 (900 MHz), VID: 60: max. 7.6 fps
+	  p-state 0, FID: 9, DID:1 (850 MHz), VID: 58: max. 7.0 fps
+	  p-state 0, FID: 8, DID:1 (800 MHz), VID: 63: schwarzer Bildschirm (freeze)
+	  p-state 0, FID: 8, DID:1 (800 MHz), VID: 60: max. 6.6 fps
+	  p-state 0, FID: 7, DID:1 (750 MHz), VID: 60: max. 6.0 fps
+	  p-state 0, FID: 6, DID:1 (700 MHz), VID: 60: max. 5.6 fps
+	  p-state 0, FID: 5, DID:1 (650 MHz), VID: 60: max. 5.2 fps
+	  p-state 0, FID: 4, DID:1 (600 MHz), VID: 60: max. 4.8 fps
+
+	  über mind. 10 Sekunden beobachtet: wenn beide cores: 
+	  p-state 0, FID: 14, DID:1 (1100 MHz), VID: 60: max. 8.8 fps
+	  p-state 0, FID: 15, DID:1 (1150 MHz), VID: 58: max. 8.7 fps
+	  p-state 0, FID: 16, DID:1 (1200 MHz), VID: 57: max. 8.8 fps
+	  p-state 0, FID: 17, DID:1 (1250 MHz), VID: 56: max. 8.9 fps
+	  p-state 0, FID: 18, DID:1 (1300 MHz), VID: 54: max. 8.9 fps
+	  p-state 0, FID: 19, DID:1 (1350 MHz), VID: 53: max. 9.0 fps
+
+	-schwarzer Bildschirm (freeze) nach wenigen (ca. 5-10) Sekunden, als: 
+	  p-state 0, FID: 10 (1800 MHz), VID: 41
+	-schwarzer Bildschirm (freeze) nach ca. 2 Sekunden, als: 
+	  p-state 1, FID: 11 (1900 MHz), VID: 44
+	-schwarzer Bildschirm (freeze) nach ca. 2 Sekunden, als: 
+	  p-state 1, FID: 16, DID 0 (2400 MHz), VID: 37
+	  
+-als ich die Taktfrequenz dynamisch ins MSR register ...71 geschrieben hatte,
+ war die Taktfrequenz nicht die, die ich berechnet und die der AMD Power Monitor anzeigte
+ (gesehen an den Frames per Second beim CPU Rightmark)
+ -FIDs unterhalb von 14 führten (soweit ich mich erinnere) zu einem Absturz und 
+  FIDs über 14 führten nicht zu der errechneten Takfreuenz, sondern es sah so aus,
+  dass es den halb so hohen Taktfrequenzen entsprach
+-in die p-state-Tabelle muss man anscheinend nach den Taktfrequenzen sortiert
+ eintragen: 
+ -als ich in p-state 3 FID 8,DID 0 (=1600 MHz), VID=41 oder 42 eintrug und p-state 
+ 2 550 MHz war, wurde nach dem Schreiben vom p-state 3 die Werte des p-state 2 gesetzt,
+ oder lag das am "max. p-state"?
+ -p-state 0: FID 14, DID 0, VID 40
+  p-state 1: FID 24, DID 1, VID 44 -> scheint die gleiche Performance wie 1100 MHz zu sein
+  funktionierte
+ -p-state 0: FID 14, DID 0, VID 40
+  p-state 1: FID 8, DID 0, VID 44 -> freeze, wenn p-state 1 eingestellt

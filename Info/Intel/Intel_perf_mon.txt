@@ -1,0 +1,6 @@
+...and IA-32...vol 3B:
+-"Availability of architectural performance monitoring capabilities is enumerated using the
+CPUID.0AH."
+  -EAX23:16: number of bits per programmable counter
+-"Architectural performance monitoring does allow for enhancement across processor
+implementations. The CPUID.0AH leaf provides version ID for each enhancement."

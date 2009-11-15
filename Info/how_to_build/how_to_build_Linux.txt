@@ -1,0 +1,12 @@
+how to build wxPumaStateCtrlDlg:
+         
+under Linux (tested with Ubuntu 8.10 32 bit)
+ -1. download package "wx2.8-headers", libwxbase2.8-dev (for "wx/setup.h")
+ -2. add "/usr/include/wx-2.8" to include path
+ -define preprocessor macro 
+   "__WXGTK20__": so the compiler searches in folder "/usr/include/wx-2.8/wx/gtk" when
+   __WXGTK__ for GdkCursor in "defs.h"
+  in "/usr/include/wx-2.8/wx/app.h"
+ -in sourcecode: include "/usr/lib/[...]/wx/setup.h before "wx/app.h"
+   -setup.h anpassen: wx_USE_IMAGE etc. auf 1
+ -install package "libwxgtk2.8-0" and/ or "libwxgtk2.8-dev" in order to link to the wxwidgets code

@@ -1,0 +1,100 @@
+http://www.lm-sensors.org/wiki/FAQ/Chapter3#WhatareVIDlinesWhyistheVIDreadingwrong
+/etc/sensors.conf : #       label in0 "VCore 1"
+		    #       label in1 "VCore 2"
+http://www.lm-sensors.org/browser/lm-sensors/trunk/doc/vid
+http://www.lm-sensors.org/browser/lm-sensors/trunk/doc/chips/SUMMARY
+
+from http://www.lm-sensors.org/wiki/FAQ/Chapter3#WhatisatI2CaddressXXX:
+What is at I2C address XXX? ¶
+ In general, we don't know. Start by running sensors-detect. If it doesn't recognize it, try running i2cdump. A partial list of manufacturers' IDs are at the bottom of doc/chips/SUMMARY. 
+What is at I2C address 0x69? ¶
+ A clock chip. Often, accessing these clock chips in the wrong way will instantly crash your computer. Sensors-detect carefully avoids these chips, and you should do too. You have been warned. 
+What is at I2C addresses 0x50 - 0x57? ¶
+ EEPROMs on your SDRAM DIMMs. Load the eeprom module to look at some basic data in sensors or use the program prog/eeprom/decode-dimms.pl to get more information than you ever wanted. 
+What is at I2C addresses 0x30 - 0x37? ¶
+ These are often 'shadows' of your EEPROMs on your SDRAM DIMMs at addresses 0x50 - 0x57. They are the 'software write-protect' registers of the SDRAM Serial Presence Detect EEPROMs. If you try and do a i2cdump on them to read the location, you won't get anything, because they contain a single write-only register. This register can be used to permanently write-protect the contents of the eeprom.
+
+-try "sudo i2cdump 0 0x38" ?
+
+sudo sensors-detect 
+# sensors-detect revision 5249 (2008-05-11 22:56:25 +0200)
+
+This program will help you determine which kernel modules you need
+to load to use lm_sensors most effectively. It is generally safe
+and recommended to accept the default answers to all questions,
+unless you know what you're doing.
+
+We can start with probing for (PCI) I2C or SMBus adapters.
+Do you want to probe now? (YES/no): YES
+Probing for PCI bus adapters...
+Use driver `i2c-piix4' for device 0000:00:14.0: ATI Technologies Inc SB600 SMBus
+
+We will now try to load each adapter module in turn.
+Module `i2c-piix4' already loaded.
+If you have undetectable or unsupported I2C/SMBus adapters, you can have
+them scanned by manually loading the modules before running this script.
+
+We are now going to do the I2C/SMBus adapter probings. Some chips may
+be double detected; we choose the one with the highest confidence
+value in that case.
+If you found that the adapter hung after probing a certain address,
+you can specify that address to remain unprobed.
+
+Next adapter: SMBus PIIX4 adapter at 0b00 (i2c-0)
+Do you want to scan it? (YES/no/selectively): YES
+Client found at address 0x50
+Probing for `Analog Devices ADM1033'...                     No
+Probing for `Analog Devices ADM1034'...                     No
+Probing for `SPD EEPROM'...                                 Yes
+    (confidence 8, not a hardware monitoring chip)
+Probing for `EDID EEPROM'...                                No
+Client found at address 0x51
+Probing for `Analog Devices ADM1033'...                     No
+Probing for `Analog Devices ADM1034'...                     No
+Probing for `SPD EEPROM'...                                 Yes
+    (confidence 8, not a hardware monitoring chip)
+Probing for `EDID EEPROM'...                                No
+
+Some chips are also accessible through the ISA I/O ports. We have to
+write to arbitrary I/O ports to probe them. This is usually safe though.
+Yes, you do have ISA I/O ports even if you do not have any ISA slots!
+Do you want to scan the ISA I/O ports? (YES/no): YES
+Probing for `National Semiconductor LM78' at 0x290...       No
+Probing for `National Semiconductor LM78-J' at 0x290...     No
+Probing for `National Semiconductor LM79' at 0x290...       No
+Probing for `Winbond W83781D' at 0x290...                   No
+Probing for `Winbond W83782D' at 0x290...                   No
+Probing for `IPMI BMC KCS' at 0xca0...                      No
+Probing for `IPMI BMC SMIC' at 0xca8...                     No
+
+Some Super I/O chips may also contain sensors. We have to write to
+standard I/O ports to probe them. This is usually safe.
+Do you want to scan for Super I/O sensors? (YES/no): YES
+Probing for Super-I/O at 0x2e/0x2f
+Trying family `National Semiconductor'...                   No
+Trying family `SMSC'...                                     No
+Trying family `VIA/Winbond/Fintek'...                       No
+Trying family `ITE'...                                      No
+Probing for Super-I/O at 0x4e/0x4f
+Trying family `National Semiconductor'...                   No
+Trying family `SMSC'...                                     No
+Trying family `VIA/Winbond/Fintek'...                       No
+Trying family `ITE'...                                      No
+
+Some south bridges, CPUs or memory controllers may also contain
+embedded sensors. Do you want to scan for them? (YES/no): YES
+Silicon Integrated Systems SIS5595...                       No
+VIA VT82C686 Integrated Sensors...                          No
+VIA VT8231 Integrated Sensors...                            No
+AMD K8 thermal sensors...                                   No
+AMD K10 thermal sensors...                                  No
+Intel Core family thermal sensor...                         No
+Intel AMB FB-DIMM thermal sensor...                         No
+
+Sorry, no sensors were detected.
+Either your sensors are not supported, or they are connected to an
+I2C or SMBus adapter that is not supported. See
+http://www.lm-sensors.org/wiki/FAQ/Chapter3 for further information.
+If you find out what chips are on your board, check
+http://www.lm-sensors.org/wiki/Devices for driver status.
+

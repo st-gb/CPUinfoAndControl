@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.1  (Win32)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGED" CONTENT="20091109;20153100">
+</HEAD>
+<BODY LANG="de-DE" DIR="LTR">
+<H2>General</H2>
+<UL>
+	<LI><P>avoid pathes with spaces (g++ has problems else)</P>
+</UL>
+<H2>Apache Xerces (SAX2 XML access)</H2>
+<P>possibilities:</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">download and install via
+	&quot;Devel-&gt;libxerces&quot; via Cygwin installer</P>
+	<UL>
+		<LI><P STYLE="margin-bottom: 0cm">only release build of a project
+		working when linking with Cygwin's xerces</P>
+		<LI><P STYLE="margin-bottom: 0cm">Xerces 3.0.1:</P>
+		<UL>
+			<LI><P STYLE="margin-bottom: 0cm">debug build:<BR>&nbsp;&nbsp;&nbsp;&nbsp;
+			-keine xerces Include-Verzeichniss angeben, sonst
+			Linker-Fehler<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &quot;undefined
+			reference to `xercesc_3_0::XMLString::transcode(unsigned<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			short const*, xercesc_3_0::MemoryManager*)'&quot;<BR>&nbsp;&nbsp;&nbsp;&nbsp;
+			&quot;--enable-auto-import&quot; als Linker-Option damit<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			-&quot;xercesc_3_0::XMLPlatformUtils::fgMemoryManager&quot;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			-xercesc_3_0::XMLUni::fgSAX2CoreValidation<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			-xercesc_3_0::XMLUni::fgSAX2CoreNameSpaces<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			gelinkt werden</P>
+		</UL>
+	</UL>
+	<LI><P>build xerces libraries:<BR>&nbsp;&nbsp; -via make:<BR>&nbsp;&nbsp;&nbsp;
+	-1. open cmd.exe<BR>&nbsp;&nbsp;&nbsp; -2. run &quot;bash&quot;
+	within cmd shell<BR>&nbsp;&nbsp;&nbsp; -3. use &quot;./configure
+	LDFLAGS=-no-undefined&nbsp; --disable-network&quot;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&quot;--disable-network&quot; because &lt;sys/socket.h&gt; couldn't
+	be found</P>
+</UL>
+</BODY>
+</HTML>

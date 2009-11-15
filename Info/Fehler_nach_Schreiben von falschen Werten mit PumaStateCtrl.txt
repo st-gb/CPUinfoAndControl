@@ -1,0 +1,4 @@
+Ereignisfilter mit Abfrage "SELECT * FROM __InstanceModificationEvent 
+WITHIN 60 WHERE TargetInstance 
+ISA "Win32_Processor" AND TargetInstance.LoadPercentage > 99" konnte im Namespace "//./root/CIMV2" 
+nicht reaktiviert werden aufgrund des Fehlers 0x80041003. Ereignisse können nicht durch diesen Filter geschickt werden, bis dieses Problem gelöst ist.

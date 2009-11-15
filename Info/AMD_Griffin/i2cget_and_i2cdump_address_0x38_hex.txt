@@ -1,0 +1,29 @@
+ sudo i2cget 0 0x38
+WARNING! This program can confuse your I2C bus, cause data loss and worse!
+I will read from device file /dev/i2c-0, chip address 0x38, current data
+address, using read byte.
+Continue? [Y/n] Y
+0x01
+user@laptop:~$ sudo i2cdump 0 0x38
+No size specified (using byte-data access)
+WARNING! This program can confuse your I2C bus, cause data loss and worse!
+I will probe file /dev/i2c-0, address 0x38, mode byte
+Continue? [Y/n] Y
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f    0123456789abcdef
+00: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+10: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+20: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+30: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+40: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+50: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+60: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+70: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+80: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+90: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+a0: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+b0: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+c0: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+d0: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+e0: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+f0: 01 00 00 00 00 50 ac 14 81 b4 08 10 7c 04 00 00    ?....P??????|?..
+

@@ -1,0 +1,108 @@
+#include "ModelData.hpp"
+//#include "RegisterData.hpp" //class MSRdata
+
+Model::Model( //GriffinController * p_griffincontroller 
+             )
+    //C++ style inits:
+    : m_bSkipCPUtypeCheck(false) 
+    , m_bUsePstate0AsMaxFreq (false)
+    , m_bEnableOvervoltageProtection(true)
+    , m_bUseDefaultFormularForOvervoltageProtection(false)
+    , m_bTruncateLogFileForEveryStartup(true)
+    , mp_cpucontroller (NULL) 
+  {
+    //m_cpucoredata
+#ifdef _DEBUG
+      const Model * pmodel = this ;
+#endif
+    m_dPreviousPERF_CTRvalue = 0.0 ;
+    //m_cpucoredata.SetGriffinController( p_griffincontroller ) ;
+  }
+
+  void Model::AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue)
+  {
+    //m_vecmaxvoltageforfreq.push_back(MaxVoltageForFreq(fValue,wFreqInMHz) );
+    m_setmaxvoltageforfreq.insert(MaxVoltageForFreq(fValue,wFreqInMHz) ) ;
+  }
+
+//  void Model::AddValueTableRow(
+//    //std::vector<RegisterDataTable>::iterator iter_regdatatable ,
+//    std::vector<RegisterDataTable> & r_stdvector_registerdatatable ,
+//    //std::vector<std::string [2]> & stdvecstdstrAttributeNameAndValue
+//    ValueTableRow & r_vte )
+//  {
+//    bool bTableFound = false ;
+//    std::vector<RegisterDataTable>::iterator iter_regdatatable ;
+//    std::string stdstrAttName ;
+//    iter_regdatatable = r_stdvector_registerdatatable.begin() ;
+//    while( iter_regdatatable != r_stdvector_registerdatatable.end() )
+//    {
+////      if( iter_regdatatable->m_wCols ==
+////         stdvecstdstrAttributeNameAndValue.size()
+////         && iter_regdatatable->m_wCols > 0
+////         && iter_regdatatable->m_wRows > 0 
+////        )
+//      {
+//        for( WORD wIndex = 0 ;wIndex < iter_regdatatable->m_wCols ; ++ wIndex )
+//        {
+//          stdstrAttName = iter_regdatatable->m_ararstdstr[wIndex][0] ;
+//          if( stdstrAttName != stdvecstdstrAttributeNameAndValue.at(wIndex) )
+//          {
+//            break ;
+//          }
+//          if( ( wIndex + 1 ) == iter_regdatatable->m_wCols )
+//          {
+//            bTableFound = true ;
+//            //TODO insert into table
+//            iter_regdatatable = r_stdvector_registerdatatable.end() ;
+//            //next ++ it gets r_stdvector_registerdatatable.end()
+//            -- iter_regdatatable ;
+//          }
+//        }
+//      }
+//      ++ iter_regdatatable ;
+//    }
+//    if( ! bTableFound )
+//      ;//TODO create new table and insert row
+//  }
+//  
+//  void Model::AddValueTableRow(
+//    std::vector<MSRdata>::reverse_iterator rev_iter_msrdata ,
+//    std::vector<std::string [2]> & stdvecstdstrAttributeNameAndValue)
+//  {
+//    if( rev_iter_msrdata != m_stdvector_msrdata.rend() )
+//      AddValueTableRow( 
+//        rev_iter_msrdata->m_stdvector_registerdatatable.begin() ,
+//        stdvecstdstrAttributeNameAndValue ) ;
+//    else
+//    {
+//      std::vector<MSRdata>::iterator iter_msrdata = m_stdvector_msrdata.begin() ;
+//      for( WORD wIndex = 0 ; wIndex < m_stdvector_msrdata.size() ; ++ wIndex )
+//      while ( iter_msrdata != m_stdvector_msrdata.end() )
+//      {
+//        //MSRdata msrdata = m_stdvector_msrdata.at()
+//  //      if( iter_msrdata->m_stdvector_registerdatatable )
+//        AddValueTableRow(stdvecstdstrAttributeNameAndValue ) ;
+//        ++ iter_msrdata ;
+//      }
+//    }
+//  }
+
+  BYTE Model::GetNumberOfCPUCores()
+  {
+    //return m_byNumberOfCPUCores ;
+    return m_cpucoredata.m_byNumberOfCPUCores ;
+  }
+
+  void Model::SetNumberOfCPUCores(BYTE byNumberOfCPUCores)
+  {
+    //m_byNumberOfCPUCores = byNumberOfCPUCores ;
+    //m_cpucoredata.m_byNumberOfCPUCores = byNumberOfCPUCores ;
+    m_cpucoredata.SetCPUcoreNumber(byNumberOfCPUCores) ;
+  }
+
+  void Model::SetSkipCPUTypeCheck(bool bSkipCPUtypeCheck)
+  {
+    m_bSkipCPUtypeCheck = bSkipCPUtypeCheck ;
+  }
+//Remain a blank line after this line for no error/warning with "g++" compiler

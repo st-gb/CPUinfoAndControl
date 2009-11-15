@@ -1,0 +1,4 @@
+
+Vol 3B:  
+Event Name Fixed-Function                    PMC              PMC Address
+CPU_CLK_UNHALTED.CORE MSR_PERF_FIXED_CTR1//  IA32_FIXED_CTR1  30AH

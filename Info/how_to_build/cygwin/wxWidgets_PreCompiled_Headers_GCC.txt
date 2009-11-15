@@ -1,0 +1,59 @@
+[edit] Precompiled headers in MinGW
+
+(from another user) This is a nice document and your English is not so bad. However, nowhere in this document, and neither in this entire wxWiki, is it discussed how to setup precompiled headers for these COMMON compilers (e.g. Visual C++). I am an intermediate-level wxWidgets user and I have just spent 2 hours trying to get precompiled headers to work with wxWidgets and MS Visual Studio .NET 2003. I googled "precompiled headers wxWidgets", "precompiled headers visual studio wxWidgets" and many similar keywords to no avail. I only found one webpage where they were telling me how to set this up if I DON'T want the standard way of doing it with wxWidgets (but I DO want just the standard way!!). I typed "precompiled headers" into the search box on the main wxWidgets webpage and found nothing useful. Found no help. In the end, I failed; it still doesn't work and I wasted 2 hours of my time. Please provide these instructions in a clear place either somewhere in the wxWiki or in the main documentation. Thank you; otherwise wxWidgets is great - I love it.
+
+(Beforehand I want to apologize for my broken English)
+
+    Precompiled c++ headers for Visual Studio, are explained at codeproject, similar is explained for QT ---- (emiraga) 
+
+I wasn't able to activate pch support as written in wxWidgets documentation which says that pch works with: “Visual C++ (including embedded Visual C++), Borland C++, Open Watcom C++ and newer versions of GCC.” but doesn't actually work with my GCC 3.4.2. I can't see GCC support in wxprec.h:
+
+
+ // check if to use precompiled headers: do it for most Windows compilers unless
+ // explicitly disabled by defining NOPCH
+ #if ( defined(__WXMSW__) && 
+        ( defined(__BORLANDC__)    || 
+          defined(__VISUALC__)     || 
+          defined(__DIGITALMARS__) || 
+          defined(__WATCOMC__) ) ) || 
+       defined(__VISAGECPP__) || 
+       defined(__MWERKS__)
+ 
+     // If user did not request NOPCH and we're not building using configure
+     // then assume user wants precompiled headers.
+     #if !defined(NOPCH) && !defined(__WX_SETUP_H__)
+         #define WX_PRECOMP
+     #endif
+ #endif
+
+
+wxWidgets lib says that: “The file "wx/wxprec.h" includes "wx/wx.h". Although this incantation may seem quirky, it is in fact the end result of a lot of experimentation, and several Windows compilers to use precompilation which is largely automatic for compilers with necessary support”. I don't know what “experimentation” they talking about, but even activating WX_PRECOMP flag manually and including wxprec.h do nothing for activating pch support.
+
+If you would like to activate pch support with GCC do the following:
+
+First of all, you should create precompiled header itself. You can make it by typing g++ yourprec.h with the same compiler options as all your project files. In yourprec.h you can add all needed headers. Here is the example:
+
+ #include <wx/wx.h>
+ #include <wx/socket.h>
+ #include <wx/notebook.h>
+ #include <wx/xrc/xmlres.h>
+ #include <wx/image.h>
+
+In Dev-C++ you can create Makefile.mak file to automate pch compiling process. Here is the example of Makefile.mak:
+
+ yourprec.h.gch: yourprec.h
+ 	$(CXX) -c yourprec.h -o yourprec.h.gch $(CXXFLAGS)
+ 
+ all-before: yourprec.h.gch
+
+After that you should go to Project->Project Options->Makefile and add your Makefile.mak. If you using IDE different from Dev-C++ you can add lines written above somewhere in your makefile.
+
+After yourprec.h is compiled you'll see a file named yourprec.h.gch. Keep in mind that folders where yourprec.h and yourprec.h.gch lie should be in the compiler search paths. The last step is #including yourprec.h in all source files of your project. You can add all other necessary headers below yourprec.h (yourprec.h must be the first included file).
+
+I should explain that GCC compiler acts this way: if it find correct .h.gch file it use it, otherwise it use .h with the same name. If the compiler is using the .h file while there is a .h.gch file in the same directory you can use -Winvalid-pch compiler flag to recognize what's wrong.
+[edit] Results
+
+My project consists of 1000 lines of C++ code. Compiling time from 27 seconds (with wx.h) was reduced to 10 seconds (with wx.h.gch) in wxWidgets 2.4.2. And from 80 sec -> 32 sec with wxWidgets 2.6.0.
+[edit] Author
+
+Andreev Nikita aka "Lestat" lestat@kemsu.ru "

@@ -1,0 +1,96 @@
+es gab eine Werteoverflow beim TimeStampCounter register:
+(es kann auch sein, dass der Overflow erst bei einer noch größereb Zahl stattfindet)
+38691245701472       100011 00110000 10000001 11110100 10111001 01100000  5*8+6=40+6=46 bit, alter Wert
+     622670100      neuer Wert
+
+//"Enhanced Intel® SpeedStep® Technology for the Intel® Pentium® M Processor" 
+//White Paper from March 2004, page 4, "2.0 Processor Support":
+"1.6 GHz (HFM) 1.484 V
+1.4 GHz 1.420 V
+1.2 GHz 1.276 V
+1.0 GHz 1.164 V
+800 MHz 1.036 V
+600 MHz (LFM) 0.956 V
+The top and bottom modes are commonly known as high frequency mode (HFM) and low frequency mode
+(LFM). These frequency and voltage operating points are stored within a read-only processor model
+specific register (MSR)." Question: what are the register numbers?
+
+http://www.intel.com/Assets/PDF/manual/253669.pdf
+  (Intel� 64 and IA-32 Architectures Software Developer�s Manual
+  Volume 3B: System Programming Guide, Part 2):
+	Table B-1. CPUID Signature Values of DisplayFamily_DisplayModel:
+	"06_0DH Intel Pentium M processor" (fam 6, model 13)
+	"06_09H Intel Pentium M processor" (fam 6, model 9)
+
+Pentium M register info
+-P=C*V^2*F P=Power , C= Capacitance V=Voltage F=Frequency
+ - P=C*V^2*F | : C   P/C=V^2*F  |:P  1/C=(V^2*F)/P  C=P/(V^2*F)
+  bsp.: C=6W/( 0,956V^2 * 600MHz) C= 6W/ (0,913936 V *600MHz)
+        C=6VA/548,3616V*MHz = 6A/548,3616MHz = A/91,3936 MHz = A/91393600 Hz
+
+-Spannung und FID ins MSRegister 0x199 schreiben und lesen: Bits 0-7 : FID oder VID
+
+-TimeStamp Counter (MSR index 0x10) erh�ht sich bez�glich der AKTUELLEN Takfrequenz
+  (also nicht wie beim Griffin immer im selben Takt).
+ Dadurch ist die aktuelle CPU-Auslasting genauer berechenbar:
+     Takte, in der die CPU Idle war / TimeStampCounter Wert Differenz, z.B.:
+     ( "Takte, in der die CPU Idle war bei Uhrzeit '19:33 02 Sekunden' " -
+     "Takte, in der die CPU Idle war bei Uhrzeit '19:33 01 Sekunde' " )
+     /
+     ( "TimeStampCounter bei Uhrzeit '19:33 02 Sekunden' " -
+     "TimeStampCounter bei Uhrzeit '19:33 01 Sekunde' " )
+
+http://software.intel.com/en-us/articles/optimizing-for-intel-pentiumr-m-processor-with-intel-vtunet-performance-analyzer/:
+"New Events for the Pentium M Processor
+Several important events were added to the Pentium M processor that help 
+characterize performance metrics in addition to those provided on previous 
+Pentium III processors. These new events allow measurement of the following 
+performance metrics:
+
+System power state transitions (voltage, frequency, all�also known as Intel SpeedStep� Technology), thermal trip event
+Many events relating to branch prediction (conditional and unconditional, direct and indirect, calls, returns)
+Micro-ops fusion effectiveness
+Partial stalls (cycles and events)
+Hardware data prefetcher and software prefetch instructions"
+
+http://developer.intel.com/Assets/PDF/appnote/241618.pdf:
+CPUID EAX=0Ah: return support for perf. monit.
+
+http://www.intel.com/Assets/PDF/manual/253669.pdf
+  (Intel� 64 and IA-32 Architectures Software Developer�s Manual
+  Volume 3B: System Programming Guide, Part 2):
+ Kapitel 30:
+	Table A-1. Architectural Performance Events:
+		0 UnHalted Core Cycles 00H 3CH 
+			-wahrscheinlich bezueglich des aktuell eingestellten Taktes
+			-TimeStampCounter auch bezueglich des aktuell eingestellten Taktes
+			 ->UnHalted Core Cycles/ TimeStampCounter = aktuelle CPU-Last, kann
+			 also auch bei < 100% der maximalen Taktfrequenz 1.0 sein.
+	30.2.1.1 Architectural Performance Monitoring Version 1 Facilities
+	  -IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
+		address space; the number of MSRs per logical processor is reported using
+		CPUID.0AH:EAX[15:8].
+		� IA32_PERFEVTSELx MSRs start at address 186H and occupy a contiguous block
+		of MSR address space. Each performance event select register is paired with a
+		corresponding performance counter in the 0C1H address block.
+		� The bit width of an IA32_PMCx MSR is reported using the
+			CPUID.0AH:EAX[23:16]. Bits beyond the width of the programmable counter are
+			undefined, and are ignored when written to. On write operations, the lower-order
+			32 bits of each MSR may be written with any value, and the high-order bits are
+			sign-extended according to the value of bit 31. The bit width for read operations
+			is reported using CPUID.
+			� Bit field layout of IA32_PERFEVTSELx MSRs is defined architecturally.
+	30.2.2 Additional Architectural Performance Monitoring Extensions
+	30.15.2 PerfCtr0 and PerfCtr1 MSRs
+	  -"The RDPMC instruction can be used by
+programs or procedures running at any privilege level and in virtual-8086 mode to
+read these counters."
+	  -"The RDPMC instruction is not serializing or ordered with other instructions. Thus, it
+does not necessarily wait until all previous instructions have been executed before
+reading the counter. Similarly, subsequent instructions may begin execution before
+the RDPMC instruction operation is performed."
+	30.15.3 Starting and Stopping the Performance-Monitoring Counters
+	30.15.4 Event and Time-Stamp Monitoring Software
+	A.9 PERFORMANCE MONITORING EVENTS FOR INTEL� PENTIUM� M PROCESSORS
+	  -CPU_CLK_UNHALTED 79H Number of cycles during which the processor is not
+halted, and not in a thermal trip.

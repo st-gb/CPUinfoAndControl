@@ -1,0 +1,5 @@
+Shared memory ging nut wenn der Dienst als user "sysv" und die GUI 
+als user "sysv" gestartet wurden.
+
+wenn  Dienst als lokales systemkonto und user "Stefan als Admin" 
+oder "sysv" ging es nicht (bei OpenFileMapping: "Zugriff verweigert")

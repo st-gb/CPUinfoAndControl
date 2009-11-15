@@ -1,0 +1,47 @@
+      //maximale Helligkeit, CPUMark mit 2 Threads, 
+      //beide Cores @550Mhz liefen stabil bei jeweils:
+      //Vid=60: 0.788V, minimal ca. 24,5 W, maximal ca. 33W (Standard-Voltage-ID für 550MHz)
+      //Vid=61: 0.788V, minimal ca. 24,4 W, maximal ca. 32,9W
+      //Vid=62: 0.775V,                     maximal ca. 33,0 W
+      //Vid=63: 0.762V, maximal ca. 32,9W
+      //Vid=64: 0.750V, maximal ca. 32,7W (eigentlich niedrigste einstellbare Voltage ID)
+      //Vid=65: 0.738V, maximal ca. 32,5W
+      //Vid=66: 0.725V, ca. minimal 25,3W, maximal ca. 32,7W
+      //Vid=67: 0.712V, ca. minmal 24,2 W, maximal ca. 32,6W
+      //Vid=68: 0.712V,            , maximal ca. 32,7W
+      //Vid=69: 0.688V,            , maximal ca. 32,8W
+      //Vid=70: 0.675V,            , maximal ca. 32,9W
+      //Vid=71: 0.663V,            , maximal ca. 32,5W
+      //Vid=72: 0.650V,            , maximal ca. 33,0W
+      //Vid=72: 0.637V, ca. minmal 24,6W, maximal ca. 33,0W
+
+      //maximale Helligkeit, CPUMark mit 2 Threads, beide Cores @1100MHz liefen stabil bei jeweils:
+      //Vid=48: 0.950V,     (Standard-Voltage-ID für 1100MHz)
+      //Vid=49: 0.938V, ->ca.42,5W
+      //Vid=50: 0.925V, ->ca.42,3W
+      //Vid=51: 0.913V, ->ca.40,0W
+      //Vid=52: 0.900V, ->ca.39,4W
+      //Vid=53: 0.887V, ->ca.39,0W
+      //Vid=54: 0.875V, ->ca.38,6W
+      //Vid=55: 0.863V, ->ca.38,2W
+      //Vid=56: 0.850V, ->ca.38,0W
+      //Vid=57: 0.837V, ->ca.37,7W
+      //Vid=58: 0.825V, ->ca.37,2W
+      //Vid=59: 0.812V, ->ca.36,9W
+      //Vid=60: 0.800V, ->ca.36,6W
+      //Vid=61: 0.788V, ->ca.36,3W
+      //Vid=62: 0.775V, ->ca.36,1W
+      //Vid=63: 0.762V, ->ca.35,8W
+      //nicht mehr stabil,als der Kern 1 0.762V, der Kern 0:
+      //Vid=64: 0.750V, ->ca.3? W
+
+      //maximale Helligkeit, CPUMark mit 2 Threads, beide Cores @2200Mhz liefen stabil bei jeweils:
+      //Vid=36: 1.100V, (Standard-Voltage-ID für 2200MHz)
+      //Vid=37: 1.088V, 
+      //Vid=38: 1.075V, 
+      //Vid=39: 1.062V, 
+      //Vid=40: 1.050V, 
+      //Vid=41: 1.038V, 
+      //Vid=42: 1.025V, 
+      //nicht mehr stabil,als der Kern 1 1.025V, der Kern 0:
+      //Vid=43: 1.013V,

@@ -1,0 +1,9 @@
+
+do not define the preproc macro "_DEBUG": 
+  else in >>wx-dir<</include/wx/debug.h __WXDEBUG__ will be declared 
+  and so method "OnAssertFailure(...)" for class "wxAppConsole" is declared 
+  in >>wx-dir<</include/wx/app.h
+  and so MSVC shows an error because the code for "OnAssertFailure" cannot be found
+  
+ignore from linker->Input: "LIBCMT" (else many LNK2005 errors like 
+  "LIBCMT.lib(setlocal.obj) : error LNK2005: __configthreadlocale already defined in MSVCRT.lib(MSVCR80.dll)")

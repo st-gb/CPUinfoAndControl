@@ -1,0 +1,189 @@
+2009.11.8 19h:37min 43s 917ms:This program is CPU information and control program for .
+license/ info: http://amd.goexchange.de / http://sw.goexchange.de
+
+2009.11.8 19h:37min 43s 927ms:Build time: Nov  8 2009 18:58:32 (Greenwich Mean Time + 1)
+2009.11.8 19h:37min 43s 927ms:This exe is started as service (and not as installer)
+2009.11.8 19h:37min 44s 7ms:CPU attributes ctor
+2009.11.8 19h:37min 44s 7ms:Init. of CPU attributes
+2009.11.8 19h:37min 44s 47ms:begin of constructor of service object
+2009.11.8 19h:37min 44s 47ms:end of constructor of service object
+2009.11.8 19h:37min 44s 47ms:begin of starting service
+2009.11.8 19h:37min 44s 47ms:before staring service ctrl dispatcher--current thread id:4512
+2009.11.8 19h:39min 43s 539ms:Service main--argument count: 1
+2009.11.8 19h:39min 43s 539ms:argument 0: CPUcontrolService
+2009.11.8 19h:39min 52s 181ms:initializing the service--begin
+12009.11.8 19h:39min 52s 191ms:Before initializing the CPU access
+2009.11.8 19h:39min 52s 251ms:WinRing0.dll library successfully loaded
+2009.11.8 19h:39min 52s 251ms:function InitializeOls exists
+2009.11.8 19h:39min 52s 812ms:result of InitializeOls:0
+2009.11.8 19h:39min 52s 822ms:WinRing0 successfully initialized
+2009.11.8 19h:39min 52s 822ms:MSR exist.
+2009.11.8 19h:39min 52s 822ms:CPU attributes ctor
+2009.11.8 19h:39min 52s 822ms:Init. of CPU attributes
+2009.11.8 19h:39min 52s 822ms:Address of service attributes: 00B4D060
+2009.11.8 19h:39min 59s 862ms:WRDL--CPUIDex--begin m_pfncpuidex: 00000000
+2009.11.8 19h:39min 59s 862ms:CPUID function pointer succ. assigned.
+2009.11.8 19h:39min 59s 862ms:Calling CPUID function succeeded.
+2009.11.8 19h:39min 59s 862ms:WRDL--CPUIDex--begin m_pfncpuidex: 020E1890
+2009.11.8 19h:39min 59s 862ms:Calling CPUID function succeeded.
+2009.11.8 19h:39min 59s 912ms:WRDL--CPUIDex--begin m_pfncpuidex: 020E1890
+2009.11.8 19h:39min 59s 912ms:Calling CPUID function succeeded.
+2009.11.8 19h:39min 59s 912ms:WRDL--CPUIDex--begin m_pfncpuidex: 020E1890
+2009.11.8 19h:39min 59s 912ms:Calling CPUID function succeeded.
+2009.11.8 19h:39min 59s 912ms:CPUID address:2147483650 
+2009.11.8 19h:39min 59s 912ms:WRDL--CPUIDex--begin m_pfncpuidex: 020E1890
+2009.11.8 19h:39min 59s 912ms:Calling CPUID function succeeded.
+2009.11.8 19h:39min 59s 912ms:CPUID address:2147483651 
+2009.11.8 19h:39min 59s 912ms:WRDL--CPUIDex--begin m_pfncpuidex: 020E1890
+2009.11.8 19h:39min 59s 912ms:Calling CPUID function succeeded.
+2009.11.8 19h:39min 59s 912ms:CPUID address:2147483652 
+2009.11.8 19h:39min 59s 912ms:Processor name of this CPU is:         Intel(R) Pentium(R) M processor 1.80GHz
+2009.11.8 19h:39min 59s 912ms:read XML configuration begin--filename: "configuration/GenuineIntel/6/13/6.xml"
+2009.11.8 19h:40min 0s 303ms:message: XML error in file: "configuration/GenuineIntel/6/13/6.xml" : An exception occurred! Type:RuntimeException, Message:The primary document entity could not be opened. Id=C:\Dokumente und Einstellungen\Stefan\Eigene Dateien\Visual Studio 2005\Projects\PumaStateCtrl/configuration/GenuineIntel/6/13/6.xml
+2009.11.8 19h:40min 0s 343ms:read XML configuration begin--filename: "configuration/GenuineIntel/6/13/6/Intel(R) Pentium(R) M processor 1.80GHz.xml"
+2009.11.8 19h:40min 0s 353ms:XML element: Intel_Pentium_M_processor_1.80GHz
+2009.11.8 19h:40min 0s 373ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 0s 373ms:successfully got "frequency_in_MHz" attribute value: 1800
+2009.11.8 19h:40min 0s 373ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 0s 373ms:CPU model: 13
+2009.11.8 19h:40min 0s 373ms:VoltageAndFreq c'tor01800
+2009.11.8 19h:40min 0s 373ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 7s 173ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 7s 173ms:successfully got "max_voltage_in_Volt" attribute value: 1.34
+2009.11.8 19h:40min 7s 173ms:VoltageAndFreq c'tor1.341800
+2009.11.8 19h:40min 7s 173ms:successfully got "min_voltage_in_Volt" attribute value: 1.148
+2009.11.8 19h:40min 7s 173ms:VoltageAndFreq c'tor1.1481800
+2009.11.8 19h:40min 7s 173ms:successfully got "voltage_in_Volt" attribute value: 1.212
+2009.11.8 19h:40min 7s 173ms:VoltageAndFreq c'tor1.2121800
+2009.11.8 19h:40min 7s 173ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 7s 173ms:successfully got "frequency_in_MHz" attribute value: 1600
+2009.11.8 19h:40min 7s 173ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 7s 173ms:CPU model: 13
+2009.11.8 19h:40min 7s 173ms:VoltageAndFreq c'tor01600
+2009.11.8 19h:40min 7s 173ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 10s 77ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 10s 77ms:successfully got "max_voltage_in_Volt" attribute value: 1.292
+2009.11.8 19h:40min 10s 77ms:VoltageAndFreq c'tor1.2921600
+2009.11.8 19h:40min 10s 77ms:successfully got "min_voltage_in_Volt" attribute value: 1.052
+2009.11.8 19h:40min 10s 77ms:VoltageAndFreq c'tor1.0521600
+2009.11.8 19h:40min 10s 77ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 10s 77ms:successfully got "frequency_in_MHz" attribute value: 1400
+2009.11.8 19h:40min 10s 77ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 10s 77ms:CPU model: 13
+2009.11.8 19h:40min 10s 77ms:VoltageAndFreq c'tor01400
+2009.11.8 19h:40min 10s 77ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 10s 798ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 10s 798ms:successfully got "max_voltage_in_Volt" attribute value: 1.228
+2009.11.8 19h:40min 10s 798ms:VoltageAndFreq c'tor1.2281400
+2009.11.8 19h:40min 10s 798ms:successfully got "min_voltage_in_Volt" attribute value: 0.972
+2009.11.8 19h:40min 10s 798ms:VoltageAndFreq c'tor0.9721400
+2009.11.8 19h:40min 10s 798ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 10s 798ms:successfully got "frequency_in_MHz" attribute value: 1200
+2009.11.8 19h:40min 10s 798ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 10s 798ms:CPU model: 13
+2009.11.8 19h:40min 10s 798ms:VoltageAndFreq c'tor01200
+2009.11.8 19h:40min 10s 798ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 11s 669ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 11s 669ms:successfully got "max_voltage_in_Volt" attribute value: 1.164
+2009.11.8 19h:40min 11s 669ms:VoltageAndFreq c'tor1.1641200
+2009.11.8 19h:40min 11s 669ms:successfully got "min_voltage_in_Volt" attribute value: 0.876
+2009.11.8 19h:40min 11s 669ms:VoltageAndFreq c'tor0.8761200
+2009.11.8 19h:40min 11s 669ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 11s 669ms:successfully got "frequency_in_MHz" attribute value: 1000
+2009.11.8 19h:40min 11s 669ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 11s 669ms:CPU model: 13
+2009.11.8 19h:40min 11s 669ms:VoltageAndFreq c'tor01000
+2009.11.8 19h:40min 11s 669ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 12s 410ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 12s 410ms:successfully got "max_voltage_in_Volt" attribute value: 1.116
+2009.11.8 19h:40min 12s 410ms:VoltageAndFreq c'tor1.1161000
+2009.11.8 19h:40min 12s 410ms:successfully got "min_voltage_in_Volt" attribute value: 0.796
+2009.11.8 19h:40min 12s 410ms:VoltageAndFreq c'tor0.7961000
+2009.11.8 19h:40min 12s 410ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 12s 410ms:successfully got "frequency_in_MHz" attribute value: 800
+2009.11.8 19h:40min 12s 410ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 12s 430ms:CPU model: 13
+2009.11.8 19h:40min 12s 430ms:VoltageAndFreq c'tor0800
+2009.11.8 19h:40min 12s 430ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 13s 192ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 13s 192ms:successfully got "max_voltage_in_Volt" attribute value: 1.052
+2009.11.8 19h:40min 13s 192ms:VoltageAndFreq c'tor1.052800
+2009.11.8 19h:40min 13s 192ms:successfully got "min_voltage_in_Volt" attribute value: 0.732
+2009.11.8 19h:40min 13s 192ms:VoltageAndFreq c'tor0.732800
+2009.11.8 19h:40min 13s 192ms:XML element: freq_and_voltage
+2009.11.8 19h:40min 13s 192ms:successfully got "frequency_in_MHz" attribute value: 600
+2009.11.8 19h:40min 13s 192ms:Address of service attributes: 00B4D060
+2009.11.8 19h:40min 13s 192ms:CPU model: 13
+2009.11.8 19h:40min 13s 192ms:VoltageAndFreq c'tor0600
+2009.11.8 19h:40min 13s 192ms:m_stdsetvoltageandfreqAvailableFreq addr.:00B4D134
+2009.11.8 19h:40min 13s 933ms:before getting max_voltage_in_Voltatt. value 
+2009.11.8 19h:40min 13s 933ms:successfully got "max_voltage_in_Volt" attribute value: 0.988
+2009.11.8 19h:40min 13s 933ms:VoltageAndFreq c'tor0.988600
+2009.11.8 19h:40min 13s 933ms:successfully got "min_voltage_in_Volt" attribute value: 0.7
+2009.11.8 19h:40min 13s 933ms:VoltageAndFreq c'tor0.7600
+2009.11.8 19h:40min 13s 933ms:successfully got "voltage_in_Volt" attribute value: 0.716
+2009.11.8 19h:40min 13s 933ms:VoltageAndFreq c'tor0.716600
+2009.11.8 19h:40min 13s 933ms:-----------End of loading from config file
+2009.11.8 19h:40min 13s 993ms:CPU core usage ctor --address: 02B4BDB0
+2009.11.8 19h:40min 13s 993ms:WRDL--CPUIDex--begin m_pfncpuidex: 020E1890
+2009.11.8 19h:40min 13s 993ms:Calling CPUID function succeeded.
+2009.11.8 19h:40min 13s 993ms:cmdLineParamsContain begin
+2009.11.8 19h:40min 13s 993ms:cmdLineParamsContain end
+2009.11.8 19h:40min 13s 993ms:read XML configuration begin--filename: "X86_info_and_control_config.xml"
+2009.11.8 19h:40min 14s 3ms:message: XML error in file: "X86_info_and_control_config.xml" : An exception occurred! Type:RuntimeException, Message:The primary document entity could not be opened. Id=C:\Dokumente und Einstellungen\Stefan\Eigene Dateien\Visual Studio 2005\Projects\PumaStateCtrl/X86_info_and_control_config.xml
+2009.11.8 19h:40min 14s 3ms:message: Error reading the XML-configuration file
+2009.11.8 19h:40min 14s 3ms:return code of handling command line args: 1
+2009.11.8 19h:40min 14s 3ms:cpucoreusage address:02B4BDB0
+2009.11.8 19h:40min 14s 3ms:handling cmd line args result:1
+2009.11.8 19h:40min 14s 3ms:End of initializing the service
+2009.11.8 19h:40min 14s 3ms:The service was successfully initialized
+2009.11.8 19h:40min 19s 541ms:Power scheme index:0 name:Desktop
+2009.11.8 19h:40min 30s 907ms:Power scheme index:1 name:Tragbar/Laptop
+2009.11.8 19h:40min 30s 907ms:Power scheme index:10878200 name:CPUcontrol
+2009.11.8 19h:40min 30s 907ms:Power scheme index:2 name:Präsentation
+2009.11.8 19h:40min 30s 907ms:Power scheme index:3 name:Dauerbetrieb
+2009.11.8 19h:40min 30s 907ms:Power scheme index:4 name:Minimaler Energieverbrauch
+2009.11.8 19h:40min 30s 907ms:Power scheme index:5 name:Minimale Batteriebelastung
+2009.11.8 19h:40min 30s 907ms:Power scheme index:6 name:X86_info_and_control
+2009.11.8 19h:40min 30s 907ms:Power scheme "X86_info_and_control" exists
+2009.11.8 19h:40min 30s 907ms:Power scheme "X86_info_and_control" exists
+2009.11.8 19h:40min 30s 907ms:DynamicThrottle: 0
+2009.11.8 19h:40min 30s 907ms:Policy 0 AllowDemotion: 0
+2009.11.8 19h:40min 30s 907ms:Policy 0 AllowPromotion: 0
+2009.11.8 19h:40min 30s 907ms:Policy 1 AllowDemotion: 0
+2009.11.8 19h:40min 30s 907ms:Policy 1 AllowPromotion: 0
+2009.11.8 19h:40min 30s 907ms:Policy 2 AllowDemotion: 0
+2009.11.8 19h:40min 30s 907ms:Policy 2 AllowPromotion: 0
+2009.11.8 19h:40min 30s 907ms:DynamicThrottle: 0
+2009.11.8 19h:40min 30s 907ms:Policy 0 AllowDemotion: 0
+2009.11.8 19h:40min 30s 907ms:init. pipe server 
+2009.11.8 19h:40min 30s 917ms:CreatePipe succeeded
+2009.11.8 19h:40min 30s 977ms:Policy 0 AllowPromotion: 0
+2009.11.8 19h:40min 30s 977ms:Policy 1 AllowDemotion: 0
+2009.11.8 19h:40min 30s 977ms:Policy 1 AllowPromotion: 0
+2009.11.8 19h:40min 30s 977ms:Policy 2 AllowDemotion: 0
+2009.11.8 19h:40min 30s 977ms:Policy 2 AllowPromotion: 0
+2009.11.8 19h:40min 30s 977ms:writing setting for index 6
+2009.11.8 19h:40min 30s 977ms:User may write to power scheme: 1
+2009.11.8 19h:40min 30s 977ms:Writing CPU settings succeeded
+2009.11.8 19h:40min 30s 997ms:Setting power scheme 6 as active scheme succeeded
+2009.11.8 19h:40min 30s 997ms:constructor of freq scaling thread base--begin
+2009.11.8 19h:40min 30s 997ms:core usage address: 02B4BDB0
+2009.11.8 19h:40min 30s 997ms:constructor of freq scaling thread base--end
+2009.11.8 19h:40min 30s 997ms:Starting DVFS thread
+2009.11.8 19h:40min 30s 997ms:Waiting for the stop service condition to become true
+2009.11.8 19h:40min 30s 997ms:service main--current thread id:6092
+2009.11.8 19h:40min 30s 997ms:DVFS thread should run?1
+2009.11.8 19h:40min 30s 997ms:CPU core usage --address: 02B4BDB0
+2009.11.8 19h:40min 30s 997ms:Init. CPU core usage
+2009.11.8 19h:40min 31s 7ms:pointer for writing to MSR succ. obtained.
+2009.11.8 19h:40min 31s 7ms:Function pointer to "RdmsrEx" successfully assigned.
+2009.11.8 19h:40min 31s 27ms:GetSecurityInfo ret :6
+2009.11.8 19h:40min 31s 27ms:Waiting for incoming client connections
+2009.11.8 19h:41min 3s 484ms:service ctrl handler--begin control code:1
+2009.11.8 19h:41min 3s 484ms:service ctrl handler--current thread id:4512
+2009.11.8 19h:41min 3s 524ms:From the service: Returning the main thread 
+
+2009.11.8 19h:41min 3s 524ms:Service main function--end
+2009.11.8 19h:41min 3s 534ms:after staring service ctrl dispatcher--current thread id:4512
+2009.11.8 19h:41min 8s 952ms:Run this program as "local system account" account within the service's properties in Windows->control panel->management->services else errors may occur

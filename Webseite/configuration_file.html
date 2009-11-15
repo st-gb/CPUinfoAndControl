@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>configuration file</title></head>
+<body><ul><li>create
+a configuration
+file in XML format if
+none exists<ul><li>This
+one is used if it is named "GriffinControl_config.xml" and lays within
+the <b>working</b>
+dir of the executable.</li><li>You can use Notepad or special XML editors to create and edit&nbsp;the file.</li></ul></li><li><b>The structure of the
+configuration file</b>
+should be like:<br><p style="margin-left: 30px;"><font face="Courier" size="-1"><a name="config_file_structure"></a>&lt;pumastatectrl
+[<a href="#use_p_state_0_as_max_freq_explanation">use_p_state_0_as_max_freq</a>="true"]<br>
+<a name="enable_overvoltage_protection"></a>[<a href="#enable_overvoltage_protection_explanation">enable_overvoltage_protection</a>="false"]
+<br>[<a href="#use_default_formula_for_overvoltage_protection_explanation">use_default_formula_for_overvoltage_protection</a>="true"]<br></font><font face="Courier" size="-1">[<a href="#log_file_path">log_file_path</a>="<i>path
+to log file</i>"]</font><br><font face="Courier" size="-1">[<a href="#confirm">confirm</a>="true"]<br>[<a name="skip_cpu_type_check"></a>skip_cpu_type_check="true"]
+&gt;<br>&nbsp; &lt;p_states&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;<a href="#performance_state">pstate</a> number="0"&nbsp;<a href="#VID_explanation">VID</a>="40"
+/&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;<a href="#performance_state">pstate</a> number="1"&nbsp;</font><font face="Courier" size="-1"><a href="configuration_file.html#FreqInMHz">FreqInMHz</a>="1050" </font><font face="Courier" size="-1"> <a href="#VID_explanation">VID</a>="57"
+/&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;<a href="#performance_state">pstate</a> number="2" <a href="#VID_explanation">VID</a>="63"
+/&gt;<br>&nbsp;
+&lt;/p_states&gt;<br>&nbsp; &lt;<a href="#CPU_tag_explanation">CPU</a>
+<a name="processor_name"></a>processor_name="AMD
+Turion(tm) X2 Ultra Dual-Core Mobile ZM-80"&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;<a name="freq_and_max_voltage"></a>freq_and_max_voltage
+frequency_in_MHz="2100"
+max_voltage_in_Volt="1.075"&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;/freq_and_max_voltage&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;freq_and_max_voltage frequency_in_MHz="1050"
+max_voltage_in_Volt="0.95"&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;/freq_and_max_voltage&gt;<br>&nbsp;
+&lt;/CPU&gt;<br>&lt;/pumastatectrl&gt;</font></p></li><ul><li><font face="Courier" size="-1">legend:</font></li><ul><li><font face="Courier" size="-1">[] : everything within the brackets is </font><font face="Courier" size="-1">optional (omit the brackets in the cfile)</font></li></ul></ul><li><a name="configuration_meaning"></a><b>explanations
+for the XML attributes/ elements:</b><br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td><a name="confirm"></a><b>confirm</b>="true":
+shows the values before changing the p-state.<br><a name="use_p_state_0_as_max_freq_explanation"></a><b>use_p_state_0_as_max_freq</b><table border="0" cellpadding="2" cellspacing="2" height="32" width="640"><tbody><tr><td width="30"></td><td>use_p_state_0_as_max_freq="true"
+:
+should be taken if CPU else than ZM-80...ZM-86</td></tr></tbody></table><a name="enable_overvoltage_protection_explanation"></a><b>enable_overvoltage_protection</b>:<br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td>if
+e.g. the overvoltage calculations prevent
+a senseful
+setting, write the attribute "<font face="Courier New, Courier, monospace">enable_overvoltage_protection=false</font>"<br><font face="Courier" size="-1"><big><font face="Times New Roman, Times, serif">(default is&nbsp;</font></big>"true")
+</font>into
+the <big><font face="Times New Roman, Times, serif" size="-1"><big>pumastatectrl
+element. But be careful with this.</big></font></big></td></tr></tbody></table><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td valign="top"><big><font face="Times New Roman, Times, serif" size="-1"><big><b><a name="CPU_tag_explanation"></a>CPU</b></big></font></big></td><td><ul><li><big><font face="Times New Roman, Times, serif" size="-1"><big>the
+executable compares "</big></font><font face="Times New Roman, Times, serif" size="-1"><big><a href="#processor_name">processor_name</a>"
+with the processor name read from
+the CPU.</big></font></big></li><ul><li><big><font face="Times New Roman, Times, serif" size="-1"><big>If
+identical, it uses the voltage-frequency pair of </big></font><font face="Times New Roman, Times, serif" size="-1"><big>"<a href="#freq_and_max_voltage">freq_and_max_voltage</a>"
+element that is above and closest to the voltage to set for overvolting
+protection.</big></font></big></li></ul></ul></td></tr></tbody></table><font face="Courier New, Courier, monospace">
+<b><a name="log_file_path"></a><font face="Times New Roman, Times, serif">log_file_path=</font></b>"</font><i>path
+to log file</i><font face="Courier New, Courier, monospace">"<br></font><blockquote>Path to
+the log file to write log information into (useful for finding errors,
+misconfiguration etc.)<br>No log file is written if either:<br><ul><li>if
+no <font face="Times New Roman, Times, serif" size="-1">
+<b>log_file_path</b></font>
+element&nbsp; is given</li><li>If the path is empty,
+i.e. <font face="Courier" size="-1"><b>log_file_path=</b>""</font></li></ul></blockquote><a name="use_default_formula_for_overvoltage_protection_explanation"></a>"<b>use_default_formula_for_overvoltage_protection</b>=true":<table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td><a name="default_formula"></a><b>default formula</b>:
+uses
+a combination of freq from p-state 0 (if&nbsp;<b>use_p_state_0_as_max_freq</b>="true")
+or by processor name if ZM-80...ZM-86 and 1.1V to calculate the
+overvolting protection curve. <font color="#ff0000"><b>Be
+sure this fits to your CPU</b></font>.</td></tr></tbody></table><font face="Courier" size="-1"><br><b><a name="FreqInMHz"></a>FreqInMHz="</b><i>Frequency_in_MHz</i><b>": <br></b></font><ul><li><font size="-1">sets the CPU core </font><font size="-1">frequency in MHz for </font><font size="-1">the p-state&nbsp;</font></li><li><font face="Courier" size="-1"><i>Frequency_in_MHz</i> </font><font size="-1">may be in the range from lowest frequency (&gt;&gt;<i>max. frequency in MHz</i>&lt;&lt; / 4 ) till highest possible frequency</font><font size="-1"> </font><font size="-1"> (you can watch applicable CPU core frequencies by using the GriffinControl GUI app)</font><font size="-1">.&nbsp;</font></li><li><font size="-1">If </font><font face="Courier" size="-1"><i>Frequency_in_MHz</i> </font><font size="-1">is
+not an applicable frequency (you can watch applicable CPU core
+frequencies by using the GriffinControl GUI app), the nearest possible
+frequency is used.</font></li></ul><font size="-1">But <b><font color="#ff0000">caution</font>:</b>
+not all frequencies that are possible do work! Especially with&nbsp;
+frequencies above half of the maximum frequency my laptop freezed You
+may test the stability of other frequencies with the GUI.<br></font><b><font face="Courier" size="-1"><br><a name="performance_state"></a>pstate</font></b><font face="Courier" size="-1">: </font><font size="-1"><br></font><ul><li><font size="-1">as I observed under the Windows operating system for a ZM-82 only&nbsp; the performance states 0,1,2 and 7 are </font><font size="-1">used</font><font size="-1">&nbsp;</font></li><li><font size="-1">But do not edit p-state 7 because my laptop freezed then.</font></li><li><font size="-1">Only change the voltages of p-state 0,1 (and 2).</font></li><li><font size="-1">default p-state CPU core frequencies for AMD Griffin "ZM" and "RM" series:<br></font></li><ul><li><font size="-1">p-state number&nbsp; 0 usally is set to 100% </font><font size="-1">of&nbsp; </font><font size="-1">the maximum CPU core frequency</font></li><li><font size="-1">p-state&nbsp;</font><font size="-1">number &nbsp;</font><font size="-1">1 usally is set to 50%&nbsp;</font><font size="-1">of&nbsp; </font><font size="-1">the maximum CPU core frequency</font><font size="-1"></font></li><li><font size="-1">p-state&nbsp;</font><font size="-1">number&nbsp;</font><font size="-1">2 usally is set to 25 % of&nbsp; </font><font size="-1">the maximum CPU core frequency</font></li></ul><li><font size="-1">default p-state CPU core frequencies for AMD Griffin "QL" and "SI" (Sempron) series:<br></font></li><ul><li><font size="-1">p-state </font><font size="-1">number</font><font size="-1">&nbsp;0 usally is set to 100% </font><font size="-1">of&nbsp; </font><font size="-1">the maximum CPU core frequency</font></li><li><font size="-1">p-state </font><font size="-1">number&nbsp;</font><font size="-1">1 usally is set to 50%&nbsp;</font><font size="-1">of&nbsp; </font><font size="-1">the maximum CPU core frequency</font></li><li><font size="-1">I guess only p-state 0 and 1 are used for these CPUs.<br></font></li></ul></ul><font face="Courier" size="-1"><b><br></b></font><a name="VID_explanation"></a><table border="0" cellpadding="2" cellspacing="2"><tbody><tr><td valign="top" width="20"><b>VID</b></td><td><ul><li><table border="1" cellpadding="2" cellspacing="2" height="844" width="729"><tbody><tr><td>voltage
+in Volt</td><td>difference in <b><u>displaying</u></b> the value by AMD Power
+Monitor (version
+1.2.3) :
+voltage (in Volt)</td><td>VID</td></tr><tr><td>0.75</td><td></td><td>64</td></tr><tr><td>0.7625</td><td>0.762
+(rounded down)</td><td>63</td></tr><tr><td>0.775</td><td></td><td>62</td></tr><tr><td>0.7875</td><td>0.787
+(rounded&nbsp;down)</td><td>61</td></tr><tr><td>0.8</td><td></td><td>60</td></tr><tr><td>0.8125</td><td>0.812
+(rounded&nbsp;down)</td><td>59</td></tr><tr><td>0.825</td><td></td><td>58</td></tr><tr><td>0.8275</td><td>0.827
+(rounded&nbsp;down)</td><td>57</td></tr><tr><td>0.85</td><td></td><td>56</td></tr><tr><td>0.8625</td><td>0.862
+(rounded&nbsp;down)</td><td>55</td></tr><tr><td>0.875</td><td></td><td>54</td></tr><tr><td>0.8875</td><td>0.887
+(rounded&nbsp;down)</td><td>53</td></tr><tr><td>0.9</td><td></td><td>52</td></tr><tr><td>0.9125</td><td>0.912
+(rounded&nbsp;down)</td><td>51</td></tr><tr><td>0.925</td><td></td><td>50</td></tr><tr><td>0.9375</td><td>0.937
+(rounded&nbsp;down)</td><td>49</td></tr><tr><td>0.95</td><td></td><td>48</td></tr><tr><td>0.9625</td><td>0.962
+(rounded&nbsp;down)</td><td>47</td></tr><tr><td>0.975</td><td></td><td>46</td></tr><tr><td>0.9875</td><td>0.987
+(rounded&nbsp;down)</td><td>45</td></tr><tr><td>1.0</td><td></td><td>44</td></tr><tr><td>1.0125</td><td>1.012
+(rounded&nbsp;down)</td><td>43</td></tr><tr><td>1.025</td><td></td><td>42</td></tr><tr><td>1.0375</td><td>1.037
+(rounded&nbsp;down)</td><td>41</td></tr><tr><td>1.05</td><td></td><td>40</td></tr><tr><td>1.0625</td><td>1.062
+(rounded&nbsp;down)</td><td>39</td></tr><tr><td>1.075</td><td></td><td>38</td></tr><tr><td>1.0875</td><td>1.087
+(rounded&nbsp;down)</td><td>37</td></tr><tr><td>1.1</td><td></td><td>36</td></tr></tbody></table></li><li>The
+higher the "VID" the <u>lower</u>
+the
+voltage. 1 step in <u>V</u>oltage <u>ID</u>
+means 0,0125 V difference.<br>The lower the
+CPU-frequencies the lower may be the voltage&nbsp; &lt;=&gt;<br>the
+higher may be the VID.</li><li>for all&nbsp;3 numbers
+from 0 to 2 one can set values. I
+think that only these 3 p-states are used by Windows.</li><li>Better
+not define values for other p-states than 0, 1 or 2<b>
+</b>because there may be malfunctions like crashes or freezes
+then.</li><li><b>The
+voltages are
+applied if Windows/ the CPU driver changes the p-state (based on CPU
+load) at first. </b>Or one can <a href="#change_the_p-state">change
+the p-state manually</a>
+.</li><ul><li>if
+the voltage ID is higher than 64 there was no effect to the voltage in
+my case:<br>below&nbsp;0.75V
+the
+CPU sends no signal to the voltage regulator (module)<br>=&gt;only
+minimum of power saving for p-state 2.</li></ul></ul></td></tr></tbody></table></td></tr></tbody></table></li><li><font color="#ff0000"><b>Caution:</b></font>
+If the voltage for a CPU frequency is too low the OS freezes.<br><ul><li>To
+find
+the lowest voltage for a CPU frequency this must happen ( I do not know
+another possibility), except one has
+a CPU frequency being able to drive with 0.75 V: below&nbsp;0.75V
+the
+CPU sends no signal to the voltage regulator (module)</li><li>-&gt;So
+save everything etc. because your work gets lost after a OS freeze.</li></ul></li><li><a name="finding_low_voltages"></a>The
+<b>get the lowest</b> usable <b>voltages</b>
+for a specific CPU frequency:&nbsp;</li><ul><li>2
+possibilities to select <b>Windows
+</b></li></ul></ul></body></html>

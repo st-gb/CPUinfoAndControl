@@ -1,0 +1,25 @@
+<Pentium_M>
+  <MSR index="0x199">
+    <FID startbit="8" bitlength="8"></FID>
+    <value_table_row MHz="600" FID="6" ></value_table_row>
+    <value_table_row MHz="800" FID="8" ></value_table_row>
+  </MSR>
+  <MSR index="0x199" name="IA32_PERF_STATUS">
+    <FID startbit="8" bitlength="8"></FID>
+    <value_table_row MHz="600" FID="6" ></value_table_row>
+    <value_table_row MHz="800" FID="8" ></value_table_row>
+  </MSR>
+  <MSR index="0x10H" name="IA32_TIME_STAMP_COUNTER">
+    <IA32_TIME_STAMP_COUNTER startbit="0" bitlength="64"></IA32_TIME_STAMP_COUNTER>
+  </MSR>
+  <!--rdmsr at address IA32_MPERF failed with Pentium M 745
+  <MSR index="0xE7H">
+    <IA32_MPERF startbit="0" bitlength="64"></IA32_MPERF>
+  </MSR>-->
+  <MSR index="0x1A0H" name="IA32_MISC_ENABLE">
+    <AutomaticThermalControlCircuitEnable startbit="3" bitlength="1"></AutomaticThermalControlCircuitEnable>
+    <PerformanceMonitoringAvailable startbit="7" bitlength="1"></PerformanceMonitoringAvailable>
+    <EnhancedIntelSpeedStepTechnologyEnable startbit="16" bitlength="1"></EnhancedIntelSpeedStepTechnologyEnable>
+  </MSR>  
+  <!--1b0H IA32_ENERGY_PERF_BIAS-->
+</Pentium_M>

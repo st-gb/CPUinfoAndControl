@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>usage of PumaStateCtrl</title></head>
+<body>table of content<br><a href="#success">success
+/ power savings</a><br><a href="#Running_the_program">Running the program</a><br><a href="#config_file_structure">structure
+of the configuration file</a><br><a href="#finding_low_voltages">How to systematically find low
+voltages for a p-state</a><br><br>THIS SOFTWARE IS
+PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
+EXPRESS OR<br>IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES<br>OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED.<br>IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,<br>INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT<br>NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,<br>DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY<br>THEORY
+OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT<br>(INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF<br>THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.<br><br>A program for CPU undervolting.<br><br>This
+Tool&nbsp;<b>only works with AMD CPUs</b> of <b>family
+17(decimal)</b> ("<b>Griffin</b>") (e.g. CPU "ZM-82").<br>Originally
+only for / restricted to Turion Ultras (ZM-xx) (of the Puma
+plattform) it should work now also with other kinds of AMD family 17
+CPUs.<br>Successfully tested with Turion Ultra ZM-80, ZM-82,
+ZM-86.<br><br><a name="success"></a><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr width="20"><td>&nbsp;</td><td><b>The
+success I
+had with this tool </b>:<font size="3">
+At a day (at another day no more): without lowering the voltage the
+frequency dropped from highest (1.1V at 2200 MHz) to the frequency
+defined by p-state 1 (=to 1100 MHz; by AMD thermal control against
+overheating?) after a couple of minutes of high
+CPU load. <br>By lowering to 1.05 V at 2200 MHz the notebook
+stayed at 2200MHz (but only when the screen does NOT cover the
+keyboard--else the heat can't <u>additionally</u> get out of the keyboard--heat
+accumulation).<br><br><b>power savings</b>
+(measured with "EKM 265" measuring device):<br>temperatures got by "CPUID Hardware Monitor" 1.11.0.<br></font><br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td>following
+tests with GPU set to max battery life, screen backlight on max.
+brightness, whole laptop bottom side on table, no battery in; with
+prime95: torture test: in-place large FFTs: 2 threads&nbsp; for
+both
+cores:<br><ul><li>VID=60=0.8 V: 33,9 W - 36 W</li><li>VID=64=0.75 V: 32,8 W - 35 W</li></ul><br>maximum
+brightness, CPUMark with 2 threads, both Cores @1100MHz stable at:<br><ul><li>VoltageID=48:
+0.950V,&nbsp;&nbsp;&nbsp;&nbsp; (default voltage ID for
+ZM-82, 1100MHz)</li><li>VoltageID=49:
+0.938V, -&gt;ca.42,5W</li><li>VoltageID=50:
+0.925V, -&gt;ca.42,3W</li><li>VoltageID=51:
+0.913V, -&gt;ca.40,0W</li><li>VoltageID=52:
+0.900V, -&gt;ca.39,4W</li><li>VoltageID=53:
+0.887V, -&gt;ca.39,0W</li><li>VoltageID=54:
+0.875V, -&gt;ca.38,6W</li><li>VoltageID=55:
+0.863V, -&gt;ca.38,2W</li><li>VoltageID=56:
+0.850V, -&gt;ca.38,0W</li><li>VoltageID=57:
+0.837V, -&gt;ca.37,7W</li><li>VoltageID=58:
+0.825V, -&gt;ca.37,2W</li><li>VoltageID=59:
+0.812V, -&gt;ca.36,9W</li><li>VoltageID=60:
+0.800V, -&gt;ca.36,6W</li><li>VoltageID=61:
+0.788V, -&gt;ca.36,3W</li><li>VoltageID=62:
+0.775V, -&gt;ca.36,1W</li><li>VoltageID=63:
+0.762V,
+-&gt;ca.35,8W</li><li>VoltageID=64:
+0.750V, -&gt;ca.3? W &nbsp;&lt;- freezed (not stable
+anymore) when core
+1 at 0.762V, core 0 at 0.750V</li></ul>following
+tests with GPU set to max battery life, screen backlight on max.
+brightness, whole laptop bottom side on table, no battery in; with
+prime95: torture test: in-place large FFTs: 2 threads&nbsp; for
+both
+cores:<br><ul><li>0,95 V at 1100 MHz: after a few
+minutes: ca. 44,4 W (more
+consumption also through 1 step faster turning fan than with 0,788
+V&nbsp; ), at 62 &deg;C (133 &deg;F) after 8 minutes</li><li>0,825
+V at 1100 MHz: 39,5 W</li><li>0,8125 V
+at 1100 MHz: 38,9 W</li><li>0,80 V at 1100 MHz: ca. 38,7 W, between 56
+&deg;C (132
+&deg;F)
+and 57 &deg;C (134 &deg;F) after a few minutes</li><li>0,788 V
+at 1100 MHz: ca. 38,6 W</li></ul>maximum
+brightness, CPUMark with 2 threads, both cores @2200Mhz stable at:<br><ul><li>VoltageID=36:
+1.100V, (default voltage ID for ZM-82, 2200MHz)</li><li>VoltageID=37:
+1.088V, </li><li>VoltageID=38:
+1.075V,</li><li>VoltageID=39:
+1.062V,</li><li>VoltageID=40:
+1.050V, </li><li>VoltageID=41:
+1.038V, </li><li>VoltageID=42:
+1.025V,</li><li>VoltageID=43:
+1.013V, &lt;- freezed (not stable anymore) when core 1 at 1.025V,
+core
+0 at 1.013V</li></ul>following
+tests with GPU set to max battery life, screen backlight on max.
+brightness, whole laptop bottom side on table, no battery in, a mouse
+(ca. 0.8 W ) attached, with
+prime95: torture test: in-place large FFTs: 2 threads&nbsp; for
+both
+cores:<br><ul><li>1,05 V at 2200 MHz: after a few
+minutes: ca.71,1 W at 89
+&deg;C
+(191 &deg;F) after ca. 12 minutes; after more time: higher fan
+speed:
+83 &deg;C
+(179 &deg;F), 67,4 W</li><li>1,1 V at 2200 MHz: after a
+few minutes: ca.73,7 W at 88 &deg;C
+(190 &deg;F) at high fan speed as with "2200 MHz at 1,05 V, 83
+&deg;C
+(179 &deg;F)".</li></ul></td></tr></tbody></table></td></tr></tbody></table><a name="CPU_protection"></a>This
+tool <b>protects CPUs</b> by:<br><ul><li>not
+letting configure&nbsp;another CPU than family 17decimal, model 3
+(except if &nbsp;"<a href="#skip_cpu_type_check">skip_cpu_type_check</a>=true"
+)</li><li>overvolt
+protection (should be safe for ZM-82 at least; disabled by
+"<a href="#enable_overvoltage_protection">enable_overvoltage_protection</a>="false"")<br><br>Here
+is an example for the calculation of overvoltage protection: a max.
+freq. of 2200 MHz and 1.1 V for it.<br>Y-axis: freq in MHz,
+x-axis: voltage in V. <br>The core freq must be on the graph or
+above to prevent overvoltage.<br>&nbsp;
+<img alt="curve showing the minimal frequency for a voltage" src="overvolting_protection_curve.png" height="257" width="412"></li></ul><b><a name="Running_the_program"></a>Running the program</b><br><ul><li>Use
+this program at&nbsp;your own risk.</li><li>this
+tool must be executed <b>with administrative
+rights</b> (like with RMClock) because it executes ring0 code in
+order to
+set the values of the CPU.</li><li>This
+tool must be executed for every cold reset again for changes to take
+effect because the changes are done within CPU registers that
+(implicitely as the name "register" should say) are
+non-persistent&nbsp;<br><br></li><li>create
+a config
+file in XML format if
+none exists.</li><ul><li>This
+one is used if it is named "config.xml" and lays within the <b>working</b>
+dir of PumaStateCtrl or if it is passed via "<font face="Courier New, Courier, monospace"><b>PumaStateCtrlDlg.exe
+-config=</b></font>&gt;&gt;<i>path to
+configuration file</i>&lt;&lt;"</li></ul><li><b>The
+config file</b>
+should be like<br><p style="margin-left: 30px;"><font face="Courier" size="-1"><a name="config_file_structure"></a>&lt;pumastatectrl
+[<a href="usage.html#use_p_state_0_as_max_freq_explanation">use_p_state_0_as_max_freq</a>="true"]<br>
+<a name="enable_overvoltage_protection"></a>[<a href="usage.html#enable_overvoltage_protection_explanation">enable_overvoltage_protection</a>="false"]
+<br>[<a href="usage.html#use_default_formula_for_overvoltage_protection_explanation">use_default_formula_for_overvoltage_protection</a>="true"]<br>[<a href="#confirm">confirm</a>="true"]<br>[<a name="skip_cpu_type_check"></a>skip_cpu_type_check="true"]
+&gt;<br>&nbsp; &lt;p_states&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;pstate number="0" <a href="usage.html#VID_explanation">VID</a>="40"
+/&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;pstate number="1" <a href="usage.html#VID_explanation">VID</a>="57"
+/&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;pstate number="2" <a href="usage.html#VID_explanation">VID</a>="63"
+/&gt;<br>&nbsp;
+&lt;/p_states&gt;<br>&nbsp; &lt;<a href="usage.html#CPU_tag_explanation">CPU</a>
+<a name="processor_name"></a>processor_name="AMD
+Turion(tm) X2 Ultra Dual-Core Mobile ZM-80"&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;<a name="freq_and_max_voltage"></a>freq_and_max_voltage
+frequency_in_MHz="2100"
+max_voltage_in_Volt="1.075"&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;/freq_and_max_voltage&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;freq_and_max_voltage frequency_in_MHz="1050"
+max_voltage_in_Volt="0.95"&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;/freq_and_max_voltage&gt;<br>&nbsp;
+&lt;/CPU&gt;<br>&lt;/pumastatectrl&gt;</font></p></li><li><a name="configuration_meaning"></a><b>explanations
+for the XML attributes/ elements:</b><br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td><a name="confirm"></a><b>confirm</b>="true": shows the values before changing the p-state.<br><a name="use_p_state_0_as_max_freq_explanation"></a><b>use_p_state_0_as_max_freq</b><table border="0" cellpadding="2" cellspacing="2" height="32" width="640"><tbody><tr><td width="30"></td><td>use_p_state_0_as_max_freq="true"
+:
+should be taken if CPU else than ZM-80...ZM-86</td></tr></tbody></table><a name="enable_overvoltage_protection_explanation"></a><b>enable_overvoltage_protection</b>:<br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td>if
+e.g. the overvoltage calculations prevent
+a senseful
+setting, write the attribute "<font face="Courier New, Courier, monospace">enable_overvoltage_protection=false</font>"<br><font face="Courier" size="-1"><big><font face="Times New Roman, Times, serif">(default is&nbsp;</font></big>"true")
+</font>into
+the <big><font face="Times New Roman, Times, serif" size="-1"><big>pumastatectrl
+element. But be careful with this.</big></font></big></td></tr></tbody></table><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td valign="top"><big><font face="Times New Roman, Times, serif" size="-1"><big><b><a name="CPU_tag_explanation"></a>CPU</b></big></font></big></td><td><ul><li><big><font face="Times New Roman, Times, serif" size="-1"><big>PumaStateCtrl
+compares "</big></font><font face="Times New Roman, Times, serif" size="-1"><big><a href="usage.html#processor_name">processor_name</a>"
+with the processor name read from
+the CPU.</big></font></big></li><ul><li><big><font face="Times New Roman, Times, serif" size="-1"><big>If identical, it uses the voltage-frequency pair of </big></font><font face="Times New Roman, Times, serif" size="-1"><big>"<a href="usage.html#freq_and_max_voltage">freq_and_max_voltage</a>"
+element that is above and closest to the voltage to set for overvolting
+protection.</big></font></big></li></ul></ul><big><font face="Times New Roman, Times, serif" size="-1"><big></big></font></big></td></tr></tbody></table><a name="use_default_formula_for_overvoltage_protection_explanation"></a>"<b>use_default_formula_for_overvoltage_protection</b>=true":<table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td><a name="default_formula"></a><b>default formula</b>: uses
+a combination of freq from p-state 0 (if&nbsp;<b>use_p_state_0_as_max_freq</b>="true")
+or by processor name if ZM-80...ZM-86 and 1.1V to calculate the overvolting protection curve. <font color="#ff0000"><b>Be sure this fits to your CPU</b></font>.</td></tr></tbody></table><a name="VID_explanation"></a><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td valign="top" width="20"><b>VID</b></td><td><ul><li>The
+higher the "VID" the <u>lower</u>
+the
+voltage. 1 step in <u>V</u>oltage <u>ID</u>
+means 0,0125 V difference.<br>The lower the
+CPU-frequencies the lower may be the voltage&nbsp; &lt;=&gt;<br>the
+higher may be the VID.</li><li>for all&nbsp;3 numbers
+from 0 to 2 one can set values. I
+think that only these 3 p-states are used by Windows.</li><li>Better
+not define values for other p-states than 0, 1 or 2<b>
+</b>because there may be malfunctions like crashes or freezes then.</li><li><b>The
+voltages are
+applied if Windows/ the CPU driver changes the p-state (based on CPU
+load) at first. </b>Or one can <a href="usage.html#change_the_p-state">change
+the p-state manually</a>
+.</li><li>if
+the voltage ID is higher than 64 there was no effect to the voltage in
+my case:<br>below&nbsp;0.75V
+the
+CPU sends no signal to the voltage regulator (module)<br>=&gt;only minimum of power saving for p-state 2.</li></ul></td></tr></tbody></table></td></tr></tbody></table></li><li><font color="#ff0000"><b>Caution:</b></font>
+If the voltage for a CPU frequency is too low the OS freezes.<br><ul><li>To
+find
+the lowest voltage for a CPU frequency this must happen ( I do not know
+another possibility), except one has
+a CPU frequency being able to drive with 0.75 V: below&nbsp;0.75V
+the
+CPU sends no signal to the voltage regulator (module)</li><li>-&gt;So
+save everything etc. because your work gets lost after a OS freeze.</li></ul></li><li><a name="finding_low_voltages"></a>The
+<b>get the lowest</b> usable <b>voltages</b>
+for a specific CPU frequency:&nbsp;</li><ul><li>2
+possibilities to select <b>Windows
+power scheme</b>:</li><ol><li>set a Windows
+power scheme that has as max. freq. a freqency that belongs to the
+p-state you want to test</li><li>set to a Windows
+power scheme that does not change p-states&nbsp;</li></ol><ul><li>to
+ensure this: control
+panel-&gt;enery options-&gt;change energy
+settings-&gt;change extended
+energy settings-&gt; set <u>minimal and maximal</u>
+CPU load to the <u>same
+percentage</u>-&gt;OK and choose this energy scheme)&nbsp;</li><li>and
+then <b>change the p-sate manually</b>: execute
+(in a
+cmd shell executed <u>as administrator</u>):<br><a name="change_the_p-state"></a>"<font face="Courier New, Courier, monospace"><b>PumaStateCtrlDlg.exe
+-p </b><i>&gt;&gt;p-state number&lt;&lt;"<font face="Times New Roman, Times, serif">,
+e.g.</font> <br></i></font>"<font face="Courier New, Courier, monospace"><b>PumaStateCtrlDlg.exe
+-p 1</b><i>".</i><font face="Times New Roman, Times, serif"> <br>And then
+execute
+PumaStateCtrl with a configuration file and run prime95 to test
+stability.<br></font><font face="Times New Roman, Times, serif">Respectively reverse order:
+start the program instance that shows up a dialog (and loads the
+settings) first and then <a href="usage.html#change_the_p-state">change
+the p-state manually</a> by the command line (=a
+second PumaStateCtrl program instance for a short time).</font></font></li></ul><li>to
+ensure that the system runs stable when a high CPU load occurs in
+future: <br>produce a
+high CPU load&nbsp;</li><ul><li>to be extra safe
+I recommend: prime95 torture test: In-place large FFTs</li><li>use at
+least as many
+stressing threads as number of CPU cores, i.e. at Dual Core: 2 or more
+threads) and&nbsp;</li><li>set the voltage beginning
+from the default
+voltage&nbsp;down step by step (= increase voltage ID by 1 ).<br>Example:
+the default voltages with&nbsp;my ZM-82 CPU are:<br></li></ul></ul><ul><ul><ul><li>550
+MHz (=p-state "2" ): voltage ID = 60 (=0,8V)</li><li>1100
+MHz (=p-state "1" ): voltage ID = 48 (=0,950V)</li><li>2200
+MHz (=p-state "0"&nbsp;): voltage ID = 36 (=1,1V)</li></ul></ul><li>if you have found the highest voltage that causes a freeze because of
+undervoltage with prime95, as a  safety margin set the VID for this p-state some steps
+below (e.g. minus 2;&nbsp;=set the voltage a bit above) to operate
+safe (=to not freeze) on voltage fluctuations/variations.</li></ul><li>In
+order for the set p-state to be effective even after standbys or
+hibernations the program must run all the time: else the p-states are
+restored to the default voltages (by the BIOS? or by Windows? or maybe
+by the
+CPU itself).</li><li><font size="3">If you
+want to see the current
+voltages&nbsp;you may download the "<a href="http://www.amd.com/us-en/assets/content_type/utilities/AMD_Power_Monitor_123.zip">AMD Power Monitor</a>" from the <a href="http://www.amd.com/us-en/">AMD
+website</a>.</font></li></ul></body></html>

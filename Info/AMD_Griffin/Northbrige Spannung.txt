@@ -1,0 +1,23 @@
+CPU-Auslastung mit prime95 : "Options->torture test..."->in-place large FFT, 2 Threads
+beide Cores @ 550 MHz, 0,8V, CPU-Lüfter AUS
+
+-Northbridge Core Spannung 0,900V: ca. 34,7 W
+-Northbridge Core Spannung 0,888?V: ca. 34,6 W
+-Northbridge Core Spannung 0,875V: ca. 34,4 W
+-Northbridge Core Spannung 0,862?V: ca. 34,2 W
+-Northbridge Core Spannung 0,85V: ca. 34,4 W
+-Northbridge Core Spannung 0,837?V: ca. 34,1 W
+-Northbridge Core Spannung 0,825V: ca. 34,0 W
+-Northbridge Core Spannung 0,812V: ca. 34,3 W
+-Northbridge Core Spannung 0,800V: ca. 34,0 W
+-Northbridge Core Spannung 0,788V: ca. 34,0? W
+-Northbridge Core Spannung 0,775V: ca. 33,9 W
+-Northbridge Core Spannung 0,762V: ca. 33,9 W
+-Northbridge Core Spannung 0,750V: ca. 34,0 W
+...
+-Northbridge Core Spannung 0,712V: ca. 34,1 W
+...
+-Northbridge Core Spannung 0,663V: ca. 34,0 W
+-Northbridge Core Spannung 0,600V: ca. 34,1 W
+
+=>unterhalb einer bestimmten Spannung (ca.0,8V) wird die Vorgabe der Spannung anscheinend nicht mehr übernommen

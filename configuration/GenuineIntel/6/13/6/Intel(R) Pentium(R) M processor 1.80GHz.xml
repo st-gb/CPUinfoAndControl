@@ -1,0 +1,33 @@
+<Intel_Pentium_M_processor_1.80GHz>
+  <!--<freq_and_max_voltage frequency_in_MHz="1800" max_voltage_in_Volt="1.340"></freq_and_max_voltage>
+  <freq_and_max_voltage frequency_in_MHz="1600" max_voltage_in_Volt="1.292"></freq_and_max_voltage>
+  <freq_and_max_voltage frequency_in_MHz="1400" max_voltage_in_Volt="1.228"></freq_and_max_voltage>
+  <freq_and_max_voltage frequency_in_MHz="1200" max_voltage_in_Volt="1.164"></freq_and_max_voltage>
+  <freq_and_max_voltage frequency_in_MHz="1000" max_voltage_in_Volt="1.116"></freq_and_max_voltage>
+  <freq_and_max_voltage frequency_in_MHz="800" max_voltage_in_Volt="1.052"></freq_and_max_voltage>
+  <freq_and_max_voltage frequency_in_MHz="600" max_voltage_in_Volt="0.988"></freq_and_max_voltage>-->
+
+  <!--with Prime95: in-place large FFTs at 1800 MHz: ~35,4 W with at 1.164 Volt , ~42,2 W at 1.34 V-->
+  <freq_and_voltage frequency_in_MHz="1800" min_voltage_in_Volt="1.148" voltage_in_Volt="1.212" max_voltage_in_Volt="1.340"></freq_and_voltage>
+  <freq_and_voltage frequency_in_MHz="1600" min_voltage_in_Volt="1.052" max_voltage_in_Volt="1.292"></freq_and_voltage>
+  <freq_and_voltage frequency_in_MHz="1400" min_voltage_in_Volt="0.972" max_voltage_in_Volt="1.228"></freq_and_voltage>
+  <freq_and_voltage frequency_in_MHz="1200" min_voltage_in_Volt="0.876" max_voltage_in_Volt="1.164"></freq_and_voltage>
+  <freq_and_voltage frequency_in_MHz="1000" min_voltage_in_Volt="0.796" max_voltage_in_Volt="1.116"></freq_and_voltage>
+  <freq_and_voltage frequency_in_MHz="800" min_voltage_in_Volt="0.732" max_voltage_in_Volt="1.052"></freq_and_voltage>
+  <!--with Prime95: in-place large FFTs at 600 MHz: ~21.9 W with at 0.7 Volt , ~ 24,2 W at 0.988V-->
+  <!--with ~30% CPU load: in-place large FFTs at 600 MHz: ~20.5 W with at 0.7 Volt , ~ 22,5 W at 0.988V-->
+  <freq_and_voltage frequency_in_MHz="600" min_voltage_in_Volt="0.7" voltage_in_Volt="0.716" max_voltage_in_Volt="0.988"></freq_and_voltage>
+
+  <!--calculation error with Prime95: in-place large FFTs at 1.8 GHz and 1.132 Volt-->
+  <!--<freq_and_voltage frequency_in_MHz="1800" error_with_voltage_in_Volt="1.132"></freq_and_voltage>-->
+  <!--calculation error with Prime95: in-place large FFTs at 1.6 GHz and 1.036 Volt-->
+  <!--<freq_and_voltage frequency_in_MHz="1600" error_with_voltage_in_Volt="1.036"></freq_and_voltage>-->
+  <!--calculation error with Prime95: in-place large FFTs at 1.4 GHz and 0.956 Volt after ca. 30 seconds-->
+  <!--<freq_and_voltage frequency_in_MHz="1400" error_with_voltage_in_Volt="0.956"></freq_and_voltage>-->
+  <!--calculation error with Prime95: in-place large FFTs at 1.2 GHz and 0.86 Volt-->
+  <!--<freq_and_voltage frequency_in_MHz="1200" error_with_voltage_in_Volt="0.86"></freq_and_voltage>-->
+  <!--calculation error with Prime95: in-place large FFTs at 1.0 GHz and 0.78 Volt-->
+  <!--<freq_and_voltage frequency_in_MHz="1000" error_with_voltage_in_Volt="0.78"></freq_and_voltage>-->
+  <!--calculation error with Prime95: in-place large FFTs at 0.8 GHz and 0.716 Volt-->
+  <!--<freq_and_voltage frequency_in_MHz="800" error_with_voltage_in_Volt="0.716"></freq_and_voltage>-->
+</Intel_Pentium_M_processor_1.80GHz>

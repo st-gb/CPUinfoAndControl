@@ -1,0 +1,3 @@
+wenn der Build-Fehler nicht gefunden werden kann, hilft
+-Project->Eigenschaften->C++ ->Erweitert 
+	"Includes anzeigen" : "Ja (/showIncludes)"

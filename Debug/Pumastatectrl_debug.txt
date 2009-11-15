@@ -1,0 +1,8 @@
+main
+handleCmdLineArgs()--argc:3
+no -config option
+cmdLineParamsContain(-p)
+cmdLineParamsContain: -p
+valid p-state option
+For core bitmask 1: setting to pstate 0
+after readmsr

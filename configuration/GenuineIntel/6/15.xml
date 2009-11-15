@@ -1,0 +1,72 @@
+<Pentium_M>
+  <MSR index="0x198">
+    <MSR_data name="IA32_PERF_STATUS_VoltageID" startbit="0" bitlength="8"></MSR_data>
+    <IA32_PERF_STATUS_FID startbit="8" bitlength="8"></IA32_PERF_STATUS_FID>
+    <value_table_row MHz="600" FID="6" ></value_table_row>
+    <value_table_row MHz="800" FID="8" ></value_table_row>
+  </MSR>
+  <MSR index="0x199" name="IA32_PERF_STATUS">
+    <MSR_data name="IA32_PERF_CTL_VoltageID" startbit="0" bitlength="8"></MSR_data>
+    <IA32_PERF_CTL_FID startbit="8" bitlength="8"></IA32_PERF_CTL_FID>
+    <value_table_row MHz="600" FID="6" ></value_table_row>
+    <value_table_row MHz="800" FID="8" ></value_table_row>
+  </MSR>
+  <MSR index="0x10H" name="IA32_TIME_STAMP_COUNTER">
+    <IA32_TIME_STAMP_COUNTER startbit="0" bitlength="64"></IA32_TIME_STAMP_COUNTER>
+  </MSR>
+  <!--rdmsr at address IA32_MPERF failed with Pentium M 745
+  <MSR index="0xE7H">
+    <IA32_MPERF startbit="0" bitlength="64"></IA32_MPERF>
+  </MSR>-->
+  <MSR index="0x1A0H" name="IA32_MISC_ENABLE">
+    <AutomaticThermalControlCircuitEnable startbit="3" bitlength="1"></AutomaticThermalControlCircuitEnable>
+    <PerformanceMonitoringAvailable startbit="7" bitlength="1"></PerformanceMonitoringAvailable>
+    <EnhancedIntelSpeedStepTechnologyEnable startbit="16" bitlength="1"></EnhancedIntelSpeedStepTechnologyEnable>
+  </MSR>
+  <MSR index="0x186H">
+    <IA32_PERFEVTSEL0_Event_Select startbit="0" bitlength="7"></IA32_PERFEVTSEL0_Event_Select>
+    <IA32_PERFEVTSEL0_Unit_Mask startbit="8" bitlength="8"></IA32_PERFEVTSEL0_Unit_Mask>
+    <IA32_PERFEVTSEL0_User_Mode startbit="16" bitlength="1"></IA32_PERFEVTSEL0_User_Mode>
+    <IA32_PERFEVTSEL0_Operating_system_mode startbit="17" bitlength="1"></IA32_PERFEVTSEL0_Operating_system_mode>
+    <IA32_PERFEVTSEL0_Edge_detect startbit="18" bitlength="1"></IA32_PERFEVTSEL0_Edge_detect>
+    <IA32_PERFEVTSEL0_Pin_control startbit="19" bitlength="1"></IA32_PERFEVTSEL0_Pin_control>
+    <IA32_PERFEVTSEL0_APIC_interrupt_enable startbit="20" bitlength="1"></IA32_PERFEVTSEL0_APIC_interrupt_enable>
+    <IA32_PERFEVTSEL0_Bit21 startbit="21" bitlength="1"></IA32_PERFEVTSEL0_Bit21>
+    <IA32_PERFEVTSEL0_Enable_counters startbit="22" bitlength="1"></IA32_PERFEVTSEL0_Enable_counters>
+    <IA32_PERFEVTSEL0_Invert_counter_mask startbit="23" bitlength="1"></IA32_PERFEVTSEL0_Invert_counter_mask>
+    <IA32_PERFEVTSEL0_Counter_Mask startbit="24" bitlength="8"></IA32_PERFEVTSEL0_Counter_Mask>
+  </MSR>
+  <MSR index="0x187H">
+    <IA32_PERFEVTSEL1_Event_Select startbit="0" bitlength="7"></IA32_PERFEVTSEL1_Event_Select>
+  </MSR>
+  <MSR index="193">
+   <IA32_PMC0 startbit="0" bitlength="64"></IA32_PMC0>
+  </MSR>
+  <MSR index="194">
+   <IA32_PMC1 startbit="0" bitlength="64"></IA32_PMC1>
+  </MSR>
+  <MSR index="0x19B" name="IA32_THERM_INTERRUPT">
+   <HighTemperature_Interrupt_Enable startbit="0" bitlength="1"></HighTemperature_Interrupt_Enable>
+   <LowTemperature_Interrupt_Enable startbit="1" bitlength="1"></LowTemperature_Interrupt_Enable>
+   <PROCHOT_Interrupt_Enable startbit="2" bitlength="1"></PROCHOT_Interrupt_Enable>
+   <FORCEPR_Interrupt_Enable startbit="3" bitlength="1"></FORCEPR_Interrupt_Enable>
+   <CriticalTemperature_Interrupt_Enable startbit="4" bitlength="1"></CriticalTemperature_Interrupt_Enable>
+  </MSR>  
+  <MSR index="0x19B" name="IA32_THERM_STATUS">
+   <PROCHOTorFORCEPR_event startbit="2" bitlength="1" ></PROCHOTorFORCEPR_event>
+   <CriticalTemperatureStatus startbit="4" bitlength="1" ></CriticalTemperatureStatus>
+   <DegreesCelsius startbit="27" bitlength="4"></DegreesCelsius>
+  </MSR>
+  <!--<MSR index="0x1A0" name="IA32_MISC_ENABLE Enable Misc. Processor Features. (R/W)">
+    < startbit="3" Automatic Thermal Control Circuit Enable. (R/W)>
+    startbit="7" Performance Monitoring Available. (R)
+    startbit="16" Enhanced Intel SpeedStep Technology Enable. (R/W)
+  </MSR>-->
+  <!--<MSR index="0x188H">
+    <IA32_PERFEVTSEL2_Event_Select startbit="0" bitlength="7"></IA32_PERFEVTSEL2_Event_Select>
+  </MSR>
+  <MSR index="0x189H">
+    <IA32_PERFEVTSEL3_Event_Select startbit="0" bitlength="7"></IA32_PERFEVTSEL3_Event_Select>
+  </MSR>-->
+  <!--1b0H IA32_ENERGY_PERF_BIAS-->
+</Pentium_M>

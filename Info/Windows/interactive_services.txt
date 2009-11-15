@@ -1,0 +1,21 @@
+see ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/interactive_services.htm:
+
+"Interacting with the User from a Service with Terminal Services
+
+All services run in Terminal Services session 0. Therefore, if an 
+interactive service displays a user interface, it is only visible to the 
+user who connected to session 0. Because there is no way to guarantee 
+that the interactive user is connected to session 0, do not configure 
+a service to run as an interactive service on Terminal Services or 
+Windows XP (fast user switching is implemented using Terminal Services).
+
+If a service running on a multiuser system must interact with a user, 
+the service should create a separate GUI application running within the 
+context of the interactive user. The easiest way to run an application 
+in each session is to add it to the following key: 
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run. 
+This GUI application should be designed to communicate with the service 
+through some method of IPC, for example, named pipes, as described in 
+the previous section. 
+By using named pipes, the server can distinguish between multiple user 
+processes by giving each pipe a unique name based on the session ID."

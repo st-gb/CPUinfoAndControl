@@ -1,0 +1,12 @@
+
+auch nach einem Neustart (kein kompletter Neustart, sondern "Warmstart") 
+bleiben die Inhalte in den P-state-Registern erhalten.
+Erst, wenn man den Rechner ausschaltet und dann einschaltet ("Kaltstart") 
+stehen wieder die originalen Werte drin.
+
+Merkwürdig (oder Absicht, um die Leistungsaufnahme nicht zu hoch zuhalten, 
+da es abgesichertem Modus kein Cool and Quit gibt) 
+(am AMD Power Monitor gesehen):
+ im bei abgesichertem Modus war nach einem Warmstart UND einem Kaltstart 
+ die Taktfrequenz der CPU 0 auf 1100 MHz begrenzt.
+ CPU 1 lief mit 2200 MHz.

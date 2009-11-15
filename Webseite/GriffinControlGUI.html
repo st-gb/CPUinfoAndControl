@@ -1,0 +1,17 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>GriffinControl GUI</title></head>
+<body><h1>GriffinControl GUI</h1><br>last edit: 04th Sep 2009 GMT+1<br><br>The GUI is mainly intended to test frequency-voltage pairs for operating stability.<br><br>On
+the main frame the curve for the default voltage is drawn. It is also
+the overvoltage protection curve: possibly the CPU could be damaged if
+the voltage is set too high. You should not set a voltage above this
+curve. Else writing the values is prevented by disabling the "write
+p-state" button.<br><br><img alt="as" src="Screenshots/GUI/GriffinControlGUI_07_Sep2009_release_2_open_core_settings_dialogs.png" height="596" width="730"><br><br><br>The current performance state number for each CPU core is updated once a second.<br><br>The
+"write into the COFVID control register" option &nbsp;does not change
+the values of a performance state(?). With this option you must select a
+performance state that is <u>different</u> from the current performance state in order for changes to take effect. <br>The AMD documentation suggests (if I recall correctly):<br><ul><li>if
+one changes the settings via the "COFVID control register" to a
+frequency and voltage that is above the current&nbsp;frequency and
+voltage then a&nbsp;higher performance state number&nbsp; should be
+specified.</li><li>if one changes the settings via the "COFVID control register" to a
+frequency and voltage that is below the current&nbsp;frequency and voltage
+then a lower performance state number&nbsp;should be specified.</li></ul></body></html>

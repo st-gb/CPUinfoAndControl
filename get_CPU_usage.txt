@@ -1,0 +1,48 @@
+Moeglichkeiten, um die CPU usage pro core zu bekommen:
+ -unter Windows: 
+      -http://www.c-plusplus.de/forum/viewtopic-var-t-is-165327.html
+      -NtQuerySystemInformation(...) laut http://www.codeguru.com/forum/showthread.php?s=&threadid=278932
+        -ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/sysinfo/base/ntquerysysteminformation.htm:
+          -SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION:
+            "When the SystemInformationClass parameter is 
+            SystemProcessorPerformanceInformation, the buffer pointed to by the 
+            SystemInformation parameter should be large enough to hold an array 
+            containing as many SYSTEM_PROCESS_INFORMATION structures as there 
+            are processors (CPUs) installed in the system.
+      -PDH (Performance Data Helper): leider muessen die Performance-"Pfade" 
+        in der LandesSprache des OS angegeben werden
+      -WMI
+   
+	-suchen nach: "CPU AND usage"
+	-http://www.codeproject.com/KB/system/MultiCPUUsage.aspx
+	-hier gucken: http://www.c-sharpcorner.com/UploadFile/scottlysle/CpuStateInfo12172006052413AM/CpuStateInfo.aspx
+	
+   -AMD Power Monitor ruft auf:
+	 -1. SetupDiEnumDeviceInterfaces() für 
+	   SetupDiGetClassDevs() und 
+	   SetupDiGetDeviceInterfaceDetail()
+	 -2. SetupDiGetClassDevs()
+	     SetupDiGetDeviceInterfaceDetail()
+	 -3. SetupDiDestroyDeviceInfoList() zu Zerstören der Infos durch SetupDiGetClassDevs()
+	 -Registry
+		 -RegOpenKeyExA ("
+		 -weitere Registry-Zugriff-Funktionen
+		 -Registry Schlüssel "HKLM\System\CurrentControlSet\Control\DeviceClasses"
+		  für Aktion "Enumerate Sub Keys") wird laufend aufgerufen
+		  ->bekommt das prog hier her :
+			-aktuellen CPU core load
+			-aktuelle Spannung
+			-aktuelle Taktfreq
+			?	
+	-Kernel32.DLL: 
+	   QueryPerformanceCounter()
+  -aus Daten der CPU (OS-unabhaengig)
+	-MSRC001_00[03:00] Performance Event Select Register (PERF_CTL[3:0])
+	-MSRC001_00[07:04] Performance Event Counter Registers (PERF_CTR[3:0])
+	  -47:0 CTR: performance counter value. Read-write. 
+	    Returns the current value of the event counter.
+	-EventSelect 0C1h Retired uops ? (Kapitel "3.14.6 Execution Unit Events")
+	-laut AMD Basic_Performance_Measurement.pdf:
+	  -EventSelect 0x76 Event: "CPU_clocks not Halted" ; Unit Mask: 0x0
+	  -EventSelect 0xC0 Event: "Retired Instructions" ; Unit Mask: 0x0
+	  ->Instructions Per Clock (IPC) = "Retired Instructions" / "CPU_clocks not Halted"

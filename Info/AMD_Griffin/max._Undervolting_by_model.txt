@@ -1,0 +1,51 @@
+http://forum.tabletpcreview.com/showthread.php?t=21877&page=11:
+"<pstate number="0" VID="45"></pstate>
+<pstate number="1" VID="61"></pstate>
+<pstate number="2" VID="64"></pstate>
+
+(displayed when the program is running)
+
+Setting for p-state 0 0.9875 V at 1900 mhz
+Setting for p-state 1 0.7875 V at 950 mhz
+Setting for p-state 2 0.7500 V at 950 mhz"
+
+http://forum.tabletpcreview.com/showthread.php?t=21877&page=14:
+this is my settings for the RM-70
+this came out to be very stable
+tested with wprime and orthos
+<pumastatectrl use_p_state_0_as_max_freq="true">
+<p_states>
+<pstate number="0" VID="46"></pstate>
+<pstate number="1" VID="63"></pstate>
+<pstate number="2" VID="64"></pstate>
+</p_states>
+<CPU processor_name="AMD Turion(tm) X2 Dual-Core Mobile RM-70">
+<freq_and_max_voltage frequency_in_MHz="2000" max_voltage_in_Volt="1.075">
+</freq_and_max_voltage>
+<freq_and_max_voltage frequency_in_MHz="1000" max_voltage_in_Volt="0.95">
+</freq_and_max_voltage>
+<freq_and_max_voltage frequency_in_MHz="500" max_voltage_in_Volt="0.800">
+</freq_and_max_voltage> 
+</CPU>
+</pumastatectrl>
+
+http://forum.tabletpcreview.com/showthread.php?t=21877&page=13:
+THESE VOLTAGES ARE TESTED TO BE STABLE by ChronoReverse. 
+I tried going lower @ 2GHz and Prime 95 would fail within a few minutes even at .9875V. 
+So give it a safety factor and we are at 1.0125V. Prime 95 runs even with .95V, 
+but would stop almost immediately. This is with step up/down enabled. 
+<pumastatectrl use_p_state_0_as_max_freq="true">
+  <p_states>
+   <pstate number="0" VID="43"></pstate>
+   <pstate number="1" VID="63"></pstate>
+   <pstate number="2" VID="64"></pstate>
+  </p_states>
+  <CPU processor_name="AMD Turion(tm) X2 Dual-Core Mobile RM-70">
+    <freq_and_max_voltage frequency_in_MHz="2000" max_voltage_in_Volt="1.075">
+    </freq_and_max_voltage>
+    <freq_and_max_voltage frequency_in_MHz="1000" max_voltage_in_Volt="0.95">
+    </freq_and_max_voltage>
+    <freq_and_max_voltage frequency_in_MHz="500" max_voltage_in_Volt="0.8">
+    </freq_and_max_voltage>    
+  </CPU>
+</pumastatectrl>
