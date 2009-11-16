@@ -5,15 +5,18 @@
 #include "CalculationThreadProc.h"
 #include "UserInterface.hpp"
 #include <stdlib.h> //rand()
+//wxWidgets does not provide the needed "set CPU affinity". So I must
+//distinguish.
 #ifdef _WINDOWS
   #include <Windows/CalculationThread.hpp>
 #else 
   #ifdef _LINUX
-  #include "/Linux/CalculationThread.hpp"  
+  #include <Linux/CalculationThread.hpp>
   #endif
 #endif
+#include <Windows_compatible_typedefs.h>
 
-DWORD WINAPI CalculationThreadProc(LPVOID lpParameter)
+DWORD /*WINAPI*/ CalculationThreadProc(LPVOID lpParameter)
 {
   //Windows_API::
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
@@ -90,6 +93,7 @@ bool isPrime(//a prime is a natural number-> unsigned value
 	return true;
 }
 
+#ifdef _WINDOWS
 long GetPrime95ResultsFileLength()
 {
   //DWORD dw ;
@@ -122,8 +126,9 @@ long GetPrime95ResultsFileLength()
     }
   return -1 ;
 }
+#endif //#ifdef _WINDOWS
 
-DWORD WINAPI FPUcalculationThreadProc(LPVOID lpParameter)
+DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter)
 {
   //Windows_API::
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;

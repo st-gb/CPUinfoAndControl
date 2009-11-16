@@ -13,9 +13,11 @@
 #include <Xerces/XMLAccess.h>
 #include <Controller/stdstring_format.hpp>
 #include "I_CPUcontroller.hpp"
+#ifdef COMPILE_WITH_AMD_GRIFFIN
 #include <Controller/AMD/Griffin/GriffinController.hpp>
-#include <Controller/Intel/PentiumM/PentiumM_Controller.hpp>
 #include <Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.hpp>
+#endif //#ifdef COMPILE_WITH_AMD_GRIFFIN
+#include <Controller/Intel/PentiumM/PentiumM_Controller.hpp>
 #include <Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.hpp>
 
 ////compiling with pre-declarations is faster than with "#include"s 
@@ -66,6 +68,7 @@ I_CPUcontroller * MainController::CreateCPUcontrollerAndUsageGetter(
   ICPUcoreUsageGetter * & r_p_icpucoreusagegetter)
 {
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
+  #ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "AuthenticAMD" 
     && p_cpucoredata->m_wFamily == 17 
     && p_cpucoredata->m_byModel ==  3 
@@ -77,6 +80,7 @@ I_CPUcontroller * MainController::CreateCPUcontrollerAndUsageGetter(
     return //new GriffinController() ;
       p_gc ;
   }
+  #endif //#ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "GenuineIntel" 
     && p_cpucoredata->m_wFamily == 6 
     && p_cpucoredata->m_byModel == 13 
@@ -101,6 +105,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
 {
   r_p_cpucontroller = NULL ;
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
+  #ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "AuthenticAMD" 
     && p_cpucoredata->m_wFamily == 17 
     && p_cpucoredata->m_byModel ==  3 
@@ -114,6 +119,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     //return //new GriffinController() ;
     //  p_gc ;
   }
+  #endif //  #ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "GenuineIntel" 
     && p_cpucoredata->m_wFamily == 6 
     && p_cpucoredata->m_byModel == 13 
@@ -139,11 +145,13 @@ void MainController::SetCPUaccess(
   mp_ispecificcontroller = p_ispecificcontroller ;
 }
 
-void MainController::Init(
+BYTE MainController::Init(
   Model & model 
   , UserInterface * p_userinterface 
   )
 {
+  BYTE byRet = 0 ;
+  mp_model = & model ;
   //mp_userinterface = 
   std::string strVendorID ;
   if( mp_ispecificcontroller->
@@ -162,7 +170,6 @@ void MainController::Init(
       byModel ;
     BYTE byStepping ;
     WORD wFamily ;
-    mp_model = & model ;
     mp_model->m_cpucoredata.m_strVendorID = strVendorID ;
     //std::string strModel ; 
     //std::string strFamily ; 
@@ -222,6 +229,7 @@ void MainController::Init(
     //SAX2MainConfigHandler sax2mainconfighandler( *p_userinterface, model);
     SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency( 
       *p_userinterface, model );
+    #ifdef COMPILE_WITH_REGISTER_EXAMINATION
     if( readXMLConfig(
         //const char* xmlFile
         strFamilyAndModelFilePath.c_str()
@@ -239,6 +247,7 @@ void MainController::Init(
 	  {
       
     }
+    #endif //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
     if( readXMLConfig(
         //const char* xmlFile
         strProcessorFilePath.c_str()
@@ -259,5 +268,7 @@ void MainController::Init(
     //if( mp_cpucontroller )
     //  //Needed for drawing the voltage-frequency curves.
     //  mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+    byRet = 1 ;
   }
+  return byRet ;
 }

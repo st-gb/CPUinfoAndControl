@@ -1,6 +1,9 @@
 #include "I_CPUcontroller.hpp"
 #include "UserInterface.hpp"
 #include <Controller/CPUindependentHelper.h>
+#include <ModelData/ModelData.hpp> //class Model
+#include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
+
 #ifdef COMPILE_WITH_XERCES
   #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"
   #include <Xerces/SAX2MainConfigHandler.hpp>
@@ -621,7 +624,7 @@ BYTE I_CPUcontroller::HandleCmdLineArgs()
     else
       mp_userinterface->Confirm("Error reading the XML-configuration file");
 #else //COMPILE_WITH_XERCES
-    byReturn = SUCCESS ;
+    //byReturn = SUCCESS ;
 #endif //COMPILE_WITH_XERCES
   }
   return 1 ;

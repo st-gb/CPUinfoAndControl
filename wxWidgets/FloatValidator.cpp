@@ -59,9 +59,9 @@ bool CfloatValidator::TransferFromWindow()
     int r;
  
     if (m_type == singleType)
-       r=sscanf(s.fn_str()," %f",t.s);
+      r = sscanf(s.fn_str()," %f",t.s);
     else
-        r=sscanf(s.fn_str()," %g",t.d);
+      r = sscanf(s.fn_str()," %g",t.d);
  
     if (r==1)
     {

@@ -85,11 +85,12 @@ PentiumM::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //                                    <8 bit > <8 bit > <8 bit > <8 bit > <8 bit >
   //previous value: 5497519814387   100 11111111 11111101 10110111 00110110 11110011
   //current value:  4398069455221   100 00000000 00000001 01011110 00011001 01110101
-  #ifdef __CYGWIN__
+  //#infdef _MSC_VER
+  //suffix "ULL" is not needed by MS compiler, but by g++
   m_ullMaximumPerfCounterValue = 0xFFFFFFFFFFULL ; //10xF = 10x 4 bit =40 bit
-  #else
-  m_ullMaximumPerfCounterValue = 0xFFFFFFFFFF ; //10xF = 10x 4 bit =40 bit
-  #endif
+  //#else
+  //m_ullMaximumPerfCounterValue = 0xFFFFFFFFFF ; //10xF = 10x 4 bit =40 bit
+  //#endif
 }
 
 //The Performance event select is cleared after ACPI S3 or S4

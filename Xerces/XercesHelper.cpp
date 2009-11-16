@@ -7,10 +7,11 @@
 #include "../stdafx.h"
 #include "../global.h" //for if FAILURE etc.
 #include <tchar.h>
+#include <limits.h>
 
 #include "XercesHelper.hpp"
 #include <xercesc/sax2/Attributes.hpp>
-#include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
+#include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
 #include "UserInterface.hpp" //for XMLString::transcode(...)
 
 XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xerces::"

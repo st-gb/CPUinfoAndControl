@@ -1,180 +1,137 @@
-2009.11.6 22h:42min 57s 8ms:This program is an undervolting program for AMD family 17 CPUs.
-license/ info: http://amd.goexchange.de / http://sw.goexchange.de
-
-2009.11.6 22h:42min 57s 18ms:Build time: Nov  3 2009 17:14:57 (Greenwich Mean Time + 1)
-2009.11.6 22h:42min 57s 18ms:This exe is started as service (and not as installer)
-2009.11.6 22h:42min 57s 18ms:CPU attributes ctor
-2009.11.6 22h:42min 57s 18ms:Init. of CPU attributes
-2009.11.6 22h:42min 57s 18ms:begin of constructor of service object
-2009.11.6 22h:42min 57s 18ms:end of constructor of service object
-2009.11.6 22h:42min 57s 18ms:begin of starting service
-2009.11.6 22h:42min 57s 38ms:Service main--argument count: 1
-2009.11.6 22h:42min 57s 38ms:argument 0: CPUcontrolService
-2009.11.6 22h:42min 57s 38ms:initializing the service--begin
-12009.11.6 22h:42min 57s 38ms:Before initializing the CPU access
-2009.11.6 22h:42min 57s 38ms:WinRing0.dll library successfully loaded
-2009.11.6 22h:42min 57s 38ms:function InitializeOls exists
-2009.11.6 22h:42min 57s 829ms:result of InitializeOls:0
-2009.11.6 22h:42min 57s 829ms:WinRing0 successfully initialized
-2009.11.6 22h:42min 57s 829ms:MSR exist.
-2009.11.6 22h:42min 57s 829ms:CPU attributes ctor
-2009.11.6 22h:42min 57s 829ms:Init. of CPU attributes
-2009.11.6 22h:42min 57s 829ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 829ms:WRDL--CPUIDex--begin m_pfncpuidex: 00000000
-2009.11.6 22h:42min 57s 829ms:CPUID function pointer succ. assigned.
-2009.11.6 22h:42min 57s 829ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 829ms:WRDL--CPUIDex--begin m_pfncpuidex: 00A61890
-2009.11.6 22h:42min 57s 829ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 829ms:WRDL--CPUIDex--begin m_pfncpuidex: 00A61890
-2009.11.6 22h:42min 57s 829ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 829ms:WRDL--CPUIDex--begin m_pfncpuidex: 00A61890
-2009.11.6 22h:42min 57s 829ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 829ms:CPUID address:2147483650 
-2009.11.6 22h:42min 57s 829ms:WRDL--CPUIDex--begin m_pfncpuidex: 00A61890
-2009.11.6 22h:42min 57s 829ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 829ms:CPUID address:2147483651 
-2009.11.6 22h:42min 57s 829ms:WRDL--CPUIDex--begin m_pfncpuidex: 00A61890
-2009.11.6 22h:42min 57s 829ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 829ms:CPUID address:2147483652 
-2009.11.6 22h:42min 57s 829ms:Processor name of this CPU is:         Intel(R) Pentium(R) M processor 1.80GHz
-2009.11.6 22h:42min 57s 829ms:read XML configuration begin--filename: "configuration/GenuineIntel/6/13.xml"
-2009.11.6 22h:42min 57s 909ms:XML element: Pentium_M
-2009.11.6 22h:42min 57s 909ms:XML element: MSR
-2009.11.6 22h:42min 57s 909ms:XML element: FID
-2009.11.6 22h:42min 57s 919ms:XML element: value_table_row
-2009.11.6 22h:42min 57s 919ms:XML element: value_table_row
-2009.11.6 22h:42min 57s 919ms:XML element: MSR
-2009.11.6 22h:42min 57s 919ms:XML element: FID
-2009.11.6 22h:42min 57s 919ms:XML element: value_table_row
-2009.11.6 22h:42min 57s 919ms:XML element: value_table_row
-2009.11.6 22h:42min 57s 919ms:XML element: MSR
-2009.11.6 22h:42min 57s 919ms:XML element: IA32_TIME_STAMP_COUNTER
-2009.11.6 22h:42min 57s 919ms:XML element: MSR
-2009.11.6 22h:42min 57s 919ms:XML element: AutomaticThermalControlCircuitEnable
-2009.11.6 22h:42min 57s 919ms:XML element: PerformanceMonitoringAvailable
-2009.11.6 22h:42min 57s 919ms:XML element: EnhancedIntelSpeedStepTechnologyEnable
-2009.11.6 22h:42min 57s 919ms:-----------End of loading from config file
-2009.11.6 22h:42min 57s 919ms:read XML configuration begin--filename: "configuration/GenuineIntel/6/13/Intel(R) Pentium(R) M processor 1.80GHz.xml"
-2009.11.6 22h:42min 57s 939ms:XML element: Intel_Pentium_M_processor_1.80GHz
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 1800
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 1.34
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 1.148
-2009.11.6 22h:42min 57s 939ms:successfully got "voltage_in_Volt" attribute value: 1.212
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 1600
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 1.292
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 1.052
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 1400
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 1.228
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 0.972
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 1200
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 1.164
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 0.876
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 1000
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 1.116
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 0.796
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 800
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 1.052
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 0.732
-2009.11.6 22h:42min 57s 939ms:XML element: freq_and_voltage
-2009.11.6 22h:42min 57s 939ms:successfully got "frequency_in_MHz" attribute value: 600
-2009.11.6 22h:42min 57s 939ms:Address of service attributes: 008BBBA8
-2009.11.6 22h:42min 57s 939ms:successfully got "max_voltage_in_Volt" attribute value: 0.988
-2009.11.6 22h:42min 57s 939ms:successfully got "min_voltage_in_Volt" attribute value: 0.7
-2009.11.6 22h:42min 57s 939ms:successfully got "voltage_in_Volt" attribute value: 0.716
-2009.11.6 22h:42min 57s 949ms:-----------End of loading from config file
-2009.11.6 22h:42min 57s 949ms:CPU core usage ctor --address: 008BBEB0
-2009.11.6 22h:42min 57s 949ms:WRDL--CPUIDex--begin m_pfncpuidex: 00A61890
-2009.11.6 22h:42min 57s 949ms:Calling CPUID function succeeded.
-2009.11.6 22h:42min 57s 949ms:cmdLineParamsContain begin
-2009.11.6 22h:42min 57s 949ms:cmdLineParamsContain end
-2009.11.6 22h:42min 57s 949ms:read XML configuration begin--filename: "GriffinControl_config.xml"
-2009.11.6 22h:42min 58s 9ms:XML element: pumastatectrl
-2009.11.6 22h:42min 58s 9ms:XML element: p_states
-2009.11.6 22h:42min 58s 9ms:XML element: pstate
-2009.11.6 22h:42min 58s 9ms:XML element: pstate
-2009.11.6 22h:42min 58s 9ms:XML element: pstate
-2009.11.6 22h:42min 58s 9ms:XML element: DynamicVoltage_and_FrequencyScaling
-2009.11.6 22h:42min 58s 9ms:successfully got "usage_poll_wait_time_in_ms" attribute value: 100
-2009.11.6 22h:42min 58s 9ms:XML element: CPU
-2009.11.6 22h:42min 58s 9ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 9ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: CPU
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: CPU
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: CPU
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: CPU
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: CPU
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: CPU
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 19ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 29ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 29ms:XML element: CPU
-2009.11.6 22h:42min 58s 29ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 29ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 29ms:XML element: CPU
-2009.11.6 22h:42min 58s 29ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 49ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 49ms:XML element: CPU
-2009.11.6 22h:42min 58s 49ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 49ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 49ms:XML element: CPU
-2009.11.6 22h:42min 58s 49ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 109ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 109ms:XML element: CPU
-2009.11.6 22h:42min 58s 109ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 109ms:XML element: freq_and_max_voltage
-2009.11.6 22h:42min 58s 109ms:-----------End of loading from config file
-2009.11.6 22h:42min 58s 109ms:return code of handling command line args: 1
-2009.11.6 22h:42min 58s 109ms:cpucoreusage address:008BBEB0
-2009.11.6 22h:42min 58s 109ms:handling cmd line args result:1
-2009.11.6 22h:42min 58s 109ms:End of initializing the service
-2009.11.6 22h:42min 58s 109ms:The service was successfully initialized
-2009.11.6 22h:42min 58s 109ms:creating power scheme failed
-2009.11.6 22h:42min 58s 109ms:constructor of freq scaling thread base--begin
-2009.11.6 22h:42min 58s 109ms:core usage address: 008BBEB0
-2009.11.6 22h:42min 58s 109ms:constructor of freq scaling thread base--end
-2009.11.6 22h:42min 58s 109ms:Starting DVFS thread
-2009.11.6 22h:42min 58s 109ms:IPC_ServerThread
-2009.11.6 22h:42min 58s 109ms:init. pipe server 
-2009.11.6 22h:42min 58s 109ms:CreatePipe succeeded
-2009.11.6 22h:42min 58s 109ms:Waiting for stop condition to become true
-2009.11.6 22h:42min 58s 109ms:GetSecurityInfo ret :6
-2009.11.6 22h:42min 58s 109ms:CPU core usage --address: 008BBEB0
-2009.11.6 22h:42min 58s 109ms:Init. CPU core usage
-2009.11.6 22h:42min 58s 109ms:pointer for writing to MSR succ. obtained.
-2009.11.6 22h:42min 58s 109ms:Function pointer to "RdmsrEx" successfully assigned.
-2009.11.6 22h:42min 58s 109ms:Waiting for incoming client connections
-2009.11.7 1h:43min 9s 385ms:service handler--begin
-2009.11.7 1h:43min 9s 385ms:From the service: Returning the main thread 
-
-2009.11.7 1h:43min 9s 385ms:Service main function--end
-2009.11.7 1h:43min 9s 385ms:Leaving service
-2009.11.7 1h:43min 9s 385ms:Run this program as "local system account" account within the service's properties in Windows->control panel->management->services else errors may occur
-2009.11.7 1h:43min 9s 385ms:end of main program entry point
+ms:CPU attributes ctor
+ms:Init. of CPU attributes
+ms:CPUID address:2147483650 
+ms:CPUID address:2147483651 
+ms:CPUID address:2147483652 
+ms:Processor name of this CPU is:         Intel(R) Pentium(R) M processor 1.80GHz
+ms:read XML configuration begin--filename: "configuration/GenuineIntel/6/13/6/Intel(R) Pentium(R) M processor 1.80GHz.xml"
+ms:XML element: Intel_Pentium_M_processor_1.80GHz
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 1800
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor01800
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:successfully got "max_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11800
+ms:successfully got "min_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11800
+ms:successfully got "voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11800
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 1600
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor01600
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:successfully got "max_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11600
+ms:successfully got "min_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11600
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 1400
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor01400
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:successfully got "max_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11400
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 1200
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor01200
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:successfully got "max_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11200
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 1000
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor01000
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:successfully got "max_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor11000
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 800
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor0800
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:successfully got "max_voltage_in_Volt" attribute value: 1
+ms:VoltageAndFreq c'tor1800
+ms:XML element: freq_and_voltage
+ms:successfully got "frequency_in_MHz" attribute value: 600
+ms:Address of service attributes: 0x9577418
+ms:CPU model: 13
+ms:VoltageAndFreq c'tor0600
+ms:m_stdsetvoltageandfreqAvailableFreq addr.:0x95774a8
+ms:before getting max_voltage_in_Voltatt. value 
+ms:-----------End of loading from config file
+ms:CPU core usage ctor --address: 0x95b5a40
+ms:begin of main frame creation
+ms:end of main frame creation
+ms:initialization of dialog--after get processor name
+ms:initialization of dialog--after a possible CPU type check
+ms:cmdLineParamsContain begin
+ms:cmdLineParamsContain end
+ms:read XML configuration begin--filename: "GriffinControl_config.xml"
+ms:XML element: pumastatectrl
+ms:XML element: p_states
+ms:XML element: pstate
+ms:XML element: pstate
+ms:XML element: pstate
+ms:XML element: DynamicVoltage_and_FrequencyScaling
+ms:successfully got "usage_poll_wait_time_in_ms" attribute value: 100
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:XML element: CPU
+ms:XML element: freq_and_max_voltage
+ms:XML element: freq_and_max_voltage
+ms:-----------End of loading from config file
+ms:initialization of dialog--after handling cmd line args
+ms:return value of handling command line args: 1

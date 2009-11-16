@@ -19,7 +19,7 @@ class UserInterface
 {
 //private:
 public:
-  GriffinController * mp_pumastatectrl ;
+//  GriffinController * mp_pumastatectrl ;
   bool m_bConfirmedYet ;
   UserInterface()
     //Set initially for ALL subclasses to "true".

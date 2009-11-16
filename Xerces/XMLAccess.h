@@ -6,7 +6,8 @@
   //#include "../ModelData/ModelData.hpp"
   //#include "../UserInterface.hpp"
   //#include "../Controller/PumaStateCtrl.h"
-  #include <xercesc/sax2/defaulthandler.hpp>
+  #include <xercesc/sax2/DefaultHandler.hpp>
+#include <ModelData/ModelData.hpp> //class Model
 
 	XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xerces::"
 //http://xerces.apache.org/xerces-c/build-3.html:

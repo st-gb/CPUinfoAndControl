@@ -24,7 +24,8 @@ class IDynFreqScalingAccess ;
 #else
   typedef char _TCHAR ;
 #endif
-#include <basetsd.h> //for DWORD_PTR
+//#include <basetsd.h> //for DWORD_PTR
+#include <Windows_compatible_typedefs.h> //for DWORD_PTR
 #include <set> //for std::set
 //typedef unsigned char BYTE ;
 #include "global.h" //for BYTE

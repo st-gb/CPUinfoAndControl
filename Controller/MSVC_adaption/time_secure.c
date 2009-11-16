@@ -1,6 +1,7 @@
 #include "time_secure.h"
 
-#include <time.h>
+#ifdef _WINDOWS
+  #include <time.h>
 
   int _ftime_s(struct
     timeb *  p_timeb)
@@ -12,7 +13,8 @@
 
   int localtime_s(
     struct tm * p_tm
-    , const time_t * time
+   //TODO time_t makes problems with g++
+   , const time_t * time
     )
   {
     int nRet = 0 ;
@@ -23,4 +25,4 @@
       nRet = 1;
     return nRet ;
   }
-
+#endif

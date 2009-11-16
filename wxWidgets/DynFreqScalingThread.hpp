@@ -9,7 +9,7 @@
 #include <math.h> //for log2()
 #include <cmath>
 #include <ModelData/CPUcoreData.hpp>
-#include <ModelData/PState.hpp>
+//#include <ModelData/Pstate.hpp>
 
 class CPUcoreData ;
 

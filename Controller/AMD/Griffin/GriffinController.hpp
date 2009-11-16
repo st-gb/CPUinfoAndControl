@@ -44,6 +44,11 @@
 #include <ModelData/VoltageAndFreq.hpp>
 #include <Controller/I_CPUcontroller.hpp>
 
+#ifndef _WINDOWS
+  #include <Windows_compatible_typedefs.h>
+#endif
+
+
 #define WRITE_MSR_FAILED 2
 #define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
 

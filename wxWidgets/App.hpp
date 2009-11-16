@@ -9,15 +9,23 @@
 #include <UserInterface.hpp>
 #include <ModelData/ModelData.hpp>
 #include <Controller/MainController.hpp>
-#include <Windows/CalculationThread.hpp>
-#include <Windows/NamedPipeClient.hpp>
+#ifdef _COMPILE_WITH_CALC_THREAD
+//#include <Windows/CalculationThread.hpp>
+#endif //#ifdef _COMPILE_WITH_CALC_THREAD
+//#include <Windows/NamedPipeClient.hpp>
 
 //class Windows_API::DynFreqScalingAccess ;
 class Model ;
 class MainFrame ;
 class UserInterface ;
+#ifdef _WINDOWS
 class WinRing0dynLinked ;
+#else
+  #include <Linux/MSRdeviceFile.h>
+#endif
+#ifdef COMPILE_WITH_CALC_THREAD
 class CalculationThread ;
+#endif //#ifdef COMPILE_WITH_CALC_THREAD
 class DynFreqScalingThread ;
 class ICPUcoreUsageGetter ;
 class I_CPUcontroller ;
@@ -37,7 +45,11 @@ private:
   //e.g. point to console or GUI.
   MainFrame * mp_frame ;
   UserInterface * mp_userinterface ;
+  #ifdef _WINDOWS
   WinRing0dynLinked * mp_winring0dynlinked ;
+  #else
+    MSRdeviceFile m_MSRdeviceFile ;
+  #endif
   std::tstring m_stdtstrProgramName ;
   Model * mp_modelData ;
 #ifdef COMPILE_WITH_SHARED_MEMORY
@@ -59,10 +71,14 @@ private:
   virtual bool OnInit();
   void outputAllPstates(unsigned char byCurrentP_state, int & vid) ;
   //GriffinController * mp_pstatectrl ;
+  #ifdef _COMPILE_WITH_CALC_THREAD
   //Windows_API::
     CalculationThread m_calculationthread ;
+  #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 public:
-  NamedPipeClient m_ipcclient ;
+  #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+    NamedPipeClient m_ipcclient ;
+  #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
   ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;

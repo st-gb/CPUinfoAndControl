@@ -5,6 +5,7 @@
 #include <ModelData/CPUcoreData.hpp>
 #include "UserInterface.hpp" //for UserInterface.m_bConfirmedYet
 #include <global.h> //LOGN
+#include "Sleep.h"
 
 DynFreqScalingThreadBase::DynFreqScalingThreadBase(
   ICPUcoreUsageGetter * p_icpu

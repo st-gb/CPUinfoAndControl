@@ -8,7 +8,8 @@
 #else
   #include <global.h> //for WORD
 #endif
+#include <Windows_compatible_typedefs.h>
 
-DWORD WINAPI FPUcalculationThreadProc(LPVOID lpParameter) ;
-DWORD WINAPI HighALUloadThreadProc(LPVOID lpParameter) ;
-DWORD WINAPI CalculationThreadProc(LPVOID lpParameter) ;
+DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter) ;
+DWORD /*WINAPI*/ HighALUloadThreadProc(LPVOID lpParameter) ;
+DWORD /*WINAPI*/ CalculationThreadProc(LPVOID lpParameter) ;

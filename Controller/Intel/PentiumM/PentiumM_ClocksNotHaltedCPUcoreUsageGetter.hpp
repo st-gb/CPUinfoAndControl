@@ -1,13 +1,14 @@
 #pragma once
 
 #include <global.h> //for DWORD
-#include <Windows.h> //for ULONGLONG
+//#include <Windows.h> //for ULONGLONG
+#include <Windows_compatible_typedefs.h> //for ULONGLONG
 #include <limits.h>
 //#include <Controller/GriffinController.hpp>
 #include <Controller/ICPUcoreUsageGetter.hpp>
 #include <ModelData/ModelData.hpp>
 
-#ifdef __CYGWIN__
+#ifndef _MSC_VER //MS compiler has _UI64_MAX defined, but not g++
   #define _UI64_MAX ULONG_LONG_MAX
 #endif
 

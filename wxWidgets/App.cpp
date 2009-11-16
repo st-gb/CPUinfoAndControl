@@ -18,15 +18,18 @@
 //#include "../Windows/CPUcoreUsageGetterIWbemServices.hpp"
 //#include <Windows/CPUcoreUsageGetterNTQSI_WintopVxd.hpp>
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
-#include "../Windows/WinRing0dynlinked.hpp"
-#include <Windows/GetWindowsVersion.h>
-#include <Windows/PowerProf/PowerProfDynLinked.hpp>
+//#include <Windows/WinRing0dynlinked.hpp>
+//#include <Windows/GetWindowsVersion.h>
+//#include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp>
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
+//#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Controller/I_CPUcontroller.hpp>
 #include <ModelData/ModelData.hpp>
 #include "MainFrame.hpp"
 #include "DynFreqScalingThread.hpp"
+#include "Linux/MSRdeviceFile.h"
+#include <strstream> //ostrstream
+#include <string> //
 //#include "../Windows/DynFreqScalingThread.hpp"
 //#include "CpuUsage.h"
 //#include "Controller/RunAsService.h" //for MyServiceStart etc.
@@ -47,7 +50,23 @@ bool wxPumaStateCtrlApp::Confirm(const std::string & str)
   if( m_bConfirmedYet )
   {
     m_bConfirmedYet = false ;
-    ::wxMessageBox(str);
+    #ifdef wxUSE_WCHAR_T
+      std::wstring wstr(str.begin(), str.end() ) ;
+      wxString wxstr( wstr) ;
+    #else
+      wxString wxstr(( const unsigned char * ) str.c_str() ) :
+    #endif
+    ::wxMessageBox( 
+      #ifdef _DEBUG
+      wxT("gg"), wxT("bla"),wxOK
+      #else
+      wxstr
+      #endif
+      );
+      #ifdef _DEBUG
+    ::wxMessageBox( wxT("This is the message."), wxT("This is the title"),
+      wxOK|wxICON_INFORMATION);
+      #endif
     m_bConfirmedYet = true ;
   }
   //m_bConfirmedYet = true ;
@@ -66,12 +85,20 @@ bool wxPumaStateCtrlApp::Confirm(std::ostrstream & r_ostrstream
   //r_ostrstream.ends();
   r_ostrstream.put('\0'); //the same as "ends()" does.
   char *pch = r_ostrstream.str() ;
+    #ifdef wxUSE_WCHAR_T
+      std::string str(pch) ;
+      std::wstring wstr(str.begin(),str.end() ) ;
+      wxString wxstr( wstr) ;
+    #else
+      wxString wxstr(( const unsigned char * ) pch ) :
+    #endif
   //r_ostrstream.flush();
   //To not show too many dialogs that the timer would bring up.
   if( m_bConfirmedYet )
   {
     m_bConfirmedYet = false ;
-    int nReturn = ::wxMessageBox(pch,"Message",wxCANCEL|wxOK);
+    int nReturn = ::wxMessageBox(//pch
+      wxstr ,_T("Message"),wxCANCEL|wxOK);
     if( nReturn == wxCANCEL )
       bReturn = false ;
     m_bConfirmedYet = true ;
@@ -104,7 +131,9 @@ int wxPumaStateCtrlApp::OnExit()
     //  delete mp_wxdynfreqscalingtimer ;
 #endif //#ifdef COMPILE_WITH_CPU_SCALING
   //Release dynamically allocated memory (inside OnInit() ) :
+  #ifdef _WINDOWS
   delete mp_winring0dynlinked ;
+  #endif
   delete [] m_arartchCmdLineArgument ;
   //delete mp_frame ;
   //delete mp_pstatectrl ;
@@ -203,17 +232,25 @@ bool wxPumaStateCtrlApp::OnInit()
     if( ! bSharedMemOk )
 #endif //COMPILE_WITH_SHARED_MEMORY
       mp_modelData = new Model() ;
-	m_ipcclient.Init() ;
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  	m_ipcclient.Init() ;
+#endif
     if( mp_modelData )
     {
       try //catch CPUaccessexception
       {
+    #ifdef _WINDOWS
       //WinRing0dynLinked winring0dynlinked(p_frame) ;
       //If allocated statically within this block / method the object 
       //gets invalid after leaving the block where it was declared.
       mp_winring0dynlinked = new WinRing0dynLinked(//p_frame
         this ) ;
       m_maincontroller.SetCPUaccess(mp_winring0dynlinked) ;
+    #else
+      //m_maincontroller.SetCPUaccess(NULL) ;
+      m_MSRdeviceFile.SetUserInterface(this) ;
+      m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
+    #endif
       m_maincontroller.Init( //m_modelData
         * mp_modelData, this );
       //m_winring0dynlinked.SetUserInterface(p_frame);
@@ -254,13 +291,22 @@ bool wxPumaStateCtrlApp::OnInit()
       mp_cpucontroller->SetUserInterface(this) ;
       //Set the CPU access BEFORE getting number of CPU cores in
       //SetModelData(...) .
+      #ifdef _WINDOWS
       mp_cpucontroller->SetCPUaccess(mp_winring0dynlinked) ;
+      #else
+      //mp_cpucontroller->SetCPUaccess(NULL);
+      mp_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
+      #endif
       mp_cpucontroller->SetModelData( //& m_modelData
          mp_modelData ) ;
       if( mp_cpucontroller )
         //Needed for drawing the voltage-frequency curves.
         mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+      #ifdef _WINDOWS
       mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
+      #else
+      mp_cpucontroller->SetCalculationThread(NULL) ;
+      #endif
       //mp_cpucontroller->SetOtherDVFSaccess(& m_powerprofdynlinked) ;
       //DWORD dwMajor = 0, dwMinor ;
       //GetWindowsVersion(dwMajor, dwMinor ) ;
@@ -274,8 +320,13 @@ bool wxPumaStateCtrlApp::OnInit()
       //{
       //  mp_dynfreqscalingaccess = new PowerProfUntilWin6DynLinked() ;
       //}
+      #ifdef _WINDOWS
       mp_dynfreqscalingaccess = new PowerProfDynLinked( m_stdtstrProgramName ) ;
       mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
+      #else
+      mp_dynfreqscalingaccess = NULL ;
+      mp_cpucontroller->SetOtherDVFSaccess( NULL ) ;
+      #endif
       //m_modelData.SetGriffinController(mp_pstatectrl) ;
       //m_modelData.SetCPUcontroller( mp_cpucontroller);
       mp_modelData->SetCPUcontroller( mp_cpucontroller);
@@ -305,9 +356,10 @@ bool wxPumaStateCtrlApp::OnInit()
       //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
       //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
       SetTopWindow(mp_frame);
-
+    #ifdef _WINDOWS
       //m_calculationthread.SetPumaStateCtrl(mp_pstatectrl);
       m_calculationthread.SetCPUcontroller(mp_cpucontroller);
+    #endif
       //p_frame->SetPumaStateController(mp_pstatectrl);
       //mp_frame->SetPumaStateController(mp_pstatectrl);
       mp_frame->SetCPUcontroller(mp_cpucontroller) ;

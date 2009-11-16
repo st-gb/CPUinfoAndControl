@@ -33,11 +33,11 @@ DynFreqScalingDlg::DynFreqScalingDlg(
   wxBoxSizer * sizerVert = new wxBoxSizer(wxVERTICAL);
   mp_wxbuttonApply = new wxButton(this, wxID_APPLY ) ;
   p_wxtextctrlThrottleTemp = new wxTextCtrl(this, wxID_ANY ) ;
-  p_wxtextctrlMilliSecondsWait = new wxTextCtrl(this, wxID_ANY , "200" ) ;
+  p_wxtextctrlMilliSecondsWait = new wxTextCtrl(this, wxID_ANY , wxT("200") ) ;
   p_wxtextctrlCPUusageForThrottleToPstate1 = new wxTextCtrl(
     this
     , wxID_ANY 
-    , "0.7" 
+    , wxT("0.7")
     , wxDefaultPosition 
     , wxDefaultSize
     , 0 //default style is 0

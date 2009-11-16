@@ -1,6 +1,7 @@
 #define _AFXDLL
 
-#include "StdAfx.h" //for ULONGLONG
+//#include "StdAfx.h" //for ULONGLONG
+#include <Windows_compatible_typedefs.h> //for ULONGLONG
 
 //// For compilers that support precompilation, includes "wx/wx.h".
 //#include "wx/wxprec.h"
@@ -176,10 +177,11 @@ public:
   //void 
   BYTE CreateDynamicMenus() ;
   void DisableWindowsDynamicFreqScalingHint();
-    wxString GetSetPstateMenuItemLabel(
-      BYTE byPstateNumber
-      , PState & pstate 
-      ) ;
+//  wxString GetSetPstateMenuItemLabel(
+//    BYTE byPstateNumber
+          //The "PState" class is AMD-specific.
+//    , PState & pstate
+//    ) ;
   void DrawAllPossibleOperatingPoints( wxDC & r_wxdcDrawOn ) ;
   void DrawCurrentVoltageSettingsCurve(
     wxDC & wxdc
@@ -238,12 +240,12 @@ public:
   //void OnSetPstate2ForBothCores(wxCommandEvent& WXUNUSED(event)) ;//{} ;
   void OnAbout(wxCommandEvent & event);
   void PossiblyAskForOSdynFreqScalingDisabling();
-  void SetMenuItemLabel(
-      BYTE byCoreID
-      , BYTE byPstateNumber
-      , //const 
-        PState & pstate 
-      ) ;
+//  void SetMenuItemLabel(
+//      BYTE byCoreID
+//      , BYTE byPstateNumber
+//      , //const
+//        PState & pstate
+//      ) ;
   //void SetPumaStateController(GriffinController * p_pumastatectrl) ;
   void SetCPUcontroller(I_CPUcontroller * );
 #ifdef wxHAS_POWER_EVENTS

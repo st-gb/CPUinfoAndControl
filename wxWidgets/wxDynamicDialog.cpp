@@ -12,6 +12,7 @@
 //#include "Controller/GriffinController.hpp"
 #include <Controller/I_CPUcontroller.hpp>
 #include "App.hpp" //for wxGetApp() / DECLARE_APP
+#include "wxStringHelper.h"
 
 //An enum guarantees a unique number for each element.
 enum
@@ -217,17 +218,17 @@ void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
        this
        , wxID_ANY
        //(*iter).m_str  
-       , wxString("")
+       , wxString(wxT("") )
        ) ;
     //p_sizerHorizontal->Add( new wxStaticText(
     mp_sizerLeftColumn->Add( new wxStaticText(
       this, 
       wxID_ANY, 
-      (*iter_registerdata).m_strDataName 
+      getwxString( (*iter_registerdata).m_strDataName )
 //#ifdef _DEBUG
 //      + wxString::Format("%x",p_wxstatictext)
 //#endif //#ifdef _DEBUG
-      + wxString(": ")
+      + wxString(wxT(": ") )
       ) 
       //0=the control should not take more space if the sizer is enlarged
       , 0 
@@ -377,12 +378,14 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
         }
         iter_registerdata->m_ullPreviousValue = ullMSR ;
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
-        wxstrULL = wxString::Format( wxString("%I64u"), ullValue) ;
+        wxstrULL = wxString::Format( wxString( wxT("%I64u") ), ullValue) ;
         //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", ullValue )
         //  wxstrULL );
         stdvector_stdstringAttributeValue.push_back( 
           //(std::string) //wxString::Format("%64u", ullValue) 
-          std::string(wxstrULL.c_str()) );
+          std::string( //wxstrULL.c_str()
+            getstdstring(wxstrULL) )
+          );
         if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end() 
           )
         {

@@ -1,7 +1,8 @@
 #pragma once
 
 //#include <windef.h> //WORD
-#include <Windows.h> //for DWORD, WINAPI etc.
+//#include <Windows.h> //for DWORD, WINAPI etc.
+#include <Windows_compatible_typedefs.h>
 typedef void *ExitCode;
 
 class I_CPUcontroller ;

@@ -8,8 +8,14 @@
 #ifndef _TCHAR_H
 #define	_TCHAR_H
 
-//#include <string.h> //for strrchr
-#define _T(x) x
+#ifdef _UNICODE
+  #define _T(x) L ## x
+  typedef wchar_t TCHAR ;
+#else
+  //#include <string.h> //for strrchr
+  #define _T(x) x
+  typedef char TCHAR ;
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

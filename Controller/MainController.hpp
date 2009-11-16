@@ -28,7 +28,7 @@ public:
   MainController();
   MainController(const MainController& orig);
   virtual ~MainController();
-  void Init(
+  BYTE Init(
     Model & model 
     , UserInterface * p_userinterface 
     ) ;

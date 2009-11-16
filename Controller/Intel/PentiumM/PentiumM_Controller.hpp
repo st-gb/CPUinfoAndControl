@@ -1,7 +1,8 @@
 #pragma once
 
 #include <Controller/I_CPUcontroller.hpp>
-#include <windows.h> //ULONGLONG
+//#include <windows.h> //ULONGLONG
+#include <Windows_compatible_typedefs.h> //for ULONGLONG
 
 class PentiumM_Controller
   : public I_CPUcontroller

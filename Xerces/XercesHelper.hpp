@@ -9,6 +9,9 @@
 
 #include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
 #include <errno.h> //for "ERANGE"
+#include <Windows_compatible_typedefs.h> //__int64
+#include <stdlib.h> //atoi()
+#include <limits.h> //ULONG_MAX
 
 //// need to properly scope any forward declarations
 //XERCES_CPP_NAMESPACE_BEGIN
@@ -107,7 +110,7 @@ public:
     ) ;
 
   static inline BYTE //SAX2MainConfigHandler::
-      XercesHelper::GetAttributeValue
+      GetAttributeValue
     (
     const Attributes & xercesc_attributes,
     const std::string & cr_stdstrAttributeName,

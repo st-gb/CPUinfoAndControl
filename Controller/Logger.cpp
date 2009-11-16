@@ -49,11 +49,14 @@ void Logger::Log(//ostream & ostr
         mp_ofstream && mp_ofstream->good() 
         )
     {
+      #ifdef _WINDOWS
         SYSTEMTIME systemtime ;
         GetSystemTime(&systemtime);              // gets current time
         ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
+      #endif
         //m_ofstream << r_stdstr ;
-        *mp_ofstream 
+        *mp_ofstream
+          #ifdef _WINDOWS
             << systemtime.wYear 
             << "." << systemtime.wMonth 
             << "." << systemtime.wDay 
@@ -61,6 +64,7 @@ void Logger::Log(//ostream & ostr
             << "h:" << systemtime.wMinute
             << "min " << systemtime.wSecond
             << "s " << systemtime.wMilliseconds
+          #endif
             << "ms:" << r_stdstr ;
         //m_ofstream.flush() ;
         mp_ofstream->flush() ;

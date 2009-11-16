@@ -1,8 +1,13 @@
 #pragma once // include guard
 #include "global.h" //for BYTE etc.
-//#include <windef.h> //for BOOL etc.
-#include <basetsd.h> //DWORD_PTR
-//#include <WINDOWS.h> //for BOOL et.c
+//#ifdef _WINDOWS
+//  //#include <windef.h> //for BOOL etc.
+//  #include <basetsd.h> //DWORD_PTR
+//  //#include <WINDOWS.h> //for BOOL et.c
+//#else
+//  #include <Windows_compatible_typedefs.h>
+//#endif
+#include <Windows_compatible_typedefs.h>
 #ifndef WINAPI 
   #define WINAPI __stdcall
 #endif
@@ -124,7 +129,8 @@ public:
   bool GetVendorID( std::string & r_str );
 
   virtual BOOL // TRUE: success, FALSE: failure
-  WINAPI 
+  //In g++ virtual methods can't be declared as stdcall
+  //WINAPI
   RdmsrEx(
 	  DWORD index,		// MSR index
 	  PDWORD eax,			// bit  0-31
@@ -133,7 +139,8 @@ public:
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   ) = 0 ;
   inline virtual BOOL // TRUE: success, FALSE: failure
-  WINAPI 
+  //In g++ virtual methods can't be declared as stdcall
+  //WINAPI
   RdpmcEx(
 	  DWORD index,		// MSR index
 	  PDWORD eax,			// bit  0-31
@@ -152,13 +159,15 @@ public:
   }
   virtual void Sleep(WORD wMillis) = 0 ;
   virtual BOOL 
-    WINAPI 
+    //In g++ virtual methods can't be declared as stdcall
+    //WINAPI
     WritePciConfigDwordEx ( 
     DWORD pciAddress,
     DWORD regAddress,
     DWORD value) = 0 ;
   virtual BOOL // TRUE: success, FALSE: failure
-    WINAPI
+    //In g++ virtual methods can't be declared as stdcall
+    //WINAPI
     WrmsrEx(
       DWORD index,		// MSR index
       DWORD dwLow ,//eax,			// bit  0-31

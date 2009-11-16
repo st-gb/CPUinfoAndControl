@@ -36,9 +36,9 @@
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/DynFreqScalingDlg.hpp>
-#include <Windows/CalculationThread.hpp>
-#include <Windows/ServiceBase.hpp>
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
+//#include <Windows/CalculationThread.hpp>
+//#include <Windows/ServiceBase.hpp>
+//#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include "../BuildTimeString.h"
 #include "ModelData/RegisterData.hpp"
 #include <ModelData/HighLoadThreadAttributes.hpp>
@@ -276,8 +276,8 @@ MainFrame::MainFrame(
       0,0,0,0,
       1,1,1,1
     } ;
-  wxIcon wxicon(bits,4,4) ;
-  SetIcon(wxicon);
+//  wxIcon wxicon(bits,4,4) ;
+//  SetIcon(wxicon);
   Connect(wxEVT_PAINT, wxPaintEventHandler(MainFrame::OnPaint));
   //SetStatusText( _T("Welcome to wxWidgets!") );
   m_timer.Start(1000);
@@ -512,34 +512,34 @@ BYTE MainFrame::AddSetPstateMenuItem(
     BYTE byReturnValue = FALSE ;
     DWORD dwLow ;
     DWORD dwHigh ;
-    PState pstate ;
-    byReturnValue = mp_pumastatectrl->GetPStateFromMSR(
-        byPstateID, 
-        dwLow, 
-        dwHigh, 
-        pstate, 
-        byCoreID
-        ) ;
-    //If getting the p-state data was successfull.
-    //If e.g. this program was not started as admin it probably was 
-    //not successfull.
-    if( byReturnValue )
-      m_arp_wxmenuitemPstate[ byCoreID * NUMBER_OF_PSTATES + byPstateID ] =
-        AddDynamicallyCreatedMenu(
-          p_wxmenuCore,
-          r_wMenuID,
-          //_T("Set p-state &0")
-          GetSetPstateMenuItemLabel(
-              //byPstateNumber
-              byPstateID
-              //mp_pumastatectrl->mp_model-> pstate
-              //Gets the Voltage ID, Frequ ID for the p-state:
-              //if not set by the user, then
-              //GetPState(byPstateID)
-              , pstate
-          )
-          //, new SelectPstateAction(byCoreID, byPstateID )
-        ) ;
+//    PState pstate ;
+//    byReturnValue = mp_pumastatectrl->GetPStateFromMSR(
+//        byPstateID,
+//        dwLow,
+//        dwHigh,
+//        pstate,
+//        byCoreID
+//        ) ;
+//    //If getting the p-state data was successfull.
+//    //If e.g. this program was not started as admin it probably was
+//    //not successfull.
+//    if( byReturnValue )
+//      m_arp_wxmenuitemPstate[ byCoreID * NUMBER_OF_PSTATES + byPstateID ] =
+//        AddDynamicallyCreatedMenu(
+//          p_wxmenuCore,
+//          r_wMenuID,
+//          //_T("Set p-state &0")
+//          GetSetPstateMenuItemLabel(
+//              //byPstateNumber
+//              byPstateID
+//              //mp_pumastatectrl->mp_model-> pstate
+//              //Gets the Voltage ID, Frequ ID for the p-state:
+//              //if not set by the user, then
+//              //GetPState(byPstateID)
+//              , pstate
+//          )
+//          //, new SelectPstateAction(byCoreID, byPstateID )
+//        ) ;
 
     return byReturnValue ;
 }
@@ -599,6 +599,7 @@ BYTE MainFrame::CreateDynamicMenus()
       //new wx
       //, & m_stdvectorwxuicontroldata.back()
       );
+    #ifdef COMPILE_WITH_CALC_THREAD
     marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
       p_wxmenuCore,
       wMenuID, //_T("high load thread (for stability check)")
@@ -618,7 +619,7 @@ BYTE MainFrame::CreateDynamicMenus()
         , ::wxGetApp().GetCPUcontroller() 
         )
       ) ;
-
+    //#endif //#ifdef COMPILE_WITH_CALC_THREAD
     marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
       p_wxmenuCore,wMenuID, //_T("high load thread (for stability check)")
       BuildHighLoadThreadMenuText(
@@ -637,6 +638,8 @@ BYTE MainFrame::CreateDynamicMenus()
         , ::wxGetApp().GetCPUcontroller()
         )
       ) ;
+    #endif //    #ifdef COMPILE_WITH_CALC_THREAD
+
     //marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
     //  p_wxmenuCore,
     //  wMenuID, //_T("high load thread (for stability check)")
@@ -735,15 +738,18 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
 {
   //ServiceBase::ContinueService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
-  if( ! ::wxGetApp().m_ipcclient.IsConnected() )
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+    if( ! ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.Init() ;
   if( ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.SendMessage(continue_service) ;
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
-  if( ! ::wxGetApp().m_ipcclient.IsConnected() )
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+    if( ! ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.Init() ;
   if( ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.SendMessage(pause_service) ;
@@ -766,15 +772,18 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
         connecttoscmerror.m_dwErrorCode).c_str() 
         ) ;
     }
+  #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
 void MainFrame::OnStartService(wxCommandEvent & WXUNUSED(event))
 {
+  #ifdef _WINDOWS
   ServiceBase::StartService( //mp_model->m_strServiceName.c_str() 
     //We need a _T() macro (wide char-> L"", char->"") for EACH 
     //line to make it compitable between char and wide char.
     _T("CPUcontrolService") 
     );
+  #endif
 }
 
 void MainFrame::OnStopService(wxCommandEvent & WXUNUSED(event))
@@ -794,7 +803,7 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       _T("codename \"griffin\" (mobile) CPUs, especially for undervolting.\n")
 
       //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-      BUILT_TIME
+      //BUILT_TIME
       //"AMD--smarter choice than Intel?\n\n"
       //"To ensure a stable operation:\n"
       _T("I observed system instability when when switching from power ")
@@ -819,18 +828,21 @@ void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent)
   wxevent )
 {
   WORD wEventID = wxevent.GetId() ;
+  #ifdef COMPILE_WITH_CALC_THREAD
 //  HighLoadThreadAttributes p_hlta =  (HighLoadThreadAttributes * )
 //    m_stdmapwxuicontroldata.find( wEventID )->second ;
   CalculationThread * p_ct = (CalculationThread *)
     m_stdmapwxuicontroldata.find( wEventID )->second ;
   if( p_ct )
     p_ct->Execute() ;
+  #endif //#ifdef COMPILE_WITH_CALC_THREAD
 }
 
 void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent) 
   wxevent )
 {
   WORD wEventID = wxevent.GetId() ;
+  #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   //TODO
   if( ::wxGetApp().m_ipcclient.IsConnected() )
   {
@@ -838,6 +850,7 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
     ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
   }
   else
+  #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   {
     //if( mp_pumastatectrl->mp_dynfreqscalingaccess->DVFSisEnabled() ;
     //SpecificCPUcoreActionAttributes * p_atts = (CalculationThread *)
@@ -1299,7 +1312,7 @@ void MainFrame::DrawCurrentPstateInfo(
    //DWORD dwEDX ;
    //DWORD dwLowmostBitsCurrentLimitRegister, dwLowmostBits ;
    //ULONGLONG ull ;
-   PState pstate ;
+//   PState pstate ;
 
 //#ifdef _DEBUG
 //   ClocksNotHaltedCPUcoreUsageGetter & getter = 
@@ -2084,18 +2097,18 @@ void MainFrame::OnPaint(wxPaintEvent & event)
       }
       //m_bDrawFreqAndVoltagePointForCurrCoreSettings =
       //    ! m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
-#ifndef _TEST_PENTIUM_M
-        //DWORD dwValue ;
-        float fTempInDegCelsius ;
-        if( mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius) 
-          )
-          wxmemorydc.DrawText(
-            wxString::Format(_T("CPU temp.:%0.2f degrees C") , 
-              fTempInDegCelsius )
-              , 50
-              , 70
-              ) ;
-#endif //#ifndef _TEST_PENTIUM_M
+//#ifndef _TEST_PENTIUM_M
+//        //DWORD dwValue ;
+//        float fTempInDegCelsius ;
+//        if( mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius)
+//          )
+//          wxmemorydc.DrawText(
+//            wxString::Format(_T("CPU temp.:%0.2f degrees C") ,
+//              fTempInDegCelsius )
+//              , 50
+//              , 70
+//              ) ;
+//#endif //#ifndef _TEST_PENTIUM_M
 #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER__
        float arf[2] ;
        //m_cpucoreusagegetter.GetPercentalUsageForAllCores(arf) ;
@@ -2648,42 +2661,43 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
   //TRACE("OnTimerEvent\n") ;
 }
 
-wxString MainFrame::GetSetPstateMenuItemLabel(
-  BYTE byPstateNumber
-  , PState & pstate 
-  )
-{
-   return wxString::Format( 
-     //We need a _T() macro (wide char-> L"", char->"") for EACH 
-     //line to make it compitable between char and wide char.
-     _T("set p-state %u (%u MHz @ %f Volt)"), 
-       (WORD) byPstateNumber
-       , pstate.GetFreqInMHz() 
-       , pstate.GetVoltageInVolt() 
-     ) ;
-}
+//wxString MainFrame::GetSetPstateMenuItemLabel(
+//  BYTE byPstateNumber
+    //The "PState" class is AMD-specific.
+//  , PState & pstate
+//  )
+//{
+//   return wxString::Format(
+//     //We need a _T() macro (wide char-> L"", char->"") for EACH
+//     //line to make it compitable between char and wide char.
+//     _T("set p-state %u (%u MHz @ %f Volt)"),
+//       (WORD) byPstateNumber
+//       , pstate.GetFreqInMHz()
+//       , pstate.GetVoltageInVolt()
+//     ) ;
+//}
 
-void MainFrame::SetMenuItemLabel(
-  BYTE byCoreID
-  , BYTE byPstateNumber
-  , //const 
-    PState & pstate 
-  )
-{
-    //int nMenuItemID
-    //this->m_nLowestIDForSetVIDnFIDnDID
-    //this->m_nNumberOfMenuIDsPerCPUcore
-    //wxMenuItem * p_wxmenuitem = FindItemByPosition(size_t position) ;
-    m_arp_wxmenuitemPstate[byCoreID * NUMBER_OF_PSTATES + byPstateNumber]
-      ->SetText(//_T("")
-       //wxString::Format("set p-state %u (%u MHz @ %f Volt)", 
-       //    (WORD) byPstateNumber
-       //    , pstate.GetFreqInMHz() 
-       //    , pstate.GetVoltageInVolt() 
-       // )
-       GetSetPstateMenuItemLabel(byPstateNumber,pstate)
-      ) ;
-}
+//void MainFrame::SetMenuItemLabel(
+//  BYTE byCoreID
+//  , BYTE byPstateNumber
+//  , //const
+//    PState & pstate
+//  )
+//{
+//    //int nMenuItemID
+//    //this->m_nLowestIDForSetVIDnFIDnDID
+//    //this->m_nNumberOfMenuIDsPerCPUcore
+//    //wxMenuItem * p_wxmenuitem = FindItemByPosition(size_t position) ;
+//    m_arp_wxmenuitemPstate[byCoreID * NUMBER_OF_PSTATES + byPstateNumber]
+//      ->SetText(//_T("")
+//       //wxString::Format("set p-state %u (%u MHz @ %f Volt)",
+//       //    (WORD) byPstateNumber
+//       //    , pstate.GetFreqInMHz()
+//       //    , pstate.GetVoltageInVolt()
+//       // )
+//       GetSetPstateMenuItemLabel(byPstateNumber,pstate)
+//      ) ;
+//}
 
 void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
 {

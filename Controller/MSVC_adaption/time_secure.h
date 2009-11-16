@@ -8,6 +8,7 @@
 #ifndef _TIME_H
 #define	_TIME_H
 
+#ifdef _WINDOWS
   #include <time.h>
 
 #ifdef __CYGWIN__
@@ -41,6 +42,7 @@ extern "C" {
 #ifdef	__cplusplus
 }
 #endif
+#endif //#ifdef _WINDOWS
 
 #endif	/* _TIME_H */
 

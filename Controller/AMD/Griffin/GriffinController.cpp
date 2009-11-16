@@ -26,6 +26,8 @@
 #ifdef _WINDOWS //with Linux I can't compile with xerces yet.
   //#define COMPILE_WITH_XERCES
   //#include <OlsApiInitDef.h> //for CPUid
+#else
+  #include <Windows_compatible_typedefs.h>
 #endif
 #ifdef COMPILE_WITH_XERCES
   #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"

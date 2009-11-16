@@ -4,7 +4,8 @@
 #include "../global.h" //for DWORD, ...
 #include <vector>
 #include <string>
-#include <windows.h> //ULONGLONG
+//#include <windows.h> //ULONGLONG
+#include <Windows_compatible_typedefs.h> //for ULONGLONG
 
 class BitRange
 {
