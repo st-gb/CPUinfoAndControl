@@ -228,6 +228,7 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   //  1 << byCoreID
   //  ) ;
   DWORD dwLow, dwHigh ;
+
   mp_pentium_m_controller->RdmsrEx(
     //IA32_PERFEVTSEL0
     //Intel vol. 3B:
@@ -304,6 +305,26 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   //m_ullPreviousPerformanceEventCounter3 
   m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousPerformanceEventCounter3
     = m_ullPerformanceEventCounter3 ;
+
+    //Workaround for unabilility to detect ACPI resume if not on Windows.
+  #ifndef __WXMSW__
+  mp_pentium_m_controller->RdmsrEx(
+    // MSR index
+    IA32_PERFEVTSEL0 ,
+    dwLow ,//eax,			// bit  0-31
+    dwHigh , //edx,			// bit 32-63
+    1	// Thread Affinity Mask
+    ) ;
+  BYTE byPerfEvtSelect = dwLow & BITMASK_FOR_LOWMOST_8BIT ;
+  //After an ACPI resume the performance event select it is set to 0.
+  if( //dwLow & BITMASK_FOR_LOWMOST_8BIT
+    byPerfEvtSelect !=
+    INTEL_ARCHITECTURAL_CPU_CLOCKS_NOT_HALTED )
+  {
+    Init() ;
+  }
+  #endif
+  
   return //-1.0 ;
 	(float) dClocksNotHaltedDiffDivTCSdiff ;
 }

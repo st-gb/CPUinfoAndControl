@@ -877,7 +877,8 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
     {
         PossiblyAskForOSdynFreqScalingDisabling() ;
         if( ! //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+            //mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+            mp_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
           )
         {
           //TODO is the memory released?
@@ -2198,7 +2199,8 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
 {
   if( //! //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
     //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-    mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+    //mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+    mp_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
     )
     if (::wxMessageBox(
         //We need a _T() macro (wide char-> L"", char->"") for EACH 

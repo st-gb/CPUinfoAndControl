@@ -128,7 +128,7 @@ public:
     //  //)
     //  ;
   }
-
+  BYTE OtherPerfCtrlMSRwriteIsActive() ;
   //Advantage for a RdmsrEx() inside CPU controller: one does not
   //need to MANUALLY check if cpuaccess is assigned. (not NULL)
   //because this is done by this class' RdmsrEx() method.

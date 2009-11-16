@@ -17,3 +17,14 @@ std::string to_stdstring(T t//, std::ios_base & (*f)(std::ios_base&)
   return //oss.str();
     str ;
 }
+
+//template <class T>
+//T from_stdstring(std::string stdstr//, std::ios_base & (*f)(std::ios_base&)
+//                      )
+//{
+//  std::istringstream iss;
+//  iss. >> stdstr ;
+//  std::string str = iss.str() ;
+//  return //oss.str();
+//    str ;
+//}

@@ -48,8 +48,11 @@ private:
   #ifdef _WINDOWS
   WinRing0dynLinked * mp_winring0dynlinked ;
   #else
-    MSRdeviceFile m_MSRdeviceFile ;
+    //MSRdeviceFile m_MSRdeviceFile ;
   #endif
+  //This member needs to nbe created on runtime because it may throw
+  //an exception (that should be catched, else runtime error) when it is created.
+  I_CPUaccess * mp_i_cpuaccess ;
   std::tstring m_stdtstrProgramName ;
   Model * mp_modelData ;
 #ifdef COMPILE_WITH_SHARED_MEMORY

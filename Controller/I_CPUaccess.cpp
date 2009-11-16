@@ -1,5 +1,6 @@
 //#include "ISpecificController.hpp"
 #include "I_CPUaccess.hpp"
+#include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
 
 #define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
 
@@ -408,4 +409,38 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
       ( dwEAX & 0xF ) ;
   }
   return bRet ;
+}
+
+BYTE I_CPUaccess::GetNumberOfCPUCores()
+{
+  //return 2 ;
+  //If CPUID for address Fn8000_0008 fails the core count is 1.
+  BYTE byCoreNumber = 1 ;
+  DWORD dwEAX;
+  DWORD dwEBX;
+  DWORD dwECX;
+  DWORD dwEDX;
+  DEBUG("WRDL--getting number of CPU cores\n");
+  if( CpuidEx(
+    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
+    0x80000008,
+    &dwEAX,
+    &dwEBX,
+    &dwECX,
+    &dwEDX,
+    1
+      )
+    )
+  {
+    byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT )
+      //"ECX 7:0 NC: number of physical cores - 1.
+      //The number of cores in the processor is NC+1 (e.g., if
+      //NC=0, then there is one core).
+      //See also section 2.9.2 [Number of Cores and Core Number]."
+      + 1 ;
+    //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
+    LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
+  }
+  DEBUG("WRDL--end of getting number of CPU cores\n");
+  return byCoreNumber ;
 }

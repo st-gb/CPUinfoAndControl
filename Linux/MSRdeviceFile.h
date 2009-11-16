@@ -11,6 +11,7 @@
 #include "../UserInterface.hpp" //for class "UserInterface"
 #include <Controller/I_CPUaccess.hpp>
 #include <Windows_compatible_typedefs.h>
+#include <fstream>
 
 //Exception class. If catched: don't continue (with assigning function
 //pointers to DLL functions etc.).
@@ -40,6 +41,8 @@ class MSRdeviceFile
 {
 private:
   //UserInterface * mp_userinterface ;
+  std::fstream * m_arfstreamMSR ;
+  int * m_arnFileHandle ;
 public:
   MSRdeviceFile(UserInterface * pui) ;
   MSRdeviceFile() ;
@@ -58,7 +61,7 @@ public:
     PDWORD edx,
     DWORD_PTR affinityMask
   );
-  BYTE GetNumberOfCPUCores() ;
+  //BYTE GetNumberOfCPUCores() ;
   inline BOOL 
   //WINAPI
   RdpmcEx(

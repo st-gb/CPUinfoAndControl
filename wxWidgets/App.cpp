@@ -57,16 +57,20 @@ bool wxPumaStateCtrlApp::Confirm(const std::string & str)
       wxString wxstr(( const unsigned char * ) str.c_str() ) :
     #endif
     ::wxMessageBox( 
-      #ifdef _DEBUG
+      #ifdef _DEBUG_
       wxT("gg"), wxT("bla"),wxOK
       #else
       wxstr
       #endif
       );
-      #ifdef _DEBUG
-    ::wxMessageBox( wxT("This is the message."), wxT("This is the title"),
-      wxOK|wxICON_INFORMATION);
-      #endif
+//      #ifdef _DEBUG
+//    ::wxMessageBox( wxT("This is the message."), wxT("This is the title"),
+//      wxOK|wxICON_INFORMATION);
+//      #endif
+//    wxMessageDialog * pdlg = new wxMessageDialog(wxGetApp().mp_frame,
+//      wxT("hh"),wxT("ca")
+//      );
+//    pdlg->ShowModal() ;
     m_bConfirmedYet = true ;
   }
   //m_bConfirmedYet = true ;
@@ -134,6 +138,8 @@ int wxPumaStateCtrlApp::OnExit()
   #ifdef _WINDOWS
   delete mp_winring0dynlinked ;
   #endif
+  if( mp_i_cpuaccess )
+    delete mp_i_cpuaccess ;
   delete [] m_arartchCmdLineArgument ;
   //delete mp_frame ;
   //delete mp_pstatectrl ;
@@ -248,9 +254,11 @@ bool wxPumaStateCtrlApp::OnInit()
       m_maincontroller.SetCPUaccess(mp_winring0dynlinked) ;
     #else
       //m_maincontroller.SetCPUaccess(NULL) ;
-      m_MSRdeviceFile.SetUserInterface(this) ;
-      m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
+      //m_MSRdeviceFile.SetUserInterface(this) ;
+      mp_i_cpuaccess = new MSRdeviceFile(this) ;
+      //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
     #endif
+      m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
       m_maincontroller.Init( //m_modelData
         * mp_modelData, this );
       //m_winring0dynlinked.SetUserInterface(p_frame);
@@ -295,8 +303,9 @@ bool wxPumaStateCtrlApp::OnInit()
       mp_cpucontroller->SetCPUaccess(mp_winring0dynlinked) ;
       #else
       //mp_cpucontroller->SetCPUaccess(NULL);
-      mp_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
+      //mp_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
       #endif
+      mp_cpucontroller->SetCPUaccess( mp_i_cpuaccess ) ;
       mp_cpucontroller->SetModelData( //& m_modelData
          mp_modelData ) ;
       if( mp_cpucontroller )

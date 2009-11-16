@@ -13,6 +13,9 @@
 #include <xercesc/sax2/Attributes.hpp>
 #include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
 #include "UserInterface.hpp" //for XMLString::transcode(...)
+#include <sstream>
+#include <locale>
+
 
 XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xerces::"
 //XERCES_CPP_NAMESPACE_BEGIN
@@ -427,13 +430,40 @@ BYTE //SAX2MainConfigHandler::
         char * pchAttributeValue = XMLString::transcode(pxmlch) ;
         if( pchAttributeValue )
         {
-            float fAtofResult ;
+            float fAtofResult = 0.0 ;
             std::string strAttributeValue = std::string(pchAttributeValue);
+            char * pEnd;
+            double d1, d2;
+
+            //atof returned 1 for "1.2" on Linux on German because the decimal
+            //point is a "," in German.
+            //http://stackoverflow.com/questions/1333451/c-locale-independent-atof:
+            //"localeconv (in <locale.h>) returns a pointer to struct whose
+            //decimal_point member contains that value. Note that the pointer
+            //is valid until the next localeconv() or setlocale() – "
+            //fAtofResult = (float) atof(pchAttributeValue ) ;
+            std::istringstream istr(pchAttributeValue);
+
+            //Ensure a "." is interpreted as decimal point no matter what the
+            //current locale is.
+            istr.imbue(std::locale("C"));
+            istr >> fAtofResult ;
+
+//            fAtofResult =
+//              //http://www.cplusplus.com/reference/clibrary/cstdlib/strtod/:
+//              //"If no valid conversion could be performed, a zero value (0.0)
+//              //is returned."
+//              strtod (
+//              #ifdef _DEBUG
+//                "1,340"
+//              #else
+//                pchAttributeValue
+//              #endif
+//                ,&pEnd);
             if(
               //atof(pchNumber) <> 0.0: If pchNumber is a valid number.
-              ( fAtofResult = (float) atof(pchAttributeValue ) )
               //Because atoi(...) returns "0" also for errors.
-              ||
+              fAtofResult ||
               ! fAtofResult // <=> nAtoiResult == 0
               && strAttributeValue == "0"
               )

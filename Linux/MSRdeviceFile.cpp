@@ -13,6 +13,9 @@
 #include <Controller/stdstring_format.hpp>
 #include <fcntl.h> //O_RDONLY, ...
 #include <cpuid.h>
+#include <errno.h>
+#include <ios> //std::iosbase
+#include <Linux/EnglishMessageFromErrorCode.h>
 //#include <Windows/ErrorCodeFromGetLastErrorToString.h>
 
 //MSRdeviceFile::MSRdeviceFile()
@@ -39,9 +42,60 @@ MSRdeviceFile::MSRdeviceFile(UserInterface * pui)
 {
   Init(pui) ;
 }
+
 void MSRdeviceFile::Init(UserInterface * pui)
 {
   mp_userinterface = pui ;
+  //getMSRFile()
+//  if(m_pcpucontroller )
+//    m_pcpucontroller->GetNumberOfCPUcores()
+  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
+  std::string stdstrMSRfilePath ;
+  m_arfstreamMSR = new std::fstream [byNumCPUcores] ;
+  m_arnFileHandle = new int [byNumCPUcores] ;
+  for(BYTE byCoreIndex = 0 ; byCoreIndex <  byNumCPUcores ; ++ byCoreIndex )
+  {
+    stdstrMSRfilePath = getMSRFile( 1 << byCoreIndex ) ;
+//    m_arfstreamMSR[byCoreIndex].exceptions (
+//      std::fstream::eofbit | std::fstream::failbit | std::fstream::badbit );
+//    try
+//    {
+//      m_arfstreamMSR[byCoreIndex].open(stdstrMSRfilePath.c_str() ,
+//        std::ios_base::binary | std::ios_base::in | std::ios_base::out
+//        ) ;
+//      if( m_arfstreamMSR[byCoreIndex].fail ( ) )
+//      {
+//        UIconfirm("Failed to open the file \"" + stdstrMSRfilePath + "\"" ) ;
+//        throw CPUaccessException("failed to open file") ;
+//      }
+//    }
+    //catch (std::fstream::failure e)
+    if (( m_arnFileHandle[byCoreIndex] = open(//msrfile
+      stdstrMSRfilePath.c_str() , //O_RDONLY
+      O_RDWR )) == -1)
+    {
+//      int i = e.type ;
+        std::string stdstrMessage = std::string("Failed to open the file \"") +
+          stdstrMSRfilePath ; //+ "\" cause: " + e.what() ;
+      switch (errno) {
+        case EACCES:  stdstrMessage += "Permission denied.\n"
+          "possible solution: run this program as administrator/root\n"
+          "do this e.g. via \"sudo\"";
+          break;
+        //case EINVACC: stdstrMsg += "Invalid access mode.\n"; break;
+        case EMFILE:  stdstrMessage += "No file handle available.\n"; break;
+        case ENOENT:  
+          stdstrMessage += " File or path not found.\n"
+            "possible solution:\n"
+            "If module \"msr\" is not installed: e.g. install via package manager\n"
+            "If module \"msr\" is installed: try \"modprobe msr\" "
+            "(with elevated rights/as root) \n";
+          break;
+        default:      stdstrMessage += "Unknown error.\n"; break;
+      }
+        UIconfirm( stdstrMessage ) ;
+    }
+  }
 }
 
 //WinRing0dynLinked::WinRing0dynLinked(UserInterface * pui)
@@ -54,7 +108,14 @@ MSRdeviceFile::MSRdeviceFile()
 
 MSRdeviceFile::~MSRdeviceFile()
 {
-
+  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
+  for(BYTE byCoreIndex = 0 ; byCoreIndex <  byNumCPUcores ; ++ byCoreIndex )
+  {
+    m_arfstreamMSR[byCoreIndex].close( ) ;
+    close( m_arnFileHandle[byCoreIndex] ) ;
+  }
+  delete [] m_arfstreamMSR ;
+  delete [] m_arnFileHandle ;
 }
 
 BOOL MSRdeviceFile::CpuidEx(
@@ -111,40 +172,6 @@ std::string MSRdeviceFile::getMSRFile(DWORD_PTR
   return ostrstr.str() ;
 }
 
-
-BYTE MSRdeviceFile::GetNumberOfCPUCores()
-{
-  //return 2 ;
-  BYTE byCoreNumber = 255 ;
-  DWORD dwEAX;
-  DWORD dwEBX;
-  DWORD dwECX;
-  DWORD dwEDX;
-  DEBUG("WRDL--getting number of CPU cores\n");
-  if( CpuidEx(
-    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
-    0x80000008,
-    &dwEAX,
-    &dwEBX,
-    &dwECX,
-    &dwEDX,
-    1
-      )
-    )
-  {
-    byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT )
-      //"ECX 7:0 NC: number of physical cores - 1.
-      //The number of cores in the processor is NC+1 (e.g., if
-      //NC=0, then there is one core).
-      //See also section 2.9.2 [Number of Cores and Core Number]."
-      + 1 ;
-    //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
-    LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
-  }
-  DEBUG("WRDL--end of getting number of CPU cores\n");
-  return byCoreNumber ;
-}
-
 BOOL // TRUE: success, FALSE: failure
   MSRdeviceFile::RdmsrEx(
   DWORD dwIndex,		// MSR index
@@ -182,44 +209,62 @@ BOOL // TRUE: success, FALSE: failure
     //   ,p_dwedx
     //   ,affinityMask
     //  );
-    const char * msrfile ;
-    int fd;
-    int result;
+//    const char * msrfile ;
+//    int fd;
+//    int result;
     unsigned long long msrvalue;
     //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
     //msrfile = getMSRFile(dwAffinityMask) ;
-    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
+//    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
+//
+//    if ((fd = open(//msrfile
+//      stdstrMSRfile.c_str() , O_RDONLY)) == -1)
+    BYTE byCoreID = 0 ;
+    //1bin ->0 10bin ->1 100bin->2
+    while( dwAffinityMask >>= 1 )
+      ++ byCoreID ;
 
-    if ((fd = open(//msrfile
-      stdstrMSRfile.c_str() , O_RDONLY)) == -1)
+//    m_arfstreamMSR[byCoreID].seekg(dwIndex,std::ios_base::beg) ;
+//    m_arfstreamMSR[byCoreID].readsome( (char *) & msrvalue,8) ;
+//    {
+//      std::string stdstrMsg = "Can't open file " + stdstrMSRfile +
+//        std::string(" for reading!\n") ;
+//     // std::string stdstrMSRfile(msrfile) ;
+//      switch (errno) {
+//        case EACCES:  stdstrMsg += "Permission denied.\n"; break;
+//        //case EINVACC: stdstrMsg += "Invalid access mode.\n"; break;
+//        case EMFILE:  stdstrMsg += "No file handle available.\n"; break;
+//        case ENOENT:  stdstrMsg += "File or path not found.\n"; break;
+//        default:      stdstrMsg += "Unknown error.\n"; break;
+//      }
+//
+//      UIconfirm( //std::string("Can't open file ") + stdstrMSRfile +
+//        //std::string(" for reading!\n")
+//        stdstrMsg
+//        );
+//      return FAILURE;
+//    }
+
+    if (lseek( m_arnFileHandle[byCoreID], dwIndex, SEEK_SET) == -1)
     {
-     // std::string stdstrMSRfile(msrfile) ;
-      UIconfirm(std::string("Can't open file ") + stdstrMSRfile +
-        std::string(" for reading!\n")
+      UIconfirm(std::string("Seeking failed in file ") //+ std::string(msrfile)
+        + std::string("\n")
         );
       return FAILURE;
     }
-
-    if (lseek(fd, dwIndex, SEEK_SET) == -1)
-    {
-      UIconfirm(std::string("Seeking failed in file ") + std::string(msrfile) +
-        std::string("!\n")
-        );
-      return FAILURE;
-    }
-
-    result = (int)read(fd, &msrvalue, (size_t)8);
-
-    if (result == -1)
-    {
-      printf("Read error in file \"%s\"!\n", msrfile);
-      return FAILURE;
-    }
-    if(close(fd) < 0 )
-    {
-      printf("Close error in file %s!\n", msrfile);
-      return FAILURE;
-    }
+//
+    int result = (int)read( m_arnFileHandle[byCoreID], &msrvalue, (size_t)8);
+//
+//    if (result == -1)
+//    {
+//      printf("Read error in file \"%s\"!\n", msrfile);
+//      return FAILURE;
+//    }
+//    if(close(fd) < 0 )
+//    {
+//      printf("Close error in file %s!\n", msrfile);
+//      return FAILURE;
+//    }
 
     *p_dwedx = msrvalue >> 32;
     *p_dweax = msrvalue;
@@ -288,6 +333,41 @@ MSRdeviceFile::WrmsrEx(
 )
 {
   BOOL bReturn = FAILURE ;
+  unsigned long long ullMSRvalue ;
+    //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
+    //msrfile = getMSRFile(dwAffinityMask) ;
+//    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
+//
+//    if ((fd = open(//msrfile
+//      stdstrMSRfile.c_str() , O_RDONLY)) == -1)
+    BYTE byCoreID = 0 ;
+    //1bin ->0 10bin ->1 100bin->2
+    while( dwAffinityMask >>= 1 )
+      ++ byCoreID ;
 
+//    m_arfstreamMSR[byCoreID].seekg(dwIndex,std::ios_base::beg) ;
+//    m_arfstreamMSR[byCoreID].readsome( (char *) & msrvalue,8) ;
+    if (lseek( m_arnFileHandle[byCoreID], dwIndex, SEEK_SET) == -1)
+    {
+      UIconfirm(std::string("Seeking failed in file ") //+ std::string(msrfile)
+        + std::string("\n")
+        );
+      return FAILURE;
+    }
+    ullMSRvalue = dwEDX ;
+    ullMSRvalue <<= 32 ;
+    ullMSRvalue |= dwEAX ;
+    int result = (int)write( m_arnFileHandle[byCoreID], & ullMSRvalue, (size_t)8);
+
+    if (result == -1)
+    {
+      UIconfirm( EnglishMessageFromErrorCode(errno) ) ;
+      return FAILURE;
+    }
+//    if(close(fd) < 0 )
+//    {
+//      printf("Close error in file %s!\n", msrfile);
+//      return FAILURE;
+//    }
   return bReturn ;
 }

@@ -75,7 +75,7 @@ public:
     PDWORD p_dwEDX,
     DWORD_PTR affinityMask
   ) = 0 ;
-  virtual BYTE GetNumberOfCPUCores() = 0 ;
+  virtual BYTE GetNumberOfCPUCores() ;
 
   //It makes sense to implement the get family and model as a
   //method of the base CPU access class (instead of e.g. as a method 
