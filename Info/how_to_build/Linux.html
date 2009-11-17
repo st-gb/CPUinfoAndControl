@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.1  (Linux)">
+	<META NAME="AUTHOR" CONTENT="Stefan Gebauer">
+	<META NAME="CREATED" CONTENT="20091116;21084500">
+	<META NAME="CHANGEDBY" CONTENT="Stefan Gebauer">
+	<META NAME="CHANGED" CONTENT="20091117;20122600">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 2cm }
+		P { margin-bottom: 0.21cm }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="de-DE" DIR="LTR">
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm">GUI Debug-Version von X86info&amp;ctrl
+erstellen für GNOME</P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0cm">wxWidgets-Libs installieren</P>
+	<LI><P STYLE="margin-bottom: 0cm">Xerces-Libs installieren</P>
+</OL>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm">Präproz.:</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK1"></A>__WX_GTK__</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK2"></A>_DEBUG
+	(wenn nicht: Laufzeitfehler, dass wxWidgets und das Programm
+	unterschiedliche erstellt wurden)</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK3"></A>COMPILE_WITH_XERCES</P>
+	<LI><P STYLE="margin-bottom: 0cm">_GLIBCXX_DEBUG_  (anscheinend
+	unnötig)</P>
+	<LI><P STYLE="margin-bottom: 0cm">Include-dirs:</P>
+	<LI><P STYLE="margin-bottom: 0cm">/home/sgebauer/SourceCodeManagement/X86Info_and_Control
+	(da sich die #include-Anweisungen in den Quelldateien auf diesen
+	Pfad beziehen)</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK4"></A>/usr/include/wx-2.8</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK5"></A>/usr/lib/wx/include/gtk2-unicode-debug-2.8
+	(für wx/setup.h)</P>
+	<LI><P STYLE="margin-bottom: 0cm">../../SourceCodeManagement/X86Info_and_Control/Controller/MSVC_adaption</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK7"></A>/usr/include
+	(für xerces)</P>
+	<LI><P STYLE="margin-bottom: 0cm">Linker-Libs (/usr/lib)</P>
+	<LI><P STYLE="margin-bottom: 0cm">xerces-c (;  statische Lib/ „*.a“)</P>
+	<LI><P STYLE="margin-bottom: 0cm"><A NAME="DDE_LINK"></A>wx_gtk2ud_core-2.8
+	 (.so-Datei)</P>
+	<LI><P STYLE="margin-bottom: 0cm">wx_baseud-2.8 (.so-Datei)</P>
+	<LI><P STYLE="margin-bottom: 0cm">wx_gtk2ud_adv-2.8 (.so-Datei)</P>
+	<LI><P STYLE="margin-bottom: 0cm">ausführen</P>
+	<LI><P STYLE="margin-bottom: 0cm">„run&gt;run directory“:
+	Verzeichnis, dass „configuration“-Verz beinhaltet</P>
+</UL>
+</BODY>
+</HTML>

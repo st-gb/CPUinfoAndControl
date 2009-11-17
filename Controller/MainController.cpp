@@ -262,13 +262,13 @@ BYTE MainController::Init(
         )
       )
 	  {
-      
+      byRet = 1 ;
     }
     //mp_cpucontroller->mp_model = & model ;
     //if( mp_cpucontroller )
     //  //Needed for drawing the voltage-frequency curves.
     //  mp_cpucontroller->GetMaximumFrequencyInMHz() ;
-    byRet = 1 ;
+    //byRet = 1 ;
   }
   return byRet ;
 }

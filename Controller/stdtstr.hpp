@@ -6,11 +6,11 @@ namespace std {
 
      #if defined _UNICODE || defined UNICODE
 
-     typedef wstring tstring;
+     typedef std::wstring tstring;
 
      #else
 
-     typedef string tstring;
+     typedef std::string tstring;
 
     #endif
 

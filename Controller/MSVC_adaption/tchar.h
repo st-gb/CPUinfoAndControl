@@ -16,6 +16,7 @@
   #define _T(x) x
   typedef char TCHAR ;
 #endif
+typedef TCHAR * LPTSTR ;
 
 #ifdef	__cplusplus
 extern "C" {

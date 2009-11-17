@@ -76,7 +76,7 @@ void MSRdeviceFile::Init(UserInterface * pui)
     {
 //      int i = e.type ;
         std::string stdstrMessage = std::string("Failed to open the file \"") +
-          stdstrMSRfilePath ; //+ "\" cause: " + e.what() ;
+          stdstrMSRfilePath + "\" cause: " ;//" + e.what() ;
       switch (errno) {
         case EACCES:  stdstrMessage += "Permission denied.\n"
           "possible solution: run this program as administrator/root\n"
@@ -94,6 +94,7 @@ void MSRdeviceFile::Init(UserInterface * pui)
         default:      stdstrMessage += "Unknown error.\n"; break;
       }
         UIconfirm( stdstrMessage ) ;
+        throw CPUaccessException(stdstrMessage) ;
     }
   }
 }

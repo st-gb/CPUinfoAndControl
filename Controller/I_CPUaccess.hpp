@@ -1,5 +1,6 @@
 #pragma once // include guard
 #include "global.h" //for BYTE etc.
+#include <string>
 //#ifdef _WINDOWS
 //  //#include <windef.h> //for BOOL etc.
 //  #include <basetsd.h> //DWORD_PTR
@@ -25,6 +26,10 @@ public:
   CPUaccessException(char * p_ch) 
   {
     m_stdstrErrorMessage = std::string(p_ch) ;
+  }
+  CPUaccessException(std::string & r_stdstr )
+  {
+    m_stdstrErrorMessage = r_stdstr ;
   }
   CPUaccessException(DWORD dw) 
   {
