@@ -1,0 +1,15 @@
+#!/bin/bash
+
+das Startskript muss im Verzeichnis des passenden Runlevel stehen.
+Bei Ubuntu z.B. ist Runlevel 2 Standard (statt normalerweise Runlevel 5)
+, um einen Desktop anzuzeigen.
+Das aktuelle Runlevel kriegt man heraus, indem man in einer Shell "runlevel" ausführt:
+Ausgabe von runlevel ist z.B. "N 2", wobei die "2" fuer das aktuelle Runlevel steht.
+
+cp x86info_and_control /etc/init.d
+#by< default it should NOT start the service on runlevel other than 5 because if the voltage is set
+#too low one can not change the voltage except one boots anothee OS.
+#ln -s /etc/init.d/x86info_and_control /etc/rcS.5/S05x86_info_and_control
+
+ln -s /etc/init.d/x86info_and_control /etc/rc5.d/S05x86_info_and_control
+

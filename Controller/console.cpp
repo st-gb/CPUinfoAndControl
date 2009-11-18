@@ -18,7 +18,7 @@
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
 #include <string>
-#include <conio.h> //for getche()
+//#include <conio.h> //for getche()
 #include <Controller/DynVoltAndFreqScaling.hpp> //DynVoltAndFreqScaling
 #include <Controller/ICPUcoreUsageGetter.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp> //
@@ -26,6 +26,9 @@
 #include <Controller/MainController.hpp> //MainController
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/I_CPUcontroller.hpp>
+#ifdef LINUX
+#include <Linux/daemon.h>
+#endif //#ifdef LINUX
 #include <Linux/MSRdeviceFile.h> // class MSRdeviceFile
 #include <Windows_compatible_typedefs.h>
 #include <DummyUserInterface.hpp>
@@ -202,7 +205,9 @@ int main( int argc, char *  argv[] )
     //: C:\WINDOWS\System32) !
     g_logger.OpenFile( //std::string("GriffinControl_log.txt")
       stdstrLogFileName ) ;
-
+    #ifdef LINUX
+    daemonize( std::string ( "/var/lock/subsys/" + stdtstrProgramName .c_str() );
+    #endif
     //PossiblyOutputUsage() ;
     OuputCredits() ;
 /*

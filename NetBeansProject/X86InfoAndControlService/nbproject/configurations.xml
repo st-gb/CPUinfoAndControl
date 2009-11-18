@@ -122,6 +122,8 @@
         <itemPath>../../Linux/EnglishMessageFromErrorCode.h</itemPath>
         <itemPath>../../Linux/MSRdeviceFile.cpp</itemPath>
         <itemPath>../../Linux/MSRdeviceFile.h</itemPath>
+        <itemPath>../../Linux/daemon.c</itemPath>
+        <itemPath>../../Linux/daemon.h</itemPath>
       </logicalFolder>
       <logicalFolder name="ModelData" displayName="ModelData" projectFiles="true">
         <itemPath>../../ModelData/CPUcoreData.cpp</itemPath>
