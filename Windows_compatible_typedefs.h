@@ -20,7 +20,11 @@ typedef unsigned char BYTE ;
 typedef unsigned short WORD ;
 typedef unsigned long DWORD ;
 #define WINAPI __stdcall
-typedef unsigned long long __int64 ;
+//MS compiler already has __int64 defined: 
+//"error C2632: '__int64' followed by '__int64' is illegal"
+#ifndef _MSC_VER 
+  typedef unsigned long long __int64 ;
+#endif //#ifndef _MSC_VER
 typedef void * LPVOID;
 //typedef ULONG_MAX ;
 

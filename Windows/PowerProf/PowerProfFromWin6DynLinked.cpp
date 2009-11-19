@@ -1,9 +1,9 @@
 #include <Windows.h> //for ::GetProcAddress(), ::GetSystemPowerStatus(), <PowrProf.h>
 #include "global.h"
 #include <tchar.h> //for "_T(...)"
-//This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
-//ie. SDK version "6.1" .
-#include <PowrProf.h> // for PowerWriteACValueIndex()
+////This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
+////ie. SDK version "6.1" .
+//#include <PowrProf.h> // for PowerWriteACValueIndex()
 #include "PowerProfFromWin6DynLinked.hpp"
 //#include <Controller/stdtstr.hpp> //for std::tstring 
 #include <exception>
@@ -400,7 +400,8 @@ PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
 {
   //m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
 #ifdef  UNICODE                     // r_winnt
-  m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
+  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+    r_stdtstrPowerSchemeName ;
 #else
   m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
     //http://www.wer-weiss-was.de/theme158/article3047390.html:
@@ -409,7 +410,8 @@ PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
 #endif
   m_hinstancePowerProfDLL = 
     //If the function fails, the return value is NULL.
-    ::LoadLibraryA(_T("PowrProf.dll") );
+    ::LoadLibraryA( "PowrProf.dll" //LPCSTR 
+      );
   if( m_hinstancePowerProfDLL )
   {
     InitializeFunctionPointers();
@@ -420,30 +422,30 @@ PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
 
 void PowerProfFromWin6DynLinked::InitializeFunctionPointers()
 {
-  std::string strFuncName = _T("PowerGetActiveScheme") ;
+  std::string strFuncName = "PowerGetActiveScheme" ;
   m_pfnpowergetactivescheme = (pfnPowerGetActiveScheme) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("PowerEnumerate") ;
+  strFuncName = "PowerEnumerate" ;
   m_pfnpowerenumerate = ( pfnPowerEnumerate) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("PowerReadACValueIndex") ;
+  strFuncName = "PowerReadACValueIndex" ;
   m_pfnpowerreadacvalueindex = (pfnPowerReadACValueIndex) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("PowerReadDCValueIndex") ;
+  strFuncName = "PowerReadDCValueIndex" ;
   m_pfnpowerreaddcvalueindex = (
     //PowerReadDCValueIndex(...) has the same signature as 
     //PowerReadACValueIndex(...)
     pfnPowerReadACValueIndex) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("PowerWriteACValueIndex") ;
+  strFuncName = "PowerWriteACValueIndex" ;
   m_pfnpowerwriteacvalueindex = (pfnPowerWriteACValueIndex) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("PowerWriteDCValueIndex") ;
+  strFuncName = "PowerWriteDCValueIndex" ;
   m_pfnpowerwritedcvalueindex = (pfnPowerWriteACValueIndex) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 }

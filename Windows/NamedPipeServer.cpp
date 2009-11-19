@@ -1,6 +1,7 @@
 #include "NamedPipeServer.hpp"
 #include <aclapi.h>
 #include "DiscretionaryAccessControlList.h"
+#include <tchar.h> //for _T()
 
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/multithreaded_pipe_server.htm
 
@@ -49,7 +50,8 @@ void OutputPipeInfo(HANDLE handlePipe)
     ea.grfAccessMode = GRANT_ACCESS ;
     ea.grfInheritance= NO_INHERITANCE ;
     ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME ;
-    ea.Trustee.ptstrName = "CURRENT_USER" ;
+    ea.Trustee.ptstrName = //char or wide char string 
+      _T("CURRENT_USER") ;
 
     // Create a new ACL that merges the new ACE
     // into the existing DACL.
@@ -434,7 +436,7 @@ BYTE NamedPipeServer::Init(
   )
 {
   LOGN("init. pipe server ");
-  LPTSTR lpszPipename = "\\\\.\\pipe\\CPUcontrollerService" ;
+  LPTSTR lpszPipename = _T("\\\\.\\pipe\\CPUcontrollerService") ;
 
   //SECURITY_DESCRIPTOR sd ;
   SECURITY_ATTRIBUTES sa ;

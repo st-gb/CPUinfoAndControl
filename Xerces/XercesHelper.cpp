@@ -28,7 +28,7 @@ XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xe
 //XERCES_STATIC_LIBRARY
 //preprocessor macro defined in order to turn off the DLL
 //import/export mechanism.
-#define XERCES_STATIC_LIBRARY
+//#define XERCES_STATIC_LIBRARY
 
 XercesHelper::XercesHelper() {
 }
@@ -165,7 +165,7 @@ BYTE //SAX2MainConfigHandler::
         char * pchAttributeValue = XMLString::transcode(cp_xmlchAttributeValue) ;
         if( pchAttributeValue )
         {
-            int nAtoiResult ;
+            //int nAtoiResult ;
             std::string strAttributeValue = std::string(pchAttributeValue);
             //if(
               //atoi(pchNumber) <> 0: If pchNumber is a valid number.
@@ -235,7 +235,7 @@ BYTE //SAX2MainConfigHandler::
         char * pchAttributeValue = XMLString::transcode(cp_xmlchAttributeValue) ;
         if( pchAttributeValue )
         {
-            int nAtoiResult ;
+            //int nAtoiResult ;
             std::string strAttributeValue = std::string(pchAttributeValue);
             //if(
               //atoi(pchNumber) <> 0: If pchNumber is a valid number.
@@ -560,8 +560,11 @@ std::string XercesHelper::ToStdString(
   {
     BYTE byReturn = FAILURE ;
     TCHAR * p_tch ;
+    char * p_ch ;
     DWORD dwResult = //strtoul
-      _tcstoul(strAttributeValue.c_str(),&p_tch ,//10
+      //_tcstoul( strAttributeValue.c_str(), &p_tch ,//10
+      //std::string is a single byte type and so needs the "char" version. 
+      strtoul( strAttributeValue.c_str(), & p_ch ,
       //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.VisualStudio.v80.de/dv_vccrt/html/38f2afe8-8178-4e0b-8bbe-d5c6ad66e3ab.htm:
       //"If base is 0, the initial characters of the string pointed to by 
       //nptr are used to determine the base."

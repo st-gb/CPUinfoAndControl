@@ -6,7 +6,7 @@
 #include <wx/checkbox.h>
 #include <wx/dialog.h>
 #include <wx/event.h>
-#include "../ModelData/PStates.h" //for class PState
+#include <ModelData/PStates.h> //for class PState
 
 //pre-declarations (to  avoid including the wxWidgets header files HERE)
 class wxCheckBox ;

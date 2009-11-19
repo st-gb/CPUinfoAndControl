@@ -34,20 +34,22 @@
 #include <Controller/ICPUcoreUsageGetter.hpp> //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CalculationThreadProc.h>
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
-#include <wxWidgets/DynFreqScalingThread.hpp>
-#include <wxWidgets/DynFreqScalingDlg.hpp>
-//#include <Windows/CalculationThread.hpp>
-//#include <Windows/ServiceBase.hpp>
-//#include <Windows/LocalLanguageMessageFromErrorCode.h>
-#include "../BuildTimeString.h"
+#include <BuildTimeString.h>
 #include "ModelData/RegisterData.hpp"
 #include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
-#include "./ModelData/wxCPUcoreID.hpp"
+#include <wxWidgets/ModelData/wxCPUcoreID.hpp>
+#include <wxWidgets/DynFreqScalingThread.hpp>
+#include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
+//#include <Windows/CalculationThread.hpp>
+#ifdef _WINDOWS
+#include <Windows/ServiceBase.hpp>
+#endif
+//#include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include "Windows/CPUcoreUsageNTQSI_OO.hpp"
 //#include <Windows/CPUcoreUsageNTQSI_OO2.hpp>
 #include "wxDynamicDialog.hpp"
-#include "App.hpp" //for wxGetApp() / DECLARE_APP
+#include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"
 //#include "CpuUsage.h" //Crystal CPU usage getter
 #include <set>

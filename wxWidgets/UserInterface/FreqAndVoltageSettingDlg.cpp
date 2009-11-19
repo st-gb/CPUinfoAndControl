@@ -15,7 +15,7 @@
 #include <wx/dialog.h>
 #include <wx/sizer.h> //for class wxBoxSizer
 #include <wx/button.h>
-#include "../global.h" //for BYTE
+#include <global.h> //for BYTE
 #include "FreqAndVoltageSettingDlg.hpp"
 //#include "../AMD_family17.h"
 #include <wx/stattext.h> //for wxStaticText

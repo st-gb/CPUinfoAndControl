@@ -3,7 +3,9 @@
 
 #include "DiscretionaryAccessControlList.h"
 #include <windows.h> //SECURITY_ATTRIBUTES,...
-#ifndef _MSC_VER
+#include <tchar.h> //for _T()
+
+#ifndef _MSC_VER //if not using an MS compiler
   //from Platform SDK's pwrprof.h
   #define SDDL_REVISION_1     1
     BOOL
@@ -46,11 +48,11 @@ BOOL CreateMyDACL(SECURITY_ATTRIBUTES * pSA)
     //     Administrators are allowed full control.
     // Modify these values as needed to generate the proper
     // DACL for your application. 
-    TCHAR * szSD = "D:"                   // Discretionary ACL
-                   "(D;OICI;GA;;;BG)"     // Deny access to Built-in Guests
-                   "(D;OICI;GA;;;AN)"     // Deny access to Anonymous Logon
-                   "(A;OICI;GRGWGX;;;AU)" // Allow read/write/execute to Authenticated Users
-                   "(A;OICI;GA;;;BA)";    // Allow full control to Administrators
+    TCHAR * szSD = _T("D:")                   // Discretionary ACL
+                   _T("D;OICI;GA;;;BG)")     // Deny access to Built-in Guests
+                   _T("D;OICI;GA;;;AN)")     // Deny access to Anonymous Logon
+                   _T("A;OICI;GRGWGX;;;AU)") // Allow read/write/execute to Authenticated Users
+                   _T("A;OICI;GA;;;BA)") ;    // Allow full control to Administrators
 
     if (NULL == pSA)
         return FALSE;

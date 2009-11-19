@@ -117,9 +117,10 @@ wxServiceSocketClient::wxServiceSocketClient(
   std::string & r_strHostname 
   , WORD wPort)
   : mp_wxsocketclient (NULL)
+  //Constructor that converts to wide string if appropriate
+  , m_wxstrServerHostname( r_strHostname.c_str() ,wxConvLocal )
 {
   m_usServerPortNumber = wPort ;
-  m_wxstrServerHostname = r_strHostname ;
 }
 
 wxServiceSocketClient::~wxServiceSocketClient()

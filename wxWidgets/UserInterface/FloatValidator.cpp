@@ -1,6 +1,6 @@
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"
-
+#include <Controller/tchar_conversion.h> //GetCharPointer()
 // for all others, include the necessary headers (this file is usually all you
 // need because it includes almost all "standard" wxWidgets headers)
 #ifndef WX_PRECOMP
@@ -54,21 +54,21 @@ wxObject *CfloatValidator::Clone() const
  
 bool CfloatValidator::TransferFromWindow()
 {
-    wxString s=((wxTextCtrl*)m_validatorWindow)->GetValue();
-    fpt_union t;
+    wxString wxstr = ((wxTextCtrl*) m_validatorWindow)->GetValue();
+    fpt_union fpt_union_ ;
     int r;
  
-    if (m_type == singleType)
-      r = sscanf(s.fn_str()," %f",t.s);
+    if ( m_type == singleType )
+      r = sscanf( GetCharPointer( wxstr.fn_str() ) ," %f", fpt_union_.s );
     else
-      r = sscanf(s.fn_str()," %g",t.d);
+      r = sscanf( GetCharPointer( wxstr.fn_str() ), " %g", fpt_union_.d );
  
-    if (r==1)
+    if ( r == 1 )
     {
         if (m_type == singleType)
-            *val.s=*t.s;
+            * val.s = * fpt_union_.s;
         else
-            *val.d=*t.d;
+            * val.d = * fpt_union_.d;
         return true;
     }
  
@@ -91,22 +91,23 @@ bool CfloatValidator::TransferToWindow()
  
 bool CfloatValidator::Validate(wxWindow* parent)
 {
-    wxString s=((wxTextCtrl*)m_validatorWindow)->GetValue();
+    wxString wxstr = ((wxTextCtrl*)m_validatorWindow)->GetValue();
     fpt_union t;
     bool ret;
  
     if (m_type == singleType) {
-        int r = sscanf(s.fn_str()," %f",t.s);
-        ret = ( (r==1) && ( *t.s > m_lBound ) && ( *t.s < m_hBound ) );
+        int r = sscanf( GetCharPointer( wxstr.fn_str() )," %f", t.s);
+        ret = ( (r==1) && ( * t.s > m_lBound ) && ( *t.s < m_hBound ) );
     }
     else {
-        int r = sscanf(s.fn_str()," %g",t.d);
-        ret = ( (r==1) && ( *t.d > m_lBound ) && ( *t.d < m_hBound ) );
+        int r = sscanf( GetCharPointer( wxstr.fn_str() ) ," %g",t.d);
+        ret = ( (r==1) && ( * t.d > m_lBound ) && ( *t.d < m_hBound ) );
     }
  
     if (!ret) {
-        wxString errmsg = wxString::Format(wxT("You must enter a number between %g and %g!"), m_lBound, m_hBound);
-        wxMessageDialog dlg(parent,errmsg,wxT("Bad input"),wxOK);
+        wxString errmsg = wxString::Format( wxT( 
+          "You must enter a number between %g and %g!"), m_lBound, m_hBound);
+        wxMessageDialog dlg( parent, errmsg, wxT("Bad input"), wxOK );
         dlg.ShowModal();
     }
  

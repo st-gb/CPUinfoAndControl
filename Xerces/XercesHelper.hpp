@@ -27,7 +27,7 @@ XERCES_CPP_NAMESPACE_USE
 //XERCES_STATIC_LIBRARY
 //preprocessor macro defined in order to turn off the DLL
 //import/export mechanism.
-#define XERCES_STATIC_LIBRARY
+//#define XERCES_STATIC_LIBRARY
 
 #define XERCES_ATTRIBUTE_VALUE_INVALID_DATA_FORMAT 2
 #define XERCES_ERROR_GETTING_ATTRIBUTE_NAME 3

@@ -492,7 +492,10 @@ void WinRing0dynLinked::UIconfirm(const std::string & str)
     mp_userinterface->Confirm(str) ;
 }
 
-BOOL WINAPI WinRing0dynLinked::WritePciConfigDwordEx (
+BOOL 
+//In g++ virtual methods can't be declared as stdcall
+//WINAPI 
+WinRing0dynLinked::WritePciConfigDwordEx (
   DWORD dwPCIaddress, DWORD dwRegAddress, DWORD dwValue)
 {
   BOOL bReturn = FAILURE ;
@@ -542,7 +545,8 @@ BOOL WINAPI WinRing0dynLinked::WritePciConfigDwordEx (
 }
 
 BOOL // TRUE: success, FALSE: failure
-WINAPI 
+//In g++ virtual methods can't be declared as stdcall
+//WINAPI 
 WinRing0dynLinked::WrmsrEx(
 	DWORD dwIndex,		// MSR index
 	DWORD dwEAX,			// bit  0-31

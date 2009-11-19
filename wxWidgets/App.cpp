@@ -18,16 +18,21 @@
 //#include "../Windows/CPUcoreUsageGetterIWbemServices.hpp"
 //#include <Windows/CPUcoreUsageGetterNTQSI_WintopVxd.hpp>
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
-//#include <Windows/WinRing0dynlinked.hpp>
 //#include <Windows/GetWindowsVersion.h>
-//#include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp>
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Controller/I_CPUcontroller.hpp>
 #include <ModelData/ModelData.hpp>
-#include "MainFrame.hpp"
+#include <wxWidgets/UserInterface/MainFrame.hpp>
+#include <wxWidgets/wxStringHelper.h>
+
 #include "DynFreqScalingThread.hpp"
-#include "Linux/MSRdeviceFile.h"
+#ifdef _WINDOWS
+  #include <Windows/PowerProf/PowerProfDynLinked.hpp>
+  #include <Windows/WinRing0dynlinked.hpp>
+#else
+  #include <Linux/MSRdeviceFile.h>
+#endif
 #include <strstream> //ostrstream
 #include <string> //
 //#include "../Windows/DynFreqScalingThread.hpp"
@@ -52,7 +57,7 @@ bool wxPumaStateCtrlApp::Confirm(const std::string & str)
     m_bConfirmedYet = false ;
     #ifdef wxUSE_WCHAR_T
       std::wstring wstr(str.begin(), str.end() ) ;
-      wxString wxstr( wstr) ;
+      wxString wxstr( wstr.c_str() ) ;
     #else
       wxString wxstr(( const unsigned char * ) str.c_str() ) :
     #endif
@@ -88,14 +93,16 @@ bool wxPumaStateCtrlApp::Confirm(std::ostrstream & r_ostrstream
   //pch[r_ostrstream.pcount()] = '\0' ;
   //r_ostrstream.ends();
   r_ostrstream.put('\0'); //the same as "ends()" does.
-  char *pch = r_ostrstream.str() ;
-    #ifdef wxUSE_WCHAR_T
-      std::string str(pch) ;
-      std::wstring wstr(str.begin(),str.end() ) ;
-      wxString wxstr( wstr) ;
-    #else
-      wxString wxstr(( const unsigned char * ) pch ) :
-    #endif
+  char * pch = r_ostrstream.str() ;
+    //#ifdef wxUSE_WCHAR_T
+    //  std::string str(pch) ;
+    //  std::wstring wstr(str.begin(),str.end() ) ;
+    //  wxString wxstr( wstr) ;
+    //#else
+    //  wxString wxstr(( const unsigned char * ) pch ) :
+    //#endif
+  std::string stdstr(pch) ;
+  wxString wxstr( getwxString( stdstr ) ) ;
   //r_ostrstream.flush();
   //To not show too many dialogs that the timer would bring up.
   if( m_bConfirmedYet )
@@ -172,17 +179,17 @@ bool wxPumaStateCtrlApp::OnInit()
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
   m_stdtstrProgramName = _T("X86_info_and_control") ;
 
-  m_arartchCmdLineArgument = new char * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
+  m_arartchCmdLineArgument = new TCHAR * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
 
   if(m_arartchCmdLineArgument)
   {
     //ISpecificController
     //MyFrame * p_frame ;
     //Intitialise to be valid.
-    m_arartchCmdLineArgument[ 0 ] = "" ;
+    m_arartchCmdLineArgument[ 0 ] = _T("") ;
     m_arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] = 
         //"-config=config.xml" ;
-        "-config=GriffinControl_config.xml" ;
+        _T("-config=GriffinControl_config.xml") ;
 
     mp_userinterface = //p_frame ;
       this ;

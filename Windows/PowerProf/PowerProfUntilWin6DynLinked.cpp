@@ -205,7 +205,7 @@ PowerProfUntilWin6DynLinked::PowerProfUntilWin6DynLinked(
 {
   //mp_stdwstrPowerSchemeName = & stdwstrPowerSchemeName ;
 #ifdef  UNICODE                     // r_winnt
-  m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
+  m_stdwstrPowerSchemeName = r_stdtstrPowerSchemeName ;
 #else
   m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
     //http://www.wer-weiss-was.de/theme158/article3047390.html:
@@ -508,7 +508,7 @@ BYTE PowerProfUntilWin6DynLinked::DisableCPUscaling(UINT uiPowerSchemeIndex)
 bool PowerProfUntilWin6DynLinked::DisableFrequencyScalingByOS()
 {
 	bool bCreatePowerScheme = false ;
-  UINT uiPowerSchemeID ;
+  //UINT uiPowerSchemeID ;
   m_bGotPowerSchemeBeforeDisabling = GetActivePwrScheme( 
     & m_uiPowerSchemeIDBeforeDisabling ) ;
   //LOGN("Disabling OS's Dynamic Frequency scaling")
@@ -736,7 +736,8 @@ void PowerProfUntilWin6DynLinked::Initialize()
   m_bGotPowerSchemeBeforeDisabling = false ;
   m_hinstancePowerProfDLL = 
     //If the function fails, the return value is NULL.
-    ::LoadLibraryA(_T("PowrProf.dll") );
+    ::LoadLibraryA( "PowrProf.dll" //LPCSTR / char * 
+      );
   if( m_hinstancePowerProfDLL )
   {
     InitializeFunctionPointers();
@@ -752,42 +753,42 @@ void PowerProfUntilWin6DynLinked::InitializeFunctionPointers()
 {
   std::string strFuncName ;
 
-  strFuncName = _T("CanUserWritePwrScheme") ;
+  strFuncName = "CanUserWritePwrScheme" ;
   m_pfncanuserwritepwrscheme = (pfnCanUserWritePwrScheme) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("EnumPwrSchemes") ;
+  strFuncName = "EnumPwrSchemes" ;
   m_pfnenumpwrschemes = (pfnEnumPwrSchemes) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("GetActivePwrScheme") ;
+  strFuncName = "GetActivePwrScheme" ;
   m_pfngetactivepwrscheme = (pfnGetActivePwrScheme) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("GetCurrentPowerPolicies") ;
+  strFuncName = "GetCurrentPowerPolicies" ;
   m_pfngetcurrentpowerpolicies = (pfnGetCurrentPowerPolicies) 
     ::GetProcAddress( m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("ReadProcessorPwrScheme") ;
+  strFuncName = "ReadProcessorPwrScheme" ;
   m_pfnreadprocessorpwrscheme = (pfnReadProcessorPwrScheme) 
     ::GetProcAddress( m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("ReadPwrScheme") ;
+  strFuncName = "ReadPwrScheme" ;
   m_pfnreadpwrscheme = (pfnReadPwrScheme) 
     ::GetProcAddress( m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("WriteProcessorPwrScheme") ;
+  strFuncName = "WriteProcessorPwrScheme" ;
   m_pfnwriteprocessorpwrscheme = 
     //WriteProcessorPwrScheme(...) has the same function sig as 
     //ReadProcessorPwrScheme(...)
     (pfnReadProcessorPwrScheme) 
     ::GetProcAddress( m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("SetActivePwrScheme") ;
+  strFuncName = "SetActivePwrScheme" ;
   m_pfnsetactivepwrscheme = (pfnSetActivePwrScheme) 
     ::GetProcAddress( m_hinstancePowerProfDLL, strFuncName.c_str() );
 
-  strFuncName = _T("WritePwrScheme") ;
+  strFuncName = "WritePwrScheme" ;
 	m_pfnwritepwrscheme = (pfnWritePwrScheme)
     ::GetProcAddress( m_hinstancePowerProfDLL, strFuncName.c_str() );
 }

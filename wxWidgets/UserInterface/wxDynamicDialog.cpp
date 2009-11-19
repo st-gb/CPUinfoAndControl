@@ -11,8 +11,8 @@
 //#include "Controller/PumaStateCtrl.h"
 //#include "Controller/GriffinController.hpp"
 #include <Controller/I_CPUcontroller.hpp>
-#include "App.hpp" //for wxGetApp() / DECLARE_APP
-#include "wxStringHelper.h"
+#include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
+#include <wxWidgets/wxStringHelper.h>
 
 //An enum guarantees a unique number for each element.
 enum

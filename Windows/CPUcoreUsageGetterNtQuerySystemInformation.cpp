@@ -106,7 +106,8 @@
 //  e.g. another platform SDK
 //#define MIDL_PASS
 #include <Windows.h> //GetProcAddress()
-#include "global.h" //for _T()
+//#include "global.h" //for _T()
+#include <tchar.h> //for _T()
 
 CPUcoreUsageGetterNtQuerySystemInformation::
   CPUcoreUsageGetterNtQuerySystemInformation()
@@ -114,7 +115,8 @@ CPUcoreUsageGetterNtQuerySystemInformation::
   {
     NtQuerySystemInformation = (PROCNTQSI)::GetProcAddress(
       ::GetModuleHandle(//_T(
-      "ntdll")
+      //This param is either ASCII or wide char (if _UNICODE is #defined)
+      _T("ntdll") )
       //)
       , "NtQuerySystemInformation"); 
 

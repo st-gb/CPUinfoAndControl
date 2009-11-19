@@ -99,7 +99,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -126,6 +126,87 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
+				ShowIncludes="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(WX_DIR)/lib/vc_dll&quot;;&quot;$(XERCES_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_PATH)\release&quot;;&quot;D:\Programme\Microsoft SDKs\Windows\v6.1\Lib_&quot;;&quot;D:\Temp\xerces-c_2_8_0-x86-windows-vc_8_0\lib_&quot;;D:\Temp\WinRing0_1_2_0Alpha1\release_"
+				IgnoreDefaultLibraryNames="LIBCMT"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug_from_Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\lib\vc_dll\msw&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_2_8_10_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WXWIDGETS_2_8_10_FULL_LATEST_ROOT_PATH)\include_&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;WXUSINGDLL;COMPILE_WITH_XERCES"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				ShowIncludes="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -185,6 +266,22 @@
 			<File
 				RelativePath="..\..\main.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_from_Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\stdafx.cpp"
@@ -193,6 +290,22 @@
 			<File
 				RelativePath="..\..\wxGUI.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_from_Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -211,6 +324,22 @@
 			<File
 				RelativePath="..\..\Console.h"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_from_Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\DummyUserInterface.hpp"
@@ -230,6 +359,10 @@
 			</File>
 			<File
 				RelativePath="..\..\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\string_typedefs.h"
 				>
 			</File>
 			<File
@@ -357,6 +490,22 @@
 			<File
 				RelativePath="..\..\Controller\SelectPstateAction.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_from_Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\Controller\SelectPstateAction.hpp"
@@ -375,8 +524,36 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Controller\MSVC_adaption\tchar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Controller\tchar_conversion.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Controller\tchar_conversion.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Controller\Windows.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_from_Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\Controller\WinRing0.h"
@@ -687,16 +864,32 @@
 			Name="wxWidgets"
 			>
 			<File
-				RelativePath="..\..\wxWidgets\FloatValidator.cpp"
+				RelativePath="..\..\wxWidgets\App.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\wxWidgets\FloatValidator.hpp"
+				RelativePath="..\..\wxWidgets\App.hpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\wxWidgets\MSRaccess.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_from_Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\wxWidgets\wxDynFreqScalingTimer.cpp"
@@ -710,47 +903,74 @@
 				Name="UserInterface"
 				>
 				<File
-					RelativePath="..\..\wxWidgets\App.cpp"
+					RelativePath="..\..\wxWidgets\UserInterface\DynFreqScalingDlg.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\App.hpp"
+					RelativePath="..\..\wxWidgets\UserInterface\DynFreqScalingDlg.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\DynFreqScalingDlg.cpp"
+					RelativePath="..\..\wxWidgets\UserInterface\FloatValidator.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug_from_Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\wxWidgets\UserInterface\FloatValidator.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\DynFreqScalingDlg.hpp"
+					RelativePath="..\..\wxWidgets\UserInterface\FreqAndVoltageSettingDlg.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\FreqAndVoltageSettingDlg.cpp"
+					RelativePath="..\..\wxWidgets\UserInterface\FreqAndVoltageSettingDlg.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\FreqAndVoltageSettingDlg.hpp"
+					RelativePath="..\..\wxWidgets\UserInterface\MainFrame.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\MainFrame.cpp"
+					RelativePath="..\..\wxWidgets\UserInterface\MainFrame.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\MainFrame.hpp"
+					RelativePath="..\..\wxWidgets\UserInterface\wxDynamicDialog.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\wxDynamicDialog.cpp"
+					RelativePath="..\..\wxWidgets\UserInterface\wxDynamicDialog.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\wxWidgets\wxDynamicDialog.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\wxWidgets\wxFrequencyInMHz_Slider.hpp"
+					RelativePath="..\..\wxWidgets\UserInterface\wxFrequencyInMHz_Slider.hpp"
 					>
 				</File>
 			</Filter>
@@ -768,6 +988,22 @@
 				<File
 					RelativePath="..\..\wxWidgets\Controller.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug_from_Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\wxWidgets\Controller.hpp"
@@ -776,6 +1012,22 @@
 				<File
 					RelativePath="..\..\wxWidgets\CPUIDaccess.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug_from_Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\wxWidgets\CPUIDaccess.hpp"
@@ -795,6 +1047,15 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug_from_Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -830,9 +1091,25 @@
 							Name="VCCLCompilerTool"
 						/>
 					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug_from_Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\wxWidgets\Controller\wxServiceSocketServer.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\wxWidgets\Controller\wxStringHelper.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\wxWidgets\wxStringHelper.h"
 					>
 				</File>
 			</Filter>
@@ -897,6 +1174,15 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug_from_Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"

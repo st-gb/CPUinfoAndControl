@@ -111,8 +111,9 @@ long GetPrime95ResultsFileLength()
     fclose( p_filePrime95Results );
     return Size ;
   }
-    HANDLE hFile = CreateFile("C:\\Programme\\Prime95\\results.txt",GENERIC_READ | GENERIC_READ,0,0, 
-                              OPEN_EXISTING,0,0); 
+    HANDLE hFile = ::CreateFile( //CreateFile takes wide char or char.
+      _T("C:\\Programme\\Prime95\\results.txt") ,
+      GENERIC_READ | GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0 );
 
     if (hFile != INVALID_HANDLE_VALUE) 
     { 
@@ -317,7 +318,9 @@ DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter)
   return 0;
 }
 
-DWORD WINAPI HighALUloadThreadProc(LPVOID lpParameter)
+DWORD 
+//WINAPI 
+HighALUloadThreadProc(LPVOID lpParameter)
 {
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
   pcalculationthread->m_vbContinue = true ;

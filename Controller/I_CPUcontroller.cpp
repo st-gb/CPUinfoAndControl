@@ -3,6 +3,7 @@
 #include <Controller/CPUindependentHelper.h>
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
+#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 
 #ifdef COMPILE_WITH_XERCES
   #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"
@@ -540,8 +541,9 @@ bool I_CPUcontroller::CmdLineParamsContain(
   DEBUG("cmdLineParamsContain begin\n");
   for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
   {
-    std::string strCmdArg(m_arartcharCmdLineArg[nIndex]);
-    wPos = (WORD) strCmdArg.find(std::string(ptcharOption)+
+    std::string strCmdArg( GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
+    wPos = (WORD) strCmdArg.find( std::string( GetCharPointer( 
+      ptcharOption ) ) +
       //TCHAR("=")
       std::string("=") ) ;
     if( wPos != std::string::npos && wPos == 0 )
@@ -552,9 +554,9 @@ bool I_CPUcontroller::CmdLineParamsContain(
         //Start after "="
         +1);
 #else
-      strValue = strCmdArg.substr(strlen(ptcharOption)
+      strValue = strCmdArg.substr( strlen( GetCharPointer( ptcharOption ) )
         //Start after "="
-        +1);
+        + 1 );
 #endif //#ifdef WIN32
       bcmdLineParamsContain = true ;
       break ;

@@ -17,7 +17,7 @@
 //#endif
 
 //#include "Controller/PumaStateCtrl.h" //for "class PumaStateCtrl"
-#include "../UserInterface.hpp" //for abstract class UserInterface
+#include <UserInterface.hpp> //for abstract class UserInterface
 //#ifndef WX_PRECOMP
 //    #include "wx/frame.h"
 //#endif
@@ -25,7 +25,7 @@
 #include <wx/timer.h> //for class wxTimer
 #include "wx/power.h" //for power mgmt notification (wxPowerType et.c)
 #include <vector> //for std::vector
-#include "../ModelData/ModelData.hpp"
+#include <ModelData/ModelData.hpp>
 #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
   //#include "Windows/CPUcoreUsageGetterNtQuerySystemInformation.hpp"
   //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"

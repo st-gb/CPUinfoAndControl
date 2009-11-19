@@ -2,6 +2,10 @@
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
 
+#ifdef _WINDOWS
+  #define _COMPILE_WITH_CALC_THREAD
+#endif
+
 //#include "../Windows/DynFreqScalingAccess.hpp"
 //#include <Windows/PowerProfDynLinked.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
@@ -10,7 +14,7 @@
 #include <ModelData/ModelData.hpp>
 #include <Controller/MainController.hpp>
 #ifdef _COMPILE_WITH_CALC_THREAD
-//#include <Windows/CalculationThread.hpp>
+  #include <Windows/CalculationThread.hpp>
 #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 //#include <Windows/NamedPipeClient.hpp>
 

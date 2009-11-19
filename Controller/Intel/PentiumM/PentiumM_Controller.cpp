@@ -2,7 +2,7 @@
 
 #include "PentiumM_Controller.hpp"
 //#include <windef.h> //for "NULL"
-#include "../Intel_registers.h"
+#include <Controller/Intel_registers.h>
 #include <ModelData/ModelData.hpp>
 //#include <I_CPUaccess.hpp>
 #include <Controller/I_CPUaccess.hpp>

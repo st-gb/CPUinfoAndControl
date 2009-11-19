@@ -11,27 +11,9 @@
 #include <string>
 #include <wx/string.h> //wxString
 
-wxString getwxString(std::string & str )
-{
-#ifdef wxUSE_WCHAR_T
-  std::wstring wstr(str.begin(), str.end() ) ;
-  wxString wxstr( wstr) ;
-#else
-  wxString wxstr(( const unsigned char * ) str.c_str() ) :
-#endif
- return  wxstr ;
-}
+wxString getwxString(std::string & str ) ;
 
-std::string getstdstring(wxString & wxstr)
-{
-#ifdef wxUSE_WCHAR_T
-  std::wstring wstr(wxstr.c_str() ) ;
-  std::string str(wstr.begin(), wstr.end() ) ;
-#else
-  std::string str(( const unsigned char * ) wxstr.c_str() ) ;
-#endif
- return str ;
-}
+std::string getstdstring(wxString & wxstr) ;
 
 #endif	/* _WXSTRINGHELPER_H */
 

@@ -13,6 +13,7 @@
 //#ifndef _MSC_VER
   #include <windows.h> //for ::FormatMessage(...)
   #include <winnt.h> //for MAKELANGID
+#include <Controller/tchar_conversion.h>
 //#endif
 
 //diese Funktion liefert die zum DWORD-(unsigned long-) Wert 
@@ -46,7 +47,7 @@ DWORD GetLastErrorMessageString(
     dwRet = ::GetLastError() ;
   else
 	  //strErrorMessage = (LPCTSTR)lpMsgBuf;
-    strErrorMessage = std::string( (LPCTSTR) lpMsgBuf);
+    strErrorMessage = std::string( GetCharPointer( ((LPCTSTR) lpMsgBuf) ) );
 
 	if( lpMsgBuf != NULL )
     ::LocalFree(lpMsgBuf);

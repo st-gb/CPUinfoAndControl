@@ -11,12 +11,13 @@
 //#endif //#ifdef _WINDOWS
 #include <iostream> //for "cout"
 #include "GriffinController.hpp"
-#include "Windows/CalculationThread.hpp"
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_7BIT
-#include <ModelData/ModelData.hpp>
-#include <ModelData/PStates.h>
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/Sleep.h>
+#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <ModelData/ModelData.hpp>
+#include <ModelData/PStates.h>
+#include <Windows/CalculationThread.hpp>
 #include <math.h> //for pow(...);
 #include <ios> //for ostream formatters "hex" and "dec"
 #include <global.h>
@@ -220,8 +221,9 @@ using namespace std;
     DEBUG("cmdLineParamsContain begin\n");
     for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
     {
-      std::string strCmdArg(m_arartcharCmdLineArg[nIndex]);
-      wPos = (WORD) strCmdArg.find(std::string(ptcharOption)+
+      std::string strCmdArg( GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
+      wPos = (WORD) strCmdArg.find( std::string( GetCharPointer( 
+        ptcharOption ) ) +
         //TCHAR("=")
         std::string("=") ) ;
       if( wPos != std::string::npos && wPos == 0 )
@@ -232,9 +234,10 @@ using namespace std;
           //Start after "="
           +1);
 #else
-        strValue = strCmdArg.substr(strlen(ptcharOption)
+        strValue = strCmdArg.substr( //_tcslen(): _UNICODE: ->wcslen(), else ->strlen()
+          _tcslen(ptcharOption)
           //Start after "="
-          +1);
+          + 1 );
 #endif //#ifdef WIN32
         bcmdLineParamsContain = true ;
         break ;
@@ -267,7 +270,8 @@ using namespace std;
 #ifdef MS_COMPILER
           rbyOption = _tstoi(m_arartcharCmdLineArg[nIndex +1 ] ) ;
 #else
-          rbyOption = atoi(m_arartcharCmdLineArg[nIndex +1 ] ) ;
+          rbyOption = atoi( GetCharPointer( m_arartcharCmdLineArg[ 
+            nIndex + 1 ] ) ) ;
 #endif
           bcmdLineParamsContain = true ;
           break ;
@@ -562,7 +566,7 @@ GriffinController::GriffinController(
 //    TRACE("Adress of argv[1]: %lx %lx\n",argv[1], &argv[1] );
 //#endif
   mp_userinterface = p_userinterface ;
-  mp_userinterface->mp_pumastatectrl = this ;
+  //mp_userinterface->mp_pumastatectrl = this ;
 //#ifdef WIN32
 //  //m_handleEvent = CreateEvent(
 //  //g_handleEvent = CreateEvent(
@@ -4796,8 +4800,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         }
       }
       else
-        mp_userinterface->Confirm(_T("p-state not set because of its unsafe "
-          "vvalues") );
+        mp_userinterface->Confirm( "p-state not set because of its unsafe "
+          "vvalues" );
     return byRet ;
   }
 

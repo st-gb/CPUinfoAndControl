@@ -3,7 +3,7 @@
 
 #ifdef _MSC_VER //if MicroSoft-Compiler
     //damit nicht der Compiler-Fehler C2146 auftritt
-    #include <Afx.h>
+    //#include <Afx.h>
 #endif
 //#include <windef.h> //for DWORD
 #include <string>

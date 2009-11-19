@@ -5,7 +5,8 @@
 //#include <Windows/PowerProfDynLinked.hpp>
 #include <Windows/PowerProf/I_PowerProfDynLinked.hpp>
 #include <Windows.h> //for ULONG in Powerprof.h WINAPI, ::Sleep(...)
-#include <Powrprof.h>
+//PGLOBAL_POWER_POLICY, PMACHINE_PROCESSOR_POWER_POLICY, PPOWER_POLICY
+#include <Powrprof.h> 
 
 #define WSTR_PWRSCHEMESENUMPROC
 #ifdef WSTR_PWRSCHEMESENUMPROC
@@ -17,8 +18,13 @@
 #endif
 #include <string>
 
-#define __in
-#define __out 
+//g++ has neither "__in" nor "__out" 
+#ifndef __in
+  #define __in
+#endif
+#ifndef __out
+  #define __out
+#endif
 
 typedef BOOLEAN (WINAPI * pfnCanUserWritePwrScheme) () ;
 
