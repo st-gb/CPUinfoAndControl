@@ -512,8 +512,8 @@ BYTE MainFrame::AddSetPstateMenuItem(
   )
 {
     BYTE byReturnValue = FALSE ;
-    DWORD dwLow ;
-    DWORD dwHigh ;
+    //DWORD dwLow ;
+    //DWORD dwHigh ;
 //    PState pstate ;
 //    byReturnValue = mp_pumastatectrl->GetPStateFromMSR(
 //        byPstateID,

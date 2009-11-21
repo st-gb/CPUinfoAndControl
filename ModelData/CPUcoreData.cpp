@@ -114,6 +114,7 @@ void CPUcoreData::Init()
 {
   m_fCPUcoreLoadThresholdForIncreaseInPercent = 80.0f ;
   m_fPercentalCPUcoreFreqIncrease = 1.5f ;
+  m_fThrottleTemp = 90.0 ; //a good default value.
   m_fVoltageForMaxCPUcoreFreq = 1.05f ;
   m_arfCPUcoreLoadInPercent = NULL ;
   m_arwCurrentFreqInMHz = NULL ;
@@ -158,6 +159,7 @@ void CPUcoreData::Init()
         //<=> CpuFid > ( MainPllOpFreqId - 08 ) : 2
      m_byLowestEffectiveFreqID = ( m_byMainPLLoperatingFrequencyIDmax - 8 ) 
        / 2 + 1 ;
+     SetMaxFreqInMHz( ( byMainPLLoperatingFrequencyIDmax + 8 ) * 100 ) ;
   }
 
   CPUcoreData::CPUcoreData(

@@ -33,7 +33,7 @@ class XercesHelper ;
 //XERCES_STATIC_LIBRARY
 //preprocessor macro defined in order to turn off the DLL
 //import/export mechanism.
-#define XERCES_STATIC_LIBRARY
+//#define XERCES_STATIC_LIBRARY
 
 class SAX2_CPUspecificHandler
   : public DefaultHandler

@@ -140,6 +140,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
+				OutputFile="C:\Users\Public\GriffinControlService_und_PumaStateCtrl\$(ProjectName)GUI_32bit.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(WX_DIR)/lib/vc_dll&quot;;&quot;$(XERCES_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_PATH)\release&quot;;&quot;D:\Programme\Microsoft SDKs\Windows\v6.1\Lib_&quot;;&quot;D:\Temp\xerces-c_2_8_0-x86-windows-vc_8_0\lib_&quot;;D:\Temp\WinRing0_1_2_0Alpha1\release_"
 				IgnoreDefaultLibraryNames="LIBCMT"
@@ -179,8 +180,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="2"
-			WholeProgramOptimization="1"
+			CharacterSet="0"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -199,13 +200,15 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="0"
+				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\lib\vc_dll\msw&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_2_8_10_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WXWIDGETS_2_8_10_FULL_LATEST_ROOT_PATH)\include_&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;WXUSINGDLL;COMPILE_WITH_XERCES"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;WXUSINGDLL;COMPILE_WITH_XERCES;COMPILE_WITH_AMD_GRIFFIN"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				DebugInformationFormat="4"
 				ShowIncludes="true"
 			/>
 			<Tool
@@ -220,6 +223,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
+				OutputFile="C:\Users\Public\GriffinControlService_und_PumaStateCtrl\$(ProjectName)GUI_32bit_debug.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(WX_DIR)/lib/vc_dll&quot;;&quot;$(XERCES_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_PATH)\release&quot;;&quot;D:\Programme\Microsoft SDKs\Windows\v6.1\Lib_&quot;;&quot;D:\Temp\xerces-c_2_8_0-x86-windows-vc_8_0\lib_&quot;;D:\Temp\WinRing0_1_2_0Alpha1\release_"
 				IgnoreDefaultLibraryNames="LIBCMT"
@@ -557,6 +561,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Controller\WinRing0.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Controller\X86InfoAndControlExceptions.hpp"
 				>
 			</File>
 			<Filter

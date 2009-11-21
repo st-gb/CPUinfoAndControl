@@ -6,19 +6,20 @@
  */
 
 #include "MainController.hpp"
-#include <Controller/I_CPUaccess.hpp>
-#include <Xerces/SAX2_CPUspecificHandler.hpp>
-#include <Xerces/SAX2MainConfigHandler.hpp>
-#include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
-#include <Xerces/XMLAccess.h>
-#include <Controller/stdstring_format.hpp>
 #include "I_CPUcontroller.hpp"
+#include <Controller/I_CPUaccess.hpp>
+#include <Controller/stdstring_format.hpp>
+#include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #ifdef COMPILE_WITH_AMD_GRIFFIN
 #include <Controller/AMD/Griffin/GriffinController.hpp>
 #include <Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.hpp>
 #endif //#ifdef COMPILE_WITH_AMD_GRIFFIN
 #include <Controller/Intel/PentiumM/PentiumM_Controller.hpp>
 #include <Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.hpp>
+#include <Xerces/SAX2_CPUspecificHandler.hpp>
+#include <Xerces/SAX2MainConfigHandler.hpp>
+#include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
+#include <Xerces/XMLAccess.h>
 
 ////compiling with pre-declarations is faster than with "#include"s 
 //class GriffinController ;
@@ -111,10 +112,11 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     && p_cpucoredata->m_byModel ==  3 
     )
   {
-    r_p_cpucontroller = new GriffinController() ;
+    r_p_cpucontroller = new GriffinController( mp_model , mp_cpuaccessmethod ) ;
     r_p_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
       0
       , (GriffinController*) r_p_cpucontroller
+      //, *mp_model
       ) ;
     //return //new GriffinController() ;
     //  p_gc ;
@@ -139,10 +141,10 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
 
 void MainController::SetCPUaccess(
   //ISpecificController 
-  I_CPUaccess * p_ispecificcontroller 
+  I_CPUaccess * p_cpuaccessmethod 
   )
 {
-  mp_ispecificcontroller = p_ispecificcontroller ;
+  mp_cpuaccessmethod = p_cpuaccessmethod ;
 }
 
 BYTE MainController::Init(
@@ -154,7 +156,7 @@ BYTE MainController::Init(
   mp_model = & model ;
   //mp_userinterface = 
   std::string strVendorID ;
-  if( mp_ispecificcontroller->
+  if( mp_cpuaccessmethod->
     //CpuidEx(
     //0, //CPUID function 0 is vendor ID
     //PDWORD eax,
@@ -173,9 +175,9 @@ BYTE MainController::Init(
     mp_model->m_cpucoredata.m_strVendorID = strVendorID ;
     //std::string strModel ; 
     //std::string strFamily ; 
-    //mp_ispecificcontroller->GetModel(strModel) ;
-    //mp_ispecificcontroller->GetFamily(strFamily) ;
-    if( mp_ispecificcontroller->//GetFamilyAndModel( //byFamily
+    //mp_cpuaccessmethod->GetModel(strModel) ;
+    //mp_cpuaccessmethod->GetFamily(strFamily) ;
+    if( mp_cpuaccessmethod->//GetFamilyAndModel( //byFamily
       //wFamily , byModel ) 
         GetFamilyAndModelAndStepping(
           wFamily , byModel , byStepping ) 
@@ -209,7 +211,7 @@ BYTE MainController::Init(
       ;
     std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
     std::string strProcessorName ;
-    if( mp_ispecificcontroller->
+    if( mp_cpuaccessmethod->
         //Because file name must not begin with spaces in NTFS.
         GetProcessorNoLeadingSpaces( //byFamily
           strProcessorName 
@@ -264,6 +266,13 @@ BYTE MainController::Init(
 	  {
       byRet = 1 ;
     }
+    else
+      throw VoltageSafetyException( 
+        "Running this program is unsafe because theres was an error "
+        "with the file containg the maximum voltages (" + strProcessorFilePath + 
+        ")" 
+        ) ;
+
     //mp_cpucontroller->mp_model = & model ;
     //if( mp_cpucontroller )
     //  //Needed for drawing the voltage-frequency curves.

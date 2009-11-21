@@ -8,14 +8,17 @@
   ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
     //BYTE byCoreID ,
     WORD dwAffinityMask ,
-    GriffinController * p_griffincontroller 
+    GriffinController * p_griffincontroller
+    //Model * p_model
     )
     : 
     mp_griffincontroller (p_griffincontroller)
     //, m_bAtLeastSecondTime (false)
-	, m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+	  , m_dwAtMask2ndTimeCPUcoreMask ( 0 )
   {
     BYTE byNumCPUs = p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
+    m_dMaximumCPUcoreFrequency = p_griffincontroller->mp_model->m_cpucoredata.
+      m_wMaxFreqInMHz ;
     m_ar_cnh_cpucore_ugpca = new 
       ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ byNumCPUs ];
 	//m_bAtLeastSecondTime
@@ -56,6 +59,9 @@ BYTE ClocksNotHaltedCPUcoreUsageGetter::Init(
   return 0 ;
 }
 
+//As a convention for all CPU controllers, this method should return the 
+//core usage related to the CURRENT (and not 
+//to maximum) the CPU frequency.
   //double 
 float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   BYTE byCoreID
@@ -91,7 +97,7 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   {
 
     //ULONGLONG ullTimeStampCounterValueDiff 
-	m_ullTimeStampCounterValueDiff  = //ull - 
+  	m_ullTimeStampCounterValueDiff  = //ull - 
     //  m_ullPreviousTimeStampCounterValue;
       ULONGLONG_VALUE_DIFF( m_ull , //m_ullPreviousTimeStampCounterValue
         m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
@@ -105,27 +111,38 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
         m_ullPreviousPerformanceEventCounter3
       ) ;
 
-  //This is the CPU core load/ usage expressed as clocks not halted from 
-  //max. possible clocks. 
-  //example:
-  // If the current freq is 1100 MHz and the 
-    //max. freq is 2200 MHz:
-    // 1 s time diff
-  //if 100% load: "clocks not halted" is 1100 million or nearly 1100 million.
-  // so the quotient of "CnH diff/TSC diff" is ca. 1100 M / 2200 M =~ 0.5 
-  //if the frequency was constantly 1100 MHz the quotient is 1100 M / 1100 M = 1.0 = 100%
-  //If the frequency was NOT constantly the same between the times of 
-  //taking differences, the exact usage can not be calculated:
-  // if the last set frequency is e.g. 1100 MHz and other software changes it
-  //  immediately to 550 MHz after this software did it and the load is 100% the quotient is
-  //  ca. 550 M / 1100 M = 0.5 = 50% although the usage was 100%.
-  //  This is a problem because
-  //  other software may manipulate the current frequency.
-  // 
-  //double 
-	dClocksNotHaltedDiffDivTCSdiff =
+    //This is the CPU core load/ usage expressed as clocks not halted from 
+    //max. possible clocks. 
+    //example:
+    // If the current freq is 1100 MHz and the 
+      //max. freq is 2200 MHz:
+      // 1 s time diff
+    //if 100% load: "clocks not halted" is 1100 million or nearly 1100 million.
+    // so the quotient of "CnH diff/TSC diff" is ca. 1100 M / 2200 M =~ 0.5 
+    //if the frequency was constantly 1100 MHz the quotient is 1100 M / 1100 M = 1.0 = 100%
+    //If the frequency was NOT constantly the same between the times of 
+    //taking differences, the exact usage can not be calculated:
+    // if the last set frequency is e.g. 1100 MHz and other software changes it
+    //  immediately to 550 MHz after this software did it and the load is 100% the quotient is
+    //  ca. 550 M / 1100 M = 0.5 = 50% although the usage was 100%.
+    //  This is a problem because
+    //  other software may manipulate the current frequency.
+    float fVoltageInVolt ;
+    WORD wFreqInMHz ;
+    mp_griffincontroller->GetCurrentPstate( wFreqInMHz, fVoltageInVolt , 
+      byCoreID ) ;
+    m_dMaximumPossibleCPUclocksNotHalted = (double) m_ullTimeStampCounterValueDiff
+      * ( (double) wFreqInMHz / m_dMaximumCPUcoreFrequency ) ;
+    // 
+    //double 
+	  dClocksNotHaltedDiffDivTCSdiff =
       (double) m_ullPerformanceEventCounter3Diff /
-      (double) m_ullTimeStampCounterValueDiff ;
+      //The timestamp counter runs at a CONSTANT frequency (same as the 
+      //maximum core frequency) on AMD Griffin CPUs. 
+      //So in order to get the current CPU usage we need the last set 
+      //core frequency.
+      //(double) m_ullTimeStampCounterValueDiff ;
+      m_dMaximumPossibleCPUclocksNotHalted ;
 #ifdef _DEBUG
 	if( //dClocksNotHaltedDiffDivTCSdiff > 1.0 || 
     dClocksNotHaltedDiffDivTCSdiff < 0.02 )

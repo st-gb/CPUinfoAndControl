@@ -432,8 +432,8 @@ BYTE //SAX2MainConfigHandler::
         {
             float fAtofResult = 0.0 ;
             std::string strAttributeValue = std::string(pchAttributeValue);
-            char * pEnd;
-            double d1, d2;
+            //char * pEnd;
+            //double d1, d2;
 
             //atof returned 1 for "1.2" on Linux on German because the decimal
             //point is a "," in German.
@@ -559,7 +559,7 @@ std::string XercesHelper::ToStdString(
     )
   {
     BYTE byReturn = FAILURE ;
-    TCHAR * p_tch ;
+    //TCHAR * p_tch ;
     char * p_ch ;
     DWORD dwResult = //strtoul
       //_tcstoul( strAttributeValue.c_str(), &p_tch ,//10

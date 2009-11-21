@@ -53,6 +53,7 @@ namespace PentiumM
     DWORD m_dwAtMask2ndTimeCPUcoreMask ;
     DWORD m_dwLowmostBits , m_dwHighmostBits ;
     DWORD m_dwAffinityMask ;
+    Model * mp_model ;
     //GriffinController * mp_griffincontroller ;
     PentiumM_Controller * mp_pentium_m_controller ;
     ULONGLONG m_ullPerformanceEventCounter3Diff ;

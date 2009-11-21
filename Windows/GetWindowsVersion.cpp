@@ -16,7 +16,7 @@
 //#else
 //int main(void)
 //#endif
-std::string GetWindowsVersion(DWORD & dwMajor ,DWORD & dwMinor)
+std::string GetWindowsVersion(DWORD & r_dwMajorVersion ,DWORD & r_dwMinorVersion )
 {
   std::string strVersion ;
   OSVERSIONINFO osversioninfo ;
@@ -30,6 +30,8 @@ std::string GetWindowsVersion(DWORD & dwMajor ,DWORD & dwMinor)
       )
     )
   {
+    r_dwMajorVersion = osversioninfo.dwMajorVersion ;
+    r_dwMinorVersion = osversioninfo.dwMinorVersion ;
    //is the platform win9x or NT
    switch(osversioninfo.dwPlatformId )
    {
@@ -72,6 +74,15 @@ std::string GetWindowsVersion(DWORD & dwMajor ,DWORD & dwMinor)
                     strVersion = "Windows XP" ;
                  break;
                case 6:
+                 switch( osversioninfo.dwMinorVersion )
+                 {
+                 case 0:
+                   strVersion = "Windows Vista" ;
+                   break; 
+                 case 1:
+                   strVersion = "Windows 7" ;
+                   break; 
+                 }
                  break;
             }break;
     }

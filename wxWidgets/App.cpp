@@ -22,6 +22,8 @@
 //#include <Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp>
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Controller/I_CPUcontroller.hpp>
+#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #include <ModelData/ModelData.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 #include <wxWidgets/wxStringHelper.h>
@@ -142,9 +144,9 @@ int wxPumaStateCtrlApp::OnExit()
     //  delete mp_wxdynfreqscalingtimer ;
 #endif //#ifdef COMPILE_WITH_CPU_SCALING
   //Release dynamically allocated memory (inside OnInit() ) :
-  #ifdef _WINDOWS
-  delete mp_winring0dynlinked ;
-  #endif
+  //#ifdef _WINDOWS
+  //delete mp_winring0dynlinked ;
+  //#endif
   if( mp_i_cpuaccess )
     delete mp_i_cpuaccess ;
   delete [] m_arartchCmdLineArgument ;
@@ -256,7 +258,8 @@ bool wxPumaStateCtrlApp::OnInit()
       //WinRing0dynLinked winring0dynlinked(p_frame) ;
       //If allocated statically within this block / method the object 
       //gets invalid after leaving the block where it was declared.
-      mp_winring0dynlinked = new WinRing0dynLinked(//p_frame
+      //mp_winring0dynlinked 
+      mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
         this ) ;
       m_maincontroller.SetCPUaccess(mp_winring0dynlinked) ;
     #else
@@ -603,6 +606,12 @@ bool wxPumaStateCtrlApp::OnInit()
           //this->Confirm("Reading from MSR failed kjj");
           //mp_frame->Confirm("CPU access error.\n(insuff rights?)");
           return FALSE ;
+      }
+      catch( VoltageSafetyException e )
+      {
+        Confirm( GetCharPointer( ( e.m_stdtstrMessage + "\n->Exiting" ).c_str() ) 
+          ) ;
+        return FALSE ;
       }
     }// if (mp_modelData)
   }

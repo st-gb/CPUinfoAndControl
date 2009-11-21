@@ -179,11 +179,11 @@ using namespace std;
   //#else
   //      if( WrmsrEx (
   //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-        //DEBUG("Adress of mp_controller: %lx\n", mp_controller);
+        //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
 #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
         if(
           //CONTROLLER_PREFIX
-          mp_controller->
+          mp_cpuaccess->
           WrmsrEx(
             P_STATE_CONTROL_REGISTER,
             dwMSRlow,
@@ -432,7 +432,7 @@ BYTE GriffinController::Init(//Model * mp_model
 {
   //mp_model->SetGriffinController(this) ;
   mp_model->SetCPUcontroller(this);
-  mp_model->SetNumberOfCPUCores( mp_controller->GetNumberOfCPUCores() );
+  mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
   marp_calculationthread = new ICalculationThread * [ 
       mp_model->GetNumberOfCPUCores() ] ;
   if( marp_calculationthread )
@@ -514,7 +514,7 @@ GriffinController::GriffinController(
   , _TCHAR * argv[]
   , Model & m_modelData 
   , //ISpecificController 
-    I_CPUaccess * p_controller 
+    I_CPUaccess * p_cpuaccess 
   , ICalculationThread * p_calculationthread 
   , IDynFreqScalingAccess & p_dynfreqscalingaccess 
   )
@@ -522,7 +522,7 @@ GriffinController::GriffinController(
   : 
   m_byNumberOfCmdLineArgs(argc) 
   , m_arartcharCmdLineArg ( argv )
-  , mp_controller(p_controller)
+  //, mp_cpuaccess(p_cpuaccess)
   , mp_calculationthread(p_calculationthread)
   , m_bPstateSet(false)
   , m_byPstateID(0)
@@ -531,8 +531,9 @@ GriffinController::GriffinController(
   , mp_userinterface(NULL)
   , m_bFrequencyScalingByOSDisabled(false)
 {
+  mp_cpuaccess = p_cpuaccess ;
   //mp_userinterface->mp_pumastatectrl = this ;
-  //mp_model->SetNumberOfCPUCores( mp_controller->GetNumberOfCPUCores() );
+  //mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
   //PumaStateCtrl();
   Init();
 }
@@ -545,18 +546,20 @@ GriffinController::GriffinController(
   UserInterface * p_userinterface ,
   Model & m_modelData ,
   //ISpecificController 
-    I_CPUaccess * p_controller ,
+    I_CPUaccess * p_cpuaccess ,
   ICalculationThread * p_calculationthread ,
   IDynFreqScalingAccess & p_dynfreqscalingaccess 
   )
   //: m_pstates(NULL)
-  : mp_controller(p_controller)
-  , mp_calculationthread(p_calculationthread)
+  : 
+  //mp_cpuaccess(p_cpuaccess)
+  mp_calculationthread(p_calculationthread)
   , m_bPstateSet(false)
   , m_byPstateID(0)
   , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
   , m_bFrequencyScalingByOSDisabled(false)
 {
+  mp_cpuaccess = p_cpuaccess ;
   m_byNumberOfCmdLineArgs = argc ;
   m_arartcharCmdLineArg = argv ;
   //m_pstates = NULL ;
@@ -578,7 +581,7 @@ GriffinController::GriffinController(
 //#else
 //  g_pfnRdMsrEx = readMSR ;
 //#endif
-  //m_model.SetNumberOfCPUCores( mp_controller->GetNumberOfCPUCores() );
+  //m_model.SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
   mp_model = & m_modelData ;
   //PumaStateCtrl();
   Init();
@@ -654,7 +657,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
           //if(p_pstateCurrent->IsSafeInCombinationTo(pstateFromMSR) )
           p_pstateCurrent->AssignChangesToPstateFromMSR(pstateFromMSR);
           //p_pstateCurrent->AssignChangesFromPstateFromMSR(pstateFromMSR);
-          if( setVidAndFrequencyForPState_Puma(
+          if( WriteToPstateOrCOFVIDcontrolRegister(
             GetMSRregisterForPstate(p_pstateCurrent->m_byNumber),
             //pstateFromMSR.m_byVoltageID,
             //pstateFromMSR.m_byFreqID,
@@ -727,7 +730,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
       ;
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
 #else
-    mp_controller->WrmsrEx(
+    mp_cpuaccess->WrmsrEx(
       PERF_CTL_0 + byPerformanceEventSelectRegisterNumber ,
       dwLow ,
       wEventSelect >> 8 ,
@@ -815,7 +818,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
     //AMD Opteron™ and AMD Phenom™ Processors:
     //chapter 4.2.1. Instructions per cycle (IPC).
     DWORD dwLow, dwHigh;
-    mp_controller->RdmsrEx(
+    mp_cpuaccess->RdmsrEx(
       PERF_CTR_0,
       & dwLow,
       & dwHigh,
@@ -837,7 +840,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
     //"To accurately start counting with the write that enables the counter,
     //disable the counter when changing the
     //event and then enable the counter with a second MSR write."
-//    mp_controller->WrmsrEx(PERF_CTL_0,
+//    mp_cpuaccess->WrmsrEx(PERF_CTL_0,
 //      //1=core 0
 //      1) ;
 
@@ -891,6 +894,33 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
       )>>9) ; //<=>bits 9-15 shifted   }
   }
 
+  //Overrides virtual BYTE GetCurrentPstate(...) from base class.
+  BYTE GriffinController::GetCurrentPstate(
+    WORD & r_wFreqInMHz 
+    , float & r_fVoltageInVolt
+    , BYTE byCoreID 
+    )
+  {
+	  DWORD dwIndex ;		// MSR index
+	  DWORD dwLowmostBits ;			// bit  0-31 (register "EAX")
+	  DWORD dwHighmostBits ;			// bit 32-63 (register "EDX")
+	  DWORD_PTR dwAffinityMask ;	// Thread Affinity Mask
+    if( RdmsrEx(
+	    COFVID_STATUS_REGISTER ,		// MSR index
+	    dwLowmostBits,			// bit  0-31 (register "EAX")
+	    dwHighmostBits,			// bit 32-63 (register "EDX")
+	    1 << byCoreID //dwAffinityMask	// Thread Affinity Mask
+        )
+      )
+    {
+      PState pstate ;
+      GetVIDmFIDnDID(dwLowmostBits,pstate ) ;
+      r_wFreqInMHz = pstate.GetFreqInMHz() ;
+      r_fVoltageInVolt = pstate.GetVoltageInVolt() ;
+    }
+    return 0 ; 
+  }
+
   int GriffinController::GetPStateFromMSR(
     BYTE byPStateID, 
     DWORD & dwLow, 
@@ -920,7 +950,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
 //#else
 //      RdmsrEx
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-      mp_controller->
+      mp_cpuaccess->
       RdmsrEx
       (dwRegisterNumber, &dwLow, &dwHigh, 
       //byThreadAffinityBitmask 
@@ -1397,7 +1427,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       DEBUG("PCI address:" << getBinaryRepresentation(dwPCIAddress).c_str() 
         << "\n");
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xDC,&dwValue)
-      if( mp_controller->ReadPciConfigDwordEx(dwPCIAddress,0xDC,&dwValue)
+      if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xDC,&dwValue)
         )
       {
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
@@ -1447,7 +1477,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
       DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xA0,&dwValue)
-      if( mp_controller->ReadPciConfigDwordEx(dwPCIAddress,0xA0,&dwValue)
+      if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xA0,&dwValue)
         )
       {
         BYTE bPSI_LbitVIDenable ;
@@ -1515,7 +1545,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
       DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xA4,&dwValue)
-      if( mp_controller->ReadPciConfigDwordEx(dwPCIAddress,0xA4,&dwValue)
+      if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xA4,&dwValue)
         )
       {
         DWORD dwCurrentTemperature = dwValue>>21 ;
@@ -1560,7 +1590,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
       //DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,
-      if(  mp_controller->ReadPciConfigDwordEx( dwPCIAddress ,
+      if(  mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
         //AMD: "F3x1E8 SBI Address Register"
         0x1E8,&dwValue) 
         )
@@ -1606,7 +1636,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
       DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,
-      if( mp_controller->ReadPciConfigDwordEx( dwPCIAddress ,
+      if( mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
         //AMD: "F3x1E4 SBI Control Register"
         0x1E4,&dwValue) 
         )
@@ -1655,7 +1685,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(//arch,
         dwPCIAddress).c_str() );
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,
-      if( mp_controller->ReadPciConfigDwordEx( dwPCIAddress ,
+      if( mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
         //AMD: "F3x1EC SBI Data Register"
         0x1EC,&dwValue) 
         )
@@ -1769,7 +1799,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#else
 //        WritePciConfigDwordEx
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-        mp_controller->WritePciConfigDwordEx
+        mp_cpuaccess->WritePciConfigDwordEx
         (dwPCIAddress,
         //AMD: "F3x1E8 SBI Add6ress Register"
         0x1E8,dwValue) 
@@ -1815,7 +1845,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       DEBUG("to write: input at least 1 char and press ENTER\n");
       std::cin >> nDummy ;
 //      if((*m_pfnwritepciconfigdwordex)(dwPCIAddress,0xDC,dwValue)
-      if( mp_controller->WritePciConfigDwordEx( dwPCIAddress,0xDC,dwValue)
+      if( mp_cpuaccess->WritePciConfigDwordEx( dwPCIAddress,0xDC,dwValue)
         )
       {
         DEBUG("successfully written to PCI config\n");
@@ -1842,15 +1872,15 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //DEBUG("Find lowest operating voltage for p-state %u\n", (WORD)byPstate )
     LOG("Trying to find lowest operating voltage for p-state " << 
         (WORD) byPstate << "\n" )
-      //mp_controller->GetNumberOfPhysicalCores() ;
+      //mp_cpuaccess->GetNumberOfPhysicalCores() ;
       //mp_cpuidaccess->GetNumberOfPhysicalCores() ;
     //GetPStateFromMSR(byPstate,dwLow, dwHigh, pstate, byCoreID ) ;
     GetPStateFromMSR(byPstate,dwLow, dwHigh, m_pstate, byCoreID ) ;
     m_bPstateSet = true ;
     //byVID = pstate.m_byVoltageID ;
-    //mp_controller->StartCalculationThread(0);
+    //mp_cpuaccess->StartCalculationThread(0);
     mp_calculationthread->StartCalculationThread(0);
-    //mp_controller->RdmsrEx( GetMSRregisterForPstate( byPstate) ) ;
+    //mp_cpuaccess->RdmsrEx( GetMSRregisterForPstate( byPstate) ) ;
     while( 
       //64 is the VID for the lowest voltage that the CPU sends to 
       //the voltage regulator.
@@ -1883,7 +1913,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       if( ! mp_userinterface->Confirm(ostrstream) )
         break ;
       //++ pstate.m_byVoltageID ;
-        if( setVidAndFrequencyForPState_Puma(
+        if( WriteToPstateOrCOFVIDcontrolRegister(
           GetMSRregisterForPstate(//p_pstateCurrent->m_byNumber
           byPstate),
           //pstateFromMSR.m_byVoltageID,
@@ -1911,7 +1941,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DWORD dwEAX;			// bit  0-31
     DWORD dwEDX;			// bit 32-63
     DEBUG("getting current p-state.\n");
-    if( mp_controller->RdmsrEx(
+    if( mp_cpuaccess->RdmsrEx(
 	    P_STATE_STATUS_REGISTER,		// MSR index
 	    &dwEAX,			// bit  0-31
 	    &dwEDX,			// bit 32-63
@@ -1954,7 +1984,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#else
 //        CpuidEx
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-        mp_controller->CpuidEx
+        mp_cpuaccess->CpuidEx
         (dwFunctionIndex,&dwEAX,&dwEBX,&dwECX,&dwEDX,1) 
         )
       {
@@ -2575,7 +2605,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DWORD dwEDX;
     DEBUG("PSC--getting number of CPU cores\n");
     if( //CpuidEx(
-      mp_controller->CpuidEx(
+      mp_cpuaccess->CpuidEx(
       //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
       0x80000008,
       &dwEAX,
@@ -2616,6 +2646,28 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 	  //unsigned long index ;
 	  return //"AMD: MSR C001_0064 specifies P-state 0"
 		  0xC0010064 + byPstate ;
+  }
+  void GriffinController::GetMSRregisterValue( 
+    BYTE byVoltageID, 
+    const DIDandFID & didandfid , 
+    DWORD & dwHighmostMSRvalue , 
+    DWORD & dwLowmostMSRvalue 
+    )
+  {
+    //GetFIDandDID( wFreqInMHz, byFrequencyID, byDivisorID ) ;
+    //didandfid
+    dwHighmostMSRvalue = 0 ;
+    SET_P_STATE_TO_VALID(dwHighmostMSRvalue) ;
+
+    //See AMD Family 11h Processor BKDG (document # 41256), 
+    // "MSRC001_00[6B:64] P-state [7:0] Registers"
+    //5:0 CpuFid
+    dwLowmostMSRvalue = ( didandfid.m_byFreqID & 63) ;
+    //CpuDid: core divisor ID.
+    dwLowmostMSRvalue |= ( ( (WORD) didandfid.m_byDivisorID ) << 
+      START_BIT_FOR_CPU_CORE_DIVISOR_ID ) ;
+    //15:9 CpuVid: core VID.
+    dwLowmostMSRvalue |= ( ( (WORD) byVoltageID ) << 9) ; //<=>bits 9-15 shifted
   }
 
   bool GriffinController::isVIDOptionSpecified(BYTE & rbyVID)
@@ -2733,8 +2785,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //m_pstate.m_byVoltageID += 2 ;
       //Lowering the Voltage ID means increasing the voltage.
       m_pstate.m_byVoltageID -= 2 ;
-      //mp_controller->WrmsrEx();
-      if( setVidAndFrequencyForPState_Puma(
+      //mp_cpuaccess->WrmsrEx();
+      if( WriteToPstateOrCOFVIDcontrolRegister(
         GetMSRregisterForPstate(//p_pstateCurrent->m_byNumber
         m_byPstateForFindingLowVoltage),
         //pstateFromMSR.m_byVoltageID,
@@ -3032,7 +3084,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#else
 //        CpuidEx
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-        mp_controller->CpuidEx
+        mp_cpuaccess->CpuidEx
         //if( CpuidEx
         (0x00000000,&dwEAX,&dwEBX,&dwECX,&dwEDX,1) 
         )
@@ -3051,7 +3103,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#else
 //          CpuidEx
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-          mp_controller->CpuidEx
+          mp_cpuaccess->CpuidEx
           (
             //Query CPUID Function 0000_0001 for CPU model and family.
             0x00000001,&dwEAX,&dwEBX,&dwECX,&dwEDX,1)
@@ -3160,336 +3212,336 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     return bSuccess ;
   }
 
-  BYTE GriffinController::GetInterpolatedVoltageFromFreq(
-    WORD wFreqInMHzToGetVoltageFrom
-    , const //MaxVoltageForFreq 
-      VoltageAndFreq & cr_maxfreqandvoltageNearestFreqGreaterEqual
-    , const //MaxVoltageForFreq 
-      VoltageAndFreq & cr_maxfreqandvoltageNearestFreqLowerEqual
-    , float & r_fVoltageInVolt 
-    )
-  {
-    if( cr_maxfreqandvoltageNearestFreqGreaterEqual.m_wFreqInMHz ==
-      cr_maxfreqandvoltageNearestFreqLowerEqual.m_wFreqInMHz )
-    {
-      r_fVoltageInVolt = cr_maxfreqandvoltageNearestFreqGreaterEqual.m_fVoltageInVolt ;
-        return true ;
-    }
-    else
-    {
-      WORD wFreqInMHzFromNearFreqAboveWantedFreq =
-        cr_maxfreqandvoltageNearestFreqGreaterEqual.m_wFreqInMHz ;
-      WORD wFreqInMHzFromNearFreqBelowWantedFreq =
-        cr_maxfreqandvoltageNearestFreqLowerEqual.m_wFreqInMHz ;
-      //if( mp_model->m_pstates.m_arp_pstate[1] &&
-      //  mp_model->m_pstates.m_arp_pstate[1]->GetFreqInMHz() <
-      //  wFreqInMHzToGetVoltageFrom
-      //  )
-      //{
-        float fVoltageInVoltFromNearFreqAboveWantedFreq ;
-        float fVoltageInVoltFromNearFreqBelowWantedFreq ;
-        fVoltageInVoltFromNearFreqAboveWantedFreq =
-          //mp_model->m_pstates.m_arp_pstate[0]->GetVoltageInVolt() ;
-          cr_maxfreqandvoltageNearestFreqGreaterEqual.m_fVoltageInVolt ;
-        fVoltageInVoltFromNearFreqBelowWantedFreq =
-          //mp_model->m_pstates.m_arp_pstate[1]->GetVoltageInVolt() ;
-          cr_maxfreqandvoltageNearestFreqLowerEqual.m_fVoltageInVolt ;
-        //  VoltagefromHigherFreq - x = voltagefromLowerfreq ;
-        //  x = log2( y ) * voltagefromFreqAboveAndBeowDiff 
-        // VoltagefromHigherFreq - log2( freqabove / freq ) *
-        //   x * voltagefromFreqAboveAndBelowDiff 
-        //   = voltagefromLowerfreq ;
-        // VoltagefromHigherFreq - log2Result *
-        //   x * voltagefromFreqAboveAndBelowDiff 
-        //   = voltagefromLowerfreq ;
-        //voltagefromLowerfreq = VoltagefromHigherFreq -
-        //  log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | - VoltagefromHigherFreq
-        //voltagefromLowerfreq - VoltagefromHigherFreq =
-        // log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | / 
-        //            log2ResultMultvoltagefromFreqAboveAndBelowDiff
-        //(voltagefromLowerfreq - VoltagefromHigherFreq ) /
-        //  log2ResultMultvoltagefromFreqAboveAndBelowDiff = x
+  //BYTE GriffinController::GetInterpolatedVoltageFromFreq(
+  //  WORD wFreqInMHzToGetVoltageFrom
+  //  , const //MaxVoltageForFreq 
+  //    VoltageAndFreq & cr_maxfreqandvoltageNearestFreqGreaterEqual
+  //  , const //MaxVoltageForFreq 
+  //    VoltageAndFreq & cr_maxfreqandvoltageNearestFreqLowerEqual
+  //  , float & r_fVoltageInVolt 
+  //  )
+  //{
+  //  if( cr_maxfreqandvoltageNearestFreqGreaterEqual.m_wFreqInMHz ==
+  //    cr_maxfreqandvoltageNearestFreqLowerEqual.m_wFreqInMHz )
+  //  {
+  //    r_fVoltageInVolt = cr_maxfreqandvoltageNearestFreqGreaterEqual.m_fVoltageInVolt ;
+  //      return true ;
+  //  }
+  //  else
+  //  {
+  //    WORD wFreqInMHzFromNearFreqAboveWantedFreq =
+  //      cr_maxfreqandvoltageNearestFreqGreaterEqual.m_wFreqInMHz ;
+  //    WORD wFreqInMHzFromNearFreqBelowWantedFreq =
+  //      cr_maxfreqandvoltageNearestFreqLowerEqual.m_wFreqInMHz ;
+  //    //if( mp_model->m_pstates.m_arp_pstate[1] &&
+  //    //  mp_model->m_pstates.m_arp_pstate[1]->GetFreqInMHz() <
+  //    //  wFreqInMHzToGetVoltageFrom
+  //    //  )
+  //    //{
+  //      float fVoltageInVoltFromNearFreqAboveWantedFreq ;
+  //      float fVoltageInVoltFromNearFreqBelowWantedFreq ;
+  //      fVoltageInVoltFromNearFreqAboveWantedFreq =
+  //        //mp_model->m_pstates.m_arp_pstate[0]->GetVoltageInVolt() ;
+  //        cr_maxfreqandvoltageNearestFreqGreaterEqual.m_fVoltageInVolt ;
+  //      fVoltageInVoltFromNearFreqBelowWantedFreq =
+  //        //mp_model->m_pstates.m_arp_pstate[1]->GetVoltageInVolt() ;
+  //        cr_maxfreqandvoltageNearestFreqLowerEqual.m_fVoltageInVolt ;
+  //      //  VoltagefromHigherFreq - x = voltagefromLowerfreq ;
+  //      //  x = log2( y ) * voltagefromFreqAboveAndBeowDiff 
+  //      // VoltagefromHigherFreq - log2( freqabove / freq ) *
+  //      //   x * voltagefromFreqAboveAndBelowDiff 
+  //      //   = voltagefromLowerfreq ;
+  //      // VoltagefromHigherFreq - log2Result *
+  //      //   x * voltagefromFreqAboveAndBelowDiff 
+  //      //   = voltagefromLowerfreq ;
+  //      //voltagefromLowerfreq = VoltagefromHigherFreq -
+  //      //  log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | - VoltagefromHigherFreq
+  //      //voltagefromLowerfreq - VoltagefromHigherFreq =
+  //      // log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | / 
+  //      //            log2ResultMultvoltagefromFreqAboveAndBelowDiff
+  //      //(voltagefromLowerfreq - VoltagefromHigherFreq ) /
+  //      //  log2ResultMultvoltagefromFreqAboveAndBelowDiff = x
 
-        //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
-        //   voltagefromFreqAboveAndBelowDiff  | - VoltagefromHigherFreq
-        //voltageLowerFreq - VoltagefromHigherFreq = - log_x( freqaboveDivFreq ) *
-        //   voltagefromFreqAboveAndBelowDiff | / voltagefromFreqAboveAndBelowDiff
-        //(voltageLowerFreq - VoltagefromHigherFreq ) / 
-        //  voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
-        //voltageLowerFreqMinusVoltagefromHigherFreq /
-        // voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
-        //givenVoltage = voltageLowerFreqMinusVoltagefromHigherFreq /
-        //  voltagefromFreqAboveAndBelowDiff 
-        //givenVoltage = - log_x( freqaboveDivFreq )  x=?
-        //
-        //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
-        //  voltagefromFreqAboveAndBelowDiff | + log_x( freqabove / freq ) *
-        //      voltagefromFreqAboveAndBelowDiff
-        //voltageLowerFreq + log_x( freqabove / freq ) *
-        //   voltagefromFreqAboveAndBelowDiff = VoltagefromHigherFreq | - voltageLowerFreq
-        //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
-        //  VoltagefromHigherFreq - voltageLowerFreq 
-        //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
-        //   VoltagefromHigherFreqMinusVoltageLowerFreq | /
-        //log_x( freqabove / freq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
-        //   voltagefromFreqAboveAndBelowDiff
-        //log_x( freqaboveDivFreq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
-        //   voltagefromFreqAboveAndBelowDiff x=?
-        //givenVoltage = VoltagefromHigherFreqMinusVoltageLowerFreq / 
-        //   voltagefromFreqAboveAndBelowDiff
-        //log_x( freqaboveDivFreq ) = givenVoltage    x=?
-        //example: log_x(2,0952380952) = 0,2125 V / 0,2125 V 
-        //highervoltag-lowervoltage = log_x(2,0952380952)
+  //      //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
+  //      //   voltagefromFreqAboveAndBelowDiff  | - VoltagefromHigherFreq
+  //      //voltageLowerFreq - VoltagefromHigherFreq = - log_x( freqaboveDivFreq ) *
+  //      //   voltagefromFreqAboveAndBelowDiff | / voltagefromFreqAboveAndBelowDiff
+  //      //(voltageLowerFreq - VoltagefromHigherFreq ) / 
+  //      //  voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
+  //      //voltageLowerFreqMinusVoltagefromHigherFreq /
+  //      // voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
+  //      //givenVoltage = voltageLowerFreqMinusVoltagefromHigherFreq /
+  //      //  voltagefromFreqAboveAndBelowDiff 
+  //      //givenVoltage = - log_x( freqaboveDivFreq )  x=?
+  //      //
+  //      //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
+  //      //  voltagefromFreqAboveAndBelowDiff | + log_x( freqabove / freq ) *
+  //      //      voltagefromFreqAboveAndBelowDiff
+  //      //voltageLowerFreq + log_x( freqabove / freq ) *
+  //      //   voltagefromFreqAboveAndBelowDiff = VoltagefromHigherFreq | - voltageLowerFreq
+  //      //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
+  //      //  VoltagefromHigherFreq - voltageLowerFreq 
+  //      //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
+  //      //   VoltagefromHigherFreqMinusVoltageLowerFreq | /
+  //      //log_x( freqabove / freq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
+  //      //   voltagefromFreqAboveAndBelowDiff
+  //      //log_x( freqaboveDivFreq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
+  //      //   voltagefromFreqAboveAndBelowDiff x=?
+  //      //givenVoltage = VoltagefromHigherFreqMinusVoltageLowerFreq / 
+  //      //   voltagefromFreqAboveAndBelowDiff
+  //      //log_x( freqaboveDivFreq ) = givenVoltage    x=?
+  //      //example: log_x(2,0952380952) = 0,2125 V / 0,2125 V 
+  //      //highervoltag-lowervoltage = log_x(2,0952380952)
 
-        //http://www.mathe-fa.de/en#anchor:
-        //1.0625-log(4;2200/550)*0.3125= 0.75   (x=4)
-        //1.0625-log(x;2200/550)*0.3125= 0.75 | + log(x;2200/550)*0.3125
-        //1.0625 = 0.75 + log(x;2200/550)*0.3125 | - 0.75
-        //0,3125 = log(x;2200/550)*0.3125 | / 0.3125
-        //1 = log(x;2200/550)
-        //1 = log(x;4) = log_x(4)
+  //      //http://www.mathe-fa.de/en#anchor:
+  //      //1.0625-log(4;2200/550)*0.3125= 0.75   (x=4)
+  //      //1.0625-log(x;2200/550)*0.3125= 0.75 | + log(x;2200/550)*0.3125
+  //      //1.0625 = 0.75 + log(x;2200/550)*0.3125 | - 0.75
+  //      //0,3125 = log(x;2200/550)*0.3125 | / 0.3125
+  //      //1 = log(x;2200/550)
+  //      //1 = log(x;4) = log_x(4)
 
-        //example: 1.0625 V - 0.85V = 0,2125 V
-        float fVoltageFromFreqAboveAndBelowDiff = 
-          fVoltageInVoltFromNearFreqAboveWantedFreq -
-          fVoltageInVoltFromNearFreqBelowWantedFreq ;
-        //example: 2200 MHz / 1050 MHz ~= 2,0952380952
-        double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
-            (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-            (double) wFreqInMHzToGetVoltageFrom ;
+  //      //example: 1.0625 V - 0.85V = 0,2125 V
+  //      float fVoltageFromFreqAboveAndBelowDiff = 
+  //        fVoltageInVoltFromNearFreqAboveWantedFreq -
+  //        fVoltageInVoltFromNearFreqBelowWantedFreq ;
+  //      //example: 2200 MHz / 1050 MHz ~= 2,0952380952
+  //      double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
+  //          (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //          (double) wFreqInMHzToGetVoltageFrom ;
 
-        //ex.: -0,9371068287545918599662966193649 * 0,2125 = 
-        //     -0,19913520111035077024283803161504
-        //fCorrectionFactor = (
-        //  //example: 0.85
-        //  fVoltageInVoltFromNearFreqBelowWantedFreq - 
-        //  //example: 1.0625
-        //  fVoltageInVoltFromNearFreqAboveWantedFreq ) 
-        //  //example: -0,2125
-        //  /
-        //  //ex.: 0,0481868754067370599298056614097
-        //  ( //example:  0,22676176661993910555202664192874
-        //    - log_dualis( 
-        //    //(double) wFreqInMHzFromNearFreqAboveWantedFreq /
-        //    //(double) wFreqInMHzToGetVoltageFrom
-        //    dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom
-        //    ) 
-        //  //ex: -0,9371068287545918599662966193649
-        //    * 
-        //    //example: 0,2125 V
-        //    fVoltageFromFreqAboveAndBelowDiff ) ;
+  //      //ex.: -0,9371068287545918599662966193649 * 0,2125 = 
+  //      //     -0,19913520111035077024283803161504
+  //      //fCorrectionFactor = (
+  //      //  //example: 0.85
+  //      //  fVoltageInVoltFromNearFreqBelowWantedFreq - 
+  //      //  //example: 1.0625
+  //      //  fVoltageInVoltFromNearFreqAboveWantedFreq ) 
+  //      //  //example: -0,2125
+  //      //  /
+  //      //  //ex.: 0,0481868754067370599298056614097
+  //      //  ( //example:  0,22676176661993910555202664192874
+  //      //    - log_dualis( 
+  //      //    //(double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //      //    //(double) wFreqInMHzToGetVoltageFrom
+  //      //    dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom
+  //      //    ) 
+  //      //  //ex: -0,9371068287545918599662966193649
+  //      //    * 
+  //      //    //example: 0,2125 V
+  //      //    fVoltageFromFreqAboveAndBelowDiff ) ;
 
-        r_fVoltageInVolt =
-          //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
-          // 1,0625 - 0,22676176661993910555202664192874
-          //  = 0,835738233380060894447973358072
-          fVoltageInVoltFromNearFreqAboveWantedFreq -
-            //log10(2,0952380952380952380952380952381) =
-            //  0,32123338175226816317043359884426
-            //log10(2) = 0,30102999566398119521373889472449
-            // => log2(2,0952380952380952380952380952381) = 
-            //  0,32123338175226816317043359884426 / 
-            //  0,30102999566398119521373889472449 
-            //  = 1,067114195858536967303654785547
-            // 1,067114195858536967303654785547 * 0,2125 =
-            //   0,22676176661993910555202664192874
-            //log_dualis
-            log_x
-            (
-              (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-              (double) wFreqInMHzFromNearFreqBelowWantedFreq
-              ,
-            //wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
-              //example: 2200 MHz / 1050 MHz ~= 2.0952380952
-              //example: 2200 MHz / 550 MHz = 4
-              (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-              (double) wFreqInMHzToGetVoltageFrom
-            )
-            *
-            //fVoltageDiffBetwOvVoltProtVnf_pairs
-            (
-              //example: 1.0625 V - 0.85V = 0,2125 V
-              //example: 1.0625 V - 0.75V = 0.3125 V
-              fVoltageInVoltFromNearFreqAboveWantedFreq -
-              fVoltageInVoltFromNearFreqBelowWantedFreq
-            )
-          ;
-        return true ;
-      //}
-    }
-  }
+  //      r_fVoltageInVolt =
+  //        //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
+  //        // 1,0625 - 0,22676176661993910555202664192874
+  //        //  = 0,835738233380060894447973358072
+  //        fVoltageInVoltFromNearFreqAboveWantedFreq -
+  //          //log10(2,0952380952380952380952380952381) =
+  //          //  0,32123338175226816317043359884426
+  //          //log10(2) = 0,30102999566398119521373889472449
+  //          // => log2(2,0952380952380952380952380952381) = 
+  //          //  0,32123338175226816317043359884426 / 
+  //          //  0,30102999566398119521373889472449 
+  //          //  = 1,067114195858536967303654785547
+  //          // 1,067114195858536967303654785547 * 0,2125 =
+  //          //   0,22676176661993910555202664192874
+  //          //log_dualis
+  //          log_x
+  //          (
+  //            (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //            (double) wFreqInMHzFromNearFreqBelowWantedFreq
+  //            ,
+  //          //wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
+  //            //example: 2200 MHz / 1050 MHz ~= 2.0952380952
+  //            //example: 2200 MHz / 550 MHz = 4
+  //            (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //            (double) wFreqInMHzToGetVoltageFrom
+  //          )
+  //          *
+  //          //fVoltageDiffBetwOvVoltProtVnf_pairs
+  //          (
+  //            //example: 1.0625 V - 0.85V = 0,2125 V
+  //            //example: 1.0625 V - 0.75V = 0.3125 V
+  //            fVoltageInVoltFromNearFreqAboveWantedFreq -
+  //            fVoltageInVoltFromNearFreqBelowWantedFreq
+  //          )
+  //        ;
+  //      return true ;
+  //    //}
+  //  }
+  //}
 
-  BYTE GriffinController::GetInterpolatedVoltageFromFreq(
-    WORD wFreqInMHzToGetVoltageFrom,
-    float & r_fVoltageInVolt 
-    )
-  {
-    //WORD wFreqInMHzFromNearFreqAboveWantedFreq =
-      //mp_model->m_pstates.m_arp_pstate[0]->GetFreqInMHz() ;
-    PState * p_pstateGreaterEqual = mp_model->m_pstates.
-      GetPstateWithNearestFreqGreaterEqual( wFreqInMHzToGetVoltageFrom , 4) ;
-    PState * p_pstateLowerEqual = mp_model->m_pstates.
-      GetPstateWithNearestFreqLowerEqual( wFreqInMHzToGetVoltageFrom, 4 ) ;
-    if( //mp_model->m_pstates.m_arp_pstate[0] &&
-      //mp_model->m_pstates.m_arp_pstate[0]->GetFreqInMHz() >
-      //wFreqInMHzToGetVoltageFrom 
-      p_pstateGreaterEqual && p_pstateLowerEqual
-      )
-    {
-      if( //This is the case if wFreqInMHzToGetVoltageFrom has the 
-        //same freq as one of the p-states.
-        //This case must be catched, else wrong values by the 
-        //log_x() function (  log_1(1)  is calculated then ) .
-        p_pstateGreaterEqual == p_pstateLowerEqual 
-        )
-      {
-        r_fVoltageInVolt = p_pstateGreaterEqual->GetVoltageInVolt() ;
-        return true ;
-      }
-      else
-      {
-      WORD wFreqInMHzFromNearFreqAboveWantedFreq =
-        p_pstateGreaterEqual->GetFreqInMHz() ;
-      WORD wFreqInMHzFromNearFreqBelowWantedFreq =
-        p_pstateLowerEqual->GetFreqInMHz() ;
-      //if( mp_model->m_pstates.m_arp_pstate[1] &&
-      //  mp_model->m_pstates.m_arp_pstate[1]->GetFreqInMHz() <
-      //  wFreqInMHzToGetVoltageFrom
-      //  )
-      //{
-        float fVoltageInVoltFromNearFreqAboveWantedFreq ;
-        float fVoltageInVoltFromNearFreqBelowWantedFreq ;
-        fVoltageInVoltFromNearFreqAboveWantedFreq =
-          //mp_model->m_pstates.m_arp_pstate[0]->GetVoltageInVolt() ;
-          p_pstateGreaterEqual->GetVoltageInVolt() ;
-        fVoltageInVoltFromNearFreqBelowWantedFreq =
-          //mp_model->m_pstates.m_arp_pstate[1]->GetVoltageInVolt() ;
-          p_pstateLowerEqual->GetVoltageInVolt() ;
-        //  VoltagefromHigherFreq - x = voltagefromLowerfreq ;
-        //  x = log2( y ) * voltagefromFreqAboveAndBeowDiff 
-        // VoltagefromHigherFreq - log2( freqabove / freq ) *
-        //   x * voltagefromFreqAboveAndBelowDiff 
-        //   = voltagefromLowerfreq ;
-        // VoltagefromHigherFreq - log2Result *
-        //   x * voltagefromFreqAboveAndBelowDiff 
-        //   = voltagefromLowerfreq ;
-        //voltagefromLowerfreq = VoltagefromHigherFreq -
-        //  log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | - VoltagefromHigherFreq
-        //voltagefromLowerfreq - VoltagefromHigherFreq =
-        // log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | / 
-        //            log2ResultMultvoltagefromFreqAboveAndBelowDiff
-        //(voltagefromLowerfreq - VoltagefromHigherFreq ) /
-        //  log2ResultMultvoltagefromFreqAboveAndBelowDiff = x
+  //BYTE GriffinController::GetInterpolatedVoltageFromFreq(
+  //  WORD wFreqInMHzToGetVoltageFrom,
+  //  float & r_fVoltageInVolt 
+  //  )
+  //{
+  //  //WORD wFreqInMHzFromNearFreqAboveWantedFreq =
+  //    //mp_model->m_pstates.m_arp_pstate[0]->GetFreqInMHz() ;
+  //  PState * p_pstateGreaterEqual = mp_model->m_pstates.
+  //    GetPstateWithNearestFreqGreaterEqual( wFreqInMHzToGetVoltageFrom , 4) ;
+  //  PState * p_pstateLowerEqual = mp_model->m_pstates.
+  //    GetPstateWithNearestFreqLowerEqual( wFreqInMHzToGetVoltageFrom, 4 ) ;
+  //  if( //mp_model->m_pstates.m_arp_pstate[0] &&
+  //    //mp_model->m_pstates.m_arp_pstate[0]->GetFreqInMHz() >
+  //    //wFreqInMHzToGetVoltageFrom 
+  //    p_pstateGreaterEqual && p_pstateLowerEqual
+  //    )
+  //  {
+  //    if( //This is the case if wFreqInMHzToGetVoltageFrom has the 
+  //      //same freq as one of the p-states.
+  //      //This case must be catched, else wrong values by the 
+  //      //log_x() function (  log_1(1)  is calculated then ) .
+  //      p_pstateGreaterEqual == p_pstateLowerEqual 
+  //      )
+  //    {
+  //      r_fVoltageInVolt = p_pstateGreaterEqual->GetVoltageInVolt() ;
+  //      return true ;
+  //    }
+  //    else
+  //    {
+  //    WORD wFreqInMHzFromNearFreqAboveWantedFreq =
+  //      p_pstateGreaterEqual->GetFreqInMHz() ;
+  //    WORD wFreqInMHzFromNearFreqBelowWantedFreq =
+  //      p_pstateLowerEqual->GetFreqInMHz() ;
+  //    //if( mp_model->m_pstates.m_arp_pstate[1] &&
+  //    //  mp_model->m_pstates.m_arp_pstate[1]->GetFreqInMHz() <
+  //    //  wFreqInMHzToGetVoltageFrom
+  //    //  )
+  //    //{
+  //      float fVoltageInVoltFromNearFreqAboveWantedFreq ;
+  //      float fVoltageInVoltFromNearFreqBelowWantedFreq ;
+  //      fVoltageInVoltFromNearFreqAboveWantedFreq =
+  //        //mp_model->m_pstates.m_arp_pstate[0]->GetVoltageInVolt() ;
+  //        p_pstateGreaterEqual->GetVoltageInVolt() ;
+  //      fVoltageInVoltFromNearFreqBelowWantedFreq =
+  //        //mp_model->m_pstates.m_arp_pstate[1]->GetVoltageInVolt() ;
+  //        p_pstateLowerEqual->GetVoltageInVolt() ;
+  //      //  VoltagefromHigherFreq - x = voltagefromLowerfreq ;
+  //      //  x = log2( y ) * voltagefromFreqAboveAndBeowDiff 
+  //      // VoltagefromHigherFreq - log2( freqabove / freq ) *
+  //      //   x * voltagefromFreqAboveAndBelowDiff 
+  //      //   = voltagefromLowerfreq ;
+  //      // VoltagefromHigherFreq - log2Result *
+  //      //   x * voltagefromFreqAboveAndBelowDiff 
+  //      //   = voltagefromLowerfreq ;
+  //      //voltagefromLowerfreq = VoltagefromHigherFreq -
+  //      //  log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | - VoltagefromHigherFreq
+  //      //voltagefromLowerfreq - VoltagefromHigherFreq =
+  //      // log2ResultMultvoltagefromFreqAboveAndBelowDiff * x | / 
+  //      //            log2ResultMultvoltagefromFreqAboveAndBelowDiff
+  //      //(voltagefromLowerfreq - VoltagefromHigherFreq ) /
+  //      //  log2ResultMultvoltagefromFreqAboveAndBelowDiff = x
 
-        //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
-        //   voltagefromFreqAboveAndBelowDiff  | - VoltagefromHigherFreq
-        //voltageLowerFreq - VoltagefromHigherFreq = - log_x( freqaboveDivFreq ) *
-        //   voltagefromFreqAboveAndBelowDiff | / voltagefromFreqAboveAndBelowDiff
-        //(voltageLowerFreq - VoltagefromHigherFreq ) / 
-        //  voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
-        //voltageLowerFreqMinusVoltagefromHigherFreq /
-        // voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
-        //givenVoltage = voltageLowerFreqMinusVoltagefromHigherFreq /
-        //  voltagefromFreqAboveAndBelowDiff 
-        //givenVoltage = - log_x( freqaboveDivFreq )  x=?
-        //
-        //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
-        //  voltagefromFreqAboveAndBelowDiff | + log_x( freqabove / freq ) *
-        //      voltagefromFreqAboveAndBelowDiff
-        //voltageLowerFreq + log_x( freqabove / freq ) *
-        //   voltagefromFreqAboveAndBelowDiff = VoltagefromHigherFreq | - voltageLowerFreq
-        //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
-        //  VoltagefromHigherFreq - voltageLowerFreq 
-        //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
-        //   VoltagefromHigherFreqMinusVoltageLowerFreq | /
-        //log_x( freqabove / freq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
-        //   voltagefromFreqAboveAndBelowDiff
-        //log_x( freqaboveDivFreq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
-        //   voltagefromFreqAboveAndBelowDiff x=?
-        //givenVoltage = VoltagefromHigherFreqMinusVoltageLowerFreq / 
-        //   voltagefromFreqAboveAndBelowDiff
-        //log_x( freqaboveDivFreq ) = givenVoltage    x=?
-        //example: log_x(2,0952380952) = 0,2125 V / 0,2125 V 
-        //highervoltag-lowervoltage = log_x(2,0952380952)
+  //      //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
+  //      //   voltagefromFreqAboveAndBelowDiff  | - VoltagefromHigherFreq
+  //      //voltageLowerFreq - VoltagefromHigherFreq = - log_x( freqaboveDivFreq ) *
+  //      //   voltagefromFreqAboveAndBelowDiff | / voltagefromFreqAboveAndBelowDiff
+  //      //(voltageLowerFreq - VoltagefromHigherFreq ) / 
+  //      //  voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
+  //      //voltageLowerFreqMinusVoltagefromHigherFreq /
+  //      // voltagefromFreqAboveAndBelowDiff = - log_x( freqaboveDivFreq )
+  //      //givenVoltage = voltageLowerFreqMinusVoltagefromHigherFreq /
+  //      //  voltagefromFreqAboveAndBelowDiff 
+  //      //givenVoltage = - log_x( freqaboveDivFreq )  x=?
+  //      //
+  //      //voltageLowerFreq = VoltagefromHigherFreq - log_x( freqabove / freq ) *
+  //      //  voltagefromFreqAboveAndBelowDiff | + log_x( freqabove / freq ) *
+  //      //      voltagefromFreqAboveAndBelowDiff
+  //      //voltageLowerFreq + log_x( freqabove / freq ) *
+  //      //   voltagefromFreqAboveAndBelowDiff = VoltagefromHigherFreq | - voltageLowerFreq
+  //      //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
+  //      //  VoltagefromHigherFreq - voltageLowerFreq 
+  //      //log_x( freqabove / freq ) * voltagefromFreqAboveAndBelowDiff =
+  //      //   VoltagefromHigherFreqMinusVoltageLowerFreq | /
+  //      //log_x( freqabove / freq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
+  //      //   voltagefromFreqAboveAndBelowDiff
+  //      //log_x( freqaboveDivFreq ) = VoltagefromHigherFreqMinusVoltageLowerFreq / 
+  //      //   voltagefromFreqAboveAndBelowDiff x=?
+  //      //givenVoltage = VoltagefromHigherFreqMinusVoltageLowerFreq / 
+  //      //   voltagefromFreqAboveAndBelowDiff
+  //      //log_x( freqaboveDivFreq ) = givenVoltage    x=?
+  //      //example: log_x(2,0952380952) = 0,2125 V / 0,2125 V 
+  //      //highervoltag-lowervoltage = log_x(2,0952380952)
 
-        //http://www.mathe-fa.de/en#anchor:
-        //1.0625-log(4;2200/550)*0.3125= 0.75   (x=4)
-        //1.0625-log(x;2200/550)*0.3125= 0.75 | + log(x;2200/550)*0.3125
-        //1.0625 = 0.75 + log(x;2200/550)*0.3125 | - 0.75
-        //0,3125 = log(x;2200/550)*0.3125 | / 0.3125
-        //1 = log(x;2200/550)
-        //1 = log(x;4) = log_x(4)
+  //      //http://www.mathe-fa.de/en#anchor:
+  //      //1.0625-log(4;2200/550)*0.3125= 0.75   (x=4)
+  //      //1.0625-log(x;2200/550)*0.3125= 0.75 | + log(x;2200/550)*0.3125
+  //      //1.0625 = 0.75 + log(x;2200/550)*0.3125 | - 0.75
+  //      //0,3125 = log(x;2200/550)*0.3125 | / 0.3125
+  //      //1 = log(x;2200/550)
+  //      //1 = log(x;4) = log_x(4)
 
-        //example: 1.0625 V - 0.85V = 0,2125 V
-        float fVoltageFromFreqAboveAndBelowDiff = 
-          fVoltageInVoltFromNearFreqAboveWantedFreq -
-          fVoltageInVoltFromNearFreqBelowWantedFreq ;
-        //example: 2200 MHz / 1050 MHz ~= 2,0952380952
-        double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
-            (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-            (double) wFreqInMHzToGetVoltageFrom ;
+  //      //example: 1.0625 V - 0.85V = 0,2125 V
+  //      float fVoltageFromFreqAboveAndBelowDiff = 
+  //        fVoltageInVoltFromNearFreqAboveWantedFreq -
+  //        fVoltageInVoltFromNearFreqBelowWantedFreq ;
+  //      //example: 2200 MHz / 1050 MHz ~= 2,0952380952
+  //      double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
+  //          (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //          (double) wFreqInMHzToGetVoltageFrom ;
 
-        //ex.: -0,9371068287545918599662966193649 * 0,2125 = 
-        //     -0,19913520111035077024283803161504
-        //fCorrectionFactor = (
-        //  //example: 0.85
-        //  fVoltageInVoltFromNearFreqBelowWantedFreq - 
-        //  //example: 1.0625
-        //  fVoltageInVoltFromNearFreqAboveWantedFreq ) 
-        //  //example: -0,2125
-        //  /
-        //  //ex.: 0,0481868754067370599298056614097
-        //  ( //example:  0,22676176661993910555202664192874
-        //    - log_dualis( 
-        //    //(double) wFreqInMHzFromNearFreqAboveWantedFreq /
-        //    //(double) wFreqInMHzToGetVoltageFrom
-        //    dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom
-        //    ) 
-        //  //ex: -0,9371068287545918599662966193649
-        //    * 
-        //    //example: 0,2125 V
-        //    fVoltageFromFreqAboveAndBelowDiff ) ;
+  //      //ex.: -0,9371068287545918599662966193649 * 0,2125 = 
+  //      //     -0,19913520111035077024283803161504
+  //      //fCorrectionFactor = (
+  //      //  //example: 0.85
+  //      //  fVoltageInVoltFromNearFreqBelowWantedFreq - 
+  //      //  //example: 1.0625
+  //      //  fVoltageInVoltFromNearFreqAboveWantedFreq ) 
+  //      //  //example: -0,2125
+  //      //  /
+  //      //  //ex.: 0,0481868754067370599298056614097
+  //      //  ( //example:  0,22676176661993910555202664192874
+  //      //    - log_dualis( 
+  //      //    //(double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //      //    //(double) wFreqInMHzToGetVoltageFrom
+  //      //    dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom
+  //      //    ) 
+  //      //  //ex: -0,9371068287545918599662966193649
+  //      //    * 
+  //      //    //example: 0,2125 V
+  //      //    fVoltageFromFreqAboveAndBelowDiff ) ;
 
-        r_fVoltageInVolt =
-          //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
-          // 1,0625 - 0,22676176661993910555202664192874
-          //  = 0,835738233380060894447973358072
-          fVoltageInVoltFromNearFreqAboveWantedFreq -
-            //log10(2,0952380952380952380952380952381) =
-            //  0,32123338175226816317043359884426
-            //log10(2) = 0,30102999566398119521373889472449
-            // => log2(2,0952380952380952380952380952381) = 
-            //  0,32123338175226816317043359884426 / 
-            //  0,30102999566398119521373889472449 
-            //  = 1,067114195858536967303654785547
-            // 1,067114195858536967303654785547 * 0,2125 =
-            //   0,22676176661993910555202664192874
-            //log_dualis
-            log_x
-            (
-              (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-              (double) wFreqInMHzFromNearFreqBelowWantedFreq
-              ,
-            //wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
-              //example: 2200 MHz / 1050 MHz ~= 2.0952380952
-              //example: 2200 MHz / 550 MHz = 4
-              (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-              (double) wFreqInMHzToGetVoltageFrom
-            )
-            *
-            //fVoltageDiffBetwOvVoltProtVnf_pairs
-            (
-              //example: 1.0625 V - 0.85V = 0,2125 V
-              //example: 1.0625 V - 0.75V = 0.3125 V
-              fVoltageInVoltFromNearFreqAboveWantedFreq -
-              fVoltageInVoltFromNearFreqBelowWantedFreq
-            )
-          ;
-        return true ;
-      }
-   }
-    return false ;
-  }
+  //      r_fVoltageInVolt =
+  //        //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
+  //        // 1,0625 - 0,22676176661993910555202664192874
+  //        //  = 0,835738233380060894447973358072
+  //        fVoltageInVoltFromNearFreqAboveWantedFreq -
+  //          //log10(2,0952380952380952380952380952381) =
+  //          //  0,32123338175226816317043359884426
+  //          //log10(2) = 0,30102999566398119521373889472449
+  //          // => log2(2,0952380952380952380952380952381) = 
+  //          //  0,32123338175226816317043359884426 / 
+  //          //  0,30102999566398119521373889472449 
+  //          //  = 1,067114195858536967303654785547
+  //          // 1,067114195858536967303654785547 * 0,2125 =
+  //          //   0,22676176661993910555202664192874
+  //          //log_dualis
+  //          log_x
+  //          (
+  //            (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //            (double) wFreqInMHzFromNearFreqBelowWantedFreq
+  //            ,
+  //          //wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
+  //            //example: 2200 MHz / 1050 MHz ~= 2.0952380952
+  //            //example: 2200 MHz / 550 MHz = 4
+  //            (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+  //            (double) wFreqInMHzToGetVoltageFrom
+  //          )
+  //          *
+  //          //fVoltageDiffBetwOvVoltProtVnf_pairs
+  //          (
+  //            //example: 1.0625 V - 0.85V = 0,2125 V
+  //            //example: 1.0625 V - 0.75V = 0.3125 V
+  //            fVoltageInVoltFromNearFreqAboveWantedFreq -
+  //            fVoltageInVoltFromNearFreqBelowWantedFreq
+  //          )
+  //        ;
+  //      return true ;
+  //    }
+  // }
+  //  return false ;
+  //}
 
   BYTE GriffinController::GetCurrentTempInDegCelsius(float & fTempInDegCelsius)
   {
@@ -3676,7 +3728,9 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         //2000 
         //fFreqInMHz ,
         wFreqInMHz ,
-        fVoltageInVolt ) 
+        fVoltageInVolt ,
+        mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+        ) 
       )
     {
       BYTE byCPUcoreID = 0 ;
@@ -3799,7 +3853,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     try
     {
 #endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-      if( mp_controller->ReadPciConfigDwordEx(
+      if( mp_cpuaccess->ReadPciConfigDwordEx(
           //Bus 0, Device number 24, Function 3 is "CPU Miscellaneous Control"
           PciBusDevFunc(0,24,3)
           , dwRegisterAddress
@@ -3878,7 +3932,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //          )
 //        {
 //  #endif //#ifndef LINK_TO_WINRING0_STATICALLY
-        if( mp_controller->WritePciConfigDwordEx(dwPCIAddress,//0xDC
+        if( mp_cpuaccess->WritePciConfigDwordEx(dwPCIAddress,//0xDC
           F3xDC_CLOCK_POWER_TIMING_CONTROL_2_REGISTER_ADDRESS,dwValue)
           )
         {
@@ -3906,7 +3960,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     dwPCIAddress =  PciBusDevFunc(0,24,3) ;
 //#ifdef LINK_TO_WINRING0_STATICALLY
 //    if( WritePciConfigDwordEx (dwPCIAddress,//0xDC
-    if( mp_controller->WritePciConfigDwordEx ( dwPCIAddress ,
+    if( mp_cpuaccess->WritePciConfigDwordEx ( dwPCIAddress ,
       dwRegisterAddress, dwValue) )
     {
       bSuccess = true ;
@@ -3943,7 +3997,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       dwAffinityMask
       ) ;
     //RdpmcEx seemed to cause a blue screen (maybe because of wrong param values)
-    //mp_controller->RdpmcEx(
+    //mp_cpuaccess->RdpmcEx(
     //  PERFORMANCE_EVENT_COUNTER_0_REGISTER + byPerformanceEventCounterNumber ,
     //  //PERFORMANCE_EVENT_COUNTER_1_REGISTER ,
     //  & dwLow,
@@ -3981,7 +4035,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
               ;
           break; 
       case PERF_CTR_0:
-         mp_controller->RdmsrEx( 
+         mp_cpuaccess->RdmsrEx( 
            MSR_TIME_STAMP_COUNTER_REGISTER,
           &dwLowmostBits,// bit  0-31 (register "EAX")
           &dwHighmostBits, 
@@ -3990,13 +4044,13 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         break ;
   #ifdef _TEST_PENTIUM_M
           default:
-            return mp_controller->RdmsrEx(
+            return mp_cpuaccess->RdmsrEx(
               dwIndex,&dwLowmostBits,&dwHighmostBits,dwAffinityMask);
   #endif //  #ifdef _TEST_PENTIUM_M
     }
     return true ;
 #else
-    return mp_controller->RdmsrEx(
+    return mp_cpuaccess->RdmsrEx(
       dwIndex,//&dwEAX
       &dwLowmostBits,//&dwEDX
       &dwHighmostBits,
@@ -4008,6 +4062,42 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   void GriffinController::ResumeFromS3orS4()
   {
     ApplyAllPStates() ;
+  }
+
+  //Implement this method here and not in the base class because 
+  //the Griffin has a bug that it freezes when frequencies are set
+  //where the divisor ID is 0 and the Frequency ID is NOT the max.
+  //possible Frequency ID.
+  void GriffinController::SetFreqAndVoltageFromFreq(
+    WORD wFreqInMHz 
+    , BYTE byCoreID )
+  {
+    //The passed frequency may not be a valid frequency.
+    DIDandFID didnfid = GetNearestPossibleFreqInMHzAsDIDnFID( wFreqInMHz ) ;
+    float fVoltageInVolt ;
+    if ( didnfid.m_byDivisorID == 0 && didnfid.m_byFreqID != 
+      mp_model->m_cpucoredata.GetMainPLLoperatingFrequencyIDmax() 
+      )
+      //Avoid AMD Griffin CPU bug that causes CPU freezes.
+      wFreqInMHz = mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    else
+    {
+      wFreqInMHz = didnfid.GetFreqInMHz() ;
+    }
+
+    if( GetInterpolatedVoltageFromFreq(
+        wFreqInMHz
+        , fVoltageInVolt 
+        , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+        ) 
+      )
+    {
+      SetVoltageAndFrequency(//wFreqInMHz
+        fVoltageInVolt
+        , wFreqInMHz
+        , byCoreID
+        ) ;
+    }
   }
 
   //This method should be separated because possibly one wants to have
@@ -4295,7 +4385,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       DWORD dwMSRLow = 0 ;
       //TODO the confirmation of e.g. wxWidgets seems to happen in 
       //ANOTHER thread->synchronize here (by e.g. using critical sections)
-      setVidAndFrequencyForPState_Puma(
+      WriteToPstateOrCOFVIDcontrolRegister(
         //GetMSRregisterForPstate(
         ////Use p-state 3 for setting for dyn. freq. scaling
         ////because setting via the MSR register 0xC0010070
@@ -4337,9 +4427,84 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   BYTE GriffinController::SetNorthBridgeVoltage()
   {
       //TODO
-      //return mp_controller->SetNorthBridgeVoltage() ;
+      //return mp_cpuaccess->SetNorthBridgeVoltage() ;
       return 0 ;
   }
+
+  BYTE GriffinController::SetVoltageAndFrequency( 
+    float fVoltageInVolt, 
+    WORD wFreqInMHz ,
+    BYTE byCoreID
+    )
+  {
+    BYTE byRet = false ;
+    //BYTE byFrequencyID , byDivisorID ;
+    //DWORD dwIndex ; 
+    DWORD dwMSRhighmost, dwMSRlowmost ;
+    PState pstateMergedFromUserAndMSR ;
+    PState pstateFromUser ;
+    //GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
+    pstateFromUser = pstateMergedFromUserAndMSR ;
+    BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
+    DIDandFID didandfid = GetNearestPossibleFreqInMHzAsDIDnFID( wFreqInMHz ) ;
+    GetMSRregisterValue( byVoltageID, didandfid , dwMSRhighmost , dwMSRlowmost ) ;
+
+    DWORD dwMSRregisterIndex = GetMSRregisterForPstate( didandfid.m_byDivisorID ) ;
+    //bool_ = WriteToPstateOrCOFVIDcontrolRegister (
+	   // dwIndex , 
+    // // unsigned char byVID, //unsigned short wFreqInMHz
+	   // //unsigned char byFreqID, 
+    // // unsigned char byDivID,
+    //  //const PState & rpstateFromMSR,
+
+    //  //Used to check against overvolting.
+    //  pstateMergedFromUserAndMSR,
+    //  //Used to write to MSR.
+    //  pstateFromUser,
+    //  //PState & r_pstateMergedFromUserAndMSR,
+    //  dwMSRhighmost,
+    //  dwMSRlowmost,
+    //  //DWORD_PTR w64ulAffinityMask
+    //  //DWORD dwCoreID
+    //  //CPU core number, beginning from number "0"
+    //  byCoreID
+    //  ) ;
+    if( WrmsrEx(
+      dwMSRregisterIndex
+      , dwMSRlowmost
+      , dwMSRhighmost
+      , 1 << byCoreID
+      ) 
+      )
+      if( SetPstate( didandfid.m_byDivisorID , byCoreID ) 
+        )
+        byRet = true ;
+    return byRet ;
+  }
+
+  BYTE GriffinController::TooHot()
+  {
+    BYTE byTooHot = false ;
+    float fTempInDegCelsius ;
+    if( GetCurrentTempInDegCelsius( fTempInDegCelsius ) 
+      && fTempInDegCelsius > mp_model->m_cpucoredata.m_fThrottleTemp 
+      )
+      byTooHot = true ;
+    return byTooHot ;
+  }
+
+  //BOOL // TRUE: success, FALSE: failure
+  //  GriffinController::
+  //  //WINAPI
+  //  WrmsrEx(
+  //    DWORD index,		// MSR index
+  //    DWORD dwLow ,//eax,			// bit  0-31
+  //    DWORD dwHigh, //edx,			// bit 32-63
+  //    DWORD affinityMask	// Thread Affinity Mask
+  //  )
+  //{
+
+  //}
 
   void GriffinController::WriteToCOFVID(PState & pstate, BYTE byCoreID)
   {
@@ -4366,13 +4531,14 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       dwCOFVIDcontrolRegisterLowmostBits |= 
         //"5:0 CpuFid: core frequency ID."
         pstate.m_byFreqID ;
-      mp_controller->WrmsrEx(COFVID_CONTROL_REGISTER, 
+      mp_cpuaccess->WrmsrEx(COFVID_CONTROL_REGISTER, 
         dwCOFVIDcontrolRegisterLowmostBits, 0, 1 << byCoreID );
     }
   }
 
   //TODO: maybe this is useful: AMD 11h CPU PDF: PSI_L Bit
-  BYTE GriffinController::setVidAndFrequencyForPState_Puma(
+  BYTE GriffinController:://setVidAndFrequencyForPState_Puma
+    WriteToPstateOrCOFVIDcontrolRegister (
 	  DWORD dwRegNr, 
    // unsigned char byVID, //unsigned short wFreqInMHz
 	  //unsigned char byFreqID, 
@@ -4384,6 +4550,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //Used to write to MSR.
     PState & r_pstateFromUser,
     //PState & r_pstateMergedFromUserAndMSR,
+    //Used to write to to the p-state register. Should contain the MSR representation
     unsigned long dwMSRhigh,
     unsigned long dwMSRlow,
     //DWORD_PTR w64ulAffinityMask
@@ -4440,7 +4607,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#else
 //          RdmsrEx
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-          mp_controller->RdmsrEx
+          mp_cpuaccess->RdmsrEx
           (
           COFVID_STATUS_REGISTER,
           &dwCOFVIDStatusRegisterLow,
@@ -4655,8 +4822,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         //DEBUG("Now write to MSR\n");
 	      //if ((msr_write(msrfile, msr_register_number, &msrvalue)) != OK)
 	      //	printf("MSR write failed\n");
-        //DEBUG("Adress of mp_controller: %lx\n", mp_controller);
-        //LOG("Adress of mp_controller: " << mp_controller << "\n" );
+        //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
+        //LOG("Adress of mp_cpuaccess: " << mp_cpuaccess << "\n" );
         if( 
 //#ifndef LINK_TO_WINRING0_STATICALLY
 //          (*pfnwrmsrex)
@@ -4666,7 +4833,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
           true
 #else
-          mp_controller->
+          mp_cpuaccess->
             WrmsrEx
             (
               dwRegNr,
@@ -4688,7 +4855,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#else
 //		      usleep(1000);
 //#endif//#ifdef _WINDOWS
-          mp_controller->Sleep(1);
+          mp_cpuaccess->Sleep(1);
           byReturn = SUCCESS ;
         }
         else
@@ -4727,7 +4894,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   void GriffinController::SetUserInterface(UserInterface * p_userinterface )
   {
     mp_userinterface = p_userinterface ;
-    mp_controller->SetUserInterface(*p_userinterface) ;
+    mp_cpuaccess->SetUserInterface(*p_userinterface) ;
   }
   
   BYTE GriffinController::StartOrStopCalculationThread( BYTE byCoreID)
@@ -4901,4 +5068,53 @@ BYTE GriffinController::UseMaxVoltageForFreqForOvervoltageProtection(
       byReturn = NO_APPROPRIATE_VOLTAGE_FREQUENCY_PAIR_FOUND ;
   }
   return byReturn ;
+}
+
+BOOL GriffinController::WrmsrEx(
+  DWORD dwIndex,		// MSR index
+  DWORD dwLow ,//eax,			// bit  0-31
+  DWORD dwHigh, //edx,			// bit 32-63
+  DWORD dwAffinityMask	// Thread Affinity Mask
+  )
+{
+  BOOL bool_ = FALSE ;
+  if( dwIndex >= MSR_P_STATE_0 && dwIndex <= MSR_P_STATE_7 
+    || dwIndex == COFVID_CONTROL_REGISTER )
+  {
+    BYTE byCoreID ;
+    //DWORD dwAffinityMaskCopy = dwAffinityMask ;
+    PState pstateMergedFromUserAndMSR ;
+    PState pstateFromUser ;
+    GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
+    pstateFromUser = pstateMergedFromUserAndMSR ;
+    byCoreID = GetCoreIDFromAffinityMask(dwAffinityMask ) ;
+    //while( dwAffinityMaskCopy >>= 1 ) byCoreID
+    bool_ = WriteToPstateOrCOFVIDcontrolRegister(
+	    dwIndex , 
+     // unsigned char byVID, //unsigned short wFreqInMHz
+	    //unsigned char byFreqID, 
+     // unsigned char byDivID,
+      //const PState & rpstateFromMSR,
+
+      //Used to check against overvolting.
+      pstateMergedFromUserAndMSR,
+      //Used to write to MSR.
+      pstateFromUser,
+      //PState & r_pstateMergedFromUserAndMSR,
+      dwHigh,
+      dwLow,
+      //DWORD_PTR w64ulAffinityMask
+      //DWORD dwCoreID
+      //CPU core number, beginning from number "0"
+      byCoreID
+      ) ;
+  }
+  else
+    bool_ = mp_cpuaccess->WrmsrEx(
+      dwIndex , //DWORD dwIndex,		// MSR index
+      dwLow , //DWORD dwLow ,//eax,			// bit  0-31
+      dwHigh , //DWORD dwHigh, //edx,			// bit 32-63
+      dwAffinityMask //DWORD dwAffinityMask	// Thread Affinity Mask
+    ) ;
+  return bool_ ;
 }

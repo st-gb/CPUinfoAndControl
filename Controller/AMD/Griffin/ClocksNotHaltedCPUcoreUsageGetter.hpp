@@ -42,6 +42,8 @@ class ClocksNotHaltedCPUcoreUsageGetter
 {
 private :
   //bool m_bAtLeastSecondTime ;
+  double m_dMaximumCPUcoreFrequency ;
+  double m_dMaximumPossibleCPUclocksNotHalted ;
   DWORD m_dwAtMask2ndTimeCPUcoreMask ;
   DWORD m_dwLowmostBits , m_dwHighmostBits ;
   DWORD m_dwAffinityMask ;

@@ -261,7 +261,7 @@ wxDynFreqScalingTimer::wxDynFreqScalingTimer(
         m_dwMSRHigh = 0 ;
         m_dwMSRLow = 0 ;
 #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-        mp_pumastatectrl->setVidAndFrequencyForPState_Puma(
+        mp_pumastatectrl->WriteToPstateOrCOFVIDcontrolRegister(
           //mp_pumastatectrl->GetMSRregisterForPstate(
           ////Use p-state 3 for setting for dyn. freq. scaling
           ////because setting via the MSR register 0xC0010070

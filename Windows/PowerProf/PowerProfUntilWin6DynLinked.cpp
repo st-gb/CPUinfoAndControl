@@ -807,7 +807,9 @@ BOOLEAN WINAPI PowerProfUntilWin6DynLinked::ReadProcessorPwrScheme(
       , pMachineProcessorPowerPolicy ) ;
     if( ! booleanRet )
     {
-      LOGN("error getting CPU power info: error code: " << ::GetLastError() )
+      DWORD dwErrorCode = ::GetLastError() ;
+      std::string str = LocalLanguageMessageFromErrorCode(dwErrorCode) ;
+      LOGN("error getting CPU power info: error code: " << dwErrorCode << str )
     }
     //If the function succeeds, the return value is nonzero.
     return booleanRet ;

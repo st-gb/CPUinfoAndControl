@@ -107,6 +107,9 @@ class GriffinController
   : public I_CPUcontroller
 {
 private:
+  ////This should be private so that other classes can not access this
+  ////member directly in order to avoid writes to dangerous MSR registers.
+  //I_CPUaccess * mp_controller ;
 #ifdef _WINDOWS //win32, 64 Bit (etc.)
   //HINSTANCE is available under MS Vis Studio/ C++
   //HINSTANCE m_hinstanceThisModule;
@@ -140,7 +143,6 @@ public :
   //Model m_model ;
   Model * mp_model ;
   //ISpecificController 
-  I_CPUaccess * mp_controller ;
   ICalculationThread * mp_calculationthread ;
   ICalculationThread ** marp_calculationthread ;
   //accessed by "IncreaseVoltage(...)" and "FindLowestOperatingVoltage(...)"
@@ -165,11 +167,16 @@ public :
   //float
   ULONGLONG GetCurrentCPUload(BYTE byCPUcoreID) ;
 
+  BYTE GetCurrentPstate(
+    WORD & r_wFreqInMHz 
+    , float & Volt
+    , BYTE byCoreID 
+    ) ;
   BYTE GetCurrentPstate(DWORD dwAffinityMask) ;
 
-  BYTE GetInterpolatedVoltageFromFreq(
-    WORD wFreqInMHzToGetVoltageFrom,
-    float & r_fVoltageInVolt ) ;
+  //BYTE GetInterpolatedVoltageFromFreq(
+  //  WORD wFreqInMHzToGetVoltageFrom,
+  //  float & r_fVoltageInVolt ) ;
   WORD GetMaximumFrequencyInMHz() ;
 
   DIDandFID GetNearestHigherPossibleFreqInMHzAsDIDnFID(
@@ -179,6 +186,7 @@ public :
   DIDandFID GetNearestPossibleFreqInMHzAsDIDnFID(
       WORD wFreqInMHz ) ;
 
+  //Useful for reads from p-state and COFVID status registers.
   void GetVIDmFIDnDID(DWORD dwLowmostMSRvalue, PState & r_pstate) ;
 
   bool GetProcessorNameByCPUID(std::string & r_stdstr) ;
@@ -231,6 +239,15 @@ public :
     );
 
   GriffinController() {};
+  GriffinController(
+    Model * p_modelData, 
+    I_CPUaccess * p_cpuaccessmethod 
+    ) 
+  { 
+    mp_model = p_modelData ; 
+    mp_cpuaccess = p_cpuaccessmethod ;
+    Init() ;
+  }
   
   GriffinController(
     int argc
@@ -362,7 +379,8 @@ public :
     , double d ) ;
 
   //TODO: maybe this is useful: AMD 11h CPU PDF: PSI_L Bit
-  BYTE setVidAndFrequencyForPState_Puma(
+  BYTE //setVidAndFrequencyForPState_Puma
+    WriteToPstateOrCOFVIDcontrolRegister (
 	  DWORD dwRegNr, 
    // unsigned char byVID, //unsigned short wFreqInMHz
 	  //unsigned char byFreqID, 
@@ -394,14 +412,14 @@ public :
 
   BYTE GetCurrentTempInDegCelsius(float & fTempInDegCelsius) ;
 
-  BYTE GetInterpolatedVoltageFromFreq(
-    WORD wFreqInMHzToGetVoltageFrom
-    , const //MaxVoltageForFreq 
-      VoltageAndFreq & cr_maxfreqandvoltageNearestFreqGreaterEqual
-    , const //MaxVoltageForFreq 
-      VoltageAndFreq & cr_maxfreqandvoltageNearestFreqLowerEqual
-    , float & r_fVoltageInVolt 
-    ) ;
+  //BYTE GetInterpolatedVoltageFromFreq(
+  //  WORD wFreqInMHzToGetVoltageFrom
+  //  , const //MaxVoltageForFreq 
+  //    VoltageAndFreq & cr_maxfreqandvoltageNearestFreqGreaterEqual
+  //  , const //MaxVoltageForFreq 
+  //    VoltageAndFreq & cr_maxfreqandvoltageNearestFreqLowerEqual
+  //  , float & r_fVoltageInVolt 
+  //  ) ;
 
   WORD GetMinFreqToPreventOvervoltage(
     const MaxVoltageForFreq & maxvoltageforfreq,
@@ -418,6 +436,12 @@ public :
 
   static unsigned long GetMSRregisterForPstate(
     unsigned char byPstate ) ;
+  void GetMSRregisterValue( 
+      BYTE byVoltageID, 
+      const DIDandFID & didandfid , 
+      DWORD & dwMSRhighmost , 
+      DWORD & dwMSRlowmost 
+      ) ;
 
   UserInterface * GetUserInterface() ;
 
@@ -459,7 +483,11 @@ public :
   //}
 
   void SetUserInterface(UserInterface * p_userinterface ) ;
-  //BYTE SetVoltageAndFrequency( float fVolt, WORD wFreqInMHz ) ;
+  BYTE SetVoltageAndFrequency( 
+    float fVoltageInVolt, 
+    WORD wFreqInMHz, 
+    BYTE byCoreID 
+    ) ;
   BYTE StartOrStopCalculationThread( BYTE byCoreID) ;
 
   bool GetCPUMiscControlDWORD(DWORD dwRegisterAddress, DWORD & dwValue) ;
@@ -480,7 +508,10 @@ public :
   
 //  void SetPstateAccCPULoad()
 //  {
-////In addition to the RDMSR instruction, the PERF_CNT[3:0] registers can be read using a special read performance-monitoring counter instruction, RDPMC. The RDPMC instruction loads the contents of the PERF_CTR[3:0] register specified by the ECX register, into the EDX register and the EAX register.
+////In addition to the RDMSR instruction, the PERF_CNT[3:0] registers 
+  //can be read using a special read performance-monitoring counter instruction, RDPMC. 
+  //The RDPMC instruction loads the contents of the PERF_CTR[3:0] register 
+  //specified by the ECX register, into the EDX register and the EAX register.
 //
 //    //HQUERY hQuery;
 //    //HCOUNTER hCounter;
@@ -510,14 +541,27 @@ public :
   bool GetMaxPState(BYTE & byMaxPstate) ;
   bool SetMaxPState(BYTE byMaxPstate) ;
 
-  void WriteToCOFVID(PState & pstate, BYTE byCoreID ) ;
+  void SetFreqAndVoltageFromFreq(
+    WORD wFreqInMHz 
+    , BYTE byCoreID ) ;
 
+  BYTE TooHot( ) ;
+
+  void WriteToCOFVID(PState & pstate, BYTE byCoreID ) ;
+  BOOL // TRUE: success, FALSE: failure
+    //WINAPI
+    WrmsrEx(
+      DWORD index,		// MSR index
+      DWORD dwLow ,//eax,			// bit  0-31
+      DWORD dwHigh, //edx,			// bit 32-63
+      DWORD affinityMask	// Thread Affinity Mask
+    ) ;
 public:
-    BYTE UseMaxVoltageForFreqForOvervoltageProtection(   
-        BYTE byVID
-        ,
-        WORD wWantedFrequInMHz
-        );
+  BYTE UseMaxVoltageForFreqForOvervoltageProtection(   
+    BYTE byVID
+    ,
+    WORD wWantedFrequInMHz
+    );
 public:
 }; //end class
 

@@ -22,7 +22,8 @@
 	#include <xercesc/sax2/DefaultHandler.hpp>
 	#include <xercesc/util/XMLString.hpp>
   //#include <Controller/Logger.hpp>
-  #include "Controller/Logger.hpp"
+  #include <Controller/Logger.hpp>
+  #include <Controller/stdstring_format.hpp> //for to_strstring()
   #include "../ModelData/ModelData.hpp"
   #include "../UserInterface.hpp"
 
@@ -112,19 +113,24 @@ extern Logger g_logger ;
             delete p_sax2xmlreader;
 //	        return FAILURE;
 	      }
-	      catch (const SAXParseException& toCatch) 
+	      catch (const SAXParseException & r_saxparseexception )
 	      {
-	        char * pchMessage = XMLString::transcode(toCatch.getMessage());
+	        char * pchMessage = XMLString::transcode( r_saxparseexception.getMessage() );
 	        cout << "Exception message is: \n"
 	             << pchMessage << "\n";
           std::string strMessage = "XML error in file: \"" + 
-            std::string(xmlFile) + "\" : " + pchMessage ;
+            std::string(xmlFile) 
+            + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() ) 
+            + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() ) 
+            + ": " + pchMessage 
+            + "\nIn order to solve this problem you may look into the XML "
+            "specifications for element names etc" ;
 	        p_userinterface->Confirm(//pchMessage
             strMessage);
-	        XMLString::release( & pchMessage);
+	        XMLString::release( & pchMessage );
             //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
             //"The parser object returned by XMLReaderFactory is owned by the calling users, and it's the responsiblity of the users to delete that parser object, once they no longer need it."
-            delete p_sax2xmlreader;
+          delete p_sax2xmlreader;
 //	        return FAILURE;
 	      }
 	      catch (...) 

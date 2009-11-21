@@ -1,5 +1,7 @@
 #pragma once //include guard
 
+//#include <Controller/I_CPUaccess.hpp>
+
 #define SETTING_VOLTAGE_IS_UNSAFE 0
 #define VOLTAGE_IS_TOO_HIGH_FOR_FREQUENCY 0
 #define SETTING_VOLTAGE_IS_SAFE 1
@@ -39,6 +41,7 @@ class I_CPUcontroller
 {
 //protected or public to inherit the attributes (member vars)
 protected:
+//public:
   //The CPU access should be protected against direct access by 
   //not inherited classes because writing to an MSR may damage the CPU.
   //A good place for direct write to MSR is the concrete CPU controller
@@ -72,7 +75,17 @@ public:
   bool CmdLineParamsContain(_TCHAR * ptcharOption, std::string & strValue);
   BYTE DisableFrequencyScalingByOS() ;
   BYTE EnableOwnDVFS() ;
-  virtual BYTE Init() { return 1 ; } ;
+  //MUST be declared virtual ("virtual ...") else 
+  //GetCurrentPstate() of the derived class is NOT called.
+  virtual BYTE GetCurrentPstate(
+    WORD & r_wFreqInMHz 
+    , float & Volt
+    , BYTE byCoreID 
+    )
+  {
+    return 0 ; 
+  }
+
   BYTE GetInterpolatedVoltageFromFreq(
     WORD wFreqInMHzToGetVoltageFrom,
     float & r_fVoltageInVolt 
@@ -85,16 +98,6 @@ public:
   //  ) ;
   virtual WORD GetNumberOfPstates() { return 0 ; }
   WORD GetNumberOfCPUcores() ; 
-  //MUST be declared virtual ("virtual ...") else 
-  //GetCurrentPstate() of the derived class is NOT called.
-  virtual BYTE GetCurrentPstate(
-    WORD & r_wFreqInMHz 
-    , float & Volt
-    , BYTE byCoreID 
-    )
-  {
-    return 0 ; 
-  }
   //Must be declared pure virtual ("virtual ... = 0 ;") else 
   //GetMaximumFrequencyInMHz() of the derived class is NOT called.
   virtual WORD GetMaximumFrequencyInMHz() //{ return 0; } ;
@@ -128,6 +131,7 @@ public:
     //  //)
     //  ;
   }
+  virtual BYTE Init() { return 1 ; } ;
   BYTE OtherPerfCtrlMSRwriteIsActive() ;
   //Advantage for a RdmsrEx() inside CPU controller: one does not
   //need to MANUALLY check if cpuaccess is assigned. (not NULL)
@@ -182,7 +186,9 @@ public:
     , BYTE byCoreID) {//return 0 ; 
     } 
     //= 0 ;
-  BYTE TooHot() { return 0 ; }
+  //MUST be declared virtual ("virtual ...") else 
+  //GetCurrentPstate() of the derived class is NOT called.
+  virtual BYTE TooHot() { return 0 ; }
   void SetFrequencyInMHz(WORD wFre) {} ;
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
@@ -192,6 +198,7 @@ public:
     SetVoltageAndFrequency(
       float fVolt    
       , WORD wFreqInMHz 
-      ) {return 0 ; }
-      //;
+      , BYTE byCoreID 
+      ) //{return 0 ; }
+      = 0 ;
 };
