@@ -36,7 +36,7 @@ public:
     I_CPUaccess * p_ispecificcontroller ) ;
 private:
   //ISpecificController 
-  I_CPUaccess * mp_ispecificcontroller ;
+  I_CPUaccess * mp_cpuaccessmethod ;
 };
 
 #endif	/* _MAINCONTROLLER_HPP */

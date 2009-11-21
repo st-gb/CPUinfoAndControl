@@ -143,7 +143,8 @@ WORD PentiumM_Controller::GetMinimumFrequencyInMHz()
 
 WORD PentiumM_Controller::GetMaximumVoltageID()
 {
-  //0.7V + 0.016V * 50 = 1.34 V
+  //The maximum voltage is 1.34 V.
+  //0.7V + 0.016V * 40 = 0,7 V + 0,64V = 1.34 V
   return 40 ;
 }
 
@@ -253,6 +254,7 @@ void PentiumM_Controller::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
   SetVoltageAndFrequency(
     fVoltageInVolt
     , wFreqInMHz
+    , byCoreID
     ) ;
   fVoltageInVolt += 0.32 ; //increase by 2 voltage ID steps
 
@@ -326,6 +328,9 @@ void PentiumM_Controller::PerformanceEventSelectRegisterWrite(
 BYTE PentiumM_Controller::SetVoltageAndFrequency(
   float fVoltageInVolt
   , WORD wFreqInMHz
+  //The Pentium has just 1 core but this param is for compatibility to the 
+  //base class.
+  , BYTE byCoreID
   )
 {
   //byVoltageID: 40 = 1.34 V    27 = 1.1320000
@@ -398,6 +403,7 @@ void PentiumM_Controller::SetFreqAndVoltageFromFreq(
       SetVoltageAndFrequency(//wFreqInMHz
         fVoltageInVolt
         , ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+        , byCoreID
         ) ;
     }
   }
@@ -419,7 +425,7 @@ void PentiumM_Controller::SetFreqAndVoltageFromFreq(
           ) 
         )
       {
-        SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz) ;
+        SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
       }
     }
     //if( ( wFreqInMHz - ci_stdsetvoltageandfreqNearestLowerEqual->

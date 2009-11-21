@@ -12,9 +12,11 @@
 //#ifdef X64 || 
 #if defined(X64) || defined(_M_X64 ) || defined(_WIN64 )
   #define DLL_NAME "WinRing0x64.dll"
+  #define TSTR_DLL_NAME _T("WinRing0x64.dll")
   #define WINRING0_DRIVER_NAME "WinRing0x64.sys"
 #else
   #define DLL_NAME "WinRing0.dll"
+  #define TSTR_DLL_NAME _T("WinRing0.dll")
   #define WINRING0_DRIVER_NAME "WinRing0.sys"
 #endif
 
@@ -58,7 +60,8 @@ void WinRing0dynLinked::Init(UserInterface * pui)
   m_pfnreadpciconfigdwordex = NULL ;
   mp_userinterface = pui ;
   //m_pfnrdmsrex = NULL ;
-  m_hinstanceWinRingDLL = ::LoadLibraryA(archDLLName);
+  //m_hinstanceWinRingDLL = ::LoadLibraryA(archDLLName);
+  m_hinstanceWinRingDLL = ::LoadLibrary(TSTR_DLL_NAME);
   //wxMessageBox(//wxstrDLLName 
   //  wxstrDLLName + " DLL NOT loaded");
   if (m_hinstanceWinRingDLL == 0)
@@ -84,6 +87,7 @@ void WinRing0dynLinked::Init(UserInterface * pui)
     //  //Returns pointer to symbol name in the library or NULL if the library contains no such symbol.
     //  GetSymbol(wxstrFuncName,&bSuccess);
     //void * pfn = ::GetProcAddress(m_hinstanceWinRingDLL,"InitializeOls");
+    ::SetLastError(0) ;
     _InitializeOls pfnInitializeOls = (_InitializeOls)
       ::GetProcAddress(m_hinstanceWinRingDLL,"InitializeOls");
     //if( pfn == NULL )
@@ -112,9 +116,11 @@ void WinRing0dynLinked::Init(UserInterface * pui)
       if( dwValue == OLS_DLL_NO_ERROR )
       {
          LOG("WinRing0 successfully initialized\n") ;
+         //UIconfirm("WinRing0 successfully initialized") ;
       }
       else
       {
+        DWORD dw = ::GetLastError() ;
           std::ostrstream ostrstream;
           if( mp_userinterface )
           {
@@ -171,6 +177,9 @@ void WinRing0dynLinked::Init(UserInterface * pui)
                       "-Place the CPU access driver \"" WINRING0_DRIVER_NAME
                       "\" into the same directory as the DLL \"" DLL_NAME "\""
                       " (and this exe)\n" ;
+                      "-file system: run THIS program from an ordinary file system"
+                      " such as NFTS, and NOT from virtual file systems like"
+                      " Truecrypt drives\n" ;
                   dwErrorAsSystemError = ERROR_FILE_NOT_FOUND ;
                   break;
               case OLS_DLL_UNKNOWN_ERROR:

@@ -184,10 +184,10 @@
 	{
 	    bool bChange = false ;
 	//#ifdef PRIVATE_RELEASE //hide the other possibilities
-	    BYTE byFreqID;
+	    //BYTE byFreqID;
     //#endif
-	    WORD //wNumber, 
-	      wVID ;
+	    //WORD //wNumber, 
+	    //  wVID ;
 	#ifdef PRIVATE_RELEASE //hide the other possibilities
 	    WORD wValue ;
   #endif

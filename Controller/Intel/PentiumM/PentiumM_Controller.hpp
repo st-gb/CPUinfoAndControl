@@ -50,7 +50,11 @@ public:
     bool bInvertCounterMask ,
     BYTE byCounterMask
     ) ;
-  BYTE SetVoltageAndFrequency( float fVolt, WORD wFreqInMHz ) ;
+  BYTE SetVoltageAndFrequency( 
+    float fVolt , 
+    WORD wFreqInMHz ,
+    BYTE byCoreID 
+    ) ;
   void SetFreqAndVoltageFromFreq(
     WORD wFreqInMHz 
     , BYTE byCoreID) ;

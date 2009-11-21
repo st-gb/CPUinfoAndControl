@@ -44,8 +44,8 @@ PentiumM::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //when executing at privilege level 0."
   DWORD dwEAX ;
   DWORD dwEBX ;
-  DWORD dwECX ;
-  DWORD dwEDX ;
+  //DWORD dwECX ;
+  //DWORD dwEDX ;
   mp_pentium_m_controller->CpuidEx(
     
     0x0A , //DWORD index,

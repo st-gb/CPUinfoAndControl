@@ -943,6 +943,7 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
     , 
     //m_byCoreID
     mp_wxsliderFreqInMHz->GetValue()
+    , m_byCoreID
     ) ;
   }
   if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )

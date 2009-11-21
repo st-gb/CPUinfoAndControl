@@ -18,6 +18,7 @@ public:
 //public:
   PState() ;
   PState(BYTE byVID, BYTE byDivID=255, BYTE byFreqID=255, BYTE byNumber=255) ;
+  PState( float fVoltageInVolt, WORD wFreqInMHz ) ;
 
   void AssignChangesFromPstateFromMSR(PState & r_pstateFromMSR) ;
 

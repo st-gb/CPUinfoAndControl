@@ -478,7 +478,7 @@ BYTE I_CPUcontroller::GetPstateSafefy(
   return bPstateIsSafe ;
 }
 
-//Any WEITE operation to the performance control register by any other software 
+//Any WRITE operation to the performance control register by any other software 
 //(OS, BIOS, RMclock, GNOME power manager,...) is problematic.
 BYTE I_CPUcontroller::OtherPerfCtrlMSRwriteIsActive()
 {

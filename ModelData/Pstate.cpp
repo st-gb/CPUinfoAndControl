@@ -14,13 +14,13 @@ PState::PState()
     m_byIsSafe = true ;
   }
 
-    PState::PState
-    (
-       BYTE byVID
-       , BYTE byDivID//=255, 
-       , BYTE byFreqID//=255, 
-       , BYTE byNumber//=255
-    )
+  PState::PState
+  (
+     BYTE byVID
+     , BYTE byDivID//=255, 
+     , BYTE byFreqID//=255, 
+     , BYTE byNumber//=255
+  )
   {
     //if(byVID != 255 )
       this->m_byVoltageID = byVID;
@@ -30,6 +30,15 @@ PState::PState()
       this->m_byFreqID = byFreqID;
       m_byNumber = byNumber ;
   }
+
+//PState::PState( float fVoltageInVolt, WORD wFreqInMHz )
+//{
+//  //BYTE byFrequencyID , byDivisorID ;
+//  //GetFIDandDID( wFreqInMHz, byFrequencyID, byDivisorID ) ;
+//  DIDandFID didandfid(wFreqInMHz) ;
+//  m_byDivisorID = didandfid.m_byDivisorID ;
+//  m_byF
+//}
 
 void PState::AssignChangesFromPstateFromMSR(PState & r_pstateFromMSR)
 {
