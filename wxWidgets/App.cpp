@@ -182,16 +182,22 @@ bool wxPumaStateCtrlApp::OnInit()
   m_stdtstrProgramName = _T("X86_info_and_control") ;
 
   m_arartchCmdLineArgument = new TCHAR * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
+  mp_modelData = new Model() ;
 
-  if(m_arartchCmdLineArgument)
+  //If allocation succeeded.
+  if( m_arartchCmdLineArgument && mp_modelData )
   {
     //ISpecificController
     //MyFrame * p_frame ;
+    std::tstring stdtstrLogFilePath( mp_modelData->m_stdtstrProgramName +
+      _T("_log.txt") ) ;
+    g_logger.OpenFile( stdtstrLogFilePath ) ;
     //Intitialise to be valid.
     m_arartchCmdLineArgument[ 0 ] = _T("") ;
     m_arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] = 
-        //"-config=config.xml" ;
-        _T("-config=GriffinControl_config.xml") ;
+      //"-config=config.xml" ;
+      //_T("-config=GriffinControl_config.xml") ;
+      (wchar_t * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).c_str() ;
 
     mp_userinterface = //p_frame ;
       this ;
@@ -246,11 +252,10 @@ bool wxPumaStateCtrlApp::OnInit()
     }
     if( ! bSharedMemOk )
 #endif //COMPILE_WITH_SHARED_MEMORY
-      mp_modelData = new Model() ;
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   	m_ipcclient.Init() ;
 #endif
-    if( mp_modelData )
+    //if( mp_modelData )
     {
       try //catch CPUaccessexception
       {
@@ -359,8 +364,11 @@ bool wxPumaStateCtrlApp::OnInit()
       ////it should show error messages because of e.g. missing privileges.
       //p_frame = new MyFrame( 
       mp_frame = new MainFrame(
-        _T(//"wxPumaStateCtrlDlg"
-          "GriffinControl GUI" )
+        //_T(//"wxPumaStateCtrlDlg"
+          //"GriffinControl GUI" )
+        //_T(PROGRAM_NAME)
+        //m_stdtstrProgramName
+        mp_modelData->m_stdtstrProgramName +_T(" GUI")
         , 
         wxPoint(50,50), 
         wxSize(450,340)
@@ -609,7 +617,8 @@ bool wxPumaStateCtrlApp::OnInit()
       }
       catch( VoltageSafetyException e )
       {
-        Confirm( GetCharPointer( ( e.m_stdtstrMessage + "\n->Exiting" ).c_str() ) 
+        Confirm( GetCharPointer( ( e.m_stdtstrMessage + _T("\n->Exiting") ).
+          c_str() ) 
           ) ;
         return FALSE ;
       }

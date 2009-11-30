@@ -1,5 +1,8 @@
 #include "ModelData.hpp"
 //#include "RegisterData.hpp" //class MSRdata
+#include <Controller/MSVC_adaption/tchar.h>
+
+#define _T_LITERAL_PROGRAM_NAME _T("X86InfonControl")
 
 Model::Model( //GriffinController * p_griffincontroller 
              )
@@ -9,7 +12,8 @@ Model::Model( //GriffinController * p_griffincontroller
     , m_bEnableOvervoltageProtection(true)
     , m_bUseDefaultFormularForOvervoltageProtection(false)
     , m_bTruncateLogFileForEveryStartup(true)
-    , mp_cpucontroller (NULL) 
+    , mp_cpucontroller (NULL)
+    , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
   {
     //m_cpucoredata
 #ifdef _DEBUG

@@ -1,5 +1,21 @@
 #pragma once //include guard
 
+//#ifndef __CYGWIN__
+//  #include <tchar.h> //for _T(), TCHAR
+//#else
+//  typedef char _TCHAR ;
+//#endif
+//For non-MSVC add include dir "Controller/MSVC_adaption" in order to find
+//tchar.h .
+#include <tchar.h> //for _T(), TCHAR
+//#include <basetsd.h> //for DWORD_PTR
+
+#include <Windows_compatible_typedefs.h> //for DWORD_PTR
+#include <set> //for std::set
+#include <string> // std::string
+//typedef unsigned char BYTE ;
+//#include "global.h" //for BYTE
+
 //#include <Controller/I_CPUaccess.hpp>
 
 #define SETTING_VOLTAGE_IS_UNSAFE 0
@@ -20,20 +36,10 @@ class I_CPUaccess ;
 class UserInterface ;
 class Model ;
 class IDynFreqScalingAccess ;
-
-#ifndef __CYGWIN__
-  #include <tchar.h> //for _T(), TCHAR
-#else
-  typedef char _TCHAR ;
-#endif
-//#include <basetsd.h> //for DWORD_PTR
-#include <Windows_compatible_typedefs.h> //for DWORD_PTR
-#include <set> //for std::set
-//typedef unsigned char BYTE ;
-#include "global.h" //for BYTE
-
 class VoltageAndFreq ;
 class ICPUcoreUsageGetter ;
+
+//#define FORCE_WCHAR_T
 
 //base class for specific CPU controllers like e.g. 
 //GriffinController and PentiumMcontroller
@@ -50,7 +56,7 @@ protected:
   I_CPUaccess * mp_cpuaccess ;
 public:
   int m_byNumberOfCmdLineArgs;
-  _TCHAR ** m_arartcharCmdLineArg ;
+  TCHAR ** m_arartcharCmdLineArg ;
   //std::vector<std::string> m_stdvecstdstringCmdLineArg ;
 
   UserInterface * mp_userinterface ;
@@ -72,7 +78,7 @@ public:
     PDWORD p_dwEDX,
     DWORD_PTR affinityMask
   ) ;
-  bool CmdLineParamsContain(_TCHAR * ptcharOption, std::string & strValue);
+  bool CmdLineParamsContain( TCHAR * ptcharOption, std::string & strValue);
   BYTE DisableFrequencyScalingByOS() ;
   BYTE EnableOwnDVFS() ;
   //MUST be declared virtual ("virtual ...") else 
@@ -153,7 +159,13 @@ public:
   void SetCmdLineArgs(
     //std::vector<std::string> & r_stdvecstdstringCmdLineArg 
       int argc, 
-      _TCHAR * argv[]
+      //TCHAR * argv[]
+      //Array of strings of type TCHAR
+  #ifdef FORCE_WCHAR_T
+    wchar_t ** argv
+  #else
+    TCHAR ** argv
+  #endif
     ) ;
   void SetUserInterface( 
     //By using a pointer instead of a reference one can pass NULL 

@@ -1,6 +1,7 @@
 #include "CPUcoreData.hpp"
 #include <Controller/AMD/Griffin/AMD_family17.h>
 #include <wxWidgets/DynFreqScalingThread.hpp>
+#include <Controller/ICPUcoreUsageGetter.hpp>
 
 extern Logger g_logger ;
 

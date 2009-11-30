@@ -34,6 +34,8 @@
 #include <Controller/ICPUcoreUsageGetter.hpp> //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CalculationThreadProc.h>
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
+#include <Controller/MainController.hpp>
+#include <Controller/stdtstr.hpp>
 #include <BuildTimeString.h>
 #include "ModelData/RegisterData.hpp"
 #include <ModelData/HighLoadThreadAttributes.hpp>
@@ -110,7 +112,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnDynamicallyCreatedUIcontrol )
   EVT_MENU( ID_EnableOrDisableOtherDVFS ,
     MainFrame::OnOwnDynFreqScaling )
-
+#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   EVT_MENU( ID_ContinueService ,
     MainFrame::OnContinueService )
   EVT_MENU( ID_PauseService ,
@@ -119,7 +121,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnStartService )
   EVT_MENU( ID_StopService ,
     MainFrame::OnStopService )
-
+#endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
 //#endif
   //#ifdef _WINDOWS
 #ifdef COMPILE_WITH_SERVICE_CAPABILITY
@@ -204,8 +206,9 @@ MainFrame::MainFrame(
   p_wxmenuFile->AppendSeparator();
   //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
-
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   CreateServiceMenuItems() ;
+#endif
   CreateAndInitMenuItemPointers() ;
 
   //p_wxmenuCore0->Append( ID_FindLowestOperatingVoltage, 
@@ -241,11 +244,13 @@ MainFrame::MainFrame(
   CreateDynamicMenus();
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   wxMenu * p_wxmenuExtras = new wxMenu;
+#ifdef COMPILE_WITH_SERVICE_CONTROL
   mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
     ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq, 
     //_T("&CPU % min and max.") 
     _T("enable or disable OS's dynamic frequency scaling")
     );
+#endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
 //#endif //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //#ifdef _TEST_PENTIUM_M
   //wxMenu * p_wxmenuExtras = new wxMenu;
@@ -796,16 +801,25 @@ void MainFrame::OnStopService(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
+  std::tstring stdtstr ;
+  std::vector<std::tstring> stdvecstdtstring ;
+  MainController::GetSupportedCPUs(stdvecstdtstring) ;
+  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
+    stdtstr += stdvecstdtstring.at(by) + _T(" ") ;
   wxMessageBox(
     //We need a _T() macro (wide char-> L"", char->"") for EACH 
     //line to make it compitable between char and wide char.
     
       //"A tool for optimizing the usage of AMD family 17\n, "
-      _T("A tool for controlling performance states of AMD family 17\n, ")
-      _T("codename \"griffin\" (mobile) CPUs, especially for undervolting.\n")
+//      _T("A tool for controlling performance states of AMD family 17\n, ")
+//      _T("codename \"griffin\" (mobile) CPUs, especially for undervolting.\n")
+      //_T("A tool for controlling performance states of AMD family 17\n, ")
+      _T("A tool for controlling performance states of ")
+      + stdtstr +
+      _T( "\n, ")
 
       //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-      //BUILT_TIME
+      BUILT_TIME
       //"AMD--smarter choice than Intel?\n\n"
       //"To ensure a stable operation:\n"
       _T("I observed system instability when when switching from power ")
@@ -821,7 +835,10 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       //"--deutsches Qualitaetserzeugnis--"
     ,
     //"About wxPumaStatecontrol"
-    _T("About GriffinControlDialog"), 
+    //_T("About GriffinControlDialog"),
+    _T("About ") //_T(PROGRAM_NAME)
+    + mp_cpucontroller->mp_model->m_stdtstrProgramName
+    ,
     wxOK | wxICON_INFORMATION, this
     );
 }
@@ -2291,6 +2308,7 @@ void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
   int nMenuEventID = wxevent.GetId() ;
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   if( nMenuEventID == ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq )
   {
     //wxMessageDialog();
@@ -2325,6 +2343,7 @@ void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
       ) ;
     return ;
   }
+#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //#endif
   BYTE byCoreID = ( nMenuEventID - m_nLowestIDForSetVIDnFIDnDID ) / 
     m_nNumberOfMenuIDsPerCPUcore ;

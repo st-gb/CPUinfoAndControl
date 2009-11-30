@@ -1,6 +1,7 @@
 
 #include <Windows.h> //for SYSTEMTIME
 #include "Logger.hpp"
+#include <Controller/tchar_conversion.h> //GetCharPointer()
 
 Logger::Logger()
     //C++ style initialisation.
@@ -53,19 +54,22 @@ void Logger::Log(//ostream & ostr
         SYSTEMTIME systemtime ;
         GetSystemTime(&systemtime);              // gets current time
         ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
+      #else
+
       #endif
         //m_ofstream << r_stdstr ;
         *mp_ofstream
           #ifdef _WINDOWS
-            << systemtime.wYear 
-            << "." << systemtime.wMonth 
-            << "." << systemtime.wDay 
-            << " " << systemtime.wHour
-            << "h:" << systemtime.wMinute
-            << "min " << systemtime.wSecond
-            << "s " << systemtime.wMilliseconds
+            << systemtime.wYear << "."
+            << systemtime.wMonth << "."
+            << systemtime.wDay << " " 
+            << systemtime.wHour << "h:"
+            << systemtime.wMinute << "min "
+            << systemtime.wSecond << "s "
+            << systemtime.wMilliseconds << "ms:"
+          #else
           #endif
-            << "ms:" << r_stdstr ;
+            << r_stdstr ;
         //m_ofstream.flush() ;
         mp_ofstream->flush() ;
 
@@ -142,24 +146,25 @@ void Logger::Log(//ostream & ostr
     }
 }
 
-//void 
-bool Logger::OpenFile( std::string & r_stdstrFilePath )
+bool Logger::OpenFile( std::string & r_stdstrFilePath
+  )
 {
     //char arch [10] = "File\r\n" ;
     //When the ofstream was not dynamically created (=on the heap)
-    //the was no content within the file even when there was at least 
+    //the was no content within the file even when there was at least
     //1 output via the "<<" operator and this program was terminated
     //(=contents should have been written then).
-    //Maybe this was due to a wrong thread/ process affinity for the 
+    //Maybe this was due to a wrong thread/ process affinity for the
     //ofstream object.
     //So I create the ofstream object dynamically.
     if( ! mp_ofstream )
         mp_ofstream = new std::ofstream ;
-    //m_ofstream.open( 
+    //m_ofstream.open(
     mp_ofstream->open(
-        r_stdstrFilePath.c_str()
+      r_stdstrFilePath.c_str()
+      //GetCharPointer(r_stdtstrFilePath.c_str() )
         //"C:\\Temp\\GriffinSvc_log.txt"
-        //, std::ios_base::out | std::ios_base::trunc 
+        //, std::ios_base::out | std::ios_base::trunc
         );
 #ifdef _DEBUG
     bool bOfstreamIsGood = mp_ofstream->good() ;
@@ -168,13 +173,21 @@ bool Logger::OpenFile( std::string & r_stdstrFilePath )
     //std::ofstream ofstreamTest;
     //ofstreamTest.open( "C:\\Temp\\GriffinSvc_text.txt" );
     //ofstreamTest << "hhh bla" ;
-    //ofstreamTest << r_stdstrFilePath << " is " << 
+    //ofstreamTest << r_stdstrFilePath << " is " <<
     //    ( m_ofstream.is_open() ? "" : " NOT " ) << "open\n" ;
     //m_ofstream << "File Opened" ;
     //*mp_ofstream << "File Opened" ;
     //m_ofstream.close() ;
     //m_ofstream.write(arch,6) ;
     //m_ofstream.flush() ;
+}
+
+//void 
+bool Logger::OpenFile( //std::string & r_stdstrFilePath
+  std::tstring & r_stdtstrFilePath)
+{
+  std::string stdstr( GetCharPointer(r_stdtstrFilePath.c_str() ) ) ;
+  OpenFile( stdstr ) ;
 }
 
 void Logger::TruncateFileToZeroAndRewrite()

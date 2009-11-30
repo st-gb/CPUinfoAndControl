@@ -1,9 +1,10 @@
 #include "I_CPUcontroller.hpp"
 #include "UserInterface.hpp"
 #include <Controller/CPUindependentHelper.h>
+#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
-#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
   #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"
@@ -489,7 +490,12 @@ BYTE I_CPUcontroller::OtherPerfCtrlMSRwriteIsActive()
 
 void I_CPUcontroller::SetCmdLineArgs(
   int argc, 
-  _TCHAR * argv[]
+  //TCHAR * argv[]
+#ifdef FORCE_WCHAR_T
+  wchar_t ** argv
+#else
+  TCHAR ** argv
+#endif
   )
 {
   m_byNumberOfCmdLineArgs = argc ;
@@ -531,7 +537,7 @@ void I_CPUcontroller::SetOtherDVFSaccess(
 }
 
 bool I_CPUcontroller::CmdLineParamsContain(
-  _TCHAR * ptcharOption
+  TCHAR * ptcharOption
   , std::string & strValue
   )
 {

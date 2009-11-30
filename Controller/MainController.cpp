@@ -8,6 +8,7 @@
 #include "MainController.hpp"
 #include "I_CPUcontroller.hpp"
 #include <Controller/I_CPUaccess.hpp>
+#include <Controller/stdtstr.hpp>
 #include <Controller/stdstring_format.hpp>
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #ifdef COMPILE_WITH_AMD_GRIFFIN
@@ -267,12 +268,15 @@ BYTE MainController::Init(
       byRet = 1 ;
     }
     else
+    {
+      std::tstring tstr(
+        _T("Running this program is unsafe because theres was an error ") ) ;
+      tstr +=  _T("with the file containg the maximum voltages (") ;
+      tstr = tstr + strProcessorFilePath ;
+      tstr += _T(")") ;
       throw VoltageSafetyException( 
-        "Running this program is unsafe because theres was an error "
-        "with the file containg the maximum voltages (" + strProcessorFilePath + 
-        ")" 
-        ) ;
-
+        tstr ) ;
+    }
     //mp_cpucontroller->mp_model = & model ;
     //if( mp_cpucontroller )
     //  //Needed for drawing the voltage-frequency curves.

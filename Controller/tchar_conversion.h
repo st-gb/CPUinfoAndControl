@@ -5,3 +5,4 @@
 #include <string_typedefs.h>
 
 LPCSTR GetCharPointer( LPCTSTR lptstr ) ;
+LPCSTR GetCharPointer( const WCHAR * wstr ) ;

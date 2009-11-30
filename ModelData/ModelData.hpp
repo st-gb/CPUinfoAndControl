@@ -10,6 +10,7 @@
 #include "RegisterData.hpp" 
 #include "ValueTables.hpp"
 #include "VoltageAndFreq.hpp"
+#include <Controller/stdtstr.hpp>
 
 //class MSRdata ;
 //class ValueTables ;
@@ -33,6 +34,7 @@ public:
   I_CPUcontroller * mp_cpucontroller ;
   std::string m_strProcessorName ;
   std::string m_stdstrLogFilePath ;
+  std::tstring m_stdtstrProgramName ;
   std::vector<MSRdata> m_stdvector_msrdata ;
   WORD m_wMaxFrequency ;
   PStates m_pstates ;

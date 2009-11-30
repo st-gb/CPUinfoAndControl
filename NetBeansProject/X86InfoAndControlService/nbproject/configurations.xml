@@ -91,9 +91,12 @@
         <itemPath>../../Controller/Sleep.h</itemPath>
         <itemPath>../../Controller/WinRing0.h</itemPath>
         <itemPath>../../Controller/Windows.cpp</itemPath>
+        <itemPath>../../Controller/X86InfoAndControlExceptions.hpp</itemPath>
         <itemPath>../../Controller/console.cpp</itemPath>
         <itemPath>../../Controller/stdstring_format.hpp</itemPath>
         <itemPath>../../Controller/stdtstr.hpp</itemPath>
+        <itemPath>../../Controller/tchar_conversion.cpp</itemPath>
+        <itemPath>../../Controller/tchar_conversion.h</itemPath>
       </logicalFolder>
       <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
         <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
@@ -120,6 +123,7 @@
         <itemPath>../../Linux/CalculationThread.hpp</itemPath>
         <itemPath>../../Linux/EnglishMessageFromErrorCode.cpp</itemPath>
         <itemPath>../../Linux/EnglishMessageFromErrorCode.h</itemPath>
+        <itemPath>../../Linux/GetCurrentTime.hpp</itemPath>
         <itemPath>../../Linux/MSRdeviceFile.cpp</itemPath>
         <itemPath>../../Linux/MSRdeviceFile.h</itemPath>
         <itemPath>../../Linux/daemon.c</itemPath>

@@ -76,7 +76,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //As a consequence, if you're creating a derived class that contains child
   //windows, you should use a pointer to the child windows instead of the
   //objects themself as members of the main window."
-  wxBoxSizer * p_wxboxsizerValidPstate = new wxBoxSizer(wxHORIZONTAL);
+//  wxBoxSizer * p_wxboxsizerValidPstate = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer * p_wxboxsizerCPUcorePstate = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer * p_wxboxsizerCPUcoreDivisor = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer * p_wxboxsizerCPUcoreFrequencyMultiplier = new wxBoxSizer(wxHORIZONTAL);
@@ -91,13 +91,13 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //wxButton *btn = new wxButton(this, DIALOGS_MODELESS_BTN, _T("Apply"));
   CreateSliders();
 
-  mp_wxcheckboxValidPstate = new wxCheckBox(this, wxID_ANY,
-      //_T("Set as current after apply") ) ;
-      _T("valid p-state") ) ;
+//  mp_wxcheckboxValidPstate = new wxCheckBox(this, wxID_ANY,
+//      //_T("Set as current after apply") ) ;
+//      _T("valid p-state") ) ;
 
-  mp_wxcheckboxCOFVIDcontrol = new wxCheckBox(this, wxID_ANY,
-      //_T("Set as current after apply") ) ;
-      _T("write into COFVID control register") ) ;
+//  mp_wxcheckboxCOFVIDcontrol = new wxCheckBox(this, wxID_ANY,
+//      //_T("Set as current after apply") ) ;
+//      _T("write into COFVID control register") ) ;
 
   mp_wxstatictextExpectedCurrentDissipation = new wxStaticText(
     this, wxID_ANY, _T("") 
@@ -116,29 +116,29 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //  , 5 //Determines the border width
   //  );
 
-  p_wxboxsizerValidPstate->Add(
-    mp_wxcheckboxValidPstate
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-    , wxLEFT | wxRIGHT |
-    //wxALIGN_CENTER_VERTICAL
-    //The label and the adjustable value should be at the same vertical
-    //position, so place at the top.
-    wxALIGN_TOP
-    , 5 //Determines the border width
-    );
+//  p_wxboxsizerValidPstate->Add(
+//    mp_wxcheckboxValidPstate
+//    , 0 //0=the control should not take more space if the sizer is enlarged
+//    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
+//    , wxLEFT | wxRIGHT |
+//    //wxALIGN_CENTER_VERTICAL
+//    //The label and the adjustable value should be at the same vertical
+//    //position, so place at the top.
+//    wxALIGN_TOP
+//    , 5 //Determines the border width
+//    );
 
-  p_wxboxsizerValidPstate->Add(
-    mp_wxstatictextExpectedCurrentDissipation
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-    , wxLEFT | wxRIGHT |
-    //wxALIGN_CENTER_VERTICAL
-    //The label and the adjustable value should be at the same vertical
-    //position, so place at the top.
-    wxALIGN_TOP
-    , 5 //Determines the border width
-    );
+//  p_wxboxsizerValidPstate->Add(
+//    mp_wxstatictextExpectedCurrentDissipation
+//    , 0 //0=the control should not take more space if the sizer is enlarged
+//    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
+//    , wxLEFT | wxRIGHT |
+//    //wxALIGN_CENTER_VERTICAL
+//    //The label and the adjustable value should be at the same vertical
+//    //position, so place at the top.
+//    wxALIGN_TOP
+//    , 5 //Determines the border width
+//    );
 
   p_wxboxsizerCPUcorePstate->Add( 
     new wxStaticText(this, wxID_ANY, _T("p-state:"))
@@ -236,26 +236,26 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     , wxLEFT | wxRIGHT
     , 5 );
 
-  sizerTop->Add(
-      p_wxboxsizerValidPstate
-      //mp_wxcheckboxValidPstate 
-      ,
-      //"[...] used in wxBoxSizer to indicate if a child of a sizer can 
-      //change its size in the main orientation of the wxBoxSizer - where 
-      //0 stands for not changeable and 
-      //a value of more than zero is interpreted relative to the value of 
-      //other children of the same wxBoxSizer. "
-      //1 
-      0,
-      //wxEXPAND | //wxALL
-        wxBOTTOM
-      ,
-      //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-      //"Determines the border width, if the flag  parameter is set to
-      //include any border flag."
-      //10 
-      0
-      );
+//  sizerTop->Add(
+//      p_wxboxsizerValidPstate
+//      //mp_wxcheckboxValidPstate
+//      ,
+//      //"[...] used in wxBoxSizer to indicate if a child of a sizer can
+//      //change its size in the main orientation of the wxBoxSizer - where
+//      //0 stands for not changeable and
+//      //a value of more than zero is interpreted relative to the value of
+//      //other children of the same wxBoxSizer. "
+//      //1
+//      0,
+//      //wxEXPAND | //wxALL
+//        wxBOTTOM
+//      ,
+//      //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+//      //"Determines the border width, if the flag  parameter is set to
+//      //include any border flag."
+//      //10
+//      0
+//      );
 
   sizerTop->Add(
       p_wxboxsizerCPUcorePstate, 1 , 
@@ -346,28 +346,28 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     //Determines the border width, if the flag  parameter is set to include 
     //any border flag.
     2);
-  sizerTop->Add( 
-    mp_wxcheckboxCOFVIDcontrol ,
-    //"[...] used in wxBoxSizer to indicate if a child of a sizer can 
-    //change its size in the main orientation of the wxBoxSizer - where 
-    //0 stands for not changeable and 
-    //a value of more than zero is interpreted relative to the value of 
-    //other children of the same wxBoxSizer. "
-    //1 
-    0 , //0=no additional space between this and neighbour controls
-    wxEXPAND | //wxALL
-        wxBOTTOM
-    , 
-    2
-    ) ;
+//  sizerTop->Add(
+//    mp_wxcheckboxCOFVIDcontrol ,
+//    //"[...] used in wxBoxSizer to indicate if a child of a sizer can
+//    //change its size in the main orientation of the wxBoxSizer - where
+//    //0 stands for not changeable and
+//    //a value of more than zero is interpreted relative to the value of
+//    //other children of the same wxBoxSizer. "
+//    //1
+//    0 , //0=no additional space between this and neighbour controls
+//    wxEXPAND | //wxALL
+//        wxBOTTOM
+//    ,
+//    2
+//    ) ;
 
   //p_wxboxsizerOK_Cancel->Add(new wxButton(this, wxID_APPLY //, _T("Apply")
   //  ) );
   p_wxboxsizerOK_Cancel->Add( mp_wxbuttonApply ) ;
-  mp_wxcheckboxSetAsCurrentAfterApplying = new wxCheckBox(this, wxID_ANY, 
-      //_T("Set as current after apply") ) ;
-      _T("Set as current p-state after write") ) ;
-  p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
+//  mp_wxcheckboxSetAsCurrentAfterApplying = new wxCheckBox(this, wxID_ANY,
+//      //_T("Set as current after apply") ) ;
+//      _T("Set as current p-state after write") ) ;
+//  p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
   p_wxboxsizerOK_Cancel->Add(new wxButton(this, wxID_CANCEL) );
   sizerTop->Add(
     p_wxboxsizerOK_Cancel, 
@@ -401,6 +401,7 @@ FreqAndVoltageSettingDlg::~FreqAndVoltageSettingDlg()
 void FreqAndVoltageSettingDlg::CreateSliders()
 {
     BYTE byPstateIDtoShowSettingsFor = 0 ;
+    VoltageAndFreq voltageandfreq ;
     //DWORD dwLow ;
     //DWORD dwHigh ;
     ////PState pstate ;
@@ -423,9 +424,9 @@ void FreqAndVoltageSettingDlg::CreateSliders()
     byPstateIDtoShowSettingsFor
     //Slider minimum value.
     , 0 
-    //Slider maximum value.
+    //Slider maximum value. If e.g. 2 p-states: 1st is "0", 2nd & last is "1"
     //, NUMBER_OF_PSTATES - 1 
-    , mp_cpucontroller->GetNumberOfPstates()
+    , mp_cpucontroller->GetNumberOfPstates() - 1
     //, 2
     //If the default point (-1, -1) is specified then a default point is chosen.
     , wxPoint(-1, -1)
@@ -480,19 +481,21 @@ void FreqAndVoltageSettingDlg::CreateSliders()
   //  , wxSL_AUTOTICKS //	Displays tick marks.
   //  | wxSL_LABELS //Displays minimum, maximum and value labels.
   //  ) ;
-
+  mp_cpucontroller->GetPstate(0,voltageandfreq) ;
   mp_wxsliderFreqInMHz = new wxSlider(
     this
     //wxID_ANY, 
     , ID_FrequencySlider
     //, 2  //value
-    , //pstate.GetFreqInMHz() //Initial position for the slider.
-    //m_pstate.GetFreqInMHz() //Initial position for the slider.
-    mp_cpucontroller->GetMinimumFrequencyInMHz()
-    //Slider minimum value.
-    //AMD BIOS and kernel dev guide for family 11h: "The frequency specified 
-    //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of 
-    //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
+    , //Initial position for the slider.
+      //pstate.GetFreqInMHz() //Initial position for the slider.
+      //m_pstate.GetFreqInMHz() //Initial position for the slider.
+      //mp_cpucontroller->GetMinimumFrequencyInMHz()
+      voltageandfreq.m_wFreqInMHz
+      //Slider minimum value.
+      //AMD BIOS and kernel dev guide for family 11h: "The frequency specified
+      //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of
+      //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
     , //lowest adjustable frequency:
     //PState::GetFreqInMHz(
     //  //BYTE byFreqID
@@ -522,13 +525,15 @@ void FreqAndVoltageSettingDlg::CreateSliders()
   mp_wxsliderCPUcoreVoltage = new wxSlider(
     this, 
     //wxID_ANY, 
-    ID_VoltageSlider ,
-    //60 
-    //m_pstate.GetVoltageID()
-    mp_cpucontroller->GetMinimumVoltageID()
-    //slider minimum value
-    //, 0 
-    //, mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID
+    ID_VoltageSlider 
+    , //Initial position for the slider.
+      //60
+      //m_pstate.GetVoltageID()
+      //mp_cpucontroller->GetMinimumVoltageID()
+      mp_cpucontroller->GetVoltageID( voltageandfreq.m_fVoltageInVolt )
+      //slider minimum value
+      //, 0
+      //, mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID
     , mp_cpucontroller->GetMinimumVoltageID()
     //, MAX_VALUE_FOR_VID //slider max value
     //, mp_pumastatectrl->mp_model->m_cpucoredata.m_byMaxVoltageID
@@ -899,13 +904,13 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
   //  //! m_byPstateID
   //  byPstateNumber
   //  );
-  if( //byPstateNumber == 7 
-    mp_wxcheckboxCOFVIDcontrol->GetValue() )
-  {
-//    mp_pumastatectrl->GetAsLowWord 
-    //mp_pumastatectrl->WriteToCOFVID(pstate,m_byCoreID) ;
-  }
-  else
+//  if( //byPstateNumber == 7
+//    mp_wxcheckboxCOFVIDcontrol->GetValue() )
+//  {
+////    mp_pumastatectrl->GetAsLowWord
+//    //mp_pumastatectrl->WriteToCOFVID(pstate,m_byCoreID) ;
+//  }
+//  else
   {
   //setVidAndFrequencyForPState_Puma();
 
@@ -946,7 +951,7 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
     , m_byCoreID
     ) ;
   }
-  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
+//  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
   {
     mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
     //mp_pumastatectrl->SetPstate( byPstateNumber,

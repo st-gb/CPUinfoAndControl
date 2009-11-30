@@ -27,3 +27,6 @@ namespace std {
     #endif
 
 }
+     #if defined _UNICODE || defined UNICODE
+     std::tstring operator + ( const std::tstring & r_tstring, const std::string & r_string) ;
+     #endif

@@ -10,9 +10,14 @@
 //#include <Windows/PowerProfDynLinked.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
+//#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
 #include <UserInterface.hpp>
 #include <ModelData/ModelData.hpp>
 #include <Controller/MainController.hpp>
+
+#pragma  message( "including tchar.h" )
+//Add "Controller/MSVC_adaption/" to the include dir under non-MSVC
+#include <tchar.h> //for TCHAR
 #ifdef _COMPILE_WITH_CALC_THREAD
   #include <Windows/CalculationThread.hpp>
 #endif //#ifdef _COMPILE_WITH_CALC_THREAD
@@ -39,7 +44,7 @@ class wxPumaStateCtrlApp
   , public UserInterface
 {
 private:
-  _TCHAR ** m_arartchCmdLineArgument ;
+  TCHAR ** m_arartchCmdLineArgument ;
 
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
@@ -122,8 +127,8 @@ public:
   //For g++ the std::string object passed to Logger::OpenFile(std::string & )
   //has to be declared before. the call
   //    ( error if  "logger.OpenFile( std::string("bla");"  )
-  std::string stdstr("GriffinControl_log.txt") ;
-  g_logger.OpenFile( stdstr ) ;
+  //std::string stdstr("GriffinControl_log.txt") ;
+  //g_logger.OpenFile( stdstr ) ;
 #endif
     //m_cpucoreusagegetteriwbemservices.Init() ;
   }

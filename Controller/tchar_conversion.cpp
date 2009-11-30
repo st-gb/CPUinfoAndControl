@@ -13,7 +13,7 @@ LPCSTR GetCharPointer( LPCTSTR lptstr )
 #endif
 }
 
-LPCSTR GetCharPointer( WCHAR * wstr )
+LPCSTR GetCharPointer( const WCHAR * wstr )
 {
   std::wstring stdwstr(wstr) ;
   std::string stdstr( stdwstr.begin() , stdwstr.end() ) ;

@@ -43,7 +43,7 @@
 #include <ModelData/PStates.h>
 #include <ModelData/VoltageAndFreq.hpp>
 #include <Controller/I_CPUcontroller.hpp>
-
+#include <tchar.h>
 #ifndef _WINDOWS
   #include <Windows_compatible_typedefs.h>
 #endif
@@ -138,7 +138,8 @@ public :
   BYTE m_byPstateID ;
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
   int m_byNumberOfCmdLineArgs;
-  _TCHAR** m_arartcharCmdLineArg ;
+  //_TCHAR ** m_arartcharCmdLineArg ;
+  TCHAR ** m_arartcharCmdLineArg ;
   //PStates m_pstates;
   //Model m_model ;
   Model * mp_model ;
@@ -251,7 +252,8 @@ public :
   
   GriffinController(
     int argc
-    , _TCHAR * argv[]
+    //, _TCHAR * argv[]
+    , TCHAR * argv[]
     , Model & m_modelData
     , //ISpecificController 
       I_CPUaccess * p_controller

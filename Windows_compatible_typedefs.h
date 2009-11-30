@@ -12,6 +12,9 @@
 extern "C" {
 #endif
 
+typedef int BOOL ;
+#define FALSE 0
+#define TRUE !FALSE
 //see winnt.h
 typedef unsigned long long ULONGLONG ;
 //see basetsd.h
@@ -19,6 +22,7 @@ typedef unsigned long DWORD_PTR ;
 typedef unsigned char BYTE ;
 typedef unsigned short WORD ;
 typedef unsigned long DWORD ;
+typedef DWORD * PDWORD ;
 #define WINAPI __stdcall
 //MS compiler already has __int64 defined: 
 //"error C2632: '__int64' followed by '__int64' is illegal"

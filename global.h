@@ -27,29 +27,30 @@
     //Compiler error if "windef.h" is included using MS compiler
     #include <windef.h>
   #endif
-  typedef int BOOL;
-  typedef unsigned char BYTE;
-  typedef unsigned short WORD;
-  typedef unsigned long DWORD;
-  typedef DWORD * PDWORD;
+//  typedef int BOOL;
+//  typedef unsigned char BYTE;
+//  typedef unsigned short WORD;
+//  typedef unsigned long DWORD;
+//  typedef DWORD * PDWORD;
+  #include <Windows_compatible_typedefs.h>
   //typedef _W64 unsigned long ULONG_PTR;
 //  typedef ULONG_PTR DWORD_PTR;
 #endif
 //#ifndef WIN32
 //#ifndef _WINDOWS
 //#ifndef MS_COMPILER
-#ifndef _MSC_VER //MicroSoft C compiler (macro in Visual Studio )
-  #define _tcscmp strcmp
-	typedef char _TCHAR ;
-	typedef int BOOL;
-	#define FALSE 0
-	typedef DWORD * PDWORD;
-  #ifndef _T
-//  #define _T(x) (_TCHAR *)x
-  //Compatible with preprocessor MACRO from >>wxDir<</include/wx/wxchar.h
-    #define _T(x) x
-  #endif
-#endif
+//#ifndef _MSC_VER //MicroSoft C compiler (macro in Visual Studio )
+//  #define _tcscmp strcmp
+//	typedef char _TCHAR ;
+//	typedef int BOOL;
+//	#define FALSE 0
+//	typedef DWORD * PDWORD;
+//  #ifndef _T
+////  #define _T(x) (_TCHAR *)x
+//  //Compatible with preprocessor MACRO from >>wxDir<</include/wx/wxchar.h
+//    #define _T(x) x
+//  #endif
+//#endif
 
 //#define _EMULATE_TURION_X2_ULTRA_ZM82
 #ifdef _DEBUG

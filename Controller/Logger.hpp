@@ -5,6 +5,7 @@
     #include <strstream> //for class std::ostrstream
     #include <string> //for std::wstring
     #include <sstream>
+#include <Controller/stdtstr.hpp>
 
     class Logger
     {
@@ -34,6 +35,8 @@
           ) ;
         #endif //#ifdef COMPILE_WITH_WSTRING
         //void 
+        bool OpenFile( //std::string & r_stdstrFilePath
+          std::tstring & r_stdtstrFilePath ) ;
         bool OpenFile( std::string & r_stdstrFilePath ) ;
 
         void TruncateFileToZeroAndRewrite() ;

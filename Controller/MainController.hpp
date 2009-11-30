@@ -10,6 +10,8 @@
 
 #include <ModelData/ModelData.hpp>
 #include <UserInterface.hpp>
+#include <Controller/stdtstr.hpp>
+#include <Controller/MSVC_adaption/tchar.h>
 
 class //ISpecificController ;
   I_CPUaccess ;
@@ -28,6 +30,16 @@ public:
   MainController();
   MainController(const MainController& orig);
   virtual ~MainController();
+  static BYTE GetSupportedCPUs(//std::tstring & tstr
+    std::vector<std::tstring> & r_stdvectstr
+    )
+  {
+    #ifdef COMPILE_WITH_AMD_GRIFFIN
+      r_stdvectstr.push_back("AMD Griffin") ;
+    #endif
+      r_stdvectstr.push_back( std::tstring(_T("Pentium M") ) ) ;
+    return 1 ;
+  }
   BYTE Init(
     Model & model 
     , UserInterface * p_userinterface 

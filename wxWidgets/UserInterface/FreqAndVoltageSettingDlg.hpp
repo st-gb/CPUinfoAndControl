@@ -41,8 +41,8 @@ private:
   ////to them).
   //std::vector<wxControl * > m_vecp_wxcontrol ;
   wxButton * mp_wxbuttonApply ;
-  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
-  wxCheckBox * mp_wxcheckboxValidPstate ;
+//  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
+//  wxCheckBox * mp_wxcheckboxValidPstate ;
   wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
   //wxStaticText * mp_wxstatictextFreqInMHz ;
   wxStaticText * mp_wxstatictextVoltageInVolt ;

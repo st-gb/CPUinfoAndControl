@@ -1,0 +1,3 @@
+mit Prime95: Torture test -> ">>Small<< FFTs"
+  -Der Thread, der die Berechnungen durchführt, muss auch genug Rechenzeit pro Gesamtreichenzeit bekommen,
+   sonst trat--falls ich mich recht erinnere--kein Prime-Rechenfehler auf.

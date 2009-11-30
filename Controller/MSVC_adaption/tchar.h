@@ -9,14 +9,19 @@
 #define	_TCHAR_H
 
 #ifdef _UNICODE
-  #define _T(x) L ## x
+  #ifndef _T //e.g. wxWidgets also defines _T() macro
+    #define _T(x) L ## x
+  #endif
   typedef wchar_t TCHAR ;
+  #pragma  message( "using wchar_t for TCHAR" )
 #else
   //#include <string.h> //for strrchr
   #define _T(x) x
   typedef char TCHAR ;
+  #pragma  message( "using char for TCHAR" )
 #endif
 typedef TCHAR * LPTSTR ;
+typedef TCHAR _TCHAR ;
 
 #ifdef	__cplusplus
 extern "C" {
