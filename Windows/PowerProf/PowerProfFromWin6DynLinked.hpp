@@ -1,13 +1,16 @@
 #pragma once
 
+#define INCLUDE_POWRPROF_H_IN_PWRPROFDYNLINKED_FROM_VER6_H
 //If the powrprof.h for Windows version >= 6 is already included
 //MS compiler: "error C2011: '_POWER_DATA_ACCESSOR' : 'enum' type redefinition"
-#ifdef INCLUDE_POWERPROF_FOR_WINDOOWS_ABOVE_VERSION6
+#ifdef INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6
 #include "PowerProf_From_Win6.h"
-#else
+//#else
+#ifdef INCLUDE_POWRPROF_H_IN_PWRPROFDYNLINKED_FROM_VER6_H
 //This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
 //ie. SDK version >= "6" / "6.1" .
 #include <PowrProf.h> // for PowerWriteACValueIndex()
+#endif //#ifdef INCLUDE_POWRPROF_H_IN_PWRPROFDYNLINKED_FROM_VER6_H
 #endif //#ifdef INCLUDE_POWERPROF_FOR_WINDOOWS_ABOVE_VERSION6
 
 #include <Controller/stdtstr.hpp> //for std::tstring

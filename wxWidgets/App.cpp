@@ -197,7 +197,7 @@ bool wxPumaStateCtrlApp::OnInit()
     m_arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] = 
       //"-config=config.xml" ;
       //_T("-config=GriffinControl_config.xml") ;
-      (wchar_t * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).c_str() ;
+      (TCHAR * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).c_str() ;
 
     mp_userinterface = //p_frame ;
       this ;

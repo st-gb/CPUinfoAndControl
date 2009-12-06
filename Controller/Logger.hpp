@@ -37,7 +37,7 @@
         //void 
         bool OpenFile( //std::string & r_stdstrFilePath
           std::tstring & r_stdtstrFilePath ) ;
-        bool OpenFile( std::string & r_stdstrFilePath ) ;
+        bool OpenFile2( std::string & r_stdstrFilePath ) ;
 
         void TruncateFileToZeroAndRewrite() ;
     };

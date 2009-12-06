@@ -25,8 +25,13 @@
 #include "wxServiceSocketClient.hpp"
 
 //#pragma lib "wxbase28d_net.lib"
+#ifdef _DEBUG
 //This pragma can be used instead of including the library in the linker options.
 #pragma comment( lib, "wxbase28d_net.lib" )
+#else
+//This pragma can be used instead of including the library in the linker options.
+#pragma comment( lib, "wxbase28_net.lib" )
+#endif
 //#pragma lib "wsock32.lib"
 
 BEGIN_EVENT_TABLE(wxServiceSocketClient, wxEvtHandler)

@@ -1,6 +1,9 @@
 #pragma once 
 
 #if (NTDDI_VERSION >= NTDDI_VISTA)
+
+//#define DEFINE_POWER_DATA_ACCESSOR
+#ifdef DEFINE_POWER_DATA_ACCESSOR
 //
 // Enum which defines which field inside of a
 // power setting is being accessed.
@@ -42,6 +45,8 @@ typedef enum _POWER_DATA_ACCESSOR {
         
 } POWER_DATA_ACCESSOR, *PPOWER_DATA_ACCESSOR;
 #endif //#if (NTDDI_VERSION >= NTDDI_VISTA)
+
+#endif //#ifdef DEFINE_POWER_DATA_ACCESSOR
 
 //// from Windows 6.1 Platform SDK's "winnt.h" :
 //#ifdef INITGUID

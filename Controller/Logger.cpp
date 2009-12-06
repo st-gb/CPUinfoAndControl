@@ -146,7 +146,7 @@ void Logger::Log(//ostream & ostr
     }
 }
 
-bool Logger::OpenFile( std::string & r_stdstrFilePath
+bool Logger::OpenFile2( std::string & r_stdstrFilePath
   )
 {
     //char arch [10] = "File\r\n" ;
@@ -187,7 +187,7 @@ bool Logger::OpenFile( //std::string & r_stdstrFilePath
   std::tstring & r_stdtstrFilePath)
 {
   std::string stdstr( GetCharPointer(r_stdtstrFilePath.c_str() ) ) ;
-  OpenFile( stdstr ) ;
+  return OpenFile2( stdstr ) ;
 }
 
 void Logger::TruncateFileToZeroAndRewrite()
