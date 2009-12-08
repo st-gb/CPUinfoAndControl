@@ -2,6 +2,7 @@
 #include "UserInterface.hpp"
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <Controller/stdtstr.hpp> //get...
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
 #include <Windows_compatible_typedefs.h>
@@ -617,9 +618,12 @@ BYTE I_CPUcontroller::HandleCmdLineArgs()
           ! //g_logger.m_ofstream.is_open() 
           g_logger.IsOpen() 
         )
+      {
+        //Convert std::string to wstring or remain std::string.
+        std::tstring stdtstr = Getstdtstring(mp_model->m_stdstrLogFilePath) ;
           //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
-          g_logger.OpenFile( mp_model->m_stdstrLogFilePath ) ;
-
+          g_logger.OpenFile( stdtstr ) ;
+      }
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
       byReturn = SUCCESS ;
 #else

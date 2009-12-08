@@ -48,6 +48,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Windows.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/SelectPstateAction.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/MSRdeviceFile.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_Controller.o \
@@ -73,8 +74,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/Pstate.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/ModelData.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Linux.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin/SAX2MainConfigHandler.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/VoltageAndFreq.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/string_secure.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/CalculationThread.o \
@@ -190,6 +191,11 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Windows.o: nbproject/Makefile-${CND
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Windows.o ../../Controller/Windows.cpp
+
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/stdtstr.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o ../../Controller/stdtstr.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/SelectPstateAction.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/SelectPstateAction.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
@@ -316,15 +322,15 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Linux.o: nbproject/Makefile-${CND_C
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Linux.o ../../Controller/Linux.cpp
 
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/CalculationThreadProc.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o ../../Controller/CalculationThreadProc.cpp
-
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin/SAX2MainConfigHandler.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin/SAX2MainConfigHandler.o ../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp
+
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/CalculationThreadProc.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o ../../Controller/CalculationThreadProc.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/VoltageAndFreq.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/VoltageAndFreq.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData

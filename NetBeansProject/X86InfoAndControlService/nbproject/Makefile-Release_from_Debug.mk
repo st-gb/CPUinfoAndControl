@@ -43,6 +43,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2_CPUspecificHandler.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/MSRdeviceFile.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_Controller.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XercesHelper.o \
@@ -77,7 +78,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-lxerces-c -lwx_baseu-2.8
+LDLIBSOPTIONS=-L/usr/lib -lxerces-c -lwx_baseu-2.8
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
@@ -146,6 +147,11 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o: nbproje
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/base-unicode-debug-2.8 -I/usr/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o ../../Controller/DynFreqScalingThreadBase.cpp
+
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/stdtstr.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/base-unicode-debug-2.8 -I/usr/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o ../../Controller/stdtstr.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/MSRdeviceFile.o: nbproject/Makefile-${CND_CONF}.mk ../../Linux/MSRdeviceFile.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux

@@ -331,18 +331,35 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //mp_wxstatictextPercentageOfDefaultVoltage = new wxStaticText(this, wxID_ANY, _T("") );
   //sizerTop->Add( mp_wxstatictextPercentageOfDefaultVoltage ) ;
 
-  p_wxboxsizerCPUcoreVoltageInVolt->Add(new wxStaticText( this, wxID_ANY, 
-    //_T("core voltage in Volt: ") )
-    _T("->resulting core voltage in Volt: ") )
+  p_wxboxsizerCPUcoreVoltageInVolt->Add(
+    new wxStaticText( this, wxID_ANY,
+      //_T("core voltage in Volt: ") )
+      _T("->resulting core voltage in Volt: ")
+      )
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //[...]can change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable[...]
+    , 1
+    , //wxEXPAND |
+    wxFIXED_MINSIZE | wxALL
+    , 0
     );
   mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, _T("") );
-  p_wxboxsizerCPUcoreVoltageInVolt->Add(mp_wxstatictextVoltageInVolt, 1 , 
-    wxEXPAND | wxALL, 0);
+  p_wxboxsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
+    , 1 ,
+    wxEXPAND | wxALL
+    , 0 );
   sizerTop->Add(
     p_wxboxsizerCPUcoreVoltageInVolt, 
-    //proportition parameter: if "0" it takes the least space
-    0 , 
-    wxFIXED_MINSIZE | wxALL, 
+    //proportion parameter: if "0" it takes the least space
+    //0 ,
+    1 ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"If you would rather have a window item stay the size it started with
+    //then use wxFIXED_MINSIZE. "
+    wxEXPAND |
+    //wxFIXED_MINSIZE |
+    wxALL,
     //Determines the border width, if the flag  parameter is set to include 
     //any border flag.
     2);

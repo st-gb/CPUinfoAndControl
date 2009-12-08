@@ -253,6 +253,7 @@ MainFrame::MainFrame(
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
 //#endif //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //#ifdef _TEST_PENTIUM_M
+#ifdef _WINDOWS
   //wxMenu * p_wxmenuExtras = new wxMenu;
   p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
   mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
@@ -261,6 +262,7 @@ MainFrame::MainFrame(
     ID_EnableOrDisableOtherDVFS
     , _T("enable own DVFS") 
     );
+#endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //    ////Connect the action, that is a class derived from class xx directly
 //    ////with the menu item so that it is ensured to be the correct action
@@ -1378,10 +1380,12 @@ void MainFrame::DrawCurrentPstateInfo(
               //Pentium Ms do not have a p-state ID
               //"%u "
               //"VID:%u->"
-            _T("%f Volt ")
+            //.4f : 4 digits after comma
+            _T("%.4f Volt ")
               //"FID:%u DID:%u->
             _T("%u MHz")
-			      _T("usage in :%f")
+            //.3f : 3 digits after comma
+			      _T(" usage in %:%.3f")
 			      //"counter val.:%I64u"
 			      ,
             (WORD) byCPUcoreID ,
@@ -1400,7 +1404,7 @@ void MainFrame::DrawCurrentPstateInfo(
             //pstate.GetFreqInMHz() ,
             wFreqInMHz ,
 			      //mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ]
-            fCPUload
+            fCPUload * 100.0f
 			      //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
 			      //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
           )
@@ -1765,27 +1769,27 @@ void MainFrame::OnPaint(wxPaintEvent & event)
         m_ullPreviousTimeStampCounterValue = ull ;
             //CPU_USAGE cpu_usage ;
            
-            wxmemorydc.DrawText(
-              wxString::Format(
-    //            "%64u"
-                //"%f"
-                //We need a _T() macro (wide char-> L"", char->"") for EACH 
-                //line to make it compitable between char and wide char.
-                _T("core 0 cpu_usage: ")
-                _T("%d")
-                //"%f"
-                ,
-                //ull
-                //GetCpuUsage( 0 , & cpu_usage )
-                //wxGetApp().mp_wxDynLinkedCPUcoreUsageGetter->mp_wxDynLinkedCPUcoreUsageGetter
-                //mp_model->mp_cpucoredata
-                (int)mp_cpucoredata->m_arfCPUcoreLoadInPercent[0]
-                //mp_pumastatectrl
-                //m_cpucoreusagentqsi.GetCpuUsageNT(0 , & cpu_usage )
-              )
-              , 50
-              , 50
-              ) ;
+//            wxmemorydc.DrawText(
+//              wxString::Format(
+//    //            "%64u"
+//                //"%f"
+//                //We need a _T() macro (wide char-> L"", char->"") for EACH
+//                //line to make it compatible between char and wide char.
+//                _T("core 0 cpu_usage: ")
+//                _T("%d")
+//                //"%f"
+//                ,
+//                //ull
+//                //GetCpuUsage( 0 , & cpu_usage )
+//                //wxGetApp().mp_wxDynLinkedCPUcoreUsageGetter->mp_wxDynLinkedCPUcoreUsageGetter
+//                //mp_model->mp_cpucoredata
+//                (int)mp_cpucoredata->m_arfCPUcoreLoadInPercent[0]
+//                //mp_pumastatectrl
+//                //m_cpucoreusagentqsi.GetCpuUsageNT(0 , & cpu_usage )
+//              )
+//              , 50
+//              , 50
+//              ) ;
 
        //ull = mp_pumastatectrl->GetCurrentCPUload(1) ;
     //    double d = ull ;

@@ -201,10 +201,12 @@ int main( int argc, char *  argv[] )
 /*
     SetExePathAsCurrentDir() ;
 */
+    //Convert std::string to wstring or remain std::string.
+    std::tstring stdtstr = Getstdtstring( stdstrLogFileName) ;
     //Must set the exe path as current dir before (else the file is located in
     //: C:\WINDOWS\System32) !
     g_logger.OpenFile( //std::string("GriffinControl_log.txt")
-      stdstrLogFileName ) ;
+      stdtstr ) ;
     #ifdef LINUX
     daemonize( std::string ( "/var/lock/subsys/" + stdtstrProgramName .c_str() );
     #endif
