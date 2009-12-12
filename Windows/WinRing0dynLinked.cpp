@@ -176,9 +176,9 @@ void WinRing0dynLinked::Init(UserInterface * pui)
                       "Possible solution:\n"
                       "-Place the CPU access driver \"" WINRING0_DRIVER_NAME
                       "\" into the same directory as the DLL \"" DLL_NAME "\""
-                      " (and this exe)\n" ;
+                      " (and this exe)\n"
                       "-file system: run THIS program from an ordinary file system"
-                      " such as NFTS, and NOT from virtual file systems like"
+                      " such as NTFS, and NOT from virtual file systems like"
                       " Truecrypt drives\n" ;
                   dwErrorAsSystemError = ERROR_FILE_NOT_FOUND ;
                   break;

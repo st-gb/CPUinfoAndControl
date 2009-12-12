@@ -621,7 +621,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="PentriumM"
+				Name="PentiumM"
 				>
 				<File
 					RelativePath="..\..\Controller\Intel\PentiumM\PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp"

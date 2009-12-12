@@ -16,7 +16,9 @@
   #pragma  message( "using wchar_t for TCHAR" )
 #else
   //#include <string.h> //for strrchr
-  #define _T(x) x
+  #ifndef _T
+    #define _T(x) x
+  #endif
   typedef char TCHAR ;
   #pragma  message( "using char for TCHAR" )
 #endif

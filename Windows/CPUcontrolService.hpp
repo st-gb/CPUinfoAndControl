@@ -126,9 +126,10 @@ public :
       ) ;
     void Pause() ;
     static void requestOption(
-        //Make as parameter as reference: more ressource-saving than
-        //to return (=a copy).
-        std::vector<std::string> & vecstdstrParams ) ;
+      //Make as parameter as reference: more ressource-saving than
+      //to return (=a copy).
+      std::vector<std::string> & vecstdstrParams 
+      , std::tstring & r_tstrProgName ) ;
     static bool IsWithinStrings(
         const std::vector<std::string> & vecstdstrParams
         , const std::string & cr_stdstrToCompare ) ;

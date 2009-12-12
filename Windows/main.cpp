@@ -145,17 +145,23 @@ bool ShouldDeleteService(int argc, char *  argv[])
 
 void OuputCredits()
 {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-        //"This program is an undervolting program for AMD family 17 CPUs.\n" 
-        "This program is CPU information and control program for .\n" 
-        //maincontroller.GetSupportedCPUtypes() ;
-        "license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" )
-    std::cout << 
-        "This executable is both in one:\n"
-        "-an (de-)installer for the undervolting service\n"
-        "-the undervolting service itself\n" ;
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
+  std::tstring stdtstr ;
+  std::vector<std::tstring> stdvecstdtstring ;
+  MainController::GetSupportedCPUs(stdvecstdtstring) ;
+  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
+    stdtstr += stdvecstdtstring.at(by) + _T(" ") ;
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
+    //"This program is an undervolting program for AMD family 17 CPUs.\n" 
+    "This program is CPU information and control program for .\n" 
+    //maincontroller.GetSupportedCPUtypes() ;
+    + stdtstr +
+    "license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" )
+  std::cout << 
+    "This executable is both in one:\n"
+    "-an (de-)installer for the undervolting service\n"
+    "-the undervolting service itself\n" ;
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+    "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
 }
 
 void main( int argc, char *  argv[] ) 
@@ -207,7 +213,8 @@ void main( int argc, char *  argv[] )
 //Useful for debugging purposes.
 #ifdef EMULATE_EXECUTION_AS_SERVICE
 #else
-        CPUcontrolService::requestOption(vecstdstrParams);
+        CPUcontrolService::requestOption( vecstdstrParams
+          , stdtstrProgramName );
 #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
         if( vecstdstrParams.empty() )
         {
@@ -229,8 +236,12 @@ void main( int argc, char *  argv[] )
         else if( CPUcontrolService::ShouldDeleteService(vecstdstrParams) )
         {
             if( vecstdstrParams.size() > 1 )
+            {
                 ServiceBase::DeleteService(//"GriffinStateService"
                    vecstdstrParams.at(1).c_str() ) ;
+                PowerProfDynLinked powerprofdynlinked( stdtstrProgramName ) ;
+                powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+            }
         }
         else
         {
@@ -292,7 +303,7 @@ void main( int argc, char *  argv[] )
       << LocalLanguageMessageFromErrorCode(e.m_dwErrorCode) 
       << PossibleSolution(e.m_dwErrorCode) )
   }
-  std::cout << "Waiting for input in order for the output to be readable."
+  std::cout << //"Waiting for input in order for the output to be readable."
      " Hit any key to exit this program\n" ;
    getche() ;
    DEBUG("end of main program entry point\n");

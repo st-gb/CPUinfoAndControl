@@ -45,9 +45,11 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
       //mp_dynfreqscalingthread->
 	    if( mp_dynfreqscalingthread->Create() == wxTHREAD_NO_ERROR )
       {
-        LOGN("DVFS thread succ. created")
+        LOGN("Dynamic Voltage and Frequency Scaling thread successfully "
+          "created")
 		    wxThreadError wxthreaderror = mp_dynfreqscalingthread->Run() ;
-        LOGN("after starting DVFS thread result: " << wxthreaderror )
+        LOGN("after starting Dynamic Voltage and Frequency Scaling thread"
+          "--result: " << wxthreaderror )
       }
     }
   }
@@ -129,7 +131,7 @@ void CPUcoreData::Init()
   m_wMilliSecondsWaitBetweenDFVS = 200 ;
   m_byUpdateViewOnDVFS = 0 ;
   m_bEnableDVFS = false ;
-  LOGN("Init. of CPU attributes")
+  LOGN("Initialisation of CPU attributes")
   //mp_stdsetvoltageandfreqAvailableFreq = new std::set<VoltageAndFreq>() ;
   //mp_stdsetvoltageandfreqWanted = new std::set<VoltageAndFreq> ();
   //mp_setloweststablevoltageforfreq = new std::set<VoltageAndFreq> () ;

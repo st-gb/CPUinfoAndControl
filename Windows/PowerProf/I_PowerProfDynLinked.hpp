@@ -2,6 +2,7 @@
 
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <string> //for std::wstring
+#include <Windows_compatible_typedefs.h>
 
 class I_PowerProfDynLinked
   : public IDynFreqScalingAccess
@@ -34,4 +35,6 @@ public:
   { 
     return 0 ; 
   }
+  virtual BYTE DeletePowerScheme( 
+    const std::tstring & cr_stdtstrPowerSchemeName ) = 0 ;
 } ;

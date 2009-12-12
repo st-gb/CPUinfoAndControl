@@ -120,8 +120,9 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 
 ExitCode DynFreqScalingThreadBase::Entry()
 {
-  LOGN("DVFS thread should run?" << m_vbRun )
-  LOGN("CPU core usage --address: " << mp_icpu )
+  LOGN("Dynamic Voltage and Frequency Scaling thread should run?" << 
+    m_vbRun )
+  LOGN("CPU core usage getter--address: " << mp_icpu )
   mp_icpu->Init();
   while(//1
     m_vbRun )

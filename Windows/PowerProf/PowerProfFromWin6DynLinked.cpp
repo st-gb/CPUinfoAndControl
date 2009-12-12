@@ -5,39 +5,50 @@
 ////ie. SDK version "6.1" .
 //#include <PowrProf.h> // for PowerWriteACValueIndex()
 #include "PowerProfFromWin6DynLinked.hpp"
+#include <Controller/tchar_conversion.h> //GetCharPointer()
 //#include <Controller/stdtstr.hpp> //for std::tstring 
 #include <exception>
 
   //HINSTANCE m_hinstancePowerProfDLL ;
 
-//// from Windows 6.1 Platform SDK's "winnt.h" :
+// from Windows 6.1 Platform SDK's "winnt.h" :
 //#ifdef INITGUID
-//#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-//        EXTERN_C const GUID DECLSPEC_SELECTANY name \
-//                = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
+#ifdef DEFINE_GUID
+  #undef DEFINE_GUID
+  #define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+        EXTERN_C const GUID DECLSPEC_SELECTANY name \
+                = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
+#endif
 //#else
 //#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
 //    EXTERN_C const GUID FAR name
 //#endif // INITGUID
 //
-//// Specifies the subgroup which will contain all of the processor
-//// settings for a single policy.
-////
-//DEFINE_GUID( GUID_PROCESSOR_SETTINGS_SUBGROUP, 0x54533251, 0x82BE, 0x4824, 0x96, 0xC1, 0x47, 0xB6, 0x0B, 0x74, 0x0D, 0x00 );
-////
-//// Specifies a percentage (between 0 and 100) that the processor frequency
-//// should never go above.  For example, if this value is set to 80, then
-//// the processor frequency will never be throttled above 80 percent of its
-//// maximum frequency by the system.
-////
-//DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MAXIMUM, 0xBC5038F7, 0x23E0, 0x4960, 0x96, 0xDA, 0x33, 0xAB, 0xAF, 0x59, 0x35, 0xEC );
+// Specifies the subgroup which will contain all of the processor
+// settings for a single policy.
 //
-//// Specifies a percentage (between 0 and 100) that the processor frequency
-//// should not drop below.  For example, if this value is set to 50, then the
-//// processor frequency will never be throttled below 50 percent of its
-//// maximum frequency by the system.
-////
-//DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MINIMUM, 0x893DEE8E, 0x2BEF, 0x41E0, 0x89, 0xC6, 0xB5, 0x5D, 0x09, 0x29, 0x96, 0x4C );
+DEFINE_GUID( GUID_PROCESSOR_SETTINGS_SUBGROUP, 0x54533251, 0x82BE, 0x4824, 0x96, 0xC1, 0x47, 0xB6, 0x0B, 0x74, 0x0D, 0x00 );
+//
+// Specifies a percentage (between 0 and 100) that the processor frequency
+// should never go above.  For example, if this value is set to 80, then
+// the processor frequency will never be throttled above 80 percent of its
+// maximum frequency by the system.
+//
+DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MAXIMUM, 0xBC5038F7, 0x23E0, 0x4960, 0x96, 0xDA, 0x33, 0xAB, 0xAF, 0x59, 0x35, 0xEC );
+
+// Specifies a percentage (between 0 and 100) that the processor frequency
+// should not drop below.  For example, if this value is set to 50, then the
+// processor frequency will never be throttled below 50 percent of its
+// maximum frequency by the system.
+//
+DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MINIMUM, 0x893DEE8E, 0x2BEF, 0x41E0, 0x89, 0xC6, 0xB5, 0x5D, 0x09, 0x29, 0x96, 0x4C );
+
+
+BYTE PowerProfFromWin6DynLinked::DeletePowerScheme( 
+  const std::tstring & cr_stdtstrPowerSchemeName )
+{
+  return 0 ;
+}
 
 bool PowerProfFromWin6DynLinked::DisableFrequencyScalingByOS()
 {
@@ -50,10 +61,13 @@ bool PowerProfFromWin6DynLinked::DisableFrequencyScalingByOS()
     DWORD dwBufferSize , dwRes ;
     GUID guidPowerScheme ;
     GUID guidSubGroupOfPowerSettings ;
-    std::string strPowerScheme, strWantedPowerScheme = "CPUcontrol" ;
+    std::string strPowerScheme, strWantedPowerScheme ; //= "CPUcontrol" ;
     UCHAR * Buffer ;
     POWER_DATA_ACCESSOR AccessFlags ;
     ULONG ulIndex = 0 ;
+    strWantedPowerScheme = GetCharPointer( 
+      m_stdwstrPowerSchemeName.c_str() ) ;
+    //Walk through all power schemes.
     do
     {
       PowerEnumerate(
@@ -61,9 +75,11 @@ bool PowerProfFromWin6DynLinked::DisableFrequencyScalingByOS()
         & guidSubGroupOfPowerSettings ,//__in_opt   const GUID * ,
         AccessFlags ,//__in       POWER_DATA_ACCESSOR AccessFlags,
         ulIndex ,//__in       ULONG ulIndex,
-        //A pointer to a variable to receive the elements. If this parameter is NULL, the function retrieves the size of the buffer required.
+        //A pointer to a variable to receive the elements. If this parameter
+        //is NULL, the function retrieves the size of the buffer required.
         Buffer //__out_opt  UCHAR *Buffer,
         ) ;
+      //Get the name of the power scheme with GUID "guidPowerScheme".
       if( GetPowerSchemeName(guidPowerScheme, strPowerScheme ) == ERROR_SUCCESS )
         if( strPowerScheme == strWantedPowerScheme )
           break ;
@@ -275,11 +291,16 @@ unsigned char PowerProfFromWin6DynLinked::EnableFrequencyScalingByOS()
   return bySuccess ;
 }
 
+//Return: ERROR_SUCCESS if everything succeeded.
 DWORD PowerProfFromWin6DynLinked::GetPowerSchemeName(
   GUID & guidPowerScheme , std::string & r_stdstr )
 {
   DWORD dwBufferSize ;
-  DWORD dwRes = PowerReadFriendlyName(
+  DWORD dwRes = 
+    //double-call-approach: 
+    //1st call: get the number of bytes needed for allocating
+    //the buffer.
+    PowerReadFriendlyName(
     NULL ,
     //http://msdn.microsoft.com/en-us/library/aa372740(VS.85).aspx:
     //If the SchemeGuid parameter is not NULL but both the 
@@ -289,7 +310,8 @@ DWORD PowerProfFromWin6DynLinked::GetPowerSchemeName(
     NULL ,//__in_opt   const GUID *SubGroupOfPowerSettingsGuid,
     NULL ,//__in_opt   const GUID *PowerSettingGuid,
     NULL ,//__out_opt  PUCHAR Buffer,
-    //If the Buffer parameter is NULL, the function returns ERROR_SUCCESS and the variable receives the required buffer size. 
+    //If the Buffer parameter is NULL, the function returns ERROR_SUCCESS 
+    //and the variable receives the required buffer size.
     & dwBufferSize //__inout    LPDWORD BufferSize
     ) ;
   if( dwRes == ERROR_SUCCESS 
@@ -311,6 +333,7 @@ DWORD PowerProfFromWin6DynLinked::GetPowerSchemeName(
       ) ;
     if( dwRes == ERROR_SUCCESS )
       r_stdstr = std::string( (char *) ar_ucharBuffer ) ;
+    //Release the allocated memory.
     delete [] ar_ucharBuffer ;
   }
   return dwRes ;
@@ -669,17 +692,19 @@ DWORD WINAPI PowerProfFromWin6DynLinked::PowerReadFriendlyName(
   __in_opt   const GUID *PowerSettingGuid,
   __out_opt  PUCHAR Buffer,
   __inout    LPDWORD BufferSize
-)
+  )
 {
+  //If the function pointer is assigned.
   if( m_pfnpowerreadfriendlyname )
-    return ( * m_pfnpowerreadfriendlyname ) 
+    return //Call the DLL function.
+    ( * m_pfnpowerreadfriendlyname ) 
     (
-    RootPowerKey,
-    SchemeGuid,
-    SubGroupOfPowerSettingsGuid,
-    PowerSettingGuid,
-    Buffer,
-    BufferSize
+      RootPowerKey,
+      SchemeGuid,
+      SubGroupOfPowerSettingsGuid,
+      PowerSettingGuid,
+      Buffer,
+      BufferSize
     ) ;
   else
     throw DLLfunctionPointerNotAssignedException() ;

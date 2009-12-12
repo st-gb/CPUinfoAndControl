@@ -33,7 +33,7 @@ void OutputPipeInfo(HANDLE handlePipe)
     , & paclSACL //PACL* ppSacl,
     , & psecurity_descriptor //PSECURITY_DESCRIPTOR* ppSecurityDescriptor
   );
-  LOGN("GetSecurityInfo ret :" << dw )
+  LOGN("GetSecurityInfo return value :" << dw )
   if( dw == ERROR_SUCCESS )
   {
     PACL pNewDACL = NULL;

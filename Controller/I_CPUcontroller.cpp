@@ -57,10 +57,12 @@ BYTE I_CPUcontroller::DisableFrequencyScalingByOS()
 
 BYTE I_CPUcontroller::EnableOwnDVFS()
 {
-  LOGN("enable own DVFS--ptrs:" << mp_model << mp_dynfreqscalingaccess )
+  LOGN("Enable own Dynamic Voltage and Frequency Scaling--ptrs:" << 
+    mp_model << mp_dynfreqscalingaccess )
   if( mp_model && mp_dynfreqscalingaccess )
   {
-    LOGN("should enable DVFS?:" << mp_model->m_cpucoredata.m_bEnableDVFS )
+    LOGN("Should enable Dynamic Voltage and Frequency Scaling?:" << 
+      mp_model->m_cpucoredata.m_bEnableDVFS )
     if( mp_model->m_cpucoredata.m_bEnableDVFS )
     {
       if( mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
@@ -74,8 +76,8 @@ BYTE I_CPUcontroller::EnableOwnDVFS()
       //DynFreqScalingThread * p_dynfreqscalingthread
       if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
       {
-        LOGN("Other DVFS is enabled?:" << 
-          mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+        LOGN("Other Dynamic Voltage and Frequency Scaling (register write)"
+          " is enabled?:" << mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
           )
         if( ! //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
             mp_dynfreqscalingaccess->OtherDVFSisEnabled() 

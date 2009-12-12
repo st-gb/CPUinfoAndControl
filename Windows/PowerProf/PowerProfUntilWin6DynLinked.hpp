@@ -28,6 +28,10 @@
 
 typedef BOOLEAN (WINAPI * pfnCanUserWritePwrScheme) () ;
 
+typedef BOOLEAN (WINAPI * pfnDeletePwrScheme) (
+  UINT uiIndex
+  );
+
 typedef BOOLEAN (WINAPI * pfnEnumPwrSchemes)(
   //PWRSCHEMESENUMPROC 
   PWRSCHEMESENUMPROC_SG lpfnPwrSchemesEnumProc,
@@ -104,6 +108,7 @@ class PowerProfUntilWin6DynLinked
   bool m_bGotPowerSchemeBeforeDisabling ;
   HINSTANCE m_hinstancePowerProfDLL ;
   pfnCanUserWritePwrScheme m_pfncanuserwritepwrscheme ;
+  pfnDeletePwrScheme m_pfndeletepwrscheme ;
   pfnEnumPwrSchemes m_pfnenumpwrschemes ;
   pfnGetActivePwrScheme m_pfngetactivepwrscheme ;
   pfnGetCurrentPowerPolicies m_pfngetcurrentpowerpolicies ;
@@ -140,6 +145,11 @@ public:
   BYTE CreatePowerSchemeWithWantedName() ;
   void DeactivateCPUscaling(
     PROCESSOR_POWER_POLICY & r_processor_power_policy ) ;
+  BOOLEAN DeletePwrScheme(
+    UINT uiIndex
+  );
+  BYTE DeletePowerScheme( 
+    const std::tstring & cr_stdtstrPowerSchemeName ) ;
   BYTE DisableDVFSforPowerSchemeToSet() ;
   BYTE DisableCPUscaling(UINT uiPowerSchemeIndex) ;
   bool DisableFrequencyScalingByOS() //{ return true ; } 
@@ -158,6 +168,9 @@ public:
   BOOLEAN WINAPI GetActivePwrScheme(
     __out  PUINT puiID
     );
+  BYTE GetPowerSchemeIndex(
+    const std::wstring & cr_stdwstrPowerSchemeName 
+    , UINT & r_uiPowerSchemeIndexOfWantedName) ;
   void Initialize() ;
   void InitializeFunctionPointers() ;
   BYTE PowerSchemeToSetExists() ;

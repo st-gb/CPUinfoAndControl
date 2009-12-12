@@ -35,6 +35,15 @@ PowerProfDynLinked::~PowerProfDynLinked()
     delete mp_dynfreqscalingaccess ;
 }
 
+BYTE PowerProfDynLinked::DeletePowerScheme( 
+  const std::tstring & cr_stdtstrPowerSchemeName )
+{
+  if( mp_dynfreqscalingaccess )
+    return mp_dynfreqscalingaccess->DeletePowerScheme(
+      cr_stdtstrPowerSchemeName) ;
+  return 0 ;
+}
+
     //return: true=success
 bool PowerProfDynLinked::DisableFrequencyScalingByOS()
 {

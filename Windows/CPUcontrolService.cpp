@@ -158,7 +158,7 @@ void CPUcontrolService::Initialize()
   msp_cpucontrolservice = this;
   //m_ofstream.open("D:\\Temp\\GriffinStateControlSvc_debug.txt");
   //m_winring0dynlinked.SetUserInterface(&m_dummyuserinterface);
-  DEBUG("end of constructor of service object\n");
+  //DEBUG("end of constructor of service object\n");
 }
 
 //Pass ERROR_SUCCESS (0L) or NO_ERROR (0L) if no error
@@ -715,13 +715,15 @@ void CPUcontrolService::Pause()
 void CPUcontrolService::requestOption(
     //Make as parameter as reference: more ressource-saving than
     //to return (=a copy).
-    std::vector<std::string> & r_vecstdstrParams )
+    std::vector<std::string> & r_vecstdstrParams 
+    , std::tstring & r_tstrProgName )
 {
     bool bContinue = false ;
     char arch[101] ;
     std::string stdstrInput ;
     //std::string  stdstrDefaultProcessName = "GriffinStateControl" ;
-    std::string  stdstrDefaultProcessName = "CPUcontrolService" ;
+    std::string stdstrDefaultProcessName = //"CPUcontrolService" ;
+      GetStdString( r_tstrProgName ) ;
     //std::cout << "You can input your choice (deinstall/ install) now: "
     //    "same format as if command line option:\n" ;
     std::cout << "\nSelect your option now:\n"
@@ -733,14 +735,20 @@ void CPUcontrolService::requestOption(
     {
     case 'I':
         std::cout << "You choosed to install the service\n" ;
-        std::cout << "Now input the name for the service. Input no text to choose the default name \"" << stdstrDefaultProcessName << "\"\nPress ENTER/ Return to finish.\n" ;
+        std::cout << "Now input the name for the service. "
+          "Input no text to choose the default name \"" << 
+          stdstrDefaultProcessName << 
+          "\"\nPress ENTER/ Return to finish.\n" ;
         r_vecstdstrParams.push_back(_T("-i") );
         //Valid input char->continue.
         bContinue = true ;
         break ;
     case 'D':
         std::cout << "You choosed to delete the service\n" ;
-        std::cout << "Now input the name for the service to delete. Input no text to choose the default name \"" << stdstrDefaultProcessName << "\"\nPress ENTER/ Return to finish.\n" ;
+        std::cout << "Now input the name for the service to delete. "
+          "Input no text to choose the default name \"" << 
+          stdstrDefaultProcessName << 
+          "\"\nPress ENTER/ Return to finish.\n" ;
         r_vecstdstrParams.push_back(_T("-d") );
         //Valid input char->continue.
         bContinue = true ;
@@ -1171,6 +1179,7 @@ void CPUcontrolService::StartService()
   DEBUG("begin of starting service\n");
   LOGN("before staring service ctrl dispatcher--current thread id:" << 
     ::GetCurrentThreadId() )
+  //SERVICE_TABLE_ENTRYA ("char") or SERVICE_TABLE_ENTRYW ( wchar_t )
   SERVICE_TABLE_ENTRY ar_service_table_entry[] = 
   { 
     { 
@@ -1185,8 +1194,11 @@ void CPUcontrolService::StartService()
       //"GriffinControlService"
       //m_stdstrServiceName.c_str()
       //TODO use a variable rather than a literal
-      "CPUcontrolService"
-      //m_stdtstrProgramName.c_str()
+      //"CPUcontrolService"
+      //Convert "const char *" -> "char *", "const wchar_t *" -> "wchar_t *".
+      (TCHAR *) m_stdtstrProgramName.
+        //returns "const char *" (ANSI) or "const wchar_t *" (wide char)
+        c_str()
       //Pointer to a ServiceMain function. 
       //MyServiceStart
       //All initialization tasks are done in the service's ServiceMain 

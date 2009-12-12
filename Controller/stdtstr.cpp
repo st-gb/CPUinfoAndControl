@@ -21,7 +21,6 @@
  {
    return cr_wstr ;
  }
-
  #else
  std::tstring Getstdtstring(const std::string & cr_str )
  {
@@ -32,5 +31,25 @@
    std::string stdstr( cr_wstr.begin(), cr_wstr.end() ) ;
    return stdstr ;
  }
-
  #endif
+
+  std::wstring GetStdWstring( const std::wstring & cr_wstr )
+ {
+   return cr_wstr ;
+ }
+
+  std::wstring GetStdWstring( const std::string & cr_str )
+ {
+   std::wstring wstr( cr_str.begin(), cr_str.end() ) ;
+   return wstr ;
+ }
+
+ std::string GetStdString(const std::string & cr_str )
+ {
+   return cr_str ;
+ }
+ std::string GetStdString(const std::wstring & cr_wstr )
+ {
+   std::string stdstr( cr_wstr.begin(), cr_wstr.end() ) ;
+   return stdstr ;
+ }

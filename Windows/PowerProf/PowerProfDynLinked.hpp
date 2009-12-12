@@ -2,6 +2,7 @@
 
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <Controller/stdtstr.hpp> //for std::tstring 
+#include <Windows_compatible_typedefs.h> //for BYTE
 //#include <string> //for std::wstring 
 
 class I_PowerProfDynLinked ;
@@ -25,6 +26,7 @@ public:
   //IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
   I_PowerProfDynLinked * mp_dynfreqscalingaccess ;
   virtual unsigned char CreatePowerSchemeWithWantedName() { return 0 ; }
+  BYTE DeletePowerScheme( const std::tstring & cr_stdtstrPowerSchemeName ) ;
   bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
   bool OtherDVFSisEnabled() ;

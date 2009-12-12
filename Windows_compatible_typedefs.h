@@ -14,7 +14,9 @@ extern "C" {
 
 typedef int BOOL ;
 #define FALSE 0
-#define TRUE !FALSE
+#ifndef TRUE //Avoid MSVC warning " warning C4005: 'TRUE': Macro-redefinition"
+  #define TRUE !FALSE
+#endif
 //see winnt.h
 typedef unsigned long long ULONGLONG ;
 //see basetsd.h

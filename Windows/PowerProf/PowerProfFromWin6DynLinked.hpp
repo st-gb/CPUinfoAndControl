@@ -93,6 +93,8 @@ class PowerProfFromWin6DynLinked
   pfnPowerWriteACValueIndex m_pfnpowerwritedcvalueindex ;
 
 public:
+  BYTE DeletePowerScheme( 
+    const std::tstring & cr_stdtstrPowerSchemeName ) ;
   bool DisableFrequencyScalingByOS() ; 
   unsigned char EnableFrequencyScalingByOS() ;
 

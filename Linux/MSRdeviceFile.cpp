@@ -56,23 +56,27 @@ void MSRdeviceFile::Init(UserInterface * pui)
   for(BYTE byCoreIndex = 0 ; byCoreIndex <  byNumCPUcores ; ++ byCoreIndex )
   {
     stdstrMSRfilePath = getMSRFile( 1 << byCoreIndex ) ;
-//    m_arfstreamMSR[byCoreIndex].exceptions (
-//      std::fstream::eofbit | std::fstream::failbit | std::fstream::badbit );
-//    try
-//    {
-//      m_arfstreamMSR[byCoreIndex].open(stdstrMSRfilePath.c_str() ,
-//        std::ios_base::binary | std::ios_base::in | std::ios_base::out
-//        ) ;
-//      if( m_arfstreamMSR[byCoreIndex].fail ( ) )
-//      {
-//        UIconfirm("Failed to open the file \"" + stdstrMSRfilePath + "\"" ) ;
-//        throw CPUaccessException("failed to open file") ;
-//      }
-//    }
-    //catch (std::fstream::failure e)
-    if (( m_arnFileHandle[byCoreIndex] = open(//msrfile
-      stdstrMSRfilePath.c_str() , //O_RDONLY
-      O_RDWR )) == -1)
+    m_arfstreamMSR[byCoreIndex].exceptions (
+      std::fstream::eofbit | std::fstream::failbit | std::fstream::badbit );
+    try
+    {
+      m_arfstreamMSR[byCoreIndex].open( stdstrMSRfilePath.c_str() ,
+        //std::ios_base::binary | std::ios_base::in | std::ios_base::out
+        std::fstream::in | std::fstream::out | std::fstream::app
+        ) ;
+      //On failure, the failbit flag is set (which can be checked with member
+      //fail), and depending on the value set with exceptions an exception may
+      //be thrown.
+      if( m_arfstreamMSR[byCoreIndex].fail ( ) )
+      {
+        UIconfirm("Failed to open the file \"" + stdstrMSRfilePath + "\"" ) ;
+        throw CPUaccessException("failed to open file") ;
+      }
+    }
+    catch (std::fstream::failure e)
+//    if (( m_arnFileHandle[byCoreIndex] = open(//msrfile
+//      stdstrMSRfilePath.c_str() , //O_RDONLY
+//      O_RDWR )) == -1)
     {
 //      int i = e.type ;
         std::string stdstrMessage = std::string("Failed to open the file \"") +
@@ -113,7 +117,7 @@ MSRdeviceFile::~MSRdeviceFile()
   for(BYTE byCoreIndex = 0 ; byCoreIndex <  byNumCPUcores ; ++ byCoreIndex )
   {
     m_arfstreamMSR[byCoreIndex].close( ) ;
-    close( m_arnFileHandle[byCoreIndex] ) ;
+//    close( m_arnFileHandle[byCoreIndex] ) ;
   }
   delete [] m_arfstreamMSR ;
   delete [] m_arnFileHandle ;
@@ -167,7 +171,7 @@ std::string MSRdeviceFile::getMSRFile(DWORD_PTR
 //  else
 //    byCoreID = 1 ;
   //msr0 = for 1st CPU
-  ostrstr<<"/dev/cpu/"<<(WORD)byCoreID<<"/msr";
+  ostrstr << "/dev/cpu/" << (WORD) byCoreID << "/msr" ;
 
   //return ostrstr.str().c_str() ;
   return ostrstr.str() ;
@@ -216,7 +220,7 @@ BOOL // TRUE: success, FALSE: failure
     unsigned long long msrvalue;
     //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
     //msrfile = getMSRFile(dwAffinityMask) ;
-//    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
+    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
 //
 //    if ((fd = open(//msrfile
 //      stdstrMSRfile.c_str() , O_RDONLY)) == -1)
@@ -225,36 +229,73 @@ BOOL // TRUE: success, FALSE: failure
     while( dwAffinityMask >>= 1 )
       ++ byCoreID ;
 
-//    m_arfstreamMSR[byCoreID].seekg(dwIndex,std::ios_base::beg) ;
-//    m_arfstreamMSR[byCoreID].readsome( (char *) & msrvalue,8) ;
-//    {
+    //Set position of the get pointer.
+    m_arfstreamMSR[byCoreID].seekg(dwIndex,std::ios_base::beg) ;
+    if( m_arfstreamMSR[byCoreID].failbit ||
+        m_arfstreamMSR[byCoreID].badbit )
+    {
+      std::string stdstrMsg = "Seeking in file \"" + stdstrMSRfile +
+        std::string("\" failed!\n") ;
+      UIconfirm( stdstrMsg );
+    }
+  #ifdef _DEBUG
+    DWORD dw = m_arfstreamMSR[byCoreID].tellg ( );
+  #endif
+    char arch[8] ;
+    try
+    {
+      //read methods from std::fstream does not work with character devices?
+    m_arfstreamMSR[byCoreID].readsome( //(char *) & msrvalue
+      arch , 8 ) ;
+    }
+    catch( std::ios_base::failure fail )
+    {
+      fail.what() ;
+    }
+    //m_arfstreamMSR[byCoreID].read ( (char *) & msrvalue , 8 );
+    //m_arfstreamMSR[byCoreID].get( (char *) & msrvalue, 8 ) ;
+    //dw = m_arfstreamMSR[byCoreID].get() ;
+
 //      std::string stdstrMsg = "Can't open file " + stdstrMSRfile +
 //        std::string(" for reading!\n") ;
-//     // std::string stdstrMSRfile(msrfile) ;
-//      switch (errno) {
-//        case EACCES:  stdstrMsg += "Permission denied.\n"; break;
-//        //case EINVACC: stdstrMsg += "Invalid access mode.\n"; break;
-//        case EMFILE:  stdstrMsg += "No file handle available.\n"; break;
-//        case ENOENT:  stdstrMsg += "File or path not found.\n"; break;
-//        default:      stdstrMsg += "Unknown error.\n"; break;
-//      }
-//
-//      UIconfirm( //std::string("Can't open file ") + stdstrMSRfile +
-//        //std::string(" for reading!\n")
-//        stdstrMsg
-//        );
-//      return FAILURE;
-//    }
+     // std::string stdstrMSRfile(msrfile) ;
 
-    if (lseek( m_arnFileHandle[byCoreID], dwIndex, SEEK_SET) == -1)
+    //The stream was at the end of the source of characters before the
+    //function was called.
+    if( m_arfstreamMSR[byCoreID].failbit )
+      dw = 0 ;
+    if( m_arfstreamMSR[byCoreID].eofbit )
+      dw = 0 ;
+    if(
+        m_arfstreamMSR[byCoreID].badbit )
     {
-      UIconfirm(std::string("Seeking failed in file ") //+ std::string(msrfile)
-        + std::string("\n")
+      std::string stdstrMsg = "Reading in file \"" + stdstrMSRfile +
+        std::string("\" failed!\n") ;
+      switch (errno)
+      {
+        case EACCES:  stdstrMsg += "Permission denied.\n"; break;
+        //case EINVACC: stdstrMsg += "Invalid access mode.\n"; break;
+        case EMFILE:  stdstrMsg += "No file handle available.\n"; break;
+        case ENOENT:  stdstrMsg += "File or path not found.\n"; break;
+        case ENOTTY:  stdstrMsg += "Not a typewriter\n"; break;
+        default:      stdstrMsg += "Unknown error.\n"; break;
+      }
+
+      UIconfirm( //std::string("Can't open file ") + stdstrMSRfile +
+        //std::string(" for reading!\n")
+        stdstrMsg
         );
       return FAILURE;
     }
+//    if (lseek( m_arnFileHandle[byCoreID], dwIndex, SEEK_SET) == -1)
+//    {
+//      UIconfirm(std::string("Seeking failed in file ") //+ std::string(msrfile)
+//        + std::string("\n")
+//        );
+//      return FAILURE;
+//    }
 //
-    int result = (int)read( m_arnFileHandle[byCoreID], &msrvalue, (size_t)8);
+//    int result = (int)read( m_arnFileHandle[byCoreID], &msrvalue, (size_t)8);
 //
 //    if (result == -1)
 //    {

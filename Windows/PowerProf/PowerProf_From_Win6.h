@@ -48,29 +48,35 @@ typedef enum _POWER_DATA_ACCESSOR {
 
 #endif //#ifdef DEFINE_POWER_DATA_ACCESSOR
 
-//// from Windows 6.1 Platform SDK's "winnt.h" :
-//#ifdef INITGUID
-#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-        EXTERN_C const GUID DECLSPEC_SELECTANY name \
-                = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
+//Avoid MSVC warning "warning C4005: 'DEFINE_GUID': Makro-Neudefinition"
+//(it is also defined in "guiddef.h"
+#ifndef DEFINE_GUID
+  //// from Windows 6.1 Platform SDK's "winnt.h" :
+  //#ifdef INITGUID
+  #define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+          EXTERN_C const GUID DECLSPEC_SELECTANY name \
+                  = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
+#else
+  #include <guiddef.h>
+#endif //#ifndef DEFINE_GUID
 //#else
 //#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
 //    EXTERN_C const GUID FAR name
 //#endif // INITGUID
 
-// Specifies the subgroup which will contain all of the processor
-// settings for a single policy.
-DEFINE_GUID( GUID_PROCESSOR_SETTINGS_SUBGROUP, 0x54533251, 0x82BE, 0x4824, 0x96, 0xC1, 0x47, 0xB6, 0x0B, 0x74, 0x0D, 0x00 );
-
-// Specifies a percentage (between 0 and 100) that the processor frequency
-// should never go above.  For example, if this value is set to 80, then
-// the processor frequency will never be throttled above 80 percent of its
-// maximum frequency by the system.
-DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MAXIMUM, 0xBC5038F7, 0x23E0, 0x4960, 0x96, 0xDA, 0x33, 0xAB, 0xAF, 0x59, 0x35, 0xEC );
-
-// Specifies a percentage (between 0 and 100) that the processor frequency
-// should not drop below.  For example, if this value is set to 50, then the
-// processor frequency will never be throttled below 50 percent of its
-// maximum frequency by the system.
-DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MINIMUM, 0x893DEE8E, 0x2BEF, 0x41E0, 0x89, 0xC6, 0xB5, 0x5D, 0x09, 0x29, 0x96, 0x4C );
+//// Specifies the subgroup which will contain all of the processor
+//// settings for a single policy.
+//DEFINE_GUID( GUID_PROCESSOR_SETTINGS_SUBGROUP, 0x54533251, 0x82BE, 0x4824, 0x96, 0xC1, 0x47, 0xB6, 0x0B, 0x74, 0x0D, 0x00 );
+//
+//// Specifies a percentage (between 0 and 100) that the processor frequency
+//// should never go above.  For example, if this value is set to 80, then
+//// the processor frequency will never be throttled above 80 percent of its
+//// maximum frequency by the system.
+//DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MAXIMUM, 0xBC5038F7, 0x23E0, 0x4960, 0x96, 0xDA, 0x33, 0xAB, 0xAF, 0x59, 0x35, 0xEC );
+//
+//// Specifies a percentage (between 0 and 100) that the processor frequency
+//// should not drop below.  For example, if this value is set to 50, then the
+//// processor frequency will never be throttled below 50 percent of its
+//// maximum frequency by the system.
+//DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MINIMUM, 0x893DEE8E, 0x2BEF, 0x41E0, 0x89, 0xC6, 0xB5, 0x5D, 0x09, 0x29, 0x96, 0x4C );
 

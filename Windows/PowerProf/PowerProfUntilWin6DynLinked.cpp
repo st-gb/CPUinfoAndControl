@@ -464,6 +464,32 @@ void PowerProfUntilWin6DynLinked::DeactivateCPUscaling(
   //machine_processor_power_policy.ProcessorPolicyDc.Policy[3];
 }
 
+BOOLEAN PowerProfUntilWin6DynLinked::DeletePwrScheme(
+  UINT uiIndex
+  )
+{
+  if( m_pfndeletepwrscheme )
+    return (*m_pfndeletepwrscheme)( uiIndex ) ;
+  else
+    //throw 
+    return FALSE ;
+}
+
+BYTE PowerProfUntilWin6DynLinked::DeletePowerScheme( 
+    const std::tstring & cr_stdtstrPowerSchemeName )
+{
+  UINT uiPowerSchemeIndex ;
+  //1st: get ID for power scheme named "cr_stdtstrPowerSchemeName".
+  if( GetPowerSchemeIndex( 
+    GetStdWstring( cr_stdtstrPowerSchemeName )
+    , uiPowerSchemeIndex )
+    )
+  {
+    return DeletePwrScheme( uiPowerSchemeIndex ) ;
+  }
+  return 0 ;
+}
+
 BYTE PowerProfUntilWin6DynLinked::DisableDVFSforPowerSchemeToSet()
 {
   return DisableCPUscaling(m_uiPowerSchemeIndexOfWantedName ) ;
@@ -757,6 +783,10 @@ void PowerProfUntilWin6DynLinked::InitializeFunctionPointers()
   m_pfncanuserwritepwrscheme = (pfnCanUserWritePwrScheme) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
+  strFuncName = "DeletePwrScheme" ;
+  m_pfndeletepwrscheme = (pfnDeletePwrScheme) ::GetProcAddress( 
+    m_hinstancePowerProfDLL, strFuncName.c_str() );
+
   strFuncName = "EnumPwrSchemes" ;
   m_pfnenumpwrschemes = (pfnEnumPwrSchemes) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
@@ -849,6 +879,34 @@ BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
       ) ;
   }
   return FALSE ;
+}
+
+BYTE PowerProfUntilWin6DynLinked::GetPowerSchemeIndex(
+  const std::wstring & cr_stdwstrPowerSchemeName 
+  , UINT & r_uiPowerSchemeIndexOfWantedName
+  )
+{
+  BYTE byRet = 0 ;
+  //UINT uiPowerSchemeIndex ;
+  //m_bPowerSchemeWithP0ThrottleNoneFound = false ;
+  m_bPowerSchemeFound = false ;
+  m_stdwstrWantedPowerScheme = cr_stdwstrPowerSchemeName ;
+  //If the function succeeds, the return value is nonzero.
+  if( EnumPwrSchemes(
+      PwrSchemesEnumProcSearchPowerSchemeByName,
+      (LPARAM) //& uiPowerSchemeIndex
+        this
+      )
+    )
+  {
+    //if( m_bPowerSchemeWithP0ThrottleNoneFound )
+    if( m_bPowerSchemeFound )
+    {
+      r_uiPowerSchemeIndexOfWantedName = m_uiPowerSchemeIndexOfWantedName ;
+      byRet = 1 ;
+    }
+  }
+  return byRet ;
 }
 
 BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(

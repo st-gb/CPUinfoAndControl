@@ -29,7 +29,8 @@ BYTE PentiumM_Controller::Init()
       , 1
       ) ;
     bSpeedStepIsenabled = ! (dwHigh & 1 ) ;
-    LOGN("SteedStep is " << ( bSpeedStepIsenabled ? "en" : "dis") << " abled" )
+    LOGN("SteedStep is " << ( bSpeedStepIsenabled ? "en" : "dis") << 
+      " abled" )
     //SpeedStep not activated.
     if( ! (dwHigh & 1 ) )
     {
