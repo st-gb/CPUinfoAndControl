@@ -197,6 +197,28 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByName (
   return TRUE ;
 }
 
+//To continue until all power schemes have been enumerated, the 
+//callback function must return TRUE. 
+//To stop the enumeration, the callback function must return FALSE.
+BOOLEAN CALLBACK PwrSchemesEnumProcLogOutput (
+  UINT uiPowerSchemeID ,      // power scheme index
+  DWORD dwName,      // size of the sName string, in bytes
+  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
+  //LPTSTR strPowerSchemeName,      // name of the power scheme
+  LPWSTR strPowerSchemeName,      // name of the power scheme
+  DWORD dwDesc,      // size of the sDesc string, in bytes
+  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
+  //LPTSTR sDesc,      // description string
+  LPWSTR sDesc,      // description string
+  PPOWER_POLICY pp,  // receives the power policy
+  LPARAM lParam      // user-defined value
+  )
+{
+  LOGWN( L"Power scheme index:" << uiPowerSchemeID << L" name:" << 
+    strPowerSchemeName )
+  return TRUE ;
+}
+
 PowerProfUntilWin6DynLinked::PowerProfUntilWin6DynLinked(
   //std::wstring & stdwstrPowerSchemeName 
   std::tstring & r_stdtstrPowerSchemeName 
@@ -469,7 +491,10 @@ BOOLEAN PowerProfUntilWin6DynLinked::DeletePwrScheme(
   )
 {
   if( m_pfndeletepwrscheme )
-    return (*m_pfndeletepwrscheme)( uiIndex ) ;
+    return 
+    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/deletepwrscheme.htm:
+    //"If the function succeeds, the return value is nonzero."
+    (*m_pfndeletepwrscheme)( uiIndex ) ;
   else
     //throw 
     return FALSE ;
@@ -479,13 +504,20 @@ BYTE PowerProfUntilWin6DynLinked::DeletePowerScheme(
     const std::tstring & cr_stdtstrPowerSchemeName )
 {
   UINT uiPowerSchemeIndex ;
+  LOGN( "should delete power scheme \"" << 
+    GetStdString( cr_stdtstrPowerSchemeName ) << "\"" ) ;
   //1st: get ID for power scheme named "cr_stdtstrPowerSchemeName".
   if( GetPowerSchemeIndex( 
     GetStdWstring( cr_stdtstrPowerSchemeName )
     , uiPowerSchemeIndex )
     )
   {
-    return DeletePwrScheme( uiPowerSchemeIndex ) ;
+    BOOL bool_ = DeletePwrScheme( uiPowerSchemeIndex ) ;
+    LOGN( "Deleting power scheme \"" << 
+      Getstdtstring( cr_stdtstrPowerSchemeName ) << "\"" << 
+      ( bool_ ? "succeeded" : "failed" )
+      ) ;
+    return  bool_ ;
   }
   return 0 ;
 }
@@ -1033,6 +1065,11 @@ bool PowerProfUntilWin6DynLinked::OtherDVFSisEnabled()
     }
   }
   return bReturn ;
+}
+
+void PowerProfUntilWin6DynLinked::OutputAllPowerSchemes()
+{
+  EnumPwrSchemes(PwrSchemesEnumProcLogOutput,NULL) ;
 }
 
 BOOLEAN PowerProfUntilWin6DynLinked::WritePwrScheme(

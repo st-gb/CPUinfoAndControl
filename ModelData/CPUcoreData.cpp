@@ -106,7 +106,7 @@ CPUcoreData::CPUcoreData()
     //, m_byMinVoltageID(0)
     //, m_byMainPLLoperatingFrequencyIDmax(CPU_CORE_DATA_NOT_SET)
   {
-    LOGN("CPU attributes ctor")
+    //LOGN("CPU attributes ctor")
     //TODO get the actual number of CPU cores and set THIS one.
     //SetCPUcoreNumber(2);
     //SetMaxFreqInMHz(2200);
@@ -171,7 +171,7 @@ void CPUcoreData::Init()
     )
     //: m_wMaxFreqInMHz(wMaxFreqInMHz)
   {
-    LOGN("CPU attributes ctor 2")
+    //LOGN("CPU attributes ctor 2")
     //Call default constructor.
     //CPUcoreData();
     Init() ;

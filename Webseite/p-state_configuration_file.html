@@ -1,0 +1,23 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>configuration file</title></head>
+<body><ul><li>create
+a configuration
+file in XML format if
+none exists<ul><li>the path to it is "configuration/<i>CPU
+Vendor</i>/<i>CPU family</i>/<i>CPU model</i>/<i>CPU
+stepping</i>/<i>CPU name</i>.xml" releative to the <b>working</b>
+dir of the executable.<br>e.g.
+"C:\X86Info_and_Control\configuration\GenuineIntel\6\13\6\Intel(R)
+Pentium(R) M processor 1.80GHz.xml" for a Pentium M 745</li><li>You can use Notepad or special XML editors to create and edit&nbsp;the file.</li></ul></li><li><b>The structure of the
+configuration file</b>
+should be like:<br><p style="margin-left: 30px;"><font face="Courier" size="-1"><a name="config_file_structure"></a>&lt;<i><a href="#topmost_XML_Element">topmost_XML_Element</a></i></font><font face="Courier" size="-1">&gt;<br>&nbsp;&nbsp;&nbsp;
+&lt;</font><font face="Courier" size="-1"><a href="#freq_and_voltage">freq_and_voltage frequency_in_MHz</a>="<i>FreqInMHz</i>"&nbsp;</font><font face="Courier" size="-1"><a href="#min_voltage_in_Volt">min_voltage_in_Volt</a>="</font><font face="Courier" size="-1"><i>MinVoltageInVolt</i></font><font face="Courier" size="-1">"&nbsp;<a href="#voltage_in_Volt">voltage_in_Volt</a>="</font><font face="Courier" size="-1"><i>WantedVoltageInVolt</i></font><font face="Courier" size="-1">"&nbsp;<a href="#max_voltage_in_Volt">max_voltage_in_Volt</a>="<i>MaxVoltageInVolt</i>"/&gt;&lt;/freq_and_voltage&gt;</font><font face="Courier" size="-1"><br>&lt;/</font><font face="Courier" size="-1"><i>topmost_XML_Element</i></font><font face="Courier" size="-1">&gt;</font></p></li><ul><li><font face="Courier" size="-1">legend:</font></li><ul><li><font face="Courier" size="-1">[] : everything within the brackets is </font><font face="Courier" size="-1">optional (omit the brackets in the cfile)</font></li></ul></ul><li><a name="configuration_meaning"></a><b>explanations
+for the XML attributes/ elements:</b><br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td><a name="topmost_XML_Element"></a><font face="Courier" size="-1"><i>topmost_XML_Element: <br></i></font><blockquote><font face="Courier" size="-1">an
+XML document needs a superordinate XML element. You can name it like you
+want but it is a good idea to give it the same name as the CPU name
+(=the XML file name without the file extension)</font><br></blockquote><font face="Courier" size="-1"><i></i></font><font face="Courier" size="-1"><i><a name="voltage_in_Volt"></a></i></font><font face="Courier" size="-1">freq_and_voltage</font><font face="Courier" size="-1">: <br></font><blockquote><font color="#ff0000"><font color="#000000">You need to
+test at least 2 frequencies: </font></font><br><ul><li><font color="#ff0000"><font color="#000000">the
+maximum frequency<br>and&nbsp;</font></font></li><li><font color="#ff0000"><font color="#000000">a low
+/the lowest frequency. <br></font></font></li></ul><font color="#ff0000"><font color="#000000">The
+voltages for the intermediate frequencies are interpolated if not
+specified.<br></font></font></blockquote><font face="Courier" size="-1"><i><a name="max_voltage_in_Volt"></a>MaxVoltageInVolt</i>: <br></font><blockquote><font face="Courier" size="-1">should be the default voltage for the freq.</font><br></blockquote><font face="Courier" size="-1"><i>WantedVoltageInVolt</i></font><br><blockquote>the voltage to set<br></blockquote><font face="Courier" size="-1"><i><a name="min_voltage_in_Volt"></a>MinVoltageInVolt<br></i></font><blockquote>suggestion: set this to the lowest stable voltage<br></blockquote><font face="Courier" size="-1"><i></i></font><table border="0" cellpadding="2" cellspacing="2" height="32" width="640"><tbody></tbody></table><font face="Courier" size="-1"></font><b><font face="Courier" size="-1"><br></font></b><table border="0" cellpadding="2" cellspacing="2"><tbody></tbody></table></td></tr></tbody></table></li></ul></body></html>

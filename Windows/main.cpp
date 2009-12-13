@@ -149,16 +149,16 @@ void OuputCredits()
   std::vector<std::tstring> stdvecstdtstring ;
   MainController::GetSupportedCPUs(stdvecstdtstring) ;
   for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
-    stdtstr += stdvecstdtstring.at(by) + _T(" ") ;
+    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
     //"This program is an undervolting program for AMD family 17 CPUs.\n" 
-    "This program is CPU information and control program for .\n" 
+    "This program is a CPU information and control program for \n"
     //maincontroller.GetSupportedCPUtypes() ;
     + stdtstr +
     "license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" )
   std::cout << 
     "This executable is both in one:\n"
-    "-an (de-)installer for the undervolting service\n"
+    "-a(n) (de-)installer for the undervolting service\n"
     "-the undervolting service itself\n" ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
@@ -241,6 +241,7 @@ void main( int argc, char *  argv[] )
                    vecstdstrParams.at(1).c_str() ) ;
                 PowerProfDynLinked powerprofdynlinked( stdtstrProgramName ) ;
                 powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+                powerprofdynlinked.OutputAllPowerSchemes() ;
             }
         }
         else

@@ -65,7 +65,7 @@
 			Name="Debug_from_Release|Win32"
 			>
 			<DebugSettings
-				Command="$(TargetPath)"
+				Command="D:\Temp\Visual Studio 2005\Projects\wxPumaStateCtrlDlg\$(ProjectName)GUI_32bit_debug.exe"
 				WorkingDirectory="D:\Temp\Visual Studio 2005\Projects\wxPumaStateCtrlDlg"
 				CommandArguments=""
 				Attach="false"

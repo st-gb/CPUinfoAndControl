@@ -175,7 +175,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
   //std::vector<std::string> stdvecstdstrFurtherCmdLineArgs ;
   //argc; 
   //DEBUG("initializing the service--begin\n",argc)
-  LOG( "initializing the service--begin\n" << argc )
+  LOGN( "initializing the service--begin. argument count:" << argc )
   //specificError; 
   if( argc < 2 )
   {

@@ -69,7 +69,7 @@ public:
     //static 
        std::ofstream m_ofstream ;
     //static 
-       Model m_modelDataForCopying ;
+       //Model m_modelDataForCopying ;
        Model * mp_modelData ;
     //static 
        //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;

@@ -104,7 +104,8 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_ERASE_BACKGROUND(MainFrame::OnEraseBackground)
   EVT_MENU(ID_Quit, MainFrame::OnQuit)
   EVT_MENU(ID_About, MainFrame::OnAbout)
-#ifdef _TEST_PENTIUM_M
+//#ifdef _TEST_PENTIUM_M
+#ifdef COMPILE_WITH_MSR_EXAMINATION
   EVT_MENU(ID_MSR, MainFrame::OnMSR)
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
@@ -206,7 +207,8 @@ MainFrame::MainFrame(
   p_wxmenuFile->AppendSeparator();
   //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
-#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+//#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+#ifdef COMPILE_WITH_SERVICE_CONTROL
   CreateServiceMenuItems() ;
 #endif
   CreateAndInitMenuItemPointers() ;
@@ -244,7 +246,8 @@ MainFrame::MainFrame(
   CreateDynamicMenus();
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   wxMenu * p_wxmenuExtras = new wxMenu;
-#ifdef COMPILE_WITH_SERVICE_CONTROL
+//#ifdef COMPILE_WITH_SERVICE_CONTROL
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
     ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq, 
     //_T("&CPU % min and max.") 
@@ -255,7 +258,9 @@ MainFrame::MainFrame(
 //#ifdef _TEST_PENTIUM_M
 #ifdef _WINDOWS
   //wxMenu * p_wxmenuExtras = new wxMenu;
+#ifdef COMPILE_WITH_MSR_EXAMINATION
   p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
+#endif
   mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 //#endif
   mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
@@ -1385,7 +1390,13 @@ void MainFrame::DrawCurrentPstateInfo(
               //"FID:%u DID:%u->
             _T("%u MHz")
             //.3f : 3 digits after comma
+#ifdef _WINDOWS
+			      _T(" usage in percent:%.3f")
+#else
+            //when compiled with MSVC and running under WinXP the executable 
+            //crashes with this format string (surely because of the 1st "%")
 			      _T(" usage in %:%.3f")
+#endif
 			      //"counter val.:%I64u"
 			      ,
             (WORD) byCPUcoreID ,
@@ -2242,7 +2253,8 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
       mp_cpucontroller->DisableFrequencyScalingByOS();
 }
 
-#ifdef _TEST_PENTIUM_M
+//#ifdef _TEST_PENTIUM_M
+#ifdef COMPILE_WITH_MSR_EXAMINATION
   void MainFrame::OnMSR(wxCommandEvent& WXUNUSED(event))
   {
      //MSRdata msrdata(0x199);

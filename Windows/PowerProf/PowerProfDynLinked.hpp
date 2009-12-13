@@ -30,5 +30,6 @@ public:
   bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
   bool OtherDVFSisEnabled() ;
+  void OutputAllPowerSchemes() ;
   virtual unsigned char PowerSchemeToSetExists() { return 0 ; }
 };

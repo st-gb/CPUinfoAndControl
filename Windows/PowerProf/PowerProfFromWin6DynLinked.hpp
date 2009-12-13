@@ -180,5 +180,6 @@ public:
   );
 
   bool OtherDVFSisEnabled() ;
+  void OutputAllPowerSchemes() {} ;
   void SetFunctionPointersToNULL() ;
 };//end class

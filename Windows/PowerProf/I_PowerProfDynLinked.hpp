@@ -31,6 +31,7 @@ public:
   {
     return m_stdwstrPowerSchemeName ;
   }
+  virtual void OutputAllPowerSchemes() = 0 ;
   virtual unsigned char PowerSchemeToSetExists() 
   { 
     return 0 ; 

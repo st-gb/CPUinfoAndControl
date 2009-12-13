@@ -265,7 +265,8 @@ BOOL WinRing0dynLinked::CpuidEx(
 {
   BOOL bReturn = FAILURE ;
   //DEBUG("WRDL--CPUIDex--begin m_pfncpuidex: %x",m_pfncpuidex);
-  LOG( "WRDL--CPUIDex--begin m_pfncpuidex: " << m_pfncpuidex << "\n" );
+  //LOG( "WRDL--CPUIDex--begin m_pfncpuidex: " << m_pfncpuidex << "\n" );
+  //LOGN( "CpuidEx function pointer address: " << m_pfncpuidex );
   //If it does not point to the function yet.
   if( ! m_pfncpuidex )
   {
@@ -275,11 +276,11 @@ BOOL WinRing0dynLinked::CpuidEx(
       strFuncName.c_str() );
     if(m_pfncpuidex)
     {
-      DEBUG("CPUID function pointer succ. assigned.\n");
+      //DEBUG("CPUID function pointer successfully assigned.\n");
     }
     else
     {
-      DEBUG("CPUID function pointer NOT succ. assigned.\n");
+      DEBUG("CPUID function pointer NOT successfully assigned.\n");
     }
   }
   //else
@@ -290,7 +291,7 @@ BOOL WinRing0dynLinked::CpuidEx(
       p_dwEAX,p_dwEBX,p_dwECX,p_dwEDX,dwAffinityMask) ;
     if( bReturn )
     {
-      DEBUG("Calling CPUID function succeeded.\n");
+      //DEBUG("Calling CPUID function succeeded.\n");
     }
     else
       DEBUG("Calling CPUID function failed.\n");

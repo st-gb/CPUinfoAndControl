@@ -112,7 +112,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
-				OutputFile="$(OutDir)\$(ProjectName)_32bit.exe"
+				OutputFile="$(OutDir)\$(ProjectName)32bit.exe"
 				AdditionalLibraryDirectories="&quot;$(WXWIDGETS_FULL_32BIT_LIB_PATH)&quot;;&quot;$(WINRING0_LATEST_VERSION_FULL_LIB_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;D:\Programme\Microsoft SDKs\Windows\v6.1\Lib_&quot;;&quot;D:\Temp\xerces-c_2_8_0-x86-windows-vc_8_0\lib_&quot;;D:\Temp\WinRing0_1_2_0Alpha1\release_"
 				IgnoreDefaultLibraryNames="LIBCMT"
 			/>

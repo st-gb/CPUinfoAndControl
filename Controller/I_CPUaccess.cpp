@@ -176,7 +176,7 @@ bool //ISpecificController
           //  //dwEAX, dwEBX, dwECX, dwEDX,
           //  //archCPUID
           //  );
-          LOG("CPUID address:" << ( 0x80000002 + byCPUID_Address ) << " \n" );
+          //LOG("CPUID address:" << ( 0x80000002 + byCPUID_Address ) << " \n" );
           //archProcessorName[
         }
         else

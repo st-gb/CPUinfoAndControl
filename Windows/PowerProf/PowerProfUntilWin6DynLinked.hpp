@@ -173,6 +173,7 @@ public:
     , UINT & r_uiPowerSchemeIndexOfWantedName) ;
   void Initialize() ;
   void InitializeFunctionPointers() ;
+  void OutputAllPowerSchemes() ;
   BYTE PowerSchemeToSetExists() ;
   BOOLEAN WINAPI ReadPwrScheme (
     __in   UINT uiID,

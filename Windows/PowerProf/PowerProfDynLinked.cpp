@@ -49,6 +49,9 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
 {
   //return mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ; 
   bool bDesiredPowerSchemeExists = false ;
+  LOGN("Should disable Windows' Dynamic Voltage And Frequency Scaling.\n"
+    "All available power schemes:")
+  mp_dynfreqscalingaccess->OutputAllPowerSchemes() ;
   //Even if the access to the power scheme differs between Windows Vista 
   //and XP the logic for setting the power scheme is the same.
   //So to ensure the same implementation, implement the logic here
@@ -86,4 +89,9 @@ unsigned char PowerProfDynLinked::EnableFrequencyScalingByOS()
 bool PowerProfDynLinked::OtherDVFSisEnabled()
 {
   return mp_dynfreqscalingaccess->OtherDVFSisEnabled() ;
+}
+
+void PowerProfDynLinked::OutputAllPowerSchemes()
+{
+  mp_dynfreqscalingaccess->OutputAllPowerSchemes() ;
 }

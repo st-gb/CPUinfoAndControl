@@ -70,7 +70,7 @@ bool PowerProfFromWin6DynLinked::DisableFrequencyScalingByOS()
     //Walk through all power schemes.
     do
     {
-      PowerEnumerate(
+      dwRes = PowerEnumerate(
         & guidPowerScheme ,
         & guidSubGroupOfPowerSettings ,//__in_opt   const GUID * ,
         AccessFlags ,//__in       POWER_DATA_ACCESSOR AccessFlags,
