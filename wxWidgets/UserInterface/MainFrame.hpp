@@ -39,6 +39,7 @@
 //#include "FreqAndVoltageSettingDlg.hpp"
 
 class wxBufferedPaintDC ;
+class CalculationThread ;
 //class GriffinController ;
 //class wxMenuItem ;
 class FreqAndVoltageSettingDlg ;
@@ -67,7 +68,8 @@ public:
   CPUcoreUsageGetterIWbemServices m_cpucoreusagegetteriwbemservices ;
 #endif
   void Notify() ; //overrides wxTimer::Notify()
-
+  wxTimer m_timer;
+  DWORD m_dwTimerIntervalInMilliseconds ;
 private: 
   //PumaStateCtrl m_pumastatectrl(
   //  0, 
@@ -79,6 +81,7 @@ private:
   BYTE m_byNumberOfSettablePstatesPerCore ;
   BYTE m_byMenuIndexOf1stPstate ;
   CPUcoreData * mp_cpucoredata ;
+  CalculationThread * mp_calculationthread ;
   //ClocksNotHaltedCPUcoreUsageGetter m_clocksnothaltedcpucoreusagegetter ;
   float m_fPreviousCPUusage ;
   float m_fMaxVoltage ;
@@ -93,13 +96,13 @@ private:
   //CPUcoreUsageNTQSI m_cpucoreusagentqsi ;
   int m_nLowestIDForSetVIDnFIDnDID ;
   int m_nNumberOfMenuIDsPerCPUcore ;
+  Model * mp_model ;
   std::map<WORD, I_CPUcontrollerAction *> m_stdmapwmenuid2i_cpucontrolleraction ;
   std::vector<//classes derived from wxObject
     wxObject> m_stdvectorwxuicontroldata ;
   std::map<//classes derived from wxObject
     WORD, //wxObject *
     SpecificCPUcoreActionAttributes *> m_stdmapwxuicontroldata ;
-  wxTimer m_timer;
   wxBitmap * mp_wxbitmap ;
   wxBitmap * mp_wxbitmapStatic ;
   wxBufferedPaintDC * mp_wxbufferedpaintdcStatic ;
@@ -159,7 +162,8 @@ public:
     const wxSize& size
     //, GriffinController * p_pstatectrl
     , I_CPUcontroller * p_cpucontroller
-    , CPUcoreData * p_cpucoredata
+    //, CPUcoreData * p_cpucoredata
+    , Model * p_model
     );
   ~MainFrame() ;
 
@@ -192,6 +196,11 @@ public:
     , float fMaxVoltage
     ) ;
   void DrawCurrentPstateInfo( wxDC & r_wxdc ) ;
+  void MainFrame::DrawPerformanceStatesCrosses(
+    wxDC & r_wxdc 
+    , const std::set<VoltageAndFreq> & cr_stdsetmaxvoltageforfreq 
+    , const wxColor * cp_wxcolor 
+    ) ;
   void DrawDiagramScale(
     wxDC & wxdc ,
     //std::set<MaxVoltageForFreq>::iterator & iterstdsetmaxvoltageforfreq
@@ -209,8 +218,10 @@ public:
     wxDC & r_wxdc
     , float fVoltageInVolt
     , WORD wFreqInMHz
+    , const wxColor * cp_wxcolor 
     ) ;
   void OnEraseBackground(wxEraseEvent& event) ;
+  void OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnHighLoadThread( wxCommandEvent & WXUNUSED(event) ) ;
   void OnOwnDynFreqScaling( wxCommandEvent & WXUNUSED(wxevent) 
     //wxevent 
@@ -221,11 +232,13 @@ public:
   void OnDynamicallyCreatedUIcontrol(wxCommandEvent & event);
   void OnSize(wxSizeEvent & WXUNUSED(event)) ;
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));
+  void OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event));
 
   void OnContinueService(wxCommandEvent & WXUNUSED(event));
   void OnPauseService(wxCommandEvent & WXUNUSED(event));
   void OnStartService(wxCommandEvent & WXUNUSED(event));
   void OnStopService(wxCommandEvent & WXUNUSED(event));
+  void OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event));
 
 #ifdef PRIVATE_RELEASE //hide the other possibilities
   void OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event));
@@ -247,6 +260,7 @@ public:
 //        PState & pstate
 //      ) ;
   //void SetPumaStateController(GriffinController * p_pumastatectrl) ;
+  void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
 #ifdef wxHAS_POWER_EVENTS
   //void OnSuspending(wxPowerEvent& event)

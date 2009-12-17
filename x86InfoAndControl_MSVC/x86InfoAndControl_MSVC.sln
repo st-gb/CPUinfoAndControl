@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "x86InfoAndControl_GUI", "x8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "X86InfoAndControlService", "X86InfoAndControlService\X86InfoAndControlService.vcproj", "{DBEE7853-3C12-4057-B688-60C1B8B26FF3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LowCPUvoltageDetect_MSVC", "..\..\SourceCodeManagement\LowCPUvoltageDetect\LowCPUvoltageDetect_MSVC\LowCPUvoltageDetect_MSVC.vcproj", "{19687449-54B4-4C89-8B7A-3F340E3B5DA1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_from_Release|Win32 = Debug_from_Release|Win32
@@ -24,6 +26,12 @@ Global
 		{DBEE7853-3C12-4057-B688-60C1B8B26FF3}.Debug|Win32.Build.0 = Debug|Win32
 		{DBEE7853-3C12-4057-B688-60C1B8B26FF3}.Release|Win32.ActiveCfg = Release|Win32
 		{DBEE7853-3C12-4057-B688-60C1B8B26FF3}.Release|Win32.Build.0 = Release|Win32
+		{19687449-54B4-4C89-8B7A-3F340E3B5DA1}.Debug_from_Release|Win32.ActiveCfg = Release|Win32
+		{19687449-54B4-4C89-8B7A-3F340E3B5DA1}.Debug_from_Release|Win32.Build.0 = Release|Win32
+		{19687449-54B4-4C89-8B7A-3F340E3B5DA1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{19687449-54B4-4C89-8B7A-3F340E3B5DA1}.Debug|Win32.Build.0 = Debug|Win32
+		{19687449-54B4-4C89-8B7A-3F340E3B5DA1}.Release|Win32.ActiveCfg = Release|Win32
+		{19687449-54B4-4C89-8B7A-3F340E3B5DA1}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

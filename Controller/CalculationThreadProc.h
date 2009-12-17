@@ -10,6 +10,27 @@
 #endif
 #include <Windows_compatible_typedefs.h>
 
-DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter) ;
-DWORD /*WINAPI*/ HighALUloadThreadProc(LPVOID lpParameter) ;
-DWORD /*WINAPI*/ CalculationThreadProc(LPVOID lpParameter) ;
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+ FindDifferentPstatesThreadProc(LPVOID lpParameter) ;
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+ FPUcalculationThreadProc(LPVOID lpParameter) ;
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+ HighALUloadThreadProc(LPVOID lpParameter) ;
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+  CalculationThreadProc(LPVOID lpParameter) ;

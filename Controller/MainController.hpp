@@ -30,6 +30,8 @@ public:
   MainController();
   MainController(const MainController& orig);
   virtual ~MainController();
+  BYTE GetPstatesDirPath(std::string & r_strCPUtypeRelativeDirPath ) ;
+  BYTE GetPstateSettingsFileName( std::string & r_strPstateSettingsFileName ) ;
   static BYTE GetSupportedCPUs(//std::tstring & tstr
     std::vector<std::tstring> & r_stdvectstr
     )

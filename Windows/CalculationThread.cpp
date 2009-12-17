@@ -21,7 +21,12 @@ CalculationThread::CalculationThread()
 
 CalculationThread::CalculationThread(
   BYTE byCoreID ,
-  DWORD WINAPI pCalculationThreadProc(LPVOID lpParameter)
+  DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+  pCalculationThreadProc(LPVOID lpParameter)
   , UserInterface * p_userinterface
   , I_CPUcontroller * p_cpucontroller
   )
@@ -183,7 +188,7 @@ CalculationThread::StartCalculationThread(BYTE byCoreID)
     this,
     //DWORD dwCreationFlags,
     //If this value is zero, the thread runs immediately after creation. 
-    0,
+    0 ,
     //LPDWORD lpThreadId
     & dwThreadID
   );

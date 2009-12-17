@@ -498,7 +498,16 @@ void FreqAndVoltageSettingDlg::CreateSliders()
   //  , wxSL_AUTOTICKS //	Displays tick marks.
   //  | wxSL_LABELS //Displays minimum, maximum and value labels.
   //  ) ;
-  mp_cpucontroller->GetPstate(0,voltageandfreq) ;
+  BYTE byPstateExists = mp_cpucontroller->GetPstate(0,voltageandfreq) ;
+  //If the p-state "0" does not exist.
+  if( ! byPstateExists )
+  {
+    //Disable the write button.
+    mp_wxbuttonApply->Enable( //p_cpucontroller->GetPstateSafefy() == 
+      //SETTING_VOLTAGE_IS_SAFE 
+      false
+      ) ;
+  }
   mp_wxsliderFreqInMHz = new wxSlider(
     this
     //wxID_ANY, 
@@ -865,7 +874,9 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
     //PState::GetVoltageInVolt(nNewValue) ;
     mp_cpucontroller->GetVoltageInVolt(nNewValue) ;
   HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcoreVoltage);
-  mp_mainframe->Refresh() ;//rm_timer.
+  //mp_mainframe->Refresh() ;//rm_timer.
+  mp_mainframe->m_timer.Stop() ;
+  mp_mainframe->m_timer.Start(mp_mainframe->m_dwTimerIntervalInMilliseconds);
 }
 
 void FreqAndVoltageSettingDlg::OutputFreqAndVoltageByControlValues()

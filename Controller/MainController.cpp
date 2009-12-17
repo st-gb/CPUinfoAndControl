@@ -133,8 +133,12 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
       0, (PentiumM_Controller *) r_p_cpucontroller ) ;
   }
   if( r_p_cpucontroller )
+  {
     //For Pentium Ms e.g. it enables SpeedStep.
     r_p_cpucontroller->Init() ;
+    if( r_p_icpucoreusagegetter )
+      r_p_cpucontroller->mp_icpucoreusagegetter = r_p_icpucoreusagegetter ;
+  }
   //  //Needed for drawing the voltage-frequency curves.
   //  r_p_cpucontroller->GetMaximumFrequencyInMHz() ;
   return 1 ;
@@ -148,29 +152,16 @@ void MainController::SetCPUaccess(
   mp_cpuaccessmethod = p_cpuaccessmethod ;
 }
 
-BYTE MainController::Init(
-  Model & model 
-  , UserInterface * p_userinterface 
-  )
+//This method is also used for save file dialog.
+BYTE MainController::GetPstatesDirPath(std::string & r_strCPUtypeRelativeDirPath )
 {
   BYTE byRet = 0 ;
-  mp_model = & model ;
-  //mp_userinterface = 
   std::string strVendorID ;
   if( mp_cpuaccessmethod->
-    //CpuidEx(
-    //0, //CPUID function 0 is vendor ID
-    //PDWORD eax,
-    //PDWORD ebx,
-    //PDWORD ecx,
-    //PDWORD edx,
-    //DWORD_PTR affinityMask
-    //)
     GetVendorID(strVendorID)
     )
   {
-    BYTE //byFamily , 
-      byModel ;
+    BYTE byModel ;
     BYTE byStepping ;
     WORD wFamily ;
     mp_model->m_cpucoredata.m_strVendorID = strVendorID ;
@@ -184,34 +175,74 @@ BYTE MainController::Init(
           wFamily , byModel , byStepping ) 
       )
     {
+      WORD wModel = (WORD) byModel ;
+      WORD wStepping = (WORD) byStepping ;
+      r_strCPUtypeRelativeDirPath = 
+        "configuration/" 
+        + strVendorID 
+        + "/" 
+        + //strFamily 
+        to_stdstring<WORD>( wFamily //, std::hex
+          ) 
+        + "/" +
+        to_stdstring<WORD>( //(WORD) byModel 
+          wModel //, std::hex
+          ) 
+        + "/" +
+        //The stepping should be included because e.g. the Phenom 965 exists in Stepping
+        //C2 and  C3--the C3 has lower voltages, so the "default_voltage_in_Volt"
+        //attribute values are lower than the ones of the C2 stepping.
+        to_stdstring<WORD>( //(WORD) byModel 
+          wStepping //, std::hex
+          ) 
+        ;
+      byRet = 1 ;
+    }
+  }
+  return byRet ;
+}
+
+BYTE MainController::GetPstateSettingsFileName( 
+  std::string & r_strPstateSettingsFileName )
+{
+  BYTE byRet = 0 ;
+  if( mp_cpuaccessmethod->
+    //Because file name must not begin with spaces in NTFS.
+    GetProcessorNoLeadingSpaces( //byFamily
+      r_strPstateSettingsFileName 
+    )
+  )
+  {
+    r_strPstateSettingsFileName += ".xml" ;
+    byRet = 1 ;
+  }
+  return byRet ;
+}
+
+BYTE MainController::Init(
+  Model & model 
+  , UserInterface * p_userinterface 
+  )
+{
+  BYTE byRet = 0 ;
+  mp_model = & model ;
+  std::string strCPUtypeRelativeDirPath ;
+  if( GetPstatesDirPath(strCPUtypeRelativeDirPath) )
+  {
+    BYTE byModel ;
+    BYTE byStepping ;
+    SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
+    std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
+    std::string strProcessorName ;
+    WORD wFamily ;
+    if( mp_cpuaccessmethod->GetFamilyAndModelAndStepping(
+        wFamily , byModel , byStepping )
+      )
+    {
       mp_model->m_cpucoredata.m_byModel = byModel ;
       mp_model->m_cpucoredata.m_wFamily = wFamily ;
       mp_model->m_cpucoredata.m_byStepping = byStepping ;
     }
-    SAX2_CPUspecificHandler sax2handler( *p_userinterface, model);
-    WORD wModel = (WORD) byModel ;
-    WORD wStepping = (WORD) byStepping ;
-    std::string strCPUtypeRelativeDirPath = 
-      "configuration/" 
-      + strVendorID 
-      + "/" 
-      + //strFamily 
-      to_stdstring<WORD>( wFamily //, std::hex
-        ) 
-      + "/" +
-      to_stdstring<WORD>( //(WORD) byModel 
-        wModel //, std::hex
-        ) 
-      + "/" +
-      //The stepping should be included because e.g. the Phenom 965 exists in Stepping
-      //C2 and  C3--the C3 has lower voltages, so the "default_voltage_in_Volt"
-      //attribute values are lower than the ones of the C2 stepping.
-      to_stdstring<WORD>( //(WORD) byModel 
-        wStepping //, std::hex
-        ) 
-      ;
-    std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
-    std::string strProcessorName ;
     if( mp_cpuaccessmethod->
         //Because file name must not begin with spaces in NTFS.
         GetProcessorNoLeadingSpaces( //byFamily
@@ -269,13 +300,14 @@ BYTE MainController::Init(
     }
     else
     {
-      std::tstring tstr(
-        _T("Running this program is unsafe because theres was an error ") ) ;
-      tstr +=  _T("with the file containg the maximum voltages (") ;
-      tstr = tstr + strProcessorFilePath ;
-      tstr += _T(")") ;
-      throw VoltageSafetyException( 
-        tstr ) ;
+      //std::tstring tstr(
+      //  _T("Running this program is unsafe because theres was an error ") ) ;
+      //tstr +=  _T("with the file containg the maximum voltages (") ;
+      //tstr = tstr + strProcessorFilePath ;
+      //tstr += _T(")") ;
+      //throw VoltageSafetyException( 
+      //  tstr ) ;
+      byRet = 1 ;
     }
     //mp_cpucontroller->mp_model = & model ;
     //if( mp_cpucontroller )

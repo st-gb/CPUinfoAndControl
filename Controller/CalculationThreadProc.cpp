@@ -3,6 +3,8 @@
 //This file needed to have the file extension ".cpp", else there where
 //errors in Visual Studio for the include of <string>.
 #include "CalculationThreadProc.h"
+#include <Controller/ICPUcoreUsageGetter.hpp> //class ICPUcoreUsageGetter
+#include <ModelData/ModelData.hpp> //class Model
 #include "UserInterface.hpp"
 #include <stdlib.h> //rand()
 //wxWidgets does not provide the needed "set CPU affinity". So I must
@@ -16,7 +18,12 @@
 #endif
 #include <Windows_compatible_typedefs.h>
 
-DWORD /*WINAPI*/ CalculationThreadProc(LPVOID lpParameter)
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+ CalculationThreadProc(LPVOID lpParameter)
 {
   //Windows_API::
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
@@ -129,7 +136,123 @@ long GetPrime95ResultsFileLength()
 }
 #endif //#ifdef _WINDOWS
 
-DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter)
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+  FindDifferentPstatesThreadProc(LPVOID lpParameter)
+{
+  CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
+  if( pcalculationthread )
+  {
+    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpairstdsetvoltageandfreq ;
+    std::pair <std::map<WORD,BYTE>::iterator, bool> stdpairstdmapword2byte;
+    std::map<WORD,BYTE>::iterator stdpairstdmapword2byte_const_iter ;
+    bool bNewVoltageAndFreqPair ;
+    BYTE byTimes = 15 ;
+    pcalculationthread->m_vbContinue = true ;
+    std::map<WORD,BYTE> mapFreq2Count ;
+    WORD wSleepTimeInMs = 1 ;
+    WORD wFreqInMHz , wPrevInsertedFreqInMHz;
+    float fVoltageInVolt , fLoad ;
+    float * pfCPUcoreLoadInPercent = pcalculationthread->
+      mp_cpucontroller->mp_model->m_cpucoredata.m_arfCPUcoreLoadInPercent ;
+  #ifdef _DEBUG
+    float fCPUusageReferringToMaxFreq , 
+      fPreviousCPUusageReferringToMaxFreq = 1.0 ;
+    //pcalculationthread->mp_cpucontroller->
+    WORD wMaxFreqInMHz = 1800 ;
+    wPrevInsertedFreqInMHz = wMaxFreqInMHz + 1 ;
+  #endif
+    //while( wSleepTimeInMs < 200 )
+    do
+    {
+      DWORD dwNum = 10000000 ;
+      //Try to get a specific (average) CPU load by a full load for 
+      //some nanoseconds 
+      //and sleep afterwards.
+      while( dwNum -- )
+      {
+
+      }
+      //if( pcalculationthread->mp_cpucontroller->
+       if( pcalculationthread->mp_cpucontroller->GetCurrentPstate(
+         wFreqInMHz, fVoltageInVolt, pcalculationthread->m_byCoreID ) )
+       {
+         //mp_cpucontroller->
+         //fLoad = ::wxGetApp().mp_cpucoreusagegetter->
+           pcalculationthread->mp_cpucontroller->mp_icpucoreusagegetter->
+           //GetPercentalUsageForCore(
+           //pcalculationthread->m_byCoreID
+           GetPercentalUsageForAllCores(
+             pfCPUcoreLoadInPercent) ;
+         fLoad = pfCPUcoreLoadInPercent[ pcalculationthread->m_byCoreID ] ;
+          fCPUusageReferringToMaxFreq = fLoad * (float) wFreqInMHz / (float) wMaxFreqInMHz ;
+#ifdef _DEBUG
+          fCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
+#endif
+         if( //fCPUusageReferringToMaxFreq < fPreviousCPUusageReferringToMaxFreq 
+           //)
+           //fPreviousCPUusageReferringToMaxFreq - fCPUusageReferringToMaxFreq < 0.02
+         //if( 
+           //&&
+           wFreqInMHz >= wPrevInsertedFreqInMHz 
+           && ! (-- byTimes)
+           )
+         {
+           wSleepTimeInMs ++ ;
+           byTimes = 15 ;
+         }
+         if( //fPreviousCPUusageReferringToMaxFreq - fCPUusageReferringToMaxFreq < 0.1
+           //&& 
+           wFreqInMHz < wPrevInsertedFreqInMHz )
+         {
+           stdpairstdmapword2byte_const_iter = mapFreq2Count.find( wFreqInMHz ) ;
+           if( stdpairstdmapword2byte_const_iter != mapFreq2Count.end() )
+           {
+             ++ stdpairstdmapword2byte_const_iter->second ;
+             if( stdpairstdmapword2byte_const_iter->second > 5 ) 
+             {
+               wPrevInsertedFreqInMHz = wFreqInMHz ;
+              fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
+             }
+           }
+           else
+            //stdpairstdmapword2byte = 
+            mapFreq2Count.insert( std::pair<WORD,BYTE>(wFreqInMHz,1) ) ;
+           //if( stdpairstdmapword2byte 
+           //wPrevInsertedFreqInMHz = wFreqInMHz ;
+           //fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
+         }
+         stdpairstdsetvoltageandfreq = pcalculationthread->
+           mp_cpucontroller->mp_model->m_cpucoredata.
+            m_stdsetvoltageandfreqDefault.insert( 
+            VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
+            ) ;
+          //New p-state inserted.
+          if( stdpairstdsetvoltageandfreq.second )
+          {
+          //  wPrevInsertedFreqInMHz = wFreqInMHz ;
+          //  //bNewVoltageAndFreqPair = true ;
+          // fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
+            pcalculationthread->mp_userinterface->RedrawEverything() ;
+          }
+         Sleep( wSleepTimeInMs ) ;
+       //  if( fLoad * fCPUusageReferringToMaxFreq 
+       }
+    }
+    while( fCPUusageReferringToMaxFreq > 0.25 ) ;
+  }
+  return 0 ;
+}
+
+DWORD 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
+  FPUcalculationThreadProc(LPVOID lpParameter)
 {
   //Windows_API::
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
@@ -227,6 +350,9 @@ DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter)
       //  //( dwIndex + 1 ) 
       //  //) ;
       //  //+= ardNumberPrecalculated[dwIndex] ;
+      
+      //Zugriffsverletzung an DIESER Stelle, als mit MSVC im Debugger bei 800MHz und 0.7 Volt
+      //im Debugger: arfNumberPrecalculated = 1.00000 , dwIndex = 1???
         arfNumberPrecalculated[dwIndex] 
         = pow( 2.0, (double) dwIndex) ;
       //ardNumberPrecalculated[dwIndex] = dSum ;
@@ -319,7 +445,10 @@ DWORD /*WINAPI*/ FPUcalculationThreadProc(LPVOID lpParameter)
 }
 
 DWORD 
-//WINAPI 
+#ifdef _MSC_VER
+  //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+  WINAPI 
+#endif //#ifdef _MSC_VER
 HighALUloadThreadProc(LPVOID lpParameter)
 {
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;

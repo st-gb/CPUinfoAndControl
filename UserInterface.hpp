@@ -37,5 +37,6 @@ public:
     //std::ostream & r_ostream
     ) = 0//{return true;}
     ;
+  virtual void RedrawEverything() {} ;
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
 };

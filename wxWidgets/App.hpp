@@ -146,6 +146,7 @@ public:
   {
     return mp_cpucontroller ;
   }
+  void RedrawEverything() ;
 };
 
 DECLARE_APP(wxPumaStateCtrlApp)

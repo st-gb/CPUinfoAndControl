@@ -375,7 +375,8 @@ bool wxPumaStateCtrlApp::OnInit()
         //,mp_pstatectrl
         , mp_cpucontroller
         //, & m_modelData.m_cpucoredata
-        , & mp_modelData->m_cpucoredata
+        //, & mp_modelData->m_cpucoredata
+        , mp_modelData
         );
       //p_frame->Show(TRUE);
       //SetTopWindow(p_frame);
@@ -633,6 +634,12 @@ void wxPumaStateCtrlApp::outputAllPstates(unsigned char byCurrentP_state, int & 
 {
 
 }
+
+void wxPumaStateCtrlApp::RedrawEverything() 
+{
+  mp_frame->RedrawEverything() ;
+}
+
 //int main(int argc, char **argv)
 //{
 //  wxPumaStateCtrlApp myapp;

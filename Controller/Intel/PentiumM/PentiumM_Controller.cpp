@@ -57,6 +57,7 @@ BYTE PentiumM_Controller::GetCurrentPstate(
   , BYTE byCoreID
   )
 {
+  BYTE bySuccess = 0 ;
   DWORD dwHigh, dwLow ;
   if( RdmsrEx(
       IA32_PERF_STATUS
@@ -70,6 +71,10 @@ BYTE PentiumM_Controller::GetCurrentPstate(
     BYTE byFID = dwLow >> 8 ;
 #endif
     r_wFreqInMHz = ( dwLow >> 8 ) * 100 ;
+#ifdef _DEBUG
+    if( r_wFreqInMHz > 1800 )
+      r_wFreqInMHz = r_wFreqInMHz ;
+#endif
     BYTE byVoltageID = ( dwLow & 255 ) ;
     //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step
     //63= 0.7V 62=0.716 V,...
@@ -79,8 +84,16 @@ BYTE PentiumM_Controller::GetCurrentPstate(
 #ifdef _DEBUG
     byVoltageID = byVoltageID ;
 #endif
+    bySuccess = 1 ;
   }
-  return 1 ;
+#ifdef _DEBUG
+  else
+  {
+    bySuccess = 0 ;
+  }
+#endif
+  //return 1 ;
+  return bySuccess ;
 }
 
 BYTE PentiumM_Controller::GetCurrentPstate(
@@ -243,22 +256,20 @@ void PentiumM_Controller::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
 {
   float fVoltageInVolt ;
   WORD wFreqInMHz ;
-  GetCurrentPstate(
+  if( GetCurrentPstate(
     wFreqInMHz 
     , fVoltageInVolt
     , byCoreID 
-    ) ;
-  //{
-  //  
-  //}
-  fVoltageInVolt += 0.032 ; //increase by 2 voltage ID steps
-  SetVoltageAndFrequency(
-    fVoltageInVolt
-    , wFreqInMHz
-    , byCoreID
-    ) ;
-  fVoltageInVolt += 0.32 ; //increase by 2 voltage ID steps
-
+    ) )
+  {
+    fVoltageInVolt += 0.032 ; //increase by 2 voltage ID steps
+    SetVoltageAndFrequency(
+      fVoltageInVolt
+      , wFreqInMHz
+      , byCoreID
+      ) ;
+    fVoltageInVolt += 0.32 ; //increase by 2 voltage ID steps
+  }
   //BYTE byFreqID ;
   //BYTE byVoltageID ;
   //BYTE byCoreID  ;

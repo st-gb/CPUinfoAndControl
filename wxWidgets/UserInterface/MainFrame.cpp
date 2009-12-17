@@ -72,6 +72,9 @@ enum
   , ID_PauseService
   , ID_StartService
   , ID_StopService
+  , ID_UpdateViewInterval
+  , ID_SaveAsDefaultPstates
+  , ID_FindDifferentPstates
 //#endif
   , TIMER_ID
 //#ifdef _WINDOWS
@@ -113,6 +116,12 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnDynamicallyCreatedUIcontrol )
   EVT_MENU( ID_EnableOrDisableOtherDVFS ,
     MainFrame::OnOwnDynFreqScaling )
+  EVT_MENU( ID_UpdateViewInterval ,
+    MainFrame::OnUpdateViewInterval )
+  EVT_MENU( ID_SaveAsDefaultPstates ,
+    MainFrame::OnSaveAsDefaultPStates )
+  EVT_MENU( ID_FindDifferentPstates ,
+    MainFrame::OnFindDifferentPstates )
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   EVT_MENU( ID_ContinueService ,
     MainFrame::OnContinueService )
@@ -157,7 +166,8 @@ MainFrame::MainFrame(
   const wxSize& size
   //,GriffinController * p_pumastatectrl
   , I_CPUcontroller * p_cpucontroller
-  , CPUcoreData * p_cpucoredata 
+  //, CPUcoreData * p_cpucoredata 
+  , Model * p_model
   )
   : wxFrame((wxFrame *)NULL, -1, title, pos, size
     //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
@@ -167,7 +177,9 @@ MainFrame::MainFrame(
         //Necessary for showing a title bar
         | wxDEFAULT_FRAME_STYLE
     )
-  , mp_cpucoredata(p_cpucoredata)
+  //, mp_cpucoredata(p_cpucoredata)
+  , mp_cpucoredata( & p_model->m_cpucoredata )
+  , mp_model ( p_model )
 //, m_bConfirmedYet(true)
   , mp_freqandvoltagesettingdlg(NULL)
   //, mp_pumastatectrl(p_pumastatectrl)
@@ -186,6 +198,8 @@ MainFrame::MainFrame(
   //, m_wxbufferedpaintdcStatic( this ) 
   , mp_wxbufferedpaintdcStatic( NULL) 
   , mp_wxbitmapStatic (NULL)
+  , m_dwTimerIntervalInMilliseconds (1000)
+  , mp_calculationthread( NULL )
 {
   LOG("begin of main frame creation\n")
 
@@ -204,6 +218,8 @@ MainFrame::MainFrame(
   //wxMenu * p_wxmenuCore0 = new wxMenu;
   wxMenu * p_wxmenuNorthBridge = new wxMenu;
   p_wxmenuFile->Append( ID_About, _T("&About...") );
+  p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
+    _T("Save As &Default Performance States...") );
   p_wxmenuFile->AppendSeparator();
   //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
@@ -254,6 +270,11 @@ MainFrame::MainFrame(
     _T("enable or disable OS's dynamic frequency scaling")
     );
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
+  p_wxmenuExtras->Append(
+    ID_UpdateViewInterval, 
+    //_T("&CPU % min and max.") 
+    _T("set update view interval")
+    );
 //#endif //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //#ifdef _TEST_PENTIUM_M
 #ifdef _WINDOWS
@@ -263,10 +284,12 @@ MainFrame::MainFrame(
 #endif
   mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 //#endif
-  mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
-    ID_EnableOrDisableOtherDVFS
-    , _T("enable own DVFS") 
-    );
+  if( ! p_cpucontroller->mp_model->m_cpucoredata.
+    m_stdsetvoltageandfreqDefault.empty() )
+    mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
+      ID_EnableOrDisableOtherDVFS
+      , _T("enable own DVFS") 
+      );
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //    ////Connect the action, that is a class derived from class xx directly
@@ -294,7 +317,8 @@ MainFrame::MainFrame(
 //  SetIcon(wxicon);
   Connect(wxEVT_PAINT, wxPaintEventHandler(MainFrame::OnPaint));
   //SetStatusText( _T("Welcome to wxWidgets!") );
-  m_timer.Start(1000);
+  //m_timer.Start(1000);
+  m_timer.Start(m_dwTimerIntervalInMilliseconds);
   //http://docs.wxwidgets.org/stable/wx_wxtimer.html#wxtimersetowner:
   //"Associates the timer with the given owner object. When the timer is 
   //running, the owner will receive timer events with id equal to id 
@@ -328,6 +352,8 @@ MainFrame::~MainFrame()
   //Release memory for array of pointers.
   delete [] m_arp_wxmenuitemPstate ;
   delete [] marp_wxmenuItemHighLoadThread ;
+  if( mp_calculationthread )
+    delete mp_calculationthread ;
 }
 
 //void MyFrame::AddMenu()
@@ -613,6 +639,11 @@ BYTE MainFrame::CreateDynamicMenus()
       //new wx
       //, & m_stdvectorwxuicontroldata.back()
       );
+    p_wxmenuCore->Append(wMenuID, _T("find different p-states") );
+    Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, 
+      wxCommandEventHandler(
+      MainFrame::OnFindDifferentPstates )
+      );
     #ifdef COMPILE_WITH_CALC_THREAD
     marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
       p_wxmenuCore,
@@ -758,6 +789,50 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
   if( ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.SendMessage(continue_service) ;
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+}
+
+void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
+{
+  //wxString wxstrInput = ::wxGetTextFromUser( wxstrMessage , wxT("input"), 
+  //  wxT("1000") ) ;
+  ////::wxGetNumberFromUser
+  ////If the user has input text (and has NOT pressed "cancel")
+  //if( ! wxstrInput.empty() )
+  //{
+  //  unsigned long ulMs ;
+  //  bool bSuccess = wxstrInput.ToULong(& ulMs) ;
+  //  if ( bSuccess )
+  //  {
+  //    //ReadMsrEx() returned false results if used with a time and a 10 ms interval.
+  //    if( ulMs < 100 )
+  //      wxMessageBox( wxT("the number is too low. "
+  //      "Getting the current CPU frequency returned wrong values with < 100 ms") ) ;
+  //    else
+  //    {
+  //      m_dwTimerIntervalInMilliseconds = ulMs ;
+  //      m_timer.Stop() ;
+  //      m_timer.Start(ulMs) ;
+  //    }
+  //  }
+  //  else
+  //  {
+  //    wxMessageBox( wxT("You did not enter a valid integer number") ) ;
+  //  }
+  //}
+  //Must create dynamically, else the CalculationThread is destroyed after leaving
+  //this block.
+  if( ! mp_calculationthread )
+  {
+    mp_calculationthread = new CalculationThread( 
+    0 
+    , FindDifferentPstatesThreadProc
+    , & ::wxGetApp() 
+    , ::wxGetApp().GetCPUcontroller() 
+    ) ;
+  }
+  if( mp_calculationthread )
+    mp_calculationthread->Execute() ;
+  //::wxMilliSleep()
 }
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
@@ -1045,6 +1120,37 @@ void MainFrame::DrawAllPossibleOperatingPoints(
   //} while( wCurrentFreqInMHz != mp_cpucoredata->m_wMaxFreqInMHz ) ;
 }
 
+void MainFrame::DrawPerformanceStatesCrosses(
+  wxDC & r_wxdc 
+  , const std::set<VoltageAndFreq> & cr_stdsetmaxvoltageforfreq 
+  , const wxColor * cp_wxcolor 
+  )
+{
+  const wxPen wxpenCurrent = r_wxdc.GetPen() ;
+#ifdef _DEBUG
+  const wxColor wxcolor = wxpenCurrent.GetColour() ;
+  int nPenWidth = wxpenCurrent.GetWidth() ;
+#endif
+  std::set<VoltageAndFreq>::const_iterator iter = 
+    cr_stdsetmaxvoltageforfreq.begin() ;
+  while( iter != cr_stdsetmaxvoltageforfreq.end() )
+  {
+    DrawVoltageFreqCross(
+      r_wxdc
+      , iter->m_fVoltageInVolt
+      , iter->m_wFreqInMHz
+      , cp_wxcolor
+      ) ;
+    ++ iter ;
+  }
+#ifdef _DEBUG
+  if( nPenWidth == 3 )
+    nPenWidth = 3 ;
+#endif
+  //Restore the pen.
+  r_wxdc.SetPen( wxpenCurrent ) ;
+}
+
 void MainFrame::DrawDiagramScale(
   wxDC & wxdc ,
   //std::set<MaxVoltageForFreq>::iterator & iterstdsetmaxvoltageforfreq
@@ -1059,6 +1165,11 @@ void MainFrame::DrawDiagramScale(
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
     mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
   iterstdsetvoltageandfreq = r_stdsetvoltageandfreq.begin() ;
+#ifdef _DEBUG
+  const wxPen & wxpenCurrent = wxdc.GetPen() ;
+  const wxColor wxcolor = wxpenCurrent.GetColour() ;
+  int nPenWidth = wxpenCurrent.GetWidth() ;
+#endif
 
   //p_wxpaintdc->DrawText( wxT("550") , arwxpoint[0].x, //200
   //    wDiagramHeight ) ;
@@ -1555,6 +1666,7 @@ void MainFrame::DrawVoltageFreqCross(
   wxDC & r_wxdc
   , float fVoltageInVolt
   , WORD wFreqInMHz
+  , const wxColor * cp_wxcolor 
   )
 {
   WORD wXcoordinate = 
@@ -1569,7 +1681,8 @@ void MainFrame::DrawVoltageFreqCross(
     fVoltageInVolt
     / m_fMaxVoltage * m_wDiagramHeight ;
 
-  wxPen pen(*wxBLUE, 3); // red pen of width 1
+  //wxPen pen(*wxBLUE, 3); // pen of width 3
+  wxPen pen(*cp_wxcolor, 3); // pen of width 3
   r_wxdc.SetPen(pen);
   //Draw Cursor:
   r_wxdc.DrawLine( 
@@ -2106,10 +2219,11 @@ void MainFrame::OnPaint(wxPaintEvent & event)
         )
       {
         DrawVoltageFreqCross(
-            wxmemorydc
-            , m_fVoltageInVoltOfCurrentActiveCoreSettings
-            , m_wFreqInMHzOfCurrentActiveCoreSettings
-            ) ;
+          wxmemorydc
+          , m_fVoltageInVoltOfCurrentActiveCoreSettings
+          , m_wFreqInMHzOfCurrentActiveCoreSettings
+          , wxBLUE
+          ) ;
       }
       else
       {
@@ -2127,6 +2241,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
             , fVoltageInVolt
             //, r_percpucoreattributes.m_wFreqInMHzCalculatedFromCPUload 
             , wFreqInMHz
+            , wxBLUE
             ) ;
         }
       }
@@ -2595,9 +2710,135 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
   }
 #endif // wxHAS_POWER_EVENTS
 
+void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
+{
+  std::string strCPUtypeRelativeDirPath ;
+  std::string strPstateSettingsFileName ;
+  if( wxGetApp().m_maincontroller.GetPstatesDirPath( 
+    strCPUtypeRelativeDirPath ) 
+    && wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
+    strPstateSettingsFileName )
+    )
+    ::wxFileSelector( wxT("Select file path") 
+      , strCPUtypeRelativeDirPath.c_str() 
+      , strPstateSettingsFileName.c_str() ) ;
+}
+
 void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
                      sizeevent//)
                      )
+{
+  RedrawEverything() ;
+}
+
+void MainFrame::OnTimerEvent(wxTimerEvent &event)
+{
+  //Do something
+  bool bNewVoltageAndFreqPair = false ;
+  float fVoltageInVolt ;
+  WORD wFreqInMHz ;
+  std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpairstdsetvoltageandfreq ;
+  for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
+    mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
+  {
+    if( mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
+    {
+#ifdef _DEBUG
+      if( wFreqInMHz > 1800 )
+        wFreqInMHz = wFreqInMHz ;
+#endif
+      stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
+        m_stdsetvoltageandfreqDefault.insert( 
+        VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
+        ) ;
+      //New p-state inserted.
+      if( stdpairstdsetvoltageandfreq.second )
+        bNewVoltageAndFreqPair = true ;
+    }
+  }
+  if( bNewVoltageAndFreqPair )
+  {
+    std::set<VoltageAndFreq>::reverse_iterator reviter = 
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin() ;
+    //Need to set the max freq. Else (all) the operating points are drawn at x-coord. "0".
+    mp_cpucoredata->m_wMaxFreqInMHz = (*reviter).m_wFreqInMHz ;
+    RedrawEverything() ;
+  }
+  else
+    Refresh() ;
+  //TRACE("OnTimerEvent\n") ;
+}
+
+void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
+{
+  wxString wxstrMessage = wxT("Input update view interval in milliseconds") ;
+  wxString wxstrInput = ::wxGetTextFromUser( wxstrMessage , wxT("input"), 
+    wxT("1000") ) ;
+  //::wxGetNumberFromUser
+  //If the user has input text (and has NOT pressed "cancel")
+  if( ! wxstrInput.empty() )
+  {
+    unsigned long ulMs ;
+    bool bSuccess = wxstrInput.ToULong(& ulMs) ;
+    if ( bSuccess )
+    {
+      //ReadMsrEx() returned false results if used with a time and a 10 ms interval.
+      if( ulMs < 100 )
+        wxMessageBox( wxT("the number is too low. "
+        "Getting the current CPU frequency returned wrong values with < 100 ms") ) ;
+      else
+      {
+        m_dwTimerIntervalInMilliseconds = ulMs ;
+        m_timer.Stop() ;
+        m_timer.Start(ulMs) ;
+      }
+    }
+    else
+    {
+      wxMessageBox( wxT("You did not enter a valid integer number") ) ;
+    }
+  }
+}
+
+//wxString MainFrame::GetSetPstateMenuItemLabel(
+//  BYTE byPstateNumber
+    //The "PState" class is AMD-specific.
+//  , PState & pstate
+//  )
+//{
+//   return wxString::Format(
+//     //We need a _T() macro (wide char-> L"", char->"") for EACH
+//     //line to make it compitable between char and wide char.
+//     _T("set p-state %u (%u MHz @ %f Volt)"),
+//       (WORD) byPstateNumber
+//       , pstate.GetFreqInMHz()
+//       , pstate.GetVoltageInVolt()
+//     ) ;
+//}
+
+//void MainFrame::SetMenuItemLabel(
+//  BYTE byCoreID
+//  , BYTE byPstateNumber
+//  , //const
+//    PState & pstate
+//  )
+//{
+//    //int nMenuItemID
+//    //this->m_nLowestIDForSetVIDnFIDnDID
+//    //this->m_nNumberOfMenuIDsPerCPUcore
+//    //wxMenuItem * p_wxmenuitem = FindItemByPosition(size_t position) ;
+//    m_arp_wxmenuitemPstate[byCoreID * NUMBER_OF_PSTATES + byPstateNumber]
+//      ->SetText(//_T("")
+//       //wxString::Format("set p-state %u (%u MHz @ %f Volt)",
+//       //    (WORD) byPstateNumber
+//       //    , pstate.GetFreqInMHz()
+//       //    , pstate.GetVoltageInVolt()
+//       // )
+//       GetSetPstateMenuItemLabel(byPstateNumber,pstate)
+//      ) ;
+//}
+
+void MainFrame::RedrawEverything()
 {
   int i = 0 ;
   if( mp_wxbitmap )
@@ -2646,8 +2887,8 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
   //"Blit()" with the DC drawn to and the DC that shows it in the window.
   //if( mp_wxbufferedpaintdcStatic )
   {
-    std::set<VoltageAndFreq> & r_setvoltageforfreq = mp_cpucontroller->mp_model->
-      m_cpucoredata.m_stdsetvoltageandfreqDefault ;
+    std::set<VoltageAndFreq> & r_setvoltageforfreq = mp_cpucontroller->
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
 //    std::set<MaxVoltageForFreq>::iterator iterstdsetmaxvoltageforfreq = 
     std::set<VoltageAndFreq>::reverse_iterator iterstdsetvoltageandfreq = 
       //mp_pumastatectrl->mp_model->//m_vecmaxvoltageforfreq
@@ -2690,53 +2931,11 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
       , m_fMaxVoltage
       ) ;
     DrawAllPossibleOperatingPoints( m_wxmemorydcStatic ) ;
+    DrawPerformanceStatesCrosses( m_wxmemorydcStatic , 
+      mp_cpucoredata->m_stdsetvoltageandfreqDefault 
+      , wxGREEN ) ;
   }
 }
-
-void MainFrame::OnTimerEvent(wxTimerEvent &event)
-{
-  //Do something
-  Refresh() ;
-  //TRACE("OnTimerEvent\n") ;
-}
-
-//wxString MainFrame::GetSetPstateMenuItemLabel(
-//  BYTE byPstateNumber
-    //The "PState" class is AMD-specific.
-//  , PState & pstate
-//  )
-//{
-//   return wxString::Format(
-//     //We need a _T() macro (wide char-> L"", char->"") for EACH
-//     //line to make it compitable between char and wide char.
-//     _T("set p-state %u (%u MHz @ %f Volt)"),
-//       (WORD) byPstateNumber
-//       , pstate.GetFreqInMHz()
-//       , pstate.GetVoltageInVolt()
-//     ) ;
-//}
-
-//void MainFrame::SetMenuItemLabel(
-//  BYTE byCoreID
-//  , BYTE byPstateNumber
-//  , //const
-//    PState & pstate
-//  )
-//{
-//    //int nMenuItemID
-//    //this->m_nLowestIDForSetVIDnFIDnDID
-//    //this->m_nNumberOfMenuIDsPerCPUcore
-//    //wxMenuItem * p_wxmenuitem = FindItemByPosition(size_t position) ;
-//    m_arp_wxmenuitemPstate[byCoreID * NUMBER_OF_PSTATES + byPstateNumber]
-//      ->SetText(//_T("")
-//       //wxString::Format("set p-state %u (%u MHz @ %f Volt)",
-//       //    (WORD) byPstateNumber
-//       //    , pstate.GetFreqInMHz()
-//       //    , pstate.GetVoltageInVolt()
-//       // )
-//       GetSetPstateMenuItemLabel(byPstateNumber,pstate)
-//      ) ;
-//}
 
 void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
 {

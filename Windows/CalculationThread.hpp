@@ -30,7 +30,9 @@ public:
   BYTE m_byCoreID ;
   volatile bool m_vbContinue ;
   DWORD //WINAPI 
-    ( WINAPI * mpfn_CalculationThreadProc) (LPVOID ) ;
+    //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+    ( WINAPI 
+    * mpfn_CalculationThreadProc) (LPVOID ) ;
   //PumaStateCtrl 
   //GriffinController * mp_pumastatectrl ;
   I_CPUcontroller * mp_cpucontroller ;
@@ -53,7 +55,12 @@ public:
     );
   CalculationThread(
     BYTE byCoreID ,
-    DWORD WINAPI pCalculationThreadProc(LPVOID lpParameter)
+    DWORD 
+#ifdef _MSC_VER
+    //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
+    WINAPI 
+#endif //#ifdef _MSC_VER
+    pCalculationThreadProc(LPVOID lpParameter)
     , UserInterface * p_userinterface
     , I_CPUcontroller * p_cpucontroller
     ) ;

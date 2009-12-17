@@ -243,6 +243,11 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
     , dwLow
     , dwHigh
     , 1 ) ;
+  //It seems that only 40 bits of the PMC are used with Pentium Ms although also
+  //higher bits are set.
+  //with simply making a difference, I got "1099516786500" (~10^12) although it was a 100 ms
+  //interval, so the max. diff. could be ~ 1800 M/ 10 = 180 M (180 * 10^6)
+  dwHigh &= BITMASK_FOR_LOWMOST_8BIT ;
   m_ullPerformanceEventCounter3 = dwHigh ;
   m_ullPerformanceEventCounter3 <<= 32 ;
   m_ullPerformanceEventCounter3 |= dwLow ;
@@ -287,7 +292,7 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
     (double) m_ullPerformanceEventCounter3Diff /
     (double) m_ullTimeStampCounterValueDiff ;
 #ifdef _DEBUG
-	if( //dClocksNotHaltedDiffDivTCSdiff > 1.0 || 
+	if( dClocksNotHaltedDiffDivTCSdiff > 1.1 || 
     dClocksNotHaltedDiffDivTCSdiff < 0.02 )
 	{
 		int i = 0 ;
@@ -345,10 +350,10 @@ BYTE PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
       //-1.0 = error
       -1.0 
       )
-	{
-      byReturn = 0 ;
-	  //break ;
-	}
+	  {
+        byReturn = 0 ;
+	    //break ;
+	  }
   }
   return byReturn ;
 }

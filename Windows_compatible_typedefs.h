@@ -25,6 +25,7 @@ typedef unsigned char BYTE ;
 typedef unsigned short WORD ;
 typedef unsigned long DWORD ;
 typedef DWORD * PDWORD ;
+typedef wchar_t WCHAR ;
 #define WINAPI __stdcall
 //MS compiler already has __int64 defined: 
 //"error C2632: '__int64' followed by '__int64' is illegal"

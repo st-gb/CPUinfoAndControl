@@ -1,6 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>configuration file</title></head>
-<body><ul><li>create
+<body>for the service (also possidsdble for the GUI) to select the
+voltage for the on-demand performance switching (Dynamic Voltage and
+Frequency Scaling)<br><ul><li>create
 a configuration
 file in XML format if
 none exists<ul><li>the path to it is "configuration/<i>CPU
@@ -11,7 +13,7 @@ dir of the executable.<br>e.g.
 Pentium(R) M processor 1.80GHz.xml" for a Pentium M 745</li><li>You can use Notepad or special XML editors to create and edit&nbsp;the file.</li></ul></li><li><b>The structure of the
 configuration file</b>
 should be like:<br><p style="margin-left: 30px;"><font face="Courier" size="-1"><a name="config_file_structure"></a>&lt;<i><a href="#topmost_XML_Element">topmost_XML_Element</a></i></font><font face="Courier" size="-1">&gt;<br>&nbsp;&nbsp;&nbsp;
-&lt;</font><font face="Courier" size="-1"><a href="#freq_and_voltage">freq_and_voltage frequency_in_MHz</a>="<i>FreqInMHz</i>"&nbsp;</font><font face="Courier" size="-1"><a href="#min_voltage_in_Volt">min_voltage_in_Volt</a>="</font><font face="Courier" size="-1"><i>MinVoltageInVolt</i></font><font face="Courier" size="-1">"&nbsp;<a href="#voltage_in_Volt">voltage_in_Volt</a>="</font><font face="Courier" size="-1"><i>WantedVoltageInVolt</i></font><font face="Courier" size="-1">"&nbsp;<a href="#max_voltage_in_Volt">max_voltage_in_Volt</a>="<i>MaxVoltageInVolt</i>"/&gt;&lt;/freq_and_voltage&gt;</font><font face="Courier" size="-1"><br>&lt;/</font><font face="Courier" size="-1"><i>topmost_XML_Element</i></font><font face="Courier" size="-1">&gt;</font></p></li><ul><li><font face="Courier" size="-1">legend:</font></li><ul><li><font face="Courier" size="-1">[] : everything within the brackets is </font><font face="Courier" size="-1">optional (omit the brackets in the cfile)</font></li></ul></ul><li><a name="configuration_meaning"></a><b>explanations
+&lt;</font><font face="Courier" size="-1"><a href="#freq_and_voltage">freq_and_voltage frequency_in_MHz</a>="<i>FreqInMHz</i>"&nbsp;</font><font face="Courier" size="-1"><a href="#min_voltage_in_Volt">min_voltage_in_Volt</a>="</font><font face="Courier" size="-1"><i>MinVoltageInVolt</i></font><font face="Courier" size="-1">"&nbsp;<a href="#voltage_in_Volt">voltage_in_Volt</a>="</font><font face="Courier" size="-1"><i>WantedVoltageInVolt</i></font><font face="Courier" size="-1">"&nbsp;<a href="#max_voltage_in_Volt">max_voltage_in_Volt</a>="<i>MaxVoltageInVolt</i>"/&gt;&lt;/freq_and_voltage&gt;</font><font face="Courier" size="-1"><br>&lt;/</font><font face="Courier" size="-1"><i>topmost_XML_Element</i></font><font face="Courier" size="-1">&gt;</font></p></li><li><a name="configuration_meaning"></a><b>explanations
 for the XML attributes/ elements:</b><br><table border="0" cellpadding="2" cellspacing="2" width="100%"><tbody><tr><td width="30"></td><td><a name="topmost_XML_Element"></a><font face="Courier" size="-1"><i>topmost_XML_Element: <br></i></font><blockquote><font face="Courier" size="-1">an
 XML document needs a superordinate XML element. You can name it like you
 want but it is a good idea to give it the same name as the CPU name
