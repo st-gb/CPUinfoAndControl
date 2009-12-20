@@ -35,6 +35,13 @@ PowerProfDynLinked::~PowerProfDynLinked()
     delete mp_dynfreqscalingaccess ;
 }
 
+bool PowerProfDynLinked::ChangeOtherDVFSaccessPossible()
+{
+  if( mp_dynfreqscalingaccess )
+    return mp_dynfreqscalingaccess->ChangeOtherDVFSaccessPossible() ;
+  return false ;
+}
+
 BYTE PowerProfDynLinked::DeletePowerScheme( 
   const std::tstring & cr_stdtstrPowerSchemeName )
 {
@@ -56,7 +63,7 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   //and XP the logic for setting the power scheme is the same.
   //So to ensure the same implementation, implement the logic here
   //in the superordinate access.
-  if( mp_dynfreqscalingaccess->PowerSchemeToSetExists() )
+  if( mp_dynfreqscalingaccess->PowerSchemeToSetExists() == 1 )
   {
     //mp_dynfreqscalingaccess->ActivatePowerSchemeToSet() ;
     bDesiredPowerSchemeExists = true ;

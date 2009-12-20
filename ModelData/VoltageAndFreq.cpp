@@ -18,7 +18,7 @@ VoltageAndFreq::VoltageAndFreq(
   m_fVoltageInVolt = fVoltageInVolt ;
   m_wFreqInMHz = wFreqInMHz ;
 //#ifdef _DEBUG
-  LOGN("VoltageAndFreq c'tor" << m_fVoltageInVolt << m_wFreqInMHz )
+  //LOGN("VoltageAndFreq c'tor" << m_fVoltageInVolt << m_wFreqInMHz )
 //#endif
 }
 

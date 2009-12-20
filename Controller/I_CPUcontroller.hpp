@@ -81,6 +81,10 @@ public:
   bool CmdLineParamsContain( TCHAR * ptcharOption, std::string & strValue);
   BYTE DisableFrequencyScalingByOS() ;
   BYTE EnableOwnDVFS() ;
+  //Some of these frequences may not be applicable.
+  //e.g. AMD Griffin crashes with freq > 1/2 max freq & < max freq
+  virtual void GetAllPossibleFrequencies(std::set<VoltageAndFreq> & 
+    r_stdsetvoltageandfreq) {} ;
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
   virtual BYTE GetCurrentPstate(
@@ -95,7 +99,7 @@ public:
   BYTE GetInterpolatedVoltageFromFreq(
     WORD wFreqInMHzToGetVoltageFrom,
     float & r_fVoltageInVolt 
-    , std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
+    , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
     ) ;
   //BYTE GetInterpolatedVoltageFromFreq(
   //  WORD wFreqInMHzToGetVoltageFrom,
@@ -193,11 +197,18 @@ public:
     float fLoad ) {} ;
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
-  virtual void SetFreqAndVoltageFromFreq(
+  virtual BYTE SetFreqAndVoltageFromFreq(
     WORD wFreqInMHz 
-    , BYTE byCoreID) {//return 0 ; 
-    } 
-    //= 0 ;
+    , BYTE byCoreID) //{//return 0 ; 
+    //} 
+    //= 0 
+    ;
+  virtual BYTE SetFreqAndVoltageFromFreq(
+    WORD wFreqInMHz 
+    , const std::set<VoltageAndFreq> & 
+      cr_stdsetvoltageandfreqForInterpolation
+    , BYTE byCoreID ) { return 0 ; };
+
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
   virtual BYTE TooHot() { return 0 ; }

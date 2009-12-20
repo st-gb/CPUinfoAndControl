@@ -3,6 +3,7 @@
 #include "../global.h" //for BYTE, WORD
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
 #include <set>
+#include <wx/thread.h> //for class wxCriticalSection
 
 #define CPU_CORE_DATA_NOT_SET 255
 //#include <Controller/ClocksNotHaltedCPUcoreUsageGetter.hpp>
@@ -96,6 +97,7 @@ public:
   //DFVS = dyn. volt. and freq. scaling
   WORD m_wMilliSecondsWaitBetweenDFVS ;
   WORD m_wFamily ;
+  wxCriticalSection m_wxcriticalsection ;
 
   //Intension: allocate this as an array at runtime. So releasing memory 
   //is easier because only memory of this array must be freed
@@ -103,7 +105,7 @@ public:
   //  float * m_arfCPUusage ;
   //  DynFreqScalingThread * m_ardynfreqscalingthread ;
   PerCPUcoreAttributes * m_arp_percpucoreattributes ;
-  void AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
+  bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   //void AddFreqAndLowestStableVoltage(float fValue,WORD wFreqInMHz) ;
   void AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz) ;

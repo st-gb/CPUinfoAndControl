@@ -75,9 +75,20 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     //  ) ;
   }
 
-void CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
+bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {
-  m_stdsetvoltageandfreqDefault.insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
+  bool bInserted = false ;
+  m_wxcriticalsection.Enter() ;
+  std::pair <std::set<VoltageAndFreq>::iterator, bool> 
+    stdpairstdsetvoltageandfreq = m_stdsetvoltageandfreqDefault.insert( 
+    VoltageAndFreq(fValue,wFreqInMHz) ) ;
+  bInserted = stdpairstdsetvoltageandfreq.second ;
+  //Used by I_CPUcontroller::GetMaximumFrequencyInMHz(), 
+  //I_CPUcontroller::GetMinimumFrequencyInMHz()
+  m_stdsetvoltageandfreqAvailableFreq.insert(
+    VoltageAndFreq(fValue,wFreqInMHz) ) ;
+  m_wxcriticalsection.Leave() ;
+  return bInserted ;
 }
 
 void CPUcoreData::AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz)

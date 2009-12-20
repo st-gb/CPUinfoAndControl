@@ -21,6 +21,7 @@
   class Model ;
   class UserInterface ;
 
+  BYTE mergeXMLfileDOM( const char * p_chFullXMLFilePath, Model & r_model ) ;
   char readXMLConfig(
     const char* xmlFile,//PStates & pstates
     Model & model,

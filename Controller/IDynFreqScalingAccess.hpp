@@ -4,6 +4,7 @@ class IDynFreqScalingAccess
 {
 public:
     //return: true=success
+  virtual bool ChangeOtherDVFSaccessPossible() { return false ; }
   virtual bool DisableFrequencyScalingByOS() = 0;
   virtual unsigned char EnableFrequencyScalingByOS() = 0;
   //"Other DVFS" because the implementaion may disably e.g. the OS's

@@ -25,6 +25,7 @@ public:
   //deletion of the dyn. allocated object.
   //IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
   I_PowerProfDynLinked * mp_dynfreqscalingaccess ;
+  bool ChangeOtherDVFSaccessPossible() ;
   virtual unsigned char CreatePowerSchemeWithWantedName() { return 0 ; }
   BYTE DeletePowerScheme( const std::tstring & cr_stdtstrPowerSchemeName ) ;
   bool DisableFrequencyScalingByOS() ;

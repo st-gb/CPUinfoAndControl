@@ -133,6 +133,7 @@ public:
   BYTE ActivatePowerSchemeToSet() ;
   BOOLEAN WINAPI CanUserWritePwrScheme(void);
 
+  inline bool ChangeOtherDVFSaccessPossible () ;
   BYTE CreatePowerScheme(
 		//LPTSTR lpszName ,
 		//LPTSTR lpszDescription ,

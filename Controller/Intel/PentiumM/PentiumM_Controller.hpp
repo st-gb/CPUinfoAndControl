@@ -17,6 +17,8 @@ public:
     ) ;
   PentiumM_Controller(void);
   BYTE Init() ;
+  void GetAllPossibleFrequencies(std::set<VoltageAndFreq> & 
+    r_stdsetvoltageandfreq) ;
   WORD GetNumberOfPstates() ;
   WORD GetMaximumFrequencyInMHz() ;
   WORD GetMinimumFrequencyInMHz() ;
@@ -55,9 +57,14 @@ public:
     WORD wFreqInMHz ,
     BYTE byCoreID 
     ) ;
-  void SetFreqAndVoltageFromFreq(
+  //BYTE SetFreqAndVoltageFromFreq(
+  //  WORD wFreqInMHz 
+  //  , BYTE byCoreID) ;
+  BYTE SetFreqAndVoltageFromFreq(
     WORD wFreqInMHz 
-    , BYTE byCoreID) ;
+    , const std::set<VoltageAndFreq> & 
+      cr_stdsetvoltageandfreqForInterpolation
+    , BYTE byCoreID ) ;
   BYTE TooHot() ;
   BOOL // TRUE: success, FALSE: failure
     //WINAPI

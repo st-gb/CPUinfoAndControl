@@ -19,6 +19,7 @@
 #include "wx/window.h"
 #include "wx/frame.h" //for class wxFrame
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
+#include <wx/numdlg.h> //for ::wxGetNumberFromUser(...)
 #include <wx/stattext.h> //for wxStaticText
 #include <wx/wx.h> //for wxMessageBox(...) (,etc.)
 #include <wx/icon.h> //for wxIcon
@@ -43,6 +44,7 @@
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
+#include <Xerces/XMLAccess.h>
 //#include <Windows/CalculationThread.hpp>
 #ifdef _WINDOWS
 #include <Windows/ServiceBase.hpp>
@@ -269,6 +271,14 @@ MainFrame::MainFrame(
     //_T("&CPU % min and max.") 
     _T("enable or disable OS's dynamic frequency scaling")
     );
+  //If one can not change the power scheme (Windows) etc.
+  if( ! mp_cpucontroller->mp_dynfreqscalingaccess->
+      ChangeOtherDVFSaccessPossible() )
+  {
+    mp_wxmenuitemOtherDVFS->Enable(false);
+    mp_wxmenuitemOtherDVFS->SetHelp ( wxT("Start e.g. as administrator to gain access") ) ;
+    //mp_wxmenuitemOtherDVFS->SetItemLabel (wxT("dd") ) ;
+  }
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
   p_wxmenuExtras->Append(
     ID_UpdateViewInterval, 
@@ -821,17 +831,82 @@ void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
   //}
   //Must create dynamically, else the CalculationThread is destroyed after leaving
   //this block.
-  if( ! mp_calculationthread )
-  {
-    mp_calculationthread = new CalculationThread( 
-    0 
-    , FindDifferentPstatesThreadProc
-    , & ::wxGetApp() 
-    , ::wxGetApp().GetCPUcontroller() 
+  //if( ! mp_calculationthread )
+  //{
+  //  mp_calculationthread = new CalculationThread( 
+  //  0 
+  //  , FindDifferentPstatesThreadProc
+  //  , & ::wxGetApp() 
+  //  , ::wxGetApp().GetCPUcontroller() 
+  //  ) ;
+  //}
+  //if( mp_calculationthread )
+  //  mp_calculationthread->Execute() ;
+  long lMin = ::wxGetNumberFromUser(
+    wxT("input mininum frequency:"), 
+    wxT("prompt:"), 
+    wxT("caption:"), 
+    mp_cpucontroller->GetMinimumFrequencyInMHz() ,
+    0 ,
+    mp_cpucontroller->GetMaximumFrequencyInMHz()    
     ) ;
+  //If the user enters an invalid value or cancels the dialog, the function will return -1.
+  if( lMin == -1 )
+    ::wxMessageBox(wxT("either invalid value or cancel") ) ;
+  else
+  {
+    long lMax = ::wxGetNumberFromUser(
+      wxT("input maxinum frequency:"), 
+      wxT("prompt:"), 
+      wxT("caption:"), 
+      mp_cpucontroller->GetMaximumFrequencyInMHz() ,
+      lMin ,
+      mp_cpucontroller->GetMaximumFrequencyInMHz()
+      ) ;
+    if( lMax == -1 )
+      ::wxMessageBox(wxT("either invalid value or cancel") ) ;
+    else
+    {
+      std::set<VoltageAndFreq> stdsetvoltageandfreq ;
+      std::set<VoltageAndFreq>::iterator iter ;
+      mp_cpucontroller->GetAllPossibleFrequencies( stdsetvoltageandfreq ) ;
+      //iter = stdsetvoltageandfreq.find(lMin) ;
+      iter = stdsetvoltageandfreq.begin() ;
+      while( iter != stdsetvoltageandfreq.end() )
+      {
+        if( lMin >= iter->m_wFreqInMHz )
+          break ;
+        iter ++ ;
+      }
+      
+
+      //if( iter != stdsetvoltageandfreq.end() )
+      {
+        float fVolt ;
+        WORD wFreq ;
+        //for( WORD wFreq = lMin ; wFreq < lMax ; wFreq += 50 )
+        while( iter != stdsetvoltageandfreq.end() )
+        {
+          //mp_cpucontroller->GetNearestHigherPossibleFreqInMHz( lMin ) ;
+          mp_cpucontroller->SetFreqAndVoltageFromFreq( //wFreq, 
+            iter->m_wFreqInMHz ,
+            mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+            //mp_model->m_cpucoredata.m_stdsetvoltageandfreqPossibleByCPU
+            //stdsetvoltageandfreq
+            , 0 ) ;
+          ::wxMilliSleep(100) ;
+          mp_cpucontroller->GetCurrentPstate( //wFreq, 
+            wFreq ,
+            fVolt
+            , 0 ) ;
+          if( wFreq == iter->m_wFreqInMHz )
+            if( mp_model->m_cpucoredata.AddDefaultVoltageForFreq( fVolt, wFreq ) )
+              RedrawEverything() ;
+          ++ iter ;
+        }
+      }
+    }
   }
-  if( mp_calculationthread )
-    mp_calculationthread->Execute() ;
   //::wxMilliSleep()
 }
 
@@ -2446,16 +2521,20 @@ void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
     //wxMessageBox("hh") ;
     //wxString strCurrentValue = wxT("50") ;
     //wxString sNewValue = wxGetTextFromUser(wxT("Enter min CPU %for CURRENT power profile (scheme)"), 
+//#ifndef _DEBUG
     //  wxT("title"), strCurrentValue);
     if( //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
       //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
       ::wxGetApp().mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
       )
+//#endif
       //mp_pumastatectrl->DisableFrequencyScalingByOS() ;
       ::wxGetApp().mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
+//#ifndef _DEBUG
     else
       //mp_pumastatectrl->EnableFrequencyScalingByOS() ;
       ::wxGetApp().mp_dynfreqscalingaccess->EnableFrequencyScalingByOS() ;
+//#endif //#ifdef _DEBUG
     mp_wxmenuitemOtherDVFS->SetText(//_T("")
        wxString::Format(
        //We need a _T() macro (wide char-> L"", char->"") for EACH 
@@ -2719,9 +2798,24 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
     && wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
     strPstateSettingsFileName )
     )
-    ::wxFileSelector( wxT("Select file path") 
+  {
+    wxString wxstrFilePath = ::wxFileSelector( 
+      wxT("Select file path") 
       , strCPUtypeRelativeDirPath.c_str() 
-      , strPstateSettingsFileName.c_str() ) ;
+      , strPstateSettingsFileName.c_str() 
+      , wxT("xml")
+      , wxT("*.*")
+      , wxFD_SAVE
+      ) ;
+    if ( ! wxstrFilePath.empty() )
+    {
+        // work with the file
+        //...
+      //readXMLfileDOM( wxstrFilePath.c_str() ) ;
+      mergeXMLfileDOM( wxstrFilePath.c_str() , * mp_model ) ;
+    }
+    //mp_configfileaccess->
+  }
 }
 
 void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
@@ -2747,13 +2841,15 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
       if( wFreqInMHz > 1800 )
         wFreqInMHz = wFreqInMHz ;
 #endif
-      stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
-        m_stdsetvoltageandfreqDefault.insert( 
-        VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
-        ) ;
-      //New p-state inserted.
-      if( stdpairstdsetvoltageandfreq.second )
-        bNewVoltageAndFreqPair = true ;
+      //stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
+      //  m_stdsetvoltageandfreqDefault.insert( 
+      //  VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
+      //  ) ;
+      bNewVoltageAndFreqPair = mp_model->m_cpucoredata.AddDefaultVoltageForFreq(
+        fVoltageInVolt , wFreqInMHz ) ;
+      ////New p-state inserted.
+      //if( stdpairstdsetvoltageandfreq.second )
+      //  bNewVoltageAndFreqPair = true ;
     }
   }
   if( bNewVoltageAndFreqPair )

@@ -102,7 +102,7 @@ BYTE I_CPUcontroller::EnableOwnDVFS()
 BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
   WORD wFreqInMHzToGetVoltageFrom
   , float & r_fVoltageInVolt 
-  , std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
+  , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
   )
 {
   //WORD wFreqInMHzFromNearFreqAboveWantedFreq =
@@ -503,6 +503,16 @@ void I_CPUcontroller::SetCmdLineArgs(
 {
   m_byNumberOfCmdLineArgs = argc ;
   m_arartcharCmdLineArg = argv ;
+}
+
+BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
+  WORD wFreqInMHz 
+  , BYTE byCoreID)
+{
+  return SetFreqAndVoltageFromFreq(
+    wFreqInMHz 
+    , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+    , byCoreID ) ;
 }
 
 void I_CPUcontroller::SetUserInterface( 

@@ -237,6 +237,9 @@ PowerProfUntilWin6DynLinked::PowerProfUntilWin6DynLinked(
   Initialize() ;
 }
 
+//0: power scheme does not exist
+//1: power scheme exists
+//2: error (enumerating) power scheme(s)
 BYTE PowerProfUntilWin6DynLinked:: PowerSchemeToSetExists()
 {
   //May be set to true inside "PwrSchemesEnumProcSearchPowerSchemeByName"
@@ -278,9 +281,10 @@ BYTE PowerProfUntilWin6DynLinked:: PowerSchemeToSetExists()
 			//bCreatePowerScheme = true ;
     }
   }
-	//else //no power scheme for the user THIS process runs for or no
- //   //access rights.
+	else //no power scheme for the user THIS process runs for or no
+    //access rights.
 	//	bCreatePowerScheme = true ;
+    return 2 ;
   return m_bPowerSchemeFound ;
 }
 
@@ -308,6 +312,11 @@ BOOLEAN WINAPI PowerProfUntilWin6DynLinked::CanUserWritePwrScheme(void)
   if( m_pfncanuserwritepwrscheme )
     return (*m_pfncanuserwritepwrscheme)() ;
   return FALSE ;
+}
+
+bool PowerProfUntilWin6DynLinked::ChangeOtherDVFSaccessPossible ()
+{
+  return CanUserWritePwrScheme() ;
 }
 
 BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
@@ -397,10 +406,10 @@ BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
     {
       DWORD dwLastError = ::GetLastError() ;
       LOGWN( L"writing power scheme " << stdwstrName.c_str()  << 
-        L"failed. Error code: " << dwLastError )
-        //<< L" error message: " << 
-        //LocalLanguageMessageFromErrorCode(dwLastError) 
-        //)
+        L"failed. Error code: " << dwLastError //)
+        << L" error message: " << 
+        ::GetStdWstring( ::LocalLanguageMessageFromErrorCode(dwLastError) )
+        )
     }
   }
   else
@@ -735,7 +744,9 @@ BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
 			//Call EnumPwrSchemes in pwrprof.dll 
 			(*m_pfnenumpwrschemes) (lpfnPwrSchemesEnumProc, lParam) ;		
 		//ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/enumpwrschemes.htm:
-		//"If the function fails, the return value is zero."
+    // / http://msdn.microsoft.com/en-us/library/aa372687(VS.85).aspx:
+		//"If the function fails, the return value is zero. To get extended 
+    //error information, call GetLastError."
 		//I experienced that it fails if either not power prfs for the user 
 		//the process runs for or that maybe the user has no rights to enumerate the schemes.
 		if( ! booleanRes )
@@ -759,6 +770,8 @@ BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
       //  pp,  // receives the power policy
       //  lParam      // user-defined value
       //  );
+      std::string str = LocalLanguageMessageFromErrorCode(dw) ;
+      LOGN( "enumerating power schemes failed: " << str ) ;
     }
     //If the function succeeds, the return value is nonzero.
     return booleanRes ;
@@ -1018,10 +1031,15 @@ BOOLEAN WINAPI PowerProfUntilWin6DynLinked::WriteProcessorPwrScheme(
   return 0 ;
 }
 
+//This method does NOT return the correct value if ran as normal user
+//(i.e. not as admin)
 bool PowerProfUntilWin6DynLinked::OtherDVFSisEnabled()
 {
   bool bReturn = true ;
   UINT uiPowerSchemeID ;
+#ifdef _DEBUG
+  OutputAllPowerSchemes() ;
+#endif
   if( GetActivePwrScheme( & uiPowerSchemeID)  )
   {
     MACHINE_PROCESSOR_POWER_POLICY machine_processor_power_policy ;

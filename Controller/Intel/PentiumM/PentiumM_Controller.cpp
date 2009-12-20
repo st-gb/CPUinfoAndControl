@@ -51,6 +51,18 @@ BYTE PentiumM_Controller::Init()
   return 1 ;
 }
 
+void PentiumM_Controller::GetAllPossibleFrequencies(
+  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq )
+{
+  r_stdsetvoltageandfreq.clear() ;
+  //If set.
+  if( mp_model->m_cpucoredata.m_wMaxFreqInMHz )
+  for( WORD wFreqInMHz = 600 ; 
+    wFreqInMHz <= mp_model->m_cpucoredata.m_wMaxFreqInMHz 
+    ; wFreqInMHz += 100 )
+    r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0 , wFreqInMHz ) ) ;
+}
+
 BYTE PentiumM_Controller::GetCurrentPstate(
   WORD & r_wFreqInMHz 
   , float & r_fVoltageInVolt
@@ -67,10 +79,11 @@ BYTE PentiumM_Controller::GetCurrentPstate(
       )
     )
   {
-#ifdef _DEBUG
+//#ifdef _DEBUG
     BYTE byFID = dwLow >> 8 ;
-#endif
-    r_wFreqInMHz = ( dwLow >> 8 ) * 100 ;
+//#endif
+    r_wFreqInMHz = //( ( dwLow >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ) * 100 ;
+      byFID * 100 ;
 #ifdef _DEBUG
     if( r_wFreqInMHz > 1800 )
       r_wFreqInMHz = r_wFreqInMHz ;
@@ -345,6 +358,7 @@ BYTE PentiumM_Controller::SetVoltageAndFrequency(
   , BYTE byCoreID
   )
 {
+  BYTE byRet ;
   //byVoltageID: 40 = 1.34 V    27 = 1.1320000
   //float fVoltageMinusLowestVoltage = (fVoltageInVolt - 0.7 ) ;
   //float fVoltageID = fVoltageMinusLowestVoltage / 0.016 ;
@@ -357,20 +371,22 @@ BYTE PentiumM_Controller::SetVoltageAndFrequency(
   DWORD dwLow = byFreqID << 8 ;
   dwLow |= byVoltageID ;
   //LOGN("P M ctrl: " << fVoltageInVolt << " " << wFreqInMHz )
-  WrmsrEx(
+  byRet = WrmsrEx(
     IA32_PERF_CTL
     , dwLow
     , 0
     , 1
     ) ;
 
-  return 0 ;
+  return byRet ;
 }
 
-void PentiumM_Controller::SetFreqAndVoltageFromFreq(
+BYTE PentiumM_Controller::SetFreqAndVoltageFromFreq(
   WORD wFreqInMHz 
-  , BYTE byCoreID)
+  , const std::set<VoltageAndFreq> & cr_stdsetvoltageandfreqForInterpolation
+  , BYTE byCoreID )
 {
+  BYTE byRet = 0 ;
   float fVoltageInVolt ;
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
@@ -402,19 +418,18 @@ void PentiumM_Controller::SetFreqAndVoltageFromFreq(
     )
   {
     if( GetInterpolatedVoltageFromFreq(
-        //wFreqInMHz
-        ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+        wFreqInMHz
+        //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
         , fVoltageInVolt 
-        //, r_stdsetvoltageandfreq
-        //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
-        , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-        //, * mp_model->m_cpucoredata.mp_stdsetvoltageandfreqWanted
+        //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+        , cr_stdsetvoltageandfreqForInterpolation
         ) 
       )
     {
-      SetVoltageAndFrequency(//wFreqInMHz
+      byRet = SetVoltageAndFrequency(//wFreqInMHz
         fVoltageInVolt
-        , ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+        //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+        , wFreqInMHz
         , byCoreID
         ) ;
     }
@@ -430,14 +445,12 @@ void PentiumM_Controller::SetFreqAndVoltageFromFreq(
           //wFreqInMHz
           ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
           , fVoltageInVolt 
-          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
-          //, r_stdsetvoltageandfreq 
-          , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-          //, * mp_model->m_cpucoredata.mp_stdsetvoltageandfreqWanted
+          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+          , cr_stdsetvoltageandfreqForInterpolation
           ) 
         )
       {
-        SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
+        byRet = SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
       }
     }
     //if( ( wFreqInMHz - ci_stdsetvoltageandfreqNearestLowerEqual->
@@ -459,6 +472,7 @@ void PentiumM_Controller::SetFreqAndVoltageFromFreq(
     //  SetVoltageAndFrequency(wFreqInMHz,fVoltageInVolt) ;
     //}
   }
+  return byRet ;
 }
 
 BYTE PentiumM_Controller::TooHot()

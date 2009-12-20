@@ -225,13 +225,17 @@ DWORD
            //wPrevInsertedFreqInMHz = wFreqInMHz ;
            //fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
          }
-         stdpairstdsetvoltageandfreq = pcalculationthread->
-           mp_cpucontroller->mp_model->m_cpucoredata.
-            m_stdsetvoltageandfreqDefault.insert( 
-            VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
-            ) ;
+         //stdpairstdsetvoltageandfreq = pcalculationthread->
+         //  mp_cpucontroller->mp_model->m_cpucoredata.
+         //   m_stdsetvoltageandfreqDefault.insert( 
+         //   VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
+         //   ) ;
+          bNewVoltageAndFreqPair = pcalculationthread->
+            mp_cpucontroller->mp_model->m_cpucoredata.AddDefaultVoltageForFreq(
+            fVoltageInVolt , wFreqInMHz ) ;
           //New p-state inserted.
-          if( stdpairstdsetvoltageandfreq.second )
+          if( //stdpairstdsetvoltageandfreq.second 
+            bNewVoltageAndFreqPair )
           {
           //  wPrevInsertedFreqInMHz = wFreqInMHz ;
           //  //bNewVoltageAndFreqPair = true ;

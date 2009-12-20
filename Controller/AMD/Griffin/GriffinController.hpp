@@ -543,7 +543,7 @@ public :
   bool GetMaxPState(BYTE & byMaxPstate) ;
   bool SetMaxPState(BYTE byMaxPstate) ;
 
-  void SetFreqAndVoltageFromFreq(
+   BYTE SetFreqAndVoltageFromFreq(
     WORD wFreqInMHz 
     , BYTE byCoreID ) ;
 

@@ -4068,10 +4068,11 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   //the Griffin has a bug that it freezes when frequencies are set
   //where the divisor ID is 0 and the Frequency ID is NOT the max.
   //possible Frequency ID.
-  void GriffinController::SetFreqAndVoltageFromFreq(
+  BYTE GriffinController::SetFreqAndVoltageFromFreq(
     WORD wFreqInMHz 
     , BYTE byCoreID )
   {
+    BYTE byRet = 0 ;
     //The passed frequency may not be a valid frequency.
     DIDandFID didnfid = GetNearestPossibleFreqInMHzAsDIDnFID( wFreqInMHz ) ;
     float fVoltageInVolt ;
@@ -4092,12 +4093,13 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         ) 
       )
     {
-      SetVoltageAndFrequency(//wFreqInMHz
+      byRet = SetVoltageAndFrequency(//wFreqInMHz
         fVoltageInVolt
         , wFreqInMHz
         , byCoreID
         ) ;
     }
+    return byRet ;
   }
 
   //This method should be separated because possibly one wants to have
