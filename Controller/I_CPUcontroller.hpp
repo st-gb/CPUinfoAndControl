@@ -79,6 +79,7 @@ public:
     DWORD_PTR affinityMask
   ) ;
   bool CmdLineParamsContain( TCHAR * ptcharOption, std::string & strValue);
+  virtual void DecreaseVoltageBy1Step(float & r_fVoltage) {}
   BYTE DisableFrequencyScalingByOS() ;
   BYTE EnableOwnDVFS() ;
   //Some of these frequences may not be applicable.
@@ -101,6 +102,14 @@ public:
     float & r_fVoltageInVolt 
     , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
     ) ;
+  //Can not simply do maximum Voltage ID -> voltage in Volt because
+  //AMD:   max. voltage ID = MIN. voltage, 
+  //Intel: max. voltage ID = MAX. voltage
+  virtual float GetMaximumVoltageInVolt() ;
+  //Can not simply do minimum Voltage ID -> voltage in Volt because
+  //AMD:   min. voltage ID = MAX. voltage, 
+  //Intel: min. voltage ID = MIN. voltage
+  virtual float GetMinimumVoltageInVolt() { return 0.0 ; }
   //BYTE GetInterpolatedVoltageFromFreq(
   //  WORD wFreqInMHzToGetVoltageFrom,
   //  float & r_fVoltageInVolt 
@@ -128,6 +137,7 @@ public:
   virtual float GetVoltageInVolt(WORD wVoltageID ) = 0 ;
   virtual WORD GetVoltageID(float fVoltageInVolt ) = 0 ;
   BYTE HandleCmdLineArgs() ;
+  virtual void IncreaseVoltageBy1Step(float & r_fVoltage) {}
   virtual void IncreaseVoltageForCurrentPstate(BYTE byCoreID)
   {
     //float & fVolt ;

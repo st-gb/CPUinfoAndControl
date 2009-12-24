@@ -69,6 +69,7 @@ bool wxPumaStateCtrlApp::Confirm(const std::string & str)
       #else
       wxstr
       #endif
+      , m_stdtstrProgramName
       );
 //      #ifdef _DEBUG
 //    ::wxMessageBox( wxT("This is the message."), wxT("This is the title"),
@@ -111,7 +112,10 @@ bool wxPumaStateCtrlApp::Confirm(std::ostrstream & r_ostrstream
   {
     m_bConfirmedYet = false ;
     int nReturn = ::wxMessageBox(//pch
-      wxstr ,_T("Message"),wxCANCEL|wxOK);
+      wxstr
+      //, _T("Message")
+      , m_stdtstrProgramName
+      , wxCANCEL | wxOK );
     if( nReturn == wxCANCEL )
       bReturn = false ;
     m_bConfirmedYet = true ;

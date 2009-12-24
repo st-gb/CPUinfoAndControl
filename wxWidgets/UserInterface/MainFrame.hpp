@@ -61,6 +61,7 @@ public:
   WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
   float m_fVoltageInVoltOfCurrentActiveCoreSettings ;
   bool m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
+  bool m_bRangeBeginningFromMinVoltage ;
 #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
   //CPUcoreUsageGetterNtQuerySystemInformation m_cpucoreusagegetter ;
 #endif
@@ -85,6 +86,8 @@ private:
   //ClocksNotHaltedCPUcoreUsageGetter m_clocksnothaltedcpucoreusagegetter ;
   float m_fPreviousCPUusage ;
   float m_fMaxVoltage ;
+  float m_fMinVoltage ;
+  float m_fMaxMinusMinVoltage ;
   ULONGLONG m_ullPreviousCPUusage ;
   ULONGLONG m_ullHighestDiff ;
   ULONGLONG m_ullHighestPerformanceEventCounter2Diff ;

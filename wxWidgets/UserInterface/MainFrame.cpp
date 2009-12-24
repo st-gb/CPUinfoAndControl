@@ -202,6 +202,7 @@ MainFrame::MainFrame(
   , mp_wxbitmapStatic (NULL)
   , m_dwTimerIntervalInMilliseconds (1000)
   , mp_calculationthread( NULL )
+  , m_bRangeBeginningFromMinVoltage ( true )
 {
   LOG("begin of main frame creation\n")
 
@@ -221,7 +222,7 @@ MainFrame::MainFrame(
   wxMenu * p_wxmenuNorthBridge = new wxMenu;
   p_wxmenuFile->Append( ID_About, _T("&About...") );
   p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
-    _T("Save As &Default Performance States...") );
+    _T("Save &Performance States...") );
   p_wxmenuFile->AppendSeparator();
   //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
@@ -1232,6 +1233,8 @@ void MainFrame::DrawDiagramScale(
   std::set<VoltageAndFreq>::iterator & iterstdsetvoltageandfreq
   )
 {
+  //float fMinVoltage ;
+  //float fMaxMinusMinVoltage ;
   WORD wXcoordinate ;
   WORD wYcoordinate ;
   WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
@@ -1246,6 +1249,8 @@ void MainFrame::DrawDiagramScale(
   int nPenWidth = wxpenCurrent.GetWidth() ;
 #endif
 
+  //fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
+  //fMaxMinusMinVoltage = m_fMaxVoltage - fMinVoltage ;
   //p_wxpaintdc->DrawText( wxT("550") , arwxpoint[0].x, //200
   //    wDiagramHeight ) ;
   //p_wxpaintdc->DrawText( wxT("1100") , arwxpoint[1].x, //200
@@ -1296,7 +1301,13 @@ void MainFrame::DrawDiagramScale(
       //wxmemorydc.DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
       wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, m_wDiagramHeight) ;
 
-      wYcoordinate =
+      if( m_bRangeBeginningFromMinVoltage )
+        wYcoordinate =
+          m_wDiagramHeight -
+          ( (*iterstdsetvoltageandfreq).m_fVoltageInVolt - m_fMinVoltage )
+          / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+      else
+        wYcoordinate =
           m_wDiagramHeight -
           //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
           //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
@@ -1404,10 +1415,16 @@ void MainFrame::DrawLowestStableVoltageCurve(
             , fVoltage
             , mp_cpucoredata->m_setloweststablevoltageforfreq
             ) ;
-          wYcoordinate = m_wDiagramHeight - 
-            fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
-            fMaxVoltage
-            * m_wDiagramHeight ;
+          if( m_bRangeBeginningFromMinVoltage )
+            wYcoordinate =
+              m_wDiagramHeight -
+              ( fVoltage - m_fMinVoltage )
+              / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+          else
+            wYcoordinate = m_wDiagramHeight - 
+              fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
+              fMaxVoltage
+              * m_wDiagramHeight ;
           //p_wxpaintdc->DrawLine( 
           wxdc.DrawLine( 
             wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
@@ -1489,7 +1506,13 @@ void MainFrame::DrawOvervoltageProtectionCurve(
              ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram )
           , fVoltage
           , mp_cpucoredata->m_stdsetvoltageandfreqDefault ) ;
-        wYcoordinate = m_wDiagramHeight - 
+        if( m_bRangeBeginningFromMinVoltage )
+          wYcoordinate =
+            m_wDiagramHeight -
+            ( fVoltage - m_fMinVoltage )
+            / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+        else
+          wYcoordinate = m_wDiagramHeight - 
             fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
             fMaxVoltage
             * m_wDiagramHeight ;
@@ -1707,8 +1730,14 @@ void MainFrame::DrawCurrentVoltageSettingsCurve(
             , mp_cpucoredata->m_stdsetvoltageandfreqWanted )
           )
         {
-          wYcoordinate = m_wDiagramHeight -
-              fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
+          if( m_bRangeBeginningFromMinVoltage )
+            wYcoordinate =
+              m_wDiagramHeight -
+              ( fVoltage - m_fMinVoltage )
+              / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+          else
+            wYcoordinate = m_wDiagramHeight -
+              fVoltage / //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
               fMaxVoltage
               * m_wDiagramHeight ;
           //p_wxpaintdc->DrawLine(
@@ -1750,11 +1779,18 @@ void MainFrame::DrawVoltageFreqCross(
     //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz / 
     wFreqInMHz / 
     (float) mp_cpucoredata->m_wMaxFreqInMHz * m_wDiagramWidth ;
-  WORD wYcoordinate =
-    m_wDiagramHeight - 
-    //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
-    fVoltageInVolt
-    / m_fMaxVoltage * m_wDiagramHeight ;
+  WORD wYcoordinate ;
+  if( m_bRangeBeginningFromMinVoltage )
+    wYcoordinate =
+      m_wDiagramHeight -
+      ( fVoltageInVolt - m_fMinVoltage )
+      / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+  else
+    wYcoordinate =
+      m_wDiagramHeight - 
+      //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
+      fVoltageInVolt
+      / m_fMaxVoltage * m_wDiagramHeight ;
 
   //wxPen pen(*wxBLUE, 3); // pen of width 3
   wxPen pen(*cp_wxcolor, 3); // pen of width 3
@@ -2799,6 +2835,7 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
     strPstateSettingsFileName )
     )
   {
+    LOGN( "for file dialog: relative dir path=" << strCPUtypeRelativeDirPath )
     wxString wxstrFilePath = ::wxFileSelector( 
       wxT("Select file path") 
       , strCPUtypeRelativeDirPath.c_str() 
@@ -2812,7 +2849,8 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
         // work with the file
         //...
       //readXMLfileDOM( wxstrFilePath.c_str() ) ;
-      mergeXMLfileDOM( wxstrFilePath.c_str() , * mp_model ) ;
+      mergeXMLfileDOM( wxstrFilePath.c_str() , * mp_model , 
+        strPstateSettingsFileName ) ;
     }
     //mp_configfileaccess->
   }
@@ -2940,6 +2978,8 @@ void MainFrame::RedrawEverything()
   if( mp_wxbitmap )
     delete mp_wxbitmap ;
   wxRect rect = GetClientRect();
+  m_fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
+  m_fMaxMinusMinVoltage = m_fMaxVoltage - m_fMinVoltage ;
 
   //wxCoord wxcoordCanvasWidth ;
   //wxCoord wxcoordCanvasHeight ;

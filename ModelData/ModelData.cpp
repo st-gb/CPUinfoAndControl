@@ -2,7 +2,7 @@
 //#include "RegisterData.hpp" //class MSRdata
 #include <Controller/MSVC_adaption/tchar.h>
 
-#define _T_LITERAL_PROGRAM_NAME _T("X86InfonControl")
+#define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
 
 Model::Model( //GriffinController * p_griffincontroller 
              )

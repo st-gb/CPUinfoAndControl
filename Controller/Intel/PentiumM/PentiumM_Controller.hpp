@@ -9,6 +9,7 @@ class PentiumM_Controller
 {
   //Model * mp_model ;
 public:
+  void DecreaseVoltageBy1Step(float & r_fVoltage) ;
   BYTE GetCurrentPstate(WORD & wFreqInMHz, float & Volt, BYTE byCoreID) ;
   BYTE GetCurrentPstate(
     BYTE & r_byFreqID
@@ -24,6 +25,7 @@ public:
   WORD GetMinimumFrequencyInMHz() ;
   WORD GetMaximumVoltageID() ;
   WORD GetMinimumVoltageID() ;
+  inline float GetMinimumVoltageInVolt() ;
   //WORD GetNearestHigherPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq) ;
   //bool GetPstateSafefy(
@@ -32,6 +34,7 @@ public:
   //  ) ;
   WORD GetVoltageID(float fVoltageInVolt ) ;
   float GetVoltageInVolt(WORD wVoltageID ) ;
+  void IncreaseVoltageBy1Step(float & r_fVoltage) ;
   void IncreaseVoltageForCurrentPstate(BYTE byCoreID) ;
   void PerformanceEventSelectRegisterWrite(
     DWORD dwAffinityBitMask ,

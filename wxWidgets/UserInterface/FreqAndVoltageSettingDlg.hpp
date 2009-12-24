@@ -13,6 +13,8 @@ class wxCheckBox ;
 class wxControl ;
 class wxDialog ;
 class wxStaticText ;
+class wxSpinButton ;
+class wxSpinEvent ;
 //class PumaStateCtrl ;
 //class GriffinController ;
 class I_CPUcontroller ;
@@ -26,6 +28,7 @@ private:
   BYTE m_byCoreID ;
   BYTE m_byPstateID ;
   BYTE m_byPreviousMultiplierValue ;
+  float m_fWantedVoltageInVolt ;
   //DIDandFID m_did_and_fid ;
   //Needed for setting p-state.
   //PumaStateCtrl 
@@ -34,6 +37,7 @@ private:
   //PState m_pstate ;
   MainFrame * mp_mainframe ;
   WORD m_wPreviousFrequencyInMHz ;
+  WORD m_wVoltageID ;
   //"When a wxWindow is destroyed, it automatically deletes all its children. These children are all the objects that received the window as the parent-argument in their constructors.  
   //As a consequence, if you're creating a derived class that contains child windows, you should use a pointer to the child windows instead of the objects themself as members of the main window."
   ////This vector contains the dyn. (on the heap) created controls
@@ -41,11 +45,16 @@ private:
   ////to them).
   //std::vector<wxControl * > m_vecp_wxcontrol ;
   wxButton * mp_wxbuttonApply ;
+  wxButton * mp_wxbuttonSetAsMinVoltage ;
+  wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
 //  wxCheckBox * mp_wxcheckboxValidPstate ;
   wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
+  wxCheckBox * mp_wxcheckboxbuttonAlsoSetWantedVoltage ;
+  wxSpinButton * mp_wxspinbuttonVoltageInVolt ;
   //wxStaticText * mp_wxstatictextFreqInMHz ;
   wxStaticText * mp_wxstatictextVoltageInVolt ;
+  wxStaticText * mp_wxstatictextWantedVoltageInVolt ;
   wxStaticText * mp_wxstatictextExpectedCurrentDissipation ;
   wxStaticText * mp_wxstatictextPercentageOfDefaultVoltage ;
   wxSlider * mp_wxsliderCPUcoreDivisorID ;
@@ -67,6 +76,11 @@ public:
   void HandleMultiplierValueChanged() ;
   void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
   void OnApplyButton(wxCommandEvent & );
+  void OnDecVoltage(wxCommandEvent & );
+  void OnIncVoltage(wxCommandEvent & );
+  void OnSetAsMinVoltageButton(wxCommandEvent & );
+  void OnSpinVoltageDown(wxSpinEvent & event) ;
+  void OnSpinVoltageUp(wxSpinEvent & event) ;
   void OutputFreqAndVoltageByControlValues() ;
   void RemoveAttention(wxWindow * p_wxwindow);
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;

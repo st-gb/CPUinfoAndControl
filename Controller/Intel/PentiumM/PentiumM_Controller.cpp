@@ -16,6 +16,15 @@ PentiumM_Controller::~PentiumM_Controller(void)
 {
 }
 
+//For "increase voltage" in the user interface.
+void PentiumM_Controller::DecreaseVoltageBy1Step(float & r_fVoltage)
+{
+  WORD wVoltageID = GetVoltageID( r_fVoltage ) ;
+  //if( wVoltageID < GetMaximumVoltageID(
+  -- wVoltageID ;
+  r_fVoltage = GetVoltageInVolt( wVoltageID ) ;
+}
+
 BYTE PentiumM_Controller::Init()
 {
   if( mp_cpuaccess )
@@ -181,6 +190,11 @@ WORD PentiumM_Controller::GetMinimumVoltageID()
   return 0 ;
 }
 
+float PentiumM_Controller::GetMinimumVoltageInVolt()
+{
+  return 0.7 ;
+}
+
 WORD PentiumM_Controller::GetNumberOfPstates()
 {
   return mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
@@ -263,6 +277,15 @@ WORD PentiumM_Controller::GetVoltageID(float fVoltageInVolt )
 float PentiumM_Controller::GetVoltageInVolt(WORD wVoltageID )
 {
   return 0.7 + 0.016 * wVoltageID ;
+}
+
+//For "increase voltage" in the user interface.
+void PentiumM_Controller::IncreaseVoltageBy1Step(float & r_fVoltage)
+{
+  WORD wVoltageID = GetVoltageID( r_fVoltage ) ;
+  //if( wVoltageID < GetMaximumVoltageID(
+  ++ wVoltageID ;
+  r_fVoltage = GetVoltageInVolt( wVoltageID ) ;
 }
 
 void PentiumM_Controller::IncreaseVoltageForCurrentPstate(BYTE byCoreID)

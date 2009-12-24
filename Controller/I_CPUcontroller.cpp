@@ -360,6 +360,15 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
 //  return false ;
 //}
 
+float I_CPUcontroller::GetMaximumVoltageInVolt()
+{
+  std::set<VoltageAndFreq>::const_reverse_iterator r_iter = 
+    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin( ) ;
+  if( r_iter != mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rend() )
+    return r_iter->m_fVoltageInVolt ;
+  return - 1.0 ;
+}
+
 WORD I_CPUcontroller::GetNearestHigherPossibleFreqInMHz(WORD wFreqInMhzOld)
 {
   std::set<VoltageAndFreq>::const_iterator iter = 
