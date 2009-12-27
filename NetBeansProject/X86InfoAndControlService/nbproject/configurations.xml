@@ -354,11 +354,12 @@
             <pElem>../..</pElem>
             <pElem>../../Controller/MSVC_adaption</pElem>
             <pElem>/usr/include/wx-2.8</pElem>
-            <pElem>/usr/lib/wx/include/base-unicode-debug-2.8</pElem>
+            <pElem>/usr/lib/wx/include/base-unicode-release-2.8</pElem>
             <pElem>/usr/include</pElem>
           </incDir>
           <preprocessorList>
             <Elem>COMPILE_WITH_XERCES</Elem>
+            <Elem>_UNICODE</Elem>
           </preprocessorList>
         </ccTool>
         <linkerTool>

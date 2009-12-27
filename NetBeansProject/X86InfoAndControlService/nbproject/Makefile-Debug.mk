@@ -13,8 +13,8 @@ CP=cp
 CCADMIN=CCadmin
 RANLIB=ranlib
 CC=gcc
-CCC=g++
-CXX=g++
+CCC=g++-4.4
+CXX=g++-4.4
 FC=
 AS=as
 

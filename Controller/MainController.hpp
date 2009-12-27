@@ -36,10 +36,13 @@ public:
     std::vector<std::tstring> & r_stdvectstr
     )
   {
+    std::tstring stdtstr ;
     #ifdef COMPILE_WITH_AMD_GRIFFIN
-      r_stdvectstr.push_back("AMD Griffin") ;
+      stdtstr = _T("AMD Griffin") ;
+      r_stdvectstr.push_back( stdtstr ) ;
     #endif
-      r_stdvectstr.push_back( std::tstring(_T("Pentium M") ) ) ;
+    stdtstr = _T("Pentium M") ;
+    r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }
   BYTE Init(

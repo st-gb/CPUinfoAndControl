@@ -173,9 +173,10 @@ int main( int argc, char *  argv[] )
   LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
   //LPTSTR ptstrProgramArg = _T("-config=GriffinControl_config.xml") ;
   std::tstring stdtstrProgramName(ptstrProgramName) ;
-  std::tstring stdtstrProgramArg = std::tstring("-config=") + ptstrProgramName +
-    std::tstring("_config.xml") ;
-  std::string stdstrLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
+  std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
+    + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
+  std::tstring stdtstrLogFileName = ptstrProgramName
+    + std::tstring(_T("_log.txt") ) ;
   //try
   //{
     ////TODO make file path variable.
@@ -201,12 +202,13 @@ int main( int argc, char *  argv[] )
 /*
     SetExePathAsCurrentDir() ;
 */
-    //Convert std::string to wstring or remain std::string.
-    std::tstring stdtstr = Getstdtstring( stdstrLogFileName) ;
+//    //Convert std::string to wstring or remain std::string.
+//    std::tstring stdtstr = Getstdtstring( stdtstrLogFileName) ;
     //Must set the exe path as current dir before (else the file is located in
     //: C:\WINDOWS\System32) !
     g_logger.OpenFile( //std::string("GriffinControl_log.txt")
-      stdtstr ) ;
+      //stdtstr
+      stdtstrLogFileName ) ;
     #ifdef LINUX
     daemonize( std::string ( "/var/lock/subsys/" + stdtstrProgramName .c_str() );
     #endif
@@ -333,7 +335,7 @@ int main( int argc, char *  argv[] )
       //ISpecificController
       //MyFrame * p_frame ;
       //Intitialise to be valid.
-      arartchCmdLineArgument[ 0 ] = "" ;
+      arartchCmdLineArgument[ 0 ] = _T("");
       arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] =
           //"-config=config.xml" ;
           (TCHAR *) stdtstrProgramArg.c_str() ;

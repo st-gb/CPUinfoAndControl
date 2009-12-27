@@ -332,7 +332,7 @@ extern Logger g_logger ;
     , std::string & r_strPstateSettingsFileName )
   {
     BYTE retval ;
-    // "/*": das Wurzel-Element unabhängig vom Namen 
+    // "/*": das Wurzel-Element unabhï¿½ngig vom Namen 
     //  (jedes wohlgeformte XML-Dokument hat genau ein Wurzel-Element)
     char * archXPath = "/*/freq_and_voltage" ; 
     DOMDocument * p_dom_document ;
@@ -384,11 +384,10 @@ extern Logger g_logger ;
             //Attribute exists.
             if ( p_domnodeAttribute )
             {
+              std::string stdstr = xerceshelper.ToStdString(cp_xmlchAttrValue) ;
               cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
               //cp_xmlchAttrValue = cp_xmlchAttrValue ;
-              xerceshelper.ToDWORD( 
-                  xerceshelper.ToStdString(cp_xmlchAttrValue) , & dwValue
-                ) ;
+              xerceshelper.ToDWORD( stdstr , & dwValue ) ;
               stdmapFrequenciesStoredInFile2DOMindex.insert( 
                 std::pair<WORD,WORD> ( dwValue, i ) ) ;
             }
@@ -452,8 +451,10 @@ extern Logger g_logger ;
                 )
               {
                 float fVoltageFromFile ;
+                std::string stdstr = XercesHelper::ToStdString(
+                  p_domnodeAttribute->getNodeValue() ) ;
                 from_stdstring<float>( fVoltageFromFile ,
-                  XercesHelper::ToStdString(p_domnodeAttribute->getNodeValue())
+                  stdstr
                   //, & fVoltage
                   ) ;
                 //DOMElement * p_dom_elementFreqnVolt = 
@@ -511,9 +512,9 @@ extern Logger g_logger ;
               if ( p_domnodeAttribute )
               {
                 float fVoltageFromFile ;
-                from_stdstring<float>( fVoltageFromFile ,
-                  XercesHelper::ToStdString( p_domnodeAttribute->getNodeValue() )
-                  ) ;
+                std::string stdstr = XercesHelper::ToStdString(
+                  p_domnodeAttribute->getNodeValue() ) ;
+                from_stdstring<float>( fVoltageFromFile , stdstr ) ;
                 if( fVoltageFromFile != citerstdsetvoltageandfreq->m_fVoltageInVolt )
                 {
                   //DOMElement * p_dom_elementFreqnVolt = 
@@ -550,9 +551,9 @@ extern Logger g_logger ;
               if ( p_domnodeAttribute )
               {
                 float fVoltageFromFile ;
-                from_stdstring<float>( fVoltageFromFile ,
-                  XercesHelper::ToStdString( p_domnodeAttribute->getNodeValue() )
-                  ) ;
+                std::string stdstr = XercesHelper::ToStdString(
+                  p_domnodeAttribute->getNodeValue() ) ;
+                from_stdstring<float>( fVoltageFromFile , stdstr ) ;
                 if( fVoltageFromFile != citerstdsetvoltageandfreq->m_fVoltageInVolt )
                 {
                   //DOMElement * p_dom_elementFreqnVolt = 

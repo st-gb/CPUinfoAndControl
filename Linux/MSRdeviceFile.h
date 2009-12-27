@@ -41,7 +41,7 @@ class MSRdeviceFile
 {
 private:
   //UserInterface * mp_userinterface ;
-  std::fstream * m_arfstreamMSR ;
+//  std::fstream * m_arfstreamMSR ;
   int * m_arnFileHandle ;
 public:
   MSRdeviceFile(UserInterface * pui) ;
