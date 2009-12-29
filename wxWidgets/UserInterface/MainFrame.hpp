@@ -199,7 +199,7 @@ public:
     , float fMaxVoltage
     ) ;
   void DrawCurrentPstateInfo( wxDC & r_wxdc ) ;
-  void MainFrame::DrawPerformanceStatesCrosses(
+  void DrawPerformanceStatesCrosses(
     wxDC & r_wxdc 
     , const std::set<VoltageAndFreq> & cr_stdsetmaxvoltageforfreq 
     , const wxColor * cp_wxcolor 

@@ -36,7 +36,7 @@
 #include <Controller/CalculationThreadProc.h>
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
 #include <Controller/MainController.hpp>
-#include <Controller/stdtstr.hpp>
+#include <Controller/stdtstr.hpp> //Getstdtstring(...)
 #include <BuildTimeString.h>
 #include "ModelData/RegisterData.hpp"
 #include <ModelData/HighLoadThreadAttributes.hpp>
@@ -2838,8 +2838,8 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
     LOGN( "for file dialog: relative dir path=" << strCPUtypeRelativeDirPath )
     wxString wxstrFilePath = ::wxFileSelector( 
       wxT("Select file path") 
-      , strCPUtypeRelativeDirPath.c_str() 
-      , strPstateSettingsFileName.c_str() 
+      , Getstdtstring( strCPUtypeRelativeDirPath ).c_str()
+      , Getstdtstring( strPstateSettingsFileName ) .c_str()
       , wxT("xml")
       , wxT("*.*")
       , wxFD_SAVE
@@ -2849,7 +2849,9 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
         // work with the file
         //...
       //readXMLfileDOM( wxstrFilePath.c_str() ) ;
-      mergeXMLfileDOM( wxstrFilePath.c_str() , * mp_model , 
+      mergeXMLfileDOM( 
+        GetStdString( std::tstring( wxstrFilePath.c_str() ) ).c_str()
+        , * mp_model ,
         strPstateSettingsFileName ) ;
     }
     //mp_configfileaccess->

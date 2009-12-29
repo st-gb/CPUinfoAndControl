@@ -33,6 +33,15 @@
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
+        <logicalFolder name="AMD" displayName="AMD" projectFiles="true">
+          <logicalFolder name="Griffin" displayName="Griffin" projectFiles="true">
+            <itemPath>../../Controller/AMD/Griffin/AMD_family17.h</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.hpp</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/GriffinController.cpp</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/GriffinController.hpp</itemPath>
+          </logicalFolder>
+        </logicalFolder>
         <logicalFolder name="Intel" displayName="Intel" projectFiles="true">
           <logicalFolder name="PentiumM" displayName="PentiumM" projectFiles="true">
             <itemPath>../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
@@ -78,7 +87,6 @@
         <itemPath>../../Controller/I_CPUcontrollerAction.hpp</itemPath>
         <itemPath>../../Controller/I_ServerProcess.hpp</itemPath>
         <itemPath>../../Controller/Intel_registers.h</itemPath>
-        <itemPath>../../Controller/Linux.cpp</itemPath>
         <itemPath>../../Controller/Linux.h</itemPath>
         <itemPath>../../Controller/Logger.cpp</itemPath>
         <itemPath>../../Controller/Logger.hpp</itemPath>
@@ -90,7 +98,6 @@
         <itemPath>../../Controller/SelectPstateAction.hpp</itemPath>
         <itemPath>../../Controller/Sleep.h</itemPath>
         <itemPath>../../Controller/WinRing0.h</itemPath>
-        <itemPath>../../Controller/Windows.cpp</itemPath>
         <itemPath>../../Controller/X86InfoAndControlExceptions.hpp</itemPath>
         <itemPath>../../Controller/console.cpp</itemPath>
         <itemPath>../../Controller/stdstring_format.hpp</itemPath>
@@ -116,6 +123,8 @@
         </logicalFolder>
         <logicalFolder name="Intel" displayName="Intel" projectFiles="true">
         </logicalFolder>
+        <logicalFolder name="Linux" displayName="Linux" projectFiles="true">
+        </logicalFolder>
         <logicalFolder name="Windows" displayName="Windows" projectFiles="true">
         </logicalFolder>
       </logicalFolder>
@@ -134,7 +143,6 @@
         <itemPath>../../ModelData/CPUcoreData.cpp</itemPath>
         <itemPath>../../ModelData/CPUcoreData.hpp</itemPath>
         <itemPath>../../ModelData/DIDandFID.hpp</itemPath>
-        <itemPath>../../ModelData/HighLoadThreadAttributes.cpp</itemPath>
         <itemPath>../../ModelData/ModelData.cpp</itemPath>
         <itemPath>../../ModelData/ModelData.hpp</itemPath>
         <itemPath>../../ModelData/PStates.cpp</itemPath>
@@ -153,9 +161,29 @@
       <logicalFolder name="NetBeansProject"
                      displayName="NetBeansProject"
                      projectFiles="true">
+        <logicalFolder name="x86InfoAndControlGUI"
+                       displayName="x86InfoAndControlGUI"
+                       projectFiles="true">
+        </logicalFolder>
         <logicalFolder name="X86InfoAndControlService"
                        displayName="X86InfoAndControlService"
                        projectFiles="true">
+          <logicalFolder name="dist" displayName="dist" projectFiles="true">
+            <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+              <logicalFolder name="GNU-Linux-x86"
+                             displayName="GNU-Linux-x86"
+                             projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+            <logicalFolder name="Release_from_Debug"
+                           displayName="Release_from_Debug"
+                           projectFiles="true">
+              <logicalFolder name="GNU-Linux-x86"
+                             displayName="GNU-Linux-x86"
+                             projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="Release" displayName="Release" projectFiles="true">
@@ -164,14 +192,38 @@
         <logicalFolder name="Screenshots" displayName="Screenshots" projectFiles="true">
           <logicalFolder name="GUI" displayName="GUI" projectFiles="true">
           </logicalFolder>
+          <logicalFolder name="Prime95" displayName="Prime95" projectFiles="true">
+          </logicalFolder>
           <logicalFolder name="service" displayName="service" projectFiles="true">
           </logicalFolder>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="wxWidgets" displayName="wxWidgets" projectFiles="true">
+        <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketClient.cpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketClient.hpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketServer.cpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketServer.hpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxStringHelper.cpp</itemPath>
+        </logicalFolder>
         <logicalFolder name="ModelData" displayName="ModelData" projectFiles="true">
           <itemPath>../../wxWidgets/ModelData/wxCPUcoreID.cpp</itemPath>
           <itemPath>../../wxWidgets/ModelData/wxCPUcoreID.hpp</itemPath>
+        </logicalFolder>
+        <logicalFolder name="UserInterface"
+                       displayName="UserInterface"
+                       projectFiles="true">
+          <itemPath>../../wxWidgets/UserInterface/DynFreqScalingDlg.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/DynFreqScalingDlg.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FloatValidator.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FloatValidator.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/MainFrame.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/MainFrame.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/wxDynamicDialog.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/wxDynamicDialog.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/wxFrequencyInMHz_Slider.hpp</itemPath>
         </logicalFolder>
         <itemPath>../../wxWidgets/App.cpp</itemPath>
         <itemPath>../../wxWidgets/App.hpp</itemPath>
@@ -183,7 +235,6 @@
         <itemPath>../../wxWidgets/Controller.hpp</itemPath>
         <itemPath>../../wxWidgets/DynFreqScalingThread.cpp</itemPath>
         <itemPath>../../wxWidgets/DynFreqScalingThread.hpp</itemPath>
-        <itemPath>../../wxWidgets/MSRaccess.cpp</itemPath>
         <itemPath>../../wxWidgets/wxDynFreqScalingTimer.cpp</itemPath>
         <itemPath>../../wxWidgets/wxDynFreqScalingTimer.hpp</itemPath>
         <itemPath>../../wxWidgets/wxDynLinkedCPUcoreUsageGetter.hpp</itemPath>
@@ -197,6 +248,20 @@
                        projectFiles="true">
           <logicalFolder name="Release" displayName="Release" projectFiles="true">
           </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="x86InfoAndControl_MSVC"
+                     displayName="x86InfoAndControl_MSVC"
+                     projectFiles="true">
+        <logicalFolder name="release" displayName="release" projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="x86InfoAndControl"
+                       displayName="x86InfoAndControl"
+                       projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="X86InfoAndControlService"
+                       displayName="X86InfoAndControlService"
+                       projectFiles="true">
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="Xerces" displayName="Xerces" projectFiles="true">
@@ -231,7 +296,7 @@
       <itemPath>../../preprocessor_helper_macros.h</itemPath>
       <itemPath>../../stdafx.cpp</itemPath>
       <itemPath>../../stdafx.h</itemPath>
-      <itemPath>../../wxGUI.cpp</itemPath>
+      <itemPath>../../string_typedefs.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -256,13 +321,13 @@
             <pElem>../..</pElem>
             <pElem>../../Controller/MSVC_adaption</pElem>
             <pElem>/usr/include/wx-2.8</pElem>
-            <pElem>/usr/lib/wx/include/base-unicode-debug-2.8</pElem>
-            <pElem>/usr/include</pElem>
+            <pElem>/usr/lib/wx/include/gtk2-unicode-debug-2.8</pElem>
           </incDir>
           <preprocessorList>
+            <Elem>__WXGTK__</Elem>
             <Elem>_DEBUG</Elem>
-            <Elem>COMPILE_WITH_XERCES</Elem>
             <Elem>_UNICODE</Elem>
+            <Elem>COMPILE_WITH_XERCES</Elem>
           </preprocessorList>
         </ccTool>
         <linkerTool>
@@ -271,13 +336,23 @@
           </linkerAddLib>
           <linkerLibItems>
             <linkerLibLibItem>xerces-c</linkerLibLibItem>
+            <linkerLibLibItem>wx_gtk2ud_core-2.8</linkerLibLibItem>
             <linkerLibLibItem>wx_baseud-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_gtk2u_adv-2.8</linkerLibLibItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>
-      <item path="../../Controller/CalculationThreadProc.cpp" ex="true" tool="1">
+      <item path="../../Console.h" ex="true" tool="3">
       </item>
-      <item path="../../Controller/Linux.cpp" ex="true" tool="1">
+      <item path="../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/AMD/Griffin/GriffinController.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/CalculationThreadProc.cpp" ex="true" tool="1">
       </item>
       <item path="../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp"
             ex="true"
@@ -285,19 +360,13 @@
       </item>
       <item path="../../Controller/SelectPstateAction.cpp" ex="true" tool="1">
       </item>
-      <item path="../../Controller/WinRing0.h" ex="true" tool="3">
+      <item path="../../Controller/SelectPstateAction.hpp" ex="true" tool="3">
       </item>
-      <item path="../../Controller/Windows.cpp" ex="true" tool="1">
+      <item path="../../Controller/console.cpp" ex="true" tool="1">
       </item>
       <item path="../../Linux/CalculationThread.cpp" ex="true" tool="1">
       </item>
-      <item path="../../ModelData/HighLoadThreadAttributes.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/PStates.cpp" ex="true" tool="1">
-      </item>
       <item path="../../ModelData/Pstate.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/RegisterData.cpp" ex="true" tool="1">
       </item>
       <item path="../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp"
             ex="true"
@@ -305,17 +374,19 @@
       </item>
       <item path="../../main.cpp" ex="true" tool="1">
       </item>
-      <item path="../../wxGUI.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/App.cpp" ex="true" tool="1">
-      </item>
       <item path="../../wxWidgets/CPUIDaccess.cpp" ex="true" tool="1">
       </item>
       <item path="../../wxWidgets/Controller.cpp" ex="true" tool="1">
       </item>
-      <item path="../../wxWidgets/MSRaccess.cpp" ex="true" tool="1">
+      <item path="../../wxWidgets/Controller.hpp" ex="true" tool="3">
       </item>
-      <item path="../../wxWidgets/ModelData/wxCPUcoreID.cpp" ex="true" tool="1">
+      <item path="../../wxWidgets/Controller/wxServiceSocketClient.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketServer.cpp"
+            ex="true"
+            tool="1">
       </item>
       <item path="../../wxWidgets/wxDynFreqScalingTimer.cpp" ex="true" tool="1">
       </item>
@@ -341,82 +412,6 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
-    </conf>
-    <conf name="Release_from_Debug" type="1">
-      <toolsSet>
-        <developmentServer>localhost</developmentServer>
-        <compilerSet>GNU|GNU</compilerSet>
-        <platform>2</platform>
-      </toolsSet>
-      <compileType>
-        <ccTool>
-          <developmentMode>5</developmentMode>
-          <incDir>
-            <pElem>../..</pElem>
-            <pElem>../../Controller/MSVC_adaption</pElem>
-            <pElem>/usr/include/wx-2.8</pElem>
-            <pElem>/usr/lib/wx/include/base-unicode-release-2.8</pElem>
-            <pElem>/usr/include</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>COMPILE_WITH_XERCES</Elem>
-            <Elem>_UNICODE</Elem>
-          </preprocessorList>
-        </ccTool>
-        <linkerTool>
-          <linkerAddLib>
-            <pElem>/usr/lib</pElem>
-          </linkerAddLib>
-          <linkerLibItems>
-            <linkerLibLibItem>xerces-c</linkerLibLibItem>
-            <linkerLibLibItem>wx_baseu-2.8</linkerLibLibItem>
-          </linkerLibItems>
-        </linkerTool>
-      </compileType>
-      <item path="../../Controller/CalculationThreadProc.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Controller/Linux.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp"
-            ex="true"
-            tool="1">
-      </item>
-      <item path="../../Controller/SelectPstateAction.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Controller/WinRing0.h" ex="true" tool="3">
-      </item>
-      <item path="../../Controller/Windows.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Linux/CalculationThread.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/HighLoadThreadAttributes.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/PStates.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/Pstate.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/RegisterData.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp"
-            ex="true"
-            tool="1">
-      </item>
-      <item path="../../main.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxGUI.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/App.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/CPUIDaccess.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/Controller.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/MSRaccess.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/ModelData/wxCPUcoreID.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../wxWidgets/wxDynFreqScalingTimer.cpp" ex="true" tool="1">
-      </item>
     </conf>
   </confs>
 </configurationDescriptor>
