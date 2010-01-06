@@ -3,9 +3,9 @@
 #include <strstream> //for std::ostrstream
 #include <string>
 //#include "PumaStateCtrl.h"
-#include <Controller/AMD/Griffin/GriffinController.hpp>
+//#include <Controller/AMD/Griffin/GriffinController.hpp>
 
-class GriffinController ;
+//class GriffinController ;
 
 //#define WRITE_TO_OUTPUTSTREAM(ostrstream1,var,str) /*std::ostrstream ostrstream1 ;*/ \
 //  ostrstream1 << var; \

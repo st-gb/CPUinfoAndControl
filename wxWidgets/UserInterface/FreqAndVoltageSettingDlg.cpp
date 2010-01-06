@@ -17,6 +17,7 @@
 //#include "../ModelData/PStates.h"
 //#include "../Controller/PumaStateCtrl.h"
 //#include "Controller/GriffinController.hpp"
+#include <Controller/I_CPUcontroller.hpp>
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/dialog.h>

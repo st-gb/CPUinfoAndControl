@@ -3,6 +3,7 @@
 #include <Windows/PowerProf/PowerProfFromWin6DynLinked.hpp>
 #include <Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp>
 #include "global.h" //LOGN
+#include <Controller/stdtstr.hpp> //class tstring
 
 PowerProfDynLinked::PowerProfDynLinked(
   //std::wstring & r_stdwstrProgramName 

@@ -4,7 +4,8 @@
 #include "stdafx.h"
 #include <Windows.h>
 #include <tchar.h> //for _T()
-#include <Controller/tchar_conversion.h> //GetCharPointer(...)
+//#include <Controller/tchar_conversion.h> //GetCharPointer(...)
+#include <Controller/stdtstr.hpp> //GetCharPointer(...)
 
 //#using <mscorlib.dll>
 
@@ -44,8 +45,9 @@ std::string GetWindowsVersion(DWORD & r_dwMajorVersion ,DWORD & r_dwMinorVersion
                  strVersion = "Windows 95" ;
               break;
               case 10:
-                if( std::string( GetCharPointer( 
-                  osversioninfo.szCSDVersion ) ) == "2222A" )
+                if( //std::string( GetCharPointer( 
+                  //osversioninfo.szCSDVersion ) ) == "2222A" )
+                  GetStdString(osversioninfo.szCSDVersion ) == "2222A" )
                  strVersion = "Windows 98 Second Edition" ;
               else
                  strVersion = "Windows 98" ;

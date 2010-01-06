@@ -39,7 +39,7 @@ class DynFreqScalingThread ;
 class ICPUcoreUsageGetter ;
 class I_CPUcontroller ;
 
-class wxPumaStateCtrlApp
+class wxX86InfoAndControlApp
   : public wxApp
   , public UserInterface
 {
@@ -110,7 +110,7 @@ public:
  #endif //#ifndef COMPILE_WITHOUT_IWBEMSERVICES
 
 #endif //#ifdef COMPILE_WITH_CPU_SCALING
-  wxPumaStateCtrlApp()
+  wxX86InfoAndControlApp()
     //C++ style inits:
 //#ifdef COMPILE_WITH_CPU_SCALING
 //    : mp_wxdynfreqscalingtimer(NULL)
@@ -136,7 +136,7 @@ public:
   //"You should delete all wxWidgets object that you created by 
     //the time OnExit finishes. 
     //In particular, do not destroy them from application class' destructor!"
-  ~wxPumaStateCtrlApp()
+  ~wxX86InfoAndControlApp()
   {
   }
   bool Confirm(const std::string & str) ;
@@ -149,4 +149,4 @@ public:
   void RedrawEverything() ;
 };
 
-DECLARE_APP(wxPumaStateCtrlApp)
+DECLARE_APP(wxX86InfoAndControlApp)

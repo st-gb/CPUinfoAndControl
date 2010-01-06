@@ -1,7 +1,9 @@
 #include "I_CPUcontroller.hpp"
 #include "UserInterface.hpp"
 #include <Controller/CPUindependentHelper.h>
-#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <Controller/I_CPUaccess.hpp>
+#include <Controller/IDynFreqScalingAccess.hpp>
+//#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/stdtstr.hpp> //get...
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
@@ -569,9 +571,11 @@ bool I_CPUcontroller::CmdLineParamsContain(
   DEBUG("cmdLineParamsContain begin\n");
   for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
   {
-    std::string strCmdArg( GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
-    wPos = (WORD) strCmdArg.find( std::string( GetCharPointer( 
-      ptcharOption ) ) +
+    std::string strCmdArg( //GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
+      GetStdString(m_arartcharCmdLineArg[ nIndex ]) ) ;
+    wPos = (WORD) strCmdArg.find( //std::string( GetCharPointer( 
+      //ptcharOption ) ) +
+      GetStdString(ptcharOption ) +
       //TCHAR("=")
       std::string("=") ) ;
     if( wPos != std::string::npos && wPos == 0 )
@@ -582,7 +586,8 @@ bool I_CPUcontroller::CmdLineParamsContain(
         //Start after "="
         +1);
 #else
-      strValue = strCmdArg.substr( strlen( GetCharPointer( ptcharOption ) )
+      strValue = strCmdArg.substr( //strlen( GetCharPointer( ptcharOption ) )
+        GetStdString( ptcharOption ).length()
         //Start after "="
         + 1 );
 #endif //#ifdef WIN32

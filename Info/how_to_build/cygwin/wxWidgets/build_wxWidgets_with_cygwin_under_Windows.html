@@ -27,8 +27,7 @@
 	<LI><P STYLE="margin-bottom: 0in">Ensure that there are NO spaces in
 	the dir pathes!</P>
 	<LI><P STYLE="margin-bottom: 0in">inside the Windows-Shell
-	(&quot;cmd.exe&quot;; prompt), start the Unix-Shell&nbsp;&quot;sh&quot;
-	(&gt;&gt;cygwin dir&lt;&lt;\bin\sh.exe)</P>
+	(&quot;cmd.exe&quot;; prompt)</P>
 </OL>
 <OL START=5>
 	<LI><P STYLE="margin-bottom: 0in">change to the dir where the object
@@ -37,13 +36,12 @@
 <OL START=4>
 	<LI><P STYLE="margin-bottom: 0in">run the script
 	&quot;&gt;&gt;wxwidgets-dir&lt;&lt;/configure …&quot;
-	(../configure)</P>
+	: "bash ../configure --with-msw" </P>
 </OL>
 <OL START=6>
 	<LI><P STYLE="margin-bottom: 0in">„./configure
 	--with-extra-cflags=-mno-cygwin –with-extra-cxxflags=-mno-cygwin“</P>
-</OL>
-<OL START=5>
+	<LI><P>for gcc 4: add "-D_SYS_SELECT_H" as "CPPFLAGS" in the "Makefile" (because else a conflict/ compile error: duplicate function "int select ..." </P>
 	<LI><P>executing &quot;make&quot; <B>failed</B> at
 	&quot;&gt;&gt;wxwidgets-dir&lt;&lt;/utils/wxrc&quot; if I recall
 	correctly</P>

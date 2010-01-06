@@ -1,6 +1,7 @@
 //#include "ISpecificController.hpp"
 #include "I_CPUaccess.hpp"
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
+#include <string.h> //strcat(...)
 
 #define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
 
@@ -207,20 +208,28 @@ bool //ISpecificController
   char archCPUID[ 
     //3 words a 4 bytes = 12 byte + NULL char = 13
     13 ] ;
-  archCPUID[12] = '\0' ;
+  char archEBX[5]="    ", archECX[5] = "    " , archEDX[5] = "    " ;
+  archCPUID[12] = '\0' ; //for (DWORD *) (archCPUID + 8)
+  archCPUID[0] = '\0' ; //for strcat()
   DWORD dw ;
   //Intel: EBX: "Genu" EDX: "ineI" ECX: "ntel"
   bRet = CpuidEx( 
     0x00000000 
     , & dw
     //Vendor ID is stored in EBX, ECX, EDX
-    , (DWORD *) archCPUID //EBX
-    , ( (DWORD *) (archCPUID + 8)) //ECX
-    , ( (DWORD *) (archCPUID + 4)) //EDX
+    , //(DWORD *) archCPUID //EBX
+      (DWORD *) archEBX
+    ,// ( (DWORD *) (archCPUID + 8)) //ECX
+      (DWORD *) archECX
+    , //( (DWORD *) (archCPUID + 4)) //EDX
+      (DWORD *) archEDX
     , 1
     ) ;
   if( bRet )
   {
+    strcat( archCPUID, archEBX ) ;
+    strcat( archCPUID, archEDX ) ;
+    strcat( archCPUID, archECX ) ;
     r_str = std::string(archCPUID) ;
   }
   return bRet ;
@@ -421,9 +430,21 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
   DWORD dwECX;
   DWORD dwEDX;
   DEBUG("WRDL--getting number of CPU cores\n");
+//  if( CpuidEx(
+//    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
+//    0x80000008,
+//    &dwEAX,
+//    &dwEBX,
+//    &dwECX,
+//    &dwEDX,
+//    1
+//      )
+//    )
   if( CpuidEx(
-    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
-    0x80000008,
+    //Intel: "Place core count in BL (originally in EAX[31:26]"
+    //0x0000001,
+		//Thread Level Processor Topology (CPUID Function 0Bh with ECX=0)
+		0xB,
     &dwEAX,
     &dwEBX,
     &dwECX,
@@ -431,7 +452,7 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
     1
       )
     )
-  {
+	{
     byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT )
       //"ECX 7:0 NC: number of physical cores - 1.
       //The number of cores in the processor is NC+1 (e.g., if

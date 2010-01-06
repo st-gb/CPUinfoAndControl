@@ -32,6 +32,7 @@
 #include "FreqAndVoltageSettingDlg.hpp"
 //#include "../Controller/GriffinController.hpp"
 #include <Controller/I_CPUcontrollerAction.hpp>
+#include <Controller/I_CPUcontroller.hpp>
 #include <Controller/ICPUcoreUsageGetter.hpp> //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CalculationThreadProc.h>
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
@@ -39,7 +40,7 @@
 #include <Controller/stdtstr.hpp> //Getstdtstring(...)
 #include <BuildTimeString.h>
 #include "ModelData/RegisterData.hpp"
-#include <ModelData/HighLoadThreadAttributes.hpp>
+//#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
@@ -201,7 +202,9 @@ MainFrame::MainFrame(
   , mp_wxbufferedpaintdcStatic( NULL) 
   , mp_wxbitmapStatic (NULL)
   , m_dwTimerIntervalInMilliseconds (1000)
+  #ifdef COMPILE_WITH_CALC_THREAD
   , mp_calculationthread( NULL )
+  #endif
   , m_bRangeBeginningFromMinVoltage ( true )
 {
   LOG("begin of main frame creation\n")
@@ -290,10 +293,6 @@ MainFrame::MainFrame(
 //#ifdef _TEST_PENTIUM_M
 #ifdef _WINDOWS
   //wxMenu * p_wxmenuExtras = new wxMenu;
-#ifdef COMPILE_WITH_MSR_EXAMINATION
-  p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
-#endif
-  mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 //#endif
   if( ! p_cpucontroller->mp_model->m_cpucoredata.
     m_stdsetvoltageandfreqDefault.empty() )
@@ -301,6 +300,10 @@ MainFrame::MainFrame(
       ID_EnableOrDisableOtherDVFS
       , _T("enable own DVFS") 
       );
+#endif
+#ifdef COMPILE_WITH_MSR_EXAMINATION
+  p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
+  mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //    ////Connect the action, that is a class derived from class xx directly
@@ -363,8 +366,10 @@ MainFrame::~MainFrame()
   //Release memory for array of pointers.
   delete [] m_arp_wxmenuitemPstate ;
   delete [] marp_wxmenuItemHighLoadThread ;
+	#ifdef COMPILE_WITH_CALC_THREAD
   if( mp_calculationthread )
     delete mp_calculationthread ;
+	#endif
 }
 
 //void MyFrame::AddMenu()
@@ -977,7 +982,7 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       _T( "\n, ")
 
       //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-      BUILT_TIME
+      //BUILT_TIME
       //"AMD--smarter choice than Intel?\n\n"
       //"To ensure a stable operation:\n"
       _T("I observed system instability when when switching from power ")
@@ -1957,12 +1962,12 @@ void MainFrame::OnPaint(wxPaintEvent & event)
         //    0, 
         //    0);
         //float f
-       DWORD dwLowmostBits;
+       DWORD dwLowmostBits = 0 ;
 //#ifndef _TEST_PENTIUM_M
        DrawCurrentPstateInfo(wxmemorydc) ;
 //#endif //#ifndef _TEST_PENTIUM_M
        ULONGLONG ull ;
-       DWORD dwHighmostBits //, dwLowmostBits 
+       DWORD dwHighmostBits = 0//, dwLowmostBits 
          ;
        //mp_pumastatectrl->RdmsrEx(
        //   MSR_TIME_STAMP_COUNTER_REGISTER,
@@ -2920,8 +2925,8 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
     {
       //ReadMsrEx() returned false results if used with a time and a 10 ms interval.
       if( ulMs < 100 )
-        wxMessageBox( wxT("the number is too low. "
-        "Getting the current CPU frequency returned wrong values with < 100 ms") ) ;
+        wxMessageBox( wxT("the number is too low. ")
+          wxT("Getting the current CPU frequency returned wrong values with < 100 ms") ) ;
       else
       {
         m_dwTimerIntervalInMilliseconds = ulMs ;

@@ -1,14 +1,14 @@
 #pragma once // include guard
 #include "global.h" //for BYTE etc.
 #include <string>
-//#ifdef _WINDOWS
-//  //#include <windef.h> //for BOOL etc.
-//  #include <basetsd.h> //DWORD_PTR
-//  //#include <WINDOWS.h> //for BOOL et.c
-//#else
-//  #include <Windows_compatible_typedefs.h>
-//#endif
-#include <Windows_compatible_typedefs.h>
+#ifdef _WINDOWS
+  //#include <windef.h> //for BOOL etc.
+  #include <basetsd.h> //DWORD_PTR
+  //#include <WINDOWS.h> //for BOOL et.c
+#else
+  #include <Windows_compatible_typedefs.h>
+#endif
+//#include <Windows_compatible_typedefs.h>
 #ifndef WINAPI 
   #define WINAPI __stdcall
 #endif
@@ -132,6 +132,8 @@ public:
   //http://de.wikipedia.org/wiki/CPUID
   //http://www.sandpile.org/ia32/cpuid.htm
   bool GetVendorID( std::string & r_str );
+
+  virtual void InitPerCPUcoreAccess(BYTE byNumCPUcores) {}
 
   virtual BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall

@@ -1,0 +1,73 @@
+<Pentium_M>
+  <MSR index="0x198" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID startbit="0" bitlength="8"/>
+    <value_table_row MHz="600" FID="6" ></value_table_row>
+    <value_table_row MHz="800" FID="8" ></value_table_row>
+  </MSR>
+  <MSR index="0x198" core="1" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x198" core="2" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x198" core="3" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x198" core="4" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x198" core="5" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x198" core="6" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x198" core="7" name="IA32_PERF_STATUS">
+    <IA32_PERF_CTL_FID_core1 startbit="8" bitlength="8"/>
+    <IA32_PERF_CTL_VID_core1 startbit="0" bitlength="8"/>
+  </MSR>
+  <MSR index="0x199" name="IA32_PERF_CTL">
+    <IA32_PERF_STATUS_FID startbit="8" bitlength="8"/>
+    <value_table_row MHz="600" FID="6" ></value_table_row>
+    <value_table_row MHz="800" FID="8" ></value_table_row>
+  </MSR>
+  <MSR index="0x19A" name="IA32_CLOCK_MODULATION">
+    <IA32_CLOCK_MODULATION startbit="0" bitlength="64"/>
+  </MSR>
+  <MSR index="0x19C" name="IA32_THERM_STATUS">
+    <DigitalReadout startbit="16" bitlength="7"/> <!--vol. 3B table B-2-->
+    <ResolutioninDegreesCelsius startbit="27" bitlength="4"/> <!--vol. 3B table B-2-->
+  </MSR>
+  <MSR index="0xE8H" name="IA32_APERF">
+    <IA32_APERF diff="true" startbit="0" bitlength="64"/>
+  </MSR>
+  <MSR index="0x10H" name="IA32_TIME_STAMP_COUNTER">
+    <IA32_TIME_STAMP_COUNTER startbit="0" bitlength="64"></IA32_TIME_STAMP_COUNTER>
+  </MSR>
+  <!--rdmsr at address IA32_MPERF failed with Pentium M 745
+  <MSR index="0xE7H">
+    <IA32_MPERF startbit="0" bitlength="64"></IA32_MPERF>
+  </MSR>-->
+  <MSR index="0x1A0H" name="IA32_MISC_ENABLE">
+    <AutomaticThermalControlCircuitEnable startbit="3" bitlength="1"/>
+    <PerformanceMonitoringAvailable startbit="7" bitlength="1"/>
+    <EnhancedIntelSpeedStepTechnologyEnable startbit="16" bitlength="1"/>
+    <EnhancedIntelSpeedStepTechnologyEnable startbit="16" bitlength="1"/>
+    <TurboModeDisable startbit="38" bitlength="1"/>
+  </MSR>
+  <MSR index="0x1A2" name="MSR_TEMPERATURE_TARGET">
+    <TemperatureTarget startbit="16" bitlength="8"/>
+  </MSR>
+  <MSR index="0x1AD" name="MSR_TURBO_RATIO_LIMIT">
+    <MaximumTurboRatioLimit1C startbit="0" bitlength="8"/>
+    <MaximumTurboRatioLimit4C startbit="24" bitlength="8"/>
+  </MSR>
+  <!--1b0H IA32_ENERGY_PERF_BIAS-->
+</Pentium_M>

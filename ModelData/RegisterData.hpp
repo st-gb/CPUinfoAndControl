@@ -67,12 +67,14 @@ public:
 class MSRdata
 {
  public:
+  BYTE m_byCoreID ;
     DWORD m_dwIndex ;
     std::vector<RegisterData> m_stdvec_registerdata ;
     //std::vector<std::string [][]> m_stdvector_ararstdstr ;
     std::vector<RegisterDataTable> m_stdvector_registerdatatable ;
     MSRdata(//DWORD 
       unsigned long dwIndex)
+      : m_byCoreID(0)
     {
         m_dwIndex = dwIndex ;
     }

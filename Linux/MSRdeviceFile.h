@@ -79,6 +79,7 @@ public:
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   );
   void Init(UserInterface * pui) ;
+  void InitPerCPUcoreAccess(BYTE byNumCPUcores) ;
   BOOL ReadPciConfigDwordEx(
     DWORD dwPCIaddress
     , DWORD dwRegAddress

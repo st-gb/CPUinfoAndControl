@@ -44,7 +44,7 @@
 	//#ifdef WIN32
 	class NumberFormatException 
     : public
-    #ifdef __CYGWIN__
+    #if defined (__CYGWIN__) || defined(__MINGW32__) // == 1
     //  ::RuntimeException
       std::exception
     #else
@@ -53,7 +53,7 @@
 	{
 	public:
 	   NumberFormatException(const std::string& s)
-      #ifdef __CYGWIN__
+      #if defined (__CYGWIN__) || defined(__MINGW32__)
       //  ::RuntimeException
       //  std::exception()
       #else

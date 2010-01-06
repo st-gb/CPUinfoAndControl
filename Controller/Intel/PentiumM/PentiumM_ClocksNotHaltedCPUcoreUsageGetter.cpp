@@ -6,6 +6,7 @@
 //#include <Controller/GriffinController.hpp>
 #include <Controller/Intel/PentiumM/PentiumM_Controller.hpp>
 #include <preprocessor_helper_macros.h>
+#include <Windows_compatible_typedefs.h> //DWORD, ...
 //#include <Controller/I_CPUcontroller.hpp> //ReadmsrEx
 
 //TODO correct reatment of value overflow? bitwidth of value is important

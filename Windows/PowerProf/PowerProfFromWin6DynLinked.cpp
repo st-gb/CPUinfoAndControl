@@ -65,7 +65,8 @@ bool PowerProfFromWin6DynLinked::DisableFrequencyScalingByOS()
     UCHAR * Buffer ;
     POWER_DATA_ACCESSOR AccessFlags ;
     ULONG ulIndex = 0 ;
-    strWantedPowerScheme = GetCharPointer( 
+    strWantedPowerScheme = //GetCharPointer( 
+      GetStdString(
       m_stdwstrPowerSchemeName.c_str() ) ;
     //Walk through all power schemes.
     do

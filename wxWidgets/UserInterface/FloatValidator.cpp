@@ -59,9 +59,11 @@ bool CfloatValidator::TransferFromWindow()
     int r;
  
     if ( m_type == singleType )
-      r = sscanf( GetCharPointer( wxstr.GetData() ) ," %f", fpt_union_.s );
+      r = sscanf( //GetCharPointer( wxstr.GetData() 
+        wxstr.GetData().AsChar() ," %f", fpt_union_.s );
     else
-      r = sscanf( GetCharPointer( wxstr.GetData() ), " %g", fpt_union_.d );
+      r = sscanf( //GetCharPointer( wxstr.GetData() )
+        wxstr.GetData().AsChar() , " %g", fpt_union_.d );
  
     if ( r == 1 )
     {
@@ -96,11 +98,13 @@ bool CfloatValidator::Validate(wxWindow* parent)
     bool ret;
  
     if (m_type == singleType) {
-        int r = sscanf( GetCharPointer( wxstr.GetData() )," %f", t.s);
+        int r = sscanf( //GetCharPointer( wxstr.GetData() )
+          wxstr.GetData().AsChar() ," %f", t.s);
         ret = ( (r==1) && ( * t.s > m_lBound ) && ( *t.s < m_hBound ) );
     }
     else {
-        int r = sscanf( GetCharPointer( wxstr.GetData() ) ," %g",t.d);
+        int r = sscanf( //GetCharPointer( wxstr.GetData() ) 
+          wxstr.GetData().AsChar() ," %g",t.d);
         ret = ( (r==1) && ( * t.d > m_lBound ) && ( *t.d < m_hBound ) );
     }
  

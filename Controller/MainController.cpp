@@ -17,6 +17,8 @@
 #endif //#ifdef COMPILE_WITH_AMD_GRIFFIN
 #include <Controller/Intel/PentiumM/PentiumM_Controller.hpp>
 #include <Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.hpp>
+#include <Controller/Intel/Nehalem/NehalemController.hpp>
+#include <Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #include <Xerces/SAX2MainConfigHandler.hpp>
 #include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
@@ -131,6 +133,15 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     r_p_cpucontroller = new PentiumM_Controller() ;
     r_p_icpucoreusagegetter = new PentiumM::ClocksNotHaltedCPUcoreUsageGetter(
       0, (PentiumM_Controller *) r_p_cpucontroller ) ;
+  }
+  if( p_cpucoredata->m_strVendorID == "GenuineIntel"
+    && p_cpucoredata->m_wFamily == 6
+    && p_cpucoredata->m_byModel == 30
+    )
+  {
+    r_p_cpucontroller = new NehalemController() ;
+    r_p_icpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
+      0, (NehalemController *) r_p_cpucontroller ) ;
   }
   if( r_p_cpucontroller )
   {
@@ -263,7 +274,8 @@ BYTE MainController::Init(
     //SAX2MainConfigHandler sax2mainconfighandler( *p_userinterface, model);
     SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency( 
       *p_userinterface, model );
-    #ifdef COMPILE_WITH_REGISTER_EXAMINATION
+    //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
+		#ifdef COMPILE_WITH_MSR_EXAMINATION
     if( readXMLConfig(
         //const char* xmlFile
         strFamilyAndModelFilePath.c_str()

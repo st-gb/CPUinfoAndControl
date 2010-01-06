@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.1  (Win32)">
+	<META NAME="AUTHOR" CONTENT="Stefan Gebauer">
+	<META NAME="CREATED" CONTENT="20100104;17290500">
+	<META NAME="CHANGEDBY" CONTENT="Stefan Gebauer">
+	<META NAME="CHANGED" CONTENT="20100104;19234300">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 2cm }
+		P { margin-bottom: 0.21cm }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="de-DE" DIR="LTR">
+<H1>Build x86Info&amp;Control with MSVC++ under Windows</H1>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">preprocessor:
+	&quot;WIN32;__WXMSW__;_WINDOWS;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY&quot;</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">add
+	needed Source files (&bdquo;.c&ldquo;, &quot;.cpp&quot;) to MSVC
+	project</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">unter
+	Projekt-Eigenschaften einstellen (sonst Fehler beim Erstellen)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">C/C++
+	-&gt; Codegenerierung: Laufzeitbibliothek &quot;Multithreaded-DLL
+	(/MD)&quot;</FONT></FONT></P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-for
+<B>wxWidgets</B>: </FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	-create
+x64 or 32 bit libraries if they do not exist. (choose
+&bdquo;project-&gt;create <U><B>new</B></U>&ldquo; in order for the
+object files to be of the desired plaform (32 or 64 bit)</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	-add
+preprocessor macro: &bdquo;__WXMSW__&ldquo;</FONT></FONT></P>
+<P STYLE="margin-left: 1.25cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-bei
+&quot;Linker&quot;</FONT></FONT></P>
+<P STYLE="margin-left: 2.5cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-unter
+&quot;Allgemein&quot; -&gt; Zus&auml;tzliche
+Bibkiotheksverzeichnisse: &quot;\lib&quot;-Verzeichnis von wxWidgets:</FONT></FONT></P>
+<P STYLE="margin-left: 2.5cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-falls
+Release-Version:\lib</FONT></FONT></P>
+<P STYLE="margin-left: 2.5cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-unter
+&quot;Eingabe&quot; hinzuf&uuml;gen: </FONT></FONT>
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">&quot;wxmsw28_core.lib
+	</FONT></FONT>
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">rpcrt4.lib
+	(needed for class Uuid)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">wxbase28.lib
+	</FONT></FONT>
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT SIZE=2 STYLE="font-size: 11pt"><FONT FACE="Times New Roman, serif">comctl32.lib</FONT></FONT></P>
+</UL>
+<P STYLE="margin-left: 2.5cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-for
+Debug version: </FONT></FONT>
+</P>
+<P STYLE="margin-left: 2.5cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-Rpcrt4.lib</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt"><FONT FACE="Times New Roman, serif">-for
+</FONT><FONT FACE="Times New Roman, serif"><B>xerces</B></FONT><FONT FACE="Times New Roman, serif">
+XML: </FONT></FONT></FONT>
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">bei
+	Linker-&gt;Eingabe hinzuf&uuml;gen: </FONT></FONT>
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">&quot;xerces-c_static_2.lib&quot;
+	(Xerces 2 linked into the x86Info&amp;control exe)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">&quot;xerces-c_static_3.lib&quot;
+	(Xerces 3 linked into the x86Info&amp;control exe)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">With
+	Xerces &lt; Version 2.8:</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Add
+	&quot;XML_LIBRARY&quot; to &quot;Preprocessor Definitions&quot; to
+	compile with Xerces statically (else many &quot;LNK2001&quot; and
+	&quot;LNK2019&quot; and linker errors).</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">with
+	Xerces 3.0: &quot;XERCES_STATIC_LIBRARY&quot; as preprocessor macro</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">add
+	xerces include directory to C++</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">for
+	linker: add &quot;xerces\lib&quot; dir</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">And:
+	Add &quot;Advapi32.lib&quot; as additional dependancy for the
+	linker.</FONT></FONT></P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-zu
+Linker-&gt;Bibliothek ignorieren hinzufuegen (sonst:
+&quot;LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
+MSVCRT.lib(MSVCR80.dll) definiert.&quot;) :</FONT></FONT></P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">release
+	version: &quot;LIBCMT.lib&quot;, </FONT></FONT>
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">debug
+	version:  LIBCMTD.lib</FONT></FONT></P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Arial, sans-serif"><FONT SIZE=2 STYLE="font-size: 11pt">-for
+<B>power scheme</B> access under Windows Vista (access is different
+from Windows XP):</FONT></FONT></P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">download
+	Windows SDK for Windows Vista for &quot;powrprof.lib&quot; etc.</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">add
+	directory where &quot;powerprof.lib&quot; resides (e.g.
+	D:\Programme\Microsoft SDKs\Windows\v6.1\Lib)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">from
+	the directory from the Windows SDK for Windows Vista</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">bei
+	Linker-&gt;Eingabe hinzuf&uuml;gen: &quot;powrprof.lib&quot; </FONT></FONT>
+	</P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-64
+bit</FONT></FONT></P>
+<P STYLE="margin-left: 1.25cm; margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-for
+power profiles access in Windows Vista:<BR>lib dir:
+D:\Programme\Microsoft SDKs\Windows\v6.1\Lib\x64</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-wenn
+C/C++ -&gt; Codegenerierung: Laufzeitbibliothek &quot;Multithreaded
+(/MT)&quot;</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-for
+power profiles access in Windows Vista:</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-for
+Debug version:</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-Debug
+compiles and works with the wxWidgets DLL-linked version 2.8.5 from
+&quot;BvLib&quot;</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-use
+defined preprocessor macro &quot;WXUSINGDLL&quot;</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-C/C++
+</FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-&quot;general&quot;:
+</FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-&quot;debug
+information format&quot;: &quot;/ZI&quot; (for pausing at
+breakpoints)</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-optimization</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-optimization:
+&quot;/Od&quot; (for pausing at breakpoints)</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-code
+generaion</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-&quot;runtime
+library&quot;: &quot;Multithreaded-Debug-DLL (/MDd)&quot;</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-linker</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-debugging</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-&quot;generate
+debug info&quot;: &quot;Ja (/DEBUG)&quot;</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+</BODY>
+</HTML>

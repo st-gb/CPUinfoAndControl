@@ -3,6 +3,11 @@
 #include "../global.h" //for BYTE, WORD
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
 #include <set>
+//because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208: 
+//   'void': Keine Elemente definiert, die diesen Typ verwenden
+//http://trac.wxwidgets.org/ticket/11482:
+//if you include <windows.h> you must include <wx/msw/winundef.h> after it.
+#include <wx/msw/winundef.h> 
 #include <wx/thread.h> //for class wxCriticalSection
 
 #define CPU_CORE_DATA_NOT_SET 255

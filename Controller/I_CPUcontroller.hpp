@@ -8,8 +8,12 @@
 //For non-MSVC add include dir "Controller/MSVC_adaption" in order to find
 //tchar.h .
 #include <tchar.h> //for _T(), TCHAR
-//#include <basetsd.h> //for DWORD_PTR
-
+#if __GNUC__ == 4 //cygwin 1.7 has w32api/basetsd.h
+  #include <w32api/basetsd.h> //for DWORD_PTR
+#endif
+#if defined(_MSC_VER)
+  #include <basetsd.h> //for DWORD_PTR
+#endif
 #include <Windows_compatible_typedefs.h> //for DWORD_PTR
 #include <set> //for std::set
 #include <string> // std::string
@@ -116,7 +120,11 @@ public:
   //  , std::map<VoltageAndFreq> & r_stdsetvoltageandfreq
   //  ) ;
   virtual WORD GetNumberOfPstates() { return 0 ; }
-  WORD GetNumberOfCPUcores() ; 
+  //As far as I know there is no standard way to determine the number of CPU
+  //cores. So AMD Griffins store the value at CPUID function 8...8 but not
+  //Intel. As the number is spectic the CPU models the controller should know
+  //return the value. E.g for Intel Pentium Ms it is always? "1".
+  virtual WORD GetNumberOfCPUcores() ;
   //Must be declared pure virtual ("virtual ... = 0 ;") else 
   //GetMaximumFrequencyInMHz() of the derived class is NOT called.
   virtual WORD GetMaximumFrequencyInMHz() //{ return 0; } ;

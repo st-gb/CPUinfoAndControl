@@ -4,6 +4,7 @@
 //errors in Visual Studio for the include of <string>.
 #include "CalculationThreadProc.h"
 #include <Controller/ICPUcoreUsageGetter.hpp> //class ICPUcoreUsageGetter
+#include <Controller/I_CPUcontroller.hpp> //class 
 #include <ModelData/ModelData.hpp> //class Model
 #include "UserInterface.hpp"
 #include <stdlib.h> //rand()

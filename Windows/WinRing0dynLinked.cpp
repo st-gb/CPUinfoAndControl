@@ -2,9 +2,11 @@
 //#include <winbase.h> //for ::GetProcAddress()
 #include <Windows.h> //for ::GetProcAddress(), ::GetCurrentDirectory
 #include <strstream> //for std::ostrstream
+#include <tchar.h> //_T()
 #include "../global.h" //for DEBUG()
 #include "../preprocessor_helper_macros.h"
 #include <Controller/stdstring_format.hpp>
+#include <Controller/tchar_conversion.h> //GetCharPointer(...)
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 
 //#include <OlsApiInitDef.h> //for _IsMsr
@@ -151,7 +153,11 @@ void WinRing0dynLinked::Init(UserInterface * pui)
                   ) == (dw - 1)
                 )
                 ostrstream << "current working dir:\"" 
-                  << lptstrCurrentDirectory << "\"\n" ;
+                  << //GetCharPointer(
+                  GetStdString(
+                    //is "wchar_t" if using unicode
+                    lptstrCurrentDirectory
+                    ) << "\"\n" ;
               ostrstream << "WinRing0 error:" ;
               delete [] lptstrCurrentDirectory ;
               DWORD dwErrorAsSystemError ;

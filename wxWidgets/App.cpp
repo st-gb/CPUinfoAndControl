@@ -47,9 +47,9 @@ FILE * fileDebug ; //for debug logging.
 Logger g_logger ;
 
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
-IMPLEMENT_APP(wxPumaStateCtrlApp) 
+IMPLEMENT_APP(wxX86InfoAndControlApp)
 
-bool wxPumaStateCtrlApp::Confirm(const std::string & str)
+bool wxX86InfoAndControlApp::Confirm(const std::string & str)
 {
   //::AfxMessageBox(str.c_str());
 
@@ -85,7 +85,7 @@ bool wxPumaStateCtrlApp::Confirm(const std::string & str)
   return true;
 }
 
-bool wxPumaStateCtrlApp::Confirm(std::ostrstream & r_ostrstream
+bool wxX86InfoAndControlApp::Confirm(std::ostrstream & r_ostrstream
   //std::ostream & r_ostream
   )
 {
@@ -125,7 +125,7 @@ bool wxPumaStateCtrlApp::Confirm(std::ostrstream & r_ostrstream
   return bReturn ;
 }
 
-void wxPumaStateCtrlApp::CurrenCPUfreqAndVoltageUpdated()
+void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 {
   //Only when true the cross is drawn.
   mp_frame->m_bDrawFreqAndVoltagePointForCurrCoreSettings = true ;
@@ -140,7 +140,7 @@ void wxPumaStateCtrlApp::CurrenCPUfreqAndVoltageUpdated()
 //structures. You should delete all wxWidgets object that you created by 
 //the time OnExit finishes. 
 //In particular, do not destroy them from application class' destructor!"
-int wxPumaStateCtrlApp::OnExit()
+int wxX86InfoAndControlApp::OnExit()
 {
     //Release heap mem.
 #ifdef COMPILE_WITH_CPU_SCALING
@@ -172,7 +172,7 @@ int wxPumaStateCtrlApp::OnExit()
   return 0;
 }
 
-bool wxPumaStateCtrlApp::OnInit()
+bool wxX86InfoAndControlApp::OnInit()
 {
   //m_cpucoreusagegetteriwbemservices.Init() ;
   //CPUcoreUsageGetterIWbemServices cpucoreusagegetteriwbemservices ;
@@ -277,6 +277,8 @@ bool wxPumaStateCtrlApp::OnInit()
       mp_i_cpuaccess = new MSRdeviceFile(this) ;
       //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
     #endif
+			//the main controller needs CPUID (I_CPUaccess class ) access in order to
+			//retrieve the CPU by model, family etc.
       m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
       m_maincontroller.Init( //m_modelData
         * mp_modelData, this );
@@ -312,6 +314,10 @@ bool wxPumaStateCtrlApp::OnInit()
           mp_cpucontroller 
           , mp_cpucoreusagegetter
           ) ;
+			//Now we have created the CPU controller. It knows how many cores it has.
+		  //The core count is an important information e.g. for the Linux MSR device
+		  //file access.
+			mp_i_cpuaccess->InitPerCPUcoreAccess(mp_cpucontroller->GetNumberOfCPUcores() ) ;
       mp_cpucontroller->SetCmdLineArgs(
         NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
         m_arartchCmdLineArgument ) ;
@@ -622,8 +628,9 @@ bool wxPumaStateCtrlApp::OnInit()
       }
       catch( VoltageSafetyException e )
       {
-        Confirm( GetCharPointer( ( e.m_stdtstrMessage + _T("\n->Exiting") ).
-          c_str() ) 
+        Confirm( //GetCharPointer( ( e.m_stdtstrMessage + _T("\n->Exiting") ).
+          //c_str() ) 
+          GetStdString( e.m_stdtstrMessage + _T("\n->Exiting") )
           ) ;
         return FALSE ;
       }
@@ -634,12 +641,12 @@ bool wxPumaStateCtrlApp::OnInit()
   return TRUE;
 } 
 
-void wxPumaStateCtrlApp::outputAllPstates(unsigned char byCurrentP_state, int & vid)
+void wxX86InfoAndControlApp::outputAllPstates(unsigned char byCurrentP_state, int & vid)
 {
 
 }
 
-void wxPumaStateCtrlApp::RedrawEverything() 
+void wxX86InfoAndControlApp::RedrawEverything()
 {
   mp_frame->RedrawEverything() ;
 }

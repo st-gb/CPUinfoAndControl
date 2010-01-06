@@ -71,7 +71,8 @@
   //FILE * fileDebug = fopen("PumaStateCtrl_debug.txt","r");
   /*Use a block ( "{...}" to be usable in "else" statements.*/
   //#define DEBUG(...)  {fprintf(fileDebug,__VA_ARGS__);fflush(/*stdout*/fileDebug);}
-  #include "./Controller/Logger.hpp"
+  #include "./Controller/Logger.hpp" //for class Logger
+  //class Logger ;
   #include <sstream> //for class std::stringstream
   extern Logger g_logger ;
   #define LOG(to_ostream) { std::stringstream strstream ; \

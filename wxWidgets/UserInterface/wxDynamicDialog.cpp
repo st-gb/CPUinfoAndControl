@@ -11,6 +11,7 @@
 //#include "Controller/PumaStateCtrl.h"
 //#include "Controller/GriffinController.hpp"
 #include <Controller/I_CPUcontroller.hpp>
+#include <Controller/I_CPUaccess.hpp>
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 #include <wxWidgets/wxStringHelper.h>
 
@@ -347,7 +348,8 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
       r_msrdata.m_dwIndex,
       dwEAX,
       dwEDX, 
-      dwAffMask
+      //dwAffMask
+			1 << r_msrdata.m_byCoreID
       );
     ullMSR = dwEDX  ;
     ullMSR <<= 32 ;

@@ -1,7 +1,10 @@
 
-#include <Windows.h> //for SYSTEMTIME
+#ifdef _MSC_VER
+    #include <Windows.h> //for SYSTEMTIME
+#endif
 #include "Logger.hpp"
-#include <Controller/tchar_conversion.h> //GetCharPointer()
+//#include <Controller/tchar_conversion.h> //GetCharPointer()
+#include <Controller/stdtstr.hpp> //GetStdString(...)
 
 Logger::Logger()
     //C++ style initialisation.
@@ -186,7 +189,8 @@ bool Logger::OpenFile2( std::string & r_stdstrFilePath
 bool Logger::OpenFile( //std::string & r_stdstrFilePath
   std::tstring & r_stdtstrFilePath)
 {
-  std::string stdstr( GetCharPointer(r_stdtstrFilePath.c_str() ) ) ;
+  std::string stdstr( //GetCharPointer(r_stdtstrFilePath.c_str() ) ) ;
+    GetStdString(r_stdtstrFilePath) ) ;
   return OpenFile2( stdstr ) ;
 }
 

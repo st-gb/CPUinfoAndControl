@@ -1,5 +1,9 @@
 #define _AFXDLL
 
+//return values for start or stopp high load thread.
+#define ENDED 0
+#define STARTED 1
+
 //#include "StdAfx.h" //for ULONGLONG
 #include <Windows_compatible_typedefs.h> //for ULONGLONG
 
@@ -82,7 +86,9 @@ private:
   BYTE m_byNumberOfSettablePstatesPerCore ;
   BYTE m_byMenuIndexOf1stPstate ;
   CPUcoreData * mp_cpucoredata ;
+  #ifdef COMPILE_WITH_CALC_THREAD
   CalculationThread * mp_calculationthread ;
+  #endif
   //ClocksNotHaltedCPUcoreUsageGetter m_clocksnothaltedcpucoreusagegetter ;
   float m_fPreviousCPUusage ;
   float m_fMaxVoltage ;

@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="62">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="ResourceFiles"
+                   displayName="Resource Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="X86Info_and_Control"
+                   displayName="X86Info_and_Control"
+                   projectFiles="true">
+      <logicalFolder name="configuration"
+                     displayName="configuration"
+                     projectFiles="true">
+        <logicalFolder name="GenuineIntel"
+                       displayName="GenuineIntel"
+                       projectFiles="true">
+          <logicalFolder name="6" displayName="6" projectFiles="true">
+            <logicalFolder name="13" displayName="13" projectFiles="true">
+              <logicalFolder name="6" displayName="6" projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+            <logicalFolder name="15" displayName="15" projectFiles="true">
+            </logicalFolder>
+            <logicalFolder name="30" displayName="30" projectFiles="true">
+              <logicalFolder name="5" displayName="5" projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
+        <logicalFolder name="AMD" displayName="AMD" projectFiles="true">
+          <logicalFolder name="Griffin" displayName="Griffin" projectFiles="true">
+            <itemPath>../../Controller/AMD/Griffin/AMD_family17.h</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.hpp</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/GriffinController.cpp</itemPath>
+            <itemPath>../../Controller/AMD/Griffin/GriffinController.hpp</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="Intel" displayName="Intel" projectFiles="true">
+          <logicalFolder name="Nehalem" displayName="Nehalem" projectFiles="true">
+            <itemPath>../../Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
+            <itemPath>../../Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp</itemPath>
+            <itemPath>../../Controller/Intel/Nehalem/NehalemController.cpp</itemPath>
+            <itemPath>../../Controller/Intel/Nehalem/NehalemController.hpp</itemPath>
+          </logicalFolder>
+          <logicalFolder name="PentiumM" displayName="PentiumM" projectFiles="true">
+            <itemPath>../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
+            <itemPath>../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.hpp</itemPath>
+            <itemPath>../../Controller/Intel/PentiumM/PentiumM_Controller.cpp</itemPath>
+            <itemPath>../../Controller/Intel/PentiumM/PentiumM_Controller.hpp</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="IPC" displayName="IPC" projectFiles="true">
+          <itemPath>../../Controller/IPC/I_IPC.hpp</itemPath>
+        </logicalFolder>
+        <logicalFolder name="MSVC_adaption"
+                       displayName="MSVC_adaption"
+                       projectFiles="true">
+          <itemPath>../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.h</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/specstrings_strict.h</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/stdio_secure.c</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/stdio_secure.h</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/stdlib_mscv_extras.c</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/stdlib_msvc_extras.h</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/string_secure.c</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/string_secure.h</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/tchar.h</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/time_secure.c</itemPath>
+          <itemPath>../../Controller/MSVC_adaption/time_secure.h</itemPath>
+        </logicalFolder>
+        <itemPath>../../Controller/CPUindependentHelper.cpp</itemPath>
+        <itemPath>../../Controller/CPUindependentHelper.h</itemPath>
+        <itemPath>../../Controller/CalculationThreadProc.cpp</itemPath>
+        <itemPath>../../Controller/CalculationThreadProc.h</itemPath>
+        <itemPath>../../Controller/DynFreqScalingThreadBase.cpp</itemPath>
+        <itemPath>../../Controller/DynFreqScalingThreadBase.hpp</itemPath>
+        <itemPath>../../Controller/DynVoltAndFreqScaling.cpp</itemPath>
+        <itemPath>../../Controller/DynVoltAndFreqScaling.hpp</itemPath>
+        <itemPath>../../Controller/ICPUcoreUsageGetter.hpp</itemPath>
+        <itemPath>../../Controller/IDynFreqScalingAccess.hpp</itemPath>
+        <itemPath>../../Controller/I_CPUaccess.cpp</itemPath>
+        <itemPath>../../Controller/I_CPUaccess.hpp</itemPath>
+        <itemPath>../../Controller/I_CPUcontroller.cpp</itemPath>
+        <itemPath>../../Controller/I_CPUcontroller.hpp</itemPath>
+        <itemPath>../../Controller/I_CPUcontrollerAction.cpp</itemPath>
+        <itemPath>../../Controller/I_CPUcontrollerAction.hpp</itemPath>
+        <itemPath>../../Controller/I_ServerProcess.hpp</itemPath>
+        <itemPath>../../Controller/Intel_registers.h</itemPath>
+        <itemPath>../../Controller/Linux.cpp</itemPath>
+        <itemPath>../../Controller/Linux.h</itemPath>
+        <itemPath>../../Controller/Logger.cpp</itemPath>
+        <itemPath>../../Controller/Logger.hpp</itemPath>
+        <itemPath>../../Controller/MSRaccessBase.cpp</itemPath>
+        <itemPath>../../Controller/MainController.cpp</itemPath>
+        <itemPath>../../Controller/MainController.hpp</itemPath>
+        <itemPath>../../Controller/RunAsService.h</itemPath>
+        <itemPath>../../Controller/SelectPstateAction.cpp</itemPath>
+        <itemPath>../../Controller/SelectPstateAction.hpp</itemPath>
+        <itemPath>../../Controller/Sleep.h</itemPath>
+        <itemPath>../../Controller/WinRing0.h</itemPath>
+        <itemPath>../../Controller/Windows.cpp</itemPath>
+        <itemPath>../../Controller/X86InfoAndControlExceptions.hpp</itemPath>
+        <itemPath>../../Controller/console.cpp</itemPath>
+        <itemPath>../../Controller/stdstring_format.hpp</itemPath>
+        <itemPath>../../Controller/stdtstr.cpp</itemPath>
+        <itemPath>../../Controller/stdtstr.hpp</itemPath>
+        <itemPath>../../Controller/tchar_conversion.cpp</itemPath>
+        <itemPath>../../Controller/tchar_conversion.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+        <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="Info" displayName="Info" projectFiles="true">
+        <logicalFolder name="AMD_Griffin" displayName="AMD_Griffin" projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="how_to_build"
+                       displayName="how_to_build"
+                       projectFiles="true">
+          <logicalFolder name="cygwin" displayName="cygwin" projectFiles="true">
+            <logicalFolder name="wxWidgets" displayName="wxWidgets" projectFiles="true">
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="Intel" displayName="Intel" projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="Linux" displayName="Linux" projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="Windows" displayName="Windows" projectFiles="true">
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="Linux" displayName="Linux" projectFiles="true">
+        <itemPath>../../Linux/CalculationThread.cpp</itemPath>
+        <itemPath>../../Linux/CalculationThread.hpp</itemPath>
+        <itemPath>../../Linux/EnglishMessageFromErrorCode.cpp</itemPath>
+        <itemPath>../../Linux/EnglishMessageFromErrorCode.h</itemPath>
+        <itemPath>../../Linux/GetCurrentTime.hpp</itemPath>
+        <itemPath>../../Linux/MSRdeviceFile.cpp</itemPath>
+        <itemPath>../../Linux/MSRdeviceFile.h</itemPath>
+        <itemPath>../../Linux/daemon.c</itemPath>
+        <itemPath>../../Linux/daemon.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="ModelData" displayName="ModelData" projectFiles="true">
+        <itemPath>../../ModelData/CPUcoreData.cpp</itemPath>
+        <itemPath>../../ModelData/CPUcoreData.hpp</itemPath>
+        <itemPath>../../ModelData/DIDandFID.hpp</itemPath>
+        <itemPath>../../ModelData/HighLoadThreadAttributes.cpp</itemPath>
+        <itemPath>../../ModelData/ModelData.cpp</itemPath>
+        <itemPath>../../ModelData/ModelData.hpp</itemPath>
+        <itemPath>../../ModelData/PStates.cpp</itemPath>
+        <itemPath>../../ModelData/PStates.h</itemPath>
+        <itemPath>../../ModelData/Pstate.cpp</itemPath>
+        <itemPath>../../ModelData/Pstate.hpp</itemPath>
+        <itemPath>../../ModelData/RegisterData.cpp</itemPath>
+        <itemPath>../../ModelData/RegisterData.hpp</itemPath>
+        <itemPath>../../ModelData/SpecificCPUcoreActionAttributes.cpp</itemPath>
+        <itemPath>../../ModelData/SpecificCPUcoreActionAttributes.hpp</itemPath>
+        <itemPath>../../ModelData/ValueTables.hpp</itemPath>
+        <itemPath>../../ModelData/VoltageAndFreq.cpp</itemPath>
+        <itemPath>../../ModelData/VoltageAndFreq.hpp</itemPath>
+        <itemPath>../../ModelData/highloadthreadattributes.hpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="NetBeansProject"
+                     displayName="NetBeansProject"
+                     projectFiles="true">
+        <logicalFolder name="x86InfoAndControlGUI"
+                       displayName="x86InfoAndControlGUI"
+                       projectFiles="true">
+          <logicalFolder name="dist" displayName="dist" projectFiles="true">
+            <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+              <logicalFolder name="GNU-Linux-x86"
+                             displayName="GNU-Linux-x86"
+                             projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="x86InfoAndControlGUI_Windows"
+                       displayName="x86InfoAndControlGUI_Windows"
+                       projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="X86InfoAndControlService"
+                       displayName="X86InfoAndControlService"
+                       projectFiles="true">
+          <logicalFolder name="dist" displayName="dist" projectFiles="true">
+            <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+              <logicalFolder name="GNU-Linux-x86"
+                             displayName="GNU-Linux-x86"
+                             projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+            <logicalFolder name="Release_from_Debug"
+                           displayName="Release_from_Debug"
+                           projectFiles="true">
+              <logicalFolder name="GNU-Linux-x86"
+                             displayName="GNU-Linux-x86"
+                             projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="Release" displayName="Release" projectFiles="true">
+      </logicalFolder>
+      <logicalFolder name="Webseite" displayName="Webseite" projectFiles="true">
+        <logicalFolder name="Screenshots" displayName="Screenshots" projectFiles="true">
+          <logicalFolder name="GUI" displayName="GUI" projectFiles="true">
+          </logicalFolder>
+          <logicalFolder name="Prime95" displayName="Prime95" projectFiles="true">
+          </logicalFolder>
+          <logicalFolder name="service" displayName="service" projectFiles="true">
+          </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="Windows" displayName="Windows" projectFiles="true">
+        <logicalFolder name="PowerProf" displayName="PowerProf" projectFiles="true">
+          <itemPath>../../Windows/PowerProf/I_PowerProfDynLinked.hpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProfDynLinked.cpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProfDynLinked.hpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProfFromWin6DynLinked.cpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProfFromWin6DynLinked.hpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProfUntilWin6DynLinked.cpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProf_From_Win6.h</itemPath>
+          <itemPath>../../Windows/PowerProf/PowerProf_defines.h</itemPath>
+        </logicalFolder>
+        <itemPath>../../Windows/CPUcontrolService.cpp</itemPath>
+        <itemPath>../../Windows/CPUcontrolService.hpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageGetterIWbemServices.cpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageGetterIWbemServices.hpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageGetterNTQSI_WintopVxd.hpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.cpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.hpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageNTQSI_OO.hpp</itemPath>
+        <itemPath>../../Windows/CPUcoreUsageNTQSI_OO2.hpp</itemPath>
+        <itemPath>../../Windows/CalculationThread.cpp</itemPath>
+        <itemPath>../../Windows/CalculationThread.hpp</itemPath>
+        <itemPath>../../Windows/CurrentDir.cpp</itemPath>
+        <itemPath>../../Windows/CurrentDir.h</itemPath>
+        <itemPath>../../Windows/DiscretionaryAccessControlList.cpp</itemPath>
+        <itemPath>../../Windows/DiscretionaryAccessControlList.h</itemPath>
+        <itemPath>../../Windows/DynFreqScalingAccess.cpp</itemPath>
+        <itemPath>../../Windows/DynFreqScalingAccess.hpp</itemPath>
+        <itemPath>../../Windows/DynFreqScalingThread.cpp</itemPath>
+        <itemPath>../../Windows/DynFreqScalingThread.hpp</itemPath>
+        <itemPath>../../Windows/ErrorCodeFromGetLastErrorToString.cpp</itemPath>
+        <itemPath>../../Windows/ErrorCodeFromGetLastErrorToString.h</itemPath>
+        <itemPath>../../Windows/GetWindowsVersion.cpp</itemPath>
+        <itemPath>../../Windows/GetWindowsVersion.h</itemPath>
+        <itemPath>../../Windows/LocalLanguageMessageFromErrorCode.cpp</itemPath>
+        <itemPath>../../Windows/LocalLanguageMessageFromErrorCode.h</itemPath>
+        <itemPath>../../Windows/NamedPipeClient.cpp</itemPath>
+        <itemPath>../../Windows/NamedPipeClient.hpp</itemPath>
+        <itemPath>../../Windows/NamedPipeServer.cpp</itemPath>
+        <itemPath>../../Windows/NamedPipeServer.hpp</itemPath>
+        <itemPath>../../Windows/ServiceBase.cpp</itemPath>
+        <itemPath>../../Windows/ServiceBase.hpp</itemPath>
+        <itemPath>../../Windows/WinRing0dynLinked.cpp</itemPath>
+        <itemPath>../../Windows/WinRing0dynlinked.hpp</itemPath>
+        <itemPath>../../Windows/main.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="wxWidgets" displayName="wxWidgets" projectFiles="true">
+        <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketClient.cpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketClient.hpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketServer.cpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxServiceSocketServer.hpp</itemPath>
+          <itemPath>../../wxWidgets/Controller/wxStringHelper.cpp</itemPath>
+        </logicalFolder>
+        <logicalFolder name="ModelData" displayName="ModelData" projectFiles="true">
+          <itemPath>../../wxWidgets/ModelData/wxCPUcoreID.cpp</itemPath>
+          <itemPath>../../wxWidgets/ModelData/wxCPUcoreID.hpp</itemPath>
+        </logicalFolder>
+        <logicalFolder name="UserInterface"
+                       displayName="UserInterface"
+                       projectFiles="true">
+          <itemPath>../../wxWidgets/UserInterface/DynFreqScalingDlg.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/DynFreqScalingDlg.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FloatValidator.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FloatValidator.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/MainFrame.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/MainFrame.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/wxDynamicDialog.cpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/wxDynamicDialog.hpp</itemPath>
+          <itemPath>../../wxWidgets/UserInterface/wxFrequencyInMHz_Slider.hpp</itemPath>
+        </logicalFolder>
+        <itemPath>../../wxWidgets/App.cpp</itemPath>
+        <itemPath>../../wxWidgets/App.hpp</itemPath>
+        <itemPath>../../wxWidgets/CPUIDaccess.cpp</itemPath>
+        <itemPath>../../wxWidgets/CPUIDaccess.hpp</itemPath>
+        <itemPath>../../wxWidgets/CalculationThread.h</itemPath>
+        <itemPath>../../wxWidgets/CalculationThread.hpp</itemPath>
+        <itemPath>../../wxWidgets/Controller.cpp</itemPath>
+        <itemPath>../../wxWidgets/Controller.hpp</itemPath>
+        <itemPath>../../wxWidgets/DynFreqScalingThread.cpp</itemPath>
+        <itemPath>../../wxWidgets/DynFreqScalingThread.hpp</itemPath>
+        <itemPath>../../wxWidgets/MSRaccess.cpp</itemPath>
+        <itemPath>../../wxWidgets/wxDynFreqScalingTimer.cpp</itemPath>
+        <itemPath>../../wxWidgets/wxDynFreqScalingTimer.hpp</itemPath>
+        <itemPath>../../wxWidgets/wxDynLinkedCPUcoreUsageGetter.hpp</itemPath>
+        <itemPath>../../wxWidgets/wxStringHelper.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="x86InfoAndControl"
+                     displayName="x86InfoAndControl"
+                     projectFiles="true">
+        <logicalFolder name="x86InfoAndControl"
+                       displayName="x86InfoAndControl"
+                       projectFiles="true">
+          <logicalFolder name="Release" displayName="Release" projectFiles="true">
+          </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="x86InfoAndControl_MSVC"
+                     displayName="x86InfoAndControl_MSVC"
+                     projectFiles="true">
+        <logicalFolder name="release" displayName="release" projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="VS2010" displayName="VS2010" projectFiles="true">
+          <logicalFolder name="x86InfoAndControlGUI"
+                         displayName="x86InfoAndControlGUI"
+                         projectFiles="true">
+            <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+            </logicalFolder>
+            <logicalFolder name="ipch" displayName="ipch" projectFiles="true">
+              <logicalFolder name="x86infoandcontrolgui-9342da84"
+                             displayName="x86infoandcontrolgui-9342da84"
+                             projectFiles="true">
+                <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+                </logicalFolder>
+              </logicalFolder>
+            </logicalFolder>
+            <logicalFolder name="x86InfoAndControlGUI"
+                           displayName="x86InfoAndControlGUI"
+                           projectFiles="true">
+              <logicalFolder name="Debug" displayName="Debug" projectFiles="true">
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="x86InfoAndControl"
+                       displayName="x86InfoAndControl"
+                       projectFiles="true">
+        </logicalFolder>
+        <logicalFolder name="X86InfoAndControlService"
+                       displayName="X86InfoAndControlService"
+                       projectFiles="true">
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="Xerces" displayName="Xerces" projectFiles="true">
+        <logicalFolder name="AMD" displayName="AMD" projectFiles="true">
+          <logicalFolder name="Griffin" displayName="Griffin" projectFiles="true">
+            <itemPath>../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp</itemPath>
+            <itemPath>../../Xerces/AMD/Griffin/SAX2MainConfigHandler.hpp</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <itemPath>../../Xerces/SAX2DefaultVoltageForFrequency.cpp</itemPath>
+        <itemPath>../../Xerces/SAX2DefaultVoltageForFrequency.hpp</itemPath>
+        <itemPath>../../Xerces/SAX2MainConfigHandler.cpp</itemPath>
+        <itemPath>../../Xerces/SAX2MainConfigHandler.hpp</itemPath>
+        <itemPath>../../Xerces/SAX2_CPUspecificHandler.cpp</itemPath>
+        <itemPath>../../Xerces/SAX2_CPUspecificHandler.hpp</itemPath>
+        <itemPath>../../Xerces/XMLAccess.cpp</itemPath>
+        <itemPath>../../Xerces/XMLAccess.h</itemPath>
+        <itemPath>../../Xerces/XercesHelper.cpp</itemPath>
+        <itemPath>../../Xerces/XercesHelper.hpp</itemPath>
+      </logicalFolder>
+      <itemPath>../../BuildTimeString.h</itemPath>
+      <itemPath>../../ConfigurationHandler.hpp</itemPath>
+      <itemPath>../../Console.h</itemPath>
+      <itemPath>../../DummyUserInterface.hpp</itemPath>
+      <itemPath>../../ICalculationThread.hpp</itemPath>
+      <itemPath>../../UserInterface.hpp</itemPath>
+      <itemPath>../../UserInterfaceBase.hpp</itemPath>
+      <itemPath>../../Windows_compatible_typedefs.h</itemPath>
+      <itemPath>../../Windows_specific.h</itemPath>
+      <itemPath>../../global.h</itemPath>
+      <itemPath>../../main.cpp</itemPath>
+      <itemPath>../../preprocessor_helper_macros.h</itemPath>
+      <itemPath>../../stdafx.cpp</itemPath>
+      <itemPath>../../stdafx.h</itemPath>
+      <itemPath>../../string_typedefs.h</itemPath>
+      <itemPath>../../wxGUI.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceRootList>
+    <Elem>../..</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>Cygwin_gcc3.x|Cygwin_4.x</compilerSet>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <ccTool>
+          <commandlineTool>g++.exe</commandlineTool>
+          <incDir>
+            <pElem>../..</pElem>
+            <pElem>../../Controller/MSVC_adaption</pElem>
+            <pElem>C:/wxWidgets-2.8.10/include</pElem>
+            <pElem>C:/wxWidgets-2.8.10/msw-cygwin-static-debug/lib/wx/include/msw-ansi-debug-static-2.8</pElem>
+            <pElem>C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>__WXMSW__</Elem>
+            <Elem>NOMINMAX</Elem>
+            <Elem>COMPILE_WITH_XERCES</Elem>
+            <Elem>INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6</Elem>
+            <Elem>_GLIBCXX_USE_WCHAR_T_</Elem>
+            <Elem>_GLIBCXX_OSTREAM_</Elem>
+            <Elem>DEFINE_POWER_DATA_ACCESSOR</Elem>
+            <Elem>_DEBUG</Elem>
+            <Elem>_GLIBCXX_DEBUG</Elem>
+          </preprocessorList>
+        </ccTool>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="../../Controller/Linux.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/Windows.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/console.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/CalculationThread.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/EnglishMessageFromErrorCode.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/MSRdeviceFile.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/daemon.c" ex="true" tool="0">
+      </item>
+      <item path="../../main.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxGUI.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketServer.cpp"
+            ex="true"
+            tool="1">
+      </item>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>Cygwin_4.x|Cygwin_4.x</compilerSet>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <developmentMode>5</developmentMode>
+        </cTool>
+        <ccTool>
+          <developmentMode>5</developmentMode>
+        </ccTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+    </conf>
+  </confs>
+</configurationDescriptor>

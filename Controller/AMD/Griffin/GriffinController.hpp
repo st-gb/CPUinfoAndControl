@@ -3,10 +3,6 @@
 //for use with "/MD[d]" else: fatal error C1189: #error :  Building MFC application with /MD[d] (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or do not use /MD[d]
 #define _AFXDLL
 
-//return values for start or stopp high load thread.
-#define ENDED 0
-#define STARTED 1
-
 #include <ModelData/PStates.h>
 //#include "../UserInterface.hpp"
 #include "stdio.h" //for printf() in DEBUG() etc.

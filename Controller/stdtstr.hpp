@@ -34,6 +34,8 @@ namespace std {
 
  std::tstring Getstdtstring(const std::string & str ) ;
  std::tstring Getstdtstring(const std::wstring & wstr ) ;
- std::wstring GetStdWstring( const std::tstring & cr_stdtstr ) ;
+ //std::wstring GetStdWstring( const std::tstring & cr_stdtstr ) ;
+ std::wstring GetStdWstring( const std::wstring & cr_str ) ;
+ std::wstring GetStdWstring( const std::string & cr_str ) ;
  std::string GetStdString(const std::string & cr_str ) ;
  std::string GetStdString(const std::wstring & cr_wstr ) ;

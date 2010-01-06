@@ -222,6 +222,7 @@ void SAX2_CPUspecificHandler::startElement
   {
     DWORD dwIndex ;
     char archAttributeName [] = "index" ;
+    char archCoreIDattributeName [] = "core" ;
 //    std::string stdstrAttributeName = "MSR" ;
     if( //XercesHelper::GetAttributeValue
       m_xerceshelper.GetAttributeValue
@@ -241,7 +242,19 @@ void SAX2_CPUspecificHandler::startElement
       mp_modeldata->m_stdvector_msrdata.push_back(MSRdata(dwIndex)) ;
       m_stdvec_msrdata_riter = mp_modeldata->m_stdvector_msrdata.rbegin() ;
     }
-  }
+    if( //XercesHelper::GetAttributeValue
+      m_xerceshelper.GetAttributeValue
+        (
+        r_xercesc_attributes,//"processor_name"
+        archCoreIDattributeName ,
+        dwIndex
+        )
+      == SUCCESS
+      )
+    {
+			m_stdvec_msrdata_riter->m_byCoreID = dwIndex ;
+	  }
+	}
   //Release memory AFTER comparing.
   XMLString::release(&pchXMLelementName);
 }

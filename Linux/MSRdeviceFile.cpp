@@ -46,10 +46,14 @@ MSRdeviceFile::MSRdeviceFile(UserInterface * pui)
 void MSRdeviceFile::Init(UserInterface * pui)
 {
   mp_userinterface = pui ;
+}
+
+void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
+{
   //getMSRFile()
 //  if(m_pcpucontroller )
 //    m_pcpucontroller->GetNumberOfCPUcores()
-  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
+//  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
   std::string stdstrMSRfilePath ;
 //  m_arfstreamMSR = new std::fstream [byNumCPUcores] ;
   m_arnFileHandle = new int [byNumCPUcores] ;

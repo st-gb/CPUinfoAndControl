@@ -523,7 +523,8 @@ BYTE PowerProfUntilWin6DynLinked::DeletePowerScheme(
   {
     BOOL bool_ = DeletePwrScheme( uiPowerSchemeIndex ) ;
     LOGN( "Deleting power scheme \"" << 
-      Getstdtstring( cr_stdtstrPowerSchemeName ) << "\"" << 
+      //Getstdtstring( cr_stdtstrPowerSchemeName ) << "\"" << 
+      GetStdString( cr_stdtstrPowerSchemeName ) << "\"" << 
       ( bool_ ? "succeeded" : "failed" )
       ) ;
     return  bool_ ;
