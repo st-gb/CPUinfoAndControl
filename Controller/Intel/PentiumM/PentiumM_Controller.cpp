@@ -268,7 +268,8 @@ WORD PentiumM_Controller::GetVoltageID(float fVoltageInVolt )
     //and would get 29 (1.164 V) when converting to an integer.
     //for 1.164 voltage ID in float is 29.000004
     //ceil( fVoltageID );
-    fVoltageID ;
+    //Avoid g++ warning "warning: converting to `WORD' from `float'"
+    (WORD) fVoltageID ;
   if( fVoltageID - (float) wVoltageID >= 0.5 ) 
     ++ wVoltageID ;
   return wVoltageID ;

@@ -57,7 +57,13 @@ typedef enum _POWER_DATA_ACCESSOR {
           EXTERN_C const GUID DECLSPEC_SELECTANY name \
                   = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 #else
-  #include <guiddef.h>
+  //#include <guiddef.h>
+  //g++ treats file names case sensitive. "Guiddef.h" should be
+  //adequate for g++ "Guiddef.h" and MS compiler ("guiddef.h").
+  ////MinGW already has the defines in objbase.h etc.
+  #if !defined(__MINGW32__) && (__GNUC__<4)
+    #include <Guiddef.h>
+  #endif
 #endif //#ifndef DEFINE_GUID
 //#else
 //#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \

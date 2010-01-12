@@ -7,14 +7,19 @@
 //#endif
 //For non-MSVC add include dir "Controller/MSVC_adaption" in order to find
 //tchar.h .
-#include <tchar.h> //for _T(), TCHAR
+#ifdef __CYGWIN__ //does not have a "tchar.h" shipped.
+    #include <Controller/MSVC_adaption/tchar.h> //_tcsrchr()
+#else //MSC, MINGW (,...)
+    #include <tchar.h> ////for _T(), TCHAR
+#endif
 #if __GNUC__ == 4 //cygwin 1.7 has w32api/basetsd.h
   #include <w32api/basetsd.h> //for DWORD_PTR
 #endif
-#if defined(_MSC_VER)
+//Microft and MinGW have basetsd.h
+#if defined(_MSC_VER) || (__MINGW32__==1)
   #include <basetsd.h> //for DWORD_PTR
 #endif
-#include <Windows_compatible_typedefs.h> //for DWORD_PTR
+#include <Windows_compatible_typedefs.h> //for BOOL,BYTE,DWORD_PTR,...
 #include <set> //for std::set
 #include <string> // std::string
 //typedef unsigned char BYTE ;

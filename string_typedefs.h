@@ -18,3 +18,4 @@ typedef LPCWSTR PCTSTR, LPCTSTR;
 #else
 typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
 #endif
+//Keep 1 newline after this line to avoid g++ warning"no newline at end of file"

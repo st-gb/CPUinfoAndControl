@@ -4,21 +4,21 @@
 //#endif
 
 #ifdef COMPILE_WITH_XERCES
-#include "../stdafx.h"
-#include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
+  #include "../stdafx.h"
+  #include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
 
-    //If not included: compiler error "C1010".
-    #include "SAX2MainConfigHandler.hpp"
-    #include "XercesHelper.hpp" //for GetAttributeValue(...)
-    //#include "PStates.h"
-    #include <xercesc/sax2/Attributes.hpp>
-    #include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
-    //#include "global.h" //for DEBUG(...) etc.
+  //If not included: compiler error "C1010".
+  #include "SAX2MainConfigHandler.hpp"
+  #include "XercesHelper.hpp" //for GetAttributeValue(...)
+  //#include "PStates.h"
+  #include <xercesc/sax2/Attributes.hpp>
+  #include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
+  //#include "global.h" //for DEBUG(...) etc.
 
-    #include <string>
-    #include <sstream> //for istringstream
-    #include <iostream>
-    #include "../global.h"
+  #include <string>
+  #include <sstream> //for istringstream
+  #include <iostream>
+  #include "../global.h"
   #include <exception> //for class std::exception
 	#ifndef WIN32
 		#include <stdexcept> //for class "runtime_error"
@@ -44,7 +44,7 @@
 	//#ifdef WIN32
 	class NumberFormatException 
     : public
-    #ifdef __CYGWIN__
+    #if defined(__CYGWIN__) || defined(__MINGW32__)
     //  ::RuntimeException
       std::exception
     #else
@@ -57,8 +57,10 @@
       //  ::RuntimeException
       //  std::exception()
       #else
+        #ifdef _MSC_VER
         :
         std::runtime_error(s)
+        #endif
       #endif
       {}
 	};

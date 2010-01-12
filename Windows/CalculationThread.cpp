@@ -22,7 +22,8 @@ CalculationThread::CalculationThread()
 CalculationThread::CalculationThread(
   BYTE byCoreID ,
   DWORD 
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
+#ifdef _WINDOWS
   //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
   WINAPI 
 #endif //#ifdef _MSC_VER
@@ -37,11 +38,15 @@ CalculationThread::CalculationThread(
   //, mpfn_CalculationThreadProc (pCalculationThreadProc)
   , mp_userinterface (p_userinterface)
   , mp_cpucontroller (p_cpucontroller )
+  , mpfn_CalculationThreadProc ( pCalculationThreadProc )
   //NULL also indicates failure for ::CreateThread(...).
 //  , m_hThread (NULL)
 {
   Init() ;
-  mpfn_CalculationThreadProc = pCalculationThreadProc ;
+  //GCC 4's g++ :
+  //../../Windows/CalculationThread.cpp: In constructor â€˜CalculationThread::CalculationThread(BYTE, DWORD (*)(void*), UserInterface*, I_CPUcontroller*)â€™:
+  //../../Windows/CalculationThread.cpp:44: error: invalid conversion from â€˜DWORD (*)(void*)â€™ to â€˜DWORD (*)(void*)â€™
+  //mpfn_CalculationThreadProc = (DWORD (*)(void*)) pCalculationThreadProc ;
 }
 
 CalculationThread::CalculationThread(//PumaStateCtrl 

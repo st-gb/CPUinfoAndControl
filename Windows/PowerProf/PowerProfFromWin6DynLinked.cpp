@@ -1,4 +1,6 @@
-#include <Windows.h> //for ::GetProcAddress(), ::GetSystemPowerStatus(), <PowrProf.h>
+//#include <Windows.h> //for ::GetProcAddress(), ::GetSystemPowerStatus(), <PowrProf.h>
+//Use "windows.h" because g++ (MinGW) is case sensitive.
+#include <windows.h> //for ::GetProcAddress(), ::GetSystemPowerStatus(), <PowrProf.h>
 #include "global.h"
 #include <tchar.h> //for "_T(...)"
 ////This must be the PowrProf.h from the Windows (platform) SDK for Vista, 

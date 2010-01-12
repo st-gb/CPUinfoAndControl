@@ -3,7 +3,11 @@
 //from http://support.microsoft.com/kb/307394
 #include "stdafx.h"
 #include <Windows.h>
-#include <tchar.h> //for _T()
+#ifdef __CYGWIN__ //does not have a "tchar.h" shipped.
+    #include <Controller/MSVC_adaption/tchar.h> //_tcsrchr()
+#else //MSC, MINGW (,...)
+    #include <tchar.h> ////for _T(...)
+#endif
 //#include <Controller/tchar_conversion.h> //GetCharPointer(...)
 #include <Controller/stdtstr.hpp> //GetCharPointer(...)
 

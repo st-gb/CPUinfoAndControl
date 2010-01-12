@@ -12,14 +12,14 @@ MKDIR=mkdir
 CP=cp
 CCADMIN=CCadmin
 RANLIB=ranlib
-CC=gcc
-CCC=g++-4.4
-CXX=g++-4.4
+CC=
+CCC=
+CXX=
 FC=
-AS=as
+AS=
 
 # Macros
-CND_PLATFORM=GNU-Linux-x86
+CND_PLATFORM=GNU-Windows
 CND_CONF=Debug
 CND_DISTDIR=dist
 
@@ -54,6 +54,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XercesHelper.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Logger.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/App.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemController.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2MainConfigHandler.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/tchar_conversion.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontroller.o \
@@ -66,7 +67,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/EnglishMessageFromErrorCode.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CPUindependentHelper.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdio_secure.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/PStates.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/ModelData.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/VoltageAndFreq.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/string_secure.o \
@@ -91,16 +92,16 @@ LDLIBSOPTIONS=-L/usr/lib -lxerces-c -lwx_gtk2ud_core-2.8 -lwx_baseud-2.8 -lwx_gt
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	${MAKE}  -f nbproject/Makefile-Debug.mk dist/Debug/GNU-Linux-x86/x86infoandcontrolgui
+	${MAKE}  -f nbproject/Makefile-Debug.mk dist/Debug/GNU-Windows/x86infoandcontrolgui.exe
 
-dist/Debug/GNU-Linux-x86/x86infoandcontrolgui: ${OBJECTFILES}
-	${MKDIR} -p dist/Debug/GNU-Linux-x86
+dist/Debug/GNU-Windows/x86infoandcontrolgui.exe: ${OBJECTFILES}
+	${MKDIR} -p dist/Debug/GNU-Windows
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/x86infoandcontrolgui ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.o ../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.o ../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/daemon.o: nbproject/Makefile-${CND_CONF}.mk ../../Linux/daemon.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux
@@ -110,7 +111,7 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/daemon.o: nbproject/Makefile-${CND_CONF}
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FloatValidator.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/UserInterface/FloatValidator.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FloatValidator.o ../../wxWidgets/UserInterface/FloatValidator.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FloatValidator.o ../../wxWidgets/UserInterface/FloatValidator.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/time_secure.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MSVC_adaption/time_secure.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption
@@ -120,172 +121,177 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/time_secure.o: nbproj
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/CPUcoreData.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/CPUcoreData.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/CPUcoreData.o ../../ModelData/CPUcoreData.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/CPUcoreData.o ../../ModelData/CPUcoreData.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/SpecificCPUcoreActionAttributes.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/SpecificCPUcoreActionAttributes.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/SpecificCPUcoreActionAttributes.o ../../ModelData/SpecificCPUcoreActionAttributes.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/SpecificCPUcoreActionAttributes.o ../../ModelData/SpecificCPUcoreActionAttributes.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XMLAccess.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/XMLAccess.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XMLAccess.o ../../Xerces/XMLAccess.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XMLAccess.o ../../Xerces/XMLAccess.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSRaccessBase.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MSRaccessBase.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSRaccessBase.o ../../Controller/MSRaccessBase.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSRaccessBase.o ../../Controller/MSRaccessBase.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MainController.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MainController.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MainController.o ../../Controller/MainController.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MainController.o ../../Controller/MainController.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2_CPUspecificHandler.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/SAX2_CPUspecificHandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2_CPUspecificHandler.o ../../Xerces/SAX2_CPUspecificHandler.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2_CPUspecificHandler.o ../../Xerces/SAX2_CPUspecificHandler.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/SAX2DefaultVoltageForFrequency.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o ../../Xerces/SAX2DefaultVoltageForFrequency.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o ../../Xerces/SAX2DefaultVoltageForFrequency.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/wxDynamicDialog.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/UserInterface/wxDynamicDialog.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/wxDynamicDialog.o ../../wxWidgets/UserInterface/wxDynamicDialog.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/wxDynamicDialog.o ../../wxWidgets/UserInterface/wxDynamicDialog.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/MainFrame.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/UserInterface/MainFrame.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/MainFrame.o ../../wxWidgets/UserInterface/MainFrame.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/MainFrame.o ../../wxWidgets/UserInterface/MainFrame.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/DynFreqScalingThreadBase.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o ../../Controller/DynFreqScalingThreadBase.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o ../../Controller/DynFreqScalingThreadBase.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/stdtstr.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o ../../Controller/stdtstr.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/stdtstr.o ../../Controller/stdtstr.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/Controller/wxStringHelper.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/Controller/wxStringHelper.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/Controller/wxStringHelper.o ../../wxWidgets/Controller/wxStringHelper.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/Controller/wxStringHelper.o ../../wxWidgets/Controller/wxStringHelper.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/MSRdeviceFile.o: nbproject/Makefile-${CND_CONF}.mk ../../Linux/MSRdeviceFile.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/MSRdeviceFile.o ../../Linux/MSRdeviceFile.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/MSRdeviceFile.o ../../Linux/MSRdeviceFile.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/DynFreqScalingDlg.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/UserInterface/DynFreqScalingDlg.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/DynFreqScalingDlg.o ../../wxWidgets/UserInterface/DynFreqScalingDlg.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/DynFreqScalingDlg.o ../../wxWidgets/UserInterface/DynFreqScalingDlg.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_Controller.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/Intel/PentiumM/PentiumM_Controller.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_Controller.o ../../Controller/Intel/PentiumM/PentiumM_Controller.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_Controller.o ../../Controller/Intel/PentiumM/PentiumM_Controller.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FreqAndVoltageSettingDlg.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FreqAndVoltageSettingDlg.o ../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FreqAndVoltageSettingDlg.o ../../wxWidgets/UserInterface/FreqAndVoltageSettingDlg.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XercesHelper.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/XercesHelper.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XercesHelper.o ../../Xerces/XercesHelper.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XercesHelper.o ../../Xerces/XercesHelper.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Logger.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/Logger.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Logger.o ../../Controller/Logger.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Logger.o ../../Controller/Logger.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/App.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/App.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/App.o ../../wxWidgets/App.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/App.o ../../wxWidgets/App.cpp
+
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemController.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/Intel/Nehalem/NehalemController.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem
+	${RM} $@.d
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemController.o ../../Controller/Intel/Nehalem/NehalemController.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2MainConfigHandler.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/SAX2MainConfigHandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2MainConfigHandler.o ../../Xerces/SAX2MainConfigHandler.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2MainConfigHandler.o ../../Xerces/SAX2MainConfigHandler.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/tchar_conversion.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/tchar_conversion.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/tchar_conversion.o ../../Controller/tchar_conversion.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/tchar_conversion.o ../../Controller/tchar_conversion.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontroller.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/I_CPUcontroller.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontroller.o ../../Controller/I_CPUcontroller.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontroller.o ../../Controller/I_CPUcontroller.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontrollerAction.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/I_CPUcontrollerAction.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontrollerAction.o ../../Controller/I_CPUcontrollerAction.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUcontrollerAction.o ../../Controller/I_CPUcontrollerAction.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynVoltAndFreqScaling.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/DynVoltAndFreqScaling.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynVoltAndFreqScaling.o ../../Controller/DynVoltAndFreqScaling.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynVoltAndFreqScaling.o ../../Controller/DynVoltAndFreqScaling.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/RegisterData.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/RegisterData.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/RegisterData.o ../../ModelData/RegisterData.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/RegisterData.o ../../ModelData/RegisterData.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUaccess.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/I_CPUaccess.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUaccess.o ../../Controller/I_CPUaccess.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUaccess.o ../../Controller/I_CPUaccess.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/DynFreqScalingThread.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/DynFreqScalingThread.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/DynFreqScalingThread.o ../../wxWidgets/DynFreqScalingThread.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/DynFreqScalingThread.o ../../wxWidgets/DynFreqScalingThread.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/stdafx.o: nbproject/Makefile-${CND_CONF}.mk ../../stdafx.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/stdafx.o ../../stdafx.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/stdafx.o ../../stdafx.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/EnglishMessageFromErrorCode.o: nbproject/Makefile-${CND_CONF}.mk ../../Linux/EnglishMessageFromErrorCode.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/EnglishMessageFromErrorCode.o ../../Linux/EnglishMessageFromErrorCode.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/EnglishMessageFromErrorCode.o ../../Linux/EnglishMessageFromErrorCode.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CPUindependentHelper.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/CPUindependentHelper.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CPUindependentHelper.o ../../Controller/CPUindependentHelper.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CPUindependentHelper.o ../../Controller/CPUindependentHelper.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdio_secure.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MSVC_adaption/stdio_secure.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption
 	${RM} $@.d
 	$(COMPILE.c) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdio_secure.o ../../Controller/MSVC_adaption/stdio_secure.c
 
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/PStates.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/PStates.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/PStates.o ../../ModelData/PStates.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.o ../../Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/ModelData.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/ModelData.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/ModelData.o ../../ModelData/ModelData.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/ModelData.o ../../ModelData/ModelData.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/VoltageAndFreq.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/VoltageAndFreq.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/VoltageAndFreq.o ../../ModelData/VoltageAndFreq.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/VoltageAndFreq.o ../../ModelData/VoltageAndFreq.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/string_secure.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MSVC_adaption/string_secure.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption
@@ -295,7 +301,7 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/string_secure.o: nbpr
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/ModelData/wxCPUcoreID.o: nbproject/Makefile-${CND_CONF}.mk ../../wxWidgets/ModelData/wxCPUcoreID.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/ModelData
 	${RM} $@.d
-	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/ModelData/wxCPUcoreID.o ../../wxWidgets/ModelData/wxCPUcoreID.cpp
+	$(COMPILE.cc) -g -D__WXGTK__ -D_DEBUG -D_UNICODE -DCOMPILE_WITH_XERCES -DCOMPILE_WITH_MSR_EXAMINATION -I../.. -I../../Controller/MSVC_adaption -I/usr/include/wx-2.8 -I/usr/lib/wx/include/gtk2-unicode-debug-2.8 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/ModelData/wxCPUcoreID.o ../../wxWidgets/ModelData/wxCPUcoreID.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdlib_mscv_extras.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MSVC_adaption/stdlib_mscv_extras.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption
@@ -306,9 +312,9 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdlib_mscv_extras.o:
 .build-subprojects:
 
 # Clean Targets
-.clean-conf:
+.clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r build/Debug
-	${RM} dist/Debug/GNU-Linux-x86/x86infoandcontrolgui
+	${RM} dist/Debug/GNU-Windows/x86infoandcontrolgui.exe
 
 # Subprojects
 .clean-subprojects:

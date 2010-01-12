@@ -1,8 +1,10 @@
+//compile errors (indirect (sub-)includes of "sstream" or other) when it wasn't the
+//1st include.
+#include <global.h> //for LOGN(...)
 #include "PowerProfDynLinked.hpp"
 #include <Windows/GetWindowsVersion.h>
 #include <Windows/PowerProf/PowerProfFromWin6DynLinked.hpp>
 #include <Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp>
-#include "global.h" //LOGN
 #include <Controller/stdtstr.hpp> //class tstring
 
 PowerProfDynLinked::PowerProfDynLinked(
@@ -57,8 +59,13 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
 {
   //return mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ; 
   bool bDesiredPowerSchemeExists = false ;
+  //many gcc compile errors with LOGN _here_:
+  // "/usr/lib/gcc/i686-pc-cygwin/4.3.4/include/c++/bits/istream.tcc:944:
+  //error: expected primary-expression" etc.
+  #ifdef _MSC_VER //if MS-compiler
   LOGN("Should disable Windows' Dynamic Voltage And Frequency Scaling.\n"
     "All available power schemes:")
+  #endif
   mp_dynfreqscalingaccess->OutputAllPowerSchemes() ;
   //Even if the access to the power scheme differs between Windows Vista 
   //and XP the logic for setting the power scheme is the same.
@@ -73,12 +80,22 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   {
     if( mp_dynfreqscalingaccess->CreatePowerSchemeWithWantedName() )
     {
+  //many gcc compile errors with LOGN _here_:
+  // "/usr/lib/gcc/i686-pc-cygwin/4.3.4/include/c++/bits/istream.tcc:944:
+  //error: expected primary-expression" etc.
+  #ifdef _MSC_VER //if MS-compiler
       LOGN("creating power scheme succeeded")
+  #endif
       bDesiredPowerSchemeExists = true ;
     }
     else
     {
+      //many gcc compile errors with LOGN _here_:
+      // "/usr/lib/gcc/i686-pc-cygwin/4.3.4/include/c++/bits/istream.tcc:944:
+      //error: expected primary-expression" etc.
+      #ifdef _MSC_VER //if MS-compiler
       LOGN("creating power scheme failed")
+       #endif
     }
   }
   if( bDesiredPowerSchemeExists )

@@ -2,7 +2,11 @@
 //#include <winbase.h> //for ::GetProcAddress()
 #include <Windows.h> //for ::GetProcAddress(), ::GetCurrentDirectory
 #include <strstream> //for std::ostrstream
-#include <tchar.h> //_T()
+#ifdef __CYGWIN__
+  #include <mingw/tchar.h> //for _T(...)
+#else
+  #include <tchar.h> //for _T(...)
+#endif
 #include "../global.h" //for DEBUG()
 #include "../preprocessor_helper_macros.h"
 #include <Controller/stdstring_format.hpp>

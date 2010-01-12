@@ -35,11 +35,11 @@ Logger g_logger ;
 ////error C2374: 'sm_eventTableEntries': Neudefinition; Mehrfachinitialisierung
 ////static const wxEventTableEntry sm_eventTableEntries[]; 
 ////static const wxEventTable        sm_eventTable; 
-////error C2270: 'GetEventTable': Modifizierer für Funktionen, die keine Memberfunktionen sind, nicht zulässig
+////error C2270: 'GetEventTable': Modifizierer fï¿½r Funktionen, die keine Memberfunktionen sind, nicht zulï¿½ssig
 ////virtual const wxEventTable*      GetEventTable() const; 
 ////error C2374: 'sm_eventHashTable': Neudefinition; Mehrfachinitialisierung
 ////static wxEventHashTable          sm_eventHashTable; 
-////error C2270: 'GetEventHashTable': Modifizierer für Funktionen, die keine Memberfunktionen sind, nicht zulässig
+////error C2270: 'GetEventHashTable': Modifizierer fï¿½r Funktionen, die keine Memberfunktionen sind, nicht zulï¿½ssig
 ////virtual wxEventHashTable&        GetEventHashTable() const;
 //
 ////void OnResume(wxPowerEvent& WXUNUSED(event)) ;
@@ -56,13 +56,13 @@ Logger g_logger ;
 ////  //};
 ////const wxEventTable sm_eventTable = { //&wxWindow::sm_eventTable, 
 ////    sm_eventTableEntries[0] };
-//////error C2270: 'GetEventTable': Modifizierer für Funktionen, die keine Memberfunktionen sind, nicht zulässig
+//////error C2270: 'GetEventTable': Modifizierer fï¿½r Funktionen, die keine Memberfunktionen sind, nicht zulï¿½ssig
 //////const wxEventTable GetEventTable() const 
 //////{ 
 //////    return & sm_eventTable; 
 //////} 
 ////wxEventHashTable sm_eventHashTable( sm_eventTable); 
-////error C2270: 'GetEventHashTable': Modifizierer für Funktionen, die keine Memberfunktionen sind, nicht zulässig
+////error C2270: 'GetEventHashTable': Modifizierer fï¿½r Funktionen, die keine Memberfunktionen sind, nicht zulï¿½ssig
 ////wxEventHashTable & GetEventHashTable() const 
 ////{ 
 ////    return sm_eventHashTable; 
@@ -164,7 +164,9 @@ void OuputCredits()
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
 }
 
-void main( int argc, char *  argv[] ) 
+//MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
+//void
+int main( int argc, char *  argv[] )
 {
   LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
   //LPTSTR ptstrProgramArg = _T("-config=GriffinControl_config.xml") ;
@@ -308,4 +310,5 @@ void main( int argc, char *  argv[] )
      " Hit any key to exit this program\n" ;
    getche() ;
    DEBUG("end of main program entry point\n");
+   return 0 ;
 }

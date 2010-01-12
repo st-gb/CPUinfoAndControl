@@ -7,7 +7,7 @@
 #include "PowerProf_From_Win6.h"
 //#else
 #ifdef INCLUDE_POWRPROF_H_IN_PWRPROFDYNLINKED_FROM_VER6_H
-#ifdef __CYGWIN__ // pwrprof.h != PowerProf.h in gcc (->case matter)
+#ifdef __CYGWIN__ // pwrprof.h != PowerProf.h in gcc (->case matters)
     #include <powrprof.h> // for PowerWriteACValueIndex()
 #elif defined (_MSC_VER )
 //This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
@@ -20,7 +20,11 @@
 #include <Controller/stdtstr.hpp> //for std::tstring
 
 #ifndef _MSC_VER //if not an MS-compiler
-  #include <specstrings_strict.h>
+  #if defined( __MINGW32__) || (__GNUC__>=4)
+    #include <specstrings.h> //for "__in_opt" preprocessor macro etc.
+  #else
+    #include <specstrings_strict.h>
+  #endif
   typedef DWORD far           * LPDWORD;
 #endif
 

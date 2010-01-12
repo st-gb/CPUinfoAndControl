@@ -2,7 +2,11 @@
 #include <windows.h> //for TCHAR
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <global.h> //for WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE
-#include <tchar.h> //_tcsrchr()
+#ifdef __CYGWIN__ //does not have a "tchar.h" shipped.
+    #include <Controller/MSVC_adaption/tchar.h> //_tcsrchr()
+#else //MSC, MINGW (,...)
+    #include <tchar.h> //_tcsrchr()
+#endif
 
 //Services get their current working dir set to "%WINDIR%/System32", 
 //e.g. C:\WINDOWS\System32, but this is often unwanted because if wanting 

@@ -3,8 +3,11 @@
 
 #include "DiscretionaryAccessControlList.h"
 #include <windows.h> //SECURITY_ATTRIBUTES,...
-#include <tchar.h> //for _T()
-
+#ifdef __CYGWIN__
+  #include <mingw/tchar.h> //for _T(...)
+#else
+  #include <tchar.h> //for _T()
+#endif
 #ifndef _MSC_VER //if not using an MS compiler
   //from Platform SDK's pwrprof.h
   #define SDDL_REVISION_1     1

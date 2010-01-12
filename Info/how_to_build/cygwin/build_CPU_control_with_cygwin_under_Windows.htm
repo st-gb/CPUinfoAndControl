@@ -5,7 +5,8 @@
 	<TITLE></TITLE>
 	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.1  (Win32)">
 	<META NAME="CREATED" CONTENT="0;0">
-	<META NAME="CHANGED" CONTENT="20091114;17264300">
+	<META NAME="CHANGEDBY" CONTENT="Stefan Gebauer">
+	<META NAME="CHANGED" CONTENT="20100111;22532500">
 </HEAD>
 <BODY LANG="de-DE" DIR="LTR">
 <P STYLE="margin-top: 0.42cm; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Build
@@ -90,11 +91,14 @@ name<BR>&nbsp; -for WinRing0 (&gt;&gt;winring-dir&lt;&lt;/source/dll)</P>
 	<LI><P STYLE="margin-bottom: 0cm">the&nbsp;<B>order</B> of the
 	libraries DOES MATTER:</P>
 	<UL>
+		<LI><P><B>xerces</B>: download &bdquo;libxerces-c-devel&ldquo; via
+		cygwin setup. <BR>Building the cygwin Xerces libraries from the
+		source myself did not work</P>
 		<LI><P>the order that worked for ME (these are Debug libraries: the
 		have a &quot;d&quot; inside the name):</P>
 	</UL>
 </UL>
-<BLOCKQUOTE STYLE="margin-left: 4cm; margin-right: 4cm">&nbsp;&nbsp;&nbsp;&nbsp;
+<BLOCKQUOTE STYLE="margin-left: 5cm; margin-right: 5cm">&nbsp;&nbsp;&nbsp;&nbsp;
 (NetBeans: button &quot;Add Library...&quot;)<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
 -1. wx_msw[d]_core[...]<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -2.
 wx_based (for wxThread, ...)<BR>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; -3.

@@ -56,7 +56,9 @@ public:
   CalculationThread(
     BYTE byCoreID ,
     DWORD 
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
+//_MSC_VER (MS compiler) and also g++ under Windows need "WINAPI"
+#ifdef _WINDOWS
     //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
     WINAPI 
 #endif //#ifdef _MSC_VER

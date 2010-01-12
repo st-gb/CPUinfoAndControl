@@ -36,7 +36,7 @@ namespace Windows_API
     //  m_wAQuarterOfMaxFreq = m_wMaxFreqInMHz / 4 ;
     //  m_wAHalfOfMaxFreq = m_wMaxFreqInMHz / 2 ;
     //}
-    DynFreqScalingThread::DynFreqScalingThread(
+    DynFreqScalingThread(
       ICPUcoreUsageGetter * p_icpu
       //, GriffinController * p_pumastatectrl
       , I_CPUcontroller * p_cpucontroller

@@ -1,11 +1,13 @@
 #ifndef LOGGER_HPP
     #define LOGGER_HPP
 
-    #include <fstream> //for class std::ofstream ;
-    #include <strstream> //for class std::ostrstream
+    //#include <fstream> //for class std::ofstream ;
+    //#include <strstream> //for class std::ostrstream
     #include <string> //for std::wstring
-    #include <sstream>
+    //#include <sstream>
 #include <Controller/stdtstr.hpp>
+
+  //class std::ofstream ;
 
     class Logger
     {

@@ -1,8 +1,11 @@
 #include "NamedPipeServer.hpp"
 #include <aclapi.h>
 #include "DiscretionaryAccessControlList.h"
-#include <tchar.h> //for _T()
-
+#ifdef __CYGWIN__
+  #include <mingw/tchar.h> //for _T(...)
+#else
+  #include <tchar.h> //for _T(...)
+#endif
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/multithreaded_pipe_server.htm
 
 //struct PipeClientThreadStruct
@@ -347,7 +350,7 @@ BYTE NamedPipeServer::CreateSecAttributes(
         &SIDAuthNT, 
         //http://support.microsoft.com/kb/288900/de:
         //NT Bekannte SIDs (wie LocalSystem ) haben nur einen RID Wert 
-        //relativ zu der Bezeichnerautorität SECURITY_NT_AUTHORITY.
+        //relativ zu der Bezeichnerautoritï¿½t SECURITY_NT_AUTHORITY.
         1,
        SECURITY_LOCAL_SYSTEM_RID,
        0, 0, 0, 0, 0, 0, 0,

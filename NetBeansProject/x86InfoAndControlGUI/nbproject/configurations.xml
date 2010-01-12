@@ -43,6 +43,12 @@
           </logicalFolder>
         </logicalFolder>
         <logicalFolder name="Intel" displayName="Intel" projectFiles="true">
+          <logicalFolder name="Nehalem" displayName="Nehalem" projectFiles="true">
+            <itemPath>../../Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
+            <itemPath>../../Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp</itemPath>
+            <itemPath>../../Controller/Intel/Nehalem/NehalemController.cpp</itemPath>
+            <itemPath>../../Controller/Intel/Nehalem/NehalemController.hpp</itemPath>
+          </logicalFolder>
           <logicalFolder name="PentiumM" displayName="PentiumM" projectFiles="true">
             <itemPath>../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp</itemPath>
             <itemPath>../../Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.hpp</itemPath>
@@ -313,7 +319,7 @@
       <toolsSet>
         <developmentServer>localhost</developmentServer>
         <compilerSet>GNU|GNU</compilerSet>
-        <platform>2</platform>
+        <platform>3</platform>
       </toolsSet>
       <compileType>
         <ccTool>
@@ -328,6 +334,7 @@
             <Elem>_DEBUG</Elem>
             <Elem>_UNICODE</Elem>
             <Elem>COMPILE_WITH_XERCES</Elem>
+            <Elem>COMPILE_WITH_MSR_EXAMINATION</Elem>
           </preprocessorList>
         </ccTool>
         <linkerTool>
@@ -365,6 +372,8 @@
       <item path="../../Controller/console.cpp" ex="true" tool="1">
       </item>
       <item path="../../Linux/CalculationThread.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../ModelData/PStates.cpp" ex="true" tool="1">
       </item>
       <item path="../../ModelData/Pstate.cpp" ex="true" tool="1">
       </item>
@@ -412,6 +421,100 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+    </conf>
+    <conf name="MSW_Debug" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>Cygwin_4.x|Cygwin_4.x</compilerSet>
+        <cRequired>false</cRequired>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <ccTool>
+          <incDir>
+            <pElem>../..</pElem>
+            <pElem>../../Controller/MSVC_adaption</pElem>
+            <pElem>C:\wxWidgets-2.8.10\include</pElem>
+            <pElem>C:\wxWidgets-2.8.10\msw-cygwin-static-debug\lib\wx\include\msw-ansi-debug-static-2.8</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>__WXMSW__</Elem>
+            <Elem>_DEBUG</Elem>
+            <Elem>COMPILE_WITH_XERCES</Elem>
+            <Elem>COMPILE_WITH_MSR_EXAMINATION</Elem>
+            <Elem>NOMINMAX</Elem>
+          </preprocessorList>
+        </ccTool>
+        <fortranCompilerTool>
+          <architecture>1</architecture>
+        </fortranCompilerTool>
+        <linkerTool>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/x86infoandcontrolgui</output>
+          <linkerAddLib>
+            <pElem>C:\wxWidgets-2.8.10\msw-cygwin-static-debug\lib</pElem>
+          </linkerAddLib>
+          <linkerLibItems>
+            <linkerLibLibItem>xerces-c</linkerLibLibItem>
+            <linkerLibLibItem>wx_gtk2ud_core-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_baseud-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_gtk2u_adv-2.8</linkerLibLibItem>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="../../Console.h" ex="true" tool="3">
+      </item>
+      <item path="../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/AMD/Griffin/GriffinController.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/CalculationThreadProc.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/MSVC_adaption/tchar.h" ex="true" tool="3">
+      </item>
+      <item path="../../Controller/SelectPstateAction.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/SelectPstateAction.hpp" ex="true" tool="3">
+      </item>
+      <item path="../../Controller/console.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/CalculationThread.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/daemon.c" ex="true" tool="0">
+      </item>
+      <item path="../../ModelData/PStates.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../ModelData/Pstate.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../main.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/CPUIDaccess.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller.hpp" ex="true" tool="3">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketClient.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketServer.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../wxWidgets/wxDynFreqScalingTimer.cpp" ex="true" tool="1">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

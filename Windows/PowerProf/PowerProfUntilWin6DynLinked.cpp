@@ -1,7 +1,10 @@
+//If gobal.h is included after other include following error may occur:
+//"C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+//locale_facets.h:1974: error: expected primary-expression before ',' token"
+#include "global.h" //for LOGN(...)
 #include "PowerProfUntilWin6DynLinked.hpp"
 #include <tchar.h> //for "_T(...)"
 #include <string> //std:.string
-#include "global.h" //for LOGN(...)
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include <Powrprof.h> //for static linking 
 

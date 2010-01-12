@@ -27,9 +27,13 @@ typedef int BOOL ;
 #endif
 //see winnt.h
 typedef unsigned long long ULONGLONG ;
-//see basetsd.h
-#if !defined( __CYGWIN__ ) && !defined(_MSC_VER) //else: "error: duplicate â€˜unsignedâ€™"
-  typedef _W64 unsigned long DWORD_PTR ;
+//Especially for Linux gcc/g++; see MSVC's "basetsd.h"
+//if compiled with cygwin? compiler:
+//  "error: duplicate â€˜unsignedâ€™"
+#if !defined( __CYGWIN__ ) && !defined(_MSC_VER) && (__MINGW32__==0)
+  //with MinGW: "../../Windows_compatible_typedefs.h:32: error: 
+  //redeclaration of C++ built-in type `long'"
+  typedef __W64 unsigned long DWORD_PTR ;
 #endif
 typedef unsigned char BYTE ;
 typedef unsigned short WORD ;

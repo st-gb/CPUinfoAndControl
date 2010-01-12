@@ -107,7 +107,11 @@
 //#define MIDL_PASS
 #include <Windows.h> //GetProcAddress()
 //#include "global.h" //for _T()
-#include <tchar.h> //for _T()
+#ifdef __CYGWIN__ //does not have a "tchar.h" shipped.
+    #include <Controller/MSVC_adaption/tchar.h> //_tcsrchr()
+#else //MSC, MINGW (,...)
+    #include <tchar.h> //for _T(...)
+#endif
 
 CPUcoreUsageGetterNtQuerySystemInformation::
   CPUcoreUsageGetterNtQuerySystemInformation()

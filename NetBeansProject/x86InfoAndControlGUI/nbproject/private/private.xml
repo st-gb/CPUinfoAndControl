@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/console.cpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows_compatible_typedefs.h</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/PowerProf/PowerProfFromWin6DynLinked.hpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/PowerProf/PowerProfFromWin6DynLinked.cpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/MSVC_adaption/specstrings_strict.h</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/PowerProf/PowerProf_defines.h</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/PowerProf/PowerProf_From_Win6.h</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/ModelData/CPUcoreData.hpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/ModelData/ModelData.hpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Linux/daemon.c</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/Intel/PentiumM/PentiumM_Controller.hpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/Intel/PentiumM/PentiumM_Controller.cpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.cpp</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/preprocessor_helper_macros.h</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/MSVC_adaption/stdlib_mscv_extras.c</file>
+        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/string_typedefs.h</file>
+    </open-files>
 </project-private>

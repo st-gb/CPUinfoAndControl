@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="Stefan Gebauer">
 	<META NAME="CREATED" CONTENT="20100104;17290500">
 	<META NAME="CHANGEDBY" CONTENT="Stefan Gebauer">
-	<META NAME="CHANGED" CONTENT="20100104;19234300">
+	<META NAME="CHANGED" CONTENT="20100111;23445200">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { margin: 2cm }
@@ -34,11 +34,11 @@
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-for
 <B>wxWidgets</B>: </FONT></FONT>
 </P>
-<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	-create
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-create
 x64 or 32 bit libraries if they do not exist. (choose
 &bdquo;project-&gt;create <U><B>new</B></U>&ldquo; in order for the
 object files to be of the desired plaform (32 or 64 bit)</FONT></FONT></P>
-<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	-add
+<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-add
 preprocessor macro: &bdquo;__WXMSW__&ldquo;</FONT></FONT></P>
 <P STYLE="margin-left: 1.25cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-bei
 &quot;Linker&quot;</FONT></FONT></P>
@@ -59,7 +59,7 @@ Release-Version:\lib</FONT></FONT></P>
 	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">wxbase28.lib
 	</FONT></FONT>
 	</P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT SIZE=2 STYLE="font-size: 11pt"><FONT FACE="Times New Roman, serif">comctl32.lib</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">comctl32.lib</FONT></FONT></P>
 </UL>
 <P STYLE="margin-left: 2.5cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-for
 Debug version: </FONT></FONT>
@@ -68,32 +68,17 @@ Debug version: </FONT></FONT>
 <P STYLE="margin-bottom: 0cm"><BR>
 </P>
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt"><FONT FACE="Times New Roman, serif">-for
-</FONT><FONT FACE="Times New Roman, serif"><B>xerces</B></FONT><FONT FACE="Times New Roman, serif">
-XML: </FONT></FONT></FONT>
+</FONT><FONT FACE="Times New Roman, serif"><B>xerces</B></FONT> <FONT FACE="Times New Roman, serif">XML:
+</FONT></FONT></FONT>
 </P>
 <UL>
 	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">bei
-	Linker-&gt;Eingabe hinzuf&uuml;gen: </FONT></FONT>
+	Linker-&gt;input hinzuf&uuml;gen: </FONT></FONT>
 	</P>
 	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">&quot;xerces-c_static_2.lib&quot;
 	(Xerces 2 linked into the x86Info&amp;control exe)</FONT></FONT></P>
 	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">&quot;xerces-c_static_3.lib&quot;
 	(Xerces 3 linked into the x86Info&amp;control exe)</FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">With
-	Xerces &lt; Version 2.8:</FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Add
-	&quot;XML_LIBRARY&quot; to &quot;Preprocessor Definitions&quot; to
-	compile with Xerces statically (else many &quot;LNK2001&quot; and
-	&quot;LNK2019&quot; and linker errors).</FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">with
-	Xerces 3.0: &quot;XERCES_STATIC_LIBRARY&quot; as preprocessor macro</FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">add
-	xerces include directory to C++</FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">for
-	linker: add &quot;xerces\lib&quot; dir</FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">And:
-	Add &quot;Advapi32.lib&quot; as additional dependancy for the
-	linker.</FONT></FONT></P>
 </UL>
 <P STYLE="margin-bottom: 0cm"><BR>
 </P>
@@ -108,7 +93,7 @@ MSVCRT.lib(MSVCR80.dll) definiert.&quot;) :</FONT></FONT></P>
 	version: &quot;LIBCMT.lib&quot;, </FONT></FONT>
 	</P>
 	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">debug
-	version:  LIBCMTD.lib</FONT></FONT></P>
+	version: LIBCMTD.lib</FONT></FONT></P>
 </UL>
 <P STYLE="margin-bottom: 0cm"><BR>
 </P>

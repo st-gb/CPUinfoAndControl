@@ -278,6 +278,9 @@
           <itemPath>../../wxWidgets/Controller/wxServiceSocketServer.hpp</itemPath>
           <itemPath>../../wxWidgets/Controller/wxStringHelper.cpp</itemPath>
         </logicalFolder>
+        <logicalFolder name="f1" displayName="MinGW" projectFiles="true">
+          <itemPath>C:/wxWidgets-2.8.10/msw-mingw-debug/lib/wx/include/msw-ansi-debug-static-2.8/wx/setup.h</itemPath>
+        </logicalFolder>
         <logicalFolder name="ModelData" displayName="ModelData" projectFiles="true">
           <itemPath>../../wxWidgets/ModelData/wxCPUcoreID.cpp</itemPath>
           <itemPath>../../wxWidgets/ModelData/wxCPUcoreID.hpp</itemPath>
@@ -402,24 +405,35 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>../..</Elem>
+    <Elem>C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include/xercesc</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="Debug" type="1">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <compilerSet>Cygwin_gcc3.x|Cygwin_4.x</compilerSet>
+        <compilerSet>Cygwin_4.x|Cygwin_4.x</compilerSet>
+        <cRequired>false</cRequired>
         <platform>3</platform>
       </toolsSet>
       <compileType>
+        <cTool>
+          <incDir>
+            <pElem>T:/MS_PlatformSDK6.1</pElem>
+          </incDir>
+        </cTool>
         <ccTool>
           <commandlineTool>g++.exe</commandlineTool>
           <incDir>
             <pElem>../..</pElem>
-            <pElem>../../Controller/MSVC_adaption</pElem>
+            <pElem>../../Controller/MSVC_adaption_</pElem>
             <pElem>C:/wxWidgets-2.8.10/include</pElem>
+            <pElem>C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include_</pElem>
             <pElem>C:/wxWidgets-2.8.10/msw-cygwin-static-debug/lib/wx/include/msw-ansi-debug-static-2.8</pElem>
-            <pElem>C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include</pElem>
+            <pElem>C:/wxWidgets-2.8.10/msw-mingw-debug/lib/wx/include/msw-ansi-debug-static-2.8_</pElem>
+            <pElem>C:/Libs/WinRing0_1_2_0Alpha1/source/dll</pElem>
+            <pElem>../../MS_PlatformSDK6.1</pElem>
+            <pElem>T:/MS_PlatformSDK6.1</pElem>
           </incDir>
           <preprocessorList>
             <Elem>__WXMSW__</Elem>
@@ -430,15 +444,60 @@
             <Elem>_GLIBCXX_OSTREAM_</Elem>
             <Elem>DEFINE_POWER_DATA_ACCESSOR</Elem>
             <Elem>_DEBUG</Elem>
-            <Elem>_GLIBCXX_DEBUG</Elem>
+            <Elem>_GLIBCXX_DEBUG_</Elem>
+            <Elem>UNICODE_</Elem>
+            <Elem>_UNICODE_</Elem>
+            <Elem>_GLIBCXX_EXPORT_TEMPLATE_</Elem>
+            <Elem>_WINDOWS</Elem>
+            <Elem>XERCES_STATIC_LIBRARY</Elem>
+            <Elem>XML_LIBRARY</Elem>
           </preprocessorList>
         </ccTool>
         <linkerTool>
+          <linkerAddLib>
+            <pElem>C:/wxWidgets-2.8.10/msw-cygwin-static-debug/lib</pElem>
+            <pElem>C:/Libs/WinRing0_1_2_0Alpha1/release</pElem>
+          </linkerAddLib>
           <linkerLibItems>
+            <linkerLibLibItem>advapi32</linkerLibLibItem>
+            <linkerLibLibItem>xerces-c.dll</linkerLibLibItem>
+            <linkerLibLibItem>xerces-c</linkerLibLibItem>
+            <linkerLibLibItem>wx_mswd_core-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_based-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_mswd_adv-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wxexpatd-2.8</linkerLibLibItem>
+            <linkerLibLibItem>comdlg32</linkerLibLibItem>
+            <linkerLibLibItem>gdi32</linkerLibLibItem>
+            <linkerLibLibItem>comctl32</linkerLibLibItem>
+            <linkerLibLibItem>ole32</linkerLibLibItem>
+            <linkerLibLibItem>uuid</linkerLibLibItem>
+            <linkerLibLibItem>oleaut32</linkerLibLibItem>
+            <linkerLibLibItem>kernel32</linkerLibLibItem>
+            <linkerLibLibItem>WinRing0</linkerLibLibItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/AMD/Griffin/GriffinController.cpp"
+            ex="true"
+            tool="1">
+      </item>
       <item path="../../Controller/Linux.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/MSVC_adaption/stdlib_mscv_extras.c"
+            ex="true"
+            tool="0">
+      </item>
+      <item path="../../Controller/MSVC_adaption/tchar.h" ex="true" tool="3">
+      </item>
+      <item path="../../Controller/SelectPstateAction.cpp" ex="true" tool="1">
       </item>
       <item path="../../Controller/Windows.cpp" ex="true" tool="1">
       </item>
@@ -452,15 +511,55 @@
       </item>
       <item path="../../Linux/daemon.c" ex="true" tool="0">
       </item>
+      <item path="../../ModelData/PStates.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../ModelData/Pstate.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/CPUcontrolService.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/CPUcoreUsageGetterIWbemServices.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Windows/DiscretionaryAccessControlList.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Windows/DynFreqScalingAccess.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/DynFreqScalingThread.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/NamedPipeClient.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/NamedPipeServer.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/main.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp"
+            ex="true"
+            tool="1">
+      </item>
       <item path="../../main.cpp" ex="true" tool="1">
       </item>
       <item path="../../wxGUI.cpp" ex="true" tool="1">
       </item>
+      <item path="../../wxWidgets/CPUIDaccess.cpp" ex="true" tool="1">
+      </item>
       <item path="../../wxWidgets/Controller.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketClient.cpp"
+            ex="true"
+            tool="1">
       </item>
       <item path="../../wxWidgets/Controller/wxServiceSocketServer.cpp"
             ex="true"
             tool="1">
+      </item>
+      <item path="../../wxWidgets/wxDynFreqScalingTimer.cpp" ex="true" tool="1">
       </item>
     </conf>
     <conf name="Release" type="1">

@@ -1,10 +1,14 @@
 
-#ifdef _MSC_VER
-    #include <Windows.h> //for SYSTEMTIME
+//If MS compiler etc.
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
+    //#include <Windows.h> //for SYSTEMTIME
+    //Use "windows.h" for g++ because the case matters.
+    #include <windows.h> //for SYSTEMTIME
 #endif
 #include "Logger.hpp"
 //#include <Controller/tchar_conversion.h> //GetCharPointer()
 #include <Controller/stdtstr.hpp> //GetStdString(...)
+#include <fstream> //for class std::ofstream
 
 Logger::Logger()
     //C++ style initialisation.
