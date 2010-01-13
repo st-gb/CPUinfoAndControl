@@ -1,3 +1,8 @@
+//Maybe see Intel_Volume 3A System Programming Guide--253668.pdf,
+//chapter 14.2 P-STATE HARDWARE COORDINATION,
+// IA32_MPERF MSR and IA32_APERF MSR
+// ,Example 14-1.  Determine Target P-state From Hardware Coordinated Feedback
+
 #include "NehalemClocksNotHaltedCPUcoreUsageGetter.hpp"
 //#include <ModelData/ModelData.hpp>
 

@@ -73,9 +73,9 @@
   //#define DEBUG(...)  {fprintf(fileDebug,__VA_ARGS__);fflush(/*stdout*/fileDebug);}
   #include "./Controller/Logger.hpp" //for class Logger
   //class Logger ;
-  #ifndef _MSC_VER //else compile errors with gcc
+  //#ifndef _MSC_VER //else compile errors with gcc
   #include <sstream> //for class std::stringstream
-  #endif
+  //#endif
   extern Logger g_logger ;
   #define LOG(to_ostream) { std::stringstream strstream ; \
     strstream << to_ostream; \
@@ -108,9 +108,9 @@
   //#define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(...) { \
   //  fprintf(fileDebug,__VA_ARGS__); fflush(fileDebug); \
   //  printf(__VA_ARGS__); fflush(stdout); }
-  #ifndef _MSC_VER //else compile errors with gcc
+  //#ifndef _MSC_VER //else compile errors with gcc
   #include <iostream> //for cout
-  #endif
+  //#endif
   #define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(to_ostream) { \
   LOG(to_ostream << std::endl; ); \
     std::cout << to_ostream << std::endl ; std::cout.flush(); }
