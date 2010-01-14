@@ -436,6 +436,7 @@
             <pElem>T:/MS_PlatformSDK6.1</pElem>
           </incDir>
           <preprocessorList>
+            <Elem>_WINDOWS</Elem>
             <Elem>__WXMSW__</Elem>
             <Elem>NOMINMAX</Elem>
             <Elem>COMPILE_WITH_XERCES</Elem>
@@ -448,7 +449,6 @@
             <Elem>UNICODE_</Elem>
             <Elem>_UNICODE_</Elem>
             <Elem>_GLIBCXX_EXPORT_TEMPLATE_</Elem>
-            <Elem>_WINDOWS</Elem>
             <Elem>XERCES_STATIC_LIBRARY</Elem>
             <Elem>XML_LIBRARY</Elem>
           </preprocessorList>

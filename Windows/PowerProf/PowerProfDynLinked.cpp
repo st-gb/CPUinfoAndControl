@@ -11,14 +11,14 @@ PowerProfDynLinked::PowerProfDynLinked(
   //std::wstring & r_stdwstrProgramName 
   std::tstring & r_stdtstrProgramName 
   )
-  : mp_dynfreqscalingaccess ( NULL)
+  : mp_i_powerprofdynlinked ( NULL)
 {
   DWORD dwMajor = 0, dwMinor ;
   std::string strWindowsVersion = ::GetWindowsVersion(dwMajor, dwMinor ) ;
   if( dwMajor >= 6 //&& dwMinor >= 1 
     ) 
   {
-    mp_dynfreqscalingaccess = new PowerProfFromWin6DynLinked( 
+    mp_i_powerprofdynlinked = new PowerProfFromWin6DynLinked(
       //r_stdwstrProgramName 
       r_stdtstrProgramName 
       ) ;
@@ -26,30 +26,42 @@ PowerProfDynLinked::PowerProfDynLinked(
   }
   else
   {
-    mp_dynfreqscalingaccess = new PowerProfUntilWin6DynLinked(
+    mp_i_powerprofdynlinked = new PowerProfUntilWin6DynLinked(
       //r_stdwstrProgramName 
       r_stdtstrProgramName ) ;
   }
+  #ifdef _DEBUG
+    mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
+  #endif
 }
 
 PowerProfDynLinked::~PowerProfDynLinked()
 {
-  if( mp_dynfreqscalingaccess )
-    delete mp_dynfreqscalingaccess ;
+  if( mp_i_powerprofdynlinked )
+    delete mp_i_powerprofdynlinked ;
 }
 
 bool PowerProfDynLinked::ChangeOtherDVFSaccessPossible()
 {
-  if( mp_dynfreqscalingaccess )
-    return mp_dynfreqscalingaccess->ChangeOtherDVFSaccessPossible() ;
+  if( mp_i_powerprofdynlinked )
+    return mp_i_powerprofdynlinked->ChangeOtherDVFSaccessPossible() ;
   return false ;
+}
+
+BYTE PowerProfDynLinked::CreatePowerScheme(
+  const std::wstring & cr_stdwstrPowerSchemeName )
+{
+  if( mp_i_powerprofdynlinked )
+    return mp_i_powerprofdynlinked->CreatePowerScheme(
+      cr_stdwstrPowerSchemeName) ;
+  return 0 ;
 }
 
 BYTE PowerProfDynLinked::DeletePowerScheme( 
   const std::tstring & cr_stdtstrPowerSchemeName )
 {
-  if( mp_dynfreqscalingaccess )
-    return mp_dynfreqscalingaccess->DeletePowerScheme(
+  if( mp_i_powerprofdynlinked )
+    return mp_i_powerprofdynlinked->DeletePowerScheme(
       cr_stdtstrPowerSchemeName) ;
   return 0 ;
 }
@@ -66,19 +78,19 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   LOGN("Should disable Windows' Dynamic Voltage And Frequency Scaling.\n"
     "All available power schemes:")
   #endif
-  mp_dynfreqscalingaccess->OutputAllPowerSchemes() ;
+  mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
   //Even if the access to the power scheme differs between Windows Vista 
   //and XP the logic for setting the power scheme is the same.
   //So to ensure the same implementation, implement the logic here
   //in the superordinate access.
-  if( mp_dynfreqscalingaccess->PowerSchemeToSetExists() == 1 )
+  if( mp_i_powerprofdynlinked->PowerSchemeToSetExists() == 1 )
   {
     //mp_dynfreqscalingaccess->ActivatePowerSchemeToSet() ;
     bDesiredPowerSchemeExists = true ;
   }
   else
   {
-    if( mp_dynfreqscalingaccess->CreatePowerSchemeWithWantedName() )
+    if( mp_i_powerprofdynlinked->CreatePowerSchemeWithWantedName() )
     {
   //many gcc compile errors with LOGN _here_:
   // "/usr/lib/gcc/i686-pc-cygwin/4.3.4/include/c++/bits/istream.tcc:944:
@@ -100,23 +112,23 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   }
   if( bDesiredPowerSchemeExists )
   {
-    mp_dynfreqscalingaccess->DisableDVFSforPowerSchemeToSet() ;
-    mp_dynfreqscalingaccess->ActivatePowerSchemeToSet() ;
+    mp_i_powerprofdynlinked->DisableDVFSforPowerSchemeToSet() ;
+    mp_i_powerprofdynlinked->ActivatePowerSchemeToSet() ;
   }
   return false ;
 }
 
 unsigned char PowerProfDynLinked::EnableFrequencyScalingByOS()
 {
-  return mp_dynfreqscalingaccess->EnableFrequencyScalingByOS() ;
+  return mp_i_powerprofdynlinked->EnableFrequencyScalingByOS() ;
 }
 
 bool PowerProfDynLinked::OtherDVFSisEnabled()
 {
-  return mp_dynfreqscalingaccess->OtherDVFSisEnabled() ;
+  return mp_i_powerprofdynlinked->OtherDVFSisEnabled() ;
 }
 
 void PowerProfDynLinked::OutputAllPowerSchemes()
 {
-  mp_dynfreqscalingaccess->OutputAllPowerSchemes() ;
+  mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
 }

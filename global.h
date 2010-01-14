@@ -86,6 +86,7 @@
     /*g_logger->Log(to_ostream) ; */ \
     g_logger.Log( stdstr ) ; \
     /*g_logger.Log("test ") ; */ }
+  //#ifdef COMPILE_WITH_LOG
   #define LOGN(to_ostream) LOG (to_ostream << "\n" )
   #define LOGW(to_ostream) { std::wstringstream strstream ; \
     strstream << to_ostream; \

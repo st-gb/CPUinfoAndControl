@@ -8,7 +8,8 @@
 class I_PowerProfDynLinked ;
 
 //Class for both Window version >=6 and Windows version < 6 
-//Windows  DVFS access
+//Power prof access mainly for Dynamic Voltage and Freq Scal. access.
+//So only this 1 class is needed if one wants to cover all Windows versions.
 class PowerProfDynLinked
   : public IDynFreqScalingAccess
 {
@@ -21,11 +22,12 @@ public:
   ~PowerProfDynLinked() ;
   //Must be a pointer because the concrete type is determined at
   //runtime. The advantage of the other DVFS access as a member function 
-  //instead of a factory is that as a member THIS class kümmert sich um
+  //instead of a factory is that as a member THIS class kï¿½mmert sich um
   //deletion of the dyn. allocated object.
   //IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
-  I_PowerProfDynLinked * mp_dynfreqscalingaccess ;
+  I_PowerProfDynLinked * mp_i_powerprofdynlinked ;
   bool ChangeOtherDVFSaccessPossible() ;
+  BYTE CreatePowerScheme(const std::wstring & wstr ) ;
   virtual unsigned char CreatePowerSchemeWithWantedName() { return 0 ; }
   BYTE DeletePowerScheme( const std::tstring & cr_stdtstrPowerSchemeName ) ;
   bool DisableFrequencyScalingByOS() ;

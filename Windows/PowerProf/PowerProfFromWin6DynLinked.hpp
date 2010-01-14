@@ -28,6 +28,20 @@
   typedef DWORD far           * LPDWORD;
 #endif
 
+//Following function pointer types equal the PwrProf API except that they
+//are function pointers ("WINAPI *").
+
+typedef DWORD (WINAPI * pfnPowerDeleteScheme) (
+  __in_opt  HKEY RootPowerKey,
+  __in      const GUID *SchemeGuid
+);
+
+typedef DWORD (WINAPI * pfnPowerDuplicateScheme) (
+  __in_opt  HKEY RootPowerKey,
+  __in      const GUID *SourceSchemeGuid,
+  __in      GUID **DestinationSchemeGuid
+);
+
 typedef DWORD (WINAPI * pfnPowerEnumerate) (
   __in_opt   HKEY RootPowerKey,
   __in_opt   const GUID *SchemeGuid,
@@ -60,6 +74,12 @@ typedef DWORD ( WINAPI * pfnPowerReadFriendlyName) (
   __inout    LPDWORD BufferSize
 );
 
+typedef DWORD ( WINAPI * pfnPowerSetActiveScheme) (
+  __in_opt  HKEY UserRootPowerKey,
+  __in      const GUID *SchemeGuid
+);
+
+
 typedef DWORD (WINAPI * pfnPowerWriteACValueIndex) (
   __in_opt  HKEY RootPowerKey,
   __in      const GUID *SchemeGuid,
@@ -67,6 +87,14 @@ typedef DWORD (WINAPI * pfnPowerWriteACValueIndex) (
   __in_opt  const GUID *PowerSettingGuid,
   __in      DWORD DcValueIndex
   );
+typedef DWORD (WINAPI * pfnPowerWriteFriendlyName) (
+  __in_opt  HKEY RootPowerKey,
+  __in      const GUID *SchemeGuid,
+  __in_opt  const GUID *SubGroupOfPowerSettingsGuid,
+  __in_opt  const GUID *PowerSettingGuid,
+  __in      UCHAR *Buffer,
+  __in      DWORD BufferSize
+);
 
 //class IDynFreqScalingAccess ;
 #include <Controller/IDynFreqScalingAccess.hpp>
@@ -90,24 +118,43 @@ class PowerProfFromWin6DynLinked
   DWORD m_dwDCProcThrottleMaxValue ;
   DWORD m_dwDCProcThrottleMinValue ;
   GUID m_guidPowerSchemeBeforeDisabling ;
+  GUID m_guidPowerSchemeToSet ;
   GUID * mp_guidPowerSchemeBeforeDisabling ;
   HINSTANCE m_hinstancePowerProfDLL ;
+  pfnPowerDeleteScheme m_pfnpowerdeletescheme ;
+  pfnPowerDuplicateScheme m_pfnpowerduplicatescheme ;
   pfnPowerEnumerate m_pfnpowerenumerate ;
   pfnPowerGetActiveScheme m_pfnpowergetactivescheme ;
   pfnPowerReadACValueIndex m_pfnpowerreadacvalueindex ;
   pfnPowerReadACValueIndex m_pfnpowerreaddcvalueindex ;
   pfnPowerReadFriendlyName m_pfnpowerreadfriendlyname ;
+  pfnPowerSetActiveScheme m_pfnpowersetactivescheme ;
   pfnPowerWriteACValueIndex m_pfnpowerwriteacvalueindex ;
   pfnPowerWriteACValueIndex m_pfnpowerwritedcvalueindex ;
-
+  pfnPowerWriteFriendlyName m_pfnpowerwritefriendlyname ;
 public:
+  BYTE ActivatePowerSchemeToSet() ;
+  BYTE CreatePowerScheme(
+    const std::wstring & cr_stdtstrPowerSchemeName
+    , DWORD & r_dwRetValue
+    , GUID & guidNewPowerScheme ) ;
+  unsigned char CreatePowerSchemeWithWantedName() ;
   BYTE DeletePowerScheme( 
     const std::tstring & cr_stdtstrPowerSchemeName ) ;
-  bool DisableFrequencyScalingByOS() ; 
+  BYTE DisableDVFSforAlternateCurrent(
+    const GUID * cp_guidPowerScheme
+    , DWORD dwProcThrottleValue ) ;
+  BYTE DisableDVFSforDirectCurrent(
+    const GUID * cp_guidPowerScheme
+    , DWORD dwProcThrottleValue ) ;
+  BYTE DisableDVFSforPowerSchemeToSet() ;
+  //Inherited from class PowerProfDynLinked.
+//  bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
 
   void GetThrottleSettings(
-    DWORD & dwACProcThrottleMaxValue 
+    const GUID & guidActivePowerScheme
+    , DWORD & dwACProcThrottleMaxValue
     , DWORD & dwACProcThrottleMinValue 
     , DWORD & dwDCProcThrottleMaxValue 
     , DWORD & dwDCProcThrottleMinValue 
@@ -119,7 +166,17 @@ public:
     ) ;
 
   DWORD GetPowerSchemeName(
-    GUID & guidPowerScheme , std::string & r_stdstr ) ;
+    GUID & guidPowerScheme , std::wstring & r_stdwstr ) ;
+
+  DWORD PowerDeleteScheme(
+    __in_opt  HKEY RootPowerKey,
+    __in      const GUID *SchemeGuid
+  );
+  DWORD WINAPI PowerDuplicateScheme(
+    __in_opt  HKEY RootPowerKey,
+    __in      const GUID *SourceSchemeGuid,
+    __in      GUID **DestinationSchemeGuid
+  );
 
   DWORD WINAPI PowerEnumerate(
     __in_opt   HKEY RootPowerKey,
@@ -131,7 +188,7 @@ public:
     __inout    DWORD *BufferSize
   );
   DWORD PowerEnumerate(
-    __in_opt   const GUID *SchemeGuid,
+    __in_opt   GUID *SchemeGuid,
     __in_opt   const GUID *SubGroupOfPowerSettingsGuid,
     __in       POWER_DATA_ACCESSOR AccessFlags,
     __in       ULONG Index,
@@ -165,12 +222,24 @@ public:
     __out LPDWORD AcValueIndex
     ) ;
   DWORD WINAPI PowerReadFriendlyName(
+    __in_opt   const GUID *SchemeGuid,
+    __in_opt   const GUID *SubGroupOfPowerSettingsGuid,
+    __in_opt   const GUID *PowerSettingGuid,
+    //A pointer to a variable to receive the elements. If this parameter is NULL,
+    //the function retrieves the size of the buffer required.
+    UCHAR * & Buffer
+    ) ;
+  DWORD WINAPI PowerReadFriendlyName(
     __in_opt   HKEY RootPowerKey,
     __in_opt   const GUID *SchemeGuid,
     __in_opt   const GUID *SubGroupOfPowerSettingsGuid,
     __in_opt   const GUID *PowerSettingGuid,
     __out_opt  PUCHAR Buffer,
     __inout    LPDWORD BufferSize
+  );
+  DWORD WINAPI PowerSetActiveScheme(
+    __in_opt  HKEY UserRootPowerKey,
+    __in      const GUID *SchemeGuid
   );
   DWORD WINAPI PowerWriteACValueIndex(
     __in_opt  HKEY RootPowerKey,
@@ -179,6 +248,7 @@ public:
     __in_opt  const GUID *PowerSettingGuid,
     __in      DWORD DcValueIndex
     );
+  BYTE PowerSchemeToSetExists() ;
   DWORD WINAPI PowerWriteDCValueIndex(
     __in_opt  HKEY RootPowerKey,
     __in      const GUID *SchemeGuid,
@@ -186,8 +256,16 @@ public:
     __in_opt  const GUID *PowerSettingGuid,
     __in      DWORD DcValueIndex
   );
+  DWORD WINAPI PowerWriteFriendlyName(
+    __in_opt  HKEY RootPowerKey,
+    __in      const GUID *SchemeGuid,
+    __in_opt  const GUID *SubGroupOfPowerSettingsGuid,
+    __in_opt  const GUID *PowerSettingGuid,
+    __in      UCHAR *Buffer,
+    __in      DWORD BufferSize
+  );
 
   bool OtherDVFSisEnabled() ;
-  void OutputAllPowerSchemes() {} ;
+  void OutputAllPowerSchemes() ;
   void SetFunctionPointersToNULL() ;
 };//end class

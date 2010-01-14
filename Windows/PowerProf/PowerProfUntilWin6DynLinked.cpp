@@ -644,12 +644,13 @@ bool PowerProfUntilWin6DynLinked::DisableFrequencyScalingByOS()
   {
     //std::wstring wstr = m_strWantedPowerScheme ;
     //LPTSTR lptstr = _T("CPUcontrol") ;
-    LPWSTR lpwstr = L"CPUcontrol" ;
+    //LPWSTR lpwstr = L"CPUcontrol" ;
     LPWSTR lpwstrDescription = L"for an own Dynamic Voltage & Frequency Scaling" ;
     if( CreatePowerScheme( //m_strWantedPowerScheme.c_str() , 
         //wstr.c_str() ,
         //lptstr ,
-        lpwstr ,
+        //lpwstr ,
+        (wchar_t *) m_stdwstrPowerSchemeName.c_str() ,
         //_T("for own Dyn.Volt. & Freq. Scal.") ,
         //L"for own Dyn.Volt. & Freq. Scal." ,
         lpwstrDescription ,
