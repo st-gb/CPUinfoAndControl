@@ -423,15 +423,15 @@
           </incDir>
         </cTool>
         <ccTool>
-          <commandlineTool>g++.exe</commandlineTool>
+          <commandlineTool>g++-4.exe</commandlineTool>
           <incDir>
             <pElem>../..</pElem>
             <pElem>../../Controller/MSVC_adaption_</pElem>
-            <pElem>C:/wxWidgets-2.8.10/include</pElem>
+            <pElem>${WXWIDGETS_CYGWIN_PATH}/include</pElem>
             <pElem>C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include_</pElem>
-            <pElem>C:/wxWidgets-2.8.10/msw-cygwin-static-debug/lib/wx/include/msw-ansi-debug-static-2.8</pElem>
+            <pElem>${WX_ANSI_DBG_STATIC_SETUP_H_CYG_PATH}</pElem>
             <pElem>C:/wxWidgets-2.8.10/msw-mingw-debug/lib/wx/include/msw-ansi-debug-static-2.8_</pElem>
-            <pElem>C:/Libs/WinRing0_1_2_0Alpha1/source/dll</pElem>
+            <pElem>${WINRING0_CYGWIN_PATH}/source/dll</pElem>
             <pElem>../../MS_PlatformSDK6.1</pElem>
             <pElem>T:/MS_PlatformSDK6.1</pElem>
           </incDir>
@@ -451,12 +451,14 @@
             <Elem>_GLIBCXX_EXPORT_TEMPLATE_</Elem>
             <Elem>XERCES_STATIC_LIBRARY</Elem>
             <Elem>XML_LIBRARY</Elem>
+            <Elem>COMPILE_WITH_AMD_GRIFFIN</Elem>
           </preprocessorList>
         </ccTool>
         <linkerTool>
           <linkerAddLib>
-            <pElem>C:/wxWidgets-2.8.10/msw-cygwin-static-debug/lib</pElem>
-            <pElem>C:/Libs/WinRing0_1_2_0Alpha1/release</pElem>
+            <pElem>${WX_CYG_ANSI_DBG_STAT_LIB_PATH}</pElem>
+            <pElem>C:/Libs/WinRing0_1_2_0Alpha1/release_</pElem>
+            <pElem>${WINRING0_CYG_LIB_PATH}</pElem>
           </linkerAddLib>
           <linkerLibItems>
             <linkerLibLibItem>advapi32</linkerLibLibItem>
@@ -477,14 +479,6 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
-      <item path="../../Controller/AMD/Griffin/ClocksNotHaltedCPUcoreUsageGetter.cpp"
-            ex="true"
-            tool="1">
-      </item>
-      <item path="../../Controller/AMD/Griffin/GriffinController.cpp"
-            ex="true"
-            tool="1">
-      </item>
       <item path="../../Controller/Linux.cpp" ex="true" tool="1">
       </item>
       <item path="../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp"
@@ -511,10 +505,6 @@
       </item>
       <item path="../../Linux/daemon.c" ex="true" tool="0">
       </item>
-      <item path="../../ModelData/PStates.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../ModelData/Pstate.cpp" ex="true" tool="1">
-      </item>
       <item path="../../Windows/CPUcontrolService.cpp" ex="true" tool="1">
       </item>
       <item path="../../Windows/CPUcoreUsageGetterIWbemServices.cpp"
@@ -538,10 +528,6 @@
       <item path="../../Windows/NamedPipeServer.cpp" ex="true" tool="1">
       </item>
       <item path="../../Windows/main.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp"
-            ex="true"
-            tool="1">
       </item>
       <item path="../../main.cpp" ex="true" tool="1">
       </item>

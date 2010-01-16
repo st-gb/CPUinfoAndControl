@@ -13,8 +13,10 @@
 #include "GriffinController.hpp"
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_7BIT
 #include <Controller/CPUindependentHelper.h>
+#include <Controller/CalculationThreadProc.h>//for macros "STARTED" and "ENDED"
 #include <Controller/Sleep.h>
-#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+//#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <Controller/stdtstr.hpp> //GetStdString(...)
 #include <ModelData/ModelData.hpp>
 #include <ModelData/PStates.h>
 #include <Windows/CalculationThread.hpp>
@@ -221,8 +223,10 @@ using namespace std;
     DEBUG("cmdLineParamsContain begin\n");
     for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
     {
-      std::string strCmdArg( GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
-      wPos = (WORD) strCmdArg.find( std::string( GetCharPointer( 
+      std::string strCmdArg( //GetCharPointer( m_arartcharCmdLineArg[ nIndex ] )
+        GetStdString( m_arartcharCmdLineArg[ nIndex ]) );
+      wPos = (WORD) strCmdArg.find( std::string( //GetCharPointer(
+        GetStdString(
         ptcharOption ) ) +
         //TCHAR("=")
         std::string("=") ) ;
@@ -270,8 +274,11 @@ using namespace std;
 #ifdef MS_COMPILER
           rbyOption = _tstoi(m_arartcharCmdLineArg[nIndex +1 ] ) ;
 #else
-          rbyOption = atoi( GetCharPointer( m_arartcharCmdLineArg[ 
-            nIndex + 1 ] ) ) ;
+          rbyOption = atoi( //GetCharPointer( m_arartcharCmdLineArg[
+            //nIndex + 1 ] )
+            GetStdString( m_arartcharCmdLineArg[
+            nIndex + 1 ] ).c_str()
+            ) ;
 #endif
           bcmdLineParamsContain = true ;
           break ;

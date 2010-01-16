@@ -7,7 +7,9 @@
 //   'void': Keine Elemente definiert, die diesen Typ verwenden
 //http://trac.wxwidgets.org/ticket/11482:
 //if you include <windows.h> you must include <wx/msw/winundef.h> after it.
-#include <wx/msw/winundef.h> 
+#ifdef _MSC_VER //Microsoft compiler
+#include <wx/msw/winundef.h>
+#endif
 #include <wx/thread.h> //for class wxCriticalSection
 
 #define CPU_CORE_DATA_NOT_SET 255
