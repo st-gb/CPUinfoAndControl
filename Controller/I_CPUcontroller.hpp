@@ -124,7 +124,7 @@ public:
   //  float & r_fVoltageInVolt 
   //  , std::map<VoltageAndFreq> & r_stdsetvoltageandfreq
   //  ) ;
-  virtual WORD GetNumberOfPstates() { return 0 ; }
+  virtual WORD GetNumberOfPstates() ;//{ return 0 ; }
   //As far as I know there is no standard way to determine the number of CPU
   //cores. So AMD Griffins store the value at CPUID function 8...8 but not
   //Intel. As the number is spectic the CPU models the controller should know
@@ -141,7 +141,7 @@ public:
   virtual WORD GetMinimumVoltageID() = 0 ;
   virtual WORD GetNearestHigherPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   virtual WORD GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld) ;
-  virtual BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq) = 0 ;
+  virtual BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq) ;//= 0 ;
   virtual //bool 
     BYTE GetPstateSafefy(
     WORD wFreqInMHz
@@ -230,7 +230,7 @@ public:
     WORD wFreqInMHz 
     , const std::set<VoltageAndFreq> & 
       cr_stdsetvoltageandfreqForInterpolation
-    , BYTE byCoreID ) { return 0 ; };
+    , BYTE byCoreID ) ;//{ return 0 ; };
 
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.

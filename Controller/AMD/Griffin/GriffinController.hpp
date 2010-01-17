@@ -161,6 +161,14 @@ public :
   bool cmdLineParamsContain(_TCHAR * ptcharOption, std::string & strValue);
   bool cmdLineParamsContain(_TCHAR * ptcharOption, BYTE & rbyOption) ;
 
+  void DecreaseVoltageBy1Step(float & r_fVoltage)
+  { 
+    WORD wVoltageID = GetVoltageID( r_fVoltage ) ;
+    r_fVoltage = GetVoltageInVolt( 
+      //Higher voltage ID means lower voltage 
+      ++ wVoltageID ) ; 
+  }
+
   //float
   ULONGLONG GetCurrentCPUload(BYTE byCPUcoreID) ;
 
@@ -215,6 +223,14 @@ public :
   #endif //#ifndef LINK_TO_WINRING0_STATICALLY
 //#endif//#ifdef WIN32
 #endif//#ifdef _WINDOWS
+
+  void IncreaseVoltageBy1Step(float & r_fVoltage)
+  { 
+    WORD wVoltageID = GetVoltageID( r_fVoltage ) ;
+    r_fVoltage = GetVoltageInVolt( 
+      //Lower voltage ID means higher voltage.
+      -- wVoltageID ) ; 
+  }
 
   void IncreaseVoltageForCurrentPstate(BYTE byCoreID );
 
@@ -306,25 +322,19 @@ public :
   WORD GetMinimumFrequencyInMHz() { return 150 ; }
   WORD GetMaximumVoltageID()  { return 64 ; }
   WORD GetMinimumVoltageID() { return 36 ; }
-  BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq
-    ) { return 0 ; }
+  //BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq
+  //  ) { return 0 ; }
   //bool GetPstateSafefy(
   //  WORD wFreqInMHz
   //  , float fVoltage 
   //  ) ;
-  float GetVoltageInVolt(WORD wVoltageID ) { return 0.0 ; }
+  float GetVoltageInVolt(WORD wVoltageID ) ;//{ return 0.0 ; }
   void FindLowestOperatingVoltage(BYTE byPstate, BYTE byCoreID) ;
 
   BYTE GetPstateSafefy(//PState & r_pstate,
     BYTE byVID,BYTE byFreqID,BYTE byDivID) ;
-  WORD GetVoltageID(float fVoltageInVolt ) 
-  { 
-    return
-      //without explicit cast: compiler warning
-      (BYTE)
-      //ceil( (fVoltageInVolt - 1.55f) * -1.0f / 0.0125f ) ;
-      ceil( (fVoltageInVolt - 1.55f) / -0.0125f ) ;
-  }
+
+  WORD GetVoltageID(float fVoltageInVolt ) ;
 
   bool IsTurionUltra() ;
 
@@ -336,6 +346,8 @@ public :
     DWORD & dwECX,
     DWORD & dwEDX
     );
+
+  float GetMinimumVoltageInVolt() ;
 
   BYTE GetNumberOfCPUCores() ;
 
@@ -539,6 +551,10 @@ public :
   bool GetMaxPState(BYTE & byMaxPstate) ;
   bool SetMaxPState(BYTE byMaxPstate) ;
 
+  //Implement this method our own because of this:
+  //the OS freezes when freq > 1/2 max. freq && < max. freq.
+  //So, of the freq is in this range, set it to either
+  //1/2 max. freq or max. freq.
    BYTE SetFreqAndVoltageFromFreq(
     WORD wFreqInMHz 
     , BYTE byCoreID ) ;

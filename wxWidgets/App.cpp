@@ -308,12 +308,15 @@ bool wxX86InfoAndControlApp::OnInit()
       //  m_powerprofdynlinked
       //  ) ;
       //mp_cpucontroller = //CPUcontrollerFactory::
+      if(
         m_maincontroller.
         //Creates e.g. an AMD Griffin oder Intel Pentium M controller
         CreateCPUcontrollerAndUsageGetter( 
           mp_cpucontroller 
           , mp_cpucoreusagegetter
-          ) ;
+          ) 
+        )
+      {
 			//Now we have created the CPU controller. It knows how many cores it has.
 		  //The core count is an important information e.g. for the Linux MSR device
 		  //file access.
@@ -618,6 +621,9 @@ bool wxX86InfoAndControlApp::OnInit()
       //  {
       //      s << parser.GetParam(param) << ' ';
       //  }
+      }
+      else //CreateCPUcontrollerAndUsageGetter(...) failed
+        mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
       }
       catch(//ReadMSRexception 
           CPUaccessException e)

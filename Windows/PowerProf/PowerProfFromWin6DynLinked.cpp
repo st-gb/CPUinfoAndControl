@@ -49,6 +49,7 @@ BYTE PowerProfFromWin6DynLinked::ActivatePowerSchemeToSet()
 {
   PowerGetActiveScheme( NULL, m_guidPowerSchemeBeforeDisabling ) ;
   PowerSetActiveScheme( NULL, & m_guidPowerSchemeToSet ) ;
+  return 0 ;
 }
 
 //Return value: step at which the failure was.
@@ -107,6 +108,20 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
   //ERROR_ALREADY_EXISTS  183 (0xB7)
   if( r_dwRetValue == ERROR_SUCCESS )
   {
+    DWORD dwBufferSize = ( 
+      //"(DWORD" to avoid "warning C4267: 'initializing' : conversion from 'size_t' to 
+      //'DWORD', possible loss of data"
+      (DWORD) cr_stdwstrPowerSchemeName.length() 
+    ////MSVC: wstring::length(): size in bytes
+    ////gcc: wstring::length(): size in characters
+    //#ifndef _MSC_VER
+      //terminating NULL character
+      + 1 )
+      * 2 
+    //#endif
+      ;
+    const wchar_t * p_wch = cr_stdwstrPowerSchemeName.c_str() ;
+    //dwBufferSize = wcslen( p_wch ) ;
     r_dwRetValue =
       //"Returns ERROR_SUCCESS (zero) if the call was successful, and a non-zero
       //value if the call failed."
@@ -121,9 +136,14 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
       , NULL  //__in_opt  const GUID *PowerSettingGuid,
       , (UCHAR *) cr_stdwstrPowerSchemeName.c_str() //__in      UCHAR *Buffer,
       //The size in bytes.
-      , cr_stdwstrPowerSchemeName.length()
-      //1 wide char has 2 bytes-> "*2"
-      * 2 //__in      DWORD BufferSize
+      , 
+      //cr_stdwstrPowerSchemeName.length()
+      ////1 wide char has 2 bytes-> "*2"
+      //* 2 //__in      DWORD BufferSize
+      //http://msdn.microsoft.com/en-us/library/aa372773%28VS.85%29.aspx:
+      //"The size of the friendly name specified by the Buffer parameter, 
+      //including the terminating NULL character."
+      dwBufferSize
     );
     //"If the pointer contains NULL, the function allocates memory for a new
     //GUID and puts the address of this memory in the pointer. The caller can
@@ -132,7 +152,7 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
     if( r_dwRetValue == ERROR_SUCCESS )
     {
       //guidNewPowerScheme = * p_guidNewPowerScheme ;
-      return 0 ;
+      return CREATE_POWER_SCHEME_SUCCEEDED ;
     }
   }
   else
@@ -140,9 +160,10 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
   return 1 ;
 }
 
+//Return: 0 = success
 unsigned char PowerProfFromWin6DynLinked::CreatePowerSchemeWithWantedName()
 {
-  BYTE byRet = 0 ;
+  BYTE byRet = 1 ;
   DWORD dwRetValue ;
   GUID guidNewPowerScheme ;
   byRet = CreatePowerScheme(
@@ -150,10 +171,11 @@ unsigned char PowerProfFromWin6DynLinked::CreatePowerSchemeWithWantedName()
     , dwRetValue //DWORD & r_dwRetValue
     , guidNewPowerScheme
     ) ;
-  if( byRet == 0 )
+  if( byRet == CREATE_POWER_SCHEME_SUCCEEDED )
   {
     m_guidPowerSchemeToSet = guidNewPowerScheme ;
   }
+  return byRet ;
 }
 
 BYTE PowerProfFromWin6DynLinked::DeletePowerScheme( 
@@ -378,6 +400,7 @@ BYTE PowerProfFromWin6DynLinked::DisableDVFSforPowerSchemeToSet()
       //&& guidActivePowerScheme == m_guidPowerSchemeToSet
       )
     {
+      bool bWriteSetting = false ;
       GetThrottleSettings(
         guidActivePowerScheme
         , m_dwACProcThrottleMaxValue
@@ -385,29 +408,66 @@ BYTE PowerProfFromWin6DynLinked::DisableDVFSforPowerSchemeToSet()
         , m_dwDCProcThrottleMaxValue
         , m_dwDCProcThrottleMinValue
         ) ;
+      //The current setting may be the "max. perf" scheme e.g.
       if( m_dwACProcThrottleMaxValue != m_dwACProcThrottleMinValue )
-      {
-        //GUID guidActivePowerScheme ;
-        //PowerGetActiveScheme( NULL , guidActivePowerScheme ) ;
-        //if( mp_guidPowerSchemeToSet )
+        if( guidActivePowerScheme == m_guidPowerSchemeToSet )
         {
-    //      PowerSetActiveScheme( NULL ,
-    //        //If the scheme for the wanted name was retrieved once, use its GUID for
-    //        //setting the scheme. The name of the scheme may be altered, but its GUID
-    //        //stays the same.
-    //        //mp_guidPowerSchemeToSet
-    //        & m_guidPowerSchemeToSet ) ;
-          DisableDVFSforAlternateCurrent( //mp_guidPowerSchemeToSet ,
-            & m_guidPowerSchemeToSet ,
-            25 ) ;
+          //GUID guidActivePowerScheme ;
+          //PowerGetActiveScheme( NULL , guidActivePowerScheme ) ;
+          //if( mp_guidPowerSchemeToSet )
+          {
+      //      PowerSetActiveScheme( NULL ,
+      //        //If the scheme for the wanted name was retrieved once, use its GUID for
+      //        //setting the scheme. The name of the scheme may be altered, but its GUID
+      //        //stays the same.
+      //        //mp_guidPowerSchemeToSet
+      //        & m_guidPowerSchemeToSet ) ;
+            //DisableDVFSforAlternateCurrent( //mp_guidPowerSchemeToSet ,
+            //  & m_guidPowerSchemeToSet ,
+            //  50 ) ;
+            bWriteSetting = true ;
+          }
         }
-      }
+        else
+        {
+          //The settings for the power scheme for THIS program.
+          GetThrottleSettings(
+            m_guidPowerSchemeToSet
+            , m_dwACProcThrottleMaxValue
+            , m_dwACProcThrottleMinValue
+            , m_dwDCProcThrottleMaxValue
+            , m_dwDCProcThrottleMinValue
+            ) ;
+          if( m_dwACProcThrottleMaxValue != m_dwACProcThrottleMinValue )
+            bWriteSetting = true ;
+        }
+      if( bWriteSetting )
+        DisableDVFSforAlternateCurrent( //mp_guidPowerSchemeToSet ,
+          & m_guidPowerSchemeToSet ,
+          50 ) ;
+      bWriteSetting = false ;
       if( m_dwDCProcThrottleMaxValue != m_dwDCProcThrottleMinValue )
       {
+        if( guidActivePowerScheme == m_guidPowerSchemeToSet )
+          bWriteSetting = true ;
+      }
+      else
+      {
+        //The settings for the power scheme for THIS program.
+        GetThrottleSettings(
+          m_guidPowerSchemeToSet
+          , m_dwACProcThrottleMaxValue
+          , m_dwACProcThrottleMinValue
+          , m_dwDCProcThrottleMaxValue
+          , m_dwDCProcThrottleMinValue
+          ) ;
+       if( m_dwDCProcThrottleMaxValue != m_dwDCProcThrottleMinValue )
+         bWriteSetting = false ;
+     }
+      if( bWriteSetting )
         DisableDVFSforDirectCurrent( //& guidActivePowerScheme ,
           & m_guidPowerSchemeToSet ,
-          25 ) ;
-      }
+          50 ) ;
     }
   }
   return 1 ;
@@ -492,7 +552,10 @@ unsigned char PowerProfFromWin6DynLinked::EnableFrequencyScalingByOS()
 //      )
 //      bySuccess = 0 ;
 //  }
-  dwRet = PowerSetActiveScheme( NULL, & m_guidPowerSchemeBeforeDisabling ) ;
+  dwRet = PowerSetActiveScheme( NULL, & 
+    //TODO: if this program was started and the DVFS was disabled yet
+    //then this programs knows no valid guid for enabling the DVFS.
+    m_guidPowerSchemeBeforeDisabling ) ;
   if( dwRet == ERROR_SUCCESS )
     bySuccess = 1 ;
   return bySuccess ;
@@ -800,6 +863,10 @@ void PowerProfFromWin6DynLinked::InitializeFunctionPointers()
     pfnPowerSetActiveScheme) ::GetProcAddress(
     m_hinstancePowerProfDLL, strFuncName.c_str() );
 
+  strFuncName = "PowerSettingAccessCheck " ;
+  m_pfnpowersettingaccesscheck = (pfnPowerSettingAccessCheck) ::GetProcAddress( 
+    m_hinstancePowerProfDLL, strFuncName.c_str() );
+
   strFuncName = "PowerWriteACValueIndex" ;
   m_pfnpowerwriteacvalueindex = (pfnPowerWriteACValueIndex) ::GetProcAddress( 
     m_hinstancePowerProfDLL, strFuncName.c_str() );
@@ -1059,7 +1126,8 @@ DWORD WINAPI PowerProfFromWin6DynLinked::PowerReadFriendlyName(
       & dwBufferSize
       ) ;
   }
-}
+  return dwRes ;
+  }
 
 //http://msdn.microsoft.com/en-us/library/aa372740(VS.85).aspx:
 //"If the SchemeGuid parameter is not NULL but both the
@@ -1156,6 +1224,17 @@ DWORD WINAPI PowerProfFromWin6DynLinked::PowerSetActiveScheme(
   return (*m_pfnpowersetactivescheme) (
     UserRootPowerKey,
     SchemeGuid //__in      const GUID *SchemeGuid
+    ) ;
+}
+
+DWORD WINAPI PowerProfFromWin6DynLinked::PowerSettingAccessCheck(
+  __in      POWER_DATA_ACCESSOR AccessFlags,
+  __in_opt  const GUID *PowerGuid
+  )
+{
+  return (*m_pfnpowersettingaccesscheck) (
+    AccessFlags,
+    PowerGuid
     ) ;
 }
 
@@ -1349,6 +1428,7 @@ void PowerProfFromWin6DynLinked::SetFunctionPointersToNULL()
   m_pfnpowerreadacvalueindex = NULL ;
   m_pfnpowerreaddcvalueindex = NULL ;
   m_pfnpowersetactivescheme = NULL ;
+  m_pfnpowersettingaccesscheck = NULL ;
   m_pfnpowerwriteacvalueindex = NULL ;
   m_pfnpowerwritedcvalueindex = NULL ;
   m_pfnpowerwritefriendlyname = NULL ;

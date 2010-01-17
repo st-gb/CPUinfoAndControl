@@ -267,9 +267,11 @@ MainFrame::MainFrame(
 #endif
   CreateDynamicMenus();
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
-  wxMenu * p_wxmenuExtras = new wxMenu;
+  wxMenu * p_wxmenuExtras = NULL ;
 //#ifdef COMPILE_WITH_SERVICE_CONTROL
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+  if( ! p_wxmenuExtras ) 
+    p_wxmenuExtras = new wxMenu;
   mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
     ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq, 
     //_T("&CPU % min and max.") 
@@ -294,17 +296,29 @@ MainFrame::MainFrame(
 #ifdef _WINDOWS
   //wxMenu * p_wxmenuExtras = new wxMenu;
 //#endif
-  if( ! p_cpucontroller->mp_model->m_cpucoredata.
-    m_stdsetvoltageandfreqDefault.empty() )
+  //if( ! p_cpucontroller->mp_model->m_cpucoredata.
+  //  m_stdsetvoltageandfreqDefault.empty() 
+  //  )
+  {
+    if( ! p_wxmenuExtras ) 
+      p_wxmenuExtras = new wxMenu;
     mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
       ID_EnableOrDisableOtherDVFS
       , _T("enable own DVFS") 
       );
+    if( ! p_cpucontroller->mp_model->m_cpucoredata.
+      m_stdsetvoltageandfreqDefault.empty() 
+      )
+      mp_wxmenuitemOwnDVFS->Enable(false) ;
+  }
 #endif
 #ifdef COMPILE_WITH_MSR_EXAMINATION
+  if( ! p_wxmenuExtras ) 
+    p_wxmenuExtras = new wxMenu;
   p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
-  mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 #endif
+  if( p_wxmenuExtras )
+    mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //    ////Connect the action, that is a class derived from class xx directly
 //    ////with the menu item so that it is ensured to be the correct action
@@ -1561,6 +1575,9 @@ void MainFrame::DrawCurrentPstateInfo(
 //   ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts * ar_cnh_cpucore_ugpca = 
 //	   ;
 //#endif
+   ::wxGetApp().mp_cpucoreusagegetter->
+     GetPercentalUsageForAllCores(
+     mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
    //TODO respect # of cpu cores
    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
@@ -1576,9 +1593,6 @@ void MainFrame::DrawCurrentPstateInfo(
      if( mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
      {
        //mp_cpucontroller->
-       ::wxGetApp().mp_cpucoreusagegetter->
-         GetPercentalUsageForAllCores(
-         mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
        float fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ] ;
 #ifdef _DEBUG
        if ( fCPUload == 0.0 )
@@ -2044,7 +2058,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
     //        , 20
     //        ) ;
     //    double dDiff ;
-        ULONGLONG ullDiff ;
+        //ULONGLONG ullDiff ;
     //    if( //If value overflow.
     //      ull < m_ullPreviousCPUusage )
     //      //dDiff =
@@ -2903,6 +2917,10 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
       mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin() ;
     //Need to set the max freq. Else (all) the operating points are drawn at x-coord. "0".
     mp_cpucoredata->m_wMaxFreqInMHz = (*reviter).m_wFreqInMHz ;
+    if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() > 1 
+      //&& ! mp_wxmenuitemOwnDVFS->IsEnabled()
+      )
+      mp_wxmenuitemOwnDVFS->Enable(true) ;
     RedrawEverything() ;
   }
   else

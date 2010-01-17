@@ -90,7 +90,8 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   }
   else
   {
-    if( mp_i_powerprofdynlinked->CreatePowerSchemeWithWantedName() )
+    if( mp_i_powerprofdynlinked->CreatePowerSchemeWithWantedName() 
+      == CREATE_POWER_SCHEME_SUCCEEDED )
     {
   //many gcc compile errors with LOGN _here_:
   // "/usr/lib/gcc/i686-pc-cygwin/4.3.4/include/c++/bits/istream.tcc:944:

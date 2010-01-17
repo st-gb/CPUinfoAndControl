@@ -141,7 +141,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
       //&& m_bSuccFullyGotPStateFromMSR 
       )
     {
-      float fTempInDegCelsius ;
+      //float fTempInDegCelsius ;
       //check if a temp. could be received:
       //Pentium M CPUs have no temperature register
       if( 

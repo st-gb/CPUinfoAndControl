@@ -79,6 +79,7 @@ public:
   void OnDecVoltage(wxCommandEvent & );
   void OnIncVoltage(wxCommandEvent & );
   void OnSetAsMinVoltageButton(wxCommandEvent & );
+  void OnSetAsWantedVoltageButton(wxCommandEvent & );
   void OnSpinVoltageDown(wxSpinEvent & event) ;
   void OnSpinVoltageUp(wxSpinEvent & event) ;
   void OutputFreqAndVoltageByControlValues() ;

@@ -39,8 +39,8 @@ enum
   ID_MultiplierSlider,
   ID_VoltageSlider
   , ID_FrequencySlider
-  , ID_SetAsWantedVoltage
   , ID_SetAsMinVoltage
+  , ID_SetAsWantedVoltage
   //, ID_SpinVoltageUp
   //, ID_SpinVoltageDown
   , ID_SpinVoltage //= 182
@@ -53,6 +53,8 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   EVT_BUTTON(wxID_APPLY, FreqAndVoltageSettingDlg::OnApplyButton)
   EVT_BUTTON(ID_SetAsMinVoltage, 
     FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton)
+  EVT_BUTTON(ID_SetAsWantedVoltage, 
+    FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton)
 #if wxUSE_SPINBTN
   //EVT_SPIN_UP(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageUp)
   //EVT_SPIN_DOWN(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageDown)
@@ -1080,6 +1082,20 @@ void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton( wxCommandEvent & wxcmd )
   mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Leave() ;
 }
 
+void FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton( wxCommandEvent & wxcmd )
+{
+  float fVoltage = mp_cpucontroller->GetVoltageInVolt( 
+    mp_wxsliderCPUcoreVoltage->GetValue() ) ;
+  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
+  mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
+  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
+    insert( 
+      VoltageAndFreq( fVoltage
+        , wFreq
+        )
+    ) ;
+  mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Leave() ;
+}
 void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
 {
   if( nNewValue < //mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID 

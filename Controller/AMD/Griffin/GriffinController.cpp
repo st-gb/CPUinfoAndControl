@@ -307,9 +307,38 @@ using namespace std;
     //return true ;
   }//void DisableFrequencyScaling()
 
+  WORD GriffinController::GetVoltageID(float fVoltageInVolt ) 
+  { 
+    //E.g. for "1.1" V the float value is 1.0999999 
+    // (because not all numbers are representable with a 8 byte value) 
+    // so the voltage ID as float value gets "36.000004".
+    float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f ;
+    WORD wVoltageID =
+      //without explicit cast: compiler warning
+      //Avoid g++ warning "warning: converting to `WORD' from `float'"
+      (WORD)
+      //ceil( (fVoltageInVolt - 1.55f) * -1.0f / 0.0125f ) ;
+      //ceil( //(fVoltageInVolt - 1.55f) / -0.0125f 
+        fVoltageID //) 
+      ;
+    //Check to which integer voltage ID the float value is nearer.
+    //E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36"
+    if( fVoltageID - (float) wVoltageID >= 0.5 ) 
+      ++ wVoltageID ;
+    return wVoltageID ;
+  }
+
   BYTE GriffinController::GetVoltageIDFromVoltageInVolt(float fVoltageInVolt)
   {
     return PState::GetVoltageID(fVoltageInVolt) ;
+  }
+
+  float GriffinController::GetVoltageInVolt(WORD wVoltageID )
+  {
+    return 
+      //The maximum possible voltage.
+      1.55f 
+      - ( (float)( wVoltageID ) * 0.0125f ) ;
   }
 
 //LRESULT CALLBACK //PumaStateCtrl::
@@ -724,6 +753,24 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
     BYTE byEventQualification
   )
   {
+    if( bInvertCounterMask == true )
+      //When Inv = 1, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
+      //number of events occurring in a clock cycle is less than CntMask value.
+      //Less than 1 = 0 -> so if Clocks not halted and 0 times "not halted": ->"halted"
+      byCounterMask = 1 ;
+    //see AMD Family 11h Processor BKDG, paragraph
+    //"MSRC001_00[03:00] Performance Event Select Register (PERF_CTL[3:0])"
+    //bits:
+    //31:24 CntMask: counter mask. Read-write. Controls the number of events 
+        //counted per clock cycle.
+      //00h The corresponding PERF_CTR[3:0] register is incremented by the number of events
+        //occurring in a clock cycle. Maximum number of events in one cycle is 3.
+      //01h-03h When Inv = 0, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
+        //number of events occurring in a clock cycle is greater than or equal to the CntMask value.
+         //When Inv = 1, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
+         //number of events occurring in a clock cycle is less than CntMask value.
+      //04h-FFh Reserved.
+    //23 | Inv: invert counter mask. Read-write. See CntMask.
     DWORD dwLow = 0 |
       ( byCounterMask << 24 ) |
       ( bInvertCounterMask << 23 ) |
@@ -798,8 +845,8 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
       //byCounterMask: 00h: The corresponding PERF_CTR[3:0] register is incremented by the number of events
       //occurring in a clock cycle. Maximum number of events in one cycle is 3.
       0,
-      //bInvertCounterMask
-      0,
+      bInvertCounterMask ,
+      //0,
       //bEnablePerformanceCounter
       1,
       //bEnableAPICinterrupt
@@ -908,10 +955,11 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
     , BYTE byCoreID 
     )
   {
-	  DWORD dwIndex ;		// MSR index
+    BYTE bySuccess = 0 ;
+	  //DWORD dwIndex ;		// MSR index
 	  DWORD dwLowmostBits ;			// bit  0-31 (register "EAX")
 	  DWORD dwHighmostBits ;			// bit 32-63 (register "EDX")
-	  DWORD_PTR dwAffinityMask ;	// Thread Affinity Mask
+	  //DWORD_PTR dwAffinityMask ;	// Thread Affinity Mask
     if( RdmsrEx(
 	    COFVID_STATUS_REGISTER ,		// MSR index
 	    dwLowmostBits,			// bit  0-31 (register "EAX")
@@ -924,8 +972,9 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
       GetVIDmFIDnDID(dwLowmostBits,pstate ) ;
       r_wFreqInMHz = pstate.GetFreqInMHz() ;
       r_fVoltageInVolt = pstate.GetVoltageInVolt() ;
+      bySuccess = 1 ;
     }
-    return 0 ; 
+    return bySuccess ; 
   }
 
   int GriffinController::GetPStateFromMSR(
@@ -2642,6 +2691,11 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 		  1<<byDivID) ;
   }
 
+  float GriffinController::GetMinimumVoltageInVolt()
+  {
+    return GetVoltageInVolt(mp_model->m_cpucoredata.m_byMaxVoltageID) ;
+  }
+
   UserInterface * GriffinController::GetUserInterface()
   {
     return mp_userinterface;
@@ -2903,36 +2957,47 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         if( mp_model->m_bEnableOvervoltageProtection )
         {
           LOG("overvoltage protection is enabled\n") ; 
-          float fMaxVoltageForWantedFreq ;
-          //byReturn = UseMaxVoltageForFreqForOvervoltageProtection(
-          //    byVID, wWantedFrequInMHz) ;
-          float fWantedVoltageInVolt = PState::GetVoltageInVolt(byVID);
-          //float fMaxVoltageForWantedFreq = GetMaxVoltageForFreq( 
-          byReturn = GetMaxVoltageForFreq( 
-              wWantedFrequInMHz ,
-              fMaxVoltageForWantedFreq 
-              ) ;
-          LOG("Max. voltage is " << 
-              //no scientific (e.g. 1e+015)notation
-              std::fixed << 
-              //2 digits after decimal point
-              std::setprecision(2) <<
-              fMaxVoltageForWantedFreq << "\n" ) ; 
-          if( byReturn == APPROPRIATE_2_VOLTAGE_FREQUENCY_PAIRS_FOUND || 
-              byReturn == ONE_APPROPRIATE_VOLTAGE_FREQUENCY_PAIR_FOUND )
-          {
-              //LOG("Appropriate voltage-frequency pairs were found.\n" ) ; 
-              if( fWantedVoltageInVolt > fMaxVoltageForWantedFreq )
-              {
-                 LOG("The voltage is too high for the freq.\n" ) ; 
-                  byReturn = VOLTAGE_IS_TOO_HIGH_FOR_FREQUENCY ;
-              }
-              else
-              {
-                  byReturn = SETTING_VOLTAGE_IS_SAFE ;
-                 LOG("Setting the voltage is safe.\n" ) ; 
-              }
-          }
+          //float fMaxVoltageForWantedFreq ;
+          ////byReturn = UseMaxVoltageForFreqForOvervoltageProtection(
+          ////    byVID, wWantedFrequInMHz) ;
+          //float fWantedVoltageInVolt = PState::GetVoltageInVolt(byVID);
+          ////float fMaxVoltageForWantedFreq = GetMaxVoltageForFreq( 
+          //byReturn = GetMaxVoltageForFreq( 
+          //    wWantedFrequInMHz ,
+          //    fMaxVoltageForWantedFreq 
+          //    ) ;
+          //LOG("Max. voltage is " << 
+          //    //no scientific (e.g. 1e+015)notation
+          //    std::fixed << 
+          //    //2 digits after decimal point
+          //    std::setprecision(2) <<
+          //    fMaxVoltageForWantedFreq << "\n" ) ; 
+          //if( byReturn == APPROPRIATE_2_VOLTAGE_FREQUENCY_PAIRS_FOUND || 
+          //    byReturn == ONE_APPROPRIATE_VOLTAGE_FREQUENCY_PAIR_FOUND )
+          //{
+          //    //LOG("Appropriate voltage-frequency pairs were found.\n" ) ; 
+          //    if( fWantedVoltageInVolt > fMaxVoltageForWantedFreq )
+          //    {
+          //       LOG("The voltage is too high for the freq.\n" ) ; 
+          //        byReturn = VOLTAGE_IS_TOO_HIGH_FOR_FREQUENCY ;
+          //    }
+          //    else
+          //    {
+          //        byReturn = SETTING_VOLTAGE_IS_SAFE ;
+          //       LOG("Setting the voltage is safe.\n" ) ; 
+          //    }
+          //}
+          float fMaxVoltageInVolt ;
+          WORD wFreqInMHz = GriffinController::getFrequencyInMHz(
+            byFrequencyID,byDivisorID);
+          if( GetInterpolatedVoltageFromFreq(
+            wFreqInMHz
+            , fMaxVoltageInVolt 
+            , mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+            //, * mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault
+              )
+            )
+            byReturn = SETTING_VOLTAGE_IS_SAFE ;
         }
         else
         {
@@ -3741,9 +3806,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       )
     {
       BYTE byCPUcoreID = 0 ;
-      DWORD dwLowmostBits, dwEDX ;
+      //DWORD dwLowmostBits ;
+      //DWORD dwEDX ;
       PState pstateDummy ;
-      BYTE byCurrentPstate ;
+      //BYTE byCurrentPstate ;
        //if( mp_pumastatectrl->RdmsrEx( 
        //    COFVID_STATUS_REGISTER, 
        //    dwLowmostBits, 
@@ -3797,7 +3863,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       )
     {
       BYTE byPstateNumber = 2 ;
-      DWORD dwMSRHigh, dwMSRLow ;
+      //DWORD dwMSRHigh, dwMSRLow ;
       //mp_pumastatectrl->
       //setVidAndFrequencyForPState_Puma(
       //  //mp_pumastatectrl->
@@ -4588,6 +4654,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       )
     {
       BYTE byMaxVID = 0 ;
+      byReturn = SETTING_VOLTAGE_IS_SAFE ;
       //char arch[33] ;
       //Defines on which core(s) the MSR funtions should
       //be run on. ex.: 11bin = core 0 & 1, 1bin= core 0, 10bin = core 1
@@ -4895,7 +4962,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         "protection: the core voltage is too high for the core frequency" ;
       //mp_userinterface->Confirm("1 P-State wird nicht gesetzt aus "
       //  "berspannungs-Schutz:Die Spannung ist zu hoch fr die Frequenz");
-      mp_userinterface->Confirm( ostrstr );
+      //mp_userinterface->Confirm( ostrstr );
+      byReturn = SETTING_VOLTAGE_IS_UNSAFE ;
     }
     return byReturn ;
   }
@@ -5090,6 +5158,7 @@ BOOL GriffinController::WrmsrEx(
   if( dwIndex >= MSR_P_STATE_0 && dwIndex <= MSR_P_STATE_7 
     || dwIndex == COFVID_CONTROL_REGISTER )
   {
+    bool bDangerousFreq ;
     BYTE byCoreID ;
     //DWORD dwAffinityMaskCopy = dwAffinityMask ;
     PState pstateMergedFromUserAndMSR ;
@@ -5097,26 +5166,36 @@ BOOL GriffinController::WrmsrEx(
     GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
     pstateFromUser = pstateMergedFromUserAndMSR ;
     byCoreID = GetCoreIDFromAffinityMask(dwAffinityMask ) ;
-    //while( dwAffinityMaskCopy >>= 1 ) byCoreID
-    bool_ = WriteToPstateOrCOFVIDcontrolRegister(
-	    dwIndex , 
-     // unsigned char byVID, //unsigned short wFreqInMHz
-	    //unsigned char byFreqID, 
-     // unsigned char byDivID,
-      //const PState & rpstateFromMSR,
+    bDangerousFreq = pstateMergedFromUserAndMSR.m_byFreqID != 
+      mp_model->m_cpucoredata.GetMainPLLoperatingFrequencyIDmax() && 
+      pstateMergedFromUserAndMSR.m_byDivisorID == 0 ;
+    if( //pstateMergedFromUserAndMSR.m_byDivisorID != 0 
+      //Because the OS crashes / freezes when Freq is > 1/2 max freq and 
+      //< max. freq.
+      //|| pstateMergedFromUserAndMSR.m_byFreqID == 
+      //mp_model->m_cpucoredata.GetMainPLLoperatingFrequencyIDmax()
+      ! bDangerousFreq
+      )
+      //while( dwAffinityMaskCopy >>= 1 ) byCoreID
+      bool_ = WriteToPstateOrCOFVIDcontrolRegister(
+	      dwIndex , 
+       // unsigned char byVID, //unsigned short wFreqInMHz
+	      //unsigned char byFreqID, 
+       // unsigned char byDivID,
+        //const PState & rpstateFromMSR,
 
-      //Used to check against overvolting.
-      pstateMergedFromUserAndMSR,
-      //Used to write to MSR.
-      pstateFromUser,
-      //PState & r_pstateMergedFromUserAndMSR,
-      dwHigh,
-      dwLow,
-      //DWORD_PTR w64ulAffinityMask
-      //DWORD dwCoreID
-      //CPU core number, beginning from number "0"
-      byCoreID
-      ) ;
+        //Used to check against overvolting.
+        pstateMergedFromUserAndMSR,
+        //Used to write to MSR.
+        pstateFromUser,
+        //PState & r_pstateMergedFromUserAndMSR,
+        dwHigh,
+        dwLow,
+        //DWORD_PTR w64ulAffinityMask
+        //DWORD dwCoreID
+        //CPU core number, beginning from number "0"
+        byCoreID
+        ) ;
   }
   else
     bool_ = mp_cpuaccess->WrmsrEx(

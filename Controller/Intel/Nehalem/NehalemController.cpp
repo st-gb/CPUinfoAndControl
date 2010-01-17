@@ -213,12 +213,18 @@ WORD NehalemController::GetMinimumVoltageID()
 
 float NehalemController::GetMinimumVoltageInVolt()
 {
-  return 0.7 ;
+  return 
+    //Leave an "f" prefix to avoid MSVC warning 
+    //  "warning C4305: 'return' : truncation from 'double' to 'float'"
+    0.7f ;
 }
 
 WORD NehalemController::GetNumberOfPstates()
 {
-  return mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
+  return 
+    //"(WORD)" because of MSVC's "warning C4267: 'return' : conversion from 
+    //'size_t' to 'WORD', possible loss of data"
+    (WORD) mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
   //return mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->size() ;
 }
 
@@ -319,13 +325,19 @@ void NehalemController::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
     , byCoreID 
     ) )
   {
-    fVoltageInVolt += 0.032 ; //increase by 2 voltage ID steps
+    fVoltageInVolt += 
+      //Leave an "f" prefix to avoid MSVC warning 
+      //  "warning C4305: '+=' : truncation from 'double' to 'float'"
+      0.032f ; //increase by 2 voltage ID steps
     SetVoltageAndFrequency(
       fVoltageInVolt
       , wFreqInMHz
       , byCoreID
       ) ;
-    fVoltageInVolt += 0.32 ; //increase by 2 voltage ID steps
+    fVoltageInVolt += 
+      //Leave an "f" prefix to avoid MSVC warning 
+      //  "warning C4305: '+=' : truncation from 'double' to 'float'"
+      0.32f ; //increase by 2 voltage ID steps
   }
   //BYTE byFreqID ;
   //BYTE byVoltageID ;

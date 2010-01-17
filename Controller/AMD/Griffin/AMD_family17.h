@@ -61,6 +61,7 @@
 #define PERFORMANCE_EVENT_SELECT_RETIRED_MICRO_OPS 0xC1
 #define PERFORMANCE_EVENT_SELECT_CYCLES_IN_WHICH_THE_FPU_IS_EMPTY 0x001
 
+//see AMD BIOS and Kernel Dev Guide "EventSelect 076h CPU Clocks not Halted"
 #define CPU_CLOCKS_NOT_HALTED 0x76
 
 #define MSR_P_STATE_0 0xC0010064
@@ -89,7 +90,8 @@
 #define P_STATE_CONTROL_REGISTER 0xC0010062 //"MSRC001_0062 P-state Control Register"
 #define P_STATE_STATUS_REGISTER 0xC0010063 //"MSRC001_0063 P-state Status Register"
 //2147483648 dez=10000000000000000000000000000000bin
-#define SET_P_STATE_TO_VALID(highDWORD) ( highDWORD &= 2147483648)
+//#define SET_P_STATE_TO_VALID(highDWORD) ( highDWORD |= 2147483648UL )
+#define SET_P_STATE_TO_VALID(dword) ( dword = ( 1 << 31) )
 #define MAX_VALUE_FOR_DID 7//=7 hex//=111 bin; has bits 8:6 = 3 bits
 #define MAX_VALUE_FOR_FID 63//=0x3F hex//=111111 bin; has bits 5:0 = 6 bits
 #define MAX_VALUE_FOR_VID 127//=0x7F hex//=1111111 bin; has bits 15:9 = 7 bits

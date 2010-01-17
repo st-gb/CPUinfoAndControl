@@ -197,7 +197,10 @@ float PentiumM_Controller::GetMinimumVoltageInVolt()
 
 WORD PentiumM_Controller::GetNumberOfPstates()
 {
-  return mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
+  return 
+    //"(WORD)" because of MSVC's "warning C4267: 'return' : conversion from 
+    //'size_t' to 'WORD', possible loss of data"
+    (WORD) mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
   //return mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->size() ;
 }
 
@@ -299,13 +302,19 @@ void PentiumM_Controller::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
     , byCoreID 
     ) )
   {
-    fVoltageInVolt += 0.032 ; //increase by 2 voltage ID steps
+    fVoltageInVolt += 
+      //Suffix "f" to avoid MSVC's 
+      //"warning C4305: '+=' : truncation from 'double' to 'float'"
+      0.032f ; //increase by 2 voltage ID steps
     SetVoltageAndFrequency(
       fVoltageInVolt
       , wFreqInMHz
       , byCoreID
       ) ;
-    fVoltageInVolt += 0.32 ; //increase by 2 voltage ID steps
+    fVoltageInVolt += 
+      //Suffix "f" to avoid MSVC's 
+      //"warning C4305: '+=' : truncation from 'double' to 'float'"
+      0.32f ; //increase by 2 voltage ID steps
   }
   //BYTE byFreqID ;
   //BYTE byVoltageID ;

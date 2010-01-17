@@ -470,6 +470,48 @@ WORD I_CPUcontroller::GetNumberOfCPUcores()
   return 0 ;
 }
 
+WORD I_CPUcontroller::GetNumberOfPstates()
+{
+  if( mp_model )
+  {
+    return mp_model->m_cpucoredata.m_stdsetvoltageandfreqAvailableFreq.size() ;
+  }
+  return 0 ;
+}
+
+BYTE I_CPUcontroller::GetPstate(WORD wPstateID, 
+                                    VoltageAndFreq & r_voltageandfreq )
+{
+  BYTE byPstateExists = 0 ;
+  //std::set<VoltageAndFreq>::const_iterator iter = 
+  //  mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.begin( ) ;
+  //std::set<VoltageAndFreq>::const_reverse_iterator reverse_iter =
+  //Must use "reverse_iterator" for "operator !=" of STLport's "set"
+  std::set<VoltageAndFreq>::reverse_iterator reverse_iter =
+    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin( ) ;
+    //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->begin( ) ;
+  WORD wElemenIndex = 0 ;
+  while( //iter != 
+    reverse_iter !=
+    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.
+    //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->
+    //end() 
+    rend()
+    )
+  {
+    if( wElemenIndex ++ == wPstateID )
+    {
+      r_voltageandfreq = * //iter ;
+        reverse_iter ;
+      byPstateExists = 1 ;
+      break ;
+    }
+    //++ iter ;
+    ++ reverse_iter ;
+  }
+  return byPstateExists ;
+}
+
 BYTE I_CPUcontroller::GetPstateSafefy(
   WORD wFreqInMHz
   , float fVoltageInVolt 
@@ -524,6 +566,100 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
     wFreqInMHz 
     , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
     , byCoreID ) ;
+}
+
+BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
+  WORD wFreqInMHz 
+  , const std::set<VoltageAndFreq> & cr_stdsetvoltageandfreqForInterpolation
+  , BYTE byCoreID )
+{
+  BYTE byRet = 0 ;
+  float fVoltageInVolt ;
+  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
+    //mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
+    //mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted ;
+    mp_model->m_cpucoredata.m_stdsetvoltageandfreqAvailableFreq ;
+    //* mp_model->m_cpucoredata.mp_stdsetvoltageandfreqAvailableFreq ;
+  std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
+    r_stdsetvoltageandfreq.begin() ;
+  std::set<VoltageAndFreq>::const_iterator 
+    ci_stdsetvoltageandfreqNearestLowerEqual = r_stdsetvoltageandfreq.end() ;
+  std::set<VoltageAndFreq>::const_iterator 
+    ci_stdsetvoltageandfreqNearestHigherEqual = r_stdsetvoltageandfreq.end() ;
+  while( ci_stdsetvoltageandfreq != r_stdsetvoltageandfreq.end() )
+  {
+    if( ci_stdsetvoltageandfreq->m_wFreqInMHz <= wFreqInMHz )
+      ci_stdsetvoltageandfreqNearestLowerEqual = ci_stdsetvoltageandfreq ;
+    if( ci_stdsetvoltageandfreq->m_wFreqInMHz >= wFreqInMHz )
+    {
+      ci_stdsetvoltageandfreqNearestHigherEqual = ci_stdsetvoltageandfreq ;
+      //The entries are sorted ascending by frequency. So break to avoid 
+      //assigning a higher value (that would not be the nearest higher freq
+      //any more).
+      break ;
+    }
+    ++ ci_stdsetvoltageandfreq ;
+  }
+  if( ci_stdsetvoltageandfreqNearestHigherEqual!= 
+    r_stdsetvoltageandfreq.end() 
+    )
+  {
+    if( GetInterpolatedVoltageFromFreq(
+        wFreqInMHz
+        //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+        , fVoltageInVolt 
+        //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+        , cr_stdsetvoltageandfreqForInterpolation
+        ) 
+      )
+    {
+      byRet = SetVoltageAndFrequency(//wFreqInMHz
+        fVoltageInVolt
+        //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+        , wFreqInMHz
+        , byCoreID
+        ) ;
+    }
+  }
+  else //if e.g. the wanted freq is higher than the max. freq.
+  {
+    if( ci_stdsetvoltageandfreqNearestLowerEqual  != 
+      r_stdsetvoltageandfreq.end() 
+      )
+    {
+      wFreqInMHz = ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz ;
+      if( GetInterpolatedVoltageFromFreq(
+          //wFreqInMHz
+          ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
+          , fVoltageInVolt 
+          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+          , cr_stdsetvoltageandfreqForInterpolation
+          ) 
+        )
+      {
+        byRet = SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
+      }
+    }
+    //if( ( wFreqInMHz - ci_stdsetvoltageandfreqNearestLowerEqual->
+    //    m_wFreqInMHz )        
+    //    < 
+    //    ( ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz - wFreqInMHz )
+    //  )
+    //  ci_stdsetvoltageandfreq = ci_stdsetvoltageandfreqNearestLowerEqual ;
+    //else
+    //  ci_stdsetvoltageandfreq = ci_stdsetvoltageandfreqNearestHigherEqual ;
+    //if( GetInterpolatedVoltageFromFreq(
+    //    //wFreqInMHz
+    //    ci_stdsetvoltageandfreq->m_wFreqInMHz
+    //    , fVoltageInVolt 
+    //    , mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+    //    ) 
+    //  )
+    //{
+    //  SetVoltageAndFrequency(wFreqInMHz,fVoltageInVolt) ;
+    //}
+  }
+  return byRet ;
 }
 
 void I_CPUcontroller::SetUserInterface( 

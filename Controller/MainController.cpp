@@ -108,6 +108,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   ,ICPUcoreUsageGetter * & r_p_icpucoreusagegetter)
 {
   r_p_cpucontroller = NULL ;
+  r_p_icpucoreusagegetter = NULL ;
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
   #ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "AuthenticAMD" 
@@ -148,11 +149,18 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     //For Pentium Ms e.g. it enables SpeedStep.
     r_p_cpucontroller->Init() ;
     if( r_p_icpucoreusagegetter )
+    {
       r_p_cpucontroller->mp_icpucoreusagegetter = r_p_icpucoreusagegetter ;
+      //Start performance counting etc.
+      r_p_icpucoreusagegetter->Init() ;
+    }
   }
+  if( r_p_cpucontroller && r_p_icpucoreusagegetter )
+    return 1 ;
+  else
+    return 0 ;
   //  //Needed for drawing the voltage-frequency curves.
   //  r_p_cpucontroller->GetMaximumFrequencyInMHz() ;
-  return 1 ;
 }
 
 void MainController::SetCPUaccess(

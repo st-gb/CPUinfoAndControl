@@ -4,6 +4,8 @@
 #include <string> //for std::wstring
 #include <Windows_compatible_typedefs.h>
 
+#define CREATE_POWER_SCHEME_SUCCEEDED 0
+
 //Base class of PowerProf access for Windows < version 6 and Windows >
 //version 6. Because even if the access (API) to the power scheme differs
 //between Windows Vista

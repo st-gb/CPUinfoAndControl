@@ -79,6 +79,10 @@ typedef DWORD ( WINAPI * pfnPowerSetActiveScheme) (
   __in      const GUID *SchemeGuid
 );
 
+typedef DWORD (WINAPI * pfnPowerSettingAccessCheck) (
+  __in      POWER_DATA_ACCESSOR AccessFlags,
+  __in_opt  const GUID *PowerGuid
+);
 
 typedef DWORD (WINAPI * pfnPowerWriteACValueIndex) (
   __in_opt  HKEY RootPowerKey,
@@ -129,11 +133,24 @@ class PowerProfFromWin6DynLinked
   pfnPowerReadACValueIndex m_pfnpowerreaddcvalueindex ;
   pfnPowerReadFriendlyName m_pfnpowerreadfriendlyname ;
   pfnPowerSetActiveScheme m_pfnpowersetactivescheme ;
+  pfnPowerSettingAccessCheck m_pfnpowersettingaccesscheck ;
   pfnPowerWriteACValueIndex m_pfnpowerwriteacvalueindex ;
   pfnPowerWriteACValueIndex m_pfnpowerwritedcvalueindex ;
   pfnPowerWriteFriendlyName m_pfnpowerwritefriendlyname ;
 public:
   BYTE ActivatePowerSchemeToSet() ;
+  bool ChangeOtherDVFSaccessPossible ()
+  {
+    DWORD dwRet ;
+    //maybe PowerCanRestoreIndividualDefaultPowerScheme(...) is
+    //appropriate.
+    return true ;
+    ////http://msdn.microsoft.com/en-us/library/aa372676%28VS.85%29.aspx:
+    ////PowerSettingAccessCheck(...)" is the equivalent fucntion for 
+    ////Windows < version 6's "CanUserWritePwrScheme(...) function.
+    //dwRet = PowerSettingAccessCheck(ACCESS_SCHEME, NULL) ;
+    //return dwRet == ERROR_SUCCESS ;
+  }
   BYTE CreatePowerScheme(
     const std::wstring & cr_stdtstrPowerSchemeName
     , DWORD & r_dwRetValue
@@ -241,6 +258,10 @@ public:
     __in_opt  HKEY UserRootPowerKey,
     __in      const GUID *SchemeGuid
   );
+  DWORD WINAPI PowerSettingAccessCheck(
+    __in      POWER_DATA_ACCESSOR AccessFlags,
+    __in_opt  const GUID *PowerGuid
+    );
   DWORD WINAPI PowerWriteACValueIndex(
     __in_opt  HKEY RootPowerKey,
     __in      const GUID *SchemeGuid,

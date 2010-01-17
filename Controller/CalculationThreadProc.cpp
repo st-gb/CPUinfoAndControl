@@ -273,7 +273,7 @@ DWORD
   int i = 1 ;
   //Use the SAME data type for comparing 2 values. Else because of precision
   //they can differ even if not instable voltage.
-  double fExpectedValue ;
+  //double fExpectedValue ;
   //WORD wNumbers = //1000 ;
   //  //Use at least as many bytes as the L2 cache size.
   //  2000000 ;

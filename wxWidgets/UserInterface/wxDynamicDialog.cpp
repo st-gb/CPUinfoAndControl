@@ -340,7 +340,8 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
   DWORD dwEAX,dwEDX, dwAffMask = //TODO change to be compatible with more 
     //than 1 CPU core
     1 ;
-  ULONGLONG ullMSR , ullValue, ullDiff ;
+  ULONGLONG ullMSR , ullValue ; 
+  //ULONGLONG ullDiff ;
   try
   {
     //mp_pumastatecontrol->RdmsrEx(//itermsrdata->
@@ -371,7 +372,7 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
       {
         BitRange & br = (*iter_registerdata).m_stdvec_bitrange.at(0) ;
         ullValue = //make bits from highmost zero
-          (ullMSR << 64 - br.m_byStartBit - br.m_byBitLength ) 
+          (ullMSR << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) 
           //Bring value to least significant bit
           >> ( 64 - br.m_byBitLength ) ;
         if( iter_registerdata->m_bCalculateDiff )
