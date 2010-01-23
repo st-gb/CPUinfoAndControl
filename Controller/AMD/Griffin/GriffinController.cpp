@@ -545,36 +545,36 @@ BYTE GriffinController::Init(//Model * mp_model
   return 1 ;
 }
 
-//version without user interface parameter (so it can be called before 
-//the user interface is created.
-GriffinController::GriffinController(
-  int argc
-  , _TCHAR * argv[]
-  , Model & m_modelData 
-  , //ISpecificController 
-    I_CPUaccess * p_cpuaccess 
-  , ICalculationThread * p_calculationthread 
-  , IDynFreqScalingAccess & p_dynfreqscalingaccess 
-  )
-  //C++ style initialisations
-  : 
-  m_byNumberOfCmdLineArgs(argc) 
-  , m_arartcharCmdLineArg ( argv )
-  //, mp_cpuaccess(p_cpuaccess)
-  , mp_calculationthread(p_calculationthread)
-  , m_bPstateSet(false)
-  , m_byPstateID(0)
-  , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
-  , mp_model ( & m_modelData )
-  , mp_userinterface(NULL)
-  , m_bFrequencyScalingByOSDisabled(false)
-{
-  mp_cpuaccess = p_cpuaccess ;
-  //mp_userinterface->mp_pumastatectrl = this ;
-  //mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
-  //PumaStateCtrl();
-  Init();
-}
+////version without user interface parameter (so it can be called before 
+////the user interface is created.
+//GriffinController::GriffinController(
+//  int argc
+//  , _TCHAR * argv[]
+//  , Model & m_modelData 
+//  , //ISpecificController 
+//    I_CPUaccess * p_cpuaccess 
+//  , ICalculationThread * p_calculationthread 
+//  , IDynFreqScalingAccess & p_dynfreqscalingaccess 
+//  )
+//  //C++ style initialisations
+//  : 
+//  m_byNumberOfCmdLineArgs(argc) 
+//  , m_arartcharCmdLineArg ( argv )
+//  //, mp_cpuaccess(p_cpuaccess)
+//  , mp_calculationthread(p_calculationthread)
+//  , m_bPstateSet(false)
+//  , m_byPstateID(0)
+//  , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
+//  , mp_model ( & m_modelData )
+//  , mp_userinterface(NULL)
+//  , m_bFrequencyScalingByOSDisabled(false)
+//{
+//  mp_cpuaccess = p_cpuaccess ;
+//  //mp_userinterface->mp_pumastatectrl = this ;
+//  //mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
+//  //PumaStateCtrl();
+//  Init();
+//}
 
 GriffinController::GriffinController(
   int argc, 

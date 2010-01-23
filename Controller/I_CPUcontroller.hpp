@@ -174,6 +174,8 @@ public:
     //  ;
   }
   virtual BYTE Init() { return 1 ; } ;
+  //virtual bool IsLowerVoltageThan( float fValueToProof, float fValueToCompare) ;
+  virtual bool VIDisLowerVoltageThan( WORD wVIDisLessThan, WORD wVIDvalueToCompare) ;
   BYTE OtherPerfCtrlMSRwriteIsActive() ;
   //Advantage for a RdmsrEx() inside CPU controller: one does not
   //need to MANUALLY check if cpuaccess is assigned. (not NULL)
