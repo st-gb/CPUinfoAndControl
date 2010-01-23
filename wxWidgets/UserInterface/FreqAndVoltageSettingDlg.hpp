@@ -74,6 +74,7 @@ public:
   void CreateSliders();
   void HandleCPUcoreFrequencyOrVoltageChanged(wxWindow * r_wxwindow) ;
   void HandleMultiplierValueChanged() ;
+  void HandlePstateMayHaveChanged() ;
   void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
   void OnApplyButton(wxCommandEvent & );
   void OnDecVoltage(wxCommandEvent & );
@@ -83,6 +84,7 @@ public:
   void OnSpinVoltageDown(wxSpinEvent & event) ;
   void OnSpinVoltageUp(wxSpinEvent & event) ;
   void OutputFreqAndVoltageByControlValues() ;
+  void OutputVoltageByControlValues() ;
   void RemoveAttention(wxWindow * p_wxwindow);
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;
   WORD SetNearestHigherPossibleFreqInMHz(

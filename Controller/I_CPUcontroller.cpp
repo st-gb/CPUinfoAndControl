@@ -535,6 +535,39 @@ BYTE I_CPUcontroller::GetPstateSafefy(
   return bPstateIsSafe ;
 }
 
+//bool IsLowerVoltageThan( float fIsLessThan, float fValueToCompare)
+//{
+//  float fVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
+//  if( //mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) > 
+//    fVolt >
+//    mp_cpucontroller->GetMinimumVoltageInVolt() 
+//    )
+//  {
+//    float f1VIDstepAboveIsLessThan = fIsLessThan ;
+//    float f1VIDstepAboveValueToCompare = fValueToCompare ;
+//    mp_cpucontroller->IncreaseVoltageBy1Step( f1VIDstepAboveIsLessThan ) ;
+//    mp_cpucontroller->IncreaseVoltageBy1Step( f1VIDstepAboveValueToCompare ) ;
+//    WORD wVoltageIDValueToProof = GetVoltageID( IsLessThan ) ;
+//
+//    WORD wVoltageIDValueToCompare = GetVoltageID( fValueToCompare ) ;
+//    
+//    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+//}
+
+//Define a function for comparing because of this problem:
+//the calculated float value was 1.0999999
+//the compared float value was 1.1000000
+//both values belong the SAME voltage ID, just a little rounding error.
+//By comparing the integer values for the corresponding voltages in Volt
+//the problem can be avoided.
+bool I_CPUcontroller::VIDisLowerVoltageThan( WORD wVIDisLessThan, WORD wVIDvalueToCompare)
+{
+  //float f1VIDstepAboveIsLessThan = fIsLessThan ;
+  float fVoltageIsLessThan = GetVoltageID(wVIDisLessThan) ;
+  float fVoltageValueToCompare = GetVoltageID(wVIDvalueToCompare) ;
+  return fVoltageIsLessThan < fVoltageValueToCompare ;
+}
+
 //Any WRITE operation to the performance control register by any other software 
 //(OS, BIOS, RMclock, GNOME power manager,...) is problematic.
 BYTE I_CPUcontroller::OtherPerfCtrlMSRwriteIsActive()

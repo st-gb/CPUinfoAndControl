@@ -539,7 +539,11 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //"[...] wxToolTip::SetDelay can be used to globally alter tooltips behaviour"
   wxToolTip::SetDelay(5000);
   //To show the computed freq and voltage at the beginning yet.
-  OutputFreqAndVoltageByControlValues();
+  //OutputFreqAndVoltageByControlValues();
+  //OutputVoltageByControlValues();
+  VoltageIDchanged(m_wVoltageID) ;
+  //Force the neighbour controls of "voltage in volt" to be resized.
+  Layout() ;
 }
 
 FreqAndVoltageSettingDlg::~FreqAndVoltageSettingDlg()
@@ -684,7 +688,9 @@ void FreqAndVoltageSettingDlg::CreateSliders()
     ) ;
   m_wPreviousFrequencyInMHz = mp_wxsliderFreqInMHz->GetValue();
   //HandleMultiplierValueChanged();
-  WORD wVoltageID = mp_cpucontroller->GetVoltageID( 
+  //HandlePstateMayHaveChanged() ;
+  //WORD wVoltageID
+  m_wVoltageID = mp_cpucontroller->GetVoltageID( 
     voltageandfreq.m_fVoltageInVolt ) ;
   //wxSlider * p_wxsliderCPUcoreVoltage = new wxSlider(this, 
   mp_wxsliderCPUcoreVoltage = new wxSlider(
@@ -695,7 +701,8 @@ void FreqAndVoltageSettingDlg::CreateSliders()
       //60
       //m_pstate.GetVoltageID()
       //mp_cpucontroller->GetMinimumVoltageID()
-      wVoltageID
+      //wVoltageID
+      m_wVoltageID
       //slider minimum value
       //, 0
       //, mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID
@@ -902,12 +909,52 @@ void FreqAndVoltageSettingDlg::HandleMultiplierValueChanged()
   m_byPreviousMultiplierValue = byCurrentCPUcoreFrequencyMultiplierValue ;
 }
 
+void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
+{
+  VoltageAndFreq voltageandfreq ;
+  if( mp_cpucontroller->GetPstate(
+    mp_wxsliderCPUcorePstate->GetValue() , voltageandfreq ) 
+    )
+  {
+    m_wVoltageID = mp_wxsliderCPUcoreVoltage->GetValue() ;
+//      m_pstate = pstate ;
+  //mp_wxcheckboxValidPstate->SetValue(
+  //  //"Bit 63 PstateEn"
+  //  dwHigh >> 31 ) ;
+
+  //mp_wxstatictextExpectedCurrentDissipation->SetLabel( 
+  //  wxString::Format("expected current dissipation: %f Ampere", 
+  //    PState::GetExpectedPowerDissipation(dwHigh) 
+  //    )
+  //  ) ;
+    HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcorePstate);
+    //mp_wxsliderCPUcoreFrequencyMultiplier->SetValue(m_pstate.m_byFreqID) ;
+    //mp_wxsliderCPUcoreDivisorID->SetValue(m_pstate.m_byDivisorID) ;
+    mp_wxsliderFreqInMHz->SetValue( //m_pstate.GetFreqInMHz() 
+      voltageandfreq.m_wFreqInMHz ) ;
+    mp_wxsliderCPUcoreVoltage->SetValue( //m_pstate.GetVoltageID() 
+      mp_cpucontroller->GetVoltageID(voltageandfreq.m_fVoltageInVolt) ) ;
+    VoltageIDchanged(//nValue
+      m_wVoltageID ) ;
+  }
+}
+
 void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 {
+  float fMinVoltageInVolt = mp_cpucontroller->GetMinimumVoltageInVolt() ;
   float fVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
+  //Min voltage ID is not always the max voltage: with AMD Griffin this is 
+  //exactly the opposite.
+  WORD wMinVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMinVoltageInVolt ) ;
   if( //mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) > 
-    fVolt >
-    mp_cpucontroller->GetMinimumVoltageInVolt() 
+    //fVolt >
+    //mp_cpucontroller->GetMinimumVoltageInVolt() 
+
+    //Use a function because: the calculated voltage sometimes varies from
+    //the real voltage because the computer uses disrecte values.
+    //E.g. the value read from the config. file is 1.1000000 and the 
+    //calculated value is 1.0999999.
+    mp_cpucontroller->VIDisLowerVoltageThan( wMinVoltageAsVoltageID, m_wVoltageID ) 
     )
   {
     //-- m_wVoltageID ;
@@ -922,14 +969,26 @@ void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
 {
   //int i ;
-  float fVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
-  if( mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) < 
-    mp_cpucontroller->GetMaximumVoltageInVolt() 
+  float fVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
+  float fMaxVoltageInVolt = mp_cpucontroller->GetMaximumVoltageInVolt() ;
+  //Max voltage ID is not always the max voltage: with AMD Griffin this is 
+  //exactly the opposite.
+  WORD wMaxVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMaxVoltageInVolt ) ;
+  if( //mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) < 
+    //fVoltageInVolt <
+    //mp_cpucontroller->GetMaximumVoltageInVolt() 
+    //fMaxVoltageInVolt
+    //Use a function because: the calculated voltage sometimes varies from
+    //the real voltage because the computer uses disrecte values.
+    //E.g. the value read from the config. file is 1.1000000 and the 
+    //calculated value is 1.0999999.
+    //mp_cpucontroller.IsLessVoltageThan(fVoltageInVolt,fMaxVoltageInVolt)
+    mp_cpucontroller->VIDisLowerVoltageThan( m_wVoltageID, wMaxVoltageAsVoltageID ) 
     )
   {
     //++ m_wVoltageID ;
-    mp_cpucontroller->IncreaseVoltageBy1Step( fVolt ) ;
-    m_wVoltageID = mp_cpucontroller->GetVoltageID( fVolt ) ;
+    mp_cpucontroller->IncreaseVoltageBy1Step( fVoltageInVolt ) ;
+    m_wVoltageID = mp_cpucontroller->GetVoltageID( fVoltageInVolt ) ;
     mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
     VoltageIDchanged(m_wVoltageID) ;
   }
@@ -949,32 +1008,7 @@ void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent
       //mp_pumastatectrl->GetPStateFromMSR(
         //mp_wxsliderCPUcorePstate->GetValue() , dwLow, dwHigh , m_pstate, m_byCoreID ) ;
       //mp_pumastatectrl->GetPstate(
-      VoltageAndFreq voltageandfreq ;
-      if( mp_cpucontroller->GetPstate(
-        mp_wxsliderCPUcorePstate->GetValue() , voltageandfreq ) 
-        )
-      {
-        m_wVoltageID = mp_wxsliderCPUcoreVoltage->GetValue() ;
-//      m_pstate = pstate ;
-      //mp_wxcheckboxValidPstate->SetValue(
-      //  //"Bit 63 PstateEn"
-      //  dwHigh >> 31 ) ;
-
-      //mp_wxstatictextExpectedCurrentDissipation->SetLabel( 
-      //  wxString::Format("expected current dissipation: %f Ampere", 
-      //    PState::GetExpectedPowerDissipation(dwHigh) 
-      //    )
-      //  ) ;
-        HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcorePstate);
-        //mp_wxsliderCPUcoreFrequencyMultiplier->SetValue(m_pstate.m_byFreqID) ;
-        //mp_wxsliderCPUcoreDivisorID->SetValue(m_pstate.m_byDivisorID) ;
-        mp_wxsliderFreqInMHz->SetValue( //m_pstate.GetFreqInMHz() 
-          voltageandfreq.m_wFreqInMHz ) ;
-        mp_wxsliderCPUcoreVoltage->SetValue( //m_pstate.GetVoltageID() 
-          mp_cpucontroller->GetVoltageID(voltageandfreq.m_fVoltageInVolt) ) ;
-        VoltageIDchanged(//nValue
-          m_wVoltageID ) ;
-      }
+      HandlePstateMayHaveChanged() ;
       }
       break;
   //case ID_DivisorSlider:
@@ -1026,7 +1060,7 @@ void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent
       //m_pstate.m_byVoltageID = nValue ;
     break;
   }
-  OutputFreqAndVoltageByControlValues() ;
+  //OutputFreqAndVoltageByControlValues() ;
 }
 
 void FreqAndVoltageSettingDlg::OnSpinVoltageDown( wxSpinEvent & event)
@@ -1098,13 +1132,26 @@ void FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton( wxCommandEvent & wxcm
 }
 void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
 {
-  if( nNewValue < //mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID 
-    mp_cpucontroller->GetMinimumVoltageID() )
+  float fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
+  float fMaxVoltage = mp_cpucontroller->GetMaximumVoltageInVolt() ;
+  //Max voltage ID is not always the max voltage: with AMD Griffin this is 
+  //exactly the opposite.
+  WORD wMaxVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMaxVoltage ) ;
+  WORD wMinVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMinVoltage ) ;
+  float fVoltage = mp_cpucontroller->GetVoltageInVolt( nNewValue ) ;
+  if( //nNewValue < //mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID 
+    //mp_cpucontroller->GetMinimumVoltageID() 
+    //mp_cpucontroller->IsLowerVoltageThan(fMaxVoltage, fVoltage )
+    mp_cpucontroller->VIDisLowerVoltageThan(wMaxVoltageAsVoltageID, nNewValue )
+    //wMaxVoltageAsVoltageID
+    )
     //mp_wxsliderCPUcoreVoltage->SetToolTip(_T("the voltage is above the spec."));
     SetAttention(mp_wxsliderCPUcoreVoltage,
     _T("the voltage is above the specification."));
-  else if( nNewValue > //mp_pumastatectrl->mp_model->m_cpucoredata.m_byMaxVoltageID 
-    mp_cpucontroller->GetMaximumVoltageID()
+  else if( //nNewValue > //mp_pumastatectrl->mp_model->m_cpucoredata.m_byMaxVoltageID 
+    //mp_cpucontroller->GetMaximumVoltageID()
+    //mp_cpucontroller->IsLowerVoltageThan(fVoltage , fMinVoltage)
+    mp_cpucontroller->VIDisLowerVoltageThan( nNewValue , wMinVoltageAsVoltageID)
     )
     //mp_wxsliderCPUcoreVoltage->SetToolTip(
     SetAttention( mp_wxsliderCPUcoreVoltage,
@@ -1140,6 +1187,7 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
         )
       ) ;
   }
+  OutputVoltageByControlValues() ;
   HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcoreVoltage);
   //mp_mainframe->Refresh() ;//rm_timer.
   mp_mainframe->m_timer.Stop() ;
@@ -1147,6 +1195,10 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
 }
 
 void FreqAndVoltageSettingDlg::OutputFreqAndVoltageByControlValues()
+{
+}
+
+void FreqAndVoltageSettingDlg::OutputVoltageByControlValues()
 {
   //mp_wxstatictextFreqInMHz->SetLabel(wxString::Format("%u", 
   //  PState::GetFreqInMHz(
@@ -1164,6 +1216,8 @@ void FreqAndVoltageSettingDlg::OutputFreqAndVoltageByControlValues()
       mp_wxsliderCPUcoreVoltage->GetValue() )
       )
     ) ;
+  ////Force the neighbour controls to be resized.
+  //Layout() ;
 }
 
 void FreqAndVoltageSettingDlg::OnActivate(wxActivateEvent & r_activateevent )
