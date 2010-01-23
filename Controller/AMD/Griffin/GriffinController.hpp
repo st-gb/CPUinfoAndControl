@@ -169,6 +169,9 @@ public :
       ++ wVoltageID ) ; 
   }
 
+  void GetAllPossibleFrequencies(
+    std::set<VoltageAndFreq> & r_stdsetvoltageandfreq ) ;
+
   //float
   ULONGLONG GetCurrentCPUload(BYTE byCPUcoreID) ;
 

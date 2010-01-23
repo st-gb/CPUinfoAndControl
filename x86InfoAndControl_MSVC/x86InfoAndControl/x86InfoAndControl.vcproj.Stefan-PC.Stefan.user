@@ -38,7 +38,7 @@
 			>
 			<DebugSettings
 				Command="$(TargetPath)"
-				WorkingDirectory="C:\Users\Public\GriffinControlService_und_PumaStateCtrl"
+				WorkingDirectory="$(X86INFO_AND_CONTROL_WORK_DIR)"
 				CommandArguments=""
 				Attach="false"
 				DebuggerType="3"

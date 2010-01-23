@@ -88,6 +88,11 @@
     /*g_logger.Log("test ") ; */ }
   //#ifdef COMPILE_WITH_LOG
   #define LOGN(to_ostream) LOG (to_ostream << "\n" )
+#ifdef VERBOSE_LOGGING
+  #define LOGN_VERBOSE(to_ostream) LOGN(to_ostream)
+#else
+  #define LOGN_VERBOSE(to_ostream) /*empty->do not log*/
+#endif
   #define LOGW(to_ostream) { std::wstringstream strstream ; \
     strstream << to_ostream; \
     /*/for g++ compiler:

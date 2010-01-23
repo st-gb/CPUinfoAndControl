@@ -147,23 +147,23 @@ DWORD
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
   if( pcalculationthread )
   {
+    bool bNewVoltageAndFreqPair ;
+    BYTE byTimes = 15 ;
+    float fCPUusageReferringToMaxFreq ;
+    float fPreviousCPUusageReferringToMaxFreq = 1.0 ;
+    float fVoltageInVolt , fLoad ;
+    float * pfCPUcoreLoadInPercent = pcalculationthread->
+      mp_cpucontroller->mp_model->m_cpucoredata.m_arfCPUcoreLoadInPercent ;
     std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpairstdsetvoltageandfreq ;
     std::pair <std::map<WORD,BYTE>::iterator, bool> stdpairstdmapword2byte;
     std::map<WORD,BYTE>::iterator stdpairstdmapword2byte_const_iter ;
-    bool bNewVoltageAndFreqPair ;
-    BYTE byTimes = 15 ;
     pcalculationthread->m_vbContinue = true ;
     std::map<WORD,BYTE> mapFreq2Count ;
     WORD wSleepTimeInMs = 1 ;
     WORD wFreqInMHz , wPrevInsertedFreqInMHz;
-    float fVoltageInVolt , fLoad ;
-    float * pfCPUcoreLoadInPercent = pcalculationthread->
-      mp_cpucontroller->mp_model->m_cpucoredata.m_arfCPUcoreLoadInPercent ;
-  #ifdef _DEBUG
-    float fCPUusageReferringToMaxFreq , 
-      fPreviousCPUusageReferringToMaxFreq = 1.0 ;
-    //pcalculationthread->mp_cpucontroller->
     WORD wMaxFreqInMHz = 1800 ;
+  #ifdef _DEBUG
+    //pcalculationthread->mp_cpucontroller->
     wPrevInsertedFreqInMHz = wMaxFreqInMHz + 1 ;
   #endif
     //while( wSleepTimeInMs < 200 )
@@ -189,7 +189,8 @@ DWORD
            GetPercentalUsageForAllCores(
              pfCPUcoreLoadInPercent) ;
          fLoad = pfCPUcoreLoadInPercent[ pcalculationthread->m_byCoreID ] ;
-          fCPUusageReferringToMaxFreq = fLoad * (float) wFreqInMHz / (float) wMaxFreqInMHz ;
+          fCPUusageReferringToMaxFreq = fLoad * (float) wFreqInMHz / 
+          (float) wMaxFreqInMHz ;
 #ifdef _DEBUG
           fCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
 #endif

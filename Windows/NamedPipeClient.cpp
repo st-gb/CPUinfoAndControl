@@ -15,9 +15,9 @@ BYTE NamedPipeClient::Init()
   m_bConnected = false ;
   LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\CPUcontrollerService") ;
   //LPTSTR lpvMessage=TEXT("Default message from client"); 
-  TCHAR chBuf[BUFSIZE]; 
-  BOOL fSuccess; 
-  DWORD cbRead, dwMode; 
+  //TCHAR chBuf[BUFSIZE]; 
+  //BOOL fSuccess; 
+  //DWORD cbRead, dwMode; 
   DWORD dwLastError ;
  
   // Try to open a named pipe; wait for it, if necessary. 

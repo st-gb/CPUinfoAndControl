@@ -229,6 +229,9 @@ public:
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  void OnClose(wxCloseEvent & event) ;
+  void OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
   void OnEraseBackground(wxEraseEvent& event) ;
   void OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnHighLoadThread( wxCommandEvent & WXUNUSED(event) ) ;

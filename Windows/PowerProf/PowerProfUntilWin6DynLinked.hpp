@@ -120,13 +120,18 @@ class PowerProfUntilWin6DynLinked
   pfnSetActivePwrScheme m_pfnsetactivepwrscheme ;
 	pfnWritePwrScheme m_pfnwritepwrscheme ;
   UINT m_uiPowerSchemeIDBeforeDisabling ;
+  UINT * mp_uiPowerSchemeIDBeforeDisabling ;
 public:
   bool m_bPowerSchemeWithP0ThrottleNoneFound ;
+  //for use in Enum...(...)
   bool m_bPowerSchemeFound ;
   BYTE m_byDynamicThrottle ;
   UINT m_uiPowerSchemeIndex ;
   UINT m_uiPowerSchemeIndexWithP0ThrottleNone ;
   UINT m_uiPowerSchemeIndexOfWantedName ;
+  //for use in ::PwrSchemesEnumProcSearchPowerSchemeByID(...)
+  std::wstring m_stdwstrPowerSchemeNameOfIDtoSearch ;
+  UINT m_uiPowerSchemeIndexToSearch ;
   std::string m_strWantedPowerScheme ;
   std::wstring m_stdwstrWantedPowerScheme ;
 
@@ -156,6 +161,7 @@ public:
   bool DisableFrequencyScalingByOS() //{ return true ; } 
     ;
   unsigned char EnableFrequencyScalingByOS() ;
+  bool EnablingIsPossible() ;
   BOOLEAN EnumPwrSchemes(
     //PWRSCHEMESENUMPROC 
     PWRSCHEMESENUMPROC_SG lpfnPwrSchemesEnumProc,
@@ -169,9 +175,12 @@ public:
   BOOLEAN WINAPI GetActivePwrScheme(
     __out  PUINT puiID
     );
+  IDynFreqScalingAccess::string_type GetEnableDescription() ;
   BYTE GetPowerSchemeIndex(
     const std::wstring & cr_stdwstrPowerSchemeName 
     , UINT & r_uiPowerSchemeIndexOfWantedName) ;
+  bool GetPowerSchemeName( 
+    UINT ui , std::wstring & r_stdwstrPowerSchemeName ) ;
   void Initialize() ;
   void InitializeFunctionPointers() ;
   void OutputAllPowerSchemes() ;

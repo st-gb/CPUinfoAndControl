@@ -93,6 +93,15 @@ public:
   BYTE EnableOwnDVFS() ;
   //Some of these frequences may not be applicable.
   //e.g. AMD Griffin crashes with freq > 1/2 max freq & < max freq
+  //It probably was more correct it would be called to walk through the possible 
+  //>>multipliers<< because the frequency depends on the reference that can be
+  //modified e.g. by the BIOS. 
+  //So the frequency depends on the reference clock and the multiplier:
+  //Clock frequency= multiplier * reference clock.
+  //For instance the AMD Griffin and the Pentium M have a typical 
+  //reference clock of 100 MHz.
+  //The reference clock can be determined by querying the TimeStamp counter twice and
+  //calculating a difference from these values.
   virtual void GetAllPossibleFrequencies(std::set<VoltageAndFreq> & 
     r_stdsetvoltageandfreq) {} ;
   //MUST be declared virtual ("virtual ...") else 

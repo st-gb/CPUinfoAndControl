@@ -45,6 +45,7 @@
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
+#include <wxWidgets/wxStringHelper.h>
 #include <Xerces/XMLAccess.h>
 //#include <Windows/CalculationThread.hpp>
 #ifdef _WINDOWS
@@ -69,7 +70,12 @@ enum
   , ID_MSR
 //#endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
-  , ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq //,
+  //, ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq //,
+  //This means to disable e.g.:
+  //-Windows' scaling (by ACPI objects?)
+  //-WRITE to performance state MSR registers by programs like RMclock
+  , ID_DisableOtherVoltageOrFrequencyAccess
+  , ID_EnableOtherVoltageOrFrequencyAccess
   , ID_EnableOrDisableOtherDVFS //,
   , ID_ContinueService
   , ID_PauseService
@@ -115,8 +121,12 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_MSR, MainFrame::OnMSR)
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
-  EVT_MENU( ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq ,
-    MainFrame::OnDynamicallyCreatedUIcontrol )
+  //EVT_MENU( ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq ,
+  //  MainFrame::OnDynamicallyCreatedUIcontrol )
+  EVT_MENU( ID_DisableOtherVoltageOrFrequencyAccess ,
+    MainFrame::OnDisableOtherVoltageOrFrequencyAccess ) 
+  EVT_MENU( ID_EnableOtherVoltageOrFrequencyAccess ,
+    MainFrame::OnEnableOtherVoltageOrFrequencyAccess ) 
   EVT_MENU( ID_EnableOrDisableOtherDVFS ,
     MainFrame::OnOwnDynFreqScaling )
   EVT_MENU( ID_UpdateViewInterval ,
@@ -154,6 +164,10 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_POWER_RESUME(MainFrame::OnResume)
 #endif // wxHAS_POWER_EVENTS
 
+  //For stopping the DynVoltAndFreqScal thread that accessess the wxApp.
+  //So stop the DVFS thread before destroying the wxApp object to avoid
+  //crashes.
+  EVT_CLOSE( MainFrame::OnClose ) 
   //If no EVT_PAINT macro and Connect(wxEVT_PAINT, 
   //  wxPaintEventHandler(MyFrame::OnPaint));
   // : 100% CPU load.
@@ -273,9 +287,11 @@ MainFrame::MainFrame(
   if( ! p_wxmenuExtras ) 
     p_wxmenuExtras = new wxMenu;
   mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
-    ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq, 
+    //ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq
+    ID_DisableOtherVoltageOrFrequencyAccess
     //_T("&CPU % min and max.") 
-    _T("enable or disable OS's dynamic frequency scaling")
+    //_T("enable or disable OS's dynamic frequency scaling")
+    , _T("disable OS's dynamic frequency scaling")
     );
   //If one can not change the power scheme (Windows) etc.
   if( ! mp_cpucontroller->mp_dynfreqscalingaccess->
@@ -284,6 +300,19 @@ MainFrame::MainFrame(
     mp_wxmenuitemOtherDVFS->Enable(false);
     mp_wxmenuitemOtherDVFS->SetHelp ( wxT("Start e.g. as administrator to gain access") ) ;
     //mp_wxmenuitemOtherDVFS->SetItemLabel (wxT("dd") ) ;
+  }
+  if( mp_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible() )
+  {
+    mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
+      ID_EnableOtherVoltageOrFrequencyAccess
+      //_T("enable OS's dynamic frequency scaling")
+      //GetDisableDescrpition() under Windows may return "activate 'performance' power scheme ".
+      //Use GetwxString(...) because GetEnableDescription() may return 
+      // -std::wstring although wxString uses char strings.
+      // -std::string although wxString uses wchar_t strings.
+      , getwxString( mp_cpucontroller->mp_dynfreqscalingaccess->
+        GetEnableDescription() )
+      );
   }
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
   p_wxmenuExtras->Append(
@@ -306,8 +335,8 @@ MainFrame::MainFrame(
       ID_EnableOrDisableOtherDVFS
       , _T("enable own DVFS") 
       );
-    if( ! p_cpucontroller->mp_model->m_cpucoredata.
-      m_stdsetvoltageandfreqDefault.empty() 
+    if( p_cpucontroller->mp_model->m_cpucoredata.
+      m_stdsetvoltageandfreqWanted.empty() 
       )
       mp_wxmenuitemOwnDVFS->Enable(false) ;
   }
@@ -780,7 +809,10 @@ BYTE MainFrame::CreateDynamicMenus()
           wxString::Format(
           //We need a _T() macro (wide char-> L"", char->"") for EACH 
           //line to make it compitable between char and wide char.
-          _T("%s%u"),_T("for core &"), //_T('0'+byCoreID)
+          _T("%s%u")
+          //, _T("for core &") 
+          , _T("core &") 
+          , //_T('0'+byCoreID)
             byCoreID )
           );
         //marp_wxmenuItemHighLoadThread[byCoreID]->Check(true) ;
@@ -808,6 +840,20 @@ void MainFrame::DisableWindowsDynamicFreqScalingHint()
      );
 }
 
+void MainFrame::OnClose(wxCloseEvent & event )
+{
+  PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
+      m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
+      0 ] ;
+  if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+  {
+    p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
+    //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
+    p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
+  }
+  //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
+  this->Destroy() ;
+}
 
 void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
 {
@@ -819,6 +865,16 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
   if( ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.SendMessage(continue_service) ;
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+}
+
+void MainFrame::OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) )
+{
+  ::wxGetApp().mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
+}
+
+void MainFrame::OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) )
+{
+  ::wxGetApp().mp_dynfreqscalingaccess->EnableFrequencyScalingByOS() ;
 }
 
 void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
@@ -982,7 +1038,9 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
   std::vector<std::tstring> stdvecstdtstring ;
   MainController::GetSupportedCPUs(stdvecstdtstring) ;
   for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
-    stdtstr += stdvecstdtstring.at(by) + _T(" ") ;
+  {
+    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
+  }
   wxMessageBox(
     //We need a _T() macro (wide char-> L"", char->"") for EACH 
     //line to make it compitable between char and wide char.
@@ -991,15 +1049,17 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 //      _T("A tool for controlling performance states of AMD family 17\n, ")
 //      _T("codename \"griffin\" (mobile) CPUs, especially for undervolting.\n")
       //_T("A tool for controlling performance states of AMD family 17\n, ")
-      _T("A tool for controlling performance states of ")
+      _T("A tool for giving info about and controlling performance states of\n")
       + stdtstr +
       _T( "\n, ")
 
       //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-      //BUILT_TIME
+      BUILT_TIME
       //"AMD--smarter choice than Intel?\n\n"
       //"To ensure a stable operation:\n"
-      _T("I observed system instability when when switching from power ")
+      _T("To give important information (that already may be contained in ")
+      _T("the documentation):\n")
+      _T("There may be system instability when when switching from power ")
       _T("supply operation to battery mode\n")
       _T("So test for this case if needed: test for the different p-states, ")
       _T("especially for the ones that are much undervolted.\n")
@@ -1007,7 +1067,8 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       _T("Note that the OS may freeze if changing voltages, so you may encounter data loss.\n")
       _T("->save all of your work before.\n\n")
       //" -when switching from power supply operation to battery,\n"
-      _T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
+      //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
+      _T("Licence/ info: http://trilobyte-se.de")
       //"who wants to boinc Dr. Tigerlilly?\n\n"
       //"--deutsches Qualitaetserzeugnis--"
     ,
@@ -1647,11 +1708,15 @@ void MainFrame::DrawCurrentPstateInfo(
 			      //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
 			      //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
           )
-          , 10
+          //x coordinate
+          //, 10
+          , 40
+          //y coordinate
           , //90 
-          m_wDiagramHeight - ( 20 * 
-            (mp_cpucoredata->m_byNumberOfCPUCores + 1 ) ) + 
-            ( byCPUcoreID * 20 )
+          //m_wDiagramHeight - ( 20 * 
+          //  (mp_cpucoredata->m_byNumberOfCPUCores + 1 ) ) + 
+          //  ( byCPUcoreID * 20 )
+          byCPUcoreID * 20
           ) ;
        //ull = mp_pumastatectrl->GetCurrentCPUload( byCPUcoreID ) ;
        //(double) pstate.GetFreqInMHz() / 
@@ -2570,44 +2635,44 @@ void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
   int nMenuEventID = wxevent.GetId() ;
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  if( nMenuEventID == ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq )
-  {
-    //wxMessageDialog();
-    //wxMessageBox("hh") ;
-    //wxString strCurrentValue = wxT("50") ;
-    //wxString sNewValue = wxGetTextFromUser(wxT("Enter min CPU %for CURRENT power profile (scheme)"), 
-//#ifndef _DEBUG
-    //  wxT("title"), strCurrentValue);
-    if( //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
-      //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-      ::wxGetApp().mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-      )
-//#endif
-      //mp_pumastatectrl->DisableFrequencyScalingByOS() ;
-      ::wxGetApp().mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
-//#ifndef _DEBUG
-    else
-      //mp_pumastatectrl->EnableFrequencyScalingByOS() ;
-      ::wxGetApp().mp_dynfreqscalingaccess->EnableFrequencyScalingByOS() ;
-//#endif //#ifdef _DEBUG
-    mp_wxmenuitemOtherDVFS->SetText(//_T("")
-       wxString::Format(
-       //We need a _T() macro (wide char-> L"", char->"") for EACH 
-       //line to make it compitable between char and wide char.
-       _T("%sable DVFS") , 
-       //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
-       //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-       ::wxGetApp().mp_dynfreqscalingaccess->OtherDVFSisEnabled() ? 
-       //We need a _T() macro (wide char-> L"", char->"") for EACH 
-       //line to make it compitable between char and wide char.
-       _T("dis") : 
-      //We need a _T() macro (wide char-> L"", char->"") for EACH 
-      //line to make it compitable between char and wide char.
-      _T("en")
-        )
-      ) ;
-    return ;
-  }
+//  if( nMenuEventID == ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq )
+//  {
+//    //wxMessageDialog();
+//    //wxMessageBox("hh") ;
+//    //wxString strCurrentValue = wxT("50") ;
+//    //wxString sNewValue = wxGetTextFromUser(wxT("Enter min CPU %for CURRENT power profile (scheme)"), 
+////#ifndef _DEBUG
+//    //  wxT("title"), strCurrentValue);
+//    if( //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
+//      //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+//      ::wxGetApp().mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+//      )
+////#endif
+//      //mp_pumastatectrl->DisableFrequencyScalingByOS() ;
+//      ::wxGetApp().mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
+////#ifndef _DEBUG
+//    else
+//      //mp_pumastatectrl->EnableFrequencyScalingByOS() ;
+//      ::wxGetApp().mp_dynfreqscalingaccess->EnableFrequencyScalingByOS() ;
+////#endif //#ifdef _DEBUG
+//    mp_wxmenuitemOtherDVFS->SetText(//_T("")
+//       wxString::Format(
+//       //We need a _T() macro (wide char-> L"", char->"") for EACH 
+//       //line to make it compitable between char and wide char.
+//       _T("%sable DVFS") , 
+//       //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
+//       //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+//       ::wxGetApp().mp_dynfreqscalingaccess->OtherDVFSisEnabled() ? 
+//       //We need a _T() macro (wide char-> L"", char->"") for EACH 
+//       //line to make it compitable between char and wide char.
+//       _T("dis") : 
+//      //We need a _T() macro (wide char-> L"", char->"") for EACH 
+//      //line to make it compitable between char and wide char.
+//      _T("en")
+//        )
+//      ) ;
+//    return ;
+  //}
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //#endif
   BYTE byCoreID = ( nMenuEventID - m_nLowestIDForSetVIDnFIDnDID ) / 

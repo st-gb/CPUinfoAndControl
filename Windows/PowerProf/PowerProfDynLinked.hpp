@@ -32,6 +32,8 @@ public:
   BYTE DeletePowerScheme( const std::tstring & cr_stdtstrPowerSchemeName ) ;
   bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
+  bool EnablingIsPossible() ;
+  IDynFreqScalingAccess::string_type GetEnableDescription() ;
   bool OtherDVFSisEnabled() ;
   void OutputAllPowerSchemes() ;
   virtual unsigned char PowerSchemeToSetExists() { return 0 ; }
