@@ -30,6 +30,7 @@
 #include "wx/power.h" //for power mgmt notification (wxPowerType et.c)
 #include <vector> //for std::vector
 #include <ModelData/ModelData.hpp>
+#include <Xerces/XMLAccess.hpp> //class XercesConfigurationHandler
 #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
   //#include "Windows/CPUcoreUsageGetterNtQuerySystemInformation.hpp"
   //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"
@@ -128,6 +129,7 @@ private:
   WORD m_wXcoordOfBeginOfYaxis ;
   WORD m_wDiagramWidth ;
   WORD m_wDiagramHeight ;
+  XercesConfigurationHandler m_xercesconfigurationhandler ;
 
   //std::vector<//use wxString because it need's to be a subclass of wxObject 
   //  wxString> m_vecwxstring ;

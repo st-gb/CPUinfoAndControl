@@ -10,7 +10,7 @@
 #include <Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
-  #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"
+  #include "Xerces/XMLAccess.hpp" //for "readXMLConfig(...)"
   #include <Xerces/SAX2MainConfigHandler.hpp>
 #endif
 
@@ -563,8 +563,10 @@ BYTE I_CPUcontroller::GetPstateSafefy(
 bool I_CPUcontroller::VIDisLowerVoltageThan( WORD wVIDisLessThan, WORD wVIDvalueToCompare)
 {
   //float f1VIDstepAboveIsLessThan = fIsLessThan ;
-  float fVoltageIsLessThan = GetVoltageID(wVIDisLessThan) ;
-  float fVoltageValueToCompare = GetVoltageID(wVIDvalueToCompare) ;
+  float fVoltageIsLessThan = //GetVoltageID(wVIDisLessThan) ;
+    GetVoltageInVolt(wVIDisLessThan) ;
+  float fVoltageValueToCompare = //GetVoltageID(wVIDvalueToCompare) ;
+    GetVoltageInVolt(wVIDvalueToCompare) ;
   return fVoltageIsLessThan < fVoltageValueToCompare ;
 }
 

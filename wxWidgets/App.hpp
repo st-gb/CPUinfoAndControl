@@ -62,7 +62,6 @@ private:
   //This member needs to nbe created on runtime because it may throw
   //an exception (that should be catched, else runtime error) when it is created.
   I_CPUaccess * mp_i_cpuaccess ;
-  std::tstring m_stdtstrProgramName ;
   Model * mp_modelData ;
 #ifdef COMPILE_WITH_SHARED_MEMORY
   HANDLE m_handleMapFile;
@@ -94,6 +93,7 @@ public:
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
   ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
+  std::tstring m_stdtstrProgramName ;
 #ifdef COMPILE_WITH_CPU_SCALING
   //wxDynFreqScalingTimer * mp_wxdynfreqscalingtimer ;
   //#include "wxDynLinkedCPUcoreUsageGetter.hpp"

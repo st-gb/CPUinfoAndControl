@@ -33,7 +33,7 @@
   #include <Windows_compatible_typedefs.h>
 #endif
 #ifdef COMPILE_WITH_XERCES
-  #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"
+  #include "Xerces/XMLAccess.hpp" //for "readXMLConfig(...)"
   #include "Xerces/SAX2MainConfigHandler.hpp"
   #include "Xerces/SAX2_CPUspecificHandler.hpp"
 #endif
@@ -2084,6 +2084,14 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     return bSuccess ;
   }
 
+  WORD GriffinController::GetNearestHigherPossibleFreqInMHz(
+    WORD wFreqInMHz )
+  {
+    DIDandFID didandfid = GetNearestHigherPossibleFreqInMHzAsDIDnFID(
+     wFreqInMHz ) ;
+    return didandfid.GetFreqInMHz() ;
+  }
+
   //void 
   DIDandFID GriffinController::GetNearestHigherPossibleFreqInMHzAsDIDnFID(
       WORD wFreqInMHz
@@ -2297,6 +2305,14 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         p_didandfid = ( wDiffH < wDiffL ) ? &didandfidH : &didandfidL ;
     }
     return didandfid = *p_didandfid ;
+  }
+
+  WORD GriffinController::GetNearestLowerPossibleFreqInMHz(
+   WORD wFreqInMHz )
+  {
+    DIDandFID didandfid = GetNearestLowerPossibleFreqInMHzAsDIDnFID(
+     wFreqInMHz ) ;
+    return didandfid.GetFreqInMHz() ;
   }
 
   DIDandFID GriffinController::GetNearestLowerPossibleFreqInMHzAsDIDnFID(

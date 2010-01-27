@@ -46,7 +46,7 @@
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
 #include <wxWidgets/wxStringHelper.h>
-#include <Xerces/XMLAccess.h>
+#include <Xerces/XMLAccess.hpp>
 //#include <Windows/CalculationThread.hpp>
 #ifdef _WINDOWS
 #include <Windows/ServiceBase.hpp>
@@ -220,6 +220,7 @@ MainFrame::MainFrame(
   , mp_calculationthread( NULL )
   #endif
   , m_bRangeBeginningFromMinVoltage ( true )
+  , m_xercesconfigurationhandler( p_model )
 {
   LOG("begin of main frame creation\n")
 
@@ -851,6 +852,26 @@ void MainFrame::OnClose(wxCloseEvent & event )
     //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
     p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
   }
+  std::string strCPUtypeRelativeDirPath ;
+  std::string strPstateSettingsFileName ;
+  if( wxGetApp().m_maincontroller.GetPstatesDirPath( 
+    strCPUtypeRelativeDirPath ) 
+    && wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
+    strPstateSettingsFileName )
+    )
+    if( m_xercesconfigurationhandler.ConfigurationChanged(strPstateSettingsFileName) )
+    {
+      int nReturn = ::wxMessageBox(
+        wxT("The performance state configuration has changed.\n")
+        wxT("Save changes?")
+        , wxGetApp().m_stdtstrProgramName
+        , wxYES | wxNO );
+      if( nReturn == wxYES )
+      {
+        wxCommandEvent evt ;
+        OnSaveAsDefaultPStates( evt) ;
+      }
+    }
   //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
   this->Destroy() ;
 }
@@ -1426,21 +1447,21 @@ void MainFrame::DrawLowestStableVoltageCurve(
   )
 {
   std::set<VoltageAndFreq>::const_iterator ciLower =
-    mp_cpucoredata->m_setloweststablevoltageforfreq.begin() ;
+    mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.begin() ;
     ////because of the "MaxVoltageForFreq::<" operator the set is sorted in 
     ////DESCENDING order.
     ////Points BEYOND the last element now.
-    //mp_cpucoredata->m_setloweststablevoltageforfreq.end() ;
+    //mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() ;
   ////Now it should point to the last element.
   //-- ciLower ;
-  if( ciLower != mp_cpucoredata->m_setloweststablevoltageforfreq.end() 
+  if( ciLower != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() 
     )
   {
     std::set<VoltageAndFreq>::const_iterator ciHigher =
       ciLower ;
     ciHigher ++ ;
     //ciHigher -- ;
-    if( ciHigher != mp_cpucoredata->m_setloweststablevoltageforfreq.end() 
+    if( ciHigher != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() 
       )
     {
       float fVoltage ;
@@ -1470,7 +1491,9 @@ void MainFrame::DrawLowestStableVoltageCurve(
         {
           std::set<VoltageAndFreq>::const_iterator ciBeyondHigher = ciHigher ;
           ++ ciBeyondHigher ;
-          if( ciBeyondHigher != mp_cpucoredata->m_setloweststablevoltageforfreq.end() )
+          if( ciBeyondHigher != mp_cpucoredata->
+            m_stdsetvoltageandfreqLowestStable.end() 
+            )
           {
             ++ ciLower ;
             ++ ciHigher ;
@@ -1479,7 +1502,7 @@ void MainFrame::DrawLowestStableVoltageCurve(
           }
         }
         //If current freq is in between.
-        if( ciHigher != mp_cpucoredata->m_setloweststablevoltageforfreq.end()
+        if( ciHigher != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end()
           && ciLower->m_wFreqInMHz <= wCurrentFreqInMHz && 
           ciHigher->m_wFreqInMHz >= wCurrentFreqInMHz 
           )
@@ -1493,7 +1516,7 @@ void MainFrame::DrawLowestStableVoltageCurve(
           mp_cpucontroller->GetInterpolatedVoltageFromFreq(
             wCurrentFreqInMHz 
             , fVoltage
-            , mp_cpucoredata->m_setloweststablevoltageforfreq
+            , mp_cpucoredata->m_stdsetvoltageandfreqLowestStable
             ) ;
           if( m_bRangeBeginningFromMinVoltage )
             wYcoordinate =
@@ -2933,7 +2956,9 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
         // work with the file
         //...
       //readXMLfileDOM( wxstrFilePath.c_str() ) ;
-      mergeXMLfileDOM( 
+      //mergeXMLfileDOM( 
+      //mp_configurationHandler->
+      m_xercesconfigurationhandler.MergeWithExistingConfigFile( 
         GetStdString( std::tstring( wxstrFilePath.c_str() ) ).c_str()
         , * mp_model ,
         strPstateSettingsFileName ) ;

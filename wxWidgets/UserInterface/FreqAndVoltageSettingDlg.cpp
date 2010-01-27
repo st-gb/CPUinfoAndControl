@@ -1098,7 +1098,7 @@ void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton( wxCommandEvent & wxcmd )
     mp_wxsliderCPUcoreVoltage->GetValue() ) ;
   WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
   mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
-  mp_cpucontroller->mp_model->m_cpucoredata.m_setloweststablevoltageforfreq.
+  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.
     insert( 
       VoltageAndFreq( fVoltage
         , wFreq

@@ -202,7 +202,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WINRING0_PATH)\include_&quot;"
+				AdditionalIncludeDirectories="&quot;$(X86INFO_AND_Control_FULL_ROOT_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_32_BIT_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WINRING0_PATH)\include_&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;WXUSINGDLL;COMPILE_WITH_XERCES;COMPILE_WITH_AMD_GRIFFIN;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6;COMPILE_WITH_OTHER_DVFS_ACCESS;COMPILE_WITH_CALC_THREAD_"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -223,7 +223,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Rpcrt4.lib wxbase28d.lib wxexpatd.lib wxmsw28d_adv.lib wxmsw28d_core.lib wxmsw28d_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
-				OutputFile="C:\Users\Public\GriffinControlService_und_PumaStateCtrl\$(ProjectName)GUI_32bit_debug.exe"
+				OutputFile="$(X86INFO_AND_CONTROL_WORK_DIR)\$(ProjectName)_32bit_debug.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(WX_DIR)/lib/vc_dll&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_LIB_PATH)&quot;;&quot;D:\Programme\Microsoft SDKs\Windows\v6.1\Lib_&quot;;&quot;D:\Temp\xerces-c_2_8_0-x86-windows-vc_8_0\lib_&quot;;D:\Temp\WinRing0_1_2_0Alpha1\release_"
 				IgnoreDefaultLibraryNames="LIBCMT"
@@ -284,12 +284,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(X86INFO_AND_Control_FULL_ROOT_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_RELEASE_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WINRING0_PATH)\include_&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;COMPILE_WITH_AMD_GRIFFIN;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6;COMPILE_WITH_OTHER_DVFS_ACCESS;COMPILE_WITH_CALC_THREAD"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;COMPILE_WITH_AMD_GRIFFIN;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6;COMPILE_WITH_OTHER_DVFS_ACCESS;COMPILE_WITH_CALC_THREAD_"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 				ShowIncludes="true"
 			/>
 			<Tool
@@ -1417,7 +1417,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Xerces\XMLAccess.h"
+				RelativePath="..\..\Xerces\XMLAccess.hpp"
 				>
 			</File>
 			<Filter
