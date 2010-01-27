@@ -187,8 +187,11 @@ public :
   //  float & r_fVoltageInVolt ) ;
   WORD GetMaximumFrequencyInMHz() ;
 
+  WORD GetNearestHigherPossibleFreqInMHz(
+      WORD wFreqInMHz ) ;
   DIDandFID GetNearestHigherPossibleFreqInMHzAsDIDnFID(
       WORD wFreqInMHz ) ;
+  WORD GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   DIDandFID GetNearestLowerPossibleFreqInMHzAsDIDnFID(
       WORD wFreqInMHz ) ;
   DIDandFID GetNearestPossibleFreqInMHzAsDIDnFID(
