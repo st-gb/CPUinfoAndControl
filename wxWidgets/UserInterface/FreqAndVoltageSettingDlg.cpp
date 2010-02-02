@@ -118,7 +118,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     0 );
 
   //mp_wxbuttonApply = new wxButton(this, wxID_APPLY ) ;
-  mp_wxbuttonApply = new wxButton(this, wxID_APPLY, _T("Write p-state") ) ;
+  mp_wxbuttonApply = new wxButton(this, wxID_APPLY, _T("&Write p-state") ) ;
   mp_wxbuttonSetAsWantedVoltage = new wxButton( this, 
     ID_SetAsWantedVoltage, wxT("set as wanted voltage") ) ;
   mp_wxbuttonSetAsMinVoltage = new wxButton( this, 
@@ -403,7 +403,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //    mp_cpucontroller->GetMinimumVoltageInVolt() * 1000 );
   p_wxbuttonIncBy1VoltageStep = new wxButton( this
     , ID_SpinVoltage 
-    , wxT("+") 
+    , wxT("&+") 
     ) ;
   p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
     p_wxbuttonIncBy1VoltageStep
@@ -413,7 +413,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     , 0 );
   p_wxbuttonDecBy1VoltageStep = new wxButton( this
     , ID_DecreaseVoltage
-    , wxT("-") 
+    , wxT("&-") 
     ) ;
   p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
     p_wxbuttonDecBy1VoltageStep

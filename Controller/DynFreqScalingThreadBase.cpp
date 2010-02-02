@@ -236,4 +236,9 @@ ExitCode DynFreqScalingThreadBase::Entry()
   return 0;
 }
 
+BYTE DynFreqScalingThreadBase::Start() { 
+  m_vbRun = true ; 
+  return 1 ;
+}
+
 void DynFreqScalingThreadBase::Stop() { m_vbRun = false ; }

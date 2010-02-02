@@ -126,7 +126,9 @@ private:
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
   wxMenuItem ** marp_wxmenuItemHighLoadThread ;
+  wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
   WORD m_wXcoordOfBeginOfYaxis ;
+  WORD m_wMinYcoordInDiagram ;
   WORD m_wDiagramWidth ;
   WORD m_wDiagramHeight ;
   XercesConfigurationHandler m_xercesconfigurationhandler ;
@@ -231,6 +233,7 @@ public:
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  void OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnClose(wxCloseEvent & event) ;
   void OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
   void OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;

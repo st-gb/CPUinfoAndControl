@@ -58,6 +58,7 @@
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"
 //#include "CpuUsage.h" //Crystal CPU usage getter
+#include <map> //std::map
 #include <set>
 
 class wxObject ;
@@ -83,6 +84,7 @@ enum
   , ID_StopService
   , ID_UpdateViewInterval
   , ID_SaveAsDefaultPstates
+  , ID_Collect_As_Default_Voltage_PerfStates
   , ID_FindDifferentPstates
 //#endif
   , TIMER_ID
@@ -135,6 +137,8 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnSaveAsDefaultPStates )
   EVT_MENU( ID_FindDifferentPstates ,
     MainFrame::OnFindDifferentPstates )
+  EVT_MENU( ID_Collect_As_Default_Voltage_PerfStates ,
+    MainFrame::OnCollectAsDefaultVoltagePerfStates ) 
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   EVT_MENU( ID_ContinueService ,
     MainFrame::OnContinueService )
@@ -240,7 +244,7 @@ MainFrame::MainFrame(
   wxMenu * p_wxmenuNorthBridge = new wxMenu;
   p_wxmenuFile->Append( ID_About, _T("&About...") );
   p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
-    _T("Save &Performance States...") );
+    _T("Save &performance states settings...") );
   p_wxmenuFile->AppendSeparator();
   //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
@@ -316,10 +320,18 @@ MainFrame::MainFrame(
       );
   }
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
+  if( ! p_wxmenuExtras ) 
+    p_wxmenuExtras = new wxMenu;
+
   p_wxmenuExtras->Append(
     ID_UpdateViewInterval, 
     //_T("&CPU % min and max.") 
     _T("set update view interval")
+    );
+  mp_wxmenuitemCollectAsDefaultVoltagePerfStates = p_wxmenuExtras->AppendCheckItem(
+    ID_Collect_As_Default_Voltage_PerfStates, 
+    //_T("&CPU % min and max.") 
+    _T("collect p-states as default voltage p-states")
     );
 //#endif //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //#ifdef _TEST_PENTIUM_M
@@ -859,7 +871,11 @@ void MainFrame::OnClose(wxCloseEvent & event )
     && wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
     strPstateSettingsFileName )
     )
-    if( m_xercesconfigurationhandler.ConfigurationChanged(strPstateSettingsFileName) )
+  {
+    std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/" +
+      strPstateSettingsFileName ;
+    if( m_xercesconfigurationhandler.ConfigurationChanged(//strPstateSettingsFileName
+      stdstrCPUtypeRelativeFilePath ) )
     {
       int nReturn = ::wxMessageBox(
         wxT("The performance state configuration has changed.\n")
@@ -872,8 +888,15 @@ void MainFrame::OnClose(wxCloseEvent & event )
         OnSaveAsDefaultPStates( evt) ;
       }
     }
+  }
   //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
   this->Destroy() ;
+}
+
+void MainFrame::OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) )
+{
+  mp_model->m_bCollectPstatesAsDefault = 
+    mp_wxmenuitemCollectAsDefaultVoltagePerfStates->IsChecked () ;
 }
 
 void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
@@ -1072,7 +1095,7 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       //_T("A tool for controlling performance states of AMD family 17\n, ")
       _T("A tool for giving info about and controlling performance states of\n")
       + stdtstr +
-      _T( "\n, ")
+      _T( "\n")
 
       //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
       BUILT_TIME
@@ -1080,7 +1103,7 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       //"To ensure a stable operation:\n"
       _T("To give important information (that already may be contained in ")
       _T("the documentation):\n")
-      _T("There may be system instability when when switching from power ")
+      _T("There may be system instability when switching from power ")
       _T("supply operation to battery mode\n")
       _T("So test for this case if needed: test for the different p-states, ")
       _T("especially for the ones that are much undervolted.\n")
@@ -1089,7 +1112,7 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       _T("->save all of your work before.\n\n")
       //" -when switching from power supply operation to battery,\n"
       //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
-      _T("Licence/ info: http://trilobyte-se.de")
+      _T("Licence/ info: http://www.trilobyte-se.de/x86iandc")
       //"who wants to boinc Dr. Tigerlilly?\n\n"
       //"--deutsches Qualitaetserzeugnis--"
     ,
@@ -1336,13 +1359,28 @@ void MainFrame::DrawDiagramScale(
 {
   //float fMinVoltage ;
   //float fMaxMinusMinVoltage ;
+  wxString wxstrFreq ;
+  wxCoord wxcoordWidth ;
+  wxCoord wxcoordHeight ;
+  WORD wLeftEndOfCurrFreqText ;
   WORD wXcoordinate ;
   WORD wYcoordinate ;
   WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
     //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
     mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+  std::map<WORD,WORD>::const_reverse_iterator 
+    r_iterstdmapRightEndOfFreqString2yCoord ;
+  std::map<WORD,WORD> mapRightEndOfFreqString2yCoord ;
+
+  std::map<WORD,WORD>::iterator 
+    r_iterstdmapYcoord2RightEndOfFreqString ;
+  std::map<WORD,WORD> stdmapYcoord2RightEndOfFreqString ;
+  std::map<WORD,WORD>::iterator 
+    r_iterstdmap_ycoord2rightendoffreqstringToUse ;
+
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
     mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
+  std::set<WORD> setRightEndOfFreqString ;
   iterstdsetvoltageandfreq = r_stdsetvoltageandfreq.begin() ;
 #ifdef _DEBUG
   const wxPen & wxpenCurrent = wxdc.GetPen() ;
@@ -1380,27 +1418,126 @@ void MainFrame::DrawDiagramScale(
       //Draw frequency mark.
       //p_wxpaintdc->DrawText(
       //wxmemorydc.DrawText(
-      wxdc.DrawText(
-        //wxT("550")
-        wxString::Format(
+
+      wxstrFreq = wxString::Format(
           //We need a _T() macro (wide char-> L"", char->"") for EACH 
           //line to make it compitable between char and wide char.
           _T("%u") ,
-              //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz )
-              //(*iterstdsetmaxvoltageforfreq).m_wFreqInMHz )
-              (*iterstdsetvoltageandfreq).m_wFreqInMHz)
-          ,
-          //wXcoordOfBeginOfYaxis +
-          //(float) (*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
-          //(float) wMaxFreqInMHz * wDiagramWidth
-          wXcoordinate
-          , //200
-          m_wDiagramHeight
+          (*iterstdsetvoltageandfreq).m_wFreqInMHz
           ) ;
+      wxdc.GetTextExtent( 
+        wxstrFreq
+        , & wxcoordWidth 
+        , & wxcoordHeight
+        //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+        ) ;
+      wLeftEndOfCurrFreqText = wXcoordinate 
+        //Position the line at the horizontal middle of the text.
+        - ( wxcoordWidth / 2 ) ;
+      //If the iterator is not set::end() then there is at least 1 strings that would
+      //overlap with the current string if all were drawn with the same y coordinate.
+      //iterstdsetword = setRightEndOfFreqString.
+      //  //Finds the first element whose key greater than k.
+      //  upper_bound(wLeftEndOfCurrFreqText) ;
+      //r_iterstdmapRightEndOfFreqString2yCoord = 
+      //  mapRightEndOfFreqString2yCoord.rbegin() ;
+      //while( r_iterstdmapRightEndOfFreqString2yCoord != 
+      //  mapRightEndOfFreqString2yCoord.rend() 
+      //  )
+      //{
+      //  //If space between the right end is of a prev string and the left end
+      //  //of this string.
+      //  if( r_iterstdmapRightEndOfFreqString2yCoord->first < 
+      //    wLeftEndOfCurrFreqText )
+      //    break ;
+      //  ++ r_iterstdmapRightEndOfFreqString2yCoord ;
+      //}
+
+      ////Avoid overlapping of frequency strings.
+      ////if( wLeftEndOfCurrFreqText < wRightEndOfPrevFreqText )
+      ////  wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
+      //if( r_iterstdmapRightEndOfFreqString2yCoord != 
+      //  mapRightEndOfFreqString2yCoord.rend() 
+      //  )
+      //  wYcoordinate = r_iterstdmapRightEndOfFreqString2yCoord->second ;
+      //else
+      //  if( mapRightEndOfFreqString2yCoord.empty() )
+      //    wYcoordinate = m_wDiagramHeight ;
+      //  else // no right text end that is left from the current text to draw.
+      //  {
+      //    //wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
+      //    //e.g.:  500
+      //    //         600
+      //    //           650
+      //    //Draw 1 line below the previous freq text.
+      //    wYcoordinate = mapRightEndOfFreqString2yCoord.rbegin()->second + 
+      //      wxcoordHeight ;
+      //  }
+
+      r_iterstdmapYcoord2RightEndOfFreqString = 
+        stdmapYcoord2RightEndOfFreqString.begin() ;
+      r_iterstdmap_ycoord2rightendoffreqstringToUse = 
+        stdmapYcoord2RightEndOfFreqString.end() ;
+      while( r_iterstdmapYcoord2RightEndOfFreqString != 
+        stdmapYcoord2RightEndOfFreqString.end() 
+        )
+      {
+        //If space between the right end is of a prev string and the left end
+        //of this string.
+        //The first entry is the topmost. This is also the entry 
+        if( r_iterstdmapYcoord2RightEndOfFreqString->second < 
+          wLeftEndOfCurrFreqText )
+        {
+          r_iterstdmap_ycoord2rightendoffreqstringToUse = 
+            r_iterstdmapYcoord2RightEndOfFreqString ;
+          break ;
+        }
+        ++ r_iterstdmapYcoord2RightEndOfFreqString ;
+      }
+      if( r_iterstdmap_ycoord2rightendoffreqstringToUse != 
+        stdmapYcoord2RightEndOfFreqString.end() 
+        )
+      {
+        //Update the new right end of string to draw.
+        r_iterstdmap_ycoord2rightendoffreqstringToUse->second = 
+          wLeftEndOfCurrFreqText + wxcoordWidth ;
+        wYcoordinate = r_iterstdmap_ycoord2rightendoffreqstringToUse->first ;
+      }
+      else
+      {
+        if( stdmapYcoord2RightEndOfFreqString.empty() )
+          wYcoordinate = m_wDiagramHeight ;
+        else // no right text end that is left from the current text to draw.
+        {
+          //wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
+          //e.g.:  500
+          //         600
+          //           650
+          //Draw 1 line below the previous freq text.
+          wYcoordinate = stdmapYcoord2RightEndOfFreqString.rbegin()->first + 
+            wxcoordHeight ;
+        }
+        stdmapYcoord2RightEndOfFreqString.insert(
+          std::pair<WORD,WORD> ( wYcoordinate , wLeftEndOfCurrFreqText + wxcoordWidth ) ) ;
+      }
+      wxdc.DrawText(
+        //wxT("550")
+        wxstrFreq
+        ,
+        //wXcoordOfBeginOfYaxis +
+        //(float) (*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
+        //(float) wMaxFreqInMHz * wDiagramWidth
+        wLeftEndOfCurrFreqText
+        , //m_wDiagramHeight
+        wYcoordinate
+        ) ;
+      //mapRightEndOfFreqString2yCoord.insert(
+      //  std::pair<WORD,WORD> ( wLeftEndOfCurrFreqText + wxcoordWidth, wYcoordinate ) ) ;
       //Draw vertical line for current frequency mark.
       //p_wxpaintdc->DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
       //wxmemorydc.DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
-      wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, m_wDiagramHeight) ;
+      wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, //m_wDiagramHeight
+        wYcoordinate ) ;
 
       if( m_bRangeBeginningFromMinVoltage )
         wYcoordinate =
@@ -1413,7 +1550,8 @@ void MainFrame::DrawDiagramScale(
           //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
           //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
           (*iterstdsetvoltageandfreq).m_fVoltageInVolt
-          / m_fMaxVoltage * m_wDiagramHeight ;
+          / m_fMaxVoltage * m_wDiagramHeight 
+          + m_wMinYcoordInDiagram ;
       //Draw voltage mark.
       //p_wxpaintdc->DrawText(
       //wxmemorydc.DrawText(
@@ -1619,7 +1757,9 @@ void MainFrame::DrawOvervoltageProtectionCurve(
             fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
             fMaxVoltage
             * m_wDiagramHeight ;
-        //p_wxpaintdc->DrawLine( 
+        //p_wxpaintdc->DrawLine(
+        //TODO draw lines from last point to current point. So gaps are avoided if 
+        //the angle is > 45 degrees
         wxdc.DrawLine( 
             wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
             //200-fVoltage*100, 
@@ -2994,8 +3134,9 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
       //  m_stdsetvoltageandfreqDefault.insert( 
       //  VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
       //  ) ;
-      bNewVoltageAndFreqPair = mp_model->m_cpucoredata.AddDefaultVoltageForFreq(
-        fVoltageInVolt , wFreqInMHz ) ;
+      if( mp_model->m_bCollectPstatesAsDefault )
+        bNewVoltageAndFreqPair = mp_model->m_cpucoredata.AddDefaultVoltageForFreq(
+          fVoltageInVolt , wFreqInMHz ) ;
       ////New p-state inserted.
       //if( stdpairstdsetvoltageandfreq.second )
       //  bNewVoltageAndFreqPair = true ;
@@ -3130,6 +3271,10 @@ void MainFrame::RedrawEverything()
   //Clears the device context using the current background brush. 
   //(else black background?)
   m_wxmemorydcStatic.Clear();
+
+  m_wMinYcoordInDiagram = 
+    //Let the diagram begin at the vertical middle of the topmost voltage value.
+    m_wxmemorydcStatic.GetCharHeight() / 2 ;
   //m_wxbufferedpaintdcStatic.SelectObject(mp_wxbitmapStatic) ;
 //  if( mp_wxbufferedpaintdc
 //  wxBufferedPaintDC mp_wxbufferedpaintdc ( this ) ;

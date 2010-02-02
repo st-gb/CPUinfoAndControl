@@ -24,6 +24,7 @@ class Model
 {
   BYTE m_byNumberOfCPUCores ;
 public:
+  volatile bool m_bCollectPstatesAsDefault ;
   bool m_bSkipCPUtypeCheck ;
   bool m_bTruncateLogFileForEveryStartup ;
   bool m_bUsePstate0AsMaxFreq ;

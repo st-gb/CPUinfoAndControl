@@ -14,6 +14,7 @@ Model::Model( //GriffinController * p_griffincontroller
     , m_bTruncateLogFileForEveryStartup(true)
     , mp_cpucontroller (NULL)
     , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
+    , m_bCollectPstatesAsDefault(false)
   {
     //m_cpucoredata
 #ifdef _DEBUG

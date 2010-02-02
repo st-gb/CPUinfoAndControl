@@ -33,6 +33,7 @@ XERCES_CPP_NAMESPACE_BEGIN
   class DOMElement ;
   class DOMImplementation ;
   class DOMLSParser ;
+  class DOMXPathNSResolver ;
   class DOMXPathResult ;
 
   XERCES_CPP_NAMESPACE_END
@@ -51,6 +52,9 @@ XERCES_CPP_NAMESPACE_BEGIN
     //std::map<WORD,WORD>::const_iterator AddFrequencyToDOMtree(WORD wFreq) ;
     XERCES_CPP_NAMESPACE::DOMElement * AddFrequencyToDOMtree(WORD wFreq) ;
     void AppendDefaultVoltages() ;
+    XERCES_CPP_NAMESPACE::DOMXPathNSResolver * BuildStdmapFreqInMHzInDOMtree2DOMindex(
+      std::map<WORD,WORD> & r_stdmapFreqInMHzInDOMtree2DOMindex
+      ) ;
     void GetDOM_XPathResultForFrequencies() ;
     void GetFreqnVoltDOMelement( WORD wFreqInMHz 
       , XERCES_CPP_NAMESPACE::DOMElement * & mp_dom_element ) ;
@@ -59,7 +63,12 @@ XERCES_CPP_NAMESPACE_BEGIN
     bool PossiblyAddVoltages(
       const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq 
       , //e.g. "max_voltage_in_Volt"
-      const char * const cpc_XMLAttrName ) ;
+      const char * const cpc_XMLAttrName 
+      //"true": only look if there would be changes made (useful to check
+      // for the purpose: if there are changes then ask the user whether to 
+      //save the changes.
+      , bool bOnlySimulate 
+      ) ;
     bool PossiblyAddWantedVoltages() ;
   public:
     bool ConfigurationChanged(std::string & r_strPstateSettingsFileName ) ;

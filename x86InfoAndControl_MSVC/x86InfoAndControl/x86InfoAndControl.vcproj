@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="x86InfoAndControl_GUI"
 	ProjectGUID="{C19CF353-C183-473D-B6BF-90F14D8F84B7}"
 	RootNamespace="x86InfoAndControl"
@@ -119,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(X86INFO_AND_Control_FULL_ROOT_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WINRING0_PATH)\include_&quot;"
+				AdditionalIncludeDirectories="&quot;$(X86INFO_AND_CONTROL_FULL_ROOT_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WINRING0_PATH)\include_&quot;"
 				PreprocessorDefinitions="WIN32;WXUSINGDLL;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;COMPILE_WITH_AMD_GRIFFIN;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6;COMPILE_WITH_OTHER_DVFS_ACCESS;COMPILE_WITH_CALC_THREAD"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
