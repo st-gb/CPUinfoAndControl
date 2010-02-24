@@ -16,7 +16,7 @@ CC=gcc-4.exe
 CCC=g++-4.exe
 CXX=g++-4.exe
 FC=
-AS=
+AS=as.exe
 
 # Macros
 CND_PLATFORM=Cygwin_4.x-Windows
