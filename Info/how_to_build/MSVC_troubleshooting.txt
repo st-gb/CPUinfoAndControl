@@ -10,8 +10,4 @@ wenn der Build-Fehler nicht gefunden werden kann, hilft
  one that can't be opened) dirs aren't accessable. Then these
  other dir should be shown as warnings
 -fatal error LNK1146: no argument specified with option '/LIBPATH:
--MSVC saves with CR+LF line endings.
- -to save as LF line ending (important for SourceCodeManangement checkins/ imports/ commits): 
-  -menu "File"->"Save >>filename<< as..." for each file
-  -use StripEm: http://grebulon.com/software/stripem.php
-   for automatic conversion 
+ 

@@ -4,7 +4,6 @@
 	Version="8,00"
 	Name="X86InfoAndControlService"
 	ProjectGUID="{DBEE7853-3C12-4057-B688-60C1B8B26FF3}"
-	RootNamespace="X86InfoAndControlService"
 	>
 	<Platforms>
 		<Platform
@@ -16,7 +15,6 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			>
@@ -37,8 +35,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;"
-				PreprocessorDefinitions="WIN32;WXUSINGDLL;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -100,8 +96,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(X86INFO_AND_CONTROL_FULL_ROOT_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_RELEASE_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;"
-				PreprocessorDefinitions="COMPILE_WITH_AMD_GRIFFIN;WIN32;WXUSINGDLL;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6"
+				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_LATEST_VERSION_FULL_INCLUDE_PATH)&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\lib\vc_dll\msw&quot;;&quot;$(SDK_DIR)\Include&quot;;D:\Downloads\CrystalCPUID415Src\common_;&quot;$(WX_2_8_10_DIR)\lib\vc_lib\msw_&quot;;&quot;$(WXWIDGETS_2_8_10_FULL_LATEST_ROOT_PATH)\include_&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -117,79 +113,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
 				OutputFile="$(OutDir)\$(ProjectName)32bit.exe"
-				AdditionalLibraryDirectories="&quot;$(WX_DIR)/$(WX_32_BIT_ANSI_RELEASE_STATIC_LIB_SUBDIR)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_LIB_PATH)&quot;"
+				AdditionalLibraryDirectories="&quot;$(WXWIDGETS_FULL_32BIT_LIB_PATH)&quot;;&quot;$(WINRING0_LATEST_VERSION_FULL_LIB_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;D:\Programme\Microsoft SDKs\Windows\v6.1\Lib_&quot;;&quot;D:\Temp\xerces-c_2_8_0-x86-windows-vc_8_0\lib_&quot;;D:\Temp\WinRing0_1_2_0Alpha1\release_"
 				IgnoreDefaultLibraryNames="LIBCMT"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Svc_Debug_from_Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;"
-				PreprocessorDefinitions="COMPILE_WITH_AMD_GRIFFIN;EMULATE_EXECUTION_AS_SERVICE;WIN32;WXUSINGDLL;_DEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6"
-				RuntimeLibrary="3"
-				DebugInformationFormat="4"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
-				OutputFile="C:\Users\Public\GriffinControlService_und_PumaStateCtrl\$(ProjectName)32bit_debug.exe"
-				AdditionalLibraryDirectories="&quot;$(WX_DIR)/lib/vc_dll&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_LIB_PATH)&quot;"
-				IgnoreDefaultLibraryNames="LIBCMT"
-				GenerateDebugInformation="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -260,10 +185,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\stdafx.h"
 				>
 			</File>
@@ -293,10 +214,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath=".\X86InfoAndControlService.rc"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Windows-API"
@@ -355,6 +272,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Windows\LocalLanguageMessageFromErrorCode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Windows\main.cpp"
 				>
 			</File>
 			<File
@@ -440,10 +361,6 @@
 					RelativePath="..\..\Windows\CPUcontrolService.hpp"
 					>
 				</File>
-				<File
-					RelativePath="..\..\Windows\main.cpp"
-					>
-				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -478,15 +395,6 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
-				<FileConfiguration
-					Name="Svc_Debug_from_Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\wxWidgets\DynFreqScalingThread.hpp"
@@ -495,22 +403,6 @@
 			<File
 				RelativePath="..\..\wxWidgets\wxDynFreqScalingTimer.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Svc_Debug_from_Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\wxWidgets\wxDynFreqScalingTimer.hpp"
@@ -518,6 +410,10 @@
 			</File>
 			<File
 				RelativePath="..\..\wxWidgets\wxDynLinkedCPUcoreUsageGetter.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\wxWidgets\wxStringHelper.h"
 				>
 			</File>
 			<Filter
@@ -528,14 +424,6 @@
 					>
 					<FileConfiguration
 						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Svc_Debug_from_Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -558,14 +446,6 @@
 							Name="VCCLCompilerTool"
 						/>
 					</FileConfiguration>
-					<FileConfiguration
-						Name="Svc_Debug_from_Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\wxWidgets\Controller\wxServiceSocketServer.hpp"
@@ -573,10 +453,6 @@
 				</File>
 				<File
 					RelativePath="..\..\wxWidgets\Controller\wxStringHelper.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\wxWidgets\wxStringHelper.h"
 					>
 				</File>
 			</Filter>
@@ -686,22 +562,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Controller\MSRaccessBase.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Controller\Intel\Nehalem\NehalemClocksNotHaltedCPUcoreUsageGetter.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Controller\Intel\Nehalem\NehalemClocksNotHaltedCPUcoreUsageGetter.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Controller\Intel\Nehalem\NehalemController.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Controller\Intel\Nehalem\NehalemController.hpp"
 				>
 			</File>
 			<File

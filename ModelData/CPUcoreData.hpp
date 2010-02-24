@@ -88,7 +88,7 @@ public:
   I_CPUcontroller * mp_cpucontroller ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqAvailableFreq ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqWanted ;
-  std::set<VoltageAndFreq> m_stdsetvoltageandfreqLowestStable ;
+  std::set<VoltageAndFreq> m_setloweststablevoltageforfreq ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqDefault ;
   ////Make as pointers because shared memories need a fixed size,
   ////else if elements are added.

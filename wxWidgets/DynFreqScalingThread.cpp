@@ -75,10 +75,7 @@ DynFreqScalingThread::DynFreqScalingThread(
 
 BYTE DynFreqScalingThread::Start()
 {
-  DynFreqScalingThreadBase::Start() ;
-  return 
-    //calls the Run() method of the base class "wxThread".
-    Run() ;
+  return Run() ;
 }
   ////http://docs.wxwidgets.org/stable/wx_wxthread.html#wxthreadentry:
   ////"This is the entry point of the thread. This function is pure virtual and must be implemented by any derived class. The thread execution will start here."

@@ -155,9 +155,7 @@ void OuputCredits()
     "This program is a CPU information and control program for \n"
     //maincontroller.GetSupportedCPUtypes() ;
     + stdtstr +
-    //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" 
-    "license/ info: http://www.trilobyte-se.de/x86iandc/\n" 
-    )
+    "license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" )
   std::cout << 
     "This executable is both in one:\n"
     "-a(n) (de-)installer for the undervolting service\n"

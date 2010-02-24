@@ -13,20 +13,6 @@ wxString getwxString(std::string & str )
  return  wxstr ;
 }
 
-wxString getwxString(std::wstring & stdwstr )
-{
-//#ifdef wxUSE_WCHAR_T
-//see wx/chartype.h:wxUSE_UNICODE_WCHAR->"typedef wchar_t wxStringCharType;"
-#ifdef wxUSE_UNICODE_WCHAR 
-  std::wstring wstr(str.begin(), str.end() ) ;
-  wxString wxstr( wstr.c_str() ) ;
-#else
-  std::string stdstr(stdwstr.begin(), stdwstr.end() ) ;
-  wxString wxstr(( const unsigned char * ) stdstr.c_str() ) ;
-#endif
- return  wxstr ;
-}
-
 std::string getstdstring(wxString & wxstr)
 {
 //#ifdef wxUSE_WCHAR_T

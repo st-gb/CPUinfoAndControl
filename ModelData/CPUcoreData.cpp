@@ -93,7 +93,7 @@ bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 
 void CPUcoreData::AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz)
 {
-  m_stdsetvoltageandfreqLowestStable.insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
+  m_setloweststablevoltageforfreq.insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
   //mp_setloweststablevoltageforfreq->insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
 }
 

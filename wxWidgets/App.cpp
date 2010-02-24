@@ -193,20 +193,8 @@ bool wxX86InfoAndControlApp::OnInit()
   {
     //ISpecificController
     //MyFrame * p_frame ;
-    std::tstring stdtstrLogFilePath ;
-    if( argc > 0 )
-    {
-      std::tstring tstrArg0(argv[0]) ;
-      stdtstrLogFilePath = std::tstring( //Getstdtstring(argv) +
-        tstrArg0 +
-        _T("_log.txt") ) ;
-    }
-    else
-      stdtstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName +
-        _T("_log.txt") ) ;
-    //Maybe it's better to use a file name for the log file that is derived 
-    //from THIS executable's file name: e.g. so different log files for the 
-    //x86I&C service and the x86I&C GUI are possible.
+    std::tstring stdtstrLogFilePath( mp_modelData->m_stdtstrProgramName +
+      _T("_log.txt") ) ;
     g_logger.OpenFile( stdtstrLogFilePath ) ;
     //Intitialise to be valid.
     m_arartchCmdLineArgument[ 0 ] = _T("") ;

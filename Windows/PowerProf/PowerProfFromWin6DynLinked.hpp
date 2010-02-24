@@ -141,7 +141,7 @@ public:
   BYTE ActivatePowerSchemeToSet() ;
   bool ChangeOtherDVFSaccessPossible ()
   {
-    //DWORD dwRet ;
+    DWORD dwRet ;
     //maybe PowerCanRestoreIndividualDefaultPowerScheme(...) is
     //appropriate.
     return true ;
@@ -168,7 +168,6 @@ public:
   //Inherited from class PowerProfDynLinked.
 //  bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
-  bool EnablingIsPossible() ;
 
   void GetThrottleSettings(
     const GUID & guidActivePowerScheme
@@ -182,8 +181,6 @@ public:
     //std::wstring & r_stdwstrPowerSchemeName
     std::tstring & r_stdtstrPowerSchemeName
     ) ;
-
-  IDynFreqScalingAccess::string_type GetEnableDescription() ;
 
   DWORD GetPowerSchemeName(
     GUID & guidPowerScheme , std::wstring & r_stdwstr ) ;

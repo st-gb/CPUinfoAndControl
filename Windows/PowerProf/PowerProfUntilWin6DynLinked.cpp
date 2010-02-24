@@ -203,42 +203,6 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByName (
 //To continue until all power schemes have been enumerated, the 
 //callback function must return TRUE. 
 //To stop the enumeration, the callback function must return FALSE.
-BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByID (
-  UINT uiPowerSchemeID ,      // power scheme index
-  DWORD dwName,      // size of the sName string, in bytes
-  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
-  //LPTSTR strPowerSchemeName,      // name of the power scheme
-  LPWSTR strPowerSchemeName,      // name of the power scheme
-  DWORD dwDesc,      // size of the sDesc string, in bytes
-  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
-  //LPTSTR sDesc,      // description string
-  LPWSTR sDesc,      // description string
-  PPOWER_POLICY pp,  // receives the power policy
-  LPARAM lParam      // user-defined value
-  )
-{
-  //LOGWN( L"Power scheme index:" << uiPowerSchemeID << " name:" << strPowerSchemeName )
-  PowerProfUntilWin6DynLinked * p_powerprofuntilwin6dynlinked = 
-    (PowerProfUntilWin6DynLinked *) lParam ;
-  if( p_powerprofuntilwin6dynlinked )
-  {
-    if( uiPowerSchemeID == p_powerprofuntilwin6dynlinked->
-      m_uiPowerSchemeIndexToSearch
-      )
-    {
-      p_powerprofuntilwin6dynlinked->m_stdwstrPowerSchemeNameOfIDtoSearch = 
-        std::wstring( strPowerSchemeName) ;
-      p_powerprofuntilwin6dynlinked->m_bPowerSchemeFound = true ;
-      //ok, we found the scheme. Returning "FALSE" stops further enumeration.
-      return FALSE ;
-    }
-  }
-  return TRUE ;
-}
-
-//To continue until all power schemes have been enumerated, the 
-//callback function must return TRUE. 
-//To stop the enumeration, the callback function must return FALSE.
 BOOLEAN CALLBACK PwrSchemesEnumProcLogOutput (
   UINT uiPowerSchemeID ,      // power scheme index
   DWORD dwName,      // size of the sName string, in bytes
@@ -641,8 +605,8 @@ bool PowerProfUntilWin6DynLinked::DisableFrequencyScalingByOS()
   //  }
   //}
   m_bPowerSchemeWithP0ThrottleNoneFound = false ;
-  //m_strWantedPowerScheme = "CPUcontrol" ;
-  //m_stdwstrWantedPowerScheme = L"CPUcontrol" ;
+  m_strWantedPowerScheme = "CPUcontrol" ;
+  m_stdwstrWantedPowerScheme = L"CPUcontrol" ;
   bool bDesiredPowerSchemeExists = false ;
   UINT uiPowerSchemeIndex ;
   //If the function succeeds, the return value is nonzero.
@@ -768,21 +732,6 @@ unsigned char PowerProfUntilWin6DynLinked::EnableFrequencyScalingByOS()
   return 0 ;
 } ;
 
-
-bool PowerProfUntilWin6DynLinked::EnablingIsPossible()
-{
-  bool bEnablingIsPossible = false ;
-  if( mp_uiPowerSchemeIDBeforeDisabling && CanUserWritePwrScheme() )
-  {
-    std::wstring stdwstrPowerSchemeName ;
-    GetPowerSchemeName( * mp_uiPowerSchemeIDBeforeDisabling 
-      , stdwstrPowerSchemeName ) ;
-    if( stdwstrPowerSchemeName != m_stdwstrPowerSchemeName )
-      bEnablingIsPossible = true ;
-  }
-  return bEnablingIsPossible ;
-}
-
 //Returns the return value from the call to the pwrprof.DLL's "EnumPwrSchemes"
 //function.
 //"If the function fails, the return value is zero."
@@ -858,39 +807,8 @@ BOOLEAN PowerProfUntilWin6DynLinked::GetCurrentPowerPolicies(
   return FALSE ;
 }
 
-IDynFreqScalingAccess::string_type PowerProfUntilWin6DynLinked::GetEnableDescription()
-{
-  std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
-  if( mp_uiPowerSchemeIDBeforeDisabling )
-  {
-    std::wstring stdwstrPowerSchemeName ;
-    if( GetPowerSchemeName( * mp_uiPowerSchemeIDBeforeDisabling 
-      , stdwstrPowerSchemeName ) 
-      )
-      stdtstrReturn = _T("set power scheme \"") 
-        + Getstdtstring( stdwstrPowerSchemeName )
-        + _T("\"") ;
-  }
-  return stdtstrReturn ;
-}
-
-bool PowerProfUntilWin6DynLinked::GetPowerSchemeName( 
-  UINT ui , std::wstring & r_stdwstrPowerSchemeName )
-{
-  m_bPowerSchemeFound = false ;
-  EnumPwrSchemes( 
-    PwrSchemesEnumProcSearchPowerSchemeByID
-    , (LPARAM) this ) ;
-  if( m_bPowerSchemeFound )
-  {
-    r_stdwstrPowerSchemeName = m_stdwstrPowerSchemeNameOfIDtoSearch ;
-  }
-  return m_bPowerSchemeFound ;
-}
-
 void PowerProfUntilWin6DynLinked::Initialize()
 {
-  mp_uiPowerSchemeIDBeforeDisabling = NULL ;
   m_bGotPowerSchemeBeforeDisabling = false ;
   m_hinstancePowerProfDLL = 
     //If the function fails, the return value is NULL.
@@ -899,8 +817,7 @@ void PowerProfUntilWin6DynLinked::Initialize()
   if( m_hinstancePowerProfDLL )
   {
     InitializeFunctionPointers();
-    if( GetActivePwrScheme( & m_uiPowerSchemeIDBeforeDisabling ) )
-      mp_uiPowerSchemeIDBeforeDisabling = & m_uiPowerSchemeIDBeforeDisabling ;
+    //GetActivePwrScheme( & m_uiPowerSchemeIDBeforeDisabling ) ;
   }
   else
   {

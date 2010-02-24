@@ -33,7 +33,7 @@
   #include <Windows_compatible_typedefs.h>
 #endif
 #ifdef COMPILE_WITH_XERCES
-  #include "Xerces/XMLAccess.hpp" //for "readXMLConfig(...)"
+  #include "Xerces/XMLAccess.h" //for "readXMLConfig(...)"
   #include "Xerces/SAX2MainConfigHandler.hpp"
   #include "Xerces/SAX2_CPUspecificHandler.hpp"
 #endif
@@ -169,10 +169,8 @@ using namespace std;
   //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
         dwMSRlow = (BYTE) byNewPstate ;
         //DEBUG("For core bitmask %lu: setting to pstate %u\n", dwCoreBitmask, byNewPstate);
-        LOGN_VERBOSE( "For core bitmask " << dwCoreBitmask 
-          << ": setting to pstate "
-          //Cast BYTE to WORD to output as number. 
-          << (WORD) byNewPstate );
+        LOG( "For core bitmask " << dwCoreBitmask << ": setting to pstate "
+            << byNewPstate << "\n" );
         //DEBUG("the low 32 bits: %s\n", getBinaryRepresentation(arch,dwMSRlow) );
 	      //printf("  would write:  %s to MSR %lx\n", getBinaryRepresentation(&msrvalue,arch), msr_register_number);
 	      //waitForEnter("um in MSR zu schreiben") ;
@@ -196,7 +194,7 @@ using namespace std;
             )
           )
         {
-          LOGN_VERBOSE("Setting p-state succeeded.");
+          DEBUG("Setting p-state succeeded\n");
           byReturn = SUCCESS ;
           //Wait 1 millisecond (> maximum stabilization time).
           SLEEP_1_MILLI_SECOND
@@ -545,36 +543,36 @@ BYTE GriffinController::Init(//Model * mp_model
   return 1 ;
 }
 
-////version without user interface parameter (so it can be called before 
-////the user interface is created.
-//GriffinController::GriffinController(
-//  int argc
-//  , _TCHAR * argv[]
-//  , Model & m_modelData 
-//  , //ISpecificController 
-//    I_CPUaccess * p_cpuaccess 
-//  , ICalculationThread * p_calculationthread 
-//  , IDynFreqScalingAccess & p_dynfreqscalingaccess 
-//  )
-//  //C++ style initialisations
-//  : 
-//  m_byNumberOfCmdLineArgs(argc) 
-//  , m_arartcharCmdLineArg ( argv )
-//  //, mp_cpuaccess(p_cpuaccess)
-//  , mp_calculationthread(p_calculationthread)
-//  , m_bPstateSet(false)
-//  , m_byPstateID(0)
-//  , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
-//  , mp_model ( & m_modelData )
-//  , mp_userinterface(NULL)
-//  , m_bFrequencyScalingByOSDisabled(false)
-//{
-//  mp_cpuaccess = p_cpuaccess ;
-//  //mp_userinterface->mp_pumastatectrl = this ;
-//  //mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
-//  //PumaStateCtrl();
-//  Init();
-//}
+//version without user interface parameter (so it can be called before 
+//the user interface is created.
+GriffinController::GriffinController(
+  int argc
+  , _TCHAR * argv[]
+  , Model & m_modelData 
+  , //ISpecificController 
+    I_CPUaccess * p_cpuaccess 
+  , ICalculationThread * p_calculationthread 
+  , IDynFreqScalingAccess & p_dynfreqscalingaccess 
+  )
+  //C++ style initialisations
+  : 
+  m_byNumberOfCmdLineArgs(argc) 
+  , m_arartcharCmdLineArg ( argv )
+  //, mp_cpuaccess(p_cpuaccess)
+  , mp_calculationthread(p_calculationthread)
+  , m_bPstateSet(false)
+  , m_byPstateID(0)
+  , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
+  , mp_model ( & m_modelData )
+  , mp_userinterface(NULL)
+  , m_bFrequencyScalingByOSDisabled(false)
+{
+  mp_cpuaccess = p_cpuaccess ;
+  //mp_userinterface->mp_pumastatectrl = this ;
+  //mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
+  //PumaStateCtrl();
+  Init();
+}
 
 GriffinController::GriffinController(
   int argc, 
@@ -993,11 +991,11 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
     //DEBUG("GPSFMSR for p-state #%u:"// will Read from MSR register #%lx
     //  "\n", byPStateID//, dwRegisterNumber
     //  );
-    LOGN_VERBOSE("Getting p-state from MSR for p-state # " << 
+    LOG("Getting p-state from MSR for p-state # " << 
         //Cast to WORD in order to put out as number and not as ASCII char
         //for the number(=ASCII code).
         (WORD) byPStateID << ":"// will Read from MSR register #%lx
-        );
+        "\n" );
     //If the function succeeds, the return value is TRUE.
     int nReturn = 
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
@@ -1115,14 +1113,14 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
 #endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
     if( nReturn )
     {
-      LOGN_VERBOSE("Reading from MSR succeeded.");
+      DEBUG("Reading from MSR succeeded\n");
       GetVIDmFIDnDID(dwLow, r_pstate) ;
 
       //DEBUG("GPSFMSR(...)--FID:%u DivID:%u -> %u MHz; VID:%u -> %f V\n",
       //  r_pstate.m_byFreqID,r_pstate.m_byDivisorID,
       //  r_pstate.GetFreqInMHz(), r_pstate.m_byVoltageID, 
       //  r_pstate.GetVoltageInVolt() );
-      LOGN_VERBOSE("Get p-state from MSR--Frequency ID:" << (WORD) r_pstate.m_byFreqID 
+      LOG("Get p-state from MSR--Frequency ID:" << (WORD) r_pstate.m_byFreqID 
           << " Divisor ID:" << 
           //Convert to integer in order to output as number 
           (WORD) r_pstate.m_byDivisorID 
@@ -1130,7 +1128,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
           << " MHz; Voltage ID:" << 
           //Convert to integer in order to output as number 
           (WORD) r_pstate.m_byVoltageID 
-          << " -> " << r_pstate.GetVoltageInVolt() << " V" );
+          << " -> " << r_pstate.GetVoltageInVolt() << " V\n" );
     }
     else
     {
@@ -2015,25 +2013,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     return byReturn ;
   }
 
-  void GriffinController::GetAllPossibleFrequencies(
-    std::set<VoltageAndFreq> & r_stdsetvoltageandfreq )
-  {
-    r_stdsetvoltageandfreq.clear() ;
-    //If set.
-    if( mp_model->m_cpucoredata.m_wMaxFreqInMHz )
-    {
-      WORD wCurrFreqInMhz = mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-      WORD wLowerFreq ; 
-      wLowerFreq = GetNearestLowerPossibleFreqInMHz(wCurrFreqInMhz) ;
-      while( wLowerFreq != wCurrFreqInMhz ) ;
-      {
-        r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0 , wCurrFreqInMhz ) ) ;
-        wCurrFreqInMhz = wLowerFreq ;
-        wLowerFreq = GetNearestLowerPossibleFreqInMHz(wCurrFreqInMhz) ; 
-      }
-    }
-  }
-
   bool GriffinController::GetCPUID(
     //last/rightmost/least significant 2 digits of function bumber 
     DWORD dwFunctionIndex,
@@ -2082,14 +2061,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //  #endif
 //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
     return bSuccess ;
-  }
-
-  WORD GriffinController::GetNearestHigherPossibleFreqInMHz(
-    WORD wFreqInMHz )
-  {
-    DIDandFID didandfid = GetNearestHigherPossibleFreqInMHzAsDIDnFID(
-     wFreqInMHz ) ;
-    return didandfid.GetFreqInMHz() ;
   }
 
   //void 
@@ -2275,17 +2246,17 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DIDandFID didandfidH = //mp_pumastatectrl->
       GetNearestHigherPossibleFreqInMHzAsDIDnFID(
         wFreqInMHz ) ;
-    LOGN_VERBOSE( "Freq In MHz higher than wanted freq: " << 
-        didandfidH.GetFreqInMHz() );
+    LOG( "Freq In MHz higher than wanted freq: " << 
+        didandfidH.GetFreqInMHz() << "\n" );
     DIDandFID didandfidL = //mp_pumastatectrl->
       GetNearestLowerPossibleFreqInMHzAsDIDnFID(
         wFreqInMHz ) ;
-    LOGN_VERBOSE( "Freq In MHz lower than wanted freq: " << 
-        didandfidL.GetFreqInMHz() );
+    LOG( "Freq In MHz lower than wanted freq: " << 
+        didandfidL.GetFreqInMHz() << "\n" );
     //m_p_model->m_cpucoredata.m_wMaxFreqInMHz must have been set here.
-    LOGN_VERBOSE( "CPU core Max Freq In MHz: " << 
+    LOG( "CPU core Max Freq In MHz: " << 
         //m_p_model->
-        mp_model->m_cpucoredata.m_wMaxFreqInMHz  );
+        mp_model->m_cpucoredata.m_wMaxFreqInMHz << "\n" );
     assert( //m_p_model->
       mp_model->m_cpucoredata.m_wMaxFreqInMHz != 0 ) ;
     if( didandfidH.GetFreqInMHz() > //m_p_model->
@@ -2298,21 +2269,13 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
             wFreqInMHz ) ;
         WORD wDiffH = didandfidH.GetDiff( 
             wFreqInMHz ) ;
-        LOGN_VERBOSE( "Absolute difference between wanted Freq In MHz and "
-            "lower freq: " << wDiffL  );
-        LOGN_VERBOSE( "Absolute difference between wanted Freq In MHz and "
-            "higher freq: " << wDiffH );
+        LOG( "Absolute difference between wanted Freq In MHz and "
+            "lower freq: " << wDiffL << "\n" );
+        LOG( "Absolute difference between wanted Freq In MHz and "
+            "higher freq: " << wDiffH << "\n" );
         p_didandfid = ( wDiffH < wDiffL ) ? &didandfidH : &didandfidL ;
     }
     return didandfid = *p_didandfid ;
-  }
-
-  WORD GriffinController::GetNearestLowerPossibleFreqInMHz(
-   WORD wFreqInMHz )
-  {
-    DIDandFID didandfid = GetNearestLowerPossibleFreqInMHzAsDIDnFID(
-     wFreqInMHz ) ;
-    return didandfid.GetFreqInMHz() ;
   }
 
   DIDandFID GriffinController::GetNearestLowerPossibleFreqInMHzAsDIDnFID(
@@ -2945,13 +2908,13 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     {
       //DEBUG("IsSafe(VID:%u, FID:%u, DID:%u)--begin\n",
       //  byVID,byFrequencyID,byDivisorID);
-      LOGN_VERBOSE("For checking p-state safety: VID:" << 
+      DEBUG("For checking p-state safety: VID:" << 
           (WORD) byVID 
           << ", FID:" << 
           (WORD) byFrequencyID 
           << ", DID:" << 
           (WORD) byDivisorID 
-          );
+          << "\n" );
       //Safe states are: 
       //-550MHz, voltage<=0.8V, 550/0,8=687,5
       //-1100MHz, voltage<=0.95V, 1157,89 MHz/V
@@ -2961,10 +2924,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       WORD wWantedFrequInMHz = GriffinController::getFrequencyInMHz(
         byFrequencyID,byDivisorID);
       //DEBUG("Resulting freq in MHz is:%lu, VID is:%u\n",wWantedFrequInMHz,byVID);
-      LOGN_VERBOSE("Resulting frequency in MHz is:" << wWantedFrequInMHz 
+      LOG("Resulting frequency in MHz is:" << wWantedFrequInMHz 
           //<< ", Voltage ID is:" << (WORD) byVID 
           << ", Voltage is:" << PState::GetVoltageInVolt( byVID ) << " Volt"
-          );
+          << "\n" );
 
       if( //m_model.m_vecmaxvoltageforfreq.empty() 
         //|| 
@@ -2993,7 +2956,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         //if( m_model.m_bEnableOvervoltageProtection )
         if( mp_model->m_bEnableOvervoltageProtection )
         {
-          LOGN_VERBOSE("overvoltage protection is enabled\n") ; 
+          LOG("overvoltage protection is enabled\n") ; 
           //float fMaxVoltageForWantedFreq ;
           ////byReturn = UseMaxVoltageForFreqForOvervoltageProtection(
           ////    byVID, wWantedFrequInMHz) ;
@@ -3045,8 +3008,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     }//FID,DID, and VID <= maximum values
     //DEBUG("Setting P-state is %ssafe\n", //bIsSafe
     //  byReturn ? "" : "NOT " );
-    LOGN_VERBOSE( "Setting P-state is " << ( byReturn ? "" : "NOT " ) 
-      << "safe." );
+    LOG( "Setting P-state is " << ( byReturn ? "" : "NOT " ) << "safe\n" );
     return //bIsSafe
       byReturn ;
   }
@@ -4676,9 +4638,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //DEBUG("setVidAndFrequencyForPState_Puma--enable ov. prot.: %u\n",
     //  (WORD) //m_model.m_bEnableOvervoltageProtection);
     //  mp_model->m_bEnableOvervoltageProtection);
-    LOGN_VERBOSE( 
-      "Set VID and frequency for p-state--enable overvoltage protection: " 
-      << (WORD) mp_model->m_bEnableOvervoltageProtection );
+    LOG( "Set VID and frequency for p-state--enable overvoltage protection: " 
+        << (WORD) mp_model->m_bEnableOvervoltageProtection << "\n" );
     //if( PStates::IsSafe(byVID,byFreqID,byDivID) )
     if( //If "Do not care about ov. protection"
       //! m_model.m_bEnableOvervoltageProtection 
@@ -4702,7 +4663,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         1 << byCoreID;
       //std::ostringstream ostrstream;
       std::ostrstream ostrstream;
-      LOGN_VERBOSE("no overvoltage prot. or voltage is safe");
+      DEBUG("no overvoltage prot. or voltage is safe\n");
 //#ifndef LINK_TO_WINRING0_STATICALLY
 //      fnWrMsrExDef * pfnwrmsrex ;
 //	    //unsigned char byFreqID ;
@@ -4731,14 +4692,14 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
           w64ulAffinityMask)
           )
         {
-          LOGN_VERBOSE("setting VID etc.--reading from MSR succeeded.");
+          DEBUG("setting VID etc.--reading from MSR succeeded\n");
           //byMaxVID = (dwCOFVIDStatusRegisterHigh&BITMASK_FOR_HIGHMOST_32_BIT_FOR_MAX_VID)>>3 ;
           byMaxVID = (BYTE) ( (dwCOFVIDStatusRegisterHigh&
             BITMASK_FOR_HIGHMOST_32_BIT_FOR_MIN_VID)>>10 );
           //DEBUG("the low 32 bits:%s\n", ::getBinaryRepresentation(
           //  dwCOFVIDStatusRegisterLow).c_str());
-          LOGN_VERBOSE( "the low 32 bits:" << ::getBinaryRepresentation(
-            dwCOFVIDStatusRegisterLow).c_str() );
+          LOG( "the low 32 bits:" << ::getBinaryRepresentation(
+            dwCOFVIDStatusRegisterLow).c_str() << "\n" );
         }
         else
           mp_userinterface->Confirm("RdMsrEx function failed");
@@ -4775,10 +4736,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       if( r_pstateFromUser.m_byVoltageID != NOT_SPECIFIED_BY_USER )
       {
         //DEBUG("set VID to %u\n", r_pstateFromUser.m_byVoltageID );
-        LOGN_VERBOSE("Set VID to " << //
+        LOG("Set VID to " << //
           //cast to WORD in order to put out as number and not as ASCII char
           //for the number(=ASCII-Code)
-            (WORD) r_pstateFromUser.m_byVoltageID );
+            (WORD) r_pstateFromUser.m_byVoltageID << "\n" );
         ostrstream << " VID to " <<
           //cast to WORD in order to put out as number and not as ASCII char
           //for the number(=ASCII-Code)
@@ -4798,9 +4759,9 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       if( r_pstateFromUser.m_byFreqID != NOT_SPECIFIED_BY_USER )
       {
         //DEBUG("Set Freq ID to %u\n", r_pstateFromUser.m_byFreqID );
-        LOGN_VERBOSE("Set Frequency ID to " << 
+        LOG("Set Frequency ID to " << 
             //Output as integer, not as char.
-            (WORD) r_pstateFromUser.m_byFreqID );
+            (WORD) r_pstateFromUser.m_byFreqID << "\n" );
         ostrstream << " FreqID to " <<
           //cast to WORD in order to put out as number and not as ASCII char
           //for the number(=ASCII-Code)
@@ -4816,9 +4777,9 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       if( r_pstateFromUser.m_byDivisorID != NOT_SPECIFIED_BY_USER )
       {
         //DEBUG("set Divisor ID to %u\n", r_pstateFromUser.m_byDivisorID );
-        LOGN_VERBOSE( "set divisor ID to " << 
+        LOG( "set divisor ID to " << 
             //Output as integer, not as char.
-            (WORD) r_pstateFromUser.m_byDivisorID );
+            (WORD) r_pstateFromUser.m_byDivisorID << "\n" );
         ostrstream << " & DivID to " <<
           //cast to WORD in order to put out as number and not as ASCII char
           //for the number(=ASCII-Code)
@@ -4907,8 +4868,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //DEBUG("before \"ostrstream.flush();\"\n");
       ostrstream.flush();
       //DEBUG("getBinaryRepresentation(...):%s\n",ostrstream.str());
-      LOGN_VERBOSE( //"getBinaryRepresentation(...):" << 
-          ostrstream.str() );
+      LOG( //"getBinaryRepresentation(...):" << 
+          ostrstream.str() << "\n" );
 
       //DEBUG("mind. 1 Zeichen eingeben und ENTER druecken, um in "
       //  "MSR-Register %lx zu schreiben",dwRegNr) ;
@@ -4925,7 +4886,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //        DEBUG("%s\n",ostrstream.str().c_str());
 //#endif
       //DEBUG("Write to MSR: %s\n", bWrite? "yes":"no");
-      LOGN_VERBOSE( "Write to MSR: " << ( bWrite? "yes":"no" ) );
+      LOG( "Write to MSR: " << ( bWrite? "yes":"no" ) << "\n" );
       if( bWrite )
       {
         //COFVID_CONTROL_REGISTER does not have a "PstateEn" bit

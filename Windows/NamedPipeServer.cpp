@@ -101,8 +101,8 @@ void OutputPipeInfo(HANDLE handlePipe)
 
 VOID PipeClientThread(LPVOID lpvParam) 
 { 
-   //TCHAR chRequest[PIPE_BUFFER_SIZE]; 
-   //TCHAR chReply[PIPE_BUFFER_SIZE]; 
+   TCHAR chRequest[PIPE_BUFFER_SIZE]; 
+   TCHAR chReply[PIPE_BUFFER_SIZE]; 
    BYTE byCommand ;
    DWORD cbBytesRead, cbReplyBytes, cbWritten; 
    BOOL fSuccess; 

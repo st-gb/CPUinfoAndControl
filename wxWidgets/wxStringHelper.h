@@ -12,7 +12,6 @@
 #include <wx/string.h> //wxString
 
 wxString getwxString(std::string & str ) ;
-wxString getwxString(std::wstring & stdwstr ) ;
 
 std::string getstdstring(wxString & wxstr) ;
 

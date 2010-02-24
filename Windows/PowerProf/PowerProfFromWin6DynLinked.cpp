@@ -48,8 +48,6 @@ DEFINE_GUID( GUID_PROCESSOR_THROTTLE_MINIMUM, 0x893DEE8E, 0x2BEF, 0x41E0, 0x89, 
 BYTE PowerProfFromWin6DynLinked::ActivatePowerSchemeToSet()
 {
   PowerGetActiveScheme( NULL, m_guidPowerSchemeBeforeDisabling ) ;
-  mp_guidPowerSchemeBeforeDisabling = & m_guidPowerSchemeBeforeDisabling ;
-  //if( m_guidPowerSchemeBeforeDisabling == m_guidPowerSchemeToSet )
   PowerSetActiveScheme( NULL, & m_guidPowerSchemeToSet ) ;
   return 0 ;
 }
@@ -477,8 +475,7 @@ BYTE PowerProfFromWin6DynLinked::DisableDVFSforPowerSchemeToSet()
 
 unsigned char PowerProfFromWin6DynLinked::EnableFrequencyScalingByOS()
 {
-  //BYTE bySuccess = 0 ;
-  BYTE byRet = IDynFreqScalingAccess::enable_failure ;
+  BYTE bySuccess = 0 ;
   DWORD dwRet ;
 //  if( m_bThrottleSettingsAssigned  && m_bActivePowerSchemeAssigned )
 //  {
@@ -559,50 +556,9 @@ unsigned char PowerProfFromWin6DynLinked::EnableFrequencyScalingByOS()
     //TODO: if this program was started and the DVFS was disabled yet
     //then this programs knows no valid guid for enabling the DVFS.
     m_guidPowerSchemeBeforeDisabling ) ;
-  GUID guidActiveScheme ;
-  if( PowerGetActiveScheme( NULL , guidActiveScheme ) == ERROR_SUCCESS )
-  {
-    if( guidActiveScheme == m_guidPowerSchemeBeforeDisabling )
-      byRet = IDynFreqScalingAccess::already_enabled ;
-  }
   if( dwRet == ERROR_SUCCESS )
-    //bySuccess = 1 ;
-    byRet = IDynFreqScalingAccess::enable_success ;
-  return //bySuccess ;
-    byRet ;
-}
-
-bool PowerProfFromWin6DynLinked::EnablingIsPossible()
-{
-  bool bEnablingIsPossible = false ;
-  if( mp_guidPowerSchemeBeforeDisabling )
-  {
-    std::wstring stdwstrPowerSchemeName ;
-    GetPowerSchemeName( * mp_guidPowerSchemeBeforeDisabling 
-      , stdwstrPowerSchemeName ) ;
-    if( stdwstrPowerSchemeName != m_stdwstrPowerSchemeName )
-      bEnablingIsPossible = true ;
-  }
-  return bEnablingIsPossible ;
-}
-
-//std::tstring 
-IDynFreqScalingAccess::string_type PowerProfFromWin6DynLinked::GetEnableDescription()
-{
-  std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
-  if( mp_guidPowerSchemeBeforeDisabling )
-  {
-    std::wstring stdwstrPowerSchemeName ;
-    GetPowerSchemeName( * mp_guidPowerSchemeBeforeDisabling 
-      , stdwstrPowerSchemeName ) ;
-    if( stdwstrPowerSchemeName == m_stdwstrPowerSchemeName )
-      ;
-    else
-      stdtstrReturn = _T("set power scheme \"") 
-        + Getstdtstring( stdwstrPowerSchemeName )
-        + _T("\"") ;
-  }
-  return stdtstrReturn ;
+    bySuccess = 1 ;
+  return bySuccess ;
 }
 
 //Return: ERROR_SUCCESS if everything succeeded.
@@ -863,9 +819,6 @@ PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
   if( m_hinstancePowerProfDLL )
   {
     InitializeFunctionPointers();
-    if( PowerGetActiveScheme( NULL, m_guidPowerSchemeBeforeDisabling ) == 
-      ERROR_SUCCESS )
-      mp_guidPowerSchemeBeforeDisabling = & m_guidPowerSchemeBeforeDisabling ;
   }
   else
     SetFunctionPointersToNULL();

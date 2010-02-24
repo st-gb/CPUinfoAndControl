@@ -86,13 +86,12 @@
     /*g_logger->Log(to_ostream) ; */ \
     g_logger.Log( stdstr ) ; \
     /*g_logger.Log("test ") ; */ }
-  //#ifdef COMPILE_WITH_LOG
-  #define LOGN(to_ostream) LOG (to_ostream << "\n" )
-#ifdef VERBOSE_LOGGING
-  #define LOGN_VERBOSE(to_ostream) LOGN(to_ostream)
-#else
-  #define LOGN_VERBOSE(to_ostream) /*empty->do not log*/
-#endif
+  #ifdef COMPILE_WITH_LOG
+    #define LOGN(to_ostream) LOG (to_ostream << "\n" )
+  #else
+    #define LOGN(to_ostream) ;/* ";" = empty instruction: for use in "else"
+      branches etc.*/
+  #endif //#ifdef COMPILE_WITH_LOG
   #define LOGW(to_ostream) { std::wstringstream strstream ; \
     strstream << to_ostream; \
     /*/for g++ compiler:
@@ -104,7 +103,12 @@
     /*g_logger.LogW( stdwstr ) ; */ \
     g_logger.Log( stdstr ) ; \
     /*g_logger.Log("test ") ; */ }
-  #define LOGWN(to_ostream) LOGW (to_ostream << L"\n" )
+  #ifdef COMPILE_WITH_LOG
+    #define LOGWN(to_ostream) LOGW (to_ostream << L"\n" )
+  #else
+    #define LOGWN(to_ostream) ;/* ";" = empty instruction: for use in "else"
+      branches etc.*/
+  #endif //#ifdef COMPILE_WITH_LOG
   //#define DEBUG(...) { g_logger->Log(__VA_ARGS__) ; }
   #define DEBUG(to_ostream) LOG(to_ostream)
 

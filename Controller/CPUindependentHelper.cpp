@@ -13,7 +13,7 @@ std::string getBinaryRepresentation(unsigned long ulValue//,long size
 {
 //	char arch[65] ;
   std::string str;
-  LOGN_VERBOSE("getBinaryRepresentation--begin");
+  DEBUG("getBinaryRepresentation--begin\n");
   //char arch[ 
   //  //returns size in bytes.
   //  sizeof(unsigned long) 
@@ -36,7 +36,7 @@ std::string getBinaryRepresentation(unsigned long ulValue//,long size
   //return arch ;
 
   //return std::string(arch) ;
-  LOGN_VERBOSE("getBinaryRepresentation--end");
+  DEBUG("getBinaryRepresentation--end\n");
   return str;
 }
 

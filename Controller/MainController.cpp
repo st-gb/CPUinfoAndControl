@@ -22,7 +22,7 @@
 #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #include <Xerces/SAX2MainConfigHandler.hpp>
 #include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
-#include <Xerces/XMLAccess.hpp>
+#include <Xerces/XMLAccess.h>
 
 ////compiling with pre-declarations is faster than with "#include"s 
 //class GriffinController ;
