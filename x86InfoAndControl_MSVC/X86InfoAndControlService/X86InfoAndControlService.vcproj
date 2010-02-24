@@ -100,7 +100,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="T:\X86Info_and_Control;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_DBG_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;"
+				AdditionalIncludeDirectories="&quot;$(X86INFO_AND_CONTROL_FULL_ROOT_PATH)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\include&quot;;&quot;$(WINRING0_PATH)\source\dll&quot;;&quot;$(WX_DIR)\include&quot;;&quot;$(WX_DIR)\$(WX_ANSI_RELEASE_STATIC_SETUP_H_SUBDIR)&quot;;&quot;$(SDK_DIR)\Include&quot;"
 				PreprocessorDefinitions="COMPILE_WITH_AMD_GRIFFIN;WIN32;WXUSINGDLL;NDEBUG;_WINDOWS;COMPILE_WITH_CPU_SCALING;_COMPILE_WITH_CPU_CORE_USAGE_GETTER;_TEST_PENTIUM_M_;COMPILE_WITH_IWBEMSERVICES_;COMPILE_WITH_VISTA_POWERPROFILE_ACCESS;_EMULATE_TURION_X2_ULTRA_ZM82_;__WXMSW__;NOPCH;LINK_TO_WINRING0_STATICALLY;XML_LIBRARY;XERCES_STATIC_LIBRARY;COMPILE_WITH_XERCES;INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6"
 				RuntimeLibrary="2"
 			/>
@@ -117,7 +117,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Rpcrt4.lib wxbase28.lib wxexpat.lib wxmsw28_adv.lib wxmsw28_core.lib wxmsw28_qa.lib comctl32.lib WinRing0.lib xerces-c_static_3.lib PowrProf.lib"
 				OutputFile="$(OutDir)\$(ProjectName)32bit.exe"
-				AdditionalLibraryDirectories="&quot;$(WX_DIR)/lib/vc_dll&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_LIB_PATH)&quot;"
+				AdditionalLibraryDirectories="&quot;$(WX_DIR)/$(WX_32_BIT_ANSI_RELEASE_STATIC_LIB_SUBDIR)&quot;;&quot;$(XERCES_32_BIT_LATEST_VERSION_FULL_PATH)\lib&quot;;&quot;$(FULL_PLATFORM_SDK_PATH)\v6.1\Lib&quot;;&quot;$(WINRING0_LIB_PATH)&quot;"
 				IgnoreDefaultLibraryNames="LIBCMT"
 			/>
 			<Tool
@@ -260,6 +260,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\stdafx.h"
 				>
 			</File>
@@ -289,6 +293,10 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\X86InfoAndControlService.rc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Windows-API"
@@ -347,10 +355,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Windows\LocalLanguageMessageFromErrorCode.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Windows\main.cpp"
 				>
 			</File>
 			<File
@@ -434,6 +438,10 @@
 				</File>
 				<File
 					RelativePath="..\..\Windows\CPUcontrolService.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\Windows\main.cpp"
 					>
 				</File>
 			</Filter>

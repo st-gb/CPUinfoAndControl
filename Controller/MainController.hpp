@@ -41,7 +41,7 @@ public:
       stdtstr = _T("AMD Griffin") ;
       r_stdvectstr.push_back( stdtstr ) ;
     #endif
-    stdtstr = _T("Pentium M") ;
+    stdtstr = _T("Intel Pentium M") ;
     r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }

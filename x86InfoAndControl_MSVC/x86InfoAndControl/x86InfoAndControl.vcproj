@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="x86InfoAndControl_GUI"
 	ProjectGUID="{C19CF353-C183-473D-B6BF-90F14D8F84B7}"
 	RootNamespace="x86InfoAndControl"
@@ -467,6 +467,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\stdafx.h"
 				>
 			</File>
@@ -492,6 +496,10 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\x86InfoAndControl_GUI.rc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Controller"
