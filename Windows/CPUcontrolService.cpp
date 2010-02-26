@@ -5,9 +5,10 @@
 //#include <winuser.h> //MB_SERVICE_NOTIFICATION
 #define MB_SERVICE_NOTIFICATION 0x00200000L
 
-#include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #include <Controller/DynFreqScalingThreadBase.hpp> //
+#include <Controller/I_CPUcontroller.hpp>
 #include <Controller/ICPUcoreUsageGetter.hpp> //for ICPUcoreUsageGetter::Init()
+#include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Windows/DynFreqScalingThread.hpp>
 //#include <Windows/GetWindowsVersion.h>
@@ -305,7 +306,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
         //mp_stdsetvoltageandfreqDefault->size() == 0
         )
       {
-        LOG("no default voltages specified->no overvoltage protection->exiting");
+        LOGN("no default voltages specified->no overvoltage protection->exiting");
         return 1 ;
       }
       if( mp_modelData->m_cpucoredata.
@@ -313,7 +314,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
         //mp_stdsetvoltageandfreqWanted->size() == 0 
         )
       {
-        LOG("no preferred voltages specified->exiting");
+        LOGN("no preferred voltages specified->exiting");
         return 1 ;
       }
       //mp_userinterface = //p_frame ;
@@ -321,11 +322,22 @@ DWORD CPUcontrolService::MyServiceInitialization(
       //The controller must be created before the main frame because 
       //its view depends of values retrieved from the controller
       //(e.g. for every core a single menu)
-      msp_cpucontrolservice->
-        mp_cpucontroller = 
-        m_maincontroller.CreateCPUcontrollerAndUsageGetter(
-          mp_cpucoreusagegetter ) ;
-
+      //msp_cpucontrolservice->
+      //  mp_cpucontroller = 
+      //  m_maincontroller.CreateCPUcontrollerAndUsageGetter(
+      //    mp_cpucoreusagegetter ) ;
+      if( !
+        m_maincontroller.
+        //Creates e.g. an AMD Griffin oder Intel Pentium M controller
+        CreateCPUcontrollerAndUsageGetter( 
+          mp_cpucontroller 
+          , mp_cpucoreusagegetter
+          ) 
+        )
+      {
+        LOGN("no CPU controller and/ or usage getter->exiting");
+        return 1 ;
+      }
       mp_cpucontroller->SetCmdLineArgs(
         NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
         *ppartch ) ;
@@ -964,7 +976,7 @@ void WINAPI //MyServiceStart
     //the system that require interaction with SCM will be blocked during this time.
     msp_cpucontrolservice->SetServiceStatus() ;
 
-#ifdef _DEBUG 
+#if defined( _DEBUG ) && !defined(EMULATE_EXECUTION_AS_SERVICE)
   //Give time to attach a debugger to THIS process if it was not started 
   //from Visual Studio.
   ::Sleep( //wait time in milliseconds

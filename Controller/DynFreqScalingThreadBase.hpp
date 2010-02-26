@@ -45,6 +45,8 @@ public:
     ) ;
   ExitCode Entry() ;
   //virtual int Run() = 0 ;
-  virtual BYTE Start() = 0 ;
+  //Return value for the subclass that is also inherited by "wxThread". 
+  //So a wxThreadError can be returned to the caller to check for errors.
+  virtual BYTE Start() ;
   void Stop() ;
 };

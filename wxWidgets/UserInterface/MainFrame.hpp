@@ -30,6 +30,7 @@
 #include "wx/power.h" //for power mgmt notification (wxPowerType et.c)
 #include <vector> //for std::vector
 #include <ModelData/ModelData.hpp>
+#include <Xerces/XMLAccess.hpp> //class XercesConfigurationHandler
 #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
   //#include "Windows/CPUcoreUsageGetterNtQuerySystemInformation.hpp"
   //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"
@@ -125,9 +126,12 @@ private:
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
   wxMenuItem ** marp_wxmenuItemHighLoadThread ;
+  wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
   WORD m_wXcoordOfBeginOfYaxis ;
+  WORD m_wMinYcoordInDiagram ;
   WORD m_wDiagramWidth ;
   WORD m_wDiagramHeight ;
+  XercesConfigurationHandler m_xercesconfigurationhandler ;
 
   //std::vector<//use wxString because it need's to be a subclass of wxObject 
   //  wxString> m_vecwxstring ;
@@ -229,6 +233,10 @@ public:
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  void OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnClose(wxCloseEvent & event) ;
+  void OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
   void OnEraseBackground(wxEraseEvent& event) ;
   void OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnHighLoadThread( wxCommandEvent & WXUNUSED(event) ) ;

@@ -11,8 +11,7 @@
 #include <ModelData/ModelData.hpp>
 #include <UserInterface.hpp>
 #include <Controller/stdtstr.hpp>
-#include <mingw/tchar.h>
-//#include <Controller/MSVC_adaption/tchar.h>
+#include <Controller/MSVC_adaption/tchar.h>
 
 class //ISpecificController ;
   I_CPUaccess ;
@@ -42,7 +41,7 @@ public:
       stdtstr = _T("AMD Griffin") ;
       r_stdvectstr.push_back( stdtstr ) ;
     #endif
-    stdtstr = _T("Pentium M") ;
+    stdtstr = _T("Intel Pentium M") ;
     r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }

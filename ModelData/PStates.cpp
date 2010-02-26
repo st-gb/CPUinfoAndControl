@@ -39,7 +39,7 @@ bool PStates::IsSafe(BYTE byVID, BYTE byFrequencyID, BYTE byDivisorID)
   bool bIsSafe = false ;
   //DEBUG("PStates::IsSafe(byVID:%u, byFrequencyID:%u, byDivisorID:%u)--begin\n",
   //  byVID,byFrequencyID,byDivisorID);
-  LOG("Setting p-state is safe?: Voltage ID:" << 
+  LOGN_VERBOSE("Setting p-state is safe?: Voltage ID:" << 
       //Convert to unsigned integer, else it is output as character.
       (WORD) byVID 
       << ", Frequency ID:" << 
@@ -48,7 +48,7 @@ bool PStates::IsSafe(BYTE byVID, BYTE byFrequencyID, BYTE byDivisorID)
       << " Divisor ID:" << 
       //Convert to unsigned integer, else it is output as character.
       (WORD) byDivisorID 
-      << ")--begin\n" );
+      << ")--begin" );
   //Safe states are: 
   //-550MHz, voltage<=0.8V, 550/0,8=687,5
   //-1100MHz, voltage<=0.95V, 1157,89 MHz/V
@@ -57,9 +57,9 @@ bool PStates::IsSafe(BYTE byVID, BYTE byFrequencyID, BYTE byDivisorID)
   //:f(550)=550/687,5
   WORD wFrequInMHz = GriffinController::getFrequencyInMHz(byFrequencyID,byDivisorID);
   //DEBUG("Resulting freq in MHz is:%u, VID is:%u\n",wFrequInMHz,(WORD)byVID);
-  LOG("Resulting frequency in MHz is:" << wFrequInMHz << ", Voltage ID is:" << 
+  LOGN_VERBOSE("Resulting frequency in MHz is:" << wFrequInMHz << ", Voltage ID is:" << 
       //Convert to unsigned integer, else it is output as character.
-      (WORD) byVID << "\n" );
+      (WORD) byVID );
   //switch(wFrequInMHz)
   //{
   //case 550:
@@ -88,7 +88,7 @@ bool PStates::IsSafe(BYTE byVID, BYTE byFrequencyID, BYTE byDivisorID)
     - ( (float)( byVID ) * 0.0125f ) <= fDefaultVoltageForWantedFreq )
     bIsSafe = true ;
   //DEBUG("Setting P-state is %ssafe\n", bIsSafe ? "" : "NOT " );
-  LOG( "Setting p-state is " << ( bIsSafe ? "" : "NOT " ) << "safe\n");
+  LOGN_VERBOSE( "Setting p-state is " << ( bIsSafe ? "" : "NOT " ) << "safe");
   return bIsSafe ;
 }
 

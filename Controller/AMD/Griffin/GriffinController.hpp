@@ -138,7 +138,7 @@ public :
   TCHAR ** m_arartcharCmdLineArg ;
   //PStates m_pstates;
   //Model m_model ;
-  Model * mp_model ;
+  //Model * mp_model ;
   //ISpecificController 
   ICalculationThread * mp_calculationthread ;
   ICalculationThread ** marp_calculationthread ;
@@ -169,6 +169,9 @@ public :
       ++ wVoltageID ) ; 
   }
 
+  void GetAllPossibleFrequencies(
+    std::set<VoltageAndFreq> & r_stdsetvoltageandfreq ) ;
+
   //float
   ULONGLONG GetCurrentCPUload(BYTE byCPUcoreID) ;
 
@@ -184,8 +187,11 @@ public :
   //  float & r_fVoltageInVolt ) ;
   WORD GetMaximumFrequencyInMHz() ;
 
+  WORD GetNearestHigherPossibleFreqInMHz(
+      WORD wFreqInMHz ) ;
   DIDandFID GetNearestHigherPossibleFreqInMHzAsDIDnFID(
       WORD wFreqInMHz ) ;
+  WORD GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   DIDandFID GetNearestLowerPossibleFreqInMHzAsDIDnFID(
       WORD wFreqInMHz ) ;
   DIDandFID GetNearestPossibleFreqInMHzAsDIDnFID(
@@ -262,16 +268,16 @@ public :
     Init() ;
   }
   
-  GriffinController(
-    int argc
-    //, _TCHAR * argv[]
-    , TCHAR * argv[]
-    , Model & m_modelData
-    , //ISpecificController 
-      I_CPUaccess * p_controller
-    , ICalculationThread * p_calculationthread
-    , IDynFreqScalingAccess & p_dynfreqscalingaccess
-    ) ;
+  //GriffinController(
+  //  int argc
+  //  //, _TCHAR * argv[]
+  //  , TCHAR * argv[]
+  //  , Model & m_modelData
+  //  , //ISpecificController 
+  //    I_CPUaccess * p_controller
+  //  , ICalculationThread * p_calculationthread
+  //  , IDynFreqScalingAccess & p_dynfreqscalingaccess
+  //  ) ;
 
   GriffinController(
     int argc,

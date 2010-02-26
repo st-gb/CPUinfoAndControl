@@ -124,6 +124,16 @@ unsigned char PowerProfDynLinked::EnableFrequencyScalingByOS()
   return mp_i_powerprofdynlinked->EnableFrequencyScalingByOS() ;
 }
 
+bool PowerProfDynLinked::EnablingIsPossible()
+{
+  return mp_i_powerprofdynlinked->EnablingIsPossible() ;
+}
+
+std::tstring PowerProfDynLinked::GetEnableDescription()
+{
+  return mp_i_powerprofdynlinked->GetEnableDescription() ;
+}
+
 bool PowerProfDynLinked::OtherDVFSisEnabled()
 {
   return mp_i_powerprofdynlinked->OtherDVFSisEnabled() ;

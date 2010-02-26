@@ -11,7 +11,7 @@ DWORD ServiceBase::ContinueService(
   SC_HANDLE schService ;
   SC_HANDLE schSCManager;
   SERVICE_STATUS ssStatus; 
-  DWORD dwStartTickCount, dwWaitTime;
+  //DWORD dwStartTickCount, dwWaitTime;
 
   schSCManager = OpenSCManager( 
     NULL,                    // local machine 
@@ -67,7 +67,7 @@ DWORD ServiceBase::PauseService(const TCHAR * cp_tchServiceName
   SC_HANDLE schService ;
   SC_HANDLE schSCManager;
   SERVICE_STATUS ssStatus; 
-  DWORD dwStartTickCount, dwWaitTime;
+  //DWORD dwStartTickCount, dwWaitTime;
 
   schSCManager = OpenSCManager( 
     NULL,                    // local machine 

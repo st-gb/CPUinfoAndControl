@@ -1,21 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
-    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
-        <file>file:/C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include/xercesc/util/XMLString.hpp</file>
-        <file>file:/C:/Libs/xerces-c-3.0.1-x86-windows-vc-9.0/xerces-c-3.0.1-x86-windows-vc-9.0/include/xercesc/util/XMemory.hpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/wxWidgets/App.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/wxWidgets/UserInterface/MainFrame.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/wxWidgets/UserInterface/FreqAndVoltageSettingDlg.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/wxWidgets/UserInterface/FreqAndVoltageSettingDlg.hpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/wxWidgets/UserInterface/MainFrame.hpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/wxWidgets/UserInterface/wxDynamicDialog.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/PowerProf/PowerProfFromWin6DynLinked.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/stdtstr.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/LocalLanguageMessageFromErrorCode.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/LocalLanguageMessageFromErrorCode.h</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/Logger.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Windows/PowerProf/PowerProfDynLinked.cpp</file>
-        <file>file:/T:/SourceCodeManagement/X86Info_and_Control/Controller/stdtstr.hpp</file>
-    </open-files>
 </project-private>

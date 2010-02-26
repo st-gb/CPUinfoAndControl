@@ -12,7 +12,7 @@
       </gizmo_options>
       <runprofile version="6">
         <args></args>
-        <rundir>C:\Users\Stefan</rundir>
+        <rundir>C:\Users\Public\GriffinControlService_und_PumaStateCtrl</rundir>
         <buildfirst>true</buildfirst>
         <console-type>0</console-type>
         <terminal-type>0</terminal-type>
