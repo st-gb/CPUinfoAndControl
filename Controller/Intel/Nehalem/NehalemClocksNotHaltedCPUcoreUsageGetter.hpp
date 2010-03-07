@@ -50,12 +50,13 @@ namespace Nehalem
     BYTE m_byPerfCounterBitWidth ;
     BYTE m_byPerfCounterNumber ;
     //bool m_bAtLeastSecondTime ;
+    double m_dReferenceClockInMhz ;
     DWORD m_dwAtMask2ndTimeCPUcoreMask ;
     DWORD m_dwLowmostBits , m_dwHighmostBits ;
     DWORD m_dwAffinityMask ;
     Model * mp_model ;
     //GriffinController * mp_griffincontroller ;
-    NehalemController * mp_pentium_m_controller ;
+    NehalemController * mp_nehalem_controller ;
     ULONGLONG m_ullPerformanceEventCounter3Diff ;
     //ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
     ULONGLONG m_ull ;

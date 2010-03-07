@@ -28,7 +28,7 @@ DWORD GetLastErrorMessageString(
   std::string & strErrorMessage
   )
 {
-  DWORD dwRet ;
+  DWORD dwRet = ERROR_SUCCESS ;
 	//CString strErrorMessage;
   //std::string strErrorMessage;
 	LPVOID lpMsgBuf = NULL;

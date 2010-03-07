@@ -402,6 +402,7 @@ bool wxX86InfoAndControlApp::OnInit()
         //, & m_modelData.m_cpucoredata
         //, & mp_modelData->m_cpucoredata
         , mp_modelData
+        , this
         );
       //p_frame->Show(TRUE);
       //SetTopWindow(p_frame);

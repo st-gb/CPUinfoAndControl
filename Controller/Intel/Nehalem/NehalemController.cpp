@@ -87,7 +87,8 @@ BYTE NehalemController::GetCurrentPstate(
 			IA32_PERF_STATUS
       , dwLow
       , dwHigh
-      , 1
+      , //1
+      1 << byCoreID
       )
     )
   {
@@ -123,7 +124,8 @@ BYTE NehalemController::GetCurrentPstate(
     //0    0    0    0    0    0    0    = 1.5 Volt 
     //0    0    0    0    0    0    1    = 1.4875 Volt
     //1.5 - 1.4875 = 0.0125 Volt
-    1.5 - ( (float) byVoltageID * 0.0125 ) ;
+    //1.5 - ( (float) byVoltageID * 0.0125 ) ;
+    -1.0 ;
 #ifdef _DEBUG
     byVoltageID = byVoltageID ;
 #endif
@@ -154,8 +156,8 @@ BYTE NehalemController::GetCurrentPstate(
       )
     )
   {
-    r_byFreqID = dwLow >> 8 ;
-    r_byVoltageID = ( dwLow & 255 ) ;
+    r_byVoltageID = dwLow >> 8 ;
+    r_byFreqID = ( dwLow & 255 ) ;
   }
   return 1 ;
 }
@@ -377,6 +379,106 @@ void NehalemController::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
 //             value of 0x4300D2, 0x4300B1 or 0x4300B5 because those values have a zero UMASK
 //             field (bits [15:8]).
 //Status:      For the steppings affected, see the Summary Tables of Changes.
+void NehalemController::AccuratelyStartPerformanceCounting(
+  DWORD dwAffinityBitMask ,
+  //Pentium M has 1 or 2 "Performance Event Select Register" from 
+  //  MSR ... to MSR ...  for 
+  // 1 or 2 "Performance Event Counter Registers" from 
+  //  ... to ...
+  //  that store the 48 bit counter value
+  BYTE byPerformanceEventSelectRegisterNumber ,
+  BYTE byEventSelect , //8 bit
+  BYTE byUnitMask , // 8 bit
+  bool bUserMode,
+  bool bOSmode,
+  bool bEdgeDetect,
+  bool bPINcontrol,
+  bool bEnableAPICinterrupt,
+  bool bInvertCounterMask ,
+  BYTE byCounterMask
+  )
+{
+  //Intel i7 mobile spec update AAP53. Workaround step 1: 
+  // "[...] disabling, saving valid events and clearing from the select 
+  // registers [...]"
+  PerformanceEventSelectRegisterWrite(
+    dwAffinityBitMask ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from 
+    //  MSR ... to MSR ...  for 
+    // 1 or 2 "Performance Event Counter Registers" from 
+    //  ... to ...
+    //  that store the 48 bit counter value
+    byPerformanceEventSelectRegisterNumber ,
+    byEventSelect , //8 bit
+    byUnitMask , // 8 bit
+    bUserMode,
+    bOSmode,
+    bEdgeDetect,
+    bPINcontrol,
+    bEnableAPICinterrupt,
+    //Intel vol. 3B (document # 253659):
+    //"When set, performance counting is
+    //enabled in the corresponding performance-monitoring counter; when clear, the
+    //corresponding counter is disabled. The event logic unit for a UMASK must be
+    //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+    //IA32_PMCx."
+    //bool bEnablePerformanceCounter,
+    false , //-> disable PerforManceCounter
+    bInvertCounterMask ,
+    byCounterMask
+    ) ;
+  //Intel i7 mobile spec update AAP53. Workaround step 2: 
+  // "[...] programming three event values 0x4300D2, 0x4300B1 and 0x4300B5 
+  //  into the IA32_PERFEVTSELx MSRs [...]"
+  DWORD dwLow = 0x4300D2 ;
+  WrmsrEx(
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber , // MSR index
+    dwLow ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    dwAffinityBitMask 	// Thread Affinity Mask
+  ) ;
+  WrmsrEx(
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber , // MSR index
+    0x4300B1 ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    dwAffinityBitMask 	// Thread Affinity Mask
+  ) ;
+  WrmsrEx(
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber , // MSR index
+    0x4300B5 ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    dwAffinityBitMask 	// Thread Affinity Mask
+  ) ;
+  //Intel i7 mobile spec update AAP53. Workaround step 3: 
+  // "[...] finally continuing with new event programming and
+  // restoring previous programming if necessary [...]"
+  PerformanceEventSelectRegisterWrite(
+    dwAffinityBitMask ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from 
+    //  MSR ... to MSR ...  for 
+    // 1 or 2 "Performance Event Counter Registers" from 
+    //  ... to ...
+    //  that store the 48 bit counter value
+    byPerformanceEventSelectRegisterNumber ,
+    byEventSelect , //8 bit
+    byUnitMask , // 8 bit
+    bUserMode,
+    bOSmode,
+    bEdgeDetect,
+    bPINcontrol,
+    bEnableAPICinterrupt,
+    //Intel vol. 3B (document # 253659):
+    //"When set, performance counting is
+    //enabled in the corresponding performance-monitoring counter; when clear, the
+    //corresponding counter is disabled. The event logic unit for a UMASK must be
+    //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+    //IA32_PMCx."
+    //bool bEnablePerformanceCounter,
+    true , //-> enable PerforManceCounter
+    bInvertCounterMask ,
+    byCounterMask
+    ) ;
+}
 
 void NehalemController::PerformanceEventSelectRegisterWrite(
   DWORD dwAffinityBitMask ,
@@ -420,13 +522,80 @@ void NehalemController::PerformanceEventSelectRegisterWrite(
     ( byUnitMask << 8 ) |
     ( byEventSelect )
     ;
+  //Intel i7 700 spec update:
+  // "AAP53. Performance Monitor Counters May Count Incorrectly"
+  //-> before selecting the event, the values 
+  //  -0x4300D2 (4391122 decimal)
+  //  -0x4300B1 (4391089 decimal)
+  //  -0x4300B5 (4391093 decimal)
+  //  must be written into the Performance Monitor Select registers
   WrmsrEx(
     // MSR index
     IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber ,
     dwLow ,//eax,			// bit  0-31
     0 , //edx,			// bit 32-63
-    1	// Thread Affinity Mask
+    // Thread Affinity Mask
+    //1	
+    dwAffinityBitMask
     ) ;
+}
+
+void NehalemController::PrepareForNextPerformanceCounting(
+  DWORD dwAffinityBitMask 
+  , BYTE byPerformanceEventSelectRegisterNumber
+  )
+{
+  //Intel i7 mobile spec update AAP53. Workaround step 1: 
+  // "[...] disabling, saving valid events and clearing from the select 
+  // registers [...]"
+  PerformanceEventSelectRegisterWrite(
+    dwAffinityBitMask ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from 
+    //  MSR ... to MSR ...  for 
+    // 1 or 2 "Performance Event Counter Registers" from 
+    //  ... to ...
+    //  that store the 48 bit counter value
+    byPerformanceEventSelectRegisterNumber ,
+    0 , //byEventSelect , //8 bit
+    0 , //byUnitMask , // 8 bit
+    0 , //bUserMode,
+    0 , //bOSmode,
+    0 , //bEdgeDetect,
+    0 , //bPINcontrol,
+    0 , //bEnableAPICinterrupt,
+    //Intel vol. 3B (document # 253659):
+    //"When set, performance counting is
+    //enabled in the corresponding performance-monitoring counter; when clear, the
+    //corresponding counter is disabled. The event logic unit for a UMASK must be
+    //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+    //IA32_PMCx."
+    //bool bEnablePerformanceCounter,
+    false , //-> disable PerforManceCounter
+    0 ,//bInvertCounterMask ,
+    0 //byCounterMask
+    ) ;
+  //Intel i7 mobile spec update AAP53. Workaround step 2: 
+  // "[...] programming three event values 0x4300D2, 0x4300B1 and 0x4300B5 
+  //  into the IA32_PERFEVTSELx MSRs [...]"
+  DWORD dwLow = 0x4300D2 ;
+  WrmsrEx(
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber , // MSR index
+    dwLow ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    dwAffinityBitMask 	// Thread Affinity Mask
+  ) ;
+  WrmsrEx(
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber , // MSR index
+    0x4300B1 ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    dwAffinityBitMask 	// Thread Affinity Mask
+  ) ;
+  WrmsrEx(
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber , // MSR index
+    0x4300B5 ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    dwAffinityBitMask 	// Thread Affinity Mask
+  ) ;
 }
 
 BYTE NehalemController::SetVoltageAndFrequency(
@@ -450,6 +619,10 @@ BYTE NehalemController::SetVoltageAndFrequency(
   DWORD dwLow = byFreqID << 8 ;
   dwLow |= byVoltageID ;
   //LOGN("P M ctrl: " << fVoltageInVolt << " " << wFreqInMHz )
+  //Intel i7 mobile datasheet Volume 1 (document number 320765):
+  //"Frequency selection is software controlled by writing to processor MSRs."
+
+  //Voltage selection does not seem to be possible by writuing to MSRs.
   byRet = WrmsrEx(
     IA32_PERF_CTL
     , dwLow
@@ -618,14 +791,14 @@ BOOL // TRUE: success, FALSE: failure
 //          //i = 0 ;
 //      }
     }
-//    else
-//      mp_cpuaccess->// TRUE: success, FALSE: failure
-//        WrmsrEx(
-//          index,		// MSR index
-//          dwLow ,//eax,			// bit  0-31
-//          dwHigh, //edx,			// bit 32-63
-//          affinityMask	// Thread Affinity Mask
-//        ) ;
+    else
+      mp_cpuaccess->// TRUE: success, FALSE: failure
+        WrmsrEx(
+          index,		// MSR index
+          dwLow ,//eax,			// bit  0-31
+          dwHigh, //edx,			// bit 32-63
+          affinityMask	// Thread Affinity Mask
+        ) ;
   }
   return true ;
 }

@@ -66,28 +66,33 @@ public:
 
 class MSRdata
 {
- public:
+  public:
   BYTE m_byCoreID ;
-    DWORD m_dwIndex ;
-    std::vector<RegisterData> m_stdvec_registerdata ;
-    //std::vector<std::string [][]> m_stdvector_ararstdstr ;
-    std::vector<RegisterDataTable> m_stdvector_registerdatatable ;
-    MSRdata(//DWORD 
-      unsigned long dwIndex)
-      : m_byCoreID(0)
-    {
-        m_dwIndex = dwIndex ;
-    }
-    void add(RegisterData & regdata)
-    {
-        m_stdvec_registerdata.push_back(regdata);
-    }
-    //std::string 
-    bool //GetTableContainingDataName
-      GetTableAttributeValue(
-      std::vector<RegisterDataTable>::iterator iter_registerdatatable ,
-      const std::vector<std::string> & stdvector_stdstringAttributeValue ,
-      std::string & strValue ) ;
+  DWORD m_dwIndex ;
+  std::string m_stdstrRegisterName ;
+  std::vector<RegisterData> m_stdvec_registerdata ;
+  //std::vector<std::string [][]> m_stdvector_ararstdstr ;
+  std::vector<RegisterDataTable> m_stdvector_registerdatatable ;
+  MSRdata(//DWORD
+    unsigned long dwIndex)
+    : m_byCoreID(0)
+  {
+      m_dwIndex = dwIndex ;
+  }
+  MSRdata(//DWORD
+    unsigned long dwIndex
+    , std::string & stdstrRegisterName ) ;
+
+  void add(RegisterData & regdata)
+  {
+      m_stdvec_registerdata.push_back(regdata);
+  }
+  //std::string
+  bool //GetTableContainingDataName
+    GetTableAttributeValue(
+    std::vector<RegisterDataTable>::iterator iter_registerdatatable ,
+    const std::vector<std::string> & stdvector_stdstringAttributeValue ,
+    std::string & strValue ) ;
   //An object of THIS class may contain more than 1 table.
   //ex.: looking for: "MHz"
   //true: table for "strDataName" exists

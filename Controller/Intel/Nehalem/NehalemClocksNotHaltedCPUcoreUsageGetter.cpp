@@ -22,15 +22,19 @@ Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   )
   : 
   //mp_griffincontroller (p_griffincontroller)
-  mp_pentium_m_controller (p_pentium_m_controller)
+  mp_nehalem_controller (p_pentium_m_controller)
   //, m_bAtLeastSecondTime (false)
   //,
   , m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+  , m_dReferenceClockInMhz( 133000000.0 )
 {
   LOGN("CPU core usage ctor --address: " << this)
   BYTE byNumCPUs = //p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
-    //Pentium Ms usually only have 1 CPU core.
-    1 ;
+    //Nehalems have 2 or 4 physical CPU core.
+    //4 ;
+    8 ;
+  //if( p_pentium_m_controller )
+  //  mp_model = p_pentium_m_controller->mp_model ;
   m_ar_cnh_cpucore_ugpca = new 
     ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ byNumCPUs ];
 //m_bAtLeastSecondTime
@@ -51,7 +55,7 @@ Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   DWORD dwEBX ;
   //DWORD dwECX ;
   //DWORD dwEDX ;
-  mp_pentium_m_controller->CpuidEx(
+  mp_nehalem_controller->CpuidEx(
     
     0x0A , //DWORD index,
     & dwEAX,
@@ -112,8 +116,9 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
     )
   {
     BYTE byNumCPUs = //mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
-      //Pentium Ms usually only have 1 CPU core.
-      1 ;
+      //Nehalems have 4 or 8 logical CPU cores; every logical core can 
+      //process performance monitoring.
+      8 ;
     for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
     {
     //  mp_pentium_m_controller->AccuratelyStartPerformanceCounting( 
@@ -127,7 +132,7 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
     //    ) ;
     //The Performance event select is cleared after ACPI S3 or S4
     //so rewrite it.
-      mp_pentium_m_controller->PerformanceEventSelectRegisterWrite(
+      mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
         1 << byCoreID ,
         //Pentium M has 1 or 2 "Performance Event Select Register" from 
         //  MSR ... to MSR ...  for 
@@ -136,7 +141,7 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
         //  that store the 48 bit counter value
         0 ,
         //CPU_CLOCKS_NOT_HALTED , //event select, 8 bit
-        INTEL_ARCHITECTURAL_CPU_CLOCKS_NOT_HALTED ,
+        UnHalted_Core_Cycles ,
         0 , // 8 bit unit mask
         1, //User Mode
         1, //OS mode
@@ -147,26 +152,57 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
         0 , //invert counter mask
         0 //counter mask
         ) ;
-      mp_pentium_m_controller->PerformanceEventSelectRegisterWrite(
+      //Count Halted CPU cores: the clocks were not unhalted
+      mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
         1 << byCoreID ,
-        //Pentium M has 1 or 2 "Performance Event Select Register" from 
-        //  MSR ... to MSR ...  for 
-        // 1 or 2 "Performance Event Counter Registers" from 
+        //Pentium M has 1 or 2 "Performance Event Select Register" from
+        //  MSR ... to MSR ...  for
+        // 1 or 2 "Performance Event Counter Registers" from
         //  ... to ...
         //  that store the 48 bit counter value
-        1 , //Performance Event Counter number
-        LAST_LEVEL_CACHE_MISSES_EVENT_SELECT ,
-        //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
-        LAST_LEVEL_CACHE_REFERENCES_UMASK ,
+        1 ,
+        //CPU_CLOCKS_NOT_HALTED , //event select, 8 bit
+        UnHalted_Core_Cycles ,
+        // 8 bit unit mask
+        0 , 
+        //1 ,
         1, //User Mode
         1, //OS mode
         0, //edge
         0, //pin control
         0, //APIC
         1, //enable counters
-        0 , //invert counter mask
-        0 //counter mask
+        //Inverting the unhated core cycles gives the halted core  cycles
+        1 , //invert counter mask
+        //counter mask
+        //"Inverts the result of the counter-mask comparison 
+        // when set, so that both greater than and less than comparisons can be made."
+        //When Inv = 1, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
+        //number of events occurring in a clock cycle is less than CntMask value.
+        //Less than 1 = 0 -> so if Clocks not halted and 0 times "not halted": ->"halted"
+        1 
+        //0
         ) ;
+//      mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
+//        1 << byCoreID ,
+//        //Pentium M has 1 or 2 "Performance Event Select Register" from
+//        //  MSR ... to MSR ...  for
+//        // 1 or 2 "Performance Event Counter Registers" from
+//        //  ... to ...
+//        //  that store the 48 bit counter value
+//        1 , //Performance Event Counter number
+//        LAST_LEVEL_CACHE_MISSES_EVENT_SELECT ,
+//        //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
+//        LAST_LEVEL_CACHE_REFERENCES_UMASK ,
+//        1, //User Mode
+//        1, //OS mode
+//        0, //edge
+//        0, //pin control
+//        0, //APIC
+//        1, //enable counters
+//        0 , //invert counter mask
+//        0 //counter mask
+//        ) ;
     }
   }
   //else
@@ -211,14 +247,29 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
 {
 	double dClocksNotHaltedDiffDivTCSdiff = -1.0 ;
   //mp_griffincontroller->RdmsrEx(
-  mp_pentium_m_controller->RdmsrEx(
+  mp_nehalem_controller->RdmsrEx(
     IA32_TIME_STAMP_COUNTER,
     m_dwLowmostBits,// bit  0-31 (register "EAX")
     m_dwHighmostBits, 
     //m_dwAffinityMask
     1 << byCoreID
     ) ;
-
+  mp_nehalem_controller->RdmsrEx(
+    //IA32_PERFEVTSEL0
+    //Intel vol. 3B:
+    //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
+    //address space; the number of MSRs per logical processor is reported using
+    //CPUID.0AH:EAX[15:8]."
+    //"30.2.1.1 Architectural Performance Monitoring Version 1 Facilities":
+    //The bit width of an IA32_PMCx MSR is reported using the
+    //CPUID.0AH:EAX[23:16]
+    //
+    IA32_PMC1
+    , m_dwLowmostBits
+    , m_dwHighmostBits
+    , //1 
+    1 << byCoreID
+    ) ;
   m_ull = m_dwHighmostBits ;
   m_ull <<= 32 ;
   m_ull |= m_dwLowmostBits ;
@@ -234,7 +285,7 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   //  ) ;
   DWORD dwLow, dwHigh ;
 
-  mp_pentium_m_controller->RdmsrEx(
+  mp_nehalem_controller->RdmsrEx(
     //IA32_PERFEVTSEL0
     //Intel vol. 3B:
     //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
@@ -247,12 +298,14 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
     IA32_PMC0
     , dwLow
     , dwHigh
-    , 1 ) ;
-  //It seems that only 40 bits of the PMC are used with Pentium Ms although also
-  //higher bits are set.
-  //with simply making a difference, I got "1099516786500" (~10^12) although it was a 100 ms
-  //interval, so the max. diff. could be ~ 1800 M/ 10 = 180 M (180 * 10^6)
-  dwHigh &= BITMASK_FOR_LOWMOST_8BIT ;
+    , //1 
+    1 << byCoreID
+    ) ;
+  ////It seems that only 40 bits of the PMC are used with Pentium Ms although also
+  ////higher bits are set.
+  ////with simply making a difference, I got "1099516786500" (~10^12) although it was a 100 ms
+  ////interval, so the max. diff. could be ~ 1800 M/ 10 = 180 M (180 * 10^6)
+  //dwHigh &= BITMASK_FOR_LOWMOST_8BIT ;
   m_ullPerformanceEventCounter3 = dwHigh ;
   m_ullPerformanceEventCounter3 <<= 32 ;
   m_ullPerformanceEventCounter3 |= dwLow ;
@@ -275,34 +328,45 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
       int i = 0;
     }
 #endif //#ifdef _DEBUG
-    //ULONGLONG ullTimeStampCounterValueDiff 
-	m_ullTimeStampCounterValueDiff  = //ull - 
-    //  m_ullPreviousTimeStampCounterValue;
-    ULONGLONG_VALUE_DIFF( m_ull , //m_ullPreviousTimeStampCounterValue
-      m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
+      //ULONGLONG ullTimeStampCounterValueDiff 
+  	m_ullTimeStampCounterValueDiff  = //ull - 
+      //  m_ullPreviousTimeStampCounterValue;
+      ULONGLONG_VALUE_DIFF( m_ull , //m_ullPreviousTimeStampCounterValue
+        m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
+        ) ;
+
+    //ULONGLONG ullPerformanceEventCounter3Diff = 
+    m_ullPerformanceEventCounter3Diff = 
+      //PERFORMANCE_COUNTER_VALUE_DIFF( m_ullPerformanceEventCounter3 , 
+      PerformanceCounterValueDiff( 
+        m_ullPerformanceEventCounter3 , 
+        //m_ullPreviousPerformanceEventCounter3 
+        m_ar_cnh_cpucore_ugpca[ byCoreID ].
+          m_ullPreviousPerformanceEventCounter3
       ) ;
 
-  //ULONGLONG ullPerformanceEventCounter3Diff = 
-  m_ullPerformanceEventCounter3Diff = 
-    //PERFORMANCE_COUNTER_VALUE_DIFF( m_ullPerformanceEventCounter3 , 
-    PerformanceCounterValueDiff( 
-      m_ullPerformanceEventCounter3 , 
-      //m_ullPreviousPerformanceEventCounter3 
-      m_ar_cnh_cpucore_ugpca[ byCoreID ].
-        m_ullPreviousPerformanceEventCounter3
-    ) ;
-
-  //double 
-	dClocksNotHaltedDiffDivTCSdiff =
-    (double) m_ullPerformanceEventCounter3Diff /
-    (double) m_ullTimeStampCounterValueDiff ;
-#ifdef _DEBUG
-	if( dClocksNotHaltedDiffDivTCSdiff > 1.1 || 
-    dClocksNotHaltedDiffDivTCSdiff < 0.02 )
-	{
-		int i = 0 ;
-	}
-#endif
+    BYTE byFreqID ;
+    BYTE byVoltageID ;
+    mp_nehalem_controller->GetCurrentPstate(
+      byFreqID //BYTE & r_byFreqID
+      , byVoltageID //BYTE & r_byVoltageID
+      , byCoreID //BYTE byCoreID
+      ) ;
+    //double 
+  	dClocksNotHaltedDiffDivTCSdiff =
+      //clocks where the CPU was busy / clocks not halted.
+      //(double) m_ullPerformanceEventCounter3Diff /
+      //Clocks passed = clocks not halted + clocks halted.
+      //(double) ( m_ullPerformanceEventCounter3Diff + m_ullTimeStampCounterValueDiff ) ;
+      (double) m_ullPerformanceEventCounter3Diff /
+      ( (double) byFreqID * m_dReferenceClockInMhz ) ;
+  #ifdef _DEBUG
+  	if( dClocksNotHaltedDiffDivTCSdiff > 1.1 || 
+      dClocksNotHaltedDiffDivTCSdiff < 0.02 )
+  	{
+  		int i = 0 ;
+  	}
+  #endif
     //return (float) dClocksNotHaltedDiffDivTCSdiff ;
   }
   else
@@ -318,7 +382,7 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
 
     //Workaround for unabilility to detect ACPI resume if not on Windows.
   #ifndef __WXMSW__
-  mp_pentium_m_controller->RdmsrEx(
+  mp_nehalem_controller->RdmsrEx(
     // MSR index
     IA32_PERFEVTSEL0 ,
     dwLow ,//eax,			// bit  0-31
@@ -347,7 +411,9 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
   BYTE byNumCPUs = //mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
     //mp_cpucontroller->mp_model->GetNumberOfCPUCores() ;
     //Pentium Ms usually only have 1 CPU core.
-    1 ;
+    //1 ;
+    //mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
+    8 ;
   for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
   {
     arf[ byCoreID ] = GetPercentalUsageForCore( byCoreID ) ;

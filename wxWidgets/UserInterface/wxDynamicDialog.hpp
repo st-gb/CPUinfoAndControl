@@ -28,6 +28,7 @@ class wxStaticText ;
 class wxTimer ;
 //class GriffinController ;
 class I_CPUcontroller ;
+class wxX86InfoAndControlApp ;
 
 class wxDynamicDialog
   : public wxDialog 
@@ -48,6 +49,7 @@ class wxDynamicDialog
   wxCheckBox * mp_wxcheckboxInterval ;
   wxTextCtrl * mp_wxtextctrlUpdateIntervalInMs ;
   wxTimer m_wxtimer ;
+  wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
   void DisplayRegisterData() ;
   void DisplayRegisterData(MSRdata & r_msrdata);
 public:
@@ -57,12 +59,14 @@ public:
     Model & modeldata ,
     //GriffinController * mp_pumastatecontrol 
     I_CPUcontroller * p_cpucontroller
+    , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
     ) ;
 
   void BuildGUI(MSRdata & r_msrdata ) ;
   void BuildGUI() ;
   void OnRuntimeCreatedControls(wxCommandEvent & wxevent) ;
   void OnTimerEvent(wxTimerEvent &event);
+  void ReadRegisterDataConfig( std::string & strFamilyAndModelFilePath ) ;
 
   // any class wishing to process wxWidgets events must use this macro
   DECLARE_EVENT_TABLE()

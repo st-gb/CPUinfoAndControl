@@ -54,6 +54,7 @@ class CPUcoreUsageGetterIWbemServices ;
 class CPUcoreUsageNTQSI ;
 class I_CPUcontrollerAction ;
 class SpecificCPUcoreActionAttributes ;
+class wxX86InfoAndControlApp ;
 
 class MainFrame:
   public wxFrame, 
@@ -127,6 +128,7 @@ private:
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
   wxMenuItem ** marp_wxmenuItemHighLoadThread ;
   wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
+  wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
   WORD m_wXcoordOfBeginOfYaxis ;
   WORD m_wMinYcoordInDiagram ;
   WORD m_wDiagramWidth ;
@@ -177,6 +179,7 @@ public:
     , I_CPUcontroller * p_cpucontroller
     //, CPUcoreData * p_cpucoredata
     , Model * p_model
+    , wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp
     );
   ~MainFrame() ;
 
@@ -246,6 +249,7 @@ public:
   void OnPaint(wxPaintEvent & event) ;
   void OnPstateDialog( wxCommandEvent & WXUNUSED(event) ) ;
   void OnMSR( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) ) ;
   void OnDynamicallyCreatedUIcontrol(wxCommandEvent & event);
   void OnSize(wxSizeEvent & WXUNUSED(event)) ;
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));

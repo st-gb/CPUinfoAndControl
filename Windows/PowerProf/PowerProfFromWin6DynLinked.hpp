@@ -7,13 +7,13 @@
 #include "PowerProf_From_Win6.h"
 //#else
 #ifdef INCLUDE_POWRPROF_H_IN_PWRPROFDYNLINKED_FROM_VER6_H
-#ifdef __CYGWIN__ // pwrprof.h != PowerProf.h in gcc (->case matters)
+//#ifdef __CYGWIN__ // pwrprof.h != PowerProf.h in gcc (->case matters)
     #include <powrprof.h> // for PowerWriteACValueIndex()
-#elif defined (_MSC_VER )
-//This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
-//ie. SDK version >= "6" / "6.1" .
-#include <PowrProf.h> // for PowerWriteACValueIndex()
-#endif
+//#elif defined (_MSC_VER )
+////This must be the PowrProf.h from the Windows (platform) SDK for Vista,
+////ie. SDK version >= "6" / "6.1" .
+//#include <PowrProf.h> // for PowerWriteACValueIndex()
+//#endif
 #endif //#ifdef INCLUDE_POWRPROF_H_IN_PWRPROFDYNLINKED_FROM_VER6_H
 #endif //#ifdef INCLUDE_POWERPROF_FOR_WINDOOWS_ABOVE_VERSION6
 

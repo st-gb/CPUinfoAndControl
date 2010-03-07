@@ -50,6 +50,7 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
   Model & r_modeldata ,
   //GriffinController * p_pumastatecontrol
   I_CPUcontroller * p_cpucontroller
+  , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
   : wxDialog( 
       parent, //wxID_ANY, //
@@ -64,6 +65,7 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
   //, mp_pumastatecontrol ( p_pumastatecontrol )
   , mp_cpucontroller ( p_cpucontroller )
   , mp_modeldata ( & r_modeldata)
+  , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
 {
   m_wControlID = 1 ;
   m_wxtimer.SetOwner(this, ID_Timer) ;
@@ -239,6 +241,7 @@ void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
         //The label and the adjustable value should be at the same vertical
         //position, so place at the top.
         wxALIGN_TOP
+        | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
       //Determines the border width, if the flag parameter is set to include 
       //any border flag.
       , 2 
@@ -381,7 +384,11 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
         }
         iter_registerdata->m_ullPreviousValue = ullMSR ;
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
+        #ifdef __CYGWIN__
+        wxstrULL = wxString::Format( wxString( wxT("%llu") ), ullValue) ;
+        #else
         wxstrULL = wxString::Format( wxString( wxT("%I64u") ), ullValue) ;
+        #endif
         //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", ullValue )
         //  wxstrULL );
         stdvector_stdstringAttributeValue.push_back( 
@@ -428,7 +435,20 @@ void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
     //m_stdvector_p_wxstatictextiter.empty()  ;
     mp_modeldata->m_stdvector_msrdata.//empty() ;
       clear() ;
-    ::wxGetApp().m_maincontroller.Init(*mp_modeldata, & ::wxGetApp()) ;
+    //::wxGetApp().m_maincontroller.Init(*mp_modeldata, & ::wxGetApp()) ;
+    std::string strCPUtypeRelativeDirPath ;
+    if( mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
+        strCPUtypeRelativeDirPath)
+      )
+    {
+      BYTE byModel ;
+      BYTE byStepping ;
+      //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
+      std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
+      mp_wxx86infoandcontrolapp->m_maincontroller.ReadRegisterDataConfig(
+        strFamilyAndModelFilePath ,
+        mp_wxx86infoandcontrolapp ) ;
+    }
     //delete all contained UI controls.
     //delete mp_sizerTop ;
     //while( mp_sizerTop->m_children.GetCount() && 

@@ -73,6 +73,7 @@ void WinRing0dynLinked::Init(UserInterface * pui)
   if (m_hinstanceWinRingDLL == 0)
   {
     std::ostrstream ostrstream;
+#ifndef __MINGW32__
     ostrstream << "Error loading the necessary library \"" << 
         archDLLName << "\"\n-Possible solution: put this library into the "
         "same directory as this executable's (working) directory or into a "
@@ -80,6 +81,10 @@ void WinRing0dynLinked::Init(UserInterface * pui)
     if( mp_userinterface )
       mp_userinterface->Confirm(ostrstream);
     throw DLLnotLoadedException(ostrstream.str() ) ;
+#else
+    throw DLLnotLoadedException( "error" ) ;
+
+ #endif
   }
   else
   {
@@ -208,6 +213,7 @@ void WinRing0dynLinked::Init(UserInterface * pui)
               }
             mp_userinterface->Confirm(ostrstream);
 #ifdef _DEBUG
+            //Breakpoint possibility
             int i = 0 ;
 #endif
           }

@@ -51,6 +51,10 @@ public:
     ) ;
   void SetCPUaccess(//ISpecificController 
     I_CPUaccess * p_ispecificcontroller ) ;
+  void ReadRegisterDataConfig(
+    std::string & strFamilyAndModelFilePath
+    , UserInterface * p_userinterface
+    ) ;
 private:
   //ISpecificController 
   I_CPUaccess * mp_cpuaccessmethod ;

@@ -1,5 +1,15 @@
 #include "RegisterData.hpp"
 
+MSRdata::MSRdata(//DWORD
+    unsigned long dwIndex
+    , std::string & stdstrRegisterName )
+  :
+    m_byCoreID(0)
+    , m_stdstrRegisterName ( stdstrRegisterName )
+    , m_dwIndex ( dwIndex )
+{
+}
+
 //std::string 
 bool //GetTableContainingDataName
   MSRdata::GetTableAttributeValue(

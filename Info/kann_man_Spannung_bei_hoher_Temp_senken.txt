@@ -1,0 +1,32 @@
+http://www.hardwareluxx.de/community/f11/cpu-faq-sammelthread-ubersicht-323664.html:
+
+<2.5> "Stirbt" mein Prozessor früher durch Spannungserhöhung?
+Eindeutig ja. Ein Stichwort ist hier Elektromigration, bei welcher aufgrund 
+des elektrischen Stromes Ionen langsam wandern (Diffusion). 
+Wenn der Prozessor lange genug so betrieben wurde, fallen irgendwann 
+bestimmte Transistoren aus und wenn dies genau die Falschen sind bedeutet 
+dies den Tod eines Prozessors. Allerdings braucht man dennoch keine Angst 
+zu haben, da die Prozesse, wie bereits beschrieben, sehr langsam vonstatten 
+gehen. 
+Praktisch bedeutet dies quasi das ein angenommener Prozessor 20 Jahre 
+(spekulativ) unter Vollast gelaufen wäre, bevor er den Geist auf gibt. 
+Durch Erhöhung der Spannung sinkt diese Lebensdauer (auch hier kann man nur 
+spekulieren) auf 10 Jahre. Da Prozessoren aber selten eine so lange Zeit in 
+Betrieb sind ist dieser Effekt vernachlässigbar, solange die Spannung nicht 
+deutlich zu stark erhöht wird. Auch sind tiefere Temperaturen günstig, da 
+Silizium zu den wenigen Elementen gehört, welches bei erhöhter Temperatur 
+einen geringeren Widerstand aufweist. Nach dem Ohmschen Gesetz folgt daher 
+bei Erhöhung der Temperatur und gleicher Spannung ein höherer Strom. Zu 
+beachten ist zudem, dass der Effekt auch von der Strukturbreite abhängig ist. 
+Wenn die Spannung gleich bleibt ist der Prozessor mit der kleineren 
+Strukturbreite stärker von Elektromigration betroffen als der, der in 
+breiteren Strukturen gefertigt ist. Elektromigration ist allerdings nur ein 
+Grund für den früheren Tod eines Prozessors. Es gibt noch einige andere die 
+oftmals ebenfalls von der Spannung und der Temperatur abhängen, wie 
+"Time Dependent Dielectric Breakdown". 
+Insbesondere wenn neue Gate-Materialien zum Einsatz kommen, wie bei Intels 
+neuen in 45 nm Strukturen hergestellten Prozessoren, kann der Tod eines 
+Prozessors schneller eintreten.
+
+<2.6> Das Märchen vom vDrop
+Viele beschweren sich immer wieder über den Spannungsabfall unter Last, welcher insbesondere bei Mainboards für Intel-Prozessoren sehr ausgeprägt ist. Einige modden ihr Mainboard sogar um diesen los zu werden. Im Grunde genommen ist dies völlig unnötig. Wie in <2.5> geschrieben sinkt bei Silizium der Widerstand desto Wärmer es wird. Bleibt die Spannung unter Last (= höhere Temperatur) gleich, steigt der Strom (und damit auch der "Verbrauch"). Da ein Prozessor aber weniger die Spannung interessiert als die Strommenge die durch ihn fließt, ist es problemlos möglich unter Last die Spannung zu senken, so dass weiterhin der gleiche Strom fließt. Intel hat diesen Abfall sogar spezifiziert und festgelegt. Es ist also auf keinen Fall ein Indikator für die Qualität eines Mainboards und dessen Stromversorgung, solange er nicht zu groß wird. Bei unterdimensionierten und/oder schlechten Spannungsversorgungen wird der Spannungsabfall allerdings zu groß und kann das Übertaktungspotential einschränken. Eine gewisse Daseinsberechtigung besitzen entsprechende Mods also.

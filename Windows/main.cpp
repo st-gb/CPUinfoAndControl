@@ -1,6 +1,6 @@
 //Else: "fatal error C1189: #error :  Building MFC application with /MD[d] (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or do not use /MD[d]"
-#define _AFXDLL 
-#include <AfxWin.h> //for AfxMessageBox(...)->muss MultiThreaded DLL ("/MD") sein
+//#define _AFXDLL
+//#include <AfxWin.h> //for AfxMessageBox(...)->muss MultiThreaded DLL ("/MD") sein
 #include <stdio.h> //for sprintf(...)
 //#include "PumaStateCtrl.h"
 #include <fstream> //for class ofstream

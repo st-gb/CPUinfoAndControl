@@ -3,7 +3,7 @@
 //  #define COMPILE_WITH_XERCES
 //#endif
 
-#ifdef COMPILE_WITH_XERCES
+//#ifdef COMPILE_WITH_XERCES
 #include "stdafx.h"
 #include "global.h" //for if "COMPILE_WITH_XERCES" is defined or not
 
@@ -44,21 +44,21 @@
 	//#ifdef WIN32
 	class NumberFormatException 
     : public
-    #ifdef __CYGWIN__
+    #ifdef _MSC_VER //MicroSoft Compiler
+      std::runtime_error
+    #else // __CYGWIN__, mingw
     //  ::RuntimeException
       std::exception
-    #else
-      std::runtime_error
-  #endif
+    #endif
 	{
 	public:
 	   NumberFormatException(const std::string& s)
-      #ifdef __CYGWIN__
-      //  ::RuntimeException
-      //  std::exception()
-      #else
+      #ifdef _MSC_VER //MicroSoft Compiler
         :
         std::runtime_error(s)
+      #else //__CYGWIN__, ...
+      //  ::RuntimeException
+      //  std::exception()
       #endif
       {}
 	};
@@ -450,4 +450,4 @@
          << " at line: " << exception.getLineNumber()
          << endl ) ;
 	}
-#endif //#ifdef COMPILE_WITH_XERCES
+//#endif //#ifdef COMPILE_WITH_XERCES
