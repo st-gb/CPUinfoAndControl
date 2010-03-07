@@ -699,8 +699,10 @@ void PowerProfFromWin6DynLinked::OutputAllPowerSchemes()
   //    //Release memory.
   //    delete [] p_uchBuffer ;
       GetPowerSchemeName(GUIDscheme, stdwstr ) ;
-      #ifdef _DEBUG
-        std::wcout << stdwstr << L'\n' ;
+      #if defined(_DEBUG)
+        #if !defined(__MINGW32__) //MinGW does not know "wcout"
+          std::wcout << stdwstr << L'\n' ;
+        #endif
       #endif
       ++ ulIndex ;
     }
@@ -1252,7 +1254,9 @@ BYTE PowerProfFromWin6DynLinked:: PowerSchemeToSetExists()
         return 1 ;
       }
       #ifdef _DEBUG
-        std::wcout << stdwstr << L'\n' ;
+        #if !defined(__MINGW32__) //MinGW does not know "wcout"
+          std::wcout << stdwstr << L'\n' ;
+        #endif
       #endif
       ++ ulIndex ;
     }
@@ -1454,7 +1458,9 @@ DWORD PowerProfFromWin6DynLinked::PowerWriteFriendlyName(
   )
 {
   #ifdef _DEBUG
-  std::wcout << L"changing name to " << (wchar_t*)Buffer << BufferSize ;
+    #if !defined(__MINGW32__) //MinGW does not know "wcout"
+      std::wcout << L"changing name to " << (wchar_t*)Buffer << BufferSize ;
+    #endif
   #endif
   return (*m_pfnpowerwritefriendlyname) (
     RootPowerKey,

@@ -4,13 +4,41 @@
 //#include <windows.h> //ULONGLONG
 #include <Windows_compatible_typedefs.h> //for ULONGLONG
 
-#define IA32_APERF 0xE8 //dec. 232
+//#define IA32_APERF 0xE8 //dec. 232
+
+//http://www.meisterkuehler.de/cms/cpu_verlustleistung.html
+
+//some measurement values for trying to compute the Watts:
+//measured with the "EKM" meas. device: 100% Load for every core :
+//prime 95 8 cores at 1600 MHz: 76 W   P=V^2*1600M*100%
+//prime 95 8 cores at 1330 MHz: 66 W
+//prime 95 8 cores at 931 MHz: 51 W
+//
+//P=V^2*f*load
 
 class NehalemController
   : public I_CPUcontroller
 {
   //Model * mp_model ;
 public:
+  void AccuratelyStartPerformanceCounting(
+    DWORD dwAffinityBitMask ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from 
+    //  MSR ... to MSR ...  for 
+    // 1 or 2 "Performance Event Counter Registers" from 
+    //  ... to ...
+    //  that store the 48 bit counter value
+    BYTE byPerformanceEventSelectRegisterNumber ,
+    BYTE byEventSelect , //8 bit
+    BYTE byUnitMask , // 8 bit
+    bool bUserMode,
+    bool bOSmode,
+    bool bEdgeDetect,
+    bool bPINcontrol,
+    bool bEnableAPICinterrupt,
+    bool bInvertCounterMask ,
+    BYTE byCounterMask
+    ) ;
   void DecreaseVoltageBy1Step(float & r_fVoltage) ;
   BYTE GetCurrentPstate(WORD & wFreqInMHz, float & Volt, BYTE byCoreID) ;
   BYTE GetCurrentPstate(
@@ -67,6 +95,10 @@ public:
     bool bEnablePerformanceCounter,
     bool bInvertCounterMask ,
     BYTE byCounterMask
+    ) ;
+  void PrepareForNextPerformanceCounting(
+    DWORD dwAffinityBitMask 
+    , BYTE byPerformanceEventSelectRegisterNumber
     ) ;
   BYTE SetVoltageAndFrequency( 
     float fVolt , 

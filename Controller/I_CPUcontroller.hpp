@@ -177,6 +177,11 @@ public:
   //virtual bool IsLowerVoltageThan( float fValueToProof, float fValueToCompare) ;
   virtual bool VIDisLowerVoltageThan( WORD wVIDisLessThan, WORD wVIDvalueToCompare) ;
   BYTE OtherPerfCtrlMSRwriteIsActive() ;
+
+  virtual void PrepareForNextPerformanceCounting(
+    DWORD dwAffinityBitMask 
+    , BYTE byPerformanceEventSelectRegisterNumber
+    ) { }
   //Advantage for a RdmsrEx() inside CPU controller: one does not
   //need to MANUALLY check if cpuaccess is assigned. (not NULL)
   //because this is done by this class' RdmsrEx() method.
@@ -258,4 +263,15 @@ public:
       , BYTE byCoreID 
       ) //{return 0 ; }
       = 0 ;
+  //If this method should be implemented in a derived class it should check for
+  // MSR indices and value for validity.
+  inline virtual BOOL // TRUE: success, FALSE: failure
+    //In g++ virtual methods can't be declared as stdcall
+    //WINAPI
+    WrmsrEx(
+      DWORD index,		// MSR index
+      DWORD dwLow ,//eax,			// bit  0-31
+      DWORD dwHigh, //edx,			// bit 32-63
+      DWORD affinityMask	// Thread Affinity Mask
+      ) { return FALSE ; }
 };

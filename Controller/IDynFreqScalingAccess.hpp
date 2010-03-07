@@ -1,8 +1,11 @@
 #pragma once
 
 #include <Controller/stdtstr.hpp>
+#ifdef __CYGWIN__
+#include <mingw/tchar.h> //for _T()
+#else //MS compiler, MinGW
 #include <tchar.h> //for _T()
-
+#endif
 #define ALREADY_ENABLED
 
 //TODO rename this class to "I_OtherVoltageRespectivelyFreqChange"

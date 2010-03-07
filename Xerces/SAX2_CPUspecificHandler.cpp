@@ -15,7 +15,8 @@
 //#include "PStates.h"
 #include <xercesc/sax2/Attributes.hpp>
 #include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
-#include <ostream> //for "endl"
+#include <ostream>
+//#include <bits/stringfwd.h> //for "endl"
 
 //#include "global.h" //for DEBUG(...) etc.
 
@@ -239,7 +240,28 @@ void SAX2_CPUspecificHandler::startElement
       )
     {
       m_bInsideValidMSRelement = true ;
-      mp_modeldata->m_stdvector_msrdata.push_back(MSRdata(dwIndex)) ;
+      std::string stdstrRegisterName ;
+      if(
+        m_xerceshelper.GetAttributeValue
+          (
+          r_xercesc_attributes,//"processor_name"
+          //archAttributeName ,
+          "name" ,
+          //* StdStringToDWORD::Convert ,
+          //m_xerceshelper.ToDWORD
+          //strValue
+          //dwIndex
+        stdstrRegisterName
+          )
+        == SUCCESS
+        && stdstrRegisterName != ""
+        )
+      {
+        mp_modeldata->m_stdvector_msrdata.push_back( MSRdata(
+          dwIndex, stdstrRegisterName ) ) ;
+      }
+      else
+        mp_modeldata->m_stdvector_msrdata.push_back(MSRdata(dwIndex)) ;
       m_stdvec_msrdata_riter = mp_modeldata->m_stdvector_msrdata.rbegin() ;
     }
     if( //XercesHelper::GetAttributeValue

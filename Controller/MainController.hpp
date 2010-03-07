@@ -41,7 +41,7 @@ public:
       stdtstr = _T("AMD Griffin") ;
       r_stdvectstr.push_back( stdtstr ) ;
     #endif
-    stdtstr = _T("Pentium M") ;
+    stdtstr = _T("Intel Pentium M") ;
     r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }
@@ -51,6 +51,10 @@ public:
     ) ;
   void SetCPUaccess(//ISpecificController 
     I_CPUaccess * p_ispecificcontroller ) ;
+  void ReadRegisterDataConfig(
+    std::string & strFamilyAndModelFilePath
+    , UserInterface * p_userinterface
+    ) ;
 private:
   //ISpecificController 
   I_CPUaccess * mp_cpuaccessmethod ;

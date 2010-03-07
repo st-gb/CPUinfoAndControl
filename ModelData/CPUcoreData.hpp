@@ -3,14 +3,19 @@
 #include "../global.h" //for BYTE, WORD
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
 #include <set>
-//because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208: 
-//   'void': Keine Elemente definiert, die diesen Typ verwenden
-//http://trac.wxwidgets.org/ticket/11482:
-//if you include <windows.h> you must include <wx/msw/winundef.h> after it.
-#ifdef _MSC_VER //Microsoft compiler
-#include <wx/msw/winundef.h>
-#endif
-#include <wx/thread.h> //for class wxCriticalSection
+//#ifdef __WXMSW__
+////because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208:
+////   'void': Keine Elemente definiert, die diesen Typ verwenden
+////http://trac.wxwidgets.org/ticket/11482:
+////if you include <windows.h> you must include <wx/msw/winundef.h> after it.
+//#ifdef _MSC_VER //Microsoft compiler
+//#include <wx/msw/winundef.h>
+//#endif
+//#include <wx/thread.h> //for class wxCriticalSection
+//typedef wxCriticalSection criticalsection_type ;
+//#else
+#include <criticalsection_type.hpp>
+//#endif
 
 #define CPU_CORE_DATA_NOT_SET 255
 //#include <Controller/ClocksNotHaltedCPUcoreUsageGetter.hpp>
@@ -104,7 +109,8 @@ public:
   //DFVS = dyn. volt. and freq. scaling
   WORD m_wMilliSecondsWaitBetweenDFVS ;
   WORD m_wFamily ;
-  wxCriticalSection m_wxcriticalsection ;
+  //wxCriticalSection m_wxcriticalsection ;
+  criticalsection_type m_wxcriticalsection ;
 
   //Intension: allocate this as an array at runtime. So releasing memory 
   //is easier because only memory of this array must be freed

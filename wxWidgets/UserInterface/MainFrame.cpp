@@ -55,6 +55,7 @@
 //#include "Windows/CPUcoreUsageNTQSI_OO.hpp"
 //#include <Windows/CPUcoreUsageNTQSI_OO2.hpp>
 #include "wxDynamicDialog.hpp"
+#include "CPUregisterWriteDialog.hpp"
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"
 //#include "CpuUsage.h" //Crystal CPU usage getter
@@ -69,6 +70,7 @@ enum
   , ID_About
 //#ifdef _TEST_PENTIUM_M
   , ID_MSR
+  , ID_WriteToMSRdialog
 //#endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   //, ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq //,
@@ -121,6 +123,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
 //#ifdef _TEST_PENTIUM_M
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   EVT_MENU(ID_MSR, MainFrame::OnMSR)
+  EVT_MENU(ID_WriteToMSRdialog, MainFrame::OnWriteToCPUregister)
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   //EVT_MENU( ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq ,
@@ -189,6 +192,7 @@ MainFrame::MainFrame(
   , I_CPUcontroller * p_cpucontroller
   //, CPUcoreData * p_cpucoredata 
   , Model * p_model
+  , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
   : wxFrame((wxFrame *)NULL, -1, title, pos, size
     //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
@@ -225,6 +229,7 @@ MainFrame::MainFrame(
   #endif
   , m_bRangeBeginningFromMinVoltage ( true )
   , m_xercesconfigurationhandler( p_model )
+  , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
 {
   LOG("begin of main frame creation\n")
 
@@ -358,6 +363,7 @@ MainFrame::MainFrame(
   if( ! p_wxmenuExtras ) 
     p_wxmenuExtras = new wxMenu;
   p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
+  p_wxmenuExtras->Append(ID_WriteToMSRdialog, _T("write to MSR dialog") );
 #endif
   if( p_wxmenuExtras )
     mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
@@ -1802,6 +1808,9 @@ void MainFrame::DrawCurrentPstateInfo(
    ::wxGetApp().mp_cpucoreusagegetter->
      GetPercentalUsageForAllCores(
      mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
+   #ifdef _DEBUG
+   //::wxGetApp().mp_cpucoreusagegetter->Init() ;
+   #endif
    //TODO respect # of cpu cores
    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
@@ -2787,6 +2796,7 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
        *mp_cpucontroller->mp_model,
        //mp_pumastatectrl
        mp_cpucontroller
+       , mp_wxx86infoandcontrolapp
        );
      //p_wxdlg->ShowModal() ;
      p_wxdlg->Show(true) ;
@@ -3189,6 +3199,22 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
     }
   }
 }
+
+  void MainFrame::OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) )
+  {
+     CPUregisterWriteDialog * p_wxdlg = new CPUregisterWriteDialog(
+       this ,
+       //msrdata
+       //*mp_pumastatectrl->mp_model,
+       *mp_cpucontroller->mp_model,
+       //mp_pumastatectrl
+       mp_cpucontroller
+       //mp_cpucontroller->mp_cpuaccess
+       //, mp_wxx86infoandcontrolapp
+       );
+     //p_wxdlg->ShowModal() ;
+     p_wxdlg->Show(true) ;
+  }
 
 //wxString MainFrame::GetSetPstateMenuItemLabel(
 //  BYTE byPstateNumber

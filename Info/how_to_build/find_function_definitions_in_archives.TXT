@@ -1,0 +1,3 @@
+e.g. 
+C:\>objdump -x C:\MinGW\lib\libcrtdll.a | grep assert
+C:\>objdump -t C:\MinGW\lib\libcrtdll.a : shows all functions contained

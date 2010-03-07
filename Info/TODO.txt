@@ -1,3 +1,7 @@
+1. wenn neue p-states entdeckt werden, muss neugezeichnet werden
+2. ordentliche Fehlermeldung: "erst default p-states hinzufügen, bevor man weitere Einstellungen vornehmen kann", 
+   wenn man keine Spannung und Taktfreq einstellen kann (und noch keine performance state-Konfig-Daten vorhanden sind)
+
 Als der Dienst nicht installiert war, und die Option "deinstallieren" gewählt wurde,
 wurde nicht angezeigt, dass der Dienst gar deinstalliert werden kann, da er nicht 
 installiert war.

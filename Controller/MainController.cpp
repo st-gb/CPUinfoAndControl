@@ -250,7 +250,7 @@ BYTE MainController::Init(
   {
     BYTE byModel ;
     BYTE byStepping ;
-    SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
+    //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
     std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
     std::string strProcessorName ;
     WORD wFamily ;
@@ -284,23 +284,7 @@ BYTE MainController::Init(
       *p_userinterface, model );
     //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
 		#ifdef COMPILE_WITH_MSR_EXAMINATION
-    if( readXMLConfig(
-        //const char* xmlFile
-        strFamilyAndModelFilePath.c_str()
-	      , model
-	      , p_userinterface
-     //   PumaStateCtrl * p_pumastatectrl 
-        //Base class of implementing Xerces XML handlers.
-        //This is useful because there may be more than one XML file to read.
-        //So one calls this functions with different handlers passed.
-        //DefaultHandler & r_defaulthandler
-        //, sax2mainconfighandler
-        , sax2handler
-        )
-      )
-	  {
-      
-    }
+    ReadRegisterDataConfig( strFamilyAndModelFilePath, p_userinterface ) ;
     #endif //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
     if( readXMLConfig(
         //const char* xmlFile
@@ -336,4 +320,30 @@ BYTE MainController::Init(
     //byRet = 1 ;
   }
   return byRet ;
+}
+
+//Called by MainController::Init() and by the CPU register dialog(s)
+void MainController::ReadRegisterDataConfig(
+  std::string & strFamilyAndModelFilePath
+  , UserInterface * p_userinterface
+  )
+{
+   SAX2_CPUspecificHandler sax2handler( * p_userinterface, * mp_model );
+   if( readXMLConfig(
+      //const char* xmlFile
+      strFamilyAndModelFilePath.c_str()
+      , * mp_model
+      , p_userinterface
+   //   PumaStateCtrl * p_pumastatectrl
+      //Base class of implementing Xerces XML handlers.
+      //This is useful because there may be more than one XML file to read.
+      //So one calls this functions with different handlers passed.
+      //DefaultHandler & r_defaulthandler
+      //, sax2mainconfighandler
+      , sax2handler
+      )
+    )
+	  {
+
+    }
 }

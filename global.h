@@ -93,6 +93,10 @@
 #else
   #define LOGN_VERBOSE(to_ostream) /*empty->do not log*/
 #endif
+#if defined(__MINGW32__) //MinGW does not know wide strings
+  #define LOGW(to_ostream) /*empty->do not log*/
+  #define LOGWN(to_ostream) /*empty->do not log*/
+#else
   #define LOGW(to_ostream) { std::wstringstream strstream ; \
     strstream << to_ostream; \
     /*/for g++ compiler:
@@ -105,6 +109,7 @@
     g_logger.Log( stdstr ) ; \
     /*g_logger.Log("test ") ; */ }
   #define LOGWN(to_ostream) LOGW (to_ostream << L"\n" )
+#endif
   //#define DEBUG(...) { g_logger->Log(__VA_ARGS__) ; }
   #define DEBUG(to_ostream) LOG(to_ostream)
 

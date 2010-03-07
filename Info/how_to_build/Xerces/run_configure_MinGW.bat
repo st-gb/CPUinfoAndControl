@@ -1,0 +1,1 @@
+sh ./configure LDFLAGS=-no-undefined --enable-transcoder-windows --disable-network --enable-msgloader-inmemory

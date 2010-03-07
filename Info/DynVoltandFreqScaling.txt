@@ -1,0 +1,19 @@
+how long does it take to reach a certain frequency?
+
+e.g. with (CPU load query) interval of 100 ms, increase: 150%:
+-AMD Griffin, start: 550 MHz, certain frequency: 2200 MHz :
+ 550 MHz * 1.5 = 825 MHz->800 MHz ->after 100 ms ; 
+ 800 MHz * 1.5 = 1200 MHz->2200 MHZ ( because 1200 MHz> 1100 MHz; 
+  >1100 and <2200 leads to freeze, so set to 2200 immediately)
+ -> after 200 ms
+-Pentium M, start: 600 MHz, certain frequency: 1800 MHz, 
+ 600 MHz * 1.5 = 900 MHz ; 
+ 900 MHz * 1.5 = 1350 MHz->1300 MHZ ; 
+ 1300 MHz * 1.5 = 1950 MHz->1800 MHz
+ -> after 300 ms
+ 
+ steps ~= log_increase(f_higher / f_lower )
+ time = steps * interval
+ ex. : increase = 150% = 1.5 :
+   steps ~= log1.5( 1800 / 600 ) ~= log1.5( 3 ) ~ 2.5 -> 3
+   time = 3 * 100 ms = 300 ms

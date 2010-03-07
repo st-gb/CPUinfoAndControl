@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.1  (Win32)">
+	<META NAME="AUTHOR" CONTENT="Stefan Gebauer">
+	<META NAME="CREATED" CONTENT="20100111;23454200">
+	<META NAME="CHANGEDBY" CONTENT="Stefan Gebauer">
+	<META NAME="CHANGED" CONTENT="20100227;13562100">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 2cm }
+		P { margin-bottom: 0.21cm }
+		H2.western { font-family: "Albany", sans-serif; font-size: 14pt; font-style: italic }
+		H2.cjk { font-family: "HG Mincho Light J"; font-size: 14pt; font-style: italic }
+		H2.ctl { font-family: "Arial Unicode MS"; font-size: 14pt; font-style: italic }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="de-DE" DIR="LTR">
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Preprocessor
+	Definitions</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Add
+	&quot;XML_LIBRARY&quot; to compile with Xerces (else many linker
+	error:<BR>MSVC: &quot;LNK2001&quot; and &quot;LNK2019&quot;<BR>g++:
+	undefined reference to ...).</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">with
+	Xerces 3.0: &quot;XERCES_STATIC_LIBRARY&quot; as preprocessor macro</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">add
+	xerces include directory to C++</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">for
+	linker: add &quot;xerces\lib&quot; dir</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">And:
+	Add &quot;Advapi32.lib&quot; as additional dependancy for the
+	linker.</FONT></FONT></P>
+</UL>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H1>Build Apache xerces 3</H1>
+<H2 CLASS="western">with MinGW:</H2>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">run
+	&bdquo;.configure&ldquo; in shell</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">couldn't
+	run it with MSYS' sh (C:\msys\1.0\bin\sh.exe)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">run
+	it with cygwin's sh.exe:</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">use
+	g++ version 3: &bdquo;CXX=g++-3&ldquo; , version 4 does not support
+	the &bdquo;mno-cygwin flag&ldquo;</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm">&bdquo;<FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">mno-cygwin&ldquo;
+	in order to resolve symbol names (name mangling) later when linking
+	with MinGW into the x86I&amp;Cexe</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">configure
+	CXX=g++-3 CXXFLAGS=mno-cygwin LDFLAGS=-no-undefined</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">make
+	with &bdquo;mingw32-make&ldquo;, MSYS' make did not succeed-</FONT></FONT></P>
+</UL>
+</BODY>
+</HTML>
