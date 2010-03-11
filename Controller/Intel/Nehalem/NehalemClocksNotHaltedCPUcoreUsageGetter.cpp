@@ -1,3 +1,7 @@
+//#ifdef _MSC_VER //MicroSoft-compiler
+  #include "StdAfx.h"
+//#endif
+
 //Maybe see Intel_Volume 3A System Programming Guide--253668.pdf,
 //chapter 14.2 P-STATE HARDWARE COORDINATION,
 // IA32_MPERF MSR and IA32_APERF MSR
@@ -17,18 +21,19 @@
 Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //BYTE byCoreID ,
   DWORD dwAffinityMask
-  //GriffinController * p_griffincontroller 
-  , NehalemController * p_pentium_m_controller
+  , NehalemController * p_nehalemcontroller
   )
   : 
-  //mp_griffincontroller (p_griffincontroller)
-  mp_nehalem_controller (p_pentium_m_controller)
+  //mp_nehalem_controller (p_nehalemcontroller)
   //, m_bAtLeastSecondTime (false)
   //,
-  , m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+  //, 
+    m_dwAtMask2ndTimeCPUcoreMask ( 0 )
   , m_dReferenceClockInMhz( 133000000.0 )
+  //, mp_model( p_nehalemcontroller->mp_model )
 {
   LOGN("CPU core usage ctor --address: " << this)
+  mp_cpucontroller = p_nehalemcontroller ;
   BYTE byNumCPUs = //p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
     //Nehalems have 2 or 4 physical CPU core.
     //4 ;
@@ -55,8 +60,8 @@ Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   DWORD dwEBX ;
   //DWORD dwECX ;
   //DWORD dwEDX ;
-  mp_nehalem_controller->CpuidEx(
-    
+  //mp_nehalem_controller->CpuidEx(
+  mp_cpucontroller->CpuidEx(
     0x0A , //DWORD index,
     & dwEAX,
     & dwEBX,
@@ -102,6 +107,27 @@ Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //#endif
 }
 
+BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetCurrentPstate(
+  BYTE & r_byFreqID
+  , BYTE & r_byVoltageID
+  , BYTE byCoreID
+  )
+{
+  DWORD dwHigh, dwLow ;
+  if( mp_cpucontroller->RdmsrEx(
+      IA32_PERF_STATUS
+      , dwLow
+      , dwHigh
+      , 1 << byCoreID
+      )
+    )
+  {
+    r_byVoltageID = dwLow >> 8 ;
+    r_byFreqID = ( dwLow & 255 ) ;
+  }
+  return 1 ;
+}
+
 //The Performance event select is cleared after ACPI S3 or S4
 //so rewrite it.
 BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
@@ -132,7 +158,9 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
     //    ) ;
     //The Performance event select is cleared after ACPI S3 or S4
     //so rewrite it.
-      mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
+      //mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
+      PerformanceEventSelectRegisterWrite(
+      //((NehalemController*)mp_cpucontroller)->PerformanceEventSelectRegisterWrite(
         1 << byCoreID ,
         //Pentium M has 1 or 2 "Performance Event Select Register" from 
         //  MSR ... to MSR ...  for 
@@ -153,7 +181,8 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
         0 //counter mask
         ) ;
       //Count Halted CPU cores: the clocks were not unhalted
-      mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
+      //mp_nehalem_controller->PerformanceEventSelectRegisterWrite(
+      PerformanceEventSelectRegisterWrite(
         1 << byCoreID ,
         //Pentium M has 1 or 2 "Performance Event Select Register" from
         //  MSR ... to MSR ...  for
@@ -246,15 +275,16 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   )
 {
 	double dClocksNotHaltedDiffDivTCSdiff = -1.0 ;
-  //mp_griffincontroller->RdmsrEx(
-  mp_nehalem_controller->RdmsrEx(
+  //mp_nehalem_controller->RdmsrEx(
+  mp_cpucontroller->RdmsrEx(
     IA32_TIME_STAMP_COUNTER,
     m_dwLowmostBits,// bit  0-31 (register "EAX")
     m_dwHighmostBits, 
     //m_dwAffinityMask
     1 << byCoreID
     ) ;
-  mp_nehalem_controller->RdmsrEx(
+  //mp_nehalem_controller->RdmsrEx(
+  mp_cpucontroller->RdmsrEx(
     //IA32_PERFEVTSEL0
     //Intel vol. 3B:
     //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
@@ -285,7 +315,8 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   //  ) ;
   DWORD dwLow, dwHigh ;
 
-  mp_nehalem_controller->RdmsrEx(
+  //mp_nehalem_controller->RdmsrEx(
+  mp_cpucontroller->RdmsrEx(
     //IA32_PERFEVTSEL0
     //Intel vol. 3B:
     //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
@@ -347,7 +378,8 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
 
     BYTE byFreqID ;
     BYTE byVoltageID ;
-    mp_nehalem_controller->GetCurrentPstate(
+    //mp_nehalem_controller->GetCurrentPstate(
+    GetCurrentPstate(
       byFreqID //BYTE & r_byFreqID
       , byVoltageID //BYTE & r_byVoltageID
       , byCoreID //BYTE byCoreID
@@ -403,6 +435,66 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
 	(float) dClocksNotHaltedDiffDivTCSdiff ;
 }
 
+void Nehalem::ClocksNotHaltedCPUcoreUsageGetter::PerformanceEventSelectRegisterWrite(
+  DWORD dwAffinityBitMask ,
+  //Pentium M has 1 or 2 "Performance Event Select Register" from 
+  //  MSR ... to MSR ...  for 
+  // 1 or 2 "Performance Event Counter Registers" from 
+  //  ... to ...
+  //  that store the 48 bit counter value
+  BYTE byPerformanceEventSelectRegisterNumber ,
+  BYTE byEventSelect , //8 bit
+  BYTE byUnitMask , // 8 bit
+  bool bUserMode,
+  bool bOSmode,
+  bool bEdgeDetect,
+  bool bPINcontrol,
+  bool bEnableAPICinterrupt,
+  //Intel vol. 3B (document # 253659):
+  //"When set, performance counting is
+  //enabled in the corresponding performance-monitoring counter; when clear, the
+  //corresponding counter is disabled. The event logic unit for a UMASK must be
+  //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+  //IA32_PMCx."
+  bool bEnablePerformanceCounter,
+  bool bInvertCounterMask ,
+  BYTE byCounterMask
+  )
+{
+  //DWORD dwLow = byCounterMask ;
+  //dwLow <<= 24 ;
+  //dwLow = 
+  //dwLow <<= 24 ;
+  DWORD dwLow = 0 |
+    ( byCounterMask << 24 ) |
+    ( bInvertCounterMask << 23 ) |
+    ( bEnablePerformanceCounter << 22 ) |
+    ( bEnableAPICinterrupt << 20 ) |
+    ( bPINcontrol << 19 ) |
+    ( bEdgeDetect << 18 ) |
+    ( bOSmode << 17 ) |
+    ( bUserMode << 16 ) |
+    ( byUnitMask << 8 ) |
+    ( byEventSelect )
+    ;
+  //Intel i7 700 spec update:
+  // "AAP53. Performance Monitor Counters May Count Incorrectly"
+  //-> before selecting the event, the values 
+  //  -0x4300D2 (4391122 decimal)
+  //  -0x4300B1 (4391089 decimal)
+  //  -0x4300B5 (4391093 decimal)
+  //  must be written into the Performance Monitor Select registers
+  mp_cpucontroller->WrmsrEx(
+    // MSR index
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber ,
+    dwLow ,//eax,			// bit  0-31
+    0 , //edx,			// bit 32-63
+    // Thread Affinity Mask
+    //1	
+    dwAffinityBitMask
+    ) ;
+}
+
 BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
   float arf[] 
   )
@@ -412,8 +504,8 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
     //mp_cpucontroller->mp_model->GetNumberOfCPUCores() ;
     //Pentium Ms usually only have 1 CPU core.
     //1 ;
-    //mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
-    8 ;
+    mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
+    //8 ;
   for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
   {
     arf[ byCoreID ] = GetPercentalUsageForCore( byCoreID ) ;

@@ -48,17 +48,23 @@ public:
     virtual ~SAX2_CPUspecificHandler();
 //private:
     bool m_bInsideValidMSRelement ;
+    bool m_bInsideValidCPUIDelement ;
     UserInterface * mp_userinterface ;
     Model * mp_modeldata ;
     std::string m_strElementName ;
     std::vector<MSRdata>::reverse_iterator m_stdvec_msrdata_riter;
+    std::vector<CPUIDdata>::reverse_iterator m_stdvec_cpuiddata_riter;
     void endElement(
         const   XMLCh * const    cpc_xmlchURI ,
         const   XMLCh * const    cpc_xmlchLocalName ,
-        const   XMLCh * const    cpc_xmlchQualifiedName ,
-        const   Attributes &    cr_xercesc_attributes
+        const   XMLCh * const    cpc_xmlchQualifiedName// ,
+        //const   Attributes &    cr_xercesc_attributes
       );
     void fatalError(const SAXParseException& exception) ;
+    void HandleCPUIDelement( const Attributes & r_xercesc_attributes) ;
+    void HandleInsideCPUIDelement(const Attributes & r_xercesc_attributes) ;
+    void HandleInsideMSRelement(const Attributes & r_xercesc_attributes) ;
+    void HandleMSRelement(const Attributes & r_xercesc_attributes) ;
     void startElement(
         const   XMLCh * const    cpc_xmlchURI ,
         const   XMLCh * const    cpc_xmlchLocalName ,

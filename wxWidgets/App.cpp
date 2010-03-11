@@ -125,6 +125,49 @@ bool wxX86InfoAndControlApp::Confirm(std::ostrstream & r_ostrstream
   return bReturn ;
 }
 
+void wxX86InfoAndControlApp::CPUcontrollerChanged()
+{
+  //May be NULL.
+  if( mp_cpucontroller )
+  {
+    mp_cpucontroller->SetUserInterface(this) ;
+    //Set the CPU access BEFORE getting number of CPU cores in
+    //SetModelData(...) .
+    #ifdef _WINDOWS
+    mp_cpucontroller->SetCPUaccess(mp_winring0dynlinked) ;
+    #else
+    //mp_cpucontroller->SetCPUaccess(NULL);
+    //mp_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
+    #endif
+    
+    mp_cpucontroller->SetCPUaccess( mp_i_cpuaccess ) ;
+    mp_cpucontroller->SetModelData( //& m_modelData
+       mp_modelData ) ;
+    //Needed for drawing the voltage-frequency curves.
+    mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+    #ifdef _WINDOWS
+    mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
+    #else
+    mp_cpucontroller->SetCalculationThread(NULL) ;
+    #endif
+    
+    mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
+
+    //Gets the data from the CPU and sets the info into the model data
+    //(important step for drawing overvolt prot curve)
+    //mp_pstatectrl->GetMaximumFrequencyInMHz() ;
+    mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+  }
+  //m_modelData.SetCPUcontroller( mp_cpucontroller);
+  mp_modelData->SetCPUcontroller( mp_cpucontroller);
+  #ifdef _WINDOWS
+    m_calculationthread.SetCPUcontroller(mp_cpucontroller);
+  #endif
+  //At the 1st call of this function mp_frame is NULL.
+  if( mp_frame )
+    mp_frame->SetCPUcontroller(mp_cpucontroller) ;
+}
+
 void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 {
   //Only when true the cross is drawn.
@@ -174,8 +217,8 @@ int wxX86InfoAndControlApp::OnExit()
 
 bool wxX86InfoAndControlApp::OnInit()
 {
-  //m_cpucoreusagegetteriwbemservices.Init() ;
-  //CPUcoreUsageGetterIWbemServices cpucoreusagegetteriwbemservices ;
+  //Init to NULL for "CPUcontrollerChanged()"
+  mp_frame = NULL ;
 
 #ifdef COMPILE_WITH_SHARED_MEMORY
   mp_voidMappedViewStartingAddress = NULL ;
@@ -294,31 +337,15 @@ bool wxX86InfoAndControlApp::OnInit()
       m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
       m_maincontroller.Init( //m_modelData
         * mp_modelData, this );
+      m_maincontroller.SetAttributeData( mp_modelData ) ;
       //m_winring0dynlinked.SetUserInterface(p_frame);
       //MyServiceStart ( NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS, argv) ;
-
-      //new WinRing0dynLinked(p_frame) ;
-
-      ////The controller must be created before the main frame because 
-      ////its view depends of values retrieved from the controller
-      ////(e.g. for every core a single menu)
-      //mp_pstatectrl = new GriffinController(
-      //  //0, 
-      //  NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
-      //  //NULL,
-      //  m_arartchCmdLineArgument,
-      //  //UserInterface()
-      //  //&PumaStateCtrlDlg()
-      //  //p_frame, 
-      //  this ,
-      //  m_modelData,
-      //  //&winring0dynlinked 
-      //  mp_winring0dynlinked,
-      //  //&m_winring0dynlinked,
-      //  & m_calculationthread,
-      //  //m_dynfreqscalingaccess
-      //  m_powerprofdynlinked
-      //  ) ;
+     
+      #ifdef _WINDOWS
+      mp_dynfreqscalingaccess = new PowerProfDynLinked( m_stdtstrProgramName ) ;
+      #else
+      mp_dynfreqscalingaccess = NULL ;
+      #endif
       //mp_cpucontroller = //CPUcontrollerFactory::
       if(
         m_maincontroller.
@@ -329,68 +356,29 @@ bool wxX86InfoAndControlApp::OnInit()
           ) 
         )
       {
-			//Now we have created the CPU controller. It knows how many cores it has.
-		  //The core count is an important information e.g. for the Linux MSR device
-		  //file access.
-			mp_i_cpuaccess->InitPerCPUcoreAccess(mp_cpucontroller->GetNumberOfCPUcores() ) ;
-      mp_cpucontroller->SetCmdLineArgs(
-        NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
-        m_arartchCmdLineArgument ) ;
-      mp_cpucontroller->SetUserInterface(this) ;
-      //Set the CPU access BEFORE getting number of CPU cores in
-      //SetModelData(...) .
-      #ifdef _WINDOWS
-      mp_cpucontroller->SetCPUaccess(mp_winring0dynlinked) ;
-      #else
-      //mp_cpucontroller->SetCPUaccess(NULL);
-      //mp_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
-      #endif
-      mp_cpucontroller->SetCPUaccess( mp_i_cpuaccess ) ;
-      mp_cpucontroller->SetModelData( //& m_modelData
-         mp_modelData ) ;
-      if( mp_cpucontroller )
-        //Needed for drawing the voltage-frequency curves.
-        mp_cpucontroller->GetMaximumFrequencyInMHz() ;
-      #ifdef _WINDOWS
-      mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
-      #else
-      mp_cpucontroller->SetCalculationThread(NULL) ;
-      #endif
-      //mp_cpucontroller->SetOtherDVFSaccess(& m_powerprofdynlinked) ;
-      //DWORD dwMajor = 0, dwMinor ;
-      //GetWindowsVersion(dwMajor, dwMinor ) ;
-      //if( dwMajor >= 6 //&& dwMinor >= 1 
-      //  ) 
-      //{
-      //  mp_dynfreqscalingaccess = new PowerProfDynLinked() ;
-      //  //mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
-      //}
-      //else
-      //{
-      //  mp_dynfreqscalingaccess = new PowerProfUntilWin6DynLinked() ;
-      //}
-      #ifdef _WINDOWS
-      mp_dynfreqscalingaccess = new PowerProfDynLinked( m_stdtstrProgramName ) ;
-      mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
-      #else
-      mp_dynfreqscalingaccess = NULL ;
-      mp_cpucontroller->SetOtherDVFSaccess( NULL ) ;
-      #endif
-      //m_modelData.SetGriffinController(mp_pstatectrl) ;
-      //m_modelData.SetCPUcontroller( mp_cpucontroller);
-      mp_modelData->SetCPUcontroller( mp_cpucontroller);
+  			//Now we have created the CPU controller. It knows how many cores it has.
+  		  //The core count is an important information e.g. for the Linux MSR device
+  		  //file access.
+  			mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
+          GetNumberOfCPUcores() ) ;
+        mp_cpucontroller->SetCmdLineArgs(
+          NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
+          m_arartchCmdLineArgument ) ;
+        
+        //#ifdef _WINDOWS
+        //mp_dynfreqscalingaccess = new PowerProfDynLinked( m_stdtstrProgramName ) ;
+        //#else
+        //mp_dynfreqscalingaccess = NULL ;
+        //mp_cpucontroller->SetOtherDVFSaccess( NULL ) ;
+        //#endif
 
-      //Gets the data from the CPU and sets the info into the model data
-      //(important step for drawing overvolt prot curve)
-      //mp_pstatectrl->GetMaximumFrequencyInMHz() ;
-      mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+        CPUcontrollerChanged() ;
+      }
 
       ////The user interface must be created before the controller because
       ////it should show error messages because of e.g. missing privileges.
       //p_frame = new MyFrame( 
       mp_frame = new MainFrame(
-        //_T(//"wxPumaStateCtrlDlg"
-          //"GriffinControl GUI" )
         //_T(PROGRAM_NAME)
         //m_stdtstrProgramName
         mp_modelData->m_stdtstrProgramName +_T(" GUI")
@@ -410,89 +398,19 @@ bool wxX86InfoAndControlApp::OnInit()
       //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
       //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
       SetTopWindow(mp_frame);
-    #ifdef _WINDOWS
-      //m_calculationthread.SetPumaStateCtrl(mp_pstatectrl);
-      m_calculationthread.SetCPUcontroller(mp_cpucontroller);
-    #endif
-      //p_frame->SetPumaStateController(mp_pstatectrl);
-      //mp_frame->SetPumaStateController(mp_pstatectrl);
+    //#ifdef _WINDOWS
+    //  m_calculationthread.SetCPUcontroller(mp_cpucontroller);
+    //#endif
       mp_frame->SetCPUcontroller(mp_cpucontroller) ;
       
-      //if( mp_pstatectrl->InitWinRing0() )
-      //if( gp_pstatectrl->InitWinRing0() )
+      if( mp_cpucontroller )
       {
         //char * archCPUID ;
         std::string strCPUID ;
-        ////F3x190 = Downcore Control Register
-        //pstatectrl.SetCPUMiscControlDWORD(
-        //  //F3x190 Downcore Control Register
-        //  0x190,) ;
-        //if( //mp_pstatectrl->GetProcessorNameByCPUID(//archCPUID
-        //  mp_cpucontroller->GetProcessorNameByCPUID(
-        //    strCPUID ) )
-        //{
-        //  //std::string strCPUID(archCPUID) ;
-        //  //m_model.m_parchCPUID = parchCPUID ;
-        //  //mp_pstatectrl->m_model.m_strProcessorName = //new std::string(strCPUID) ;
-        //  m_modelData.m_strProcessorName = //new std::string(strCPUID) ;
-        //    strCPUID ;
-        //}
         
         DEBUG("initialization of dialog--after get processor name\n");
 
-        //from PDF: "Basic Performance Measurements for AMD Athlon� 64,
-        //  AMD Opteron� and AMD Phenom� Processors":
-        //chapter "4.2.1. Instructions per cycle (IPC)." 
-        //  "Computation of IPC requires collection of only two basic events:
-        //    0x76 N/A CPU_clocks CPU Clocks Not Halted
-        //    0xC0 N/A Ret_instructions Retired Instructions
-        //"
-        //mp_pstatectrl->AccuratelyStartPerformanceCounting( 
-        //  1 , //aff. mask
-        //  0, 
-        //  PERFORMANCE_EVENT_SELECT_RETIRED_INSTRUCTIONS 
-        //  , false //InvertCounterMask
-        //  ) ;
         //InitCpuUsage() ;
-  //    mp_pstatectrl->PerformanceEventSelectRegisterWrite(
-  //      0 ,
-  //      //PERFORMANCE_EVENT_SELECT_RETIRED_INSTRUCTIONS ,
-  //      PERFORMANCE_EVENT_SELECT_RETIRED_MICRO_OPS ,
-  //      //0x0C1 ,
-  ////      0x076 ,
-  //      //byCounterMask: 00h: The corresponding PERF_CTR[3:0] register is incremented by the number of events
-  //      //occurring in a clock cycle. Maximum number of events in one cycle is 3.
-  //      0,
-  //      //bInvertCounterMask
-  //      0,
-  //      //bEnablePerformanceCounter
-  //      true,
-  //      //bEnableAPICinterrupt
-  //      0,
-  //      //bEdgeDetect
-  //      0,
-  //      //bOSmode
-  //      0,
-  //      //bUserMode
-  //      0,
-  //     //byEventQualification
-  //      0
-  //      ) ;
-        //mp_pstatectrl->AccuratelyStartPerformanceCounting( 
-        //  1 , //aff. mask
-        //  1, 
-        //  //CPU_CLOCKS_NOT_HALTED 
-        //  //PERFORMANCE_EVENT_SELECT_DISPATCHED_FPU_OPERATIONS
-        //  PERFORMANCE_EVENT_SELECT_CYCLES_IN_WHICH_THE_FPU_IS_EMPTY
-        //  //"[...] Invert this (MSRC001_00[03:00][Invert]=1) to count cycles" 
-        //  //in which at least one FPU operation is present in the FPU."
-        //  , true //InvertCounterMask
-        //  ) ;
-        //mp_pstatectrl->AccuratelyStartPerformanceCounting( 
-        //  2, 
-        //  CPU_CLOCKS_NOT_HALTED
-        //  , false //InvertCounterMask
-        //  ) ;
         //if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck && 
         //  ! m_modelData.m_bSkipCPUtypeCheck && 
         //  ! mp_pstatectrl->IsSupportedCPUModel() )
@@ -535,16 +453,6 @@ bool wxX86InfoAndControlApp::OnInit()
             //be affected.
 
   #ifdef COMPILE_WITH_CPU_SCALING
-            //When (the code in) Init() was executed earlier (inside the 
-            //of contructor of "CPUcoreUsageGetterIWbemServices" when it was a member 
-            //of this class) there came an error message: "failed to initialize COM"
-            //m_cpucoreusagegetteriwbemservices.Init() ;
-            //So this class can show up messages to the user.
-  #ifdef COMPILE_WITH_IWBEMSERVICES
-            m_cpucoreusagegetteriwbemservices.SetUserInterface(mp_userinterface);
-  #endif //#ifndef COMPILE_WITH_IWBEMSERVICES
-
-            //if( ! m_cpucoreusagegetteriwbemservices.Init() )
 
             //http://docs.wxwidgets.org/stable/wx_wxtimer.html#wxtimer:
             //"Note: A timer can only be used from the main thread."
@@ -559,13 +467,7 @@ bool wxX86InfoAndControlApp::OnInit()
 
             //TODO remove memory leaks by dyn. alloc.
             //mp_wxDynLinkedCPUcoreUsageGetter = new //wxDynLinkedCPUcoreUsageGetter(
-            //mp_icpucoreusagegetter = new
-            //  //std::string("CPUcoreUsageGetterNTQSI_Wintop.Vxd.dll")
-            //  //  , std::string("GetCPUusageOfCore")
-            //  //  , m_modelData.m_cpucoredata
-            //  //  ) ;
-            //  CPUcoreUsageGetterNTQSI_WintopVxd(
-            //    m_modelData.m_cpucoredata) ;
+
             //mp_dynfreqscalingthread = new DynFreqScalingThread(
             //  //& m_cpucoreusagegetteriwbemservices
             //  //mp_wxDynLinkedCPUcoreUsageGetter
@@ -617,26 +519,9 @@ bool wxX86InfoAndControlApp::OnInit()
   //          mp_pstatectrl->DisableFrequencyScalingByOS();
   #endif //#ifdef COMPILE_WITH_CPU_SCALING
         }
-  //#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-  //      mp_pstatectrl->ApplyAllPStates() ;
-  //#endif //#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-      }
-  //    else
-  //    {
-  //      mp_userinterface->Confirm("WinRing0 not correctly initialized->exiting");
-  //      //p_frame->Close();
-  //      mp_frame->Close();
-  //    }
-
-      //const wxCmdLineParser& parser
-      //  size_t count = parser.GetParamCount();
-      //  for ( size_t param = 0; param < count; param++ )
-      //  {
-      //      s << parser.GetParam(param) << ' ';
-      //  }
-      }
-      else //CreateCPUcontrollerAndUsageGetter(...) failed
-        mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
+      } //if( mp_cpucontroller )
+      //else //CreateCPUcontrollerAndUsageGetter(...) failed
+      //  mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
       }
       catch(//ReadMSRexception 
           CPUaccessException e)
@@ -668,6 +553,53 @@ void wxX86InfoAndControlApp::outputAllPstates(unsigned char byCurrentP_state, in
 void wxX86InfoAndControlApp::RedrawEverything()
 {
   mp_frame->RedrawEverything() ;
+}
+
+void wxX86InfoAndControlApp::SetCPUcontroller( 
+  I_CPUcontroller * p_cpucontrollerNew )
+{
+  if( p_cpucontrollerNew )
+  {
+    //Avoid porgram crash because of the mainframe tries to get the current
+    //performance state.
+    mp_frame->DenyCPUcontrollerAccess() ;
+    if( mp_cpucontroller )
+      //Release memory.
+      delete mp_cpucontroller ;
+    mp_cpucontroller = p_cpucontrollerNew ;
+    //May be NULL at startup.
+    if( mp_cpucoreusagegetter )
+      mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
+    //mp_cpucontroller->SetModelData( //& m_modelData
+    //  mp_modelData ) ;
+    CPUcontrollerChanged() ;
+    mp_frame->AllowCPUcontrollerAccess() ;
+    //Force an update of the canvas.
+    mp_frame->RedrawEverything() ;
+  }
+}
+
+void wxX86InfoAndControlApp::DeleteCPUcontroller( )
+{
+  //if( p_cpucontroller )
+  //{
+    //Avoid porgram crash because of the mainframe tries to get the current
+    //performance state.
+    mp_frame->DenyCPUcontrollerAccess() ;
+    if( mp_cpucontroller )
+      //Release memory.
+      delete mp_cpucontroller ;
+    mp_cpucontroller = NULL ;
+    //May be NULL at startup.
+    if( mp_cpucoreusagegetter )
+      mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
+    //mp_cpucontroller->SetModelData( //& m_modelData
+    //  mp_modelData ) ;
+    CPUcontrollerChanged() ;
+    mp_frame->AllowCPUcontrollerAccess() ;
+    //Force an update of the canvas.
+    mp_frame->RedrawEverything() ;
+  //}
 }
 
 //int main(int argc, char **argv)

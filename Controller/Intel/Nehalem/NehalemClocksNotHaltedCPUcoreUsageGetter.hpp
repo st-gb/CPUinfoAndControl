@@ -54,9 +54,8 @@ namespace Nehalem
     DWORD m_dwAtMask2ndTimeCPUcoreMask ;
     DWORD m_dwLowmostBits , m_dwHighmostBits ;
     DWORD m_dwAffinityMask ;
-    Model * mp_model ;
-    //GriffinController * mp_griffincontroller ;
-    NehalemController * mp_nehalem_controller ;
+    //Model * mp_model ;
+    //NehalemController * mp_nehalem_controller ;
     ULONGLONG m_ullPerformanceEventCounter3Diff ;
     //ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
     ULONGLONG m_ull ;
@@ -73,20 +72,47 @@ namespace Nehalem
     ClocksNotHaltedCPUcoreUsageGetter(
       //BYTE byCoreID ,
       DWORD dwAffinityMask
-      //, GriffinController * p_griffincontroller 
-      , NehalemController * p_pentium_m_controller
+      , NehalemController * p_nehalemcontroller
       ) ;
     ~ClocksNotHaltedCPUcoreUsageGetter()
     {
       delete [] m_ar_cnh_cpucore_ugpca ;
     }
+    BYTE GetCurrentPstate(
+      BYTE & r_byFreqID
+      , BYTE & r_byVoltageID
+      , BYTE byCoreID
+      ) ;
     BYTE GetPercentalUsageForAllCores(float arf[] ) ; //{ return 0 ; } ;
+    float GetPercentalUsageForCore(BYTE byCoreID) ;
     BYTE Init() ;
     ULONGLONG PerformanceCounterValueDiff(
       ULONGLONG ullPerformanceCounterCurrent ,
       ULONGLONG ullPerformanceCounterPrevious ) ;
-
-    float GetPercentalUsageForCore(BYTE byCoreID) ;
-
+    void PerformanceEventSelectRegisterWrite(
+      DWORD dwAffinityBitMask ,
+      //Pentium M has 1 or 2 "Performance Event Select Register" from 
+      //  MSR ... to MSR ...  for 
+      // 1 or 2 "Performance Event Counter Registers" from 
+      //  ... to ...
+      //  that store the 48 bit counter value
+      BYTE byPerformanceEventSelectRegisterNumber ,
+      BYTE byEventSelect , //8 bit
+      BYTE byUnitMask , // 8 bit
+      bool bUserMode,
+      bool bOSmode,
+      bool bEdgeDetect,
+      bool bPINcontrol,
+      bool bEnableAPICinterrupt,
+      //Intel vol. 3B (document # 253659):
+      //"When set, performance counting is
+      //enabled in the corresponding performance-monitoring counter; when clear, the
+      //corresponding counter is disabled. The event logic unit for a UMASK must be
+      //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+      //IA32_PMCx."
+      bool bEnablePerformanceCounter,
+      bool bInvertCounterMask ,
+      BYTE byCounterMask
+      ) ;
   } ; //end class
 }; //end namespace PentiumM

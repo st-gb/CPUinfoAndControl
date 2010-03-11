@@ -135,15 +135,15 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     r_p_icpucoreusagegetter = new PentiumM::ClocksNotHaltedCPUcoreUsageGetter(
       0, (PentiumM_Controller *) r_p_cpucontroller ) ;
   }
-  if( p_cpucoredata->m_strVendorID == "GenuineIntel"
-    && p_cpucoredata->m_wFamily == 6
-    && p_cpucoredata->m_byModel == 30
-    )
-  {
-    r_p_cpucontroller = new NehalemController() ;
-    r_p_icpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
-      0, (NehalemController *) r_p_cpucontroller ) ;
-  }
+  //if( p_cpucoredata->m_strVendorID == "GenuineIntel"
+  //  && p_cpucoredata->m_wFamily == 6
+  //  && p_cpucoredata->m_byModel == 30
+  //  )
+  //{
+  //  r_p_cpucontroller = new NehalemController() ;
+  //  r_p_icpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
+  //    0, (NehalemController *) r_p_cpucontroller ) ;
+  //}
   if( r_p_cpucontroller )
   {
     //For Pentium Ms e.g. it enables SpeedStep.
@@ -153,10 +153,14 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
       r_p_cpucontroller->mp_icpucoreusagegetter = r_p_icpucoreusagegetter ;
       //Start performance counting etc.
       r_p_icpucoreusagegetter->Init() ;
+      r_p_icpucoreusagegetter->SetAttributeData( mp_model ) ;
     }
   }
   if( r_p_cpucontroller && r_p_icpucoreusagegetter )
+  {
+
     return 1 ;
+  }
   else
     return 0 ;
   //  //Needed for drawing the voltage-frequency curves.

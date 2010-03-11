@@ -18,6 +18,7 @@
 
 //pre-declarations instead of include's(=faster)
 //class RegisterData ;
+class CPUIDdata ;
 class MSRdata ;
 class Model ;
 class wxFrame ;
@@ -26,16 +27,16 @@ class wxCommandEvent ;
 class wxCheckBox ;
 class wxStaticText ;
 class wxTimer ;
-//class GriffinController ;
-class I_CPUcontroller ;
+//class I_CPUcontroller ;
+class I_CPUaccess ;
 class wxX86InfoAndControlApp ;
 
 class wxDynamicDialog
   : public wxDialog 
 {
   unsigned short m_wControlID ;
-  //GriffinController * mp_pumastatecontrol ;
-  I_CPUcontroller * mp_cpucontroller ;
+  //I_CPUcontroller * mp_cpucontroller ;
+  I_CPUaccess * mp_cpuaccess ;
   //RegisterData * mp_regdata ;
   //MSRdata * mp_msr_data ;
   Model * mp_modeldata ;
@@ -51,18 +52,24 @@ class wxDynamicDialog
   wxTimer m_wxtimer ;
   wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
   void DisplayRegisterData() ;
+  void DisplayRegisterData(CPUIDdata & r_cpuiddata);
   void DisplayRegisterData(MSRdata & r_msrdata);
 public:
   wxDynamicDialog(//RegisterData 
     wxWindow * parent ,
     //MSRdata & r_regdata,
-    Model & modeldata ,
-    //GriffinController * mp_pumastatecontrol 
-    I_CPUcontroller * p_cpucontroller
-    , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
+    //Model & modeldata ,
+    //I_CPUcontroller * p_cpucontroller
+    //The CPU access is independant from the CPU controller and usually does 
+    //not change during runtime in contract to the CPU controller that may be
+    //exchanged during runtime.
+    //I_CPUaccess * p_cpuaccess
+    //, 
+    wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
     ) ;
 
   void BuildGUI(MSRdata & r_msrdata ) ;
+  void BuildGUI(CPUIDdata & r_cpuiddata ) ;
   void BuildGUI() ;
   void OnRuntimeCreatedControls(wxCommandEvent & wxevent) ;
   void OnTimerEvent(wxTimerEvent &event);

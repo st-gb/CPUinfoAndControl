@@ -64,6 +64,40 @@ public:
   }
 };
 
+class CPUIDdata
+{
+public:
+  BYTE m_byCoreID ;
+  DWORD m_dwIndex ;
+  std::string m_stdstrRegisterName ;
+  std::string m_stdstrGenPurposeRegName ;
+  std::vector<RegisterData> m_stdvec_registerdata ;
+  CPUIDdata(//DWORD
+    unsigned long dwIndex 
+    )
+    : m_byCoreID(0)
+  {
+      m_dwIndex = dwIndex ;
+  }
+  CPUIDdata(//DWORD
+    unsigned long dwIndex
+    //Name for the corresponding CPUID code. 
+    //E.g. CPUID code 0 is the code for getting the CPU manufacturer.
+    // so registername could be "manufacturer".
+    , std::string & stdstrRegisterName 
+    ////Name for the general purpose register whose contents are wanted.
+    ////The general purpose register can be either EAX, EBX, ECX or EDX.
+    ////This is the general register the bitrange applies to.
+    //, std::string & stdstrGenPurposeRegName 
+    )
+    : m_byCoreID(0)
+  {
+    m_dwIndex = dwIndex ;
+    m_stdstrRegisterName = stdstrRegisterName ;
+    //m_stdstrGenPurposeRegName = stdstrGenPurposeRegName ;
+  }
+} ;
+
 class MSRdata
 {
   public:

@@ -75,6 +75,8 @@ public:
   ICPUcoreUsageGetter * mp_icpucoreusagegetter ;
 public:
   I_CPUcontroller() ;
+  //in order for ~wxDynLibController to be called
+  virtual ~I_CPUcontroller() { }
   UserInterface * GetUserInterface() { return mp_userinterface ; }
 
   //This CPU instruction (in contrast to wrmsr) is not dangerous.
@@ -134,9 +136,11 @@ public:
   //  , std::map<VoltageAndFreq> & r_stdsetvoltageandfreq
   //  ) ;
   virtual WORD GetNumberOfPstates() ;//{ return 0 ; }
-  //As far as I know there is no standard way to determine the number of CPU
-  //cores. So AMD Griffins store the value at CPUID function 8...8 but not
-  //Intel. As the number is spectic the CPU models the controller should know
+  //As far as I know there is no default way to determine the number of CPU
+  //cores. 
+  //So AMD Griffins store the value at CPUID function 8...8 but Intel
+  //does not. 
+  //As the number is specific the CPU models the controller should now
   //return the value. E.g for Intel Pentium Ms it is always? "1".
   virtual WORD GetNumberOfCPUcores() ;
   //Must be declared pure virtual ("virtual ... = 0 ;") else 

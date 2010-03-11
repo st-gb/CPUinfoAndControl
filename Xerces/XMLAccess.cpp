@@ -429,6 +429,7 @@ extern Logger g_logger ;
     //DOMImplementation * p_dom_implementation ;
 
     XMLCh * p_xmlchXpath = XMLString::transcode(archXPath);
+    XMLCh * p_xmlchAttributeName ;
     try
     {
       DOMXPathNSResolver * p_dom_xpath_ns_resolver = mp_dom_document->createNSResolver(
@@ -445,7 +446,7 @@ extern Logger g_logger ;
       XMLSize_t nNumXMLelements = mp_domxpathresult->getSnapshotLength();
       DOMNamedNodeMap * p_dom_namednodemap ;
       DOMNode * p_domnodeAttribute ;
-      XMLCh * p_xmlchAttributeName = XMLString::transcode("frequency_in_MHz");
+      p_xmlchAttributeName = XMLString::transcode("frequency_in_MHz");
       const XMLCh * cp_xmlchAttrValue ;
       DWORD dwValue ;
       XercesHelper xerceshelper ;
@@ -481,7 +482,7 @@ extern Logger g_logger ;
           }
         //}
       }
-      XMLString::release( & p_xmlchAttributeName );
+      //XMLString::release( & p_xmlchAttributeName );
     }
     catch(const DOMXPathException& e)
     {
@@ -497,7 +498,8 @@ extern Logger g_logger ;
         //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
         retval = 4;
     }
-    XMLString::release(&p_xmlchXpath);
+   XMLString::release( & p_xmlchAttributeName );
+   XMLString::release(&p_xmlchXpath);
     mp_domxpathresult->release();
   }
 

@@ -36,7 +36,7 @@ public:
     return std::tstring(_T("") ) ;
   }
   //"Other DVFS" because the implementaion may disable e.g. the OS's
-  //DVFS or GNOME's DVFS, RMClock etc.
+  //DVFS or GNOME's DVFS (cpufreqd) , RMClock etc.
   virtual bool OtherDVFSisEnabled() 
   { 
     return false ;

@@ -1,11 +1,18 @@
 #pragma once //incl. guard
 #include "../global.h"
+//#include "I_CPUcontroller.hpp"
+
+class I_CPUcontroller ;
+class Model ;
 
 //This interface exists because there are many possib. to
 //get the CPU core usage.
 class ICPUcoreUsageGetter
 {
 public:
+  //Must be a pointer because this is the base class,
+  I_CPUcontroller * mp_cpucontroller ;
+  Model * mp_model ;
   //virtual float GetUsageForCore(BYTE byCore) = 0 ;
   //virtual //float 
   //  BYTE GetPercentalUsageForBothCores(float r_arf[] ) = 0 ;
@@ -13,4 +20,12 @@ public:
     BYTE GetPercentalUsageForAllCores(float arf[] ) = 0 ;
   //virtual float Init() = 0 ;//{return 0.0f; }
   virtual BYTE Init() = 0 ;//{return 0.0f; }
+  void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
+  {
+    mp_cpucontroller = p_cpucontroller ;
+  }
+  void SetAttributeData( Model * p_model )
+  {
+    mp_model = p_model ;
+  }
 };

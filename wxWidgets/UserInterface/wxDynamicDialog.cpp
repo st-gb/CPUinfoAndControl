@@ -47,10 +47,14 @@ END_EVENT_TABLE()
 wxDynamicDialog::wxDynamicDialog(//RegisterData 
   wxWindow * parent ,
   //MSRdata & r_regdata ,
-  Model & r_modeldata ,
-  //GriffinController * p_pumastatecontrol
-  I_CPUcontroller * p_cpucontroller
-  , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
+  //Model & r_modeldata ,
+  //I_CPUcontroller * p_cpucontroller
+  //The CPU access is independant from the CPU controller and usually does 
+  //not change during runtime in contract to the CPU controller that may be
+  //exchanged during runtime.
+  //I_CPUaccess * p_cpuaccess
+  //, 
+  wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
   : wxDialog( 
       parent, //wxID_ANY, //
@@ -63,8 +67,10 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
       , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
       )
   //, mp_pumastatecontrol ( p_pumastatecontrol )
-  , mp_cpucontroller ( p_cpucontroller )
-  , mp_modeldata ( & r_modeldata)
+  //, mp_cpucontroller ( p_cpucontroller )
+  , mp_cpuaccess ( p_wxx86infoandcontrolapp->GetCPUaccess() )
+  , mp_modeldata ( //& r_modeldata
+    p_wxx86infoandcontrolapp->GetModel() )
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
 {
   m_wControlID = 1 ;
@@ -92,6 +98,8 @@ void wxDynamicDialog::BuildGUI()
 {
   std::vector<MSRdata>::iterator itermsrdata = 
     mp_modeldata->m_stdvector_msrdata.begin() ;
+  std::vector<CPUIDdata>::iterator itercpuiddata =
+    mp_modeldata->m_stdvector_cpuiddata.begin() ;
   //DWORD dwEAX,dwEDX, dwAffMask = 1 ;
   //ULONGLONG ullMSR ;
   mp_sizerTop = new wxBoxSizer(//wxVERTICAL
@@ -171,6 +179,14 @@ void wxDynamicDialog::BuildGUI()
 
   mp_sizerTop->Add( mp_sizerLeftColumn ); 
   mp_sizerTop->Add( mp_sizerRightColumn ); 
+  while( itercpuiddata != mp_modeldata->m_stdvector_cpuiddata.end() )
+  {
+    //ullMSR = dwEDX  ;
+    //ullMSR <<= 32 ;
+    //ullMSR |= dwEAX ;
+    BuildGUI( *itercpuiddata ) ,
+    ++ itercpuiddata ;
+  }
   while( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
   {
     //ullMSR = dwEDX  ;
@@ -320,16 +336,208 @@ void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
    //p_wxdlg->Add(new wxStaticText(p_wxdlg, wxID_ANY, _T("sdsd") ) );
 }
 
+void wxDynamicDialog::BuildGUI(CPUIDdata & r_cpuiddata )
+{
+  //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
+  wxString wxstrDataName ;
+  std::vector<RegisterData>::iterator iter_registerdata = 
+    //mp_msr_data->m_stdvec_registerdata.begin() ;
+    r_cpuiddata.m_stdvec_registerdata.begin() ;
+
+  while( iter_registerdata != //mp_msr_data->
+    r_cpuiddata.m_stdvec_registerdata.end() )
+  {
+    //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
+     wxStaticText * p_wxstatictext = new wxStaticText(
+       this
+       , wxID_ANY
+       //(*iter).m_str  
+       , wxString(wxT("") )
+       ) ;
+    //p_sizerHorizontal->Add( new wxStaticText(
+    wxstrDataName = getwxString( (*iter_registerdata).m_strDataName ) ;
+    mp_sizerLeftColumn->Add( new wxStaticText(
+      this, 
+      wxID_ANY, 
+      wxstrDataName
+//#ifdef _DEBUG
+//      + wxString::Format("%x",p_wxstatictext)
+//#endif //#ifdef _DEBUG
+      + wxString(wxT(": ") )
+      ) 
+      //0=the control should not take more space if the sizer is enlarged
+      , 0 
+      //, wxFIXED_MINSIZE, 
+      , wxLEFT | wxRIGHT | 
+        //wxALIGN_CENTER_VERTICAL
+        //The label and the adjustable value should be at the same vertical
+        //position, so place at the top.
+        wxALIGN_TOP
+        | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
+      //Determines the border width, if the flag parameter is set to include 
+      //any border flag.
+      , 2 
+      );       
+     //m_stdmap_p_wxstatictext
+     m_stdvector_p_wxstatictext.push_back(p_wxstatictext) ;
+    //p_sizerHorizontal->Add( 
+    mp_sizerRightColumn->Add( 
+      p_wxstatictext
+      , 0 
+      //, wxFIXED_MINSIZE, 
+      , wxLEFT | wxRIGHT | 
+        //wxALIGN_CENTER_VERTICAL
+        //The label and the adjustable value should be at the same vertical
+        //position, so place at the top.
+        wxALIGN_TOP
+      //Determines the border width, if the flag  parameter is set to include 
+      //any border flag.
+      , 2 
+      );
+     ++ iter_registerdata ;
+  }
+}
+
 void wxDynamicDialog::DisplayRegisterData()
 {
   m_stdvector_p_wxstatictextiter = m_stdvector_p_wxstatictext.begin() ;
   std::vector<MSRdata>::iterator itermsrdata = 
     mp_modeldata->m_stdvector_msrdata.begin() ;
+  std::vector<CPUIDdata>::iterator iter_cpuiddata = 
+    mp_modeldata->m_stdvector_cpuiddata.begin() ;
+  while( iter_cpuiddata != mp_modeldata->m_stdvector_cpuiddata.end() )
+  {
+    DisplayRegisterData(*iter_cpuiddata) ;
+
+    ++ iter_cpuiddata ;
+  }
   while( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
   {
     DisplayRegisterData(*itermsrdata) ;
 
     ++ itermsrdata ;
+  }
+}
+
+void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
+{
+  std::vector<RegisterData>::iterator iter_registerdata = 
+    r_cpuiddata.m_stdvec_registerdata.begin() ;
+  std::vector<wxStaticText *>::iterator iterp_wxstatictext = 
+    m_stdvector_p_wxstatictext.begin() ;
+
+  DWORD dwEAX = 0, dwEDX = 0, dwAffMask = //TODO change to be compatible with more 
+    //than 1 CPU core
+    1 ;
+  DWORD dwEBX = 0, dwECX = 0 ;
+  ULONGLONG ullMSR ;
+  DWORD dwValue ; 
+  //ULONGLONG ullDiff ;
+  try
+  {
+    //mp_cpucontroller->RdmsrEx(
+    mp_cpuaccess->CpuidEx(
+      r_cpuiddata.m_dwIndex,
+      & dwEAX,
+      & dwEBX,
+      & dwECX,
+      & dwEDX, 
+      //dwAffMask
+			1 << r_cpuiddata.m_byCoreID
+      );
+    ullMSR = dwEDX  ;
+    ullMSR <<= 32 ;
+    ullMSR |= dwEAX ;
+    //This vector data is needed to get the replacement value for a table:
+    //e.g. a value depends on more than 1 other value:
+    //MHz | FID | DID
+    //2200|  14 | 0
+    //1100|  14 | 1
+    //so both FID and DID are needed in order to get the value for "MHz"
+    std::vector<std::string> stdvector_stdstringAttributeValue ;
+    wxString wxstrULL ;
+    //In this loop: get every single data at first.
+    while( 
+      iter_registerdata != r_cpuiddata.m_stdvec_registerdata.end() && 
+      iterp_wxstatictext != m_stdvector_p_wxstatictext.end() )
+    {
+      if( (*iter_registerdata).m_stdvec_bitrange.size() > 0 )
+      {
+        BitRange & br = (*iter_registerdata).m_stdvec_bitrange.at(0) ;
+        if( br.m_byStartBit < 32 )
+        {
+          dwValue = //make bits from highmost zero
+            ( dwEAX << ( 32 - br.m_byStartBit - br.m_byBitLength ) ) 
+            //Bring value to least significant bit
+            >> ( 32 - br.m_byBitLength ) ;
+        }
+        else if( br.m_byStartBit < 64 )
+        {
+          dwValue = //make bits from highmost zero
+            ( dwEBX << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) ;
+            //Bring value to least significant bit
+          dwValue >>= (
+            //Number of bits for DWORD.
+            32 
+            - br.m_byBitLength ) ;          
+        }
+        else if( br.m_byStartBit < 96 )
+        {
+          dwValue = //make bits from highmost zero
+            ( dwECX << ( 96 - br.m_byStartBit - br.m_byBitLength ) ) 
+            //Bring value to least significant bit
+            >> ( 
+            //Number of bits for DWORD.
+            32 
+            - br.m_byBitLength ) ;          
+        }
+        else if( br.m_byStartBit < 128 )
+        {
+          dwValue = //make bits from highmost zero
+            ( dwEDX << ( 128 - br.m_byStartBit - br.m_byBitLength ) ) 
+            //Bring value to least significant bit
+            >> ( 
+            //Number of bits for DWORD.
+            32 
+            - br.m_byBitLength ) ;          
+        }
+
+        //if( iter_registerdata->m_bCalculateDiff )
+        //{
+        //  dwValue  = dwValue - iter_registerdata->m_ullPreviousValue ;
+        //}
+        iter_registerdata->m_ullPreviousValue = ullMSR ;
+        //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
+        #ifdef __CYGWIN__
+        wxstrULL = wxString::Format( wxString( wxT("%u") ), dwValue) ;
+        #else
+        wxstrULL = wxString::Format( wxString( wxT("%u") ), dwValue) ;
+        #endif
+        //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", ullValue )
+        //  wxstrULL );
+        stdvector_stdstringAttributeValue.push_back( 
+          //(std::string) //wxString::Format("%64u", ullValue) 
+          std::string( //wxstrULL.c_str()
+            getstdstring(wxstrULL) )
+          );
+        if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end() 
+          )
+        {
+  #ifdef _DEBUG
+          //wxstrULL = wxString::Format("%x", *m_stdvector_p_wxstatictextiter );
+          //(*m_stdvector_p_wxstatictextiter)->SetLabel() ;
+  #endif
+          (*m_stdvector_p_wxstatictextiter)->SetLabel(wxstrULL) ;
+          ++ m_stdvector_p_wxstatictextiter ;
+        }
+      }
+      ++ iter_registerdata ;
+      ++ iterp_wxstatictext ;
+    }
+  }
+  catch(ReadMSRexception ex)
+  {
+    int i = 0 ;
   }
 }
 
@@ -347,11 +555,11 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
   //ULONGLONG ullDiff ;
   try
   {
-    //mp_pumastatecontrol->RdmsrEx(//itermsrdata->
-    mp_cpucontroller->RdmsrEx(
+    //mp_cpucontroller->RdmsrEx(
+    mp_cpuaccess->RdmsrEx(
       r_msrdata.m_dwIndex,
-      dwEAX,
-      dwEDX, 
+      & dwEAX,
+      & dwEDX, 
       //dwAffMask
 			1 << r_msrdata.m_byCoreID
       );
@@ -435,6 +643,7 @@ void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
     //m_stdvector_p_wxstatictextiter.empty()  ;
     mp_modeldata->m_stdvector_msrdata.//empty() ;
       clear() ;
+    mp_modeldata->m_stdvector_cpuiddata.clear() ;
     //::wxGetApp().m_maincontroller.Init(*mp_modeldata, & ::wxGetApp()) ;
     std::string strCPUtypeRelativeDirPath ;
     if( mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
