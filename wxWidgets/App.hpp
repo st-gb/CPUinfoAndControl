@@ -8,12 +8,15 @@
 
 //#include "../Windows/DynFreqScalingAccess.hpp"
 //#include <Windows/PowerProfDynLinked.hpp>
+#include <Controller/ICPUcoreUsageGetter.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
+#include <Controller/MainController.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
 #include <UserInterface.hpp>
 #include <ModelData/ModelData.hpp>
-#include <Controller/MainController.hpp>
+
+//#include <wxWidgets/UserInterface/Mainframe.hpp>
 
 #pragma  message( "including tchar.h" )
 //Add "Controller/MSVC_adaption/" to the include dir under non-MSVC
@@ -59,7 +62,7 @@ private:
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
-  //This member needs to nbe created on runtime because it may throw
+  //This member needs to be created on runtime because it may throw
   //an exception (that should be catched, else runtime error) when it is created.
   I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
@@ -141,12 +144,23 @@ public:
   }
   bool Confirm(const std::string & str) ;
   bool Confirm(std::ostrstream & r_ostrstream ) ;
+  void CPUcontrollerChanged() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
+  void DeleteCPUcontroller() ;
   I_CPUcontroller * GetCPUcontroller()
   {
     return mp_cpucontroller ;
   }
+  I_CPUaccess * GetCPUaccess()
+  {
+    return mp_i_cpuaccess ;
+  }
+  Model * GetModel()
+  {
+    return mp_modelData ;
+  }
   void RedrawEverything() ;
+  void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
 };
 
 DECLARE_APP(wxX86InfoAndControlApp)

@@ -50,12 +50,12 @@ public:
     UserInterface * m_p_userinterface ;
     Model * m_p_model ;
     std::string m_strElementName ;
-    void endElement(
-        const   XMLCh * const    cpc_xmlchURI ,
-        const   XMLCh * const    cpc_xmlchLocalName ,
-        const   XMLCh * const    cpc_xmlchQualifiedName ,
-        const   Attributes &    cr_xercesc_attributes
-      );
+    //void endElement(
+    //    const   XMLCh * const    cpc_xmlchURI ,
+    //    const   XMLCh * const    cpc_xmlchLocalName ,
+    //    const   XMLCh * const    cpc_xmlchQualifiedName //,
+    //    //const   Attributes &    cr_xercesc_attributes
+    //  );
     void handleFreqAndMaxVoltageElement(
       const   //xercesc_2_8::
         Attributes & attrs

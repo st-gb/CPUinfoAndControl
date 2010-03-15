@@ -134,6 +134,9 @@ void CPUcoreData::Init()
   m_arwCurrentFreqInMHz = NULL ;
   m_byMaxVoltageID = MAX_VALUE_FOR_VID ;
   m_byMinVoltageID = 0 ;
+  //Important to set to NULL when the CPU controller is NULL. 
+  //(creation of menus per CPU core )
+  m_byNumberOfCPUCores = 0 ;
   m_wMaxFreqInMHz = 0 ;
   m_byMainPLLoperatingFrequencyIDmax = CPU_CORE_DATA_NOT_SET ;
   m_arp_percpucoreattributes = NULL ;
@@ -203,11 +206,20 @@ void CPUcoreData::Init()
   void CPUcoreData::PossiblyReleaseMem()
   {
     if(m_arfCPUcoreLoadInPercent)
+    {
       delete [] m_arfCPUcoreLoadInPercent ;
+      m_arfCPUcoreLoadInPercent = NULL ;
+    }
     if(m_arwCurrentFreqInMHz)
+    {
       delete [] m_arwCurrentFreqInMHz ;
+      m_arwCurrentFreqInMHz = NULL ;
+    }
     if( m_arp_percpucoreattributes )
+    {
       delete [] m_arp_percpucoreattributes ;
+      m_arp_percpucoreattributes = NULL ;
+    }
     //delete mp_stdsetvoltageandfreqAvailableFreq ;
     //delete mp_stdsetvoltageandfreqWanted ;
     //delete mp_setloweststablevoltageforfreq ;

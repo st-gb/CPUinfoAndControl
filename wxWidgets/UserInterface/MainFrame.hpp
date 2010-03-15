@@ -27,6 +27,7 @@
 //#endif
 //#include "wx/wx.h" //for wxMessageBox(...) (,etc.)
 #include <wx/timer.h> //for class wxTimer
+#include <wx/thread.h> //for class wxCriticalSection
 #include "wx/power.h" //for power mgmt notification (wxPowerType et.c)
 #include <vector> //for std::vector
 #include <ModelData/ModelData.hpp>
@@ -55,6 +56,7 @@ class CPUcoreUsageNTQSI ;
 class I_CPUcontrollerAction ;
 class SpecificCPUcoreActionAttributes ;
 class wxX86InfoAndControlApp ;
+class wxDynLibCPUcontroller ;
 
 class MainFrame:
   public wxFrame, 
@@ -85,6 +87,7 @@ private:
   //  this) ;
   //PumaStateCtrl * m_pumastatectrl ;
   bool b_NotFirstTime ;
+  bool m_bAllowCPUcontrollerAccess ;
   BYTE m_byNumberOfSettablePstatesPerCore ;
   BYTE m_byMenuIndexOf1stPstate ;
   CPUcoreData * mp_cpucoredata ;
@@ -117,6 +120,8 @@ private:
   wxBitmap * mp_wxbitmap ;
   wxBitmap * mp_wxbitmapStatic ;
   wxBufferedPaintDC * mp_wxbufferedpaintdcStatic ;
+  wxCriticalSection m_wxcriticalsectionCPUctlAccess ;
+  wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
   //"When a wxWindow is destroyed, it automatically deletes all its children. These children are all the objects that received the window as the parent-argument in their constructors.  
   //As a consequence, if you're creating a derived class that contains child windows, you should use a pointer to the child windows instead of the objects themself as members of the main window."
@@ -183,6 +188,9 @@ public:
     );
   ~MainFrame() ;
 
+  void AllowCPUcontrollerAccess() ;
+  void DenyCPUcontrollerAccess() ;
+
   //Implement method declared in "class UserInterface" 
   //(even if with no instructions) for this class not be abstract.
   void outputAllPstates(unsigned char byCurrentP_state, int & vid){};
@@ -236,6 +244,15 @@ public:
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  inline bool IsCPUcontrollerAccessAllowedThreadSafe()
+  {
+    {
+    //Control access to m_bAllowCPUcontrollerAccess between threads.
+    wxCriticalSectionLocker wxcriticalsectionlocker(
+      m_wxcriticalsectionCPUctlAccess) ;
+    return m_bAllowCPUcontrollerAccess ;
+    }
+  }
   void OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnClose(wxCloseEvent & event) ;
   void OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
@@ -273,6 +290,8 @@ public:
   //void OnSetPstate1ForBothCores(wxCommandEvent& WXUNUSED(event)) ;//{} ;
   //void OnSetPstate2ForBothCores(wxCommandEvent& WXUNUSED(event)) ;//{} ;
   void OnAbout(wxCommandEvent & event);
+  void OnAttachCPUcontrollerDLL(wxCommandEvent & event);
+  void OnDetachCPUcontrollerDLL(wxCommandEvent & event);
   void PossiblyAskForOSdynFreqScalingDisabling();
 //  void SetMenuItemLabel(
 //      BYTE byCoreID

@@ -16,8 +16,8 @@ typedef wxCriticalSection criticalsection_type ;
 
 class I_CriticalSection
 {
-  void Enter {}
-  void Leave {}
+  void Enter() {}
+  void Leave() {}
 } ;
 
 typedef I_CriticalSection criticalsection_type ;

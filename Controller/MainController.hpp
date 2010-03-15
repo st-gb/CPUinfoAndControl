@@ -49,6 +49,10 @@ public:
     Model & model 
     , UserInterface * p_userinterface 
     ) ;
+  void SetAttributeData( Model * p_model )
+  {
+    mp_model = p_model ;
+  }
   void SetCPUaccess(//ISpecificController 
     I_CPUaccess * p_ispecificcontroller ) ;
   void ReadRegisterDataConfig(

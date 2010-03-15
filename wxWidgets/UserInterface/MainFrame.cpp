@@ -16,6 +16,7 @@
 //wxWidgets include files
 #include <wx/defs.h> //for wxBG_STYLE_CUSTOM
 #include <wx/dcbuffer.h> //for class wxBufferedPaintDC
+#include <wx/dynlib.h> 
 #include "wx/window.h"
 #include "wx/frame.h" //for class wxFrame
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
@@ -33,6 +34,7 @@
 //#include "../Controller/GriffinController.hpp"
 #include <Controller/I_CPUcontrollerAction.hpp>
 #include <Controller/I_CPUcontroller.hpp>
+#include <Controller/I_CPUaccess.hpp>
 #include <Controller/ICPUcoreUsageGetter.hpp> //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CalculationThreadProc.h>
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
@@ -45,11 +47,15 @@
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
+#include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/wxStringHelper.h>
 #include <Xerces/XMLAccess.hpp>
 //#include <Windows/CalculationThread.hpp>
 #ifdef _WINDOWS
 #include <Windows/ServiceBase.hpp>
+#include <Windows/DLLloadError.hpp>
+//#include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/ErrorCodeFromGetLastErrorToString.h>
 #endif
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include "Windows/CPUcoreUsageNTQSI_OO.hpp"
@@ -64,10 +70,46 @@
 
 class wxObject ;
 
+#include <Controller\Intel_registers.h> //IA32_PERF_STATUS
+
+//from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
+#ifdef _WIN32
+#define AM_LIB_EXPORT __declspec(dllexport)
+#else
+#define AM_LIB_EXPORT
+#endif // _WIN32
+
+////from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
+////("Calling an Exported Function in an EXE from Within a DLL"):
+//// Do exactly as you would export a DLL...
+//extern "C"
+//{
+//  //EXPORT 
+//  AM_LIB_EXPORT BOOL ReadMSR(
+//    DWORD dwIndex,		// MSR index
+//    PDWORD p_dweax,			// bit  0-31
+//    PDWORD p_dwedx,			// bit 32-63
+//    DWORD_PTR affinityMask	// Thread Affinity Mask
+//  )
+//  {
+//    //MessageBox(NULL,lpszMessage,"From Exe",MB_OK);
+//    I_CPUaccess * p_cpuaccess = wxGetApp().GetCPUaccess() ;
+//    return p_cpuaccess->RdmsrEx(
+//      dwIndex,
+//      p_dweax,// bit  0-31 (register "EAX")
+//      p_dwedx, 
+//      //m_dwAffinityMask
+//      affinityMask
+//      ) ;
+//  }
+//}
+
 enum
 {
   ID_Quit = 1
   , ID_About
+  , ID_Attach_CPU_controller_DLL
+  , ID_Detach_CPU_controller_DLL
 //#ifdef _TEST_PENTIUM_M
   , ID_MSR
   , ID_WriteToMSRdialog
@@ -120,6 +162,8 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_ERASE_BACKGROUND(MainFrame::OnEraseBackground)
   EVT_MENU(ID_Quit, MainFrame::OnQuit)
   EVT_MENU(ID_About, MainFrame::OnAbout)
+  EVT_MENU(ID_Attach_CPU_controller_DLL, MainFrame::OnAttachCPUcontrollerDLL)
+  EVT_MENU(ID_Detach_CPU_controller_DLL, MainFrame::OnDetachCPUcontrollerDLL)
 //#ifdef _TEST_PENTIUM_M
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   EVT_MENU(ID_MSR, MainFrame::OnMSR)
@@ -230,6 +274,8 @@ MainFrame::MainFrame(
   , m_bRangeBeginningFromMinVoltage ( true )
   , m_xercesconfigurationhandler( p_model )
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
+  , m_bAllowCPUcontrollerAccess ( true )
+  , mp_wxdynlibcpucontroller ( NULL )
 {
   LOG("begin of main frame creation\n")
 
@@ -248,6 +294,10 @@ MainFrame::MainFrame(
   //wxMenu * p_wxmenuCore0 = new wxMenu;
   wxMenu * p_wxmenuNorthBridge = new wxMenu;
   p_wxmenuFile->Append( ID_About, _T("&About...") );
+  p_wxmenuFile->Append( ID_Attach_CPU_controller_DLL, 
+    _T("Attach_CPU_controller_&DLL...") );
+  p_wxmenuFile->Append( ID_Detach_CPU_controller_DLL, 
+    _T("Detach_CPU_controller_&DLL...") );
   p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
     _T("Save &performance states settings...") );
   p_wxmenuFile->AppendSeparator();
@@ -304,14 +354,17 @@ MainFrame::MainFrame(
     , _T("disable OS's dynamic frequency scaling")
     );
   //If one can not change the power scheme (Windows) etc.
-  if( ! mp_cpucontroller->mp_dynfreqscalingaccess->
+  if( ! //mp_cpucontroller->mp_dynfreqscalingaccess->
+    p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
       ChangeOtherDVFSaccessPossible() )
   {
     mp_wxmenuitemOtherDVFS->Enable(false);
     mp_wxmenuitemOtherDVFS->SetHelp ( wxT("Start e.g. as administrator to gain access") ) ;
     //mp_wxmenuitemOtherDVFS->SetItemLabel (wxT("dd") ) ;
   }
-  if( mp_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible() )
+  if( //mp_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible() 
+    p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->EnablingIsPossible() 
+    )
   {
     mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
       ID_EnableOtherVoltageOrFrequencyAccess
@@ -320,8 +373,10 @@ MainFrame::MainFrame(
       //Use GetwxString(...) because GetEnableDescription() may return 
       // -std::wstring although wxString uses char strings.
       // -std::string although wxString uses wchar_t strings.
-      , getwxString( mp_cpucontroller->mp_dynfreqscalingaccess->
-        GetEnableDescription() )
+      , getwxString( 
+        //mp_cpucontroller->mp_dynfreqscalingaccess->GetEnableDescription()
+        p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->GetEnableDescription()
+         )
       );
   }
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
@@ -353,7 +408,8 @@ MainFrame::MainFrame(
       ID_EnableOrDisableOtherDVFS
       , _T("enable own DVFS") 
       );
-    if( p_cpucontroller->mp_model->m_cpucoredata.
+    if( //p_cpucontroller->mp_model->m_cpucoredata.
+      mp_model->m_cpucoredata.
       m_stdsetvoltageandfreqWanted.empty() 
       )
       mp_wxmenuitemOwnDVFS->Enable(false) ;
@@ -839,9 +895,23 @@ BYTE MainFrame::CreateDynamicMenus()
         if( byCoreID == 0 ) 
           m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticID ;
     }
-  }
+  } //for-loop
   //SetMenuBar(&m_wxmenubar);
   return byReturnValue ;
+}
+
+void MainFrame::AllowCPUcontrollerAccess()
+{
+  wxCriticalSectionLocker wxcriticalsectionlocker( 
+    m_wxcriticalsectionCPUctlAccess ) ;
+  m_bAllowCPUcontrollerAccess = true ;
+}
+
+void MainFrame::DenyCPUcontrollerAccess()
+{
+  wxCriticalSectionLocker wxcriticalsectionlocker( 
+    m_wxcriticalsectionCPUctlAccess ) ;
+  m_bAllowCPUcontrollerAccess = false ;
 }
 
 void MainFrame::DisableWindowsDynamicFreqScalingHint()
@@ -861,21 +931,27 @@ void MainFrame::DisableWindowsDynamicFreqScalingHint()
 
 void MainFrame::OnClose(wxCloseEvent & event )
 {
-  PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
-      m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
-      0 ] ;
-  if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+  //May be NULL at startup.
+  if( mp_cpucoredata->m_arp_percpucoreattributes )
   {
-    p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
-    //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
-    p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
+    PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
+        m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
+        0 ] ;
+    if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+    {
+      p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
+      //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
+      p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
+    }
   }
   std::string strCPUtypeRelativeDirPath ;
   std::string strPstateSettingsFileName ;
-  if( wxGetApp().m_maincontroller.GetPstatesDirPath( 
-    strCPUtypeRelativeDirPath ) 
-    && wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
-    strPstateSettingsFileName )
+  if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
+    mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
+      strCPUtypeRelativeDirPath ) 
+    && //wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
+    mp_wxx86infoandcontrolapp->m_maincontroller.GetPstateSettingsFileName( 
+      strPstateSettingsFileName )
     )
   {
     std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/" +
@@ -929,111 +1005,115 @@ void MainFrame::OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED
 
 void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
 {
-  //wxString wxstrInput = ::wxGetTextFromUser( wxstrMessage , wxT("input"), 
-  //  wxT("1000") ) ;
-  ////::wxGetNumberFromUser
-  ////If the user has input text (and has NOT pressed "cancel")
-  //if( ! wxstrInput.empty() )
-  //{
-  //  unsigned long ulMs ;
-  //  bool bSuccess = wxstrInput.ToULong(& ulMs) ;
-  //  if ( bSuccess )
-  //  {
-  //    //ReadMsrEx() returned false results if used with a time and a 10 ms interval.
-  //    if( ulMs < 100 )
-  //      wxMessageBox( wxT("the number is too low. "
-  //      "Getting the current CPU frequency returned wrong values with < 100 ms") ) ;
-  //    else
-  //    {
-  //      m_dwTimerIntervalInMilliseconds = ulMs ;
-  //      m_timer.Stop() ;
-  //      m_timer.Start(ulMs) ;
-  //    }
-  //  }
-  //  else
-  //  {
-  //    wxMessageBox( wxT("You did not enter a valid integer number") ) ;
-  //  }
-  //}
-  //Must create dynamically, else the CalculationThread is destroyed after leaving
-  //this block.
-  //if( ! mp_calculationthread )
-  //{
-  //  mp_calculationthread = new CalculationThread( 
-  //  0 
-  //  , FindDifferentPstatesThreadProc
-  //  , & ::wxGetApp() 
-  //  , ::wxGetApp().GetCPUcontroller() 
-  //  ) ;
-  //}
-  //if( mp_calculationthread )
-  //  mp_calculationthread->Execute() ;
-  long lMin = ::wxGetNumberFromUser(
-    wxT("input mininum frequency:"), 
-    wxT("prompt:"), 
-    wxT("caption:"), 
-    mp_cpucontroller->GetMinimumFrequencyInMHz() ,
-    0 ,
-    mp_cpucontroller->GetMaximumFrequencyInMHz()    
-    ) ;
-  //If the user enters an invalid value or cancels the dialog, the function will return -1.
-  if( lMin == -1 )
-    ::wxMessageBox(wxT("either invalid value or cancel") ) ;
-  else
+  //May be NULL at startup (before a controller DLL becomes attached).
+  if( mp_cpucontroller )
   {
-    long lMax = ::wxGetNumberFromUser(
-      wxT("input maxinum frequency:"), 
+    //wxString wxstrInput = ::wxGetTextFromUser( wxstrMessage , wxT("input"), 
+    //  wxT("1000") ) ;
+    ////::wxGetNumberFromUser
+    ////If the user has input text (and has NOT pressed "cancel")
+    //if( ! wxstrInput.empty() )
+    //{
+    //  unsigned long ulMs ;
+    //  bool bSuccess = wxstrInput.ToULong(& ulMs) ;
+    //  if ( bSuccess )
+    //  {
+    //    //ReadMsrEx() returned false results if used with a time and a 10 ms interval.
+    //    if( ulMs < 100 )
+    //      wxMessageBox( wxT("the number is too low. "
+    //      "Getting the current CPU frequency returned wrong values with < 100 ms") ) ;
+    //    else
+    //    {
+    //      m_dwTimerIntervalInMilliseconds = ulMs ;
+    //      m_timer.Stop() ;
+    //      m_timer.Start(ulMs) ;
+    //    }
+    //  }
+    //  else
+    //  {
+    //    wxMessageBox( wxT("You did not enter a valid integer number") ) ;
+    //  }
+    //}
+    //Must create dynamically, else the CalculationThread is destroyed after leaving
+    //this block.
+    //if( ! mp_calculationthread )
+    //{
+    //  mp_calculationthread = new CalculationThread( 
+    //  0 
+    //  , FindDifferentPstatesThreadProc
+    //  , & ::wxGetApp() 
+    //  , ::wxGetApp().GetCPUcontroller() 
+    //  ) ;
+    //}
+    //if( mp_calculationthread )
+    //  mp_calculationthread->Execute() ;
+    long lMin = ::wxGetNumberFromUser(
+      wxT("input mininum frequency:"), 
       wxT("prompt:"), 
       wxT("caption:"), 
-      mp_cpucontroller->GetMaximumFrequencyInMHz() ,
-      lMin ,
-      mp_cpucontroller->GetMaximumFrequencyInMHz()
+      mp_cpucontroller->GetMinimumFrequencyInMHz() ,
+      0 ,
+      mp_cpucontroller->GetMaximumFrequencyInMHz()    
       ) ;
-    if( lMax == -1 )
+    //If the user enters an invalid value or cancels the dialog, the function will return -1.
+    if( lMin == -1 )
       ::wxMessageBox(wxT("either invalid value or cancel") ) ;
     else
     {
-      std::set<VoltageAndFreq> stdsetvoltageandfreq ;
-      std::set<VoltageAndFreq>::iterator iter ;
-      mp_cpucontroller->GetAllPossibleFrequencies( stdsetvoltageandfreq ) ;
-      //iter = stdsetvoltageandfreq.find(lMin) ;
-      iter = stdsetvoltageandfreq.begin() ;
-      while( iter != stdsetvoltageandfreq.end() )
+      long lMax = ::wxGetNumberFromUser(
+        wxT("input maxinum frequency:"), 
+        wxT("prompt:"), 
+        wxT("caption:"), 
+        mp_cpucontroller->GetMaximumFrequencyInMHz() ,
+        lMin ,
+        mp_cpucontroller->GetMaximumFrequencyInMHz()
+        ) ;
+      if( lMax == -1 )
+        ::wxMessageBox(wxT("either invalid value or cancel") ) ;
+      else
       {
-        if( lMin >= iter->m_wFreqInMHz )
-          break ;
-        iter ++ ;
-      }
-      
-
-      //if( iter != stdsetvoltageandfreq.end() )
-      {
-        float fVolt ;
-        WORD wFreq ;
-        //for( WORD wFreq = lMin ; wFreq < lMax ; wFreq += 50 )
+        std::set<VoltageAndFreq> stdsetvoltageandfreq ;
+        std::set<VoltageAndFreq>::iterator iter ;
+        mp_cpucontroller->GetAllPossibleFrequencies( stdsetvoltageandfreq ) ;
+        //iter = stdsetvoltageandfreq.find(lMin) ;
+        iter = stdsetvoltageandfreq.begin() ;
         while( iter != stdsetvoltageandfreq.end() )
         {
-          //mp_cpucontroller->GetNearestHigherPossibleFreqInMHz( lMin ) ;
-          mp_cpucontroller->SetFreqAndVoltageFromFreq( //wFreq, 
-            iter->m_wFreqInMHz ,
-            mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
-            //mp_model->m_cpucoredata.m_stdsetvoltageandfreqPossibleByCPU
-            //stdsetvoltageandfreq
-            , 0 ) ;
-          ::wxMilliSleep(100) ;
-          mp_cpucontroller->GetCurrentPstate( //wFreq, 
-            wFreq ,
-            fVolt
-            , 0 ) ;
-          if( wFreq == iter->m_wFreqInMHz )
-            if( mp_model->m_cpucoredata.AddDefaultVoltageForFreq( fVolt, wFreq ) )
-              RedrawEverything() ;
-          ++ iter ;
+          if( lMin >= iter->m_wFreqInMHz )
+            break ;
+          iter ++ ;
+        }
+        
+
+        //if( iter != stdsetvoltageandfreq.end() )
+        {
+          float fVolt ;
+          WORD wFreq ;
+          //for( WORD wFreq = lMin ; wFreq < lMax ; wFreq += 50 )
+          while( iter != stdsetvoltageandfreq.end() )
+          {
+            //mp_cpucontroller->GetNearestHigherPossibleFreqInMHz( lMin ) ;
+            mp_cpucontroller->SetFreqAndVoltageFromFreq( //wFreq, 
+              iter->m_wFreqInMHz ,
+              mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+              //mp_model->m_cpucoredata.m_stdsetvoltageandfreqPossibleByCPU
+              //stdsetvoltageandfreq
+              , 0 ) ;
+            ::wxMilliSleep(100) ;
+            mp_cpucontroller->GetCurrentPstate( //wFreq, 
+              wFreq ,
+              fVolt
+              , 0 ) ;
+            if( wFreq == iter->m_wFreqInMHz )
+              if( mp_model->m_cpucoredata.AddDefaultVoltageForFreq( fVolt, wFreq ) )
+                RedrawEverything() ;
+            ++ iter ;
+          }
         }
       }
     }
+    //::wxMilliSleep()
   }
-  //::wxMilliSleep()
 }
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
@@ -1119,16 +1199,123 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
       //" -when switching from power supply operation to battery,\n"
       //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
       _T("Licence/ info: http://www.trilobyte-se.de/x86iandc")
-      //"who wants to boinc Dr. Tigerlilly?\n\n"
-      //"--deutsches Qualitaetserzeugnis--"
     ,
-    //"About wxPumaStatecontrol"
     //_T("About GriffinControlDialog"),
     _T("About ") //_T(PROGRAM_NAME)
-    + mp_cpucontroller->mp_model->m_stdtstrProgramName
+    //+ mp_cpucontroller->mp_model->m_stdtstrProgramName
+    + mp_model->m_stdtstrProgramName
     ,
     wxOK | wxICON_INFORMATION, this
     );
+}
+
+void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
+{
+  wxString wxstrExtension = wxT("") ;
+  //Under Windows it returns ".dll"
+  wxstrExtension = wxDynamicLibrary::CanonicalizeName(wxstrExtension) ;
+  //Get rid of the ".".
+  wxstrExtension = wxstrExtension.Right( wxstrExtension.length() - 1 ) ;
+    wxString wxstrFilePath = ::wxFileSelector( 
+    wxT("Select CPU controlling dynamic library") 
+    , wxEmptyString
+    , wxEmptyString
+    , wxstrExtension
+    , wxT("*.") + wxstrExtension
+    , wxFD_OPEN
+    ) ;
+  if ( ! wxstrFilePath.empty() )
+  {
+ //   wxDynamicLibrary wxdynamiclibraryCPUctl ;
+
+ //   //wxstrFilePath = wxT("T:\SourceCodeManagement\X86Info_and_Control\x86InfoAndControl_MSVC\VS2010\x86InfoAndControlGUI\Debug\NehalemControllerDLL") ;
+ //   //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html#wxdynamiclibraryload:
+ //   //"Returns true if the library was successfully loaded, false otherwise."
+ //   if( wxdynamiclibraryCPUctl.Load(wxstrFilePath) 
+ //     )
+ ///*   HINSTANCE hinstanceCPUctlDLL = ::LoadLibrary(wxstrFilePath);
+ //   if ( hinstanceCPUctlDLL != 0)*/
+ //   {
+ //     typedef VOID (WINAPI *dll_init_type)(
+ //       I_CPUaccess *
+ //       //BYTE
+ //       );
+ //     typedef DWORD (*dll_getMulti_type)(WORD );
+ //     //wxdynamiclibraryCPUctl.
+ //     wxString wxstrFuncName = wxT("Init") ;
+ //     if( wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) 
+ //       )
+ //     //dll_init_type pfnInit = (dll_init_type)
+ //     //  ::GetProcAddress(hinstanceCPUctlDLL,"Init");
+ //     //FARPROC __stdcall pfn = ::GetProcAddress(hinstanceCPUctlDLL,"nNehalemControllerDLL");
+ //     //if( pfnInit )
+ //     {
+ //       wxDYNLIB_FUNCTION(dll_init_type, Init, wxdynamiclibraryCPUctl) ;
+ //       wxDYNLIB_FUNCTION(dll_getMulti_type, GetMultiplier, wxdynamiclibraryCPUctl) ;
+ //       //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
+ //       (*pfnInit)( //wxGetApp().mp_i_cpuaccess 
+ //         mp_wxx86infoandcontrolapp->GetCPUaccess() 
+ //         //1 
+ //         ) ;
+ //       //dll_getMulti_type pfnGetMultiplier = (dll_getMulti_type)
+ //       //  ::GetProcAddress(hinstanceCPUctlDLL,"GetMultiplier") ;
+ //       //if( pfnGetMultiplier)
+ //       //{
+ //       //  DWORD dwM = (*pfnGetMultiplier) (0) ;
+ //       //  dwM = dwM ;
+ //       //}
+ //       //DWORD dwMulti = (*pfnGetMultiplier)(0) ;
+ //       //dwMulti = dwMulti ;
+ //       //dll_Init
+ //     }
+ //     else
+ //     {
+ //       DWORD dw = ::GetLastError() ;
+ //       std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
+ //       stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
+ //       //ERROR_PROC_NOT_FOUND
+ //       ::wxMessageBox( 
+ //         wxString::Format("function %s was not found within DLL", 
+ //           wxstrFuncName) + wxString(stdstrErrMsg) , 
+ //         wxT("Error ")
+ //         ) ;
+ //     }
+ //   }
+ //   else
+ //   {
+ //     DWORD dw = ::GetLastError() ;
+ //     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCode( dw) ;
+ //     std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
+ //     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
+ //     ::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
+ //   }
+    try
+    {
+      //wxDynLibCPUcontroller * p_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
+      mp_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
+        wxstrFilePath
+        , mp_wxx86infoandcontrolapp->GetCPUaccess() 
+        ) ;
+      mp_wxx86infoandcontrolapp->SetCPUcontroller( //p_wxdynlibcpucontroller 
+        mp_wxdynlibcpucontroller ) ;
+    }
+    catch( CPUaccessException & ex )
+    {
+      wxMessageBox( wxT("Error message: ") +
+        wxString(ex.m_stdstrErrorMessage) , wxT("DLL error") ) ;
+    }
+  }
+}
+
+void MainFrame::OnDetachCPUcontrollerDLL (wxCommandEvent & event)
+{
+  if( mp_wxdynlibcpucontroller )
+  {
+    //mp_wxx86infoandcontrolapp->SetCPUcontroller( NULL ) ;  
+    mp_wxx86infoandcontrolapp->DeleteCPUcontroller() ;
+    //delete mp_wxdynlibcpucontroller ;
+    mp_wxdynlibcpucontroller = NULL ;
+  }
 }
 
 void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent) 
@@ -1148,114 +1335,126 @@ void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent)
 void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent) 
   wxevent )
 {
-  WORD wEventID = wxevent.GetId() ;
-  #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  //TODO
-  if( ::wxGetApp().m_ipcclient.IsConnected() )
+  //May be NULL at sartup.
+  if( mp_cpucontroller &&     
+    //May be NULL at startup.
+    mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter 
+    )
   {
-    ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
-    ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
-  }
-  else
-  #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  {
-    //if( mp_pumastatectrl->mp_dynfreqscalingaccess->DVFSisEnabled() ;
-    //SpecificCPUcoreActionAttributes * p_atts = (CalculationThread *)
-    //  m_stdmapwxuicontroldata.find( wEventID )->second ;
-    PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
-      m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
-      0 ] ;
-    //DynFreqScalingThread * p_dynfreqscalingthread
-    if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+    WORD wEventID = wxevent.GetId() ;
+    #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+    //TODO
+    if( ::wxGetApp().m_ipcclient.IsConnected() )
     {
-      p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
-      //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
-      p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
-	    ////Start the timer (it should have been stopped before else the timer had redrawn 
-	    ////addtionally to the scaling thread).
-     // m_timer.Start() ;
-      mp_wxmenuitemOwnDVFS->SetText(
-        //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compitable between char and wide char.
-        _T("enable Own DVFS") 
-        ) ;
+      ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
+      ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
     }
     else
+    #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     {
-        PossiblyAskForOSdynFreqScalingDisabling() ;
-        if( ! //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            //mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
-            mp_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
-          )
-        {
-          //TODO is the memory released?
-          DynFreqScalingDlg * p_dynfreqscalingdlg = new DynFreqScalingDlg( 
-            this 
-            , *mp_cpucoredata 
-            ) ;
-          if( p_dynfreqscalingdlg )
-            p_dynfreqscalingdlg->
-            //Showing it "modal" is important because else the instructions below 
-            //continue before the dialog ic closed.
-            ShowModal();
-          //p_percpucoreattributes->mp_dynfreqscalingthread 
-          p_percpucoreattributes->SetCPUcontroller( mp_cpucontroller ) ;
-          p_percpucoreattributes->CreateDynFreqScalingThread( 
-            //& m_clocksnothaltedcpucoreusagegetter
-            ::wxGetApp().mp_cpucoreusagegetter
-            //wxApp
-            ) ;
-	        ////Stop the timer (else the timer redraws addtionally to the scaling thread).
-	        //m_timer.Stop() ;
-          mp_wxmenuitemOwnDVFS->SetText(
-            //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
-            _T("disable Own DVFS") 
-            ) ;
-        }
+      //if( mp_pumastatectrl->mp_dynfreqscalingaccess->DVFSisEnabled() ;
+      //SpecificCPUcoreActionAttributes * p_atts = (CalculationThread *)
+      //  m_stdmapwxuicontroldata.find( wEventID )->second ;
+      PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
+        m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
+        0 ] ;
+      //DynFreqScalingThread * p_dynfreqscalingthread
+      if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+      {
+        p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
+        //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
+        p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
+  	    ////Start the timer (it should have been stopped before else the timer had redrawn 
+  	    ////addtionally to the scaling thread).
+       // m_timer.Start() ;
+        mp_wxmenuitemOwnDVFS->SetText(
+          //We need a _T() macro (wide char-> L"", char->"") for EACH 
+          //line to make it compitable between char and wide char.
+          _T("enable Own DVFS") 
+          ) ;
       }
+      else
+      {
+          PossiblyAskForOSdynFreqScalingDisabling() ;
+          if( ! 
+              //mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+              //mp_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
+              mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+            )
+          {
+            //TODO is the memory released?
+            DynFreqScalingDlg * p_dynfreqscalingdlg = new DynFreqScalingDlg( 
+              this 
+              , *mp_cpucoredata 
+              ) ;
+            if( p_dynfreqscalingdlg )
+              p_dynfreqscalingdlg->
+              //Showing it "modal" is important because else the instructions below 
+              //continue before the dialog ic closed.
+              ShowModal();
+            //p_percpucoreattributes->mp_dynfreqscalingthread 
+            p_percpucoreattributes->SetCPUcontroller( mp_cpucontroller ) ;
+            p_percpucoreattributes->CreateDynFreqScalingThread( 
+              //& m_clocksnothaltedcpucoreusagegetter
+              //::wxGetApp().mp_cpucoreusagegetter
+              mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
+              //wxApp
+              ) ;
+  	        ////Stop the timer (else the timer redraws addtionally to the scaling thread).
+  	        //m_timer.Stop() ;
+            mp_wxmenuitemOwnDVFS->SetText(
+              //We need a _T() macro (wide char-> L"", char->"") for EACH 
+              //line to make it compitable between char and wide char.
+              _T("disable Own DVFS") 
+              ) ;
+          }
+        }
+    }
   }
 }
 
 void MainFrame::OnPstateDialog( wxCommandEvent & //WXUNUSED(event)
   wxevent )
 {
-  WORD wEventID = wxevent.GetId() ;
-  //wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
-  //  & m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
-  //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
-  //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
-  //const wxObject & wxobj = //wxevent.m_callbackUserData ;
-  //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
-  //wxCPUcoreID & r_wxcpucoreid2 = (wxCPUcoreID &) wxobj ;
-  //const wxCPUcoreID * p_wxcpucoreid2 = (const wxCPUcoreID *) & wxobj ;
-  //std::map <WORD, wxObject> :: iterator iter =
-  //  m_stdmapwxuicontroldata.find( wxevent.GetId() ) ;
-  //wxCPUcoreID wxcpucoreid = (wxCPUcoreID ) iter->second ;
-//  wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
-//    //&
-//    m_stdmapwxuicontroldata.find( wEventID )->second ;
-  SpecificCPUcoreActionAttributes * p = (SpecificCPUcoreActionAttributes *)
-    m_stdmapwxuicontroldata.find( wEventID )->second ;
-
-  BYTE byCoreID = //p_wxcpucoreid->m_byID
-    p->m_byCoreID ;
-  //BYTE byCoreID = 0 ;
-  if( m_arp_freqandvoltagesettingdlg[byCoreID] )
-    m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
-  else
+  //May be NULL at startup.
+  if( mp_cpucontroller )
   {
-    //If created as local vaiable on stack the dialog would disappear 
-    //immediately.
-    m_arp_freqandvoltagesettingdlg[byCoreID] = new 
-      FreqAndVoltageSettingDlg( 
-      this 
-      //, mp_pumastatectrl
-      ,  mp_cpucontroller
-      , byCoreID 
-      );
+    WORD wEventID = wxevent.GetId() ;
+    //wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
+    //  & m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
+    //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
+    //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
+    //const wxObject & wxobj = //wxevent.m_callbackUserData ;
+    //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
+    //wxCPUcoreID & r_wxcpucoreid2 = (wxCPUcoreID &) wxobj ;
+    //const wxCPUcoreID * p_wxcpucoreid2 = (const wxCPUcoreID *) & wxobj ;
+    //std::map <WORD, wxObject> :: iterator iter =
+    //  m_stdmapwxuicontroldata.find( wxevent.GetId() ) ;
+    //wxCPUcoreID wxcpucoreid = (wxCPUcoreID ) iter->second ;
+  //  wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
+  //    //&
+  //    m_stdmapwxuicontroldata.find( wEventID )->second ;
+    SpecificCPUcoreActionAttributes * p = (SpecificCPUcoreActionAttributes *)
+      m_stdmapwxuicontroldata.find( wEventID )->second ;
+
+    BYTE byCoreID = //p_wxcpucoreid->m_byID
+      p->m_byCoreID ;
+    //BYTE byCoreID = 0 ;
     if( m_arp_freqandvoltagesettingdlg[byCoreID] )
       m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
+    else
+    {
+      //If created as local vaiable on stack the dialog would disappear 
+      //immediately.
+      m_arp_freqandvoltagesettingdlg[byCoreID] = new 
+        FreqAndVoltageSettingDlg( 
+        this 
+        ,  mp_cpucontroller
+        , byCoreID 
+        );
+      if( m_arp_freqandvoltagesettingdlg[byCoreID] )
+        m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
+    }
   }
 }
 
@@ -1269,61 +1468,65 @@ void MainFrame::DrawAllPossibleOperatingPoints(
   wxDC & r_wxdcDrawOn
   )
 {
-  //float fCurrentVoltageInVolt ;
-  //WORD wXcoordinate ;
-  //WORD wYcoordinate ;
-  WORD wMaxFreqInMHz = //mp_pumastatectrl->mp_model->m_cpucoredata.
-    mp_cpucontroller->mp_model->m_cpucoredata.
-    m_wMaxFreqInMHz ;
+  //May be NULL at startup.
+  if( mp_cpucontroller )
+  {
+    //float fCurrentVoltageInVolt ;
+    //WORD wXcoordinate ;
+    //WORD wYcoordinate ;
+    WORD wMaxFreqInMHz = //mp_pumastatectrl->mp_model->m_cpucoredata.
+      mp_cpucontroller->mp_model->m_cpucoredata.
+      m_wMaxFreqInMHz ;
 
-  WORD wCurrentFreqInMHz = //PState::GetFreqInMHz(
-    //mp_pumastatectrl->mp_model->m_cpucoredata.
-    //  m_byLowestEffectiveFreqID
-    //, 
-    //HIGHEST_EFFECTIVE_DIVISOR_ID
-    //) ;
-    mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-  //DIDandFID didandfid ;
-  BYTE byMinVoltageID = mp_cpucoredata->m_byMinVoltageID ;
-  BYTE byMaxVoltageID = mp_cpucoredata->m_byMaxVoltageID ;
-  //BYTE byCurrentVoltageID ;
-  //do 
-  //{
-  //  for( byCurrentVoltageID = byMinVoltageID ; 
-  //    byCurrentVoltageID <= byMaxVoltageID ; ++ byCurrentVoltageID )
-  //  {
-  //    fCurrentVoltageInVolt = PState::GetVoltageInVolt( byCurrentVoltageID ) ;
-  //    wXcoordinate =
-  //      m_wXcoordOfBeginOfYaxis +
-  //        (float) wCurrentFreqInMHz /
-  //        (float) wMaxFreqInMHz * m_wDiagramWidth ;
-  //    wYcoordinate =
-  //      m_wDiagramHeight - fCurrentVoltageInVolt
-  //      / m_fMaxVoltage * m_wDiagramHeight ;
-  //    r_wxdcDrawOn.DrawLine( 
-  //      //wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
-  //      wXcoordinate
-  //      , wYcoordinate
-  //      , //wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis
-  //      wXcoordinate
-  //      //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
-  //      //"Note that the point (x2, y2) is not part of the line and is 
-  //      //not drawn by this function (this is consistent with the 
-  //      //behaviour of many other toolkits)."
-  //      + 1
-  //      , //(200-fVoltage*100) 
-  //      wYcoordinate
-  //      //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
-  //      //"Note that the point (x2, y2) is not part of the line and is 
-  //      //not drawn by this function (this is consistent with the 
-  //      //behaviour of many other toolkits)."
-  //      + 1 
-  //      ) ;
-  //  }
-  //  didandfid = mp_pumastatectrl->
-  //    GetNearestHigherPossibleFreqInMHzAsDIDnFID( wCurrentFreqInMHz + 1 ) ;
-  //  wCurrentFreqInMHz = didandfid.GetFreqInMHz() ;
-  //} while( wCurrentFreqInMHz != mp_cpucoredata->m_wMaxFreqInMHz ) ;
+    WORD wCurrentFreqInMHz = //PState::GetFreqInMHz(
+      //mp_pumastatectrl->mp_model->m_cpucoredata.
+      //  m_byLowestEffectiveFreqID
+      //, 
+      //HIGHEST_EFFECTIVE_DIVISOR_ID
+      //) ;
+      mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    //DIDandFID didandfid ;
+    BYTE byMinVoltageID = mp_cpucoredata->m_byMinVoltageID ;
+    BYTE byMaxVoltageID = mp_cpucoredata->m_byMaxVoltageID ;
+    //BYTE byCurrentVoltageID ;
+    //do 
+    //{
+    //  for( byCurrentVoltageID = byMinVoltageID ; 
+    //    byCurrentVoltageID <= byMaxVoltageID ; ++ byCurrentVoltageID )
+    //  {
+    //    fCurrentVoltageInVolt = PState::GetVoltageInVolt( byCurrentVoltageID ) ;
+    //    wXcoordinate =
+    //      m_wXcoordOfBeginOfYaxis +
+    //        (float) wCurrentFreqInMHz /
+    //        (float) wMaxFreqInMHz * m_wDiagramWidth ;
+    //    wYcoordinate =
+    //      m_wDiagramHeight - fCurrentVoltageInVolt
+    //      / m_fMaxVoltage * m_wDiagramHeight ;
+    //    r_wxdcDrawOn.DrawLine( 
+    //      //wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
+    //      wXcoordinate
+    //      , wYcoordinate
+    //      , //wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis
+    //      wXcoordinate
+    //      //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
+    //      //"Note that the point (x2, y2) is not part of the line and is 
+    //      //not drawn by this function (this is consistent with the 
+    //      //behaviour of many other toolkits)."
+    //      + 1
+    //      , //(200-fVoltage*100) 
+    //      wYcoordinate
+    //      //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
+    //      //"Note that the point (x2, y2) is not part of the line and is 
+    //      //not drawn by this function (this is consistent with the 
+    //      //behaviour of many other toolkits)."
+    //      + 1 
+    //      ) ;
+    //  }
+    //  didandfid = mp_pumastatectrl->
+    //    GetNearestHigherPossibleFreqInMHzAsDIDnFID( wCurrentFreqInMHz + 1 ) ;
+    //  wCurrentFreqInMHz = didandfid.GetFreqInMHz() ;
+    //} while( wCurrentFreqInMHz != mp_cpucoredata->m_wMaxFreqInMHz ) ;
+  }
 }
 
 void MainFrame::DrawPerformanceStatesCrosses(
@@ -1363,225 +1566,229 @@ void MainFrame::DrawDiagramScale(
   std::set<VoltageAndFreq>::iterator & iterstdsetvoltageandfreq
   )
 {
-  //float fMinVoltage ;
-  //float fMaxMinusMinVoltage ;
-  wxString wxstrFreq ;
-  wxCoord wxcoordWidth ;
-  wxCoord wxcoordHeight ;
-  WORD wLeftEndOfCurrFreqText ;
-  WORD wXcoordinate ;
-  WORD wYcoordinate ;
-  WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
-    //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-    mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-  std::map<WORD,WORD>::const_reverse_iterator 
-    r_iterstdmapRightEndOfFreqString2yCoord ;
-  std::map<WORD,WORD> mapRightEndOfFreqString2yCoord ;
-
-  std::map<WORD,WORD>::iterator 
-    r_iterstdmapYcoord2RightEndOfFreqString ;
-  std::map<WORD,WORD> stdmapYcoord2RightEndOfFreqString ;
-  std::map<WORD,WORD>::iterator 
-    r_iterstdmap_ycoord2rightendoffreqstringToUse ;
-
-  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
-    mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
-  std::set<WORD> setRightEndOfFreqString ;
-  iterstdsetvoltageandfreq = r_stdsetvoltageandfreq.begin() ;
-#ifdef _DEBUG
-  const wxPen & wxpenCurrent = wxdc.GetPen() ;
-  const wxColor wxcolor = wxpenCurrent.GetColour() ;
-  int nPenWidth = wxpenCurrent.GetWidth() ;
-#endif
-
-  //fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
-  //fMaxMinusMinVoltage = m_fMaxVoltage - fMinVoltage ;
-  //p_wxpaintdc->DrawText( wxT("550") , arwxpoint[0].x, //200
-  //    wDiagramHeight ) ;
-  //p_wxpaintdc->DrawText( wxT("1100") , arwxpoint[1].x, //200
-  //    wDiagramHeight ) ;
-  //p_wxpaintdc->DrawText( wxT("2200") , arwxpoint[2].x, //200
-  //    wDiagramHeight ) ;
-  for( ;
-      //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
-      //iterstdsetmaxvoltageforfreq != //mp_pumastatectrl->mp_model->
-      iterstdsetvoltageandfreq !=
-      //mp_cpucontroller->mp_model->
-      //m_vecmaxvoltageforfreq.end()
-      //m_setmaxvoltageforfreq.end() ; //++ iterstdvecmaxvoltageforfreq
-      r_stdsetvoltageandfreq.end() ;
-      //++ iterstdsetmaxvoltageforfreq
-      ++ iterstdsetvoltageandfreq
-      )
+  //May be NULL at startup.
+  if( mp_cpucontroller )
   {
-      wXcoordinate =
-        m_wXcoordOfBeginOfYaxis +
-          (float) //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
-          //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
-          //(*iterstdsetmaxvoltageforfreq).m_wFreqInMHz /
-          (*iterstdsetvoltageandfreq).m_wFreqInMHz /
-          (float) wMaxFreqInMHz * m_wDiagramWidth ;
-      //Draw frequency mark.
-      //p_wxpaintdc->DrawText(
-      //wxmemorydc.DrawText(
+    //float fMinVoltage ;
+    //float fMaxMinusMinVoltage ;
+    wxString wxstrFreq ;
+    wxCoord wxcoordWidth ;
+    wxCoord wxcoordHeight ;
+    WORD wLeftEndOfCurrFreqText ;
+    WORD wXcoordinate ;
+    WORD wYcoordinate ;
+    WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
+      //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+      mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    std::map<WORD,WORD>::const_reverse_iterator 
+      r_iterstdmapRightEndOfFreqString2yCoord ;
+    std::map<WORD,WORD> mapRightEndOfFreqString2yCoord ;
 
-      wxstrFreq = wxString::Format(
-          //We need a _T() macro (wide char-> L"", char->"") for EACH 
-          //line to make it compitable between char and wide char.
-          _T("%u") ,
-          (*iterstdsetvoltageandfreq).m_wFreqInMHz
-          ) ;
-      wxdc.GetTextExtent( 
-        wxstrFreq
-        , & wxcoordWidth 
-        , & wxcoordHeight
-        //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
-        ) ;
-      wLeftEndOfCurrFreqText = wXcoordinate 
-        //Position the line at the horizontal middle of the text.
-        - ( wxcoordWidth / 2 ) ;
-      //If the iterator is not set::end() then there is at least 1 strings that would
-      //overlap with the current string if all were drawn with the same y coordinate.
-      //iterstdsetword = setRightEndOfFreqString.
-      //  //Finds the first element whose key greater than k.
-      //  upper_bound(wLeftEndOfCurrFreqText) ;
-      //r_iterstdmapRightEndOfFreqString2yCoord = 
-      //  mapRightEndOfFreqString2yCoord.rbegin() ;
-      //while( r_iterstdmapRightEndOfFreqString2yCoord != 
-      //  mapRightEndOfFreqString2yCoord.rend() 
-      //  )
-      //{
-      //  //If space between the right end is of a prev string and the left end
-      //  //of this string.
-      //  if( r_iterstdmapRightEndOfFreqString2yCoord->first < 
-      //    wLeftEndOfCurrFreqText )
-      //    break ;
-      //  ++ r_iterstdmapRightEndOfFreqString2yCoord ;
-      //}
+    std::map<WORD,WORD>::iterator 
+      r_iterstdmapYcoord2RightEndOfFreqString ;
+    std::map<WORD,WORD> stdmapYcoord2RightEndOfFreqString ;
+    std::map<WORD,WORD>::iterator 
+      r_iterstdmap_ycoord2rightendoffreqstringToUse ;
 
-      ////Avoid overlapping of frequency strings.
-      ////if( wLeftEndOfCurrFreqText < wRightEndOfPrevFreqText )
-      ////  wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
-      //if( r_iterstdmapRightEndOfFreqString2yCoord != 
-      //  mapRightEndOfFreqString2yCoord.rend() 
-      //  )
-      //  wYcoordinate = r_iterstdmapRightEndOfFreqString2yCoord->second ;
-      //else
-      //  if( mapRightEndOfFreqString2yCoord.empty() )
-      //    wYcoordinate = m_wDiagramHeight ;
-      //  else // no right text end that is left from the current text to draw.
-      //  {
-      //    //wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
-      //    //e.g.:  500
-      //    //         600
-      //    //           650
-      //    //Draw 1 line below the previous freq text.
-      //    wYcoordinate = mapRightEndOfFreqString2yCoord.rbegin()->second + 
-      //      wxcoordHeight ;
-      //  }
+    std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
+      mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
+    std::set<WORD> setRightEndOfFreqString ;
+    iterstdsetvoltageandfreq = r_stdsetvoltageandfreq.begin() ;
+  #ifdef _DEBUG
+    const wxPen & wxpenCurrent = wxdc.GetPen() ;
+    const wxColor wxcolor = wxpenCurrent.GetColour() ;
+    int nPenWidth = wxpenCurrent.GetWidth() ;
+  #endif
 
-      r_iterstdmapYcoord2RightEndOfFreqString = 
-        stdmapYcoord2RightEndOfFreqString.begin() ;
-      r_iterstdmap_ycoord2rightendoffreqstringToUse = 
-        stdmapYcoord2RightEndOfFreqString.end() ;
-      while( r_iterstdmapYcoord2RightEndOfFreqString != 
-        stdmapYcoord2RightEndOfFreqString.end() 
+    //fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
+    //fMaxMinusMinVoltage = m_fMaxVoltage - fMinVoltage ;
+    //p_wxpaintdc->DrawText( wxT("550") , arwxpoint[0].x, //200
+    //    wDiagramHeight ) ;
+    //p_wxpaintdc->DrawText( wxT("1100") , arwxpoint[1].x, //200
+    //    wDiagramHeight ) ;
+    //p_wxpaintdc->DrawText( wxT("2200") , arwxpoint[2].x, //200
+    //    wDiagramHeight ) ;
+    for( ;
+        //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
+        //iterstdsetmaxvoltageforfreq != //mp_pumastatectrl->mp_model->
+        iterstdsetvoltageandfreq !=
+        //mp_cpucontroller->mp_model->
+        //m_vecmaxvoltageforfreq.end()
+        //m_setmaxvoltageforfreq.end() ; //++ iterstdvecmaxvoltageforfreq
+        r_stdsetvoltageandfreq.end() ;
+        //++ iterstdsetmaxvoltageforfreq
+        ++ iterstdsetvoltageandfreq
         )
-      {
-        //If space between the right end is of a prev string and the left end
-        //of this string.
-        //The first entry is the topmost. This is also the entry 
-        if( r_iterstdmapYcoord2RightEndOfFreqString->second < 
-          wLeftEndOfCurrFreqText )
-        {
-          r_iterstdmap_ycoord2rightendoffreqstringToUse = 
-            r_iterstdmapYcoord2RightEndOfFreqString ;
-          break ;
-        }
-        ++ r_iterstdmapYcoord2RightEndOfFreqString ;
-      }
-      if( r_iterstdmap_ycoord2rightendoffreqstringToUse != 
-        stdmapYcoord2RightEndOfFreqString.end() 
-        )
-      {
-        //Update the new right end of string to draw.
-        r_iterstdmap_ycoord2rightendoffreqstringToUse->second = 
-          wLeftEndOfCurrFreqText + wxcoordWidth ;
-        wYcoordinate = r_iterstdmap_ycoord2rightendoffreqstringToUse->first ;
-      }
-      else
-      {
-        if( stdmapYcoord2RightEndOfFreqString.empty() )
-          wYcoordinate = m_wDiagramHeight ;
-        else // no right text end that is left from the current text to draw.
-        {
-          //wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
-          //e.g.:  500
-          //         600
-          //           650
-          //Draw 1 line below the previous freq text.
-          wYcoordinate = stdmapYcoord2RightEndOfFreqString.rbegin()->first + 
-            wxcoordHeight ;
-        }
-        stdmapYcoord2RightEndOfFreqString.insert(
-          std::pair<WORD,WORD> ( wYcoordinate , wLeftEndOfCurrFreqText + wxcoordWidth ) ) ;
-      }
-      wxdc.DrawText(
-        //wxT("550")
-        wxstrFreq
-        ,
-        //wXcoordOfBeginOfYaxis +
-        //(float) (*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
-        //(float) wMaxFreqInMHz * wDiagramWidth
-        wLeftEndOfCurrFreqText
-        , //m_wDiagramHeight
-        wYcoordinate
-        ) ;
-      //mapRightEndOfFreqString2yCoord.insert(
-      //  std::pair<WORD,WORD> ( wLeftEndOfCurrFreqText + wxcoordWidth, wYcoordinate ) ) ;
-      //Draw vertical line for current frequency mark.
-      //p_wxpaintdc->DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
-      //wxmemorydc.DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
-      wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, //m_wDiagramHeight
-        wYcoordinate ) ;
+    {
+        wXcoordinate =
+          m_wXcoordOfBeginOfYaxis +
+            (float) //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
+            //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
+            //(*iterstdsetmaxvoltageforfreq).m_wFreqInMHz /
+            (*iterstdsetvoltageandfreq).m_wFreqInMHz /
+            (float) wMaxFreqInMHz * m_wDiagramWidth ;
+        //Draw frequency mark.
+        //p_wxpaintdc->DrawText(
+        //wxmemorydc.DrawText(
 
-      if( m_bRangeBeginningFromMinVoltage )
-        wYcoordinate =
-          m_wDiagramHeight -
-          ( (*iterstdsetvoltageandfreq).m_fVoltageInVolt - m_fMinVoltage )
-          / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
-      else
-        wYcoordinate =
-          m_wDiagramHeight -
-          //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-          //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
-          (*iterstdsetvoltageandfreq).m_fVoltageInVolt
-          / m_fMaxVoltage * m_wDiagramHeight 
-          + m_wMinYcoordInDiagram ;
-      //Draw voltage mark.
-      //p_wxpaintdc->DrawText(
-      //wxmemorydc.DrawText(
-      wxdc.DrawText(
-          wxString::Format(
+        wxstrFreq = wxString::Format(
             //We need a _T() macro (wide char-> L"", char->"") for EACH 
             //line to make it compitable between char and wide char.
-            _T("%.3f") ,
-              //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-              //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
-              (*iterstdsetvoltageandfreq).m_fVoltageInVolt
-              ),
-          5
+            _T("%u") ,
+            (*iterstdsetvoltageandfreq).m_wFreqInMHz
+            ) ;
+        wxdc.GetTextExtent( 
+          wxstrFreq
+          , & wxcoordWidth 
+          , & wxcoordHeight
+          //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+          ) ;
+        wLeftEndOfCurrFreqText = wXcoordinate 
+          //Position the line at the horizontal middle of the text.
+          - ( wxcoordWidth / 2 ) ;
+        //If the iterator is not set::end() then there is at least 1 strings that would
+        //overlap with the current string if all were drawn with the same y coordinate.
+        //iterstdsetword = setRightEndOfFreqString.
+        //  //Finds the first element whose key greater than k.
+        //  upper_bound(wLeftEndOfCurrFreqText) ;
+        //r_iterstdmapRightEndOfFreqString2yCoord = 
+        //  mapRightEndOfFreqString2yCoord.rbegin() ;
+        //while( r_iterstdmapRightEndOfFreqString2yCoord != 
+        //  mapRightEndOfFreqString2yCoord.rend() 
+        //  )
+        //{
+        //  //If space between the right end is of a prev string and the left end
+        //  //of this string.
+        //  if( r_iterstdmapRightEndOfFreqString2yCoord->first < 
+        //    wLeftEndOfCurrFreqText )
+        //    break ;
+        //  ++ r_iterstdmapRightEndOfFreqString2yCoord ;
+        //}
+
+        ////Avoid overlapping of frequency strings.
+        ////if( wLeftEndOfCurrFreqText < wRightEndOfPrevFreqText )
+        ////  wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
+        //if( r_iterstdmapRightEndOfFreqString2yCoord != 
+        //  mapRightEndOfFreqString2yCoord.rend() 
+        //  )
+        //  wYcoordinate = r_iterstdmapRightEndOfFreqString2yCoord->second ;
+        //else
+        //  if( mapRightEndOfFreqString2yCoord.empty() )
+        //    wYcoordinate = m_wDiagramHeight ;
+        //  else // no right text end that is left from the current text to draw.
+        //  {
+        //    //wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
+        //    //e.g.:  500
+        //    //         600
+        //    //           650
+        //    //Draw 1 line below the previous freq text.
+        //    wYcoordinate = mapRightEndOfFreqString2yCoord.rbegin()->second + 
+        //      wxcoordHeight ;
+        //  }
+
+        r_iterstdmapYcoord2RightEndOfFreqString = 
+          stdmapYcoord2RightEndOfFreqString.begin() ;
+        r_iterstdmap_ycoord2rightendoffreqstringToUse = 
+          stdmapYcoord2RightEndOfFreqString.end() ;
+        while( r_iterstdmapYcoord2RightEndOfFreqString != 
+          stdmapYcoord2RightEndOfFreqString.end() 
+          )
+        {
+          //If space between the right end is of a prev string and the left end
+          //of this string.
+          //The first entry is the topmost. This is also the entry 
+          if( r_iterstdmapYcoord2RightEndOfFreqString->second < 
+            wLeftEndOfCurrFreqText )
+          {
+            r_iterstdmap_ycoord2rightendoffreqstringToUse = 
+              r_iterstdmapYcoord2RightEndOfFreqString ;
+            break ;
+          }
+          ++ r_iterstdmapYcoord2RightEndOfFreqString ;
+        }
+        if( r_iterstdmap_ycoord2rightendoffreqstringToUse != 
+          stdmapYcoord2RightEndOfFreqString.end() 
+          )
+        {
+          //Update the new right end of string to draw.
+          r_iterstdmap_ycoord2rightendoffreqstringToUse->second = 
+            wLeftEndOfCurrFreqText + wxcoordWidth ;
+          wYcoordinate = r_iterstdmap_ycoord2rightendoffreqstringToUse->first ;
+        }
+        else
+        {
+          if( stdmapYcoord2RightEndOfFreqString.empty() )
+            wYcoordinate = m_wDiagramHeight ;
+          else // no right text end that is left from the current text to draw.
+          {
+            //wYcoordinate = m_wDiagramHeight + wxcoordHeight ;
+            //e.g.:  500
+            //         600
+            //           650
+            //Draw 1 line below the previous freq text.
+            wYcoordinate = stdmapYcoord2RightEndOfFreqString.rbegin()->first + 
+              wxcoordHeight ;
+          }
+          stdmapYcoord2RightEndOfFreqString.insert(
+            std::pair<WORD,WORD> ( wYcoordinate , wLeftEndOfCurrFreqText + wxcoordWidth ) ) ;
+        }
+        wxdc.DrawText(
+          //wxT("550")
+          wxstrFreq
           ,
-          //wDiagramHeight -
-          //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-          /// fMaxVoltage * wDiagramHeight
+          //wXcoordOfBeginOfYaxis +
+          //(float) (*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
+          //(float) wMaxFreqInMHz * wDiagramWidth
+          wLeftEndOfCurrFreqText
+          , //m_wDiagramHeight
           wYcoordinate
           ) ;
-      //Draw horizontal line for current voltage mark.
-      //p_wxpaintdc->DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
-      //wxmemorydc.DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
-      wxdc.DrawLine(m_wXcoordOfBeginOfYaxis, wYcoordinate,
-          m_wDiagramWidth + m_wXcoordOfBeginOfYaxis, wYcoordinate ) ;
+        //mapRightEndOfFreqString2yCoord.insert(
+        //  std::pair<WORD,WORD> ( wLeftEndOfCurrFreqText + wxcoordWidth, wYcoordinate ) ) ;
+        //Draw vertical line for current frequency mark.
+        //p_wxpaintdc->DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
+        //wxmemorydc.DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
+        wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, //m_wDiagramHeight
+          wYcoordinate ) ;
+
+        if( m_bRangeBeginningFromMinVoltage )
+          wYcoordinate =
+            m_wDiagramHeight -
+            ( (*iterstdsetvoltageandfreq).m_fVoltageInVolt - m_fMinVoltage )
+            / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+        else
+          wYcoordinate =
+            m_wDiagramHeight -
+            //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
+            //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
+            (*iterstdsetvoltageandfreq).m_fVoltageInVolt
+            / m_fMaxVoltage * m_wDiagramHeight 
+            + m_wMinYcoordInDiagram ;
+        //Draw voltage mark.
+        //p_wxpaintdc->DrawText(
+        //wxmemorydc.DrawText(
+        wxdc.DrawText(
+            wxString::Format(
+              //We need a _T() macro (wide char-> L"", char->"") for EACH 
+              //line to make it compitable between char and wide char.
+              _T("%.3f") ,
+                //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
+                //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
+                (*iterstdsetvoltageandfreq).m_fVoltageInVolt
+                ),
+            5
+            ,
+            //wDiagramHeight -
+            //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
+            /// fMaxVoltage * wDiagramHeight
+            wYcoordinate
+            ) ;
+        //Draw horizontal line for current voltage mark.
+        //p_wxpaintdc->DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
+        //wxmemorydc.DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
+        wxdc.DrawLine(m_wXcoordOfBeginOfYaxis, wYcoordinate,
+            m_wDiagramWidth + m_wXcoordOfBeginOfYaxis, wYcoordinate ) ;
+    }
   }
 }
 
@@ -1590,112 +1797,116 @@ void MainFrame::DrawLowestStableVoltageCurve(
   , float fMaxVoltage
   )
 {
-  std::set<VoltageAndFreq>::const_iterator ciLower =
-    mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.begin() ;
-    ////because of the "MaxVoltageForFreq::<" operator the set is sorted in 
-    ////DESCENDING order.
-    ////Points BEYOND the last element now.
-    //mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() ;
-  ////Now it should point to the last element.
-  //-- ciLower ;
-  if( ciLower != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() 
-    )
+  //May be NULL at startup.
+  if( mp_cpucontroller )
   {
-    std::set<VoltageAndFreq>::const_iterator ciHigher =
-      ciLower ;
-    ciHigher ++ ;
-    //ciHigher -- ;
-    if( ciHigher != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() 
+    std::set<VoltageAndFreq>::const_iterator ciLower =
+      mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.begin() ;
+      ////because of the "MaxVoltageForFreq::<" operator the set is sorted in 
+      ////DESCENDING order.
+      ////Points BEYOND the last element now.
+      //mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() ;
+    ////Now it should point to the last element.
+    //-- ciLower ;
+    if( ciLower != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() 
       )
     {
-      float fVoltage ;
-      WORD wYcoordinate ;
-      WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
-        //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-        mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-      WORD wCurrentFreqInMHz ;
-
-      for( WORD wCurrentXcoordinateInDiagram = //wXcoordOfBeginOfYaxis 
-        //0 
-        //Begin with 1 to avoid div by zero.
-        1 ; 
-        wCurrentXcoordinateInDiagram < //wxcoordWidth 
-        m_wDiagramWidth ; ++ wCurrentXcoordinateInDiagram 
+      std::set<VoltageAndFreq>::const_iterator ciHigher =
+        ciLower ;
+      ciHigher ++ ;
+      //ciHigher -- ;
+      if( ciHigher != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end() 
         )
       {
-        wCurrentFreqInMHz = (float) wMaxFreqInMHz / 
-          ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram ) ;
-        ////mp_pumastatectrl->GetMinFreqToPreventOvervoltage( iter ) ;
-        ////fVoltage = //1.05f - 
-        //mp_pumastatectrl->GetMaxVoltageForFreq( (float) wMaxFreqInMHz /
-        //   ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram )
-        //   , fVoltage 
-        //  );
-        if( ciHigher->m_wFreqInMHz < wCurrentFreqInMHz )
-        {
-          std::set<VoltageAndFreq>::const_iterator ciBeyondHigher = ciHigher ;
-          ++ ciBeyondHigher ;
-          if( ciBeyondHigher != mp_cpucoredata->
-            m_stdsetvoltageandfreqLowestStable.end() 
-            )
-          {
-            ++ ciLower ;
-            ++ ciHigher ;
-            //-- ciLower ;
-            //-- ciHigher ; 
-          }
-        }
-        //If current freq is in between.
-        if( ciHigher != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end()
-          && ciLower->m_wFreqInMHz <= wCurrentFreqInMHz && 
-          ciHigher->m_wFreqInMHz >= wCurrentFreqInMHz 
+        float fVoltage ;
+        WORD wYcoordinate ;
+        WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
+          //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+          mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+        WORD wCurrentFreqInMHz ;
+
+        for( WORD wCurrentXcoordinateInDiagram = //wXcoordOfBeginOfYaxis 
+          //0 
+          //Begin with 1 to avoid div by zero.
+          1 ; 
+          wCurrentXcoordinateInDiagram < //wxcoordWidth 
+          m_wDiagramWidth ; ++ wCurrentXcoordinateInDiagram 
           )
         {
-          //mp_pumastatectrl->GetInterpolatedVoltageFromFreq( 
-          //  wCurrentFreqInMHz
-          //  , *ciHigher
-          //  , *ciLower
-          //  , fVoltage
-          //  ) ;
-          mp_cpucontroller->GetInterpolatedVoltageFromFreq(
-            wCurrentFreqInMHz 
-            , fVoltage
-            , mp_cpucoredata->m_stdsetvoltageandfreqLowestStable
-            ) ;
-          if( m_bRangeBeginningFromMinVoltage )
-            wYcoordinate =
-              m_wDiagramHeight -
-              ( fVoltage - m_fMinVoltage )
-              / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
-          else
-            wYcoordinate = m_wDiagramHeight - 
-              fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
-              fMaxVoltage
-              * m_wDiagramHeight ;
-          //p_wxpaintdc->DrawLine( 
-          wxdc.DrawLine( 
-            wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
-            //200-fVoltage*100, 
-            //wDiagramHeight - 
-            //fVoltage/ (*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
-            //* wDiagramHeight ,
-            wYcoordinate ,
-            wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis
-            //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
-            //"Note that the point (x2, y2) is not part of the line and is 
-            //not drawn by this function (this is consistent with the 
-            //behaviour of many other toolkits)."
-            + 1
-            , //(200-fVoltage*100) 
-            wYcoordinate
-            //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
-            //"Note that the point (x2, y2) is not part of the line and is 
-            //not drawn by this function (this is consistent with the 
-            //behaviour of many other toolkits)."
-            + 1 
-            ) ;
-        }
-      }// for
+          wCurrentFreqInMHz = (float) wMaxFreqInMHz / 
+            ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram ) ;
+          ////mp_pumastatectrl->GetMinFreqToPreventOvervoltage( iter ) ;
+          ////fVoltage = //1.05f - 
+          //mp_pumastatectrl->GetMaxVoltageForFreq( (float) wMaxFreqInMHz /
+          //   ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram )
+          //   , fVoltage 
+          //  );
+          if( ciHigher->m_wFreqInMHz < wCurrentFreqInMHz )
+          {
+            std::set<VoltageAndFreq>::const_iterator ciBeyondHigher = ciHigher ;
+            ++ ciBeyondHigher ;
+            if( ciBeyondHigher != mp_cpucoredata->
+              m_stdsetvoltageandfreqLowestStable.end() 
+              )
+            {
+              ++ ciLower ;
+              ++ ciHigher ;
+              //-- ciLower ;
+              //-- ciHigher ; 
+            }
+          }
+          //If current freq is in between.
+          if( ciHigher != mp_cpucoredata->m_stdsetvoltageandfreqLowestStable.end()
+            && ciLower->m_wFreqInMHz <= wCurrentFreqInMHz && 
+            ciHigher->m_wFreqInMHz >= wCurrentFreqInMHz 
+            )
+          {
+            //mp_pumastatectrl->GetInterpolatedVoltageFromFreq( 
+            //  wCurrentFreqInMHz
+            //  , *ciHigher
+            //  , *ciLower
+            //  , fVoltage
+            //  ) ;
+            mp_cpucontroller->GetInterpolatedVoltageFromFreq(
+              wCurrentFreqInMHz 
+              , fVoltage
+              , mp_cpucoredata->m_stdsetvoltageandfreqLowestStable
+              ) ;
+            if( m_bRangeBeginningFromMinVoltage )
+              wYcoordinate =
+                m_wDiagramHeight -
+                ( fVoltage - m_fMinVoltage )
+                / m_fMaxMinusMinVoltage * m_wDiagramHeight ;
+            else
+              wYcoordinate = m_wDiagramHeight - 
+                fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
+                fMaxVoltage
+                * m_wDiagramHeight ;
+            //p_wxpaintdc->DrawLine( 
+            wxdc.DrawLine( 
+              wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
+              //200-fVoltage*100, 
+              //wDiagramHeight - 
+              //fVoltage/ (*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt 
+              //* wDiagramHeight ,
+              wYcoordinate ,
+              wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis
+              //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
+              //"Note that the point (x2, y2) is not part of the line and is 
+              //not drawn by this function (this is consistent with the 
+              //behaviour of many other toolkits)."
+              + 1
+              , //(200-fVoltage*100) 
+              wYcoordinate
+              //"+ 1" because: http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcdrawline:
+              //"Note that the point (x2, y2) is not part of the line and is 
+              //not drawn by this function (this is consistent with the 
+              //behaviour of many other toolkits)."
+              + 1 
+              ) ;
+          }
+        }// for
+      }
     }
   }
 }
@@ -1709,6 +1920,9 @@ void MainFrame::DrawOvervoltageProtectionCurve(
 //    , WORD wXcoordOfBeginOfYaxis
     )
 {
+  //May be NULL at startup.
+  if( mp_cpucontroller )
+  {
     float fVoltage ;
     WORD wYcoordinate ;
     WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
@@ -1788,6 +2002,7 @@ void MainFrame::DrawOvervoltageProtectionCurve(
             + 1 
             ) ;
     }
+  } //if( mp_cpucontroller )
 }
 
 void MainFrame::DrawCurrentPstateInfo(
@@ -1805,9 +2020,16 @@ void MainFrame::DrawCurrentPstateInfo(
 //   ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts * ar_cnh_cpucore_ugpca = 
 //	   ;
 //#endif
-   ::wxGetApp().mp_cpucoreusagegetter->
-     GetPercentalUsageForAllCores(
-     mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
+  wxString wxstrCPUcoreUsage ;
+   //::wxGetApp().mp_cpucoreusagegetter->
+  if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+  {
+     mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter->
+       GetPercentalUsageForAllCores(
+       mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
+  }
+  else
+    wxstrCPUcoreUsage = wxT("usage in percent: ?") ;
    #ifdef _DEBUG
    //::wxGetApp().mp_cpucoreusagegetter->Init() ;
    #endif
@@ -1826,7 +2048,21 @@ void MainFrame::DrawCurrentPstateInfo(
      if( mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
      {
        //mp_cpucontroller->
-       float fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ] ;
+       float fCPUload = -1.0 ;
+       if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+       {
+         fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ] ;
+         wxstrCPUcoreUsage = wxString::Format(
+#ifdef _WINDOWS
+			      _T(" usage in percent:%.3f")
+#else
+            //when compiled with MSVC and running under WinXP the executable 
+            //crashes with this format string (surely because of the 1st "%")
+			      _T(" usage in %:%.3f")
+#endif
+          , fCPUload * 100.0f
+          ) ;
+       }
 #ifdef _DEBUG
        if ( fCPUload == 0.0 )
        {
@@ -1851,13 +2087,14 @@ void MainFrame::DrawCurrentPstateInfo(
               //"FID:%u DID:%u->
             _T("%u MHz")
             //.3f : 3 digits after comma
-#ifdef _WINDOWS
-			      _T(" usage in percent:%.3f")
-#else
-            //when compiled with MSVC and running under WinXP the executable 
-            //crashes with this format string (surely because of the 1st "%")
-			      _T(" usage in %:%.3f")
-#endif
+//#ifdef _WINDOWS
+//			      _T(" usage in percent:%.3f")
+//#else
+//            //when compiled with MSVC and running under WinXP the executable 
+//            //crashes with this format string (surely because of the 1st "%")
+//			      _T(" usage in %:%.3f")
+//#endif
+            _T("%s")
 			      //"counter val.:%I64u"
 			      ,
             (WORD) byCPUcoreID ,
@@ -1876,7 +2113,8 @@ void MainFrame::DrawCurrentPstateInfo(
             //pstate.GetFreqInMHz() ,
             wFreqInMHz ,
 			      //mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ]
-            fCPUload * 100.0f
+            //fCPUload * 100.0f
+            wxstrCPUcoreUsage
 			      //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
 			      //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
           )
@@ -1934,6 +2172,9 @@ void MainFrame::DrawCurrentVoltageSettingsCurve(
 //    , WORD wXcoordOfBeginOfYaxis
     )
 {
+  //May be NULL at startup.
+  if( mp_cpucontroller )
+  {
     float fVoltage ;
     WORD wYcoordinate ;
     WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
@@ -2020,6 +2261,7 @@ void MainFrame::DrawCurrentVoltageSettingsCurve(
               ) ;
         }
       }//for-loop
+  } // if( mp_cpucontroller )
 }
 
 void MainFrame::DrawVoltageFreqCross(
@@ -2076,621 +2318,647 @@ void MainFrame::OnEraseBackground(wxEraseEvent& event)
 
 void MainFrame::OnPaint(wxPaintEvent & event)
 {
-//// Create a memory DC
-//  wxMemoryDC temp_dc;
-//  temp_dc.SelectObject(test_bitmap);
-//
-//  // We can now draw into the memory DC...
-//  // Copy from this DC to another DC.
-//  old_dc.Blit(250, 50, BITMAP_WIDTH, BITMAP_HEIGHT, temp_dc, 0, 0);
+  //May be NULL at startup.
+  if( mp_cpucontroller && 
+    //Is NULL if CPUcontroller is NULL at startup.
+    mp_wxbitmap 
+    )
+  {
+  //// Create a memory DC
+  //  wxMemoryDC temp_dc;
+  //  temp_dc.SelectObject(test_bitmap);
+  //
+  //  // We can now draw into the memory DC...
+  //  // Copy from this DC to another DC.
+  //  old_dc.Blit(250, 50, BITMAP_WIDTH, BITMAP_HEIGHT, temp_dc, 0, 0);
 
-  wxPaintDC * p_wxpaintdc = new wxPaintDC(this);
-    //dc->SetBackground(*wxBLUE_BRUSH);
-    wxPoint arwxpoint[3] ;
-    arwxpoint[0] = wxPoint(100, 
-        //Because the y-origin is top left.
-        200-80 ) ;
-    arwxpoint[1] = wxPoint(200, 
-        //Because the y-origin is top left.
-        200-95) ;
-    arwxpoint[2] = wxPoint(400, 
-        //Because the y-origin is top left.
-        200-110) ;
-
-    //p_wxpaintdc->DrawSpline(3, arwxpoint ) ;
-  //for( std::vector<MaxVoltageForFreq>::iterator iter = 
-  //  //m_model.m_vecmaxvoltageforfreq.begin() ; 
-  //  
-  //  //The first max voltage for freq pair ought to be the 
-  //  //highest/ maximum freq and its default voltage.
-  //  mp_pumastatectrl->mp_model->m_vecmaxvoltageforfreq.begin() ; 
-  //  iter != //m_model.m_vecmaxvoltageforfreq.end() ;
-  //    mp_pumastatectrl->mp_model->m_vecmaxvoltageforfreq.end() ;
-  //  ++ iter )
-  //{
-  //}
-    //float fVoltage ;
-    CPUcoreData * p_cpucoredata = & //mp_pumastatectrl->mp_model->m_cpucoredata ;
-      mp_cpucontroller->mp_model->m_cpucoredata ;
-    WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
-      //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-      mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-    //std::vector<MaxVoltageForFreq>::iterator iterstdvecmaxvoltageforfreq = 
-    //std::set<MaxVoltageForFreq>::iterator iterstdsetmaxvoltageforfreq = 
-    //  mp_pumastatectrl->mp_model->//m_vecmaxvoltageforfreq
-    //  m_setmaxvoltageforfreq.begin() ;
-    
-    //wxMemoryDC wxmemorydc(wxbitmap) ;
-    wxBufferedPaintDC wxmemorydc( this //, wxbitmap
-      , *mp_wxbitmap
-      ) ;
-
-    //http://www.informit.com/articles/article.aspx?p=405047:
-    // Shifts the device origin so we don't have to worry
-    // about the current scroll position ourselves
-    PrepareDC(wxmemorydc);
-
-    //http://docs.wxwidgets.org/stable/wx_wxmemorydc.html#wxmemorydc:
-    //"Use the IsOk member to test whether the constructor was 
-    //successful in creating a usable device context."
-    if( wxmemorydc.IsOk() )
+    //Control access to m_bAllowCPUcontrollerAccess between threads.
+    //m_wxCriticalSectionCPUctlAccess.Enter() ;
+    //wxCriticalSectionLocker wxcriticalsectionlocker( 
+    //  m_wxcriticalsectionCPUctlAccess ) ;
+    bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
+    if( //m_bAllowCPUcontrollerAccess 
+      bAllowCPUcontrollerAccess )
     {
-      wxCoord wxcoordCanvasWidth ;
-      wxCoord wxcoordCanvasHeight ;
-      p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
-      //m_wDiagramHeight = wxcoordCanvasHeight 
-      //    //Space for drawing scale and scale values below the x-axis.
-      //    - 50 ;
-      ////WORD wXcoordOfBeginOfYaxis = 50 ;
-      //m_wXcoordOfBeginOfYaxis = 50 ;
-      ////WORD wDiagramWidth = wxcoordCanvasWidth - wXcoordOfBeginOfYaxis - 30 ;
-      //m_wDiagramWidth = wxcoordCanvasWidth - m_wXcoordOfBeginOfYaxis - 30 ;
-      //WORD wYcoordinate ;
-      //WORD wXcoordinate ;
-      //Clears the device context using the current background brush. 
-      //(else black background?)
-      wxmemorydc.Clear();
-      //TODO maybe "dc.Blit(dcDiagramScaleAndCurves)" is faster than DrawBitmap.
-      //wxmemorydc.Blit(0, 0, wxcoordCanvasWidth , wxcoordCanvasHeight, 
-      //  & m_wxbufferedpaintdcStatic, 0, 0 );
-      //if( mp_wxbufferedpaintdcStatic )
-        wxmemorydc.Blit(0, 0, wxcoordCanvasWidth , wxcoordCanvasHeight, 
-          //mp_wxbufferedpaintdcStatic
-          & m_wxmemorydcStatic , 0, 0 );
-      //wxmemorydc.DrawBitmap( //mp_wxbitmapDiagramScaleAndCurves 
-      //  *mp_wxbitmapStatic , 0, 0) ;
-      //if( //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
-      //  iterstdsetmaxvoltageforfreq != mp_pumastatectrl->mp_model->
-      //  //m_vecmaxvoltageforfreq.end() 
-      //  m_setmaxvoltageforfreq.end()
-      //  )
-      //{
-      //    m_fMaxVoltage = //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt ;
-      //      //P-state 0 usually has the highest voltage.
-      //      (*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt ;
-      //    //http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcclear:
-      //    //"Clears the device context using the current background brush."
-      //    //p_wxpaintdc->Clear();
-      //    //mp_wxbitmap = new wxBitmap( 
-      //    //    wxcoordCanvasWidth, 
-      //    //    wxcoordCanvasHeight , 
-      //    //    //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
-      //    //    //"A depth of -1 indicates the depth of the current screen or visual."
-      //    //    -1) ;
 
-      //    //    p_wxpaintdc->Blit(
-      //    //        wXcoordOfBeginOfYaxis, 
-      //    //        0, 
-      //    //        wDiagramWidth, 
-      //    //        wDiagramHeight, 
-      //    //        &wxmemorydc, 
-      //    //        0, 
-      //    //        0);
-      //    //}
-      //    DrawDiagramScale( wxmemorydc, iterstdsetmaxvoltageforfreq) ;
-      //}
-  //    DrawOvervoltageProtectionCurve(
-  //        //p_wxpaintdc,
-  //        wxmemorydc ,
-  //        //wDiagramWidth,
-  ////                m_wDiagramWidth,
-  //        //wDiagramHeight,
-  ////                m_wDiagramHeight,
-  //        m_fMaxVoltage
-  ////                m_wXcoordOfBeginOfYaxis
-  //        ) ;
-  //    DrawCurrentVoltageSettingsCurve(
-  //        wxmemorydc ,
-  //        m_fMaxVoltage
-  //        ) ;
+    wxPaintDC * p_wxpaintdc = new wxPaintDC(this);
+      //dc->SetBackground(*wxBLUE_BRUSH);
+      wxPoint arwxpoint[3] ;
+      arwxpoint[0] = wxPoint(100, 
+          //Because the y-origin is top left.
+          200-80 ) ;
+      arwxpoint[1] = wxPoint(200, 
+          //Because the y-origin is top left.
+          200-95) ;
+      arwxpoint[2] = wxPoint(400, 
+          //Because the y-origin is top left.
+          200-110) ;
 
-        //p_wxpaintdc->Blit(
-        //    0, 
-        //    0, 
-        //    wxcoordCanvasWidth, 
-        //    wxcoordCanvasHeight, 
-        //    &wxmemorydc, 
-        //    0, 
-        //    0);
-        //float f
-       DWORD dwLowmostBits = 0 ;
-//#ifndef _TEST_PENTIUM_M
-       DrawCurrentPstateInfo(wxmemorydc) ;
-//#endif //#ifndef _TEST_PENTIUM_M
-       ULONGLONG ull ;
-       DWORD dwHighmostBits = 0//, dwLowmostBits 
-         ;
-       //mp_pumastatectrl->RdmsrEx(
-       //   MSR_TIME_STAMP_COUNTER_REGISTER,
-       //   dwLowmostBits,// bit  0-31 (register "EAX")
-	      //  dwHighmostBits, 
-       //   1 
-       //   ) ;
+      //p_wxpaintdc->DrawSpline(3, arwxpoint ) ;
+    //for( std::vector<MaxVoltageForFreq>::iterator iter = 
+    //  //m_model.m_vecmaxvoltageforfreq.begin() ; 
+    //  
+    //  //The first max voltage for freq pair ought to be the 
+    //  //highest/ maximum freq and its default voltage.
+    //  mp_pumastatectrl->mp_model->m_vecmaxvoltageforfreq.begin() ; 
+    //  iter != //m_model.m_vecmaxvoltageforfreq.end() ;
+    //    mp_pumastatectrl->mp_model->m_vecmaxvoltageforfreq.end() ;
+    //  ++ iter )
+    //{
+    //}
+      //float fVoltage ;
+      CPUcoreData * p_cpucoredata = & //mp_pumastatectrl->mp_model->m_cpucoredata ;
+        mp_cpucontroller->mp_model->m_cpucoredata ;
+      WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
+        //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+        mp_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+      //std::vector<MaxVoltageForFreq>::iterator iterstdvecmaxvoltageforfreq = 
+      //std::set<MaxVoltageForFreq>::iterator iterstdsetmaxvoltageforfreq = 
+      //  mp_pumastatectrl->mp_model->//m_vecmaxvoltageforfreq
+      //  m_setmaxvoltageforfreq.begin() ;
+      
+      //wxMemoryDC wxmemorydc(wxbitmap) ;
+      wxBufferedPaintDC wxmemorydc( this //, wxbitmap
+        , *mp_wxbitmap
+        ) ;
 
-        ull = dwHighmostBits ;
-        ull <<= 32 ;
-        ull |= dwLowmostBits ;
+      //http://www.informit.com/articles/article.aspx?p=405047:
+      // Shifts the device origin so we don't have to worry
+      // about the current scroll position ourselves
+      PrepareDC(wxmemorydc);
 
-        ULONGLONG ullTimeStampCounterValueDiff = ull - 
-          m_ullPreviousTimeStampCounterValue;
-        if( b_NotFirstTime )
-        {
-          wxmemorydc.DrawText( //wxString::Format(
-            //"%f"
-            //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
-            _T("TimeStampC value diff:")
-            , 0
-            , 90
-            ) ;
-          wxmemorydc.DrawText( 
-            wxString::Format(
+      //http://docs.wxwidgets.org/stable/wx_wxmemorydc.html#wxmemorydc:
+      //"Use the IsOk member to test whether the constructor was 
+      //successful in creating a usable device context."
+      if( wxmemorydc.IsOk() )
+      {
+        wxCoord wxcoordCanvasWidth ;
+        wxCoord wxcoordCanvasHeight ;
+        p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
+        //m_wDiagramHeight = wxcoordCanvasHeight 
+        //    //Space for drawing scale and scale values below the x-axis.
+        //    - 50 ;
+        ////WORD wXcoordOfBeginOfYaxis = 50 ;
+        //m_wXcoordOfBeginOfYaxis = 50 ;
+        ////WORD wDiagramWidth = wxcoordCanvasWidth - wXcoordOfBeginOfYaxis - 30 ;
+        //m_wDiagramWidth = wxcoordCanvasWidth - m_wXcoordOfBeginOfYaxis - 30 ;
+        //WORD wYcoordinate ;
+        //WORD wXcoordinate ;
+        //Clears the device context using the current background brush. 
+        //(else black background?)
+        wxmemorydc.Clear();
+        //TODO maybe "dc.Blit(dcDiagramScaleAndCurves)" is faster than DrawBitmap.
+        //wxmemorydc.Blit(0, 0, wxcoordCanvasWidth , wxcoordCanvasHeight, 
+        //  & m_wxbufferedpaintdcStatic, 0, 0 );
+        //if( mp_wxbufferedpaintdcStatic )
+          wxmemorydc.Blit(0, 0, wxcoordCanvasWidth , wxcoordCanvasHeight, 
+            //mp_wxbufferedpaintdcStatic
+            & m_wxmemorydcStatic , 0, 0 );
+        //wxmemorydc.DrawBitmap( //mp_wxbitmapDiagramScaleAndCurves 
+        //  *mp_wxbitmapStatic , 0, 0) ;
+        //if( //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
+        //  iterstdsetmaxvoltageforfreq != mp_pumastatectrl->mp_model->
+        //  //m_vecmaxvoltageforfreq.end() 
+        //  m_setmaxvoltageforfreq.end()
+        //  )
+        //{
+        //    m_fMaxVoltage = //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt ;
+        //      //P-state 0 usually has the highest voltage.
+        //      (*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt ;
+        //    //http://docs.wxwidgets.org/stable/wx_wxdc.html#wxdcclear:
+        //    //"Clears the device context using the current background brush."
+        //    //p_wxpaintdc->Clear();
+        //    //mp_wxbitmap = new wxBitmap( 
+        //    //    wxcoordCanvasWidth, 
+        //    //    wxcoordCanvasHeight , 
+        //    //    //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
+        //    //    //"A depth of -1 indicates the depth of the current screen or visual."
+        //    //    -1) ;
+
+        //    //    p_wxpaintdc->Blit(
+        //    //        wXcoordOfBeginOfYaxis, 
+        //    //        0, 
+        //    //        wDiagramWidth, 
+        //    //        wDiagramHeight, 
+        //    //        &wxmemorydc, 
+        //    //        0, 
+        //    //        0);
+        //    //}
+        //    DrawDiagramScale( wxmemorydc, iterstdsetmaxvoltageforfreq) ;
+        //}
+    //    DrawOvervoltageProtectionCurve(
+    //        //p_wxpaintdc,
+    //        wxmemorydc ,
+    //        //wDiagramWidth,
+    ////                m_wDiagramWidth,
+    //        //wDiagramHeight,
+    ////                m_wDiagramHeight,
+    //        m_fMaxVoltage
+    ////                m_wXcoordOfBeginOfYaxis
+    //        ) ;
+    //    DrawCurrentVoltageSettingsCurve(
+    //        wxmemorydc ,
+    //        m_fMaxVoltage
+    //        ) ;
+
+          //p_wxpaintdc->Blit(
+          //    0, 
+          //    0, 
+          //    wxcoordCanvasWidth, 
+          //    wxcoordCanvasHeight, 
+          //    &wxmemorydc, 
+          //    0, 
+          //    0);
+          //float f
+         DWORD dwLowmostBits = 0 ;
+  //#ifndef _TEST_PENTIUM_M
+         DrawCurrentPstateInfo(wxmemorydc) ;
+  //#endif //#ifndef _TEST_PENTIUM_M
+         ULONGLONG ull ;
+         DWORD dwHighmostBits = 0//, dwLowmostBits 
+           ;
+         //mp_pumastatectrl->RdmsrEx(
+         //   MSR_TIME_STAMP_COUNTER_REGISTER,
+         //   dwLowmostBits,// bit  0-31 (register "EAX")
+  	      //  dwHighmostBits, 
+         //   1 
+         //   ) ;
+
+          ull = dwHighmostBits ;
+          ull <<= 32 ;
+          ull |= dwLowmostBits ;
+
+          ULONGLONG ullTimeStampCounterValueDiff = ull - 
+            m_ullPreviousTimeStampCounterValue;
+          if( b_NotFirstTime )
+          {
+            wxmemorydc.DrawText( //wxString::Format(
               //"%f"
               //We need a _T() macro (wide char-> L"", char->"") for EACH 
               //line to make it compitable between char and wide char.
-              //print at least 10 chars
-              _T("%10I64u") ,
-              //ull - m_ullPreviousTimeStampCounterValue 
-              ullTimeStampCounterValueDiff
-              )
-            , 150
-            , 90
-            ) ;
-        }
-        m_ullPreviousTimeStampCounterValue = ull ;
-            //CPU_USAGE cpu_usage ;
-           
-//            wxmemorydc.DrawText(
-//              wxString::Format(
-//    //            "%64u"
-//                //"%f"
-//                //We need a _T() macro (wide char-> L"", char->"") for EACH
-//                //line to make it compatible between char and wide char.
-//                _T("core 0 cpu_usage: ")
-//                _T("%d")
-//                //"%f"
-//                ,
-//                //ull
-//                //GetCpuUsage( 0 , & cpu_usage )
-//                //wxGetApp().mp_wxDynLinkedCPUcoreUsageGetter->mp_wxDynLinkedCPUcoreUsageGetter
-//                //mp_model->mp_cpucoredata
-//                (int)mp_cpucoredata->m_arfCPUcoreLoadInPercent[0]
-//                //mp_pumastatectrl
-//                //m_cpucoreusagentqsi.GetCpuUsageNT(0 , & cpu_usage )
-//              )
-//              , 50
-//              , 50
-//              ) ;
-
-       //ull = mp_pumastatectrl->GetCurrentCPUload(1) ;
-    //    double d = ull ;
-
-    //    wxmemorydc.DrawText( wxString::Format(
-    //      //"%f"
-    //      "%I64u",
-    //      //f
-    //      //d
-    //      ull )
-    //        , 50
-    //        , 20
-    //        ) ;
-    //    double dDiff ;
-        //ULONGLONG ullDiff ;
-    //    if( //If value overflow.
-    //      ull < m_ullPreviousCPUusage )
-    //      //dDiff =
-    //      ullDiff = //0 
-    //        //If the value rangs WAS 0..255:
-    //        //    if current value = 10 and previos value = 250: 
-    //        //  oveflow occured. So the correct value is 255-250+10=5+10=15
-    //        _UI64_MAX - m_ullPreviousCPUusage + ull ;
-    //    else
-          //ULONGLONG ullPerformanceEventCounter2 ;
-          //ULONGLONG ullPerformanceEventCounter3 ;
-            DWORD dwAffinityMask = 1 ; //1= only CPU core 0
-#ifdef _TEST_GRIFFIN
-          //These values must be fetched even for the 1st:
-          //else the difference between 2 values is wrong/ too high
-          mp_pumastatectrl->ReadPerformanceEventCounterRegister(
-            0 ,
-            ull ,
-            dwAffinityMask ) ;
-          mp_pumastatectrl->ReadPerformanceEventCounterRegister(
-            1 ,
-            ullPerformanceEventCounter2 ,
-            dwAffinityMask ) ;
-          mp_pumastatectrl->ReadPerformanceEventCounterRegister(
-            2 ,
-            ullPerformanceEventCounter3 ,
-            dwAffinityMask ) ;
-          if ( //at the 1st time prev valu is 0--so the difference 
-            //to the current valiue can be too high
-            b_NotFirstTime )
-          {
-            //BYTE byCPUcoreID = 0 ;
-            DWORD dwHigh, dwLow ; 
-            //mp_pumastatectrl->//mp_controller->
-            //  RdmsrEx(
-            //  //PERF_CTR_0,
-            //  PERFORMANCE_EVENT_COUNTER_0_REGISTER ,
-            //  //PERFORMANCE_EVENT_COUNTER_1_REGISTER ,
-            //  dwLow,
-            //  dwHigh,
-            //  //1=core 0
-            //  //1
-            //  //byCPUcoreID 
-            //  dwAffinityMask
-            //  ) ;
-            //mp_pumastatectrl->AccuratelyStartPerformanceCounting( 
-            //  0, 
-            //  PERFORMANCE_EVENT_SELECT_RETIRED_INSTRUCTIONS 
-            //  ) ;
-            //mp_pumastatectrl->AccuratelyStartPerformanceCounting( 
-            //  1, 
-            //  CPU_CLOCKS_NOT_HALTED 
-            //  ) ;
-            //        //dDiff
-            //ullDiff = ull - m_ullPreviousCPUusage ;
-            ullDiff = PERFORMANCE_COUNTER_VALUE_DIFF( ull , 
-              m_ullPreviousCPUusage ) ;
-            ULONGLONG ullPerformanceEventCounter2Diff = 
-              PERFORMANCE_COUNTER_VALUE_DIFF( ullPerformanceEventCounter2 , 
-              m_ullPreviousPerformanceEventCounter2 ) ;
-            ULONGLONG ullPerformanceEventCounter3Diff = 
-              PERFORMANCE_COUNTER_VALUE_DIFF( ullPerformanceEventCounter3 , 
-              m_ullPreviousPerformanceEventCounter3 ) ;
-            if( ullDiff > m_ullHighestDiff )
-              m_ullHighestDiff = ullDiff ;
-            if( ullPerformanceEventCounter2Diff > 
-              m_ullHighestPerformanceEventCounter2Diff 
-              )
-              m_ullHighestPerformanceEventCounter2Diff = 
-                ullPerformanceEventCounter2Diff ;
-            wxmemorydc.DrawText(
-                //"%f"
-                "clocks not halted diff:"
+              _T("TimeStampC value diff:")
               , 0
-              , 110
+              , 90
               ) ;
-            wxmemorydc.DrawText(
-              wxString::Format(
-                //print at least 10 chars
-                "%10I64u"
-                ,
-                //ullPerformanceEventCounter2Diff
-                ullPerformanceEventCounter3Diff
-                )
-              , 150
-              , 110
-              ) ;
-              double dClocksNotHaltedDiffDivTCSdiff =
-                (double) ullPerformanceEventCounter3Diff /
-                (double) ullTimeStampCounterValueDiff ;
-            wxmemorydc.DrawText(
-              wxString::Format(
-                //print at least 10 chars
-                "clocks not halted diff / TimeStampCounter diff: %0.2f"
-                ,
-                //ullPerformanceEventCounter2Diff
-                dClocksNotHaltedDiffDivTCSdiff
-                )
-              , 0
-              , 130
-              ) ;
-            wxmemorydc.DrawText(
+            wxmemorydc.DrawText( 
               wxString::Format(
                 //"%f"
-                //"ret instr diff / clocks not halted diff: %f"
-                "FPU load = " //"FPU usage: "
-                //"\"( clocks not halted diff\"(%I64u) - "
-                //"\"cycles with empty FPU diff\"(%I64u) )(%I64u) / "  //"max. usage:"
-                "cycles at least 1 FPU op(%I64u) / "
-                //"clocks not halted diff(%I64u) = %f"
-                "TSC diff diff(%I64u) = %f"
-                ,
-                //ullPerformanceEventCounter3Diff ,
-                ullPerformanceEventCounter2Diff ,
-                //( ullPerformanceEventCounter3Diff - 
-                //  ullPerformanceEventCounter2Diff ) ,
-                //m_ullHighestPerformanceEventCounter2Diff,
-                //ullPerformanceEventCounter3Diff ,
-                ullTimeStampCounterValueDiff ,
-                (double) //ullDiff 
-                //( ullPerformanceEventCounter3Diff - 
-                  ullPerformanceEventCounter2Diff //)
-                / (double) 
-                //ullPerformanceEventCounter2Diff
-                //m_ullHighestPerformanceEventCounter2Diff
-                //ullPerformanceEventCounter3Diff
+                //We need a _T() macro (wide char-> L"", char->"") for EACH 
+                //line to make it compitable between char and wide char.
+                //print at least 10 chars
+                _T("%10I64u") ,
+                //ull - m_ullPreviousTimeStampCounterValue 
                 ullTimeStampCounterValueDiff
-              )
-              , 50
+                )
               , 150
+              , 90
               ) ;
-            //        dDiff = ullDiff ;
-            wxmemorydc.DrawText(
-              wxString::Format(
-    //            "%64u"
-                //"%f"
-                "perf ctr diff: %I64u"
-                ,
-                //f
-                //d - //m_fPreviousCPUusage
-                //ull - m_ullPreviousCPUusage
-                //dDiff
-                //ull
-                ullDiff
-              )
-              , 50
-              , 170
-              ) ;
-            wxmemorydc.DrawText(
-              wxString::Format(
-    //            "%64u"
-                //"%f"
-                "perf ctr: "
-                "%I64u"
-                //"%u"
-                ,
-                //f
-                //d - //m_fPreviousCPUusage
-                //ull - m_ullPreviousCPUusage
-                //dDiff
-                ull
-                //dwLow
-                //ullDiff
-              )
-              , 50
-              , 30
-              ) ;    //        DWORD dwValue ;
+          }
+          m_ullPreviousTimeStampCounterValue = ull ;
+              //CPU_USAGE cpu_usage ;
+             
+  //            wxmemorydc.DrawText(
+  //              wxString::Format(
+  //    //            "%64u"
+  //                //"%f"
+  //                //We need a _T() macro (wide char-> L"", char->"") for EACH
+  //                //line to make it compatible between char and wide char.
+  //                _T("core 0 cpu_usage: ")
+  //                _T("%d")
+  //                //"%f"
+  //                ,
+  //                //ull
+  //                //GetCpuUsage( 0 , & cpu_usage )
+  //                //wxGetApp().mp_wxDynLinkedCPUcoreUsageGetter->mp_wxDynLinkedCPUcoreUsageGetter
+  //                //mp_model->mp_cpucoredata
+  //                (int)mp_cpucoredata->m_arfCPUcoreLoadInPercent[0]
+  //                //mp_pumastatectrl
+  //                //m_cpucoreusagentqsi.GetCpuUsageNT(0 , & cpu_usage )
+  //              )
+  //              , 50
+  //              , 50
+  //              ) ;
 
-    //        //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
-    //        //p_maxvoltageforfreqFreqAbove->m_fVoltageInVolt -
-    //          = 1.062 -
-    //          mp_pumastatectrl->log_dualis
-    //            (//wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
-    //                (double) //p_maxvoltageforfreqFreqAbove->m_wFreqInMHz /
-    //                2200 /
-    //                (double) //wFreqToGetMaxVoltageFor
-    //                2000
-    //            )
-    //              *
-    //                //fVoltageDiffBetwOvVoltProtVnf_pairs
-    //                ( //p_maxvoltageforfreqFreqAbove->m_fVoltageInVolt -
-    //                1.062 -
-    //                //p_maxvoltageforfreqFreqBelow->m_fVoltageInVolt
-    //                0.85
-    //            )
-    //          ;
+         //ull = mp_pumastatectrl->GetCurrentCPUload(1) ;
+      //    double d = ull ;
 
-            ////dPercentalFreq = (double) m_wFreqInMHz / 
-            ////  (double) mp_cpucoredata->m_wMaxFreqInMHz ;
-            //////If e.g. running at 1/4 of max. freq the maxium performance
-            //////counter value difference can just be 1/4 of the maximum 
-            ////// possible (=when runnung at highest frequency ) performance 
-            //////  counter value difference!
-            ////dMaximumPerfCounterDiffForCurrentFreq = dPercentalFreq 
-            ////  * (double) m_ullHighestDiff ;
-            double dCPUloadInPercent = (double) ullDiff  /
-              //dMaximumPerfCounterDiffForCurrentFreq ;
-              (double) 
-              //m_ullHighestDiff ;
-              //ullPerformanceEventCounter3Diff ;
-              ullTimeStampCounterValueDiff ;
-            wxmemorydc.DrawText(
-              wxString::Format("ALU load: %0.2f" , dCPUloadInPercent )
-                , 270
-                , 90
+      //    wxmemorydc.DrawText( wxString::Format(
+      //      //"%f"
+      //      "%I64u",
+      //      //f
+      //      //d
+      //      ull )
+      //        , 50
+      //        , 20
+      //        ) ;
+      //    double dDiff ;
+          //ULONGLONG ullDiff ;
+      //    if( //If value overflow.
+      //      ull < m_ullPreviousCPUusage )
+      //      //dDiff =
+      //      ullDiff = //0 
+      //        //If the value rangs WAS 0..255:
+      //        //    if current value = 10 and previos value = 250: 
+      //        //  oveflow occured. So the correct value is 255-250+10=5+10=15
+      //        _UI64_MAX - m_ullPreviousCPUusage + ull ;
+      //    else
+            //ULONGLONG ullPerformanceEventCounter2 ;
+            //ULONGLONG ullPerformanceEventCounter3 ;
+              DWORD dwAffinityMask = 1 ; //1= only CPU core 0
+  #ifdef _TEST_GRIFFIN
+            //These values must be fetched even for the 1st:
+            //else the difference between 2 values is wrong/ too high
+            mp_pumastatectrl->ReadPerformanceEventCounterRegister(
+              0 ,
+              ull ,
+              dwAffinityMask ) ;
+            mp_pumastatectrl->ReadPerformanceEventCounterRegister(
+              1 ,
+              ullPerformanceEventCounter2 ,
+              dwAffinityMask ) ;
+            mp_pumastatectrl->ReadPerformanceEventCounterRegister(
+              2 ,
+              ullPerformanceEventCounter3 ,
+              dwAffinityMask ) ;
+            if ( //at the 1st time prev valu is 0--so the difference 
+              //to the current valiue can be too high
+              b_NotFirstTime )
+            {
+              //BYTE byCPUcoreID = 0 ;
+              DWORD dwHigh, dwLow ; 
+              //mp_pumastatectrl->//mp_controller->
+              //  RdmsrEx(
+              //  //PERF_CTR_0,
+              //  PERFORMANCE_EVENT_COUNTER_0_REGISTER ,
+              //  //PERFORMANCE_EVENT_COUNTER_1_REGISTER ,
+              //  dwLow,
+              //  dwHigh,
+              //  //1=core 0
+              //  //1
+              //  //byCPUcoreID 
+              //  dwAffinityMask
+              //  ) ;
+              //mp_pumastatectrl->AccuratelyStartPerformanceCounting( 
+              //  0, 
+              //  PERFORMANCE_EVENT_SELECT_RETIRED_INSTRUCTIONS 
+              //  ) ;
+              //mp_pumastatectrl->AccuratelyStartPerformanceCounting( 
+              //  1, 
+              //  CPU_CLOCKS_NOT_HALTED 
+              //  ) ;
+              //        //dDiff
+              //ullDiff = ull - m_ullPreviousCPUusage ;
+              ullDiff = PERFORMANCE_COUNTER_VALUE_DIFF( ull , 
+                m_ullPreviousCPUusage ) ;
+              ULONGLONG ullPerformanceEventCounter2Diff = 
+                PERFORMANCE_COUNTER_VALUE_DIFF( ullPerformanceEventCounter2 , 
+                m_ullPreviousPerformanceEventCounter2 ) ;
+              ULONGLONG ullPerformanceEventCounter3Diff = 
+                PERFORMANCE_COUNTER_VALUE_DIFF( ullPerformanceEventCounter3 , 
+                m_ullPreviousPerformanceEventCounter3 ) ;
+              if( ullDiff > m_ullHighestDiff )
+                m_ullHighestDiff = ullDiff ;
+              if( ullPerformanceEventCounter2Diff > 
+                m_ullHighestPerformanceEventCounter2Diff 
+                )
+                m_ullHighestPerformanceEventCounter2Diff = 
+                  ullPerformanceEventCounter2Diff ;
+              wxmemorydc.DrawText(
+                  //"%f"
+                  "clocks not halted diff:"
+                , 0
+                , 110
                 ) ;
-            //wxmemorydc.DrawText(
-            //  wxString::Format("max. diff: %I64u" , m_ullHighestDiff )
-            //    , 270
-            //    , 90
-            //    ) ;
-            //wxmemorydc.DrawText(
-            //  wxString::Format(//"diff"
-            //    "retired microops/s : %I64u" , ullDiff )
-            //    , 270
-            //    , 110
-            //    ) ;
-
-            //if( //If thes window has the focus 
-            //  IsActive() )
-            //{
-              if ( m_fPreviousCPUusage != 0.0f )
-              {
-                if ( dClocksNotHaltedDiffDivTCSdiff > 
-                  m_fPreviousCPUusage * 0.75 //* 1.5f 
+              wxmemorydc.DrawText(
+                wxString::Format(
+                  //print at least 10 chars
+                  "%10I64u"
+                  ,
+                  //ullPerformanceEventCounter2Diff
+                  ullPerformanceEventCounter3Diff
                   )
+                , 150
+                , 110
+                ) ;
+                double dClocksNotHaltedDiffDivTCSdiff =
+                  (double) ullPerformanceEventCounter3Diff /
+                  (double) ullTimeStampCounterValueDiff ;
+              wxmemorydc.DrawText(
+                wxString::Format(
+                  //print at least 10 chars
+                  "clocks not halted diff / TimeStampCounter diff: %0.2f"
+                  ,
+                  //ullPerformanceEventCounter2Diff
+                  dClocksNotHaltedDiffDivTCSdiff
+                  )
+                , 0
+                , 130
+                ) ;
+              wxmemorydc.DrawText(
+                wxString::Format(
+                  //"%f"
+                  //"ret instr diff / clocks not halted diff: %f"
+                  "FPU load = " //"FPU usage: "
+                  //"\"( clocks not halted diff\"(%I64u) - "
+                  //"\"cycles with empty FPU diff\"(%I64u) )(%I64u) / "  //"max. usage:"
+                  "cycles at least 1 FPU op(%I64u) / "
+                  //"clocks not halted diff(%I64u) = %f"
+                  "TSC diff diff(%I64u) = %f"
+                  ,
+                  //ullPerformanceEventCounter3Diff ,
+                  ullPerformanceEventCounter2Diff ,
+                  //( ullPerformanceEventCounter3Diff - 
+                  //  ullPerformanceEventCounter2Diff ) ,
+                  //m_ullHighestPerformanceEventCounter2Diff,
+                  //ullPerformanceEventCounter3Diff ,
+                  ullTimeStampCounterValueDiff ,
+                  (double) //ullDiff 
+                  //( ullPerformanceEventCounter3Diff - 
+                    ullPerformanceEventCounter2Diff //)
+                  / (double) 
+                  //ullPerformanceEventCounter2Diff
+                  //m_ullHighestPerformanceEventCounter2Diff
+                  //ullPerformanceEventCounter3Diff
+                  ullTimeStampCounterValueDiff
+                )
+                , 50
+                , 150
+                ) ;
+              //        dDiff = ullDiff ;
+              wxmemorydc.DrawText(
+                wxString::Format(
+      //            "%64u"
+                  //"%f"
+                  "perf ctr diff: %I64u"
+                  ,
+                  //f
+                  //d - //m_fPreviousCPUusage
+                  //ull - m_ullPreviousCPUusage
+                  //dDiff
+                  //ull
+                  ullDiff
+                )
+                , 50
+                , 170
+                ) ;
+              wxmemorydc.DrawText(
+                wxString::Format(
+      //            "%64u"
+                  //"%f"
+                  "perf ctr: "
+                  "%I64u"
+                  //"%u"
+                  ,
+                  //f
+                  //d - //m_fPreviousCPUusage
+                  //ull - m_ullPreviousCPUusage
+                  //dDiff
+                  ull
+                  //dwLow
+                  //ullDiff
+                )
+                , 50
+                , 30
+                ) ;    //        DWORD dwValue ;
+
+      //        //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
+      //        //p_maxvoltageforfreqFreqAbove->m_fVoltageInVolt -
+      //          = 1.062 -
+      //          mp_pumastatectrl->log_dualis
+      //            (//wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
+      //                (double) //p_maxvoltageforfreqFreqAbove->m_wFreqInMHz /
+      //                2200 /
+      //                (double) //wFreqToGetMaxVoltageFor
+      //                2000
+      //            )
+      //              *
+      //                //fVoltageDiffBetwOvVoltProtVnf_pairs
+      //                ( //p_maxvoltageforfreqFreqAbove->m_fVoltageInVolt -
+      //                1.062 -
+      //                //p_maxvoltageforfreqFreqBelow->m_fVoltageInVolt
+      //                0.85
+      //            )
+      //          ;
+
+              ////dPercentalFreq = (double) m_wFreqInMHz / 
+              ////  (double) mp_cpucoredata->m_wMaxFreqInMHz ;
+              //////If e.g. running at 1/4 of max. freq the maxium performance
+              //////counter value difference can just be 1/4 of the maximum 
+              ////// possible (=when runnung at highest frequency ) performance 
+              //////  counter value difference!
+              ////dMaximumPerfCounterDiffForCurrentFreq = dPercentalFreq 
+              ////  * (double) m_ullHighestDiff ;
+              double dCPUloadInPercent = (double) ullDiff  /
+                //dMaximumPerfCounterDiffForCurrentFreq ;
+                (double) 
+                //m_ullHighestDiff ;
+                //ullPerformanceEventCounter3Diff ;
+                ullTimeStampCounterValueDiff ;
+              wxmemorydc.DrawText(
+                wxString::Format("ALU load: %0.2f" , dCPUloadInPercent )
+                  , 270
+                  , 90
+                  ) ;
+              //wxmemorydc.DrawText(
+              //  wxString::Format("max. diff: %I64u" , m_ullHighestDiff )
+              //    , 270
+              //    , 90
+              //    ) ;
+              //wxmemorydc.DrawText(
+              //  wxString::Format(//"diff"
+              //    "retired microops/s : %I64u" , ullDiff )
+              //    , 270
+              //    , 110
+              //    ) ;
+
+              //if( //If thes window has the focus 
+              //  IsActive() )
+              //{
+                if ( m_fPreviousCPUusage != 0.0f )
                 {
-                  m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-                  //raise the freq.
-                  dClocksNotHaltedDiffDivTCSdiff *= 1.5 ;
+                  if ( dClocksNotHaltedDiffDivTCSdiff > 
+                    m_fPreviousCPUusage * 0.75 //* 1.5f 
+                    )
+                  {
+                    m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
+                    //raise the freq.
+                    dClocksNotHaltedDiffDivTCSdiff *= 1.5 ;
+                  }
+                  else
+                    m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
                 }
                 else
                   m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-              }
-              else
-                m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-
-              //wxmemorydc.DrawText(
-              //    wxString::Format("%0.2f" , fFreqInMHz )
-              //    , 170
-              //    , 70
-              //    ) ;
 
                 //wxmemorydc.DrawText(
-                //  wxString::Format("Freq by load:"
-                //  //"%f"
-                //  "%u"
-                //  "voltage: %0.4f" , 
-                //  //fFreqInMHz
-                //  //wFreqInMHz
-                //  pstate.GetFreqInMHz(), 
-                //  //fVoltageInVolt 
-                //  pstate.GetVoltageInVolt() 
-                //  )
-                    //, 200
-                    //, 200
-                    //) ;
-             //}
-             //else
-             //   wxmemorydc.DrawText(
-             //   wxString::Format("curr freq:%f NO current voltage %0.4f" , 
-             //     fFreqInMHz, fVoltageInVolt )
-             //       , 200
-             //       , 200
-             //       ) ;
+                //    wxString::Format("%0.2f" , fFreqInMHz )
+                //    , 170
+                //    , 70
+                //    ) ;
 
-            if( //If this window has the focus 
-              //IsActive() 
-              ! m_vbAnotherWindowIsActive
-              )
-            {
-              //m_wFreqInMHzOfCurrentActiveCoreSettings = wFreqInMHz ;
-              //m_fVoltageInVoltOfCurrentActiveCoreSettings = fVoltageInVolt ;
+                  //wxmemorydc.DrawText(
+                  //  wxString::Format("Freq by load:"
+                  //  //"%f"
+                  //  "%u"
+                  //  "voltage: %0.4f" , 
+                  //  //fFreqInMHz
+                  //  //wFreqInMHz
+                  //  pstate.GetFreqInMHz(), 
+                  //  //fVoltageInVolt 
+                  //  pstate.GetVoltageInVolt() 
+                  //  )
+                      //, 200
+                      //, 200
+                      //) ;
+               //}
+               //else
+               //   wxmemorydc.DrawText(
+               //   wxString::Format("curr freq:%f NO current voltage %0.4f" , 
+               //     fFreqInMHz, fVoltageInVolt )
+               //       , 200
+               //       , 200
+               //       ) ;
+
+              if( //If this window has the focus 
+                //IsActive() 
+                ! m_vbAnotherWindowIsActive
+                )
+              {
+                //m_wFreqInMHzOfCurrentActiveCoreSettings = wFreqInMHz ;
+                //m_fVoltageInVoltOfCurrentActiveCoreSettings = fVoltageInVolt ;
+              }
             }
-          }
-          else // b_NotFirstTime == false 
-            b_NotFirstTime = true ;
-        //m_ullPreviousCPUusage = ull ;
-        //m_ullPreviousPerformanceEventCounter2 = 
-        //  ullPerformanceEventCounter2 ;
-        //m_ullPreviousPerformanceEventCounter3 =
-        //  ullPerformanceEventCounter3 ;
-#endif //_TEST_GRIFFIN
-      //Just for testing:
-      //wXcoordinate = wYcoordinate = 50 ;
-      if( //m_bDrawFreqAndVoltagePointForCurrCoreSettings 
-        m_vbAnotherWindowIsActive 
-        )
-      {
-        DrawVoltageFreqCross(
-          wxmemorydc
-          , m_fVoltageInVoltOfCurrentActiveCoreSettings
-          , m_wFreqInMHzOfCurrentActiveCoreSettings
-          , wxBLUE
-          ) ;
-      }
-      else
-      {
-        float fVoltageInVolt ;
-        WORD wFreqInMHz ;
-        for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
-          GetNumberOfCPUcores() ; ++ byCoreID )
+            else // b_NotFirstTime == false 
+              b_NotFirstTime = true ;
+          //m_ullPreviousCPUusage = ull ;
+          //m_ullPreviousPerformanceEventCounter2 = 
+          //  ullPerformanceEventCounter2 ;
+          //m_ullPreviousPerformanceEventCounter3 =
+          //  ullPerformanceEventCounter3 ;
+  #endif //_TEST_GRIFFIN
+        //Just for testing:
+        //wXcoordinate = wYcoordinate = 50 ;
+        if( //m_bDrawFreqAndVoltagePointForCurrCoreSettings 
+          m_vbAnotherWindowIsActive 
+          )
         {
-          mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCoreID);
-          PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
-            m_arp_percpucoreattributes[ byCoreID] ;
           DrawVoltageFreqCross(
             wxmemorydc
-            //, r_percpucoreattributes.m_fVoltageInVoltCalculatedFromCPUload
-            , fVoltageInVolt
-            //, r_percpucoreattributes.m_wFreqInMHzCalculatedFromCPUload 
-            , wFreqInMHz
+            , m_fVoltageInVoltOfCurrentActiveCoreSettings
+            , m_wFreqInMHzOfCurrentActiveCoreSettings
             , wxBLUE
             ) ;
         }
-      }
-      //m_bDrawFreqAndVoltagePointForCurrCoreSettings =
-      //    ! m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
-//#ifndef _TEST_PENTIUM_M
-//        //DWORD dwValue ;
-//        float fTempInDegCelsius ;
-//        if( mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius)
-//          )
-//          wxmemorydc.DrawText(
-//            wxString::Format(_T("CPU temp.:%0.2f degrees C") ,
-//              fTempInDegCelsius )
-//              , 50
-//              , 70
-//              ) ;
-//#endif //#ifndef _TEST_PENTIUM_M
-#ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER__
-       float arf[2] ;
-       //m_cpucoreusagegetter.GetPercentalUsageForAllCores(arf) ;
-       m_cpucoreusagegetteriwbemservices.GetPercentalUsageForAllCores(arf) ;
-          wxmemorydc.DrawText(
-          wxString::Format("%f" , arf[0] )
-              , 200
-              , 70
+        else
+        {
+          float fVoltageInVolt ;
+          WORD wFreqInMHz ;
+          for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+            GetNumberOfCPUcores() ; ++ byCoreID )
+          {
+            mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCoreID);
+            PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
+              m_arp_percpucoreattributes[ byCoreID] ;
+            DrawVoltageFreqCross(
+              wxmemorydc
+              //, r_percpucoreattributes.m_fVoltageInVoltCalculatedFromCPUload
+              , fVoltageInVolt
+              //, r_percpucoreattributes.m_wFreqInMHzCalculatedFromCPUload 
+              , wFreqInMHz
+              , wxBLUE
               ) ;
-      double dPassedNanos ;
-      SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION ar_sysprocperfinfo [1] ;
-      m_cpucoreusagegetter.GetSysProcPerfInfo(
-        ar_sysprocperfinfo ,
-        dPassedNanos
-        ) ;
-      LARGE_INTEGER liKernelMinusIdle ; 
-      liKernelMinusIdle.QuadPart = 
-        ar_sysprocperfinfo[0].KernelTime.QuadPart 
-        - ar_sysprocperfinfo[0].IdleTime.QuadPart ;
-      LARGE_INTEGER liOverall ; 
-      liOverall.QuadPart = 
-        //liKernelMinusIdle.QuadPart + 
-        ar_sysprocperfinfo[0].KernelTime.QuadPart +
-        ar_sysprocperfinfo[0].IdleTime.QuadPart + 
-        ar_sysprocperfinfo[0].UserTime.QuadPart ;
+          }
+        }
+        //m_bDrawFreqAndVoltagePointForCurrCoreSettings =
+        //    ! m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
+  //#ifndef _TEST_PENTIUM_M
+  //        //DWORD dwValue ;
+  //        float fTempInDegCelsius ;
+  //        if( mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius)
+  //          )
+  //          wxmemorydc.DrawText(
+  //            wxString::Format(_T("CPU temp.:%0.2f degrees C") ,
+  //              fTempInDegCelsius )
+  //              , 50
+  //              , 70
+  //              ) ;
+  //#endif //#ifndef _TEST_PENTIUM_M
+  #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER__
+         float arf[2] ;
+         //m_cpucoreusagegetter.GetPercentalUsageForAllCores(arf) ;
+         m_cpucoreusagegetteriwbemservices.GetPercentalUsageForAllCores(arf) ;
+            wxmemorydc.DrawText(
+            wxString::Format("%f" , arf[0] )
+                , 200
+                , 70
+                ) ;
+        double dPassedNanos ;
+        SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION ar_sysprocperfinfo [1] ;
+        m_cpucoreusagegetter.GetSysProcPerfInfo(
+          ar_sysprocperfinfo ,
+          dPassedNanos
+          ) ;
+        LARGE_INTEGER liKernelMinusIdle ; 
+        liKernelMinusIdle.QuadPart = 
+          ar_sysprocperfinfo[0].KernelTime.QuadPart 
+          - ar_sysprocperfinfo[0].IdleTime.QuadPart ;
+        LARGE_INTEGER liOverall ; 
+        liOverall.QuadPart = 
+          //liKernelMinusIdle.QuadPart + 
+          ar_sysprocperfinfo[0].KernelTime.QuadPart +
+          ar_sysprocperfinfo[0].IdleTime.QuadPart + 
+          ar_sysprocperfinfo[0].UserTime.QuadPart ;
 
-          wxmemorydc.DrawText(
-            wxString::Format("idle: %I64u kernel:%I64u user:%I64u "
-              "kernel-idle:%I64u overall:%I64u" 
-              ,
-              ar_sysprocperfinfo[0].IdleTime.QuadPart , 
-              ar_sysprocperfinfo[0].KernelTime.QuadPart, 
-              ar_sysprocperfinfo[0].UserTime.QuadPart,
-              liKernelMinusIdle.QuadPart ,
-              liOverall.QuadPart
-              )
-              , 0
-              , 170
-              ) ;
-          wxmemorydc.DrawText(
-            wxString::Format(
-            "idle:%f kernel:%f kernel-idle:%f user:%f dPassedNanos:%f",
+            wxmemorydc.DrawText(
+              wxString::Format("idle: %I64u kernel:%I64u user:%I64u "
+                "kernel-idle:%I64u overall:%I64u" 
+                ,
+                ar_sysprocperfinfo[0].IdleTime.QuadPart , 
+                ar_sysprocperfinfo[0].KernelTime.QuadPart, 
+                ar_sysprocperfinfo[0].UserTime.QuadPart,
+                liKernelMinusIdle.QuadPart ,
+                liOverall.QuadPart
+                )
+                , 0
+                , 170
+                ) ;
+            wxmemorydc.DrawText(
+              wxString::Format(
+              "idle:%f kernel:%f kernel-idle:%f user:%f dPassedNanos:%f",
 
-              (double) ar_sysprocperfinfo[0].IdleTime.QuadPart / 
-                (double) liOverall.QuadPart ,
-              (double) ar_sysprocperfinfo[0].KernelTime.QuadPart / 
-                (double) liOverall.QuadPart ,
-              (double) liKernelMinusIdle.QuadPart / 
-                (double) liOverall.QuadPart ,
-              (double) ar_sysprocperfinfo[0].UserTime.QuadPart / 
-                (double) liOverall.QuadPart ,
-                dPassedNanos
-              )
-              , 0
-              , 190
-              ) ;
-#endif //#ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
-//        m_fPreviousCPUusage = d ;
+                (double) ar_sysprocperfinfo[0].IdleTime.QuadPart / 
+                  (double) liOverall.QuadPart ,
+                (double) ar_sysprocperfinfo[0].KernelTime.QuadPart / 
+                  (double) liOverall.QuadPart ,
+                (double) liKernelMinusIdle.QuadPart / 
+                  (double) liOverall.QuadPart ,
+                (double) ar_sysprocperfinfo[0].UserTime.QuadPart / 
+                  (double) liOverall.QuadPart ,
+                  dPassedNanos
+                )
+                , 0
+                , 190
+                ) ;
+  #endif //#ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
+  //        m_fPreviousCPUusage = d ;
 
-        //m_ullPreviousCPUusage = ull ;
+          //m_ullPreviousCPUusage = ull ;
 
-        //}
-    }//if( wxmemorydc.IsOk() )
+          //}
+      }//if( wxmemorydc.IsOk() )
 
-    delete p_wxpaintdc; 
+      delete p_wxpaintdc; 
+    }
+    //m_wxCriticalSectionCPUctlAccess.Leave() ;
+  } // if( mp_cpucontroller )
+  else
+  {
+    wxPaintDC wxpaintdc(this);
+    //Clears the device context using the current background brush. 
+    //(else black background?)
+    wxpaintdc.Clear();
+    wxpaintdc.DrawText( wxT("no CPU controller available->e.g. attach a DLL") , 0 , 0 ) ;
+  }
 }
 
 //order of submenus/ menu items of "core x" menus.
@@ -2713,10 +2981,10 @@ void MainFrame::Notify() //overrides wxTimer::Notify()
 
 void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
 {
-  if( //! //mp_pumastatectrl->m_bFrequencyScalingByOSDisabled 
-    //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+  if( 
     //mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
-    mp_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
+    //mp_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
+    mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
     )
     if (::wxMessageBox(
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
@@ -2731,75 +2999,30 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
         , wxYES_NO | wxICON_QUESTION )
         == wxYES
        )
-      //mp_pumastatectrl->DisableFrequencyScalingByOS();
-      mp_cpucontroller->DisableFrequencyScalingByOS();
+      //mp_cpucontroller->DisableFrequencyScalingByOS();
+      mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
 }
 
 //#ifdef _TEST_PENTIUM_M
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   void MainFrame::OnMSR(wxCommandEvent& WXUNUSED(event))
   {
-     //MSRdata msrdata(0x199);
-     //RegisterData registerdataFID("FID");
-     //RegisterData registerdataVolt("VID");
-     ////example: registerdata kann be made up of e.g. msr reggister[5:0], reggister[10:8]
-     //registerdataFID.add(8,4) ;
-     //registerdataVolt.add(0,8) ;
-     ////registerdataVolt.setTable("VID_to_Volt") ;
-     ////registerdataMHz.setTable("FID_to_MHz") ;
-     //msrdata.add(registerdataFID) ;
-     //msrdata.add(registerdataVolt) ;
-     //std::string stdstrFIDtoMHzTable [][2] = {
-     // { "MHz","FID" } ,
-     // { "600","6" } ,
-     // { "800","8" } ,
-     // { "900","9" } ,
-     // { "1000","10" } ,
-     // { "1100","11" } ,
-     // { "1200","12" } ,
-     // { "1300","13" } ,
-     // { "1400","14" } ,
-     // { "1600","16" } ,
-     // { "1800","18" } 
-     // } ;
-     //msrdata.setTable(
-     //  //2-dim. arrays can't be passed as variable length for each dimension.
-     //  //->nach B. Stroustrup chapter C.7.3
-     //  //&stdstrFIDtoMHzTable[0][0]
-     //  stdstrFIDtoMHzTable[0],2,4);
-     //std::string stdstrVIDtoVoltTable [][2] = {
-     // { "Volt","VID" } ,
-     // { "0.860","10" } ,
-     // { "0.924","14" } ,
-     // { "0.988","18" } ,
-     // { "1.036","21" } ,
-     // { "1.068","23" } ,
-     // { "1.1","25" } ,
-     // { "1.132","27" } ,
-     // { "1.164","29" } ,
-     // { "1.196","31" } ,
-     // { "1.244","33" } ,
-     // { "1.276","36" } ,
-     // { "1.308","38" } ,
-     // { "1.340","40" } 
-     // } ;
-     //msrdata.setTable(
-     //  //2-dim. arrays can't be passed as variable length for each dimension.
-     //  //->nach B. Stroustrup chapter C.7.3
-     //  //&stdstrFIDtoMHzTable[0][0]
-     //  stdstrVIDtoVoltTable[0],2,14);
-     //mp_model->m_stdvectorUIitem.push_back(msrdata ) ;
+    ////May be NULL at startup.
+    //if( mp_cpucontroller )
+    //{
      wxDynamicDialog * p_wxdlg = new wxDynamicDialog(
        this , 
        //msrdata 
        //*mp_pumastatectrl->mp_model,
-       *mp_cpucontroller->mp_model,
-       //mp_pumastatectrl
-       mp_cpucontroller
-       , mp_wxx86infoandcontrolapp
+       //*mp_cpucontroller->mp_model,
+       //mp_cpucontroller
+       //mp_wxx86infoandcontrolapp->GetCPUaccess()
+       //, 
+       mp_wxx86infoandcontrolapp
        );
      //p_wxdlg->ShowModal() ;
      p_wxdlg->Show(true) ;
+    //} //  if( mp_cpucontroller )
   }
 #endif
 
@@ -3070,15 +3293,19 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
 #ifdef wxHAS_POWER_EVENTS
   void MainFrame::OnResume(wxPowerEvent& WXUNUSED(event))
   {
+    //May be NULL at startup.
+    if( mp_cpucontroller )
+    {
 #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-    //mp_pumastatectrl->ApplyAllPStates() ;
-    mp_cpucontroller->ResumeFromS3orS4() ;
-    //After a resume (from standby) the counter value for CPU core 1 did not change.
-    //So re-initialize it now.
-    //m_clocksnothaltedcpucoreusagegetter.Init() ;
-    ::wxGetApp().mp_cpucoreusagegetter->Init() ;
+      //mp_pumastatectrl->ApplyAllPStates() ;
+      mp_cpucontroller->ResumeFromS3orS4() ;
+      //After a resume (from standby) the counter value for CPU core 1 did not change.
+      //So re-initialize it now.
+      //m_clocksnothaltedcpucoreusagegetter.Init() ;
+      ::wxGetApp().mp_cpucoreusagegetter->Init() ;
 #endif //#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-    //wxLogMessage(_T("System resumed from suspend."));
+      //wxLogMessage(_T("System resumed from suspend."));
+    } // if( mp_cpucontroller )
   }
 #endif // wxHAS_POWER_EVENTS
 
@@ -3126,47 +3353,56 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
 
 void MainFrame::OnTimerEvent(wxTimerEvent &event)
 {
-  //Do something
-  bool bNewVoltageAndFreqPair = false ;
-  float fVoltageInVolt ;
-  WORD wFreqInMHz ;
-  std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpairstdsetvoltageandfreq ;
-  for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
-    mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
+  //May be NULL at startup.
+  if( mp_cpucontroller )
   {
-    if( mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
+    bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
+    if( //m_bAllowCPUcontrollerAccess 
+      bAllowCPUcontrollerAccess )
     {
-#ifdef _DEBUG
-      if( wFreqInMHz > 1800 )
-        wFreqInMHz = wFreqInMHz ;
-#endif
-      //stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
-      //  m_stdsetvoltageandfreqDefault.insert( 
-      //  VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
-      //  ) ;
-      if( mp_model->m_bCollectPstatesAsDefault )
-        bNewVoltageAndFreqPair = mp_model->m_cpucoredata.AddDefaultVoltageForFreq(
-          fVoltageInVolt , wFreqInMHz ) ;
-      ////New p-state inserted.
-      //if( stdpairstdsetvoltageandfreq.second )
-      //  bNewVoltageAndFreqPair = true ;
+      //Do something
+      bool bNewVoltageAndFreqPair = false ;
+      float fVoltageInVolt ;
+      WORD wFreqInMHz ;
+      std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpairstdsetvoltageandfreq ;
+      for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
+        mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
+      {
+        if( mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
+        {
+    #ifdef _DEBUG
+          if( wFreqInMHz > 1800 )
+            wFreqInMHz = wFreqInMHz ;
+    #endif
+          //stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
+          //  m_stdsetvoltageandfreqDefault.insert( 
+          //  VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
+          //  ) ;
+          if( mp_model->m_bCollectPstatesAsDefault )
+            bNewVoltageAndFreqPair = mp_model->m_cpucoredata.AddDefaultVoltageForFreq(
+              fVoltageInVolt , wFreqInMHz ) ;
+          ////New p-state inserted.
+          //if( stdpairstdsetvoltageandfreq.second )
+          //  bNewVoltageAndFreqPair = true ;
+        }
+      }
+      if( bNewVoltageAndFreqPair )
+      {
+        std::set<VoltageAndFreq>::reverse_iterator reviter = 
+          mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin() ;
+        //Need to set the max freq. Else (all) the operating points are drawn at x-coord. "0".
+        mp_cpucoredata->m_wMaxFreqInMHz = (*reviter).m_wFreqInMHz ;
+        if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() > 1 
+          //&& ! mp_wxmenuitemOwnDVFS->IsEnabled()
+          )
+          mp_wxmenuitemOwnDVFS->Enable(true) ;
+        RedrawEverything() ;
+      }
+      else
+        Refresh() ;
     }
-  }
-  if( bNewVoltageAndFreqPair )
-  {
-    std::set<VoltageAndFreq>::reverse_iterator reviter = 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin() ;
-    //Need to set the max freq. Else (all) the operating points are drawn at x-coord. "0".
-    mp_cpucoredata->m_wMaxFreqInMHz = (*reviter).m_wFreqInMHz ;
-    if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() > 1 
-      //&& ! mp_wxmenuitemOwnDVFS->IsEnabled()
-      )
-      mp_wxmenuitemOwnDVFS->Enable(true) ;
-    RedrawEverything() ;
-  }
-  else
-    Refresh() ;
-  //TRACE("OnTimerEvent\n") ;
+    //TRACE("OnTimerEvent\n") ;
+  } // if( mp_cpucontroller )
 }
 
 void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
@@ -3202,11 +3438,14 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
 
   void MainFrame::OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) )
   {
+    //May be NULL at startup.
+    if( mp_cpucontroller )
+    {
      CPUregisterWriteDialog * p_wxdlg = new CPUregisterWriteDialog(
        this ,
        //msrdata
-       //*mp_pumastatectrl->mp_model,
-       *mp_cpucontroller->mp_model,
+       //*mp_cpucontroller->mp_model,
+       * mp_model ,
        //mp_pumastatectrl
        mp_cpucontroller
        //mp_cpucontroller->mp_cpuaccess
@@ -3214,6 +3453,7 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
        );
      //p_wxdlg->ShowModal() ;
      p_wxdlg->Show(true) ;
+    }   //if( mp_cpucontroller )
   }
 
 //wxString MainFrame::GetSetPstateMenuItemLabel(
@@ -3256,107 +3496,121 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::RedrawEverything()
 {
-  int i = 0 ;
-  if( mp_wxbitmap )
-    delete mp_wxbitmap ;
-  wxRect rect = GetClientRect();
-  m_fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
-  m_fMaxMinusMinVoltage = m_fMaxVoltage - m_fMinVoltage ;
-
-  //wxCoord wxcoordCanvasWidth ;
-  //wxCoord wxcoordCanvasHeight ;
-  //p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
-  m_wDiagramHeight = rect.height 
-      //Space for drawing scale and scale values below the x-axis.
-      - 50 ;
-  //WORD wXcoordOfBeginOfYaxis = 50 ;
-  m_wXcoordOfBeginOfYaxis = 50 ;
-  //WORD wDiagramWidth = wxcoordCanvasWidth - wXcoordOfBeginOfYaxis - 30 ;
-  m_wDiagramWidth = rect.width - m_wXcoordOfBeginOfYaxis - 30 ;
-
-  mp_wxbitmap = new wxBitmap( 
-    rect.width, 
-    rect.height , 
-    //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
-    //"A depth of -1 indicates the depth of the current screen or visual."
-    -1) ;
-
-  //if( mp_wxbufferedpaintdcStatic )
-  //  delete mp_wxbufferedpaintdcStatic ;
-  //create new objet so it uses internally an bitmap with the new client size.
-  //mp_wxbufferedpaintdcStatic = new wxBufferedPaintDC(this) ;
-  if( mp_wxbitmapStatic )
-    delete mp_wxbitmapStatic ;
-  mp_wxbitmapStatic = new wxBitmap( 
-    rect.width, 
-    rect.height , 
-    //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
-    //"A depth of -1 indicates the depth of the current screen or visual."
-    -1) ;
-  m_wxmemorydcStatic.SelectObject(*mp_wxbitmapStatic) ;
-  //Clears the device context using the current background brush. 
-  //(else black background?)
-  m_wxmemorydcStatic.Clear();
-
-  m_wMinYcoordInDiagram = 
-    //Let the diagram begin at the vertical middle of the topmost voltage value.
-    m_wxmemorydcStatic.GetCharHeight() / 2 ;
-  //m_wxbufferedpaintdcStatic.SelectObject(mp_wxbitmapStatic) ;
-//  if( mp_wxbufferedpaintdc
-//  wxBufferedPaintDC mp_wxbufferedpaintdc ( this ) ;
-  //Drawing the curves (calculate and draw ~ 400 points) takes some time. So do it only when
-  //the client size changes and store the drawed curves into a image and DrawBitmap() or do 
-  //"Blit()" with the DC drawn to and the DC that shows it in the window.
-  //if( mp_wxbufferedpaintdcStatic )
+  //May be NULL at startup.
+  if( mp_cpucontroller )
   {
-    std::set<VoltageAndFreq> & r_setvoltageforfreq = mp_cpucontroller->
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
-//    std::set<MaxVoltageForFreq>::iterator iterstdsetmaxvoltageforfreq = 
-    std::set<VoltageAndFreq>::reverse_iterator iterstdsetvoltageandfreq = 
-      //mp_pumastatectrl->mp_model->//m_vecmaxvoltageforfreq
-      //m_setmaxvoltageforfreq.begin() ;
-      r_setvoltageforfreq.rbegin() ;
-    if( //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
-      iterstdsetvoltageandfreq != //mp_pumastatectrl->mp_model->
-      //mp_cpucontroller->mp_model->
-      //m_vecmaxvoltageforfreq.end() 
-      //m_setmaxvoltageforfreq.end()
-      r_setvoltageforfreq.rend()
-      )
+    //Control access to m_bAllowCPUcontrollerAccess between threads.
+    //m_wxCriticalSectionCPUctlAccess.Enter() ;
+    //wxCriticalSectionLocker wxcriticalsectionlocker( 
+    //  m_wxcriticalsectionCPUctlAccess ) ;
+    bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
+    if( //m_bAllowCPUcontrollerAccess 
+      bAllowCPUcontrollerAccess )
     {
-      m_fMaxVoltage = //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt ;
-        //P-state 0 usually has the highest voltage.
-        (*iterstdsetvoltageandfreq).m_fVoltageInVolt ;
-      //for g++: assign value to created iterator and pass this to the arg
-      std::set<VoltageAndFreq>::iterator iter = r_setvoltageforfreq.begin() ;
-      DrawDiagramScale( m_wxmemorydcStatic , //iterstdsetvoltageandfreq
-        //r_setvoltageforfreq.begin()
-        iter
-        ) ;
+      int i = 0 ;
+      if( mp_wxbitmap )
+        delete mp_wxbitmap ;
+      wxRect rect = GetClientRect();
+      m_fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
+      m_fMaxMinusMinVoltage = m_fMaxVoltage - m_fMinVoltage ;
+
+      //wxCoord wxcoordCanvasWidth ;
+      //wxCoord wxcoordCanvasHeight ;
+      //p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
+      m_wDiagramHeight = rect.height 
+          //Space for drawing scale and scale values below the x-axis.
+          - 50 ;
+      //WORD wXcoordOfBeginOfYaxis = 50 ;
+      m_wXcoordOfBeginOfYaxis = 50 ;
+      //WORD wDiagramWidth = wxcoordCanvasWidth - wXcoordOfBeginOfYaxis - 30 ;
+      m_wDiagramWidth = rect.width - m_wXcoordOfBeginOfYaxis - 30 ;
+
+      mp_wxbitmap = new wxBitmap( 
+        rect.width, 
+        rect.height , 
+        //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
+        //"A depth of -1 indicates the depth of the current screen or visual."
+        -1) ;
+
+      //if( mp_wxbufferedpaintdcStatic )
+      //  delete mp_wxbufferedpaintdcStatic ;
+      //create new objet so it uses internally an bitmap with the new client size.
+      //mp_wxbufferedpaintdcStatic = new wxBufferedPaintDC(this) ;
+      if( mp_wxbitmapStatic )
+        delete mp_wxbitmapStatic ;
+      mp_wxbitmapStatic = new wxBitmap( 
+        rect.width, 
+        rect.height , 
+        //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
+        //"A depth of -1 indicates the depth of the current screen or visual."
+        -1) ;
+      m_wxmemorydcStatic.SelectObject(*mp_wxbitmapStatic) ;
+      //Clears the device context using the current background brush. 
+      //(else black background?)
+      m_wxmemorydcStatic.Clear();
+
+      m_wMinYcoordInDiagram = 
+        //Let the diagram begin at the vertical middle of the topmost voltage value.
+        m_wxmemorydcStatic.GetCharHeight() / 2 ;
+      //m_wxbufferedpaintdcStatic.SelectObject(mp_wxbitmapStatic) ;
+    //  if( mp_wxbufferedpaintdc
+    //  wxBufferedPaintDC mp_wxbufferedpaintdc ( this ) ;
+      //Drawing the curves (calculate and draw ~ 400 points) takes some time. So do it only when
+      //the client size changes and store the drawed curves into a image and DrawBitmap() or do 
+      //"Blit()" with the DC drawn to and the DC that shows it in the window.
+      //if( mp_wxbufferedpaintdcStatic )
+      {
+        std::set<VoltageAndFreq> & r_setvoltageforfreq = mp_cpucontroller->
+          mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
+    //    std::set<MaxVoltageForFreq>::iterator iterstdsetmaxvoltageforfreq = 
+        std::set<VoltageAndFreq>::reverse_iterator iterstdsetvoltageandfreq = 
+          //mp_pumastatectrl->mp_model->//m_vecmaxvoltageforfreq
+          //m_setmaxvoltageforfreq.begin() ;
+          r_setvoltageforfreq.rbegin() ;
+        if( //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
+          iterstdsetvoltageandfreq != //mp_pumastatectrl->mp_model->
+          //mp_cpucontroller->mp_model->
+          //m_vecmaxvoltageforfreq.end() 
+          //m_setmaxvoltageforfreq.end()
+          r_setvoltageforfreq.rend()
+          )
+        {
+          m_fMaxVoltage = //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt ;
+            //P-state 0 usually has the highest voltage.
+            (*iterstdsetvoltageandfreq).m_fVoltageInVolt ;
+          //for g++: assign value to created iterator and pass this to the arg
+          std::set<VoltageAndFreq>::iterator iter = r_setvoltageforfreq.begin() ;
+          DrawDiagramScale( m_wxmemorydcStatic , //iterstdsetvoltageandfreq
+            //r_setvoltageforfreq.begin()
+            iter
+            ) ;
+        }
+        DrawOvervoltageProtectionCurve(
+          //m_wxbufferedpaintdcStatic
+          //*mp_wxbufferedpaintdcStatic
+          m_wxmemorydcStatic
+          , m_fMaxVoltage
+          ) ;
+        DrawCurrentVoltageSettingsCurve(
+          //m_wxbufferedpaintdcStatic
+          //*mp_wxbufferedpaintdcStatic
+          m_wxmemorydcStatic
+          , m_fMaxVoltage
+          ) ;
+        DrawLowestStableVoltageCurve(
+          //m_wxbufferedpaintdcStatic
+          //*mp_wxbufferedpaintdcStatic
+          m_wxmemorydcStatic
+          , m_fMaxVoltage
+          ) ;
+        DrawAllPossibleOperatingPoints( m_wxmemorydcStatic ) ;
+        DrawPerformanceStatesCrosses( m_wxmemorydcStatic , 
+          mp_cpucoredata->m_stdsetvoltageandfreqDefault 
+          , wxGREEN ) ;
+      }
     }
-    DrawOvervoltageProtectionCurve(
-      //m_wxbufferedpaintdcStatic
-      //*mp_wxbufferedpaintdcStatic
-      m_wxmemorydcStatic
-      , m_fMaxVoltage
-      ) ;
-    DrawCurrentVoltageSettingsCurve(
-      //m_wxbufferedpaintdcStatic
-      //*mp_wxbufferedpaintdcStatic
-      m_wxmemorydcStatic
-      , m_fMaxVoltage
-      ) ;
-    DrawLowestStableVoltageCurve(
-      //m_wxbufferedpaintdcStatic
-      //*mp_wxbufferedpaintdcStatic
-      m_wxmemorydcStatic
-      , m_fMaxVoltage
-      ) ;
-    DrawAllPossibleOperatingPoints( m_wxmemorydcStatic ) ;
-    DrawPerformanceStatesCrosses( m_wxmemorydcStatic , 
-      mp_cpucoredata->m_stdsetvoltageandfreqDefault 
-      , wxGREEN ) ;
-  }
+    //m_wxcriticalsectionCPUctlAccess.Leave() ;
+  } // if( mp_cpucontroller )
 }
 
 void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )

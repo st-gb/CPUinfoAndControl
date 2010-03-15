@@ -1249,7 +1249,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
             g_logger.IsOpen() 
           )
             //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
-            g_logger.OpenFile( mp_model->m_stdstrLogFilePath ) ;
+            g_logger.OpenFile( Getstdtstring( mp_model->m_stdstrLogFilePath ) ) ;
 
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
         byReturn = SUCCESS ;

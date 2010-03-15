@@ -37,6 +37,7 @@ public:
   std::string m_stdstrLogFilePath ;
   std::tstring m_stdtstrProgramName ;
   std::vector<MSRdata> m_stdvector_msrdata ;
+  std::vector<CPUIDdata> m_stdvector_cpuiddata ;
   WORD m_wMaxFrequency ;
   PStates m_pstates ;
   //std::vector<MaxVoltageForFreq> m_vecmaxvoltageforfreq ;

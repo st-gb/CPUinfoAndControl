@@ -578,7 +578,7 @@ std::string XercesHelper::ToStdString(
     if ( //The return value is 0 for _atoi64 if the input cannot be 
       //converted to a value of that type.
       ( //i64 
-      dwResult == 0 && strAttributeValue != "0" ) 
+      dwResult == 0 && strAttributeValue != "0" && strAttributeValue != "0x0" ) 
       || 
       //In all out-of-range cases, errno is set to ERANGE
       errno == ERANGE
