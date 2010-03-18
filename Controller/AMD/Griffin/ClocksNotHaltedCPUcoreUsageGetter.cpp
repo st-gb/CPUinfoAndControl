@@ -12,9 +12,11 @@
     //Model * p_model
     )
     : 
-    mp_griffincontroller (p_griffincontroller)
+    //Initialize in the same order as textual in the declaration?
+    //(to avoid g++ warnings)
+    m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+    , mp_griffincontroller (p_griffincontroller)
     //, m_bAtLeastSecondTime (false)
-	  , m_dwAtMask2ndTimeCPUcoreMask ( 0 )
   {
     BYTE byNumCPUs = p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
     m_dMaximumCPUcoreFrequency = p_griffincontroller->mp_model->m_cpucoredata.
@@ -197,7 +199,8 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
 	if( //dClocksNotHaltedDiffDivTCSdiff > 1.0 || 
     dClocksNotHaltedDiffDivTCSdiff < 0.02 )
 	{
-		int i = 0 ;
+//    //Breakpoint possibility
+//		int i = 0 ;
 	}
 #endif
     //return (float) dClocksNotHaltedDiffDivTCSdiff ;

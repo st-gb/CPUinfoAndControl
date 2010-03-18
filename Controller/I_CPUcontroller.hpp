@@ -61,7 +61,7 @@ protected:
   //not inherited classes because writing to an MSR may damage the CPU.
   //A good place for direct write to MSR is the concrete CPU controller
   //(NOT the CPU access class because there may be many of them->
-  //against Dont Repeat Yourself principle) class.
+  //against Don't Repeat Yourself principle) class.
   I_CPUaccess * mp_cpuaccess ;
 public:
   int m_byNumberOfCmdLineArgs;

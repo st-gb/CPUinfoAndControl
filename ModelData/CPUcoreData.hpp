@@ -30,18 +30,22 @@ class ICPUcoreUsageGetter ;
 
 class PerCPUcoreAttributes
 {
+//Sort the attributes  lexicographically for simplification of:
+//Initialize in the same order as textual in the declaration?
+//(to avoid g++ warnings)
 private :
   BYTE m_byCoreID ;
-  WORD m_wCurrentFreqInMHz ;
   CPUcoreData * mp_cpucoredata ;
-  //GriffinController * mp_griffincontroller ;
-  I_CPUcontroller * mp_cpucontroller ;
-  ICPUcoreUsageGetter * mp_icpucoreusagegetter ; 
 public:
+  DynFreqScalingThread * mp_dynfreqscalingthread ;
   float m_fPreviousCPUusage ;
   float m_fVoltageInVoltCalculatedFromCPUload ;
+private:
+  I_CPUcontroller * mp_cpucontroller ;
+  ICPUcoreUsageGetter * mp_icpucoreusagegetter ;
+  WORD m_wCurrentFreqInMHz ;
+public:
   WORD m_wFreqInMHzCalculatedFromCPUload ;
-  DynFreqScalingThread * mp_dynfreqscalingthread ;
 
   PerCPUcoreAttributes() ;
   ~PerCPUcoreAttributes() ;
@@ -122,7 +126,7 @@ public:
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   //void AddFreqAndLowestStableVoltage(float fValue,WORD wFreqInMHz) ;
   void AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz) ;
-
+  void ClearCPUcontrollerSpecificAtts() ;
   CPUcoreData() ;
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;

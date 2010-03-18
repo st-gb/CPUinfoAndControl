@@ -465,3 +465,8 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
   DEBUG("WRDL--end of getting number of CPU cores\n");
   return byCoreNumber ;
 }
+
+//I_CPUaccess::~I_CPUaccess()
+//{
+//
+//}

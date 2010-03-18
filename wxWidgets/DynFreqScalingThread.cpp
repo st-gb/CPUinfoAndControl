@@ -37,7 +37,7 @@ DynFreqScalingThread::DynFreqScalingThread(
 //    //, mp_cpucoredata(&r_cpucoredata)
 //    //, m_vbRun(true)
 //    //, m_wMilliSecondsToWait(600)
-//    //, mp_cpucontroller ( p_cpucontroller )
+//    //, mp_i_cpucontroller ( p_cpucontroller )
   : DynFreqScalingThreadBase(
       p_icpu
       //, GriffinController * p_pumastatectrl
@@ -58,7 +58,7 @@ DynFreqScalingThread::DynFreqScalingThread(
 //    //m_wAHalfOfMaxFreq = m_wMaxFreqInMHz / 2 ;
 //    //m_wAQuarterOfMaxFreq = m_wMaxFreqInMHz / 4 ;
 //    ////mp_pumastatectrl = p_pumastatectrl ;
-//    //mp_cpucontroller = p_cpucontroller ;
+//    //mp_i_cpucontroller = p_cpucontroller ;
 //    //I_CPUcontroller
 ////#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
 ////    if( mp_pumastatectrl->GetPStateFromMSR(//p_pstateCurrent->m_byNumber

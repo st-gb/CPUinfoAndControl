@@ -13,15 +13,14 @@
 PentiumM::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //BYTE byCoreID ,
   DWORD dwAffinityMask
-  //GriffinController * p_griffincontroller 
   , PentiumM_Controller * p_pentium_m_controller
   )
   : 
-  //mp_griffincontroller (p_griffincontroller)
-  mp_pentium_m_controller (p_pentium_m_controller)
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+  , mp_pentium_m_controller (p_pentium_m_controller)
   //, m_bAtLeastSecondTime (false)
-  //,
-  , m_dwAtMask2ndTimeCPUcoreMask ( 0 )
 {
   LOGN("CPU core usage ctor --address: " << this)
   BYTE byNumCPUs = //p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
@@ -262,13 +261,15 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
       m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue 
       )
     {
-      int i = 0;
+//      //Breakpoint possibility
+//      int i = 0;
     }
     if( m_ullPerformanceEventCounter3 < m_ar_cnh_cpucore_ugpca[ byCoreID ].
       m_ullPreviousPerformanceEventCounter3 
       )
     {
-      int i = 0;
+//      //Breakpoint possibility
+//      int i = 0;
     }
 #endif //#ifdef _DEBUG
     //ULONGLONG ullTimeStampCounterValueDiff 
@@ -296,7 +297,8 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
 	if( dClocksNotHaltedDiffDivTCSdiff > 1.1 || 
     dClocksNotHaltedDiffDivTCSdiff < 0.02 )
 	{
-		int i = 0 ;
+//    //Breakpoint possibility
+//		int i = 0 ;
 	}
 #endif
     //return (float) dClocksNotHaltedDiffDivTCSdiff ;
@@ -341,7 +343,7 @@ BYTE PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
 {
   BYTE byReturn = 1 ;
   BYTE byNumCPUs = //mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
-    //mp_cpucontroller->mp_model->GetNumberOfCPUCores() ;
+    //mp_i_cpucontroller->mp_model->GetNumberOfCPUCores() ;
     //Pentium Ms usually only have 1 CPU core.
     1 ;
   for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )

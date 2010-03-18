@@ -184,7 +184,7 @@
 	  Attributes & attrs
 	  )
 	{
-	    bool bChange = false ;
+//	    bool bChange = false ;
 	//#ifdef PRIVATE_RELEASE //hide the other possibilities
 	    //BYTE byFreqID;
     //#endif
@@ -214,7 +214,7 @@
 	    {
         LOG( "XML attribute name: \"FreqInMHz\"; value: " << wValue << "\n" );
         //Gets the nearest possoble freq and stores it into the data model.
-        //mp_cpucontroller->SetNearestFreqInMHz( wValue ) ;
+        //mp_i_cpucontroller->SetNearestFreqInMHz( wValue ) ;
 	    }
       std::string stdstrAttributeName = "VoltageInVolt" ;
       float fValue ;
@@ -223,7 +223,7 @@
         LOG( "XML attribute name: \"" << stdstrAttributeName.c_str() << 
           "\"; value: " << fValue << "\n" );
         //m_p_model->m_pstates.SetPStateVID( byPstateID , 
-        //  mp_cpucontroller->
+        //  mp_i_cpucontroller->
         //  GetVoltageIDFromVoltageInVolt( fValue )
         //  );
 	    }

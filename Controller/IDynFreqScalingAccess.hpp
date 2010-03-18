@@ -22,7 +22,7 @@ public:
   //Using an enum rather than #defines ensures that there are no strings 
   //with the same value.
   enum EnableRetCodes { enable_success, enable_failure, already_enabled } ;
-  //Possilby typedef "string_type" to "std::string" if compiling with MinGW.
+  //Possibly typedef "string_type" to "std::string" if compiling with MinGW.
   typedef std::tstring string_type ;
     //return: true=success
   virtual bool ChangeOtherDVFSaccessPossible() { return false ; }
@@ -35,7 +35,7 @@ public:
   virtual string_type GetEnableDescription() {
     return std::tstring(_T("") ) ;
   }
-  //"Other DVFS" because the implementaion may disable e.g. the OS's
+  //"Other DVFS" because the implementation may disable e.g. the OS's
   //DVFS or GNOME's DVFS (cpufreqd) , RMClock etc.
   virtual bool OtherDVFSisEnabled() 
   { 

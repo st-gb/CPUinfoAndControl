@@ -52,8 +52,10 @@ SAX2_CPUspecificHandler::SAX2_CPUspecificHandler(
     Model & r_modeldata
   )
   : 
-  m_bInsideValidMSRelement(false)
-  , m_bInsideValidCPUIDelement(false)
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_bInsideValidCPUIDelement(false)
+  , m_bInsideValidMSRelement(false)
   , m_xerceshelper(r_userinterface)
   //, m_stdvec_msrdata_riter 
 {
@@ -217,7 +219,7 @@ void SAX2_CPUspecificHandler::HandleInsideCPUIDelement(
   const Attributes & r_xercesc_attributes
   )
 {
-  bool bCalculateDiff ;
+//  bool bCalculateDiff ;
   BYTE byStartBit ;
   BYTE byBitLength ;
   std::string strMSRdataName = m_strElementName ;

@@ -14,11 +14,13 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
   , CPUcoreData & r_cpucoredata
   )
   : //m_bSuccFullyGotPStateFromMSR(false)
-  m_bCalledInit(false)
-  , mp_cpucoredata(&r_cpucoredata)
-  , m_vbRun(true)
-  , m_wMilliSecondsToWait(100)
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  mp_cpucoredata(&r_cpucoredata)
   , mp_cpucontroller ( p_cpucontroller )
+  , m_bCalledInit(false)
+  , m_wMilliSecondsToWait(100)
+  , m_vbRun(true)
 {
     DEBUG("constructor of freq scaling thread base--begin\n");
     mp_icpu = p_icpu ;
@@ -82,7 +84,9 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
         ) ;
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
-        wFreqInMHz * 1.5
+        //Explicit cast to avoid (g++) compiler warning.
+        (WORD)
+          ( wFreqInMHz * 1.5f )
         , byCoreID
         );
     }
@@ -102,7 +106,9 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
         ) ;
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
-        wFreqInMHz * fLoad
+        //Explicit cast to avoid (g++) compiler warning.
+        (WORD)
+          ( wFreqInMHz * fLoad )
         , byCoreID
         );
     }
@@ -112,7 +118,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
       //mp_cpucoredata->m_arfCPUcoreLoadInPercent[byCoreID] ;
       fLoad ;
   //mp_pumastatectrl->SetFreqAndVoltage(//dClocksNotHaltedDiffDivTCSdiff
-  //mp_cpucontroller->SetFreqAndVoltage(
+  //mp_i_cpucontroller->SetFreqAndVoltage(
   //  byCoreID ,
   //  //mp_cpucoredata->m_arfCPUcoreLoadInPercent[byCoreID] 
   //  fLoad );
@@ -146,7 +152,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
       //Pentium M CPUs have no temperature register
       if( 
         //mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
-        //mp_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
+        //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
         mp_cpucontroller->TooHot()
         )
         //if ( fTempInDegCelsius > 90.0f )
@@ -187,7 +193,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
               mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
               if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >= 
                 (float) mp_cpucoredata->m_wMaxFreqInMHz /
-                //(float) mp_cpucontroller->GetFrequencyInMHz(byCoreID)
+                //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
                 wFreqInMHz >=
                 //50% of max. freq
                 0.5f 

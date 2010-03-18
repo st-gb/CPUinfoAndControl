@@ -16,6 +16,11 @@ public:
   //virtual float GetUsageForCore(BYTE byCore) = 0 ;
   //virtual //float 
   //  BYTE GetPercentalUsageForBothCores(float r_arf[] ) = 0 ;
+
+  //Must be virtual for the destructor of subclasses to be called?!
+  virtual ~ICPUcoreUsageGetter()
+    //Also needs to be defined (else when linking: undefined referenc to it)
+    {} ;
   virtual //float 
     BYTE GetPercentalUsageForAllCores(float arf[] ) = 0 ;
   //virtual float Init() = 0 ;//{return 0.0f; }

@@ -13,6 +13,9 @@ private:
   dll_GetCurrentPstate_type m_pfngetcurrentpstate ;
   dll_GetNumberOfCPUcores_type m_pfnGetNumberOfCPUcores ;
   dll_SetCurrentPstate_type m_pfnsetcurrentpstate ;
+  dll_GetMaximumFrequencyInMHz_type m_pfnGetMaximumFrequencyInMHz ;
+  dll_GetMaximumFrequencyInMHz_type m_pfnGetMinimumFrequencyInMHz ;
+  dll_GetTemperatureInCelsius_type m_pfngettemperatureincelsius ;
   wxDynamicLibrary m_wxdynamiclibraryCPUctl ;
 public:
   wxDynLibCPUcontroller( 
@@ -32,6 +35,7 @@ public:
   WORD GetMinimumVoltageID() ;
   WORD GetNumberOfCPUcores() ;
   float GetVoltageInVolt(WORD wVoltageID ) ;
+  float GetTemperatureInCelsius(WORD wVoltageID ) ;
   WORD GetVoltageID(float fVoltageInVolt ) ;
   BYTE 
     //Let voltage be the first element from name because the same in

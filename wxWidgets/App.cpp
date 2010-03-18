@@ -26,12 +26,15 @@
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #include <ModelData/ModelData.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
-#include <wxWidgets/wxStringHelper.h>
+//#include <wxWidgets/wxStringHelper.h>
+#include <wxWidgets/Controller/wxStringHelper.h> //getwxString(...)
 
 #include "DynFreqScalingThread.hpp"
 #ifdef _WINDOWS
   #include <Windows/PowerProf/PowerProfDynLinked.hpp>
-  #include <Windows/WinRing0dynlinked.hpp>
+  //#include <Windows/WinRing0dynlinked.hpp>
+  //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
+  #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #else
   #include <Linux/MSRdeviceFile.h>
 #endif
@@ -48,6 +51,73 @@ Logger g_logger ;
 
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
+
+#include<Controller/exported_functions.h> //for AM_LIB_EXPORT
+
+//from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
+//("Calling an Exported Function in an EXE from Within a DLL"):
+// Do exactly as you would export a DLL...
+extern "C"
+{
+  //EXPORT
+  AM_LIB_EXPORT BOOL ReadMSR(
+    DWORD dwIndex,    // MSR index
+    PDWORD p_dweax,     // bit  0-31
+    PDWORD p_dwedx,     // bit 32-63
+    DWORD_PTR affinityMask  // Thread Affinity Mask
+  )
+  {
+//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
+    I_CPUaccess * p_cpuaccess = wxGetApp().
+      GetCPUaccess() ;
+    BOOL boolRet = p_cpuaccess->RdmsrEx(
+      dwIndex,
+      p_dweax,// bit  0-31 (register "EAX")
+      p_dwedx,
+      //m_dwAffinityMask
+      affinityMask
+      ) ;
+    #ifdef _DEBUG
+    //if( dwIndex == 0x1AD )
+      DEBUG_COUT( "exe::ReadMSR(Index,affinityMask): "
+        << dwIndex << " "
+        << *p_dweax << " "
+        << *p_dwedx << " "
+        << affinityMask
+        << "\n" )
+    #endif
+    return boolRet ;
+  }
+
+  AM_LIB_EXPORT BOOL WriteMSR(
+    DWORD dwIndex,    // MSR index
+    DWORD dwEAX,     // bit  0-31
+    DWORD dwEDX,     // bit 32-63
+    DWORD_PTR affinityMask  // Thread Affinity Mask
+    )
+  {
+//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
+    I_CPUaccess * p_cpuaccess = wxGetApp().
+      GetCPUaccess() ;
+    BOOL boolRet = p_cpuaccess->WrmsrEx(
+      dwIndex,
+      dwEAX,// bit  0-31 (register "EAX")
+      dwEDX,
+      //m_dwAffinityMask
+      affinityMask
+      ) ;
+    #ifdef _DEBUG
+    //if( dwIndex == 0x1AD )
+      DEBUG_COUT( "exe::WriteMSR(Index,affinityMask): "
+        << dwIndex << " "
+        << dwEAX << " "
+        << dwEDX << " "
+        << affinityMask
+        << "\n" )
+    #endif
+    return boolRet ;
+  }
+}
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
 {
@@ -133,12 +203,13 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     mp_cpucontroller->SetUserInterface(this) ;
     //Set the CPU access BEFORE getting number of CPU cores in
     //SetModelData(...) .
-    #ifdef _WINDOWS
-    mp_cpucontroller->SetCPUaccess(mp_winring0dynlinked) ;
-    #else
-    //mp_cpucontroller->SetCPUaccess(NULL);
-    //mp_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
-    #endif
+    //#ifdef _WINDOWS
+    //mp_i_cpucontroller->SetCPUaccess( //mp_winring0dynlinked
+    //  mp_i_cpuaccess ) ;
+    //#else
+    ////mp_i_cpucontroller->SetCPUaccess(NULL);
+    ////mp_i_cpucontroller->SetCPUaccess( & m_MSRdeviceFile) ;
+    //#endif
     
     mp_cpucontroller->SetCPUaccess( mp_i_cpuaccess ) ;
     mp_cpucontroller->SetModelData( //& m_modelData
@@ -148,7 +219,7 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     #ifdef _WINDOWS
     mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
     #else
-    mp_cpucontroller->SetCalculationThread(NULL) ;
+    mp_i_cpucontroller->SetCalculationThread(NULL) ;
     #endif
     
     mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
@@ -158,7 +229,7 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     //mp_pstatectrl->GetMaximumFrequencyInMHz() ;
     mp_cpucontroller->GetMaximumFrequencyInMHz() ;
   }
-  //m_modelData.SetCPUcontroller( mp_cpucontroller);
+  //m_modelData.SetCPUcontroller( mp_i_cpucontroller);
   mp_modelData->SetCPUcontroller( mp_cpucontroller);
   #ifdef _WINDOWS
     m_calculationthread.SetCPUcontroller(mp_cpucontroller);
@@ -323,9 +394,16 @@ bool wxX86InfoAndControlApp::OnInit()
       //If allocated statically within this block / method the object 
       //gets invalid after leaving the block where it was declared.
       //mp_winring0dynlinked 
-      mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
+      //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
+#ifdef _MSC_VER //possible because the import library is for MSVC
+      mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
         this ) ;
-      m_maincontroller.SetCPUaccess(mp_winring0dynlinked) ;
+#else //because no import library is available
+      mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
+        this ) ;
+#endif
+      //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
+      //  mp_i_cpuaccess ) ;
     #else
       //m_maincontroller.SetCPUaccess(NULL) ;
       //m_MSRdeviceFile.SetUserInterface(this) ;
@@ -335,6 +413,7 @@ bool wxX86InfoAndControlApp::OnInit()
 			//the main controller needs CPUID (I_CPUaccess class ) access in order to
 			//retrieve the CPU by model, family etc.
       m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
+      mp_i_cpuaccess->mp_model = mp_modelData ;
       m_maincontroller.Init( //m_modelData
         * mp_modelData, this );
       m_maincontroller.SetAttributeData( mp_modelData ) ;
@@ -346,7 +425,7 @@ bool wxX86InfoAndControlApp::OnInit()
       #else
       mp_dynfreqscalingaccess = NULL ;
       #endif
-      //mp_cpucontroller = //CPUcontrollerFactory::
+      //mp_i_cpucontroller = //CPUcontrollerFactory::
       if(
         m_maincontroller.
         //Creates e.g. an AMD Griffin oder Intel Pentium M controller
@@ -369,7 +448,7 @@ bool wxX86InfoAndControlApp::OnInit()
         //mp_dynfreqscalingaccess = new PowerProfDynLinked( m_stdtstrProgramName ) ;
         //#else
         //mp_dynfreqscalingaccess = NULL ;
-        //mp_cpucontroller->SetOtherDVFSaccess( NULL ) ;
+        //mp_i_cpucontroller->SetOtherDVFSaccess( NULL ) ;
         //#endif
 
         CPUcontrollerChanged() ;
@@ -399,7 +478,7 @@ bool wxX86InfoAndControlApp::OnInit()
       //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
       SetTopWindow(mp_frame);
     //#ifdef _WINDOWS
-    //  m_calculationthread.SetCPUcontroller(mp_cpucontroller);
+    //  m_calculationthread.SetCPUcontroller(mp_i_cpucontroller);
     //#endif
       mp_frame->SetCPUcontroller(mp_cpucontroller) ;
       
@@ -445,10 +524,10 @@ bool wxX86InfoAndControlApp::OnInit()
           case EXIT:
             return FALSE;
             break;
-          default:
+//          default:
   //          DEBUG("Before starting timer\n");
             //mp_wxdynfreqscalingtimer->mp_pumastatectrl = mp_pstatectrl ;
-            DWORD dwValue = 0 ;
+//            DWORD dwValue = 0 ;
             //TODO read values from CPU at first because the other values should not 
             //be affected.
 
@@ -486,9 +565,9 @@ bool wxX86InfoAndControlApp::OnInit()
 
             //if( m_modelData.m_cpucoredata.m_bEnableDVFS )
             //{
-            //  if( mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+            //  if( mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
             //    )
-            //    mp_cpucontroller->DisableFrequencyScalingByOS();
+            //    mp_i_cpucontroller->DisableFrequencyScalingByOS();
             //  PerCPUcoreAttributes * p_percpucoreattributes = 
             //    & m_modelData.m_cpucoredata.
             //    m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
@@ -497,11 +576,11 @@ bool wxX86InfoAndControlApp::OnInit()
             //  if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
             //  {
             //    if( ! //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            //        mp_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
+            //        mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
             //      )
             //    {
             //      //p_percpucoreattributes->mp_dynfreqscalingthread 
-            //      p_percpucoreattributes->SetCPUcontroller( mp_cpucontroller ) ;
+            //      p_percpucoreattributes->SetCPUcontroller( mp_i_cpucontroller ) ;
             //      p_percpucoreattributes->CreateDynFreqScalingThread( 
             //        mp_cpucoreusagegetter
             //        ) ;
@@ -510,7 +589,7 @@ bool wxX86InfoAndControlApp::OnInit()
             //}
 //ifdef COMPILE_WITH_SHARED_MEMORY the SERVICE should do the DVFS
 #ifndef COMPILE_WITH_SHARED_MEMORY
-            mp_cpucontroller->EnableOwnDVFS() ;
+            mp_i_cpucontroller->EnableOwnDVFS() ;
 #endif
             DEBUG("After starting CPU freq thread\n");
 
@@ -519,7 +598,7 @@ bool wxX86InfoAndControlApp::OnInit()
   //          mp_pstatectrl->DisableFrequencyScalingByOS();
   #endif //#ifdef COMPILE_WITH_CPU_SCALING
         }
-      } //if( mp_cpucontroller )
+      } //if( mp_i_cpucontroller )
       //else //CreateCPUcontrollerAndUsageGetter(...) failed
       //  mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
       }
@@ -570,7 +649,7 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
       mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
-    //mp_cpucontroller->SetModelData( //& m_modelData
+    //mp_i_cpucontroller->SetModelData( //& m_modelData
     //  mp_modelData ) ;
     CPUcontrollerChanged() ;
     mp_frame->AllowCPUcontrollerAccess() ;
@@ -593,7 +672,7 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
       mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
-    //mp_cpucontroller->SetModelData( //& m_modelData
+    //mp_i_cpucontroller->SetModelData( //& m_modelData
     //  mp_modelData ) ;
     CPUcontrollerChanged() ;
     mp_frame->AllowCPUcontrollerAccess() ;

@@ -262,11 +262,11 @@ WinRing0dynLinked::WinRing0dynLinked()
 
 WinRing0dynLinked::~WinRing0dynLinked()
 {
-  _DeinitializeOls pfnInitializeOls = (_DeinitializeOls)
-    ::GetProcAddress(m_hinstanceWinRingDLL,"InitializeOls");
-  if( pfnInitializeOls )
+  _DeinitializeOls pfnDeinitializeOls = (_DeinitializeOls)
+    ::GetProcAddress(m_hinstanceWinRingDLL,"DeinitializeOls");
+  if( pfnDeinitializeOls )
   {
-    (*pfnInitializeOls)() ;
+    (*pfnDeinitializeOls)() ;
   }
 }
 

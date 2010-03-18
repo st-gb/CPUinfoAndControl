@@ -504,7 +504,7 @@ public :
     WORD wFreqInMHz, 
     BYTE byCoreID 
     ) ;
-  BYTE StartOrStopCalculationThread( BYTE byCoreID) ;
+//  BYTE StartOrStopCalculationThread( BYTE byCoreID) ;
 
   bool GetCPUMiscControlDWORD(DWORD dwRegisterAddress, DWORD & dwValue) ;
 

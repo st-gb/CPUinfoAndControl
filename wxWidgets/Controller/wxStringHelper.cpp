@@ -1,4 +1,5 @@
-#include <wxWidgets/wxStringHelper.h>
+//#include <wxWidgets/wxStringHelper.h>
+#include "wxStringHelper.h"
 
 wxString getwxString(std::string & str )
 {
@@ -12,6 +13,16 @@ wxString getwxString(std::string & str )
 #endif
  return  wxstr ;
 }
+
+//wxString getwxString(std::tstring & tstr )
+//{
+//#ifdef wxUSE_UNICODE_WCHAR
+//  std::wstring wstr(str.begin(), str.end() ) ;
+//  wxString wxstr( wstr.c_str() ) ;
+//#else
+//  wxString wxstr(( const unsigned char * ) tstr.c_str() ) ;
+//#endif
+//}
 
 wxString getwxString(std::wstring & stdwstr )
 {

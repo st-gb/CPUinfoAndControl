@@ -295,7 +295,6 @@ BYTE MainController::Init(
         strProcessorFilePath.c_str()
 	      , model
 	      , p_userinterface
-     //   PumaStateCtrl * p_pumastatectrl 
         //Base class of implementing Xerces XML handlers.
         //This is useful because there may be more than one XML file to read.
         //So one calls this functions with different handlers passed.
@@ -313,14 +312,14 @@ BYTE MainController::Init(
       //tstr +=  _T("with the file containg the maximum voltages (") ;
       //tstr = tstr + strProcessorFilePath ;
       //tstr += _T(")") ;
-      //throw VoltageSafetyException( 
+      //throw VoltageSafetyException(
       //  tstr ) ;
       byRet = 1 ;
     }
-    //mp_cpucontroller->mp_model = & model ;
-    //if( mp_cpucontroller )
+    //mp_i_cpucontroller->mp_model = & model ;
+    //if( mp_i_cpucontroller )
     //  //Needed for drawing the voltage-frequency curves.
-    //  mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+    //  mp_i_cpucontroller->GetMaximumFrequencyInMHz() ;
     //byRet = 1 ;
   }
   return byRet ;

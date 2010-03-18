@@ -591,11 +591,13 @@ GriffinController::GriffinController(
   //: m_pstates(NULL)
   : 
   //mp_cpuaccess(p_cpuaccess)
-  mp_calculationthread(p_calculationthread)
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_bFrequencyScalingByOSDisabled(false)
   , m_bPstateSet(false)
   , m_byPstateID(0)
   , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
-  , m_bFrequencyScalingByOSDisabled(false)
+  , mp_calculationthread(p_calculationthread)
 {
   mp_cpuaccess = p_cpuaccess ;
   m_byNumberOfCmdLineArgs = argc ;
@@ -889,7 +891,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
       ull ;
 //    f *= 4294967296.0f ,
 //    f += dwLow ;
-    float fDiff = f - mp_model->m_dPreviousPERF_CTRvalue ;
+//    float fDiff = f - mp_model->m_dPreviousPERF_CTRvalue ;
     mp_model->m_dPreviousPERF_CTRvalue = f ;
 //    f = dwLow ;
     //BKDG: 
@@ -918,7 +920,7 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
     //LARGE_INTEGER liPerfCounterValue ;
     //::SetThreadAffinityMask(::GetCurrentThread(), 0);
     //::QueryPerformanceCounter(&liPerfCounterValue);
-    DWORD dwMilliSecondsEleapsedSinceOSstart = ::GetTickCount();
+//    DWORD dwMilliSecondsEleapsedSinceOSstart = ::GetTickCount();
     //if( GetTickCount() - dwStart >= TIMELIMIT )
 
     return //f
@@ -1158,7 +1160,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   {
 //#ifdef WIN32
 #ifdef _WINDOWS
-    BYTE bySBISMBusRegisterData = 0;
+//    BYTE bySBISMBusRegisterData = 0;
     //BYTE bySVIsendByteAddressDescription = 6//=110b
 #endif //#ifdef WIN32
     //  <<4; //Intersil: "BITS 6:4 Always 110b" (bit 4 = 5th bit)
@@ -1248,8 +1250,11 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
             ! //g_logger.m_ofstream.is_open() 
             g_logger.IsOpen() 
           )
+          {
+            std::tstring tstr = Getstdtstring( mp_model->m_stdstrLogFilePath ) ;
             //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
-            g_logger.OpenFile( Getstdtstring( mp_model->m_stdstrLogFilePath ) ) ;
+            g_logger.OpenFile( tstr ) ;
+          }
 
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
         byReturn = SUCCESS ;
@@ -1917,11 +1922,12 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 
   void GriffinController::FindLowestOperatingVoltage(BYTE byPstate, BYTE byCoreID)
   {
-    BYTE byCoreIndex = 0 , byCoreCount = 
-      //mp_modeldata->GetNumberOfPhysicalCores() ;
-      //m_model.GetNumberOfPhysicalCores() ;
-      //m_model.GetNumberOfCPUCores() ;
-      mp_model->GetNumberOfCPUCores() ;
+//    BYTE byCoreIndex = 0 ;
+//    BYTE byCoreCount =
+//      //mp_modeldata->GetNumberOfPhysicalCores() ;
+//      //m_model.GetNumberOfPhysicalCores() ;
+//      //m_model.GetNumberOfCPUCores() ;
+//      mp_model->GetNumberOfCPUCores() ;
     m_byPstateForFindingLowVoltage = byPstate ;
     //BYTE byVID ;
     DWORD dwLow;
@@ -2182,7 +2188,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //        fLog2
     //      ) ;
     //else
-        byDivisorID = fLog2 ;
+        byDivisorID =
+          //Explicit cast to avoid (g++) warning.
+          (BYTE)
+          fLog2 ;
     //wMaxFreq / wFreq - 1 = byDivisorID ;
 
     //(FID+8)*100/2^divID = freqInMHz | : 100/2^divID
@@ -2201,7 +2210,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     // FID                = 2200           : 100 - 8
     // FID                = 22                   - 8
     // FID                = 14
-    BYTE byFID = (float) wFreqInMHz * pow(2.0,byDivisorID) / 100.0f - 8 ;
+    BYTE byFID =
+      //Cast to BYTE in order to avoid (g++) compiler warning.
+      (BYTE) ( (float) wFreqInMHz * pow(2.0,byDivisorID) / 100.0f
+        - 8 ) ;
     wNewFreqInMhz = PState::GetFreqInMHz(byFID,byDivisorID) ;
     //if( //byFID < //MainPllOpFreqId/2
     //    //mp_pumastatectrl->
@@ -2398,7 +2410,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //        fLog2
     //      ) ;
     //else
-        byDivisorID = fLog2 ;
+        byDivisorID =
+          (BYTE)
+          //Explicit cast to avoid (g++) warning.
+          fLog2 ;
     //wMaxFreq / wFreq - 1 = byDivisorID ;
 
     //(FID+8)*100/2^divID = freqInMHz | : 100/2^divID
@@ -2417,7 +2432,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     // FID                = 2200           : 100 - 8
     // FID                = 22                   - 8
     // FID                = 14
-    BYTE byFID = (float) wFreqInMHz * pow(2.0,byDivisorID) / 100.0f - 8 ;
+    BYTE byFID =
+      //Cast to BYTE in order to avoid (g++) compiler warning.
+      (BYTE)
+      ( (float) wFreqInMHz * pow(2.0,byDivisorID) / 100.0f - 8 ) ;
     //AMD BIOS and kernel dev guide for family 11h: "The frequency specified 
     //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of 
     //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
@@ -2674,12 +2692,15 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //If no explicit cast: compiler warning:
       //"[...]converting to `WORD' from `double'"
       (WORD)
-      maxvoltageforfreq.m_wFreqInMHz /
-      //MUST NOT be an integer (but a floating point type!).
-      //(WORD) 
-      pow(2,(//fLowestAboveWantedVoltage
-      maxvoltageforfreq.m_fVoltageInVolt -
-      fWantedVoltageInVolt) / 0.15 );
+      (
+        //(float)
+        maxvoltageforfreq.m_wFreqInMHz /
+        //MUST NOT be an integer (but a floating point type!).
+        //(WORD)
+        pow( 2,(//fLowestAboveWantedVoltage
+            maxvoltageforfreq.m_fVoltageInVolt -
+            fWantedVoltageInVolt) / 0.15 )
+      ) ;
     //return wMaxFreqDivWantedFreq ;
     //DEBUG("For %f V : MinFreqToPreventOvervoltage: %u \n", 
     //  fWantedVoltageInVolt ,wMinFreqToPreventOvervoltage );
@@ -3843,7 +3864,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         ) 
       )
     {
-      BYTE byCPUcoreID = 0 ;
+//      BYTE byCPUcoreID = 0 ;
       //DWORD dwLowmostBits ;
       //DWORD dwEDX ;
       PState pstateDummy ;
@@ -3900,7 +3921,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       didnfid.m_byDivisorID == 2 
       )
     {
-      BYTE byPstateNumber = 2 ;
+//      BYTE byPstateNumber = 2 ;
       //DWORD dwMSRHigh, dwMSRLow ;
       //mp_pumastatectrl->
       //setVidAndFrequencyForPState_Puma(
@@ -4276,11 +4297,13 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] *=
           //If no explicit cast: compiler warning:
           //"[...]converting to `short unsigned int' from `float'"
-          (WORD)
-          100 /
-          p_cpucoredata->m_arfCPUcoreLoadInPercent[byCPUcoreID] ;
+          (WORD) (
+            100 /
+            p_cpucoredata->m_arfCPUcoreLoadInPercent[byCPUcoreID] ) ;
         p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] *= 
-          p_cpucoredata->m_fPercentalCPUcoreFreqIncrease ;
+          //Explicit cast to avoid (g++) compiler warning.
+          (WORD)
+            ( p_cpucoredata->m_fPercentalCPUcoreFreqIncrease ) ;
         if( p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] > 
           p_cpucoredata->m_wMaxFreqInMHz )
           p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] = 
@@ -4870,7 +4893,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       ostrstream<<"the high 32 bits: "<< getBinaryRepresentation(dwMSRhigh)<<"\n";
       if(dwRegNr != COFVID_CONTROL_REGISTER)
       {
-        float fCurrent ;
+        //Initialize just to avoid (g++) compiler warning.
+        float fCurrent = 0.0f ;
         BYTE byCurrentDivisor =
           (dwCOFVIDStatusRegisterHigh >> (START_BIT_FOR_CURRENT_DIVISOR_ID - 32) )
             & BITMASK_FOR_LOWMOST_2BIT ;
@@ -5013,50 +5037,50 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     mp_cpuaccess->SetUserInterface(*p_userinterface) ;
   }
   
-  BYTE GriffinController::StartOrStopCalculationThread( BYTE byCoreID)
-  {
-      BYTE byAction = STARTED;
-      LOG("start or stop high load calc thread for core " << 
-          (WORD) byCoreID << "\n");
-      LOG("Thread has " << 
-          ( marp_calculationthread[ byCoreID ] ? 
-              //is <> NULL 
-              "NOT " :
-              //is NULL 
-              "" 
-          ) << "to be created first.\n");
-      if( marp_calculationthread[ byCoreID ] )
-      {
-          if( //marp_calculationthread[ byCoreID ]->m_vbContinue == true 
-              marp_calculationthread[ byCoreID ]->IsRunning() )
-          {
-              LOG("Thread is running\n");
-            //marp_calculationthread[ byCoreID ]->m_vbContinue = false ;
-              marp_calculationthread[ byCoreID ]->EndCalculationThread() ;
-              byAction = ENDED ;
-            //::WaitForSingleObject(marp_calculationthread[ byCoreID ]->m_hThread);
-            //delete marp_calculationthread[ byCoreID ] ;
-            //marp_calculationthread[ byCoreID ] = NULL ;
-          }
-          else 
-          {
-             LOG("Thread is NOT running\n");
-              marp_calculationthread[ byCoreID ]->StartCalculationThread(byCoreID) ;
-              marp_calculationthread[ byCoreID ]->StartCalculationThread(byCoreID) ;
-          }
-      }
-      else
-      {
-          LOG("Creating high load calc thread for core " 
-              << (WORD) byCoreID << "\n");
-          marp_calculationthread[ byCoreID ] = new CalculationThread( this ) ;
-          if( //Check if allocation succeeded if it was NULL before
-              marp_calculationthread[ byCoreID ] )
-              marp_calculationthread[ byCoreID ]->
-                StartCalculationThread( byCoreID ) ;
-      }
-      return byAction ;
-  }
+//  BYTE GriffinController::StartOrStopCalculationThread( BYTE byCoreID)
+//  {
+//      BYTE byAction = STARTED;
+//      LOG("start or stop high load calc thread for core " <<
+//          (WORD) byCoreID << "\n");
+//      LOG("Thread has " <<
+//          ( marp_calculationthread[ byCoreID ] ?
+//              //is <> NULL
+//              "NOT " :
+//              //is NULL
+//              ""
+//          ) << "to be created first.\n");
+//      if( marp_calculationthread[ byCoreID ] )
+//      {
+//          if( //marp_calculationthread[ byCoreID ]->m_vbContinue == true
+//              marp_calculationthread[ byCoreID ]->IsRunning() )
+//          {
+//              LOG("Thread is running\n");
+//            //marp_calculationthread[ byCoreID ]->m_vbContinue = false ;
+//              marp_calculationthread[ byCoreID ]->EndCalculationThread() ;
+//              byAction = ENDED ;
+//            //::WaitForSingleObject(marp_calculationthread[ byCoreID ]->m_hThread);
+//            //delete marp_calculationthread[ byCoreID ] ;
+//            //marp_calculationthread[ byCoreID ] = NULL ;
+//          }
+//          else
+//          {
+//             LOG("Thread is NOT running\n");
+//              marp_calculationthread[ byCoreID ]->StartCalculationThread(byCoreID) ;
+//              marp_calculationthread[ byCoreID ]->StartCalculationThread(byCoreID) ;
+//          }
+//      }
+//      else
+//      {
+//          LOG("Creating high load calc thread for core "
+//              << (WORD) byCoreID << "\n");
+//          marp_calculationthread[ byCoreID ] = new CalculationThread( this ) ;
+//          if( //Check if allocation succeeded if it was NULL before
+//              marp_calculationthread[ byCoreID ] )
+//              marp_calculationthread[ byCoreID ]->
+//                StartCalculationThread( byCoreID ) ;
+//      }
+//      return byAction ;
+//  }
 
   BYTE GriffinController::SetPstate(BYTE byPstateID,BYTE byCoreID)
   {
@@ -5077,7 +5101,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         )
         )
       {
-        if( byPstateID >= 0 && byPstateID < NUMBER_OF_PSTATES )
+        if( //byPstateID >= 0 &&
+            byPstateID < NUMBER_OF_PSTATES )
         {
           changePstate(byPstateID, (1 << byCoreID) );
         }
@@ -5095,8 +5120,8 @@ BYTE GriffinController::UseMaxVoltageForFreqForOvervoltageProtection(
     )
 {
   BYTE byReturn = SETTING_VOLTAGE_IS_UNSAFE ;
-  float fMaxVoltage = 0.0 , fMinVoltage = 0.0 ;
-  float fLowestAboveWantedVoltage = 0.0 ;
+//  float fMaxVoltage = 0.0 , fMinVoltage = 0.0 ;
+//  float fLowestAboveWantedVoltage = 0.0 ;
   float fWantedVoltageInVolt = PState::GetVoltageInVolt(byVID);
   //std::vector<MaxVoltageForFreq>::iterator 
   std::set<MaxVoltageForFreq>::iterator 
