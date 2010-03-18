@@ -20,7 +20,9 @@
     #define _T(x) x
   #endif
   typedef char TCHAR ;
+#ifdef _MSC_VER //MicroSoft compiler
   #pragma  message( "using char for TCHAR" )
+#endif
 #endif
 typedef TCHAR * LPTSTR ;
 typedef TCHAR _TCHAR ;

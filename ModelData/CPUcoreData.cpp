@@ -7,10 +7,12 @@ extern Logger g_logger ;
 
 PerCPUcoreAttributes::PerCPUcoreAttributes()
     : 
-    mp_dynfreqscalingthread(NULL)
-    , mp_icpucoreusagegetter(NULL)
-    , m_wCurrentFreqInMHz (0)
-    , m_fPreviousCPUusage(-1.0)
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  mp_dynfreqscalingthread(NULL)
+  , m_fPreviousCPUusage(-1.0)
+  , mp_icpucoreusagegetter(NULL)
+  , m_wCurrentFreqInMHz (0)
   {
     //mp_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
     //  m_byCoreID
@@ -104,6 +106,14 @@ void CPUcoreData::AddPreferredVoltageForFreq(float fValue, WORD wFreqInMHz)
   //mp_stdsetvoltageandfreqWanted->insert( 
   m_stdsetvoltageandfreqWanted.insert( 
     VoltageAndFreq(fValue,wFreqInMHz) ) ;
+}
+
+void CPUcoreData::ClearCPUcontrollerSpecificAtts()
+{
+  m_stdsetvoltageandfreqDefault.clear() ;
+  m_stdsetvoltageandfreqWanted.clear() ;
+  m_stdsetvoltageandfreqLowestStable.clear() ;
+  m_stdsetvoltageandfreqAvailableFreq.clear() ;
 }
 
 CPUcoreData::CPUcoreData()

@@ -35,7 +35,7 @@ class wxDynamicDialog
   : public wxDialog 
 {
   unsigned short m_wControlID ;
-  //I_CPUcontroller * mp_cpucontroller ;
+  //I_CPUcontroller * mp_i_cpucontroller ;
   I_CPUaccess * mp_cpuaccess ;
   //RegisterData * mp_regdata ;
   //MSRdata * mp_msr_data ;

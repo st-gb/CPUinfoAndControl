@@ -138,7 +138,7 @@ extern Logger g_logger ;
       NULL 
       );
 
-    XMLSize_t nLength = mp_domxpathresult->getSnapshotLength();
+    XMLSize_t nDOMqueryResultsetLength = mp_domxpathresult->getSnapshotLength();
     DOMNamedNodeMap * p_dom_namednodemap ;
     DOMNode * p_domnodeAttribute ;
     XMLCh * xmlchAttributeName = XMLString::transcode("frequency_in_MHz");
@@ -147,9 +147,11 @@ extern Logger g_logger ;
     XercesHelper xerceshelper ;
 
     //Iterate over all "freq_and_voltage" XML elements.
-    for(XMLSize_t i = 0; i < nLength; i++)
+    for( //XMLSize_t 
+      WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength; 
+      wResultSetIndex ++ )
     {
-      mp_domxpathresult->snapshotItem(i);
+      mp_domxpathresult->snapshotItem(wResultSetIndex);
       //theSerializer->write(p_domxpathresult->getNodeValue(), 
       //  theOutputDesc);
       //Get all attributes for the current XML element.
@@ -169,7 +171,7 @@ extern Logger g_logger ;
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
           xerceshelper.ToDWORD( stdstr , & dwValue ) ;
           m_stdmapFreqInMHzInDOMtree2DOMindex.insert( 
-            std::pair<WORD,WORD> ( dwValue, i ) ) ;
+            std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
         }
       //}
     }
@@ -258,7 +260,7 @@ extern Logger g_logger ;
             m_stdmapFreqInMHzInDOMtree2DOMindex ) ;
 
         bool bDOMtreeModified = false ;
-        bool bCreateMaxVoltageAttribute ;
+//        bool bCreateMaxVoltageAttribute ;
         //Prevent insertions or deletions while accessing the STL container.
         mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
 
@@ -979,7 +981,7 @@ extern Logger g_logger ;
    //This is useful because there may be more than one XML file to read.
    //So one calls this functions with different handlers passed.
     DefaultHandler & r_defaulthandler
-      )
+    )
 	{
     BYTE byReturn = FAILURE ;
       //DEBUG("readXMLConfig begin--filename:%s\n",xmlFile);
@@ -990,6 +992,7 @@ extern Logger g_logger ;
       //"Independent of the API you want to use, DOM, SAX, or SAX2, your
       //application must initialize the Xerces system before using the API[...]"
 	    XMLPlatformUtils::Initialize();
+      LOG( "XML successfully initialized\n" );
 	  }
 	  catch (const XMLException & toCatch )
 	  {
@@ -1002,98 +1005,103 @@ extern Logger g_logger ;
 	    XMLString::release(&message);
 //	    return FAILURE;
 	  }
-	
-	  SAX2XMLReader * p_sax2xmlreader = XMLReaderFactory::createXMLReader();
-      if( p_sax2xmlreader )
-      {
-	      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreValidation, true);   
-	      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreNameSpaces, true);   // optional
-    	
-	      //DefaultHandler * p_defaultHandler = new DefaultHandler();
-	      DefaultHandler defaultHandler;
-	      //p_sax2xmlreader->setContentHandler(defaultHandler);
+    //Initialize to NULL just to avoid (g++) compiler warning.
+	  SAX2XMLReader * p_sax2xmlreader = NULL ;
+	  p_sax2xmlreader = XMLReaderFactory::createXMLReader();
+    if( p_sax2xmlreader )
+    {
+      LOGN( "XML reader successfully created" );
+      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreValidation, true);
+      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreNameSpaces, true);   // optional
+
+      //DefaultHandler * p_defaultHandler = new DefaultHandler();
+      DefaultHandler defaultHandler;
+      //p_sax2xmlreader->setContentHandler(defaultHandler);
 //	      SAX2MainConfigHandler sax2(//pstates
 //	        model ,
 //            p_userinterface ,
 //            p_pumastatectrl
 //            );
-	      p_sax2xmlreader->setContentHandler(//&sax2
-          & r_defaulthandler );
-	      p_sax2xmlreader->setErrorHandler(//p_defaultHandler
-          & defaultHandler );
-    	
-	      try 
-	      {
-	        p_sax2xmlreader->parse(xmlFile);
-	        DEBUG("-----------End of loading from config file\n") ;
-           //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
-           //"The parser object returned by XMLReaderFactory is owned by the 
-            //calling users, and it's the responsiblity of the users to delete 
-            //that parser object, once they no longer need it."
-              delete p_sax2xmlreader;
-            if( model.m_bTruncateLogFileForEveryStartup )
-                g_logger.TruncateFileToZeroAndRewrite() ;
-           byReturn = SUCCESS;
-	      }
-	      catch (const XMLException& toCatch) 
-	      {
-	        char * message = XMLString::transcode(toCatch.getMessage());
-	        cout << "XML exception. Message is: \n"
-	             << message << "\n";
-          p_userinterface->Confirm( std::string( "XML exception in file" ) + 
-            xmlFile + ":" + message );
-	        XMLString::release(&message);
-            //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
-            //"The parser object returned by XMLReaderFactory is owned by 
-            //the calling users, and it's the responsiblity of the users to 
-            //delete that parser object, once they no longer need it."
+      p_sax2xmlreader->setContentHandler(//&sax2
+        & r_defaulthandler );
+      p_sax2xmlreader->setErrorHandler(//p_defaultHandler
+        & defaultHandler );
+
+      try
+      {
+        LOGN( "before parsing XML file" );
+        p_sax2xmlreader->parse(xmlFile);
+        DEBUG("-----------End of loading from config file\n") ;
+         //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
+         //"The parser object returned by XMLReaderFactory is owned by the
+          //calling users, and it's the responsiblity of the users to delete
+          //that parser object, once they no longer need it."
             delete p_sax2xmlreader;
-//	        return FAILURE;
-	      }
-	      catch (const SAXParseException & r_saxparseexception )
-	      {
-	        char * pchMessage = XMLString::transcode( r_saxparseexception.getMessage() );
-	        cout << "Exception message is: \n"
-	             << pchMessage << "\n";
-          std::string strMessage = "XML error in file: \"" + 
-            std::string(xmlFile) 
-            + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() ) 
-            + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() ) 
-            + ": " + pchMessage 
-            + "\nIn order to solve this problem you may look into the XML "
-            "specifications for element names etc" ;
-	        p_userinterface->Confirm(//pchMessage
-            strMessage);
-	        XMLString::release( & pchMessage );
-            //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
-            //"The parser object returned by XMLReaderFactory is owned by 
-            //the calling users, and it's the responsiblity of the users to 
-            //delete that parser object, once they no longer need it."
+          if( model.m_bTruncateLogFileForEveryStartup )
+              g_logger.TruncateFileToZeroAndRewrite() ;
+         byReturn = SUCCESS;
+      }
+      catch (const XMLException& toCatch)
+      {
+        LOGN( "XMLException" );
+        char * message = XMLString::transcode(toCatch.getMessage());
+        cout << "XML exception. Message is: \n"
+             << message << "\n";
+        p_userinterface->Confirm( std::string( "XML exception in file" ) +
+          xmlFile + ":" + message );
+        XMLString::release(&message);
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
+          //"The parser object returned by XMLReaderFactory is owned by
+          //the calling users, and it's the responsiblity of the users to
+          //delete that parser object, once they no longer need it."
           delete p_sax2xmlreader;
 //	        return FAILURE;
-	      }
-	      catch (...) 
-	      {
-	        DEBUG_COUT( << "Unexpected Exception at parsing XML\n" ) ;
-	        p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
-            //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
-            //"The parser object returned by XMLReaderFactory is owned by 
-            //the calling users, and it's the responsiblity of the users to 
-            //delete that parser object, once they no longer need it."
-            delete p_sax2xmlreader;
-//	        return FAILURE;
-	      }
-	      //__finally
-       //   {
-       ////        //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
-       //   //"The parser object returned by XMLReaderFactory is owned by the 
-       //   //calling users, and it's the responsiblity of the users to 
-       //   //delete that parser object, once they no longer need it."
-       //   delete p_sax2xmlreader;
-       //   }
-    	  //delete p_defaultHandler;
       }
-
+      catch (const SAXParseException & r_saxparseexception )
+      {
+        LOGN( "SAXParseException" );
+        char * pchMessage = XMLString::transcode( r_saxparseexception.getMessage() );
+        cout << "Exception message is: \n"
+             << pchMessage << "\n";
+        std::string strMessage = "XML error in file: \"" +
+          std::string(xmlFile)
+          + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
+          + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
+          + ": " + pchMessage
+          + "\nIn order to solve this problem you may look into the XML "
+          "specifications for element names etc" ;
+        p_userinterface->Confirm(//pchMessage
+          strMessage);
+        XMLString::release( & pchMessage );
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
+          //"The parser object returned by XMLReaderFactory is owned by
+          //the calling users, and it's the responsiblity of the users to
+          //delete that parser object, once they no longer need it."
+        delete p_sax2xmlreader;
+//	        return FAILURE;
+      }
+      catch (...)
+      {
+        DEBUG_COUT( "Unexpected Exception at parsing XML\n" ) ;
+        p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
+          //"The parser object returned by XMLReaderFactory is owned by
+          //the calling users, and it's the responsiblity of the users to
+          //delete that parser object, once they no longer need it."
+          delete p_sax2xmlreader;
+//	        return FAILURE;
+      }
+      //__finally
+     //   {
+     ////        //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
+     //   //"The parser object returned by XMLReaderFactory is owned by the
+     //   //calling users, and it's the responsiblity of the users to
+     //   //delete that parser object, once they no longer need it."
+     //   delete p_sax2xmlreader;
+     //   }
+      //delete p_defaultHandler;
+    }
+    LOGN( "terminating XML usage" );
     //http://xerces.apache.org/xerces-c/program-3.html:
     //"Independent of the API you want to use, DOM, SAX, or SAX2, your
     //application must [...] and terminate it after you are done.
@@ -1109,10 +1117,12 @@ extern Logger g_logger ;
     , DOMImplementation * & p_dom_implementation 
     )
   {
+//    BYTE byRet = FAILURE ;
     try {
         XMLPlatformUtils::Initialize();
     }
-    catch (const XMLException& toCatch) {
+    catch (const XMLException& toCatch)
+    {
         char* message = XMLString::transcode(toCatch.getMessage());
         //cout << "Error during initialization! :\n"
         //     << message << "\n";
@@ -1155,22 +1165,23 @@ extern Logger g_logger ;
         cout << "Exception message is: \n"
              << message << "\n";
         XMLString::release(&message);
-        return -1;
+        return FAILURE ;
     }
-    catch (const DOMException& toCatch) {
+    catch(const DOMLSException & ex)
+    {
+        return FAILURE ;
+    }
+    catch (const DOMException& toCatch)
+    {
         char* message = XMLString::transcode(toCatch.msg);
         cout << "Exception message is: \n"
              << message << "\n";
         XMLString::release(&message);
-        return -1;
-    }
-    catch(const DOMLSException & ex)
-    {
-        return -1;
+        return FAILURE ;
     }
     catch (...) {
         cout << "Unexpected Exception \n" ;
-        return -1;
+        return FAILURE ;
     }
     //delete errHandler;
     return 0;
@@ -1224,6 +1235,7 @@ extern Logger g_logger ;
     //delete myErrorHandler;
     //delete myFilter;
     delete myFormTarget;
+    return 1 ;
   }
 
   BYTE XercesConfigurationHandler:://mergeXMLfileDOM( 
@@ -1232,7 +1244,8 @@ extern Logger g_logger ;
     , Model & model 
     , std::string & r_strPstateSettingsFileName )
   {
-    BYTE retval ;
+    //Initialize just to avoid (g++) compiler warning.
+    BYTE retval = 0 ;
     //DOMDocument * p_dom_document ;
     DOMLSParser * p_dom_ls_parser ;
     DOMImplementation * p_dom_implementation ;
@@ -1254,12 +1267,12 @@ extern Logger g_logger ;
             m_stdmapFreqInMHzInDOMtree2DOMindex ) ;
 
         bool bDOMtreeModified = false ;
-        bool bCreateMaxVoltageAttribute ;
+//        bool bCreateMaxVoltageAttribute ;
         //Prevent insertions or deletions while accessing the STL container.
         model.m_cpucoredata.m_wxcriticalsection.Enter() ;
 
         //WORD wSize = model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
-        WORD wFreq ;
+//        WORD wFreq ;
         //for( WORD wIndex = 0 ; wIndex < wSize ; ++ wIndex )
 
         //if( PossiblyAddDefaultVoltages() )

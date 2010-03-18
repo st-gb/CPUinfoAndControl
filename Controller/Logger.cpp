@@ -1,3 +1,6 @@
+//#if defined( _MSC_VER) 
+#include "StdAfx.h"
+//#endif //#ifdef _MSC_VER
 
 //If MS compiler etc.
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
@@ -59,7 +62,7 @@ void Logger::Log(//ostream & ostr
     {
       #ifdef _WINDOWS
         SYSTEMTIME systemtime ;
-        GetSystemTime(&systemtime);              // gets current time
+        //GetSystemTime(&systemtime);              // gets current time
         ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
       #else
 
@@ -174,7 +177,7 @@ bool Logger::OpenFile2( std::string & r_stdstrFilePath
         //, std::ios_base::out | std::ios_base::trunc
         );
 #ifdef _DEBUG
-    bool bOfstreamIsGood = mp_ofstream->good() ;
+//    bool bOfstreamIsGood = mp_ofstream->good() ;
 #endif
     return mp_ofstream->good() ;
     //std::ofstream ofstreamTest;

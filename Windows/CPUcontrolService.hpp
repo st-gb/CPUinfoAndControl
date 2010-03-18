@@ -78,8 +78,8 @@ public:
     MainController m_maincontroller ;
     /*DynFreqScalingThread * mp_dynfreqscalingthread ;*/
     //static 
-    //WinRing0dynLinked m_winring0dynlinked ;
-    WinRing0dynLinked * mp_winring0dynlinked ;
+    //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
+    WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
     static std::vector<std::string> m_vecstrCmdLineOptions ;
     std::tstring m_stdtstrProgramArg ;
     std::vector<std::string> m_vecstdstrCommandLineArgs ;

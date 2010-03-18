@@ -27,9 +27,24 @@
   : \
   (current) - (prev)
 
+#define ULONG_VALUE_DIFF(current,prev) \
+  /* the performance counter values are increasing in time except a value wrap
+  occured */ \
+  (current) < (prev) ? \
+  /* for understanding this calculation: 
+    example: wrap at 255: current value: 2 old value : 250 
+    -> correct value is "maximum value" minus "old value" + 
+    "current value" + 1 (because first value is "0")
+    = 255 - 250 + 2 + 1 = 5 + 2 + 1 = 8 
+    example: wrap at 255: current value: 0 old value : 255: 255-255 + 0 + 1 = 1
+  */ \
+  (ULONG_MAX - (prev) ) + (current) + 1 \
+  : \
+  (current) - (prev)
+
 //pre-declare
-//class GriffinController ;
-class NehalemController ;
+class I_CPUaccess ;
+//class NehalemController ;
 class Model ;
 //class ICPUcoreUsageGetter ;
 
@@ -39,6 +54,7 @@ namespace Nehalem
   class ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts
   {
   public :
+    DWORD m_dwTickCount ; //for storing the  milliseconds passed
     ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
     ULONGLONG m_ullPreviousTimeStampCounterValue ;
   } ;
@@ -49,14 +65,18 @@ namespace Nehalem
   private :
     BYTE m_byPerfCounterBitWidth ;
     BYTE m_byPerfCounterNumber ;
+    BYTE m_byNumLogicalCPUcores ;
     //bool m_bAtLeastSecondTime ;
-    double m_dReferenceClockInMhz ;
+    double m_dReferenceClockInHz ;
     DWORD m_dwAtMask2ndTimeCPUcoreMask ;
     DWORD m_dwLowmostBits , m_dwHighmostBits ;
     DWORD m_dwAffinityMask ;
+    DWORD m_dwTickCount ; //for getting the milliseconds passed
+    DWORD m_dwTickCountDiff ;
     //Model * mp_model ;
     //NehalemController * mp_nehalem_controller ;
     ULONGLONG m_ullPerformanceEventCounter3Diff ;
+    I_CPUaccess * mp_cpuaccess ;
     //ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
     ULONGLONG m_ull ;
     //ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
@@ -72,11 +92,17 @@ namespace Nehalem
     ClocksNotHaltedCPUcoreUsageGetter(
       //BYTE byCoreID ,
       DWORD dwAffinityMask
-      , NehalemController * p_nehalemcontroller
+      //, NehalemController * p_nehalemcontroller
+      , I_CPUaccess *
       ) ;
+    ClocksNotHaltedCPUcoreUsageGetter() ;
     ~ClocksNotHaltedCPUcoreUsageGetter()
     {
       delete [] m_ar_cnh_cpucore_ugpca ;
+    }
+    I_CPUaccess * GetCPUaccess( )
+    {
+      return mp_cpuaccess ; 
     }
     BYTE GetCurrentPstate(
       BYTE & r_byFreqID
@@ -85,7 +111,9 @@ namespace Nehalem
       ) ;
     BYTE GetPercentalUsageForAllCores(float arf[] ) ; //{ return 0 ; } ;
     float GetPercentalUsageForCore(BYTE byCoreID) ;
+    void GetPerfCounterAttributes() ;
     BYTE Init() ;
+    void Init( DWORD dwAffinityMask ) ;
     ULONGLONG PerformanceCounterValueDiff(
       ULONGLONG ullPerformanceCounterCurrent ,
       ULONGLONG ullPerformanceCounterPrevious ) ;
@@ -114,5 +142,6 @@ namespace Nehalem
       bool bInvertCounterMask ,
       BYTE byCounterMask
       ) ;
+    void SetCPUaccess( I_CPUaccess * p_i_cpuaccess ) ;
   } ; //end class
 }; //end namespace PentiumM

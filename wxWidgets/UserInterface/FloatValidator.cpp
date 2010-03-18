@@ -65,7 +65,12 @@ bool CfloatValidator::TransferFromWindow()
     else
       r = sscanf( //GetCharPointer( wxstr.GetData() )
         //wxstr.GetData().AsChar() , " %g", fpt_union_.d );
-        wxstr.GetData(), " %g", fpt_union_.d );
+        wxstr.GetData(),
+        //http://en.wikipedia.org/wiki/Scanf#Format_string_specifications:
+        //"'%lf' : Scan as a double floating-point number."
+        // (same format as datatype avoids g++ compiler warnings)
+        " %lf"
+        , fpt_union_.d );
  
     if ( r == 1 )
     {
@@ -108,7 +113,12 @@ bool CfloatValidator::Validate(wxWindow* parent)
     else {
         int r = sscanf( //GetCharPointer( wxstr.GetData() ) 
           //wxstr.GetData().AsChar() ," %g",t.d);
-          wxstr.GetData() ," %g",t.d);
+          wxstr.GetData() ,
+          //http://en.wikipedia.org/wiki/Scanf#Format_string_specifications:
+          //"'%lf' : Scan as a double floating-point number."
+          // (same format as datatype avoids g++ compiler warnings)
+          " %lf"
+          , t.d );
         ret = ( (r==1) && ( * t.d > m_lBound ) && ( *t.d < m_hBound ) );
     }
  

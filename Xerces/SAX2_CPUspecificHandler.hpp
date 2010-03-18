@@ -38,22 +38,22 @@ class XercesHelper ;
 class SAX2_CPUspecificHandler
   : public DefaultHandler
 {
-  XercesHelper m_xerceshelper ;
 public:
+//private:
+  bool m_bInsideValidCPUIDelement ;
+  bool m_bInsideValidMSRelement ;
+  Model * mp_modeldata ;
+  std::string m_strElementName ;
+  std::vector<MSRdata>::reverse_iterator m_stdvec_msrdata_riter;
+  std::vector<CPUIDdata>::reverse_iterator m_stdvec_cpuiddata_riter;
+  UserInterface * mp_userinterface ;
+  XercesHelper m_xerceshelper ;
     SAX2_CPUspecificHandler(
         UserInterface & r_userinterface,
         Model & r_modeldata
         );
     SAX2_CPUspecificHandler(const SAX2_CPUspecificHandler& orig);
     virtual ~SAX2_CPUspecificHandler();
-//private:
-    bool m_bInsideValidMSRelement ;
-    bool m_bInsideValidCPUIDelement ;
-    UserInterface * mp_userinterface ;
-    Model * mp_modeldata ;
-    std::string m_strElementName ;
-    std::vector<MSRdata>::reverse_iterator m_stdvec_msrdata_riter;
-    std::vector<CPUIDdata>::reverse_iterator m_stdvec_cpuiddata_riter;
     void endElement(
         const   XMLCh * const    cpc_xmlchURI ,
         const   XMLCh * const    cpc_xmlchLocalName ,

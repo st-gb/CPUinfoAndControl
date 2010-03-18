@@ -32,9 +32,9 @@ class CPUregisterWriteDialog
   : public wxDialog
 {
 private:
+  I_CPUcontroller * mp_cpucontroller ;
   Model * mp_modeldata ;
   MSRdata * mp_msrdata ;
-  I_CPUcontroller * mp_cpucontroller ;
   wxBoxSizer * mp_sizerAttributeNameAndValue ;
   wxBoxSizer * mp_sizerLeftColumn ;
   wxBoxSizer * mp_sizerRightColumn ;

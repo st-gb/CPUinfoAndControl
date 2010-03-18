@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <WinError.h> //ERROR_BAD_EXE_FORMAT
 
 class DLLloadError
 {

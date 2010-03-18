@@ -149,7 +149,8 @@ DWORD
   {
     bool bNewVoltageAndFreqPair ;
     BYTE byTimes = 15 ;
-    float fCPUusageReferringToMaxFreq ;
+    //Initialize just to avoid (g++) compiler warning.
+    float fCPUusageReferringToMaxFreq = 0.0f ;
     float fPreviousCPUusageReferringToMaxFreq = 1.0 ;
     float fVoltageInVolt , fLoad ;
     float * pfCPUcoreLoadInPercent = pcalculationthread->
@@ -160,10 +161,11 @@ DWORD
     pcalculationthread->m_vbContinue = true ;
     std::map<WORD,BYTE> mapFreq2Count ;
     WORD wSleepTimeInMs = 1 ;
-    WORD wFreqInMHz , wPrevInsertedFreqInMHz;
+    //Initialize just to avoid (g++) compiler warning.
+    WORD wFreqInMHz , wPrevInsertedFreqInMHz = 0 ;
     WORD wMaxFreqInMHz = 1800 ;
   #ifdef _DEBUG
-    //pcalculationthread->mp_cpucontroller->
+    //pcalculationthread->mp_i_cpucontroller->
     wPrevInsertedFreqInMHz = wMaxFreqInMHz + 1 ;
   #endif
     //while( wSleepTimeInMs < 200 )
@@ -177,11 +179,11 @@ DWORD
       {
 
       }
-      //if( pcalculationthread->mp_cpucontroller->
+      //if( pcalculationthread->mp_i_cpucontroller->
        if( pcalculationthread->mp_cpucontroller->GetCurrentPstate(
          wFreqInMHz, fVoltageInVolt, pcalculationthread->m_byCoreID ) )
        {
-         //mp_cpucontroller->
+         //mp_i_cpucontroller->
          //fLoad = ::wxGetApp().mp_cpucoreusagegetter->
            pcalculationthread->mp_cpucontroller->mp_icpucoreusagegetter->
            //GetPercentalUsageForCore(
@@ -228,7 +230,7 @@ DWORD
            //fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
          }
          //stdpairstdsetvoltageandfreq = pcalculationthread->
-         //  mp_cpucontroller->mp_model->m_cpucoredata.
+         //  mp_i_cpucontroller->mp_model->m_cpucoredata.
          //   m_stdsetvoltageandfreqDefault.insert( 
          //   VoltageAndFreq ( fVoltageInVolt , wFreqInMHz ) 
          //   ) ;
@@ -266,12 +268,12 @@ DWORD
   BYTE arbyAllBitsSet[sizeof(double)] ;
   memset(arbyAllBitsSet,255,sizeof(double) ) ;
   //a double is 8 bytes big
-  double d = 5.0 ;
+//  double d = 5.0 ;
   double dAllBitsSet ;
   //memcpy( dAllBitsSet, arbyAllBitsSet sizeof(double) ) ;
   memset( & dAllBitsSet,255,sizeof(double) ) ;
-  double dExpectedValue = 1.0/3.0 ;
-  int i = 1 ;
+//  double dExpectedValue = 1.0/3.0 ;
+//  int i = 1 ;
   //Use the SAME data type for comparing 2 values. Else because of precision
   //they can differ even if not instable voltage.
   //double fExpectedValue ;
@@ -296,8 +298,8 @@ DWORD
     && byData
     )
   {
-    DWORD dwNumberToTest = //ULONG_MAX; 
-      1 ;
+//    DWORD dwNumberToTest = //ULONG_MAX;
+//      1 ;
     DWORD dwIndex = 0 ;
     double dSum = 0.0 ;
     for ( ; dwIndex < dwNumbers ; ++ dwIndex )
@@ -335,7 +337,7 @@ DWORD
   DWORD dwNumberCountMinus1 = dwNumbers - 1 ;
   dSum = 0.0 ;
   //PumaStateCtrl * p_pumastatectrl = (PumaStateCtrl * ) lpParameter ;
-  long lPreviousPrime95ResultsFileLength = GetPrime95ResultsFileLength() ;
+//  long lPreviousPrime95ResultsFileLength = GetPrime95ResultsFileLength() ;
   srand(dwNumberCountMinus1) ;
   BYTE byExpVal = 255 ;
   if( pcalculationthread )
@@ -459,8 +461,8 @@ HighALUloadThreadProc(LPVOID lpParameter)
 {
   CalculationThread * pcalculationthread = (CalculationThread*) lpParameter ;
   pcalculationthread->m_vbContinue = true ;
-  double d = 5.0 ;
-  int i = 1 ;
+//  double d = 5.0 ;
+//  int i = 1 ;
   DWORD dwAllBitsSet = 
     //For stability check: use a number where all bits are set. So every 
     //transistor storing a bit needs voltage.

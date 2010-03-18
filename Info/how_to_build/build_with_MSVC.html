@@ -7,11 +7,14 @@
 	<META NAME="AUTHOR" CONTENT="Stefan Gebauer">
 	<META NAME="CREATED" CONTENT="20100104;17290500">
 	<META NAME="CHANGEDBY" CONTENT="Stefan Gebauer">
-	<META NAME="CHANGED" CONTENT="20100111;23445200">
+	<META NAME="CHANGED" CONTENT="20100313;1221300">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { margin: 2cm }
 		P { margin-bottom: 0.21cm }
+		H2.western { font-family: "Albany", sans-serif; font-size: 14pt; font-style: italic }
+		H2.cjk { font-family: "HG Mincho Light J"; font-size: 14pt; font-style: italic }
+		H2.ctl { font-family: "Arial Unicode MS"; font-size: 14pt; font-style: italic }
 	-->
 	</STYLE>
 </HEAD>
@@ -82,21 +85,6 @@ Debug version: </FONT></FONT>
 </UL>
 <P STYLE="margin-bottom: 0cm"><BR>
 </P>
-<P STYLE="margin-bottom: 0cm"><BR>
-</P>
-<P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-zu
-Linker-&gt;Bibliothek ignorieren hinzufuegen (sonst:
-&quot;LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
-MSVCRT.lib(MSVCR80.dll) definiert.&quot;) :</FONT></FONT></P>
-<UL>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">release
-	version: &quot;LIBCMT.lib&quot;, </FONT></FONT>
-	</P>
-	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">debug
-	version: LIBCMTD.lib</FONT></FONT></P>
-</UL>
-<P STYLE="margin-bottom: 0cm"><BR>
-</P>
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Arial, sans-serif"><FONT SIZE=2 STYLE="font-size: 11pt">-for
 <B>power scheme</B> access under Windows Vista (access is different
 from Windows XP):</FONT></FONT></P>
@@ -146,8 +134,40 @@ breakpoints)</FONT></FONT></P>
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-code
 generaion</FONT></FONT></P>
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-&quot;runtime
-library&quot;: &quot;Multithreaded-Debug-DLL (/MDd)&quot;</FONT></FONT></P>
-<P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-linker</FONT></FONT></P>
+library&quot;: &quot;Multithreaded-Debug-DLL (/Mdd)&quot;</FONT></FONT></P>
+<P STYLE="margin-bottom: 0cm"><BR>
+</P>
+<H2 CLASS="western">linker</H2>
+<P STYLE="margin-left: 1.25cm; margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-zu
+Linker-&gt;Bibliothek ignorieren hinzufuegen (sonst:
+&quot;LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
+MSVCRT.lib(MSVCR80.dll) definiert.&quot;) :</FONT></FONT></P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">release
+	version: &quot;LIBCMT.lib&quot;, </FONT></FONT>
+	</P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">debug
+	version: LIBCMTD.lib</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>general</B><SPAN STYLE="font-weight: normal">:</SPAN></FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">enable
+	incremental linking: &bdquo;Yes (/INCREMENTAL)&ldquo;</SPAN></FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>manifest</B>
+	file:</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">UAC
+	execution level: &bdquo;requireAdministrator
+	(/level='requireAdministrator')&ldquo;<BR>(especially if
+	OlsInitialize() or GetDllStatus() returns an error code)</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>System</B></FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Subsystem:
+	&bdquo;Windows (/SUBSYSTEM:WINDOWS)&ldquo;</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Advanced:</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm">&bdquo;<FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">No
+	(/DYNAMICBASE:NO)&ldquo;</FONT></FONT></P>
+	<LI><P STYLE="margin-bottom: 0cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Data
+	exec prev: &bdquo;&ldquo;</FONT></FONT></P>
+</UL>
+<P STYLE="margin-left: 1.25cm; margin-bottom: 0cm"><BR>
+</P>
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-debugging</FONT></FONT></P>
 <P STYLE="margin-bottom: 0cm"><FONT FACE="Courier New, monospace"><FONT SIZE=2 STYLE="font-size: 11pt">-&quot;generate
 debug info&quot;: &quot;Ja (/DEBUG)&quot;</FONT></FONT></P>

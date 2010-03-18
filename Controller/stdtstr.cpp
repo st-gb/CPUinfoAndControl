@@ -1,3 +1,7 @@
+//#ifdef _MSC_VER
+  #include "StdAfx.h"
+//#endif//#ifdef _MSC_VER
+
 #include "stdtstr.hpp"
 
  #if defined _UNICODE || defined UNICODE
@@ -53,3 +57,4 @@
    std::string stdstr( cr_wstr.begin(), cr_wstr.end() ) ;
    return stdstr ;
  }
+ //Let newline below to avoid g++ warning "no newline at end of file".

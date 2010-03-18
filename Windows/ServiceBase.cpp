@@ -122,7 +122,7 @@ DWORD ServiceBase::CreateService(
   //, TCHAR * tchPathToServiceExe
   )
 { 
-  BOOL boolReturn = FALSE ;
+//  BOOL boolReturn = FALSE ;
   SC_HANDLE schService ;
   SC_HANDLE schSCManager;
   TCHAR szPath[MAX_PATH]; 
@@ -269,12 +269,21 @@ DWORD ServiceBase::CreateService(
     SERVICE_AUTO_START,
     SERVICE_ERROR_NORMAL,      // error control type 
     // path to service's binary 
-    //"Pointer to a null-terminated string that contains the fully qualified path to the service binary file. If the path contains a space, it must be quoted so that it is correctly interpreted. For example, "d:\\my share\\myservice.exe" should be specified as "\"d:\\my share\\myservice.exe\"". 
-    //The path can also include arguments for an auto-start service. For example, "d:\\myshare\\myservice.exe arg1 arg2". These arguments are passed to the service entry point (typically the main function)."
-    // "..\\GriffinControlService\\Release\\ 
+    //"Pointer to a null-terminated string that contains the fully qualified
+    //path to the service binary file. If the path contains a space, it must
+    //be quoted so that it is correctly interpreted. For example,
+    //"d:\\my share\\myservice.exe" should be specified as
+    //"\"d:\\my share\\myservice.exe\"".
+    //The path can also include arguments for an auto-start service.
+    //For example, "d:\\myshare\\myservice.exe arg1 arg2".
+    //These arguments are passed to the service entry point
+    //(typically the main function)."
+    //Use C comment, else compiler warning: multi-line comment because of "\" at
+    // line end.
+    /* "..\\GriffinControlService\\Release\\
     //"C:\\Dokumente und Einstellungen\\Stefan\\Eigene Dateien\\"
     //"Visual Studio 2005\\Projects\\GriffinControlService\\Release\\"
-    //"GriffinControlService.exe",
+    //"GriffinControlService.exe", */
     tchPathcToServiceExe,
     NULL,                      // no load ordering group 
     NULL,                      // no tag identifier 

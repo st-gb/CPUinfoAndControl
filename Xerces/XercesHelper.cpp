@@ -335,7 +335,7 @@ BYTE //SAX2MainConfigHandler::
   DWORD & r_dwValue
   )
 {
-  BYTE byReturn = FAILURE;
+//  BYTE byReturn = FAILURE;
   //XMLCh * p_xmlchAttributeName = XMLString::transcode(lpctstrAttrName) ;
   //if( p_xmlchAttributeName )
   //{

@@ -1,0 +1,21 @@
+http://wiki.wxwidgets.org/Compiling_WxWidgets_With_MSYS-MinGW
+
+1. Open an MSYS shell by clicking on the Msys icon. 
+2. execute configure within this shell
+
+ANSI DLL Release version:
+(can be done with cygwin's "sh")
+sh ../configure -LDFLAGS=-no-undefined --build=x86-winnt-mingw32 --with-extra-cflags=-mno-cygwin -–with-extra-cxxflags=-mno-cygwin
+
+-add "-D_SYS_SELECT_H" as "CPPFLAGS" in the "Makefile" (because else a conflict/ compile error: duplicate function "int select ..."
+
+-use MinGW's "mingw32-make" for the created "Makefile"
+   -if the Makefile was made using cygwin's "sh"
+     : replace "/cygdrive/>>drive letter<<" by ">>drive letter<<:" inside the generated Makefile
+       e.g. replace all "/cygdrive/c" by "C:"
+-use cygwin's "make" (MSYS' make did not work) only if MIngW/ MSYS' make do not work
+  (but I uess it creates inconpatible libs that generate linker errors when linked with MinGW)
+
+ANSI static lib Release version:
+sh ../configure CPPFLAGS=-D_SYS_SELECT_H LDFLAGS=-no-undefined --build=x86-winnt-mingw32 --with-msw --with-extra-cflags=-mno-cygwin -–with-extra-cxxflags=-mno-cygwin --disable-shared
+sh ../configure --build=x86-winnt-mingw32 --with-extra-cflags=-mno-cygwin –with-extra-cxxflags=-mno-cygwin

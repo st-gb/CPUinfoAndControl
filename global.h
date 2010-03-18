@@ -116,18 +116,24 @@
   #define CPP_WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(coutArgs) { \
     std::cout coutArgs ; std::cout.flush(); \
     g_ofstream coutArgs ; g_ofstream.flush(); }
-  //#define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(...) { \
+  //Use C comment, else compiler warning: multi-line comment because of "\" at
+  // line end.
+  /*#define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(...) { \
   //  fprintf(fileDebug,__VA_ARGS__); fflush(fileDebug); \
-  //  printf(__VA_ARGS__); fflush(stdout); }
+  //  printf(__VA_ARGS__); fflush(stdout); } */
   //#ifndef _MSC_VER //else compile errors with gcc
   #include <iostream> //for cout
   //#endif
   #define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(to_ostream) { \
   LOG(to_ostream << std::endl; ); \
     std::cout << to_ostream << std::endl ; std::cout.flush(); }
-  //this macro may NOT be called like the other one with "..."/ "__VA_ARGS__",
-  //else many errors
-  #define DEBUG_COUT(coutArgs)  {std::cout coutArgs ; std::cout.flush(); }
+  #ifdef _DEBUG
+    //this macro may NOT be called like the other one with "..."/ "__VA_ARGS__",
+    //else many errors
+    #define DEBUG_COUT(coutArgs)  {std::cout << coutArgs ; std::cout.flush(); }
+  #else
+    #define DEBUG_COUT(coutArgs) //->empty
+  #endif
 #else
 	#define DEBUG(...) //->empty
   #define DEBUG(coutArgs) //->empty

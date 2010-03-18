@@ -30,7 +30,8 @@ BYTE PentiumM_Controller::Init()
   if( mp_cpuaccess )
   {
     bool bSpeedStepIsenabled ;
-    DWORD dwLow, dwHigh ;
+    //Initialize just to avoid (g++) compiler warning.
+    DWORD dwLow = 0 , dwHigh = 0 ;
     mp_cpuaccess->WrmsrEx(
       IA32_MISC_ENABLE
       , dwLow 
@@ -560,7 +561,8 @@ BOOL // TRUE: success, FALSE: failure
           )
         )
       {
-        int i = 0 ;
+//        //Breakpoint possibility
+//        int i = 0 ;
         if( fVoltageInVoltFromRegisterValueToWrite <= fMaxVoltageInVolt )
           mp_cpuaccess->// TRUE: success, FALSE: failure
             WrmsrEx(

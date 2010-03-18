@@ -7,12 +7,17 @@
 
 //class GriffinController ;
 
+//Use C comment, else compiler warning: multi-line comment because of "\" at
+// line end.
 //#define WRITE_TO_OUTPUTSTREAM(ostrstream1,var,str) /*std::ostrstream ostrstream1 ;*/ \
 //  ostrstream1 << var; \
 //  char *pch = ostrstream1.str() ; \
-//  /*pch[ostrstream.pcount()] = '\0' ;: Must set this, else text may follow after the string we want.*/
-//  pch[ostrstream1.pcount()] = '\0' ; \
-//    str = std::string(pch) ;
+//  /*pch[ostrstream.pcount()] = '\0' ;: Must set this, else text may follow
+//    after the string we want.*/
+//Use C comment, else compiler warning: multi-line comment because of "\" at
+// line end.
+/*  pch[ostrstream1.pcount()] = '\0' ; \
+//    str = std::string(pch) ; */
 //  /*::AfxMessageBox(pch ) ;*/
 
 class UserInterface
@@ -27,6 +32,8 @@ public:
   {
 
   }
+  //In order for destructorts of subclasses to be called
+  virtual ~UserInterface() {}
   void showHelp(){};
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};

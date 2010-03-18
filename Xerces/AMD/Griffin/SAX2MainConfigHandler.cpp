@@ -180,7 +180,7 @@
 	  //is fundamental important.
 	  if(XercesHelper::GetAttributeValue(attrs,"number",byPstateID))
 	  {
-	    bool bChange = false ;
+//	    bool bChange = false ;
 	//#ifdef PRIVATE_RELEASE //hide the other possibilities
 	    BYTE byFreqID;
     //#endif
@@ -290,7 +290,7 @@
               didandfid.m_byDivisorID);
             m_p_model->m_pstates.SetPStateFID(byPstateID, //p_didandfid->
               didandfid.m_byFreqID);
-        //mp_cpucontroller->SetNearestFreqInMHz( wValue ) ;
+        //mp_i_cpucontroller->SetNearestFreqInMHz( wValue ) ;
 	    }
       std::string stdstrAttributeName = "VoltageInVolt" ;
       float fValue ;

@@ -32,13 +32,15 @@ CalculationThread::CalculationThread(
   , I_CPUcontroller * p_cpucontroller
   )
   :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
   m_byCoreID ( byCoreID )
 //  m_bCalcError(false) ,
 //  m_vbContinue(true) ,
   //, mpfn_CalculationThreadProc (pCalculationThreadProc)
-  , mp_userinterface (p_userinterface)
-  , mp_cpucontroller (p_cpucontroller )
   , mpfn_CalculationThreadProc ( pCalculationThreadProc )
+  , mp_cpucontroller (p_cpucontroller )
+  , mp_userinterface (p_userinterface)
   //NULL also indicates failure for ::CreateThread(...).
 //  , m_hThread (NULL)
 {
@@ -83,7 +85,8 @@ void CalculationThread::Init()
 //void
 BYTE CalculationThread::Execute()
 {
-  BYTE byAction = STARTED;
+  BYTE byAction = //STARTED;
+    started ;
   DWORD dwExitCode ;
 
   LOG("start or stop high load calc thread for core " <<
@@ -102,7 +105,8 @@ BYTE CalculationThread::Execute()
     //marp_calculationthread[ byCoreID ]->m_vbContinue = false ;
       EndCalculationThread() ;
       m_hThread = NULL ;
-      byAction = ENDED ;
+      byAction = //ENDED ;
+        ended ;
 //    mp_userinterface->//SetMenuItemText(
 //      ChangeUserInterface(
 //      //Pass a pointer to THIS object to let the UserInterface select the
@@ -129,7 +133,8 @@ BYTE CalculationThread::Execute()
 //        //"stdmapmenuitem2ui.get(cpucontrolleraction)->SetMenuItemText(str) ;
 //        this,
 //        "end thread" ) ;
-      byAction = STARTED;
+      byAction = //STARTED;
+          started ;
   }
   return byAction ;
 }

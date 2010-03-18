@@ -22,9 +22,11 @@
                 = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 #endif
 //#else
-//#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+//Use C comment, else compiler warning: multi-line comment because of "\" at
+// line end.
+/*#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
 //    EXTERN_C const GUID FAR name
-//#endif // INITGUID
+//#endif // INITGUID */
 //
 // Specifies the subgroup which will contain all of the processor
 // settings for a single policy.
@@ -67,7 +69,7 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
   DWORD dwPowerEnumerateRet ;
   UCHAR * p_uchBuffer ;
   GUID GUIDscheme ;
-  GUID guidNewPowerScheme ;
+//  GUID guidNewPowerScheme ;
   GUID * p_guidNewPowerScheme = NULL ;
   std::wstring stdwstr ;
 //http://msdn.microsoft.com/en-us/library/aa372730(VS.85).aspx:
@@ -122,7 +124,7 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
       * 2 
     //#endif
       ;
-    const wchar_t * p_wch = cr_stdwstrPowerSchemeName.c_str() ;
+//    const wchar_t * p_wch = cr_stdwstrPowerSchemeName.c_str() ;
     //dwBufferSize = wcslen( p_wch ) ;
     r_dwRetValue =
       //"Returns ERROR_SUCCESS (zero) if the call was successful, and a non-zero
@@ -844,9 +846,12 @@ PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
   //std::wstring & r_stdwstrPowerSchemeName
   std::tstring & r_stdtstrPowerSchemeName
   )
-  : mp_guidPowerSchemeBeforeDisabling ( NULL ) 
-  , m_bActivePowerSchemeAssigned ( false )
+  :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_bActivePowerSchemeAssigned ( false )
   , m_bThrottleSettingsAssigned ( false )
+  , mp_guidPowerSchemeBeforeDisabling ( NULL )
 {
   //m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
 #ifdef  UNICODE                     // r_winnt

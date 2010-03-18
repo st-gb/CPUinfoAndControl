@@ -30,7 +30,8 @@ BYTE NehalemController::Init()
   if( mp_cpuaccess )
   {
     bool bSpeedStepIsenabled ;
-    DWORD dwLow, dwHigh ;
+    //Initialize just to avoid (g++) compiler warning.
+    DWORD dwLow = 0 , dwHigh = 0 ;
     mp_cpuaccess->WrmsrEx(
       IA32_MISC_ENABLE
       , dwLow 
@@ -114,7 +115,9 @@ BYTE NehalemController::GetCurrentPstate(
       )
     )
   {
+#ifdef _DEBUG
     BYTE byVoltageID = ( dwLow & 255 ) ;
+#endif
     //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step
     //63= 0.7V 62=0.716 V,...
     //40=1.340 Volt
@@ -297,7 +300,8 @@ WORD NehalemController::GetVoltageID(float fVoltageInVolt )
     //and would get 29 (1.164 V) when converting to an integer.
     //for 1.164 voltage ID in float is 29.000004
     //ceil( fVoltageID );
-    fVoltageID ;
+	//Cast to WORD to avoid warning "converting to WORD from float.
+    (WORD) fVoltageID ;
   if( fVoltageID - (float) wVoltageID >= 0.5 ) 
     ++ wVoltageID ;
   return wVoltageID ;
@@ -763,8 +767,8 @@ BOOL // TRUE: success, FALSE: failure
     if( //Writing to this register may damage the CPU
       index == IA32_PERF_CTL )
     {
-      WORD wFreqInMHz = ( dwLow >> 8 ) * 100 ;
-      BYTE byVoltageID = ( dwLow & 255 ) ;
+//      WORD wFreqInMHz = ( dwLow >> 8 ) * 100 ;
+//      BYTE byVoltageID = ( dwLow & 255 ) ;
 //      //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step
 //      //63= 0.7V 62=0.716 V,...
 //      //40=1.340 Volt

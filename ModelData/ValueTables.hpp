@@ -29,7 +29,7 @@ public:
             m_vecstrAttributeValue.push_back( iter->second ) ;
             ++ iter ;
         }
-        r_stdmap_stdstringName2Value ;
+//        r_stdmap_stdstringName2Value ;
     }
 
 };

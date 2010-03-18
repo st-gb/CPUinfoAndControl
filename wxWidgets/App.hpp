@@ -17,8 +17,9 @@
 #include <ModelData/ModelData.hpp>
 
 //#include <wxWidgets/UserInterface/Mainframe.hpp>
-
-#pragma  message( "including tchar.h" )
+#ifdef _MSC_VER //MicroSoft compiler
+  #pragma  message( "including tchar.h" )
+#endif
 //Add "Controller/MSVC_adaption/" to the include dir under non-MSVC
 #include <tchar.h> //for TCHAR
 #ifdef _COMPILE_WITH_CALC_THREAD
@@ -31,7 +32,7 @@ class Model ;
 class MainFrame ;
 class UserInterface ;
 #ifdef _WINDOWS
-class WinRing0dynLinked ;
+class WinRing0_1_3RunTimeDynLinked ;
 #else
   #include <Linux/MSRdeviceFile.h>
 #endif
@@ -58,7 +59,7 @@ private:
   MainFrame * mp_frame ;
   UserInterface * mp_userinterface ;
   #ifdef _WINDOWS
-  WinRing0dynLinked * mp_winring0dynlinked ;
+  WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
@@ -74,7 +75,7 @@ private:
   //Model m_modelData ;
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
 
-  //WinRing0dynLinked m_winring0dynlinked ;
+  //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
 
   //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
   //If there are member objects they are destroyed from MyApp destructor. 

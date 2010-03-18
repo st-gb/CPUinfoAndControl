@@ -53,9 +53,11 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
       , wxSize(400, 200)
       , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
       )
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  , mp_cpucontroller ( p_cpucontroller )
   , mp_modeldata( & r_modeldata )
   , m_wNumIgnoreChanges( 0 )
-  , mp_cpucontroller ( p_cpucontroller )
 {
   std::vector<MSRdata>::iterator itermsrdata =
     mp_modeldata->m_stdvector_msrdata.begin() ;
@@ -92,15 +94,23 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
     //BuildGUI( *itermsrdata ) ,
     //itermsrdata->m_dwIndex ;
     if( itermsrdata->m_stdstrRegisterName.empty() )
-      p_wxlistbox->InsertItems( 1,
+    {
+      //Create object here and not as parameter (else:
+      // g++ warning: "taking addesss of temporary".
+      wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        & wxString::Format("%u", itermsrdata->m_dwIndex )
-        , p_wxlistbox->GetCount() ) ;
+        wxString::Format("%lu", itermsrdata->m_dwIndex ) ;
+      p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
+    }
     else
-      p_wxlistbox->InsertItems( 1,
+    {
+      //Create object here and not as parameter (else:
+      // g++ warning: "taking addesss of temporary".
+      wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        & wxString( itermsrdata->m_stdstrRegisterName )
-        , p_wxlistbox->GetCount() ) ;
+        itermsrdata->m_stdstrRegisterName ;
+      p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
+    }
     ++ itermsrdata ;
   }
   itermsrdata =
@@ -221,7 +231,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 
       wxTextCtrl * p_wxtextctrl = m_stdvec_p_wxtextctrl.at( wRegisterDataIndexChangedContent ) ;
       wxString wxstrChanged = p_wxtextctrl->GetValue() ;
-      char * p_ch = (char *) wxstrChanged.fn_str() ;
+//      char * p_ch = (char *) wxstrChanged.fn_str() ;
       ULONGLONG ullFromChangedTextCtrl ;
       if( wxstrChanged.
         //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
@@ -346,8 +356,8 @@ void CPUregisterWriteDialog::OnRegisterListBoxSelection(
   wxCommandEvent & evt )
 {
   wxArrayInt wxarrintSelections ;
-  int nNumberOfSelections =
-  p_wxlistbox->GetSelections(wxarrintSelections) ;
+//  int nNumberOfSelections =
+//      p_wxlistbox->GetSelections(wxarrintSelections) ;
   if( wxarrintSelections.GetCount () > 0 )
   {
     int nIndex = wxarrintSelections.Last () ;
@@ -456,7 +466,7 @@ void CPUregisterWriteDialog::OnWriteToMSR(
       {
         BitRange & br = iter_registerdata->m_stdvec_bitrange.front() ;
         wxstr = (*c_iter_p_wxtextctrl)->GetValue() ;
-        char * p_ch = (char *) wxstr.fn_str() ;
+//        char * p_ch = (char *) wxstr.fn_str() ;
         //ullMSR = 
         if( wxstr.
           //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:

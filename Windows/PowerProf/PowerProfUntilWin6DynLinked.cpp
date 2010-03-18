@@ -123,7 +123,8 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchByDynamicThrottle (
         ::GetSystemPowerStatus(& system_power_status)
         )
       {
-        BYTE byDynamicThrottle ;
+        //Initialize just to avoid (g++) compiler warning.
+        BYTE byDynamicThrottle = 0 ;
         //DWORD dwACProcThrottleMaxValue ;
         if( system_power_status.ACLineStatus == 1 // Online
           )
@@ -443,6 +444,7 @@ BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
     }
     else
     {
+      //Wrong g++ compiler warning "unused variable" here:
       DWORD dwLastError = ::GetLastError() ;
       LOGWN( L"writing power scheme " << stdwstrName.c_str()  << 
         L"failed. Error code: " << dwLastError //)
@@ -1175,7 +1177,8 @@ bool PowerProfUntilWin6DynLinked::OtherDVFSisEnabled()
 
 void PowerProfUntilWin6DynLinked::OutputAllPowerSchemes()
 {
-  EnumPwrSchemes(PwrSchemesEnumProcLogOutput,NULL) ;
+  EnumPwrSchemes(PwrSchemesEnumProcLogOutput, //NULL
+    0 ) ;
 }
 
 BOOLEAN PowerProfUntilWin6DynLinked::WritePwrScheme(

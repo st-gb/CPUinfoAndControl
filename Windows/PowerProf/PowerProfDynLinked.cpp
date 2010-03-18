@@ -22,7 +22,7 @@ PowerProfDynLinked::PowerProfDynLinked(
       //r_stdwstrProgramName 
       r_stdtstrProgramName 
       ) ;
-    //mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
+    //mp_i_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
   }
   else
   {

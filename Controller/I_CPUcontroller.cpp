@@ -15,9 +15,12 @@
 #endif
 
 I_CPUcontroller::I_CPUcontroller()
-  : mp_userinterface (NULL)
+  :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  mp_cpuaccess (NULL)
+  , mp_userinterface (NULL)
   , mp_model (NULL)
-  , mp_cpuaccess (NULL)
   , mp_calculationthread (NULL)
   , mp_dynfreqscalingaccess (NULL)
   , mp_icpucoreusagegetter (NULL)
@@ -198,9 +201,9 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
          ) ;
 
       //example: 2200 MHz / 1050 MHz ~= 2,0952380952
-      double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
-          (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-          (double) wFreqInMHzToGetVoltageFrom ;
+//      double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
+//          (double) wFreqInMHzFromNearFreqAboveWantedFreq /
+//          (double) wFreqInMHzToGetVoltageFrom ;
 
       r_fVoltageInVolt =
         ////fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
@@ -527,7 +530,7 @@ BYTE I_CPUcontroller::GetPstateSafefy(
       )
     )
   {
-    int i = 0 ;
+//    int i = 0 ;
     if( fVoltageInVolt <= fMaxVoltageInVolt )
       bPstateIsSafe = //true ;
         SETTING_VOLTAGE_IS_SAFE ;
@@ -537,16 +540,16 @@ BYTE I_CPUcontroller::GetPstateSafefy(
 
 //bool IsLowerVoltageThan( float fIsLessThan, float fValueToCompare)
 //{
-//  float fVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
-//  if( //mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) > 
+//  float fVolt = mp_i_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
+//  if( //mp_i_cpucontroller->GetVoltageInVolt(m_wVoltageID ) > 
 //    fVolt >
-//    mp_cpucontroller->GetMinimumVoltageInVolt() 
+//    mp_i_cpucontroller->GetMinimumVoltageInVolt() 
 //    )
 //  {
 //    float f1VIDstepAboveIsLessThan = fIsLessThan ;
 //    float f1VIDstepAboveValueToCompare = fValueToCompare ;
-//    mp_cpucontroller->IncreaseVoltageBy1Step( f1VIDstepAboveIsLessThan ) ;
-//    mp_cpucontroller->IncreaseVoltageBy1Step( f1VIDstepAboveValueToCompare ) ;
+//    mp_i_cpucontroller->IncreaseVoltageBy1Step( f1VIDstepAboveIsLessThan ) ;
+//    mp_i_cpucontroller->IncreaseVoltageBy1Step( f1VIDstepAboveValueToCompare ) ;
 //    WORD wVoltageIDValueToProof = GetVoltageID( IsLessThan ) ;
 //
 //    WORD wVoltageIDValueToCompare = GetVoltageID( fValueToCompare ) ;

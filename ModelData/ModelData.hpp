@@ -25,21 +25,21 @@ class Model
   BYTE m_byNumberOfCPUCores ;
 public:
   volatile bool m_bCollectPstatesAsDefault ;
+  bool m_bEnableOvervoltageProtection ;
   bool m_bSkipCPUtypeCheck ;
   bool m_bTruncateLogFileForEveryStartup ;
-  bool m_bUsePstate0AsMaxFreq ;
-  bool m_bEnableOvervoltageProtection ;
   bool m_bUseDefaultFormularForOvervoltageProtection ;
+  bool m_bUsePstate0AsMaxFreq ;
   double m_dPreviousPERF_CTRvalue ;
   //GriffinController * mp_griffincontroller ;
   I_CPUcontroller * mp_cpucontroller ;
+  PStates m_pstates ;
   std::string m_strProcessorName ;
   std::string m_stdstrLogFilePath ;
   std::tstring m_stdtstrProgramName ;
   std::vector<MSRdata> m_stdvector_msrdata ;
   std::vector<CPUIDdata> m_stdvector_cpuiddata ;
   WORD m_wMaxFrequency ;
-  PStates m_pstates ;
   //std::vector<MaxVoltageForFreq> m_vecmaxvoltageforfreq ;
   //Use a std::set because so the elements are sorted when inserting them.
   //Also advantage: if the core frequencies are not sorted within the config
