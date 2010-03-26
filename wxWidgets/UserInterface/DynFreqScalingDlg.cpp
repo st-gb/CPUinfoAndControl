@@ -26,8 +26,8 @@ DynFreqScalingDlg::DynFreqScalingDlg(
     , wxSize(400, 400)
     , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
     )
-  , m_floatvalidator( & //m_fThrottleTemp 
-    r_cpucoredata.m_fThrottleTemp )
+  , m_floatvalidator( & //m_fThrottleTempInDegCelsius 
+    r_cpucoredata.m_fThrottleTempInDegCelsius )
   , mp_cpucoredata( & r_cpucoredata )
 {
   wxBoxSizer * sizerVert = new wxBoxSizer(wxVERTICAL);

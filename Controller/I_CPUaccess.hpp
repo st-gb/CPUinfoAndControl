@@ -56,7 +56,7 @@ class Model ;
 //like via WinRing0 library or via /dev/msr0 etc.
 //So this dependancy that can also be Operating System specific is decoupled.
 
-//For succ. linling with gcc: if there is an error with vftable:
+//For succ. linking with gcc: if there is an error with vftable:
 ///usr/lib/gcc/i686-pc-cygwin/3.4.4/include/c++/bits/locale_facets.tcc:2498:
 //  undefined reference to `vtable for ISpecificController'
 //http://gcc.gnu.org/faq.html#vtables:

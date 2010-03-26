@@ -1211,93 +1211,93 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //if(pstatectrl.cmdLineParamsContain(_T("-config"),strValue) )
     if( cmdLineParamsContain(_T("-config"),strValue) )
     {
-#ifdef COMPILE_WITH_XERCES
-      SAX2MainConfigHandler saxhandler(//pstates
-        *mp_model ,
-        mp_userinterface ,
-        this
-         );
-      if( 
-        readXMLConfig(//"config.xml"
-
-        //mp_configurationHandler->LoadConfiguration(
-
-        //strValue.c_str(),pstates) )
-        //strValue.c_str(),pstatectrl.m_pstates) )
-        strValue.c_str(), //m_pstates
-        //m_model,
-        *mp_model,
-        mp_userinterface ,
-        //this
-        saxhandler
-        )
-        )
-      {
-        //if( pstates.AreSafe() )
-        //{
-        //  ChangePStates();
-        //}
-        //else
-        //  printf("Unsafe values/voltage for p-state->not applying values\");
-        //pstatectrl.ApplyAllPStates(pstates);
-        //pstatectrl.ApplyAllPStates();
-
-        //If the file is NOT assigned/ opened yet.
-        //if( fileDebug == NULL )
-        if( //An empty string means: do NOT write to the log file.
-            ! mp_model->m_stdstrLogFilePath.empty()
-            &&
-            ! //g_logger.m_ofstream.is_open() 
-            g_logger.IsOpen() 
-          )
-          {
-            std::tstring tstr = Getstdtstring( mp_model->m_stdstrLogFilePath ) ;
-            //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
-            g_logger.OpenFile( tstr ) ;
-          }
-
-#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-        byReturn = SUCCESS ;
-#else
-      if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck && 
-        ! mp_model->m_bSkipCPUtypeCheck && 
-        ! IsSupportedCPUModel() 
-        )
-      {
-        mp_userinterface->Confirm("This CPU model is not supported by this program."
-          "Use \"skip_cpu_type_check\" (see help) if you think it makes "
-          "sense.\n->exiting");
-        return byReturn ;
-      }
-
-        byReturn = ApplyAllPStates();
-
-#endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-      }
-      else
-        mp_userinterface->Confirm("Error reading the XML-configuration file");
-#ifdef _TEST_PENTIUM_M
-      SAX2_CPUspecificHandler sax2cpuspecifichandler(
-        *mp_userinterface ,
-        *mp_model) ;
-      //if(
-      //  readXMLConfig(
-      //    "Pentium_M.xml", //m_pstates
-      //    //m_model,
-      //    *mp_model,
-      //    mp_userinterface ,
-      //    //this
-      //    sax2cpuspecifichandler
-      //    )
-      //  )
-      //{
-      //  //Just for debugging:
-      //  int i = 0 ;
-      //}
-#endif
-#else //COMPILE_WITH_XERCES
-      byReturn = SUCCESS ;
-#endif //COMPILE_WITH_XERCES
+//#ifdef COMPILE_WITH_XERCES
+//      SAX2MainConfigHandler saxhandler(//pstates
+//        *mp_model ,
+//        mp_userinterface ,
+//        this
+//         );
+//      if(
+//        readXMLConfig(//"config.xml"
+//
+//        //mp_configurationHandler->LoadConfiguration(
+//
+//        //strValue.c_str(),pstates) )
+//        //strValue.c_str(),pstatectrl.m_pstates) )
+//        strValue.c_str(), //m_pstates
+//        //m_model,
+//        *mp_model,
+//        mp_userinterface ,
+//        //this
+//        saxhandler
+//        )
+//        )
+//      {
+//        //if( pstates.AreSafe() )
+//        //{
+//        //  ChangePStates();
+//        //}
+//        //else
+//        //  printf("Unsafe values/voltage for p-state->not applying values\");
+//        //pstatectrl.ApplyAllPStates(pstates);
+//        //pstatectrl.ApplyAllPStates();
+//
+//        //If the file is NOT assigned/ opened yet.
+//        //if( fileDebug == NULL )
+//        if( //An empty string means: do NOT write to the log file.
+//            ! mp_model->m_stdstrLogFilePath.empty()
+//            &&
+//            ! //g_logger.m_ofstream.is_open()
+//            g_logger.IsOpen()
+//          )
+//          {
+//            std::tstring tstr = Getstdtstring( mp_model->m_stdstrLogFilePath ) ;
+//            //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
+//            g_logger.OpenFile( tstr ) ;
+//          }
+//
+//#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
+//        byReturn = SUCCESS ;
+//#else
+//      if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck &&
+//        ! mp_model->m_bSkipCPUtypeCheck &&
+//        ! IsSupportedCPUModel()
+//        )
+//      {
+//        mp_userinterface->Confirm("This CPU model is not supported by this program."
+//          "Use \"skip_cpu_type_check\" (see help) if you think it makes "
+//          "sense.\n->exiting");
+//        return byReturn ;
+//      }
+//
+//        byReturn = ApplyAllPStates();
+//
+//#endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
+//      }
+//      else
+//        mp_userinterface->Confirm("Error reading the XML-configuration file");
+//#ifdef _TEST_PENTIUM_M
+//      SAX2_CPUspecificHandler sax2cpuspecifichandler(
+//        *mp_userinterface ,
+//        *mp_model) ;
+//      //if(
+//      //  readXMLConfig(
+//      //    "Pentium_M.xml", //m_pstates
+//      //    //m_model,
+//      //    *mp_model,
+//      //    mp_userinterface ,
+//      //    //this
+//      //    sax2cpuspecifichandler
+//      //    )
+//      //  )
+//      //{
+//      //  //Just for debugging:
+//      //  int i = 0 ;
+//      //}
+//#endif
+//#else //COMPILE_WITH_XERCES
+//      byReturn = SUCCESS ;
+//#endif //COMPILE_WITH_XERCES
     }
     else
     {
@@ -4303,7 +4303,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] *= 
           //Explicit cast to avoid (g++) compiler warning.
           (WORD)
-            ( p_cpucoredata->m_fPercentalCPUcoreFreqIncrease ) ;
+            ( p_cpucoredata->m_fCPUcoreFreqIncreaseFactor ) ;
         if( p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] > 
           p_cpucoredata->m_wMaxFreqInMHz )
           p_cpucoredata->m_arwCurrentFreqInMHz[byCPUcoreID ] = 
@@ -4623,7 +4623,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     BYTE byTooHot = false ;
     float fTempInDegCelsius ;
     if( GetCurrentTempInDegCelsius( fTempInDegCelsius ) 
-      && fTempInDegCelsius > mp_model->m_cpucoredata.m_fThrottleTemp 
+      && fTempInDegCelsius > mp_model->m_cpucoredata.m_fThrottleTempInDegCelsius 
       )
       byTooHot = true ;
     return byTooHot ;

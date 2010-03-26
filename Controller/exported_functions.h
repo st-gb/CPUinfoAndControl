@@ -12,6 +12,11 @@
 extern "C" {
 #endif
 
+//#include <windef.h> //BOOL
+//typedef int BOOL ;
+#include <Windows_compatible_typedefs.h> //DWORD etc.
+#include <basetsd.h> //DWORD_PTR
+
 //from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
 #ifdef _WIN32
 #define AM_LIB_EXPORT __declspec(dllexport)

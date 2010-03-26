@@ -58,7 +58,8 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
       fLoad >
       //m_fPreviousCPUusage 
       //r_percpucoreattributes.m_fPreviousCPUusage * 0.75 //* 1.5f 
-      0.75
+      //0.75
+      mp_cpucoredata->m_fCPUcoreLoadThresholdForIncreaseInPercent
       ////e.g. 1100 / 2200 * 0.75 = 0.5 * 0.75 = 0.375
       //p_percpucoreattributes->m_wCurrentFreqInMHz / 
       //  mp_cpucoredata->m_wMaxFreqInMHz 
@@ -86,7 +87,8 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
         //Explicit cast to avoid (g++) compiler warning.
         (WORD)
-          ( wFreqInMHz * 1.5f )
+          ( wFreqInMHz * //1.5f
+            mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor )
         , byCoreID
         );
     }
@@ -199,10 +201,11 @@ ExitCode DynFreqScalingThreadBase::Entry()
                 0.5f 
                 //&& fTempInDegCelsius > 90.0f 
                 )
-                //mp_pumastatectrl->SetPstate( 1 , byCoreID ) ;
-                mp_cpucontroller->SetFrequencyInMHz( 
+                //mp_cpucontroller->SetFrequencyInMHz(
+                mp_cpucontroller->SetFreqAndVoltageFromFreq(
                   //Set half of max. freq because the CPU is too hot
-                  mp_cpucoredata->m_wMaxFreqInMHz / 2 ) ;
+                  mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
+                  , byCoreID ) ;
               else
                 ChangeOperatingPointByLoad( byCoreID ,
                   //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID] 
@@ -242,7 +245,9 @@ ExitCode DynFreqScalingThreadBase::Entry()
   return 0;
 }
 
-BYTE DynFreqScalingThreadBase::Start() { 
+//BYTE
+//Use DWORD because of GetLastError(...) return code.
+DWORD DynFreqScalingThreadBase::Start() {
   m_vbRun = true ; 
   return 1 ;
 }

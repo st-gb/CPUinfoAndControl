@@ -1,5 +1,5 @@
 //#ifdef _MSC_VER //MicroSoft-compiler
-  #include "StdAfx.h"
+//  #include "StdAfx.h"
 //#endif
 
 //Maybe see Intel_Volume 3A System Programming Guide--253668.pdf,
@@ -25,6 +25,7 @@ Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   DWORD dwAffinityMask
   //, NehalemController * p_nehalemcontroller
   , I_CPUaccess * p_i_cpuaccess
+  , BYTE byNumLogicalCPUcores
   )
   //: 
   //mp_nehalem_controller (p_nehalemcontroller)
@@ -33,21 +34,33 @@ Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //, mp_model( p_nehalemcontroller->mp_model )
 {
   mp_cpuaccess = p_i_cpuaccess ;
-  Init(dwAffinityMask) ;
+  m_byNumberOfLogicalCPUcores = byNumLogicalCPUcores ;
+  Init(dwAffinityMask, byNumLogicalCPUcores ) ;
 }
 
+//Used for static creation (e.g. as a global variable ): number if CPU cores 
+//is not known at the moment of the creation.
 Nehalem::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter() 
   //Initially setting to 1 core is safe: this is the minimum.
-  : m_byNumLogicalCPUcores( 1)
+  : m_byNumberOfLogicalCPUcores( 1)
+  , m_ar_cnh_cpucore_ugpca ( NULL )
 { 
   //m_dwAffinityMask = 0 ;
-  Init(0) ;
+  Init(0, 1 ) ;
+}
+
+void Nehalem::ClocksNotHaltedCPUcoreUsageGetter::AllocateCPUcoreAttributeArray()
+{
+  m_ar_cnh_cpucore_ugpca = new 
+    ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ m_byNumberOfLogicalCPUcores ];
 }
 
 void Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
   DWORD dwAffinityMask
+  , WORD wNumLogicalCPUcores
   )
 {
+  m_byNumberOfLogicalCPUcores = (BYTE) wNumLogicalCPUcores ;
   m_dwAtMask2ndTimeCPUcoreMask = 0 ;
   m_dReferenceClockInHz = 133000000.0 ;
 
@@ -160,7 +173,7 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::Init(
       //Nehalems have 4 or 8 logical CPU cores; every logical core can 
       //process performance monitoring.
       //8 ;
-      m_byNumLogicalCPUcores ;
+      m_byNumberOfLogicalCPUcores ;
     for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
     {
     //  mp_pentium_m_controller->AccuratelyStartPerformanceCounting( 
@@ -540,7 +553,8 @@ BYTE Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
     //mp_i_cpucontroller->mp_model->GetNumberOfCPUCores() ;
     //Pentium Ms usually only have 1 CPU core.
     //1 ;
-    mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
+    //mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
+    m_byNumberOfLogicalCPUcores ;
     //8 ;
   for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
   {
@@ -569,10 +583,16 @@ void Nehalem::ClocksNotHaltedCPUcoreUsageGetter::SetCPUaccess(
     //4 ;
     //8 ;
     //mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
-    p_i_cpuaccess->mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
-  m_byNumLogicalCPUcores = byNumCPUs ;
+    //p_i_cpuaccess->mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
+    m_byNumberOfLogicalCPUcores ;
+  //m_byNumverOfLogicalCPUcores = byNumCPUs ;
     //if( p_pentium_m_controller )
   //  mp_model = p_pentium_m_controller->mp_model ;
-  m_ar_cnh_cpucore_ugpca = new 
-    ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ byNumCPUs ];
+}
+
+void Nehalem::ClocksNotHaltedCPUcoreUsageGetter::SetNumberOfLogicalCPUcores(
+  BYTE byNum
+  )
+{
+  m_byNumberOfLogicalCPUcores = byNum ;
 }

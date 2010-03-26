@@ -38,7 +38,8 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
 		//"[...]"This means, of course, that all detached threads must be 
 		//created on the heap because the thread will call delete this; 
 		//upon termination.[...]"
-      mp_dynfreqscalingthread = new DynFreqScalingThread(
+      mp_dynfreqscalingthread = new //DynFreqScalingThread(
+        wxWidgets::DynFreqScalingThread(
         mp_icpucoreusagegetter
         //, mp_griffincontroller 
         , mp_cpucontroller
@@ -119,7 +120,7 @@ void CPUcoreData::ClearCPUcontrollerSpecificAtts()
 CPUcoreData::CPUcoreData()
     //C++ style initialisations:
     //: m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
-    //, m_fPercentalCPUcoreFreqIncrease(1.5f)
+    //, m_fCPUcoreFreqIncreaseFactor(1.5f)
     //, m_fVoltageForMaxCPUcoreFreq(1.05f)
     //, m_arfCPUcoreLoadInPercent(NULL)
     //, m_arwCurrentFreqInMHz(NULL)
@@ -136,9 +137,11 @@ CPUcoreData::CPUcoreData()
 
 void CPUcoreData::Init()
 {
-  m_fCPUcoreLoadThresholdForIncreaseInPercent = 80.0f ;
-  m_fPercentalCPUcoreFreqIncrease = 1.5f ;
-  m_fThrottleTemp = 90.0 ; //a good default value.
+  m_fCPUcoreLoadThresholdForIncreaseInPercent =
+    //expressed as core usage between [0...1]
+      0.9f ;
+  m_fCPUcoreFreqIncreaseFactor = 1.5f ;
+  m_fThrottleTempInDegCelsius = 90.0 ; //a good default value.
   m_fVoltageForMaxCPUcoreFreq = 1.05f ;
   m_arfCPUcoreLoadInPercent = NULL ;
   m_arwCurrentFreqInMHz = NULL ;

@@ -6,7 +6,7 @@
 #include <limits.h>
 //#include <Controller/GriffinController.hpp>
 #include <Controller/ICPUcoreUsageGetter.hpp>
-#include <ModelData/ModelData.hpp>
+//#include <ModelData/ModelData.hpp>
 
 #ifndef _MSC_VER //MS compiler has _UI64_MAX defined, but not g++
   #define _UI64_MAX ULONG_LONG_MAX
@@ -65,7 +65,7 @@ namespace Nehalem
   private :
     BYTE m_byPerfCounterBitWidth ;
     BYTE m_byPerfCounterNumber ;
-    BYTE m_byNumLogicalCPUcores ;
+    BYTE m_byNumberOfLogicalCPUcores ;
     //bool m_bAtLeastSecondTime ;
     double m_dReferenceClockInHz ;
     DWORD m_dwAtMask2ndTimeCPUcoreMask ;
@@ -85,6 +85,7 @@ namespace Nehalem
     ULONGLONG m_ullPerformanceEventCounter3 ;
     ULONGLONG m_ullMaximumPerfCounterValue ;
   public:
+    void AllocateCPUcoreAttributeArray() ;
     //Use the variable declared as member and not as local variable, 
     //so they aren't created for every method call
     ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts * m_ar_cnh_cpucore_ugpca ;
@@ -94,11 +95,13 @@ namespace Nehalem
       DWORD dwAffinityMask
       //, NehalemController * p_nehalemcontroller
       , I_CPUaccess *
+      , BYTE byNumCPUcores
       ) ;
     ClocksNotHaltedCPUcoreUsageGetter() ;
     ~ClocksNotHaltedCPUcoreUsageGetter()
     {
-      delete [] m_ar_cnh_cpucore_ugpca ;
+      if( m_ar_cnh_cpucore_ugpca )
+        delete [] m_ar_cnh_cpucore_ugpca ;
     }
     I_CPUaccess * GetCPUaccess( )
     {
@@ -113,7 +116,7 @@ namespace Nehalem
     float GetPercentalUsageForCore(BYTE byCoreID) ;
     void GetPerfCounterAttributes() ;
     BYTE Init() ;
-    void Init( DWORD dwAffinityMask ) ;
+    void Init( DWORD dwAffinityMask , WORD wNumLogicalCPUcores ) ;
     ULONGLONG PerformanceCounterValueDiff(
       ULONGLONG ullPerformanceCounterCurrent ,
       ULONGLONG ullPerformanceCounterPrevious ) ;
@@ -143,5 +146,6 @@ namespace Nehalem
       BYTE byCounterMask
       ) ;
     void SetCPUaccess( I_CPUaccess * p_i_cpuaccess ) ;
+    void SetNumberOfLogicalCPUcores( BYTE byNum ) ;
   } ; //end class
 }; //end namespace PentiumM

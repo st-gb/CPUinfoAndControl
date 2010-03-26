@@ -45,9 +45,8 @@ public:
   //MySAX2Handler(PStates & pstates);
   SAX2MainConfigHandler(
       Model & m_model,
-      UserInterface * p_userinterface, 
-      //GriffinController * mp_pumastatectrl
-      I_CPUcontroller * p_cpucontroller
+      UserInterface * p_userinterface //,
+      //I_CPUcontroller * p_cpucontroller
       );
 
     //MySAX2Handler(const MySAX2Handler & mysax2){};

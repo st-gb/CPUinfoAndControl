@@ -782,8 +782,8 @@ BYTE I_CPUcontroller::HandleCmdLineArgs()
 #ifdef COMPILE_WITH_XERCES
     SAX2MainConfigHandler saxhandler(//pstates
       *mp_model ,
-      mp_userinterface ,
-      this
+      mp_userinterface //,
+      //this
       );
     if( 
       readXMLConfig(//"config.xml"

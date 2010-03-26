@@ -1,8 +1,15 @@
-#include <wxWidgets/App.hpp>
-#include <windef.h>
+//#include <wxWidgets/App.hpp>
+#include <Controller/CPUcontrolBase.hpp>
+#include <Controller/I_CPUaccess.hpp>
+#include "exported_functions.h"
+//#include <windef.h>
+//#include <Windows_compatible_typedefs.h> //DWORD etc.
 
 //class wx86InfoAndControlApp ;
 //extern wx86InfoAndControlApp & wxGetApp();
+class CPUcontrolBase ;
+
+extern CPUcontrolBase * gp_cpucontrolbase ;
 
 //from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
 #ifdef _WIN32
@@ -27,7 +34,8 @@ extern "C"
   )
   {
     //MessageBox(NULL,lpszMessage,"From Exe",MB_OK);
-    I_CPUaccess * p_cpuaccess = wxGetApp().
+    I_CPUaccess * p_cpuaccess = //wxGetApp().
+      gp_cpucontrolbase->
       GetCPUaccess() ;
     return p_cpuaccess->RdmsrEx(
       dwIndex,

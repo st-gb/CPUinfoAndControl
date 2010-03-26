@@ -15,6 +15,7 @@
 //typedef wxCriticalSection criticalsection_type ;
 //#else
 #include <criticalsection_type.hpp>
+#include <wxWidgets/DynFreqScalingThread.hpp>
 //#endif
 
 #define CPU_CORE_DATA_NOT_SET 255
@@ -22,11 +23,18 @@
 //#include <Controller/GriffinController.hpp>
 //#include <wxWidgets/DynFreqScalingThread.hpp>
 
+//using namespace wxWidgets ;
+
 class CPUcoreData ;
 //class GriffinController ;
 class I_CPUcontroller ;
-class DynFreqScalingThread ;
+//class wxWidgets::DynFreqScalingThread ;
 class ICPUcoreUsageGetter ;
+
+namespace wxWidgets
+{
+  class DynFreqScalingThread ;
+}
 
 class PerCPUcoreAttributes
 {
@@ -37,7 +45,7 @@ private :
   BYTE m_byCoreID ;
   CPUcoreData * mp_cpucoredata ;
 public:
-  DynFreqScalingThread * mp_dynfreqscalingthread ;
+  wxWidgets::DynFreqScalingThread * mp_dynfreqscalingthread ;
   float m_fPreviousCPUusage ;
   float m_fVoltageInVoltCalculatedFromCPUload ;
 private:
@@ -90,9 +98,9 @@ public:
   BYTE m_byStepping ;
   float * m_arfCPUcoreLoadInPercent ;
   float m_fCPUcoreLoadThresholdForIncreaseInPercent;
-  float m_fPercentalCPUcoreFreqIncrease ;
+  float m_fCPUcoreFreqIncreaseFactor ;
   float m_fVoltageForMaxCPUcoreFreq ;
-  float m_fThrottleTemp ;
+  float m_fThrottleTempInDegCelsius ;
   //GriffinController * mp_griffincontroller ;
   I_CPUcontroller * mp_cpucontroller ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqAvailableFreq ;

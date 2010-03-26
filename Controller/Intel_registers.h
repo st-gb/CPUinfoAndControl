@@ -45,6 +45,8 @@
 #define IA32_THERM_STATUS 0x19C //412 
 //#define CPU_CLOCKS_NOT_HALTED 121
 
+#define MSR_TEMPERATURE_TARGET 0x1A2
+
 //MPERF/ APERF = CPU load ?
 #define IA32_MPERF //Maximum Qualified Performance Clock Counter (R/Write to clear)
 #define IA32_APERF //Actual Performance Clock Counter (R/Write to clear)
@@ -55,7 +57,7 @@
 //Intel Volume 3B System Programming Guide (document number "253669") 
 //appendix A.1, Table A-1:  event number
 //Performance Counter Events (
-#define UnHalted_Core_Cycles 0x3C
+#define UnHalted_Core_Cycles 0x3C //=60dec
 
 //30.10.5 Cycle Counting and Opportunistic Processor Operation
 

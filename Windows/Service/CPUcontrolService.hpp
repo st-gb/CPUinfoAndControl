@@ -6,6 +6,7 @@
 //#include "wxWidgets/DynFreqScalingThread.hpp"
 //#include "PumaStateCtrl.h"
 #include <DummyUserInterface.hpp>
+#include <Controller/CPUcontrolBase.hpp>
 #include <Controller/MainController.hpp>
 #include <Controller/I_ServerProcess.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
@@ -14,16 +15,28 @@
 //#include <Windows/CPUcoreUsageGetterIWbemServices.hpp>
 #include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/DynFreqScalingAccess.hpp>
-#include <Windows/NamedPipeServer.hpp>
-#include <Windows/WinRing0dynLinked.hpp>
+#ifdef COMPILE_WITH_IPC
+  #include <Windows/NamedPipeServer.hpp>
+#endif //#ifdef COMPILE_WITH_IPC
+//#include <Windows/WinRing0dynLinked.hpp>
+#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #include <vector>
+
+//#define _WIN32_WINNT 0x0400 //for MB_SERVICE_NOTIFICATION
+//#include <winuser.h> //MB_SERVICE_NOTIFICATION
+#define MB_SERVICE_NOTIFICATION 0x00200000L
 
 class WinRing0DynLinked ;
 class I_DynFreqScalingAccess ;
 class DynFreqScalingThreadBase ;
 
 class CPUcontrolService
-  : public I_ServerProcess
+  :
+#ifdef COMPILE_WITH_IPC
+    public I_ServerProcess
+  ,
+#endif //#ifdef COMPILE_WITH_IPC
+  public CPUcontrolBase
 {
 private :
   //Flag for ServiceCtrlHandlerEx to indicate whether the service is REALLY
@@ -79,12 +92,14 @@ public:
     /*DynFreqScalingThread * mp_dynfreqscalingthread ;*/
     //static 
     //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
-    WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
+    //WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
     static std::vector<std::string> m_vecstrCmdLineOptions ;
     std::tstring m_stdtstrProgramArg ;
     std::vector<std::string> m_vecstdstrCommandLineArgs ;
     ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
+#ifdef COMPILE_WITH_IPC
     NamedPipeServer m_ipcserver ;
+#endif //#ifdef COMPILE_WITH_IPC
     DynFreqScalingThreadBase * mp_dynfreqscalingthreadbase ;
 public :
     CPUcontrolService(//const char* szServiceName
@@ -111,7 +126,9 @@ public :
     std::string GetValueIfHasPrefix( 
         const std::string & r_stdstrPrefix ) ;
     void Initialize() ;
+#ifdef COMPILE_WITH_IPC
     void IPC_Message(BYTE byCommand) ;
+#endif //#ifdef COMPILE_WITH_IPC
     ////static 
     //    bool HasLogFilePathOption( int argc, char *  argv[] ) ;
     static void outputUsage();

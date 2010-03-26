@@ -11,13 +11,13 @@ class I_CPUaccess ;
 //WINAPI is replaced by __stdcall (a calling convention) that is needed 
 //    because else runtime error may occur: something with CPU register "ESP".
 typedef float (
-  WINAPI
-  * _GetCPUcoreUsage) (BYTE byCoreNumber);
+  //WINAPI
+  * _GetCPUcoreUsage) (WORD wCoreNumber);
 typedef void (
   //WINAPI
   * dll_usage_getter_init_type)(
-      I_CPUaccess *
-      //BYTE
+      //I_CPUaccess *
+      WORD wNumLogicalCPUcores
       );
 
 class wxDynLibCPUcoreUsageGetter

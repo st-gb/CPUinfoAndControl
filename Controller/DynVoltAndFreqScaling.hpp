@@ -23,7 +23,8 @@ public:
     ) ;
 //  DynVoltAndFreqScaling(const DynVoltAndFreqScaling& orig);
   virtual ~DynVoltAndFreqScaling();
-  BYTE Start() { return 1 ; }
+  //BYTE Start() { return 1 ; }
+  DWORD Start() { return 1 ; }
 private:
 
 };

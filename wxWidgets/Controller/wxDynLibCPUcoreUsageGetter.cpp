@@ -33,11 +33,17 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
           "GetCPUcoreUsage" ) ;
       m_pfn_dll_init_type = (dll_usage_getter_init_type)
-        m_wxdynamiclibraryCPUcoreUsage.GetSymbol( 
+        m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
           "Init" ) ;
-      if( m_pfngetcpucoreusage && m_pfn_dll_init_type )
+      if( m_pfn_dll_init_type )
+        (*m_pfn_dll_init_type) ( //p_cpuaccess 
+        //p_cpuacces->wNumLogicalCPUcores 
+        cpucoredata.m_byNumberOfCPUCores
+        ) ;
+      if( m_pfngetcpucoreusage //&& m_pfn_dll_init_type
+          )
       {
-        (*m_pfn_dll_init_type) ( p_cpuaccess ) ;
+        //(*m_pfn_dll_init_type) ( p_cpuaccess ) ;
         bSuccess = true ;
       }
     }
@@ -67,6 +73,8 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
 #ifdef _DEBUG
     {
       float f = (*m_pfngetcpucoreusage)(byCPUcoreNumber) ;
+      DEBUG_COUT( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
+        "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
       arf[byCPUcoreNumber] = f ;
     }
 #else

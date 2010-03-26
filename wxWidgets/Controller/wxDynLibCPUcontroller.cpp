@@ -5,8 +5,11 @@
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/DLLloadError.hpp>
 #include <wx/msgdlg.h>
-#include <limits> //float>::min()
-//#include <float.h> //FLT_MIN
+#ifdef _MSC_VER
+  #include <float.h> //FLT_MIN
+#else
+  #include <limits> //float>::min()
+#endif
 
 wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   wxString & r_wxstrFilePath 
@@ -55,7 +58,14 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       m_pfnGetMinimumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type) 
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumFrequencyInMHz") 
         ) ;
-    
+
+      wxstrFuncName = wxT("PrepareForNextPerformanceCounting") ;
+      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+        m_pfn_preparefornextperformancecounting =
+          (dll_PrepareForNextPerformanceCounting)
+          m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
+      else
+        m_pfn_preparefornextperformancecounting = NULL ;
       //Do not use wxDYNLIB_FUNCTION: it shows a wxWidgets error message if 
       // a DLL function does not exist.
     //  wxDYNLIB_FUNCTION(dll_GetCurrentPstate_type, GetCurrentPstate, 
@@ -70,11 +80,20 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type) 
       m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
 
+    wxstrFuncName = wxT("WriteMSR") ;
+    if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+      m_pfn_write_msr = (dll_WriteMSR_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("WriteMSR") ) ;
+    else
+      m_pfn_write_msr = NULL ;
     //wxDYNLIB_FUNCTION(dll_GetNumberOfCPUcores_type, GetNumberOfCPUcores, 
     //  m_wxdynamiclibraryCPUctl) ;
     //m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
     m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
       m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetNumberOfCPUcores") ) ;
+
+    m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetTemperatureInCelsius") ) ;
       //dll_getMulti_type pfnGetMultiplier = (dll_getMulti_type)
       //  ::GetProcAddress(hinstanceCPUctlDLL,"GetMultiplier") ;
       //if( pfnGetMultiplier)
@@ -197,8 +216,12 @@ float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
   {
     return ( * m_pfngettemperatureincelsius ) ( wCoreID ) ;
   }
-  return std::numeric_limits<float>::min() ;
-    //FLT_MIN
+  return 
+#ifdef _MSC_VER
+    FLT_MIN ;
+#else
+    std::numeric_limits<float>::min() ;
+#endif
 }
 
 float wxDynLibCPUcontroller::GetVoltageInVolt(WORD wVoltageID )
@@ -209,6 +232,18 @@ float wxDynLibCPUcontroller::GetVoltageInVolt(WORD wVoltageID )
 WORD wxDynLibCPUcontroller::GetVoltageID(float fVoltageInVolt )
 {
   return 0 ;
+}
+
+void wxDynLibCPUcontroller::PrepareForNextPerformanceCounting(
+   DWORD dwAffinityBitMask
+   , BYTE byPerformanceEventSelectRegisterNumber
+   )
+{
+  if( m_pfn_preparefornextperformancecounting )
+  {
+    ( * m_pfn_preparefornextperformancecounting )
+        ( dwAffinityBitMask, byPerformanceEventSelectRegisterNumber ) ;
+  }
 }
 
 BYTE wxDynLibCPUcontroller::
@@ -231,4 +266,28 @@ BYTE wxDynLibCPUcontroller::
      return by ;
   }
   return 0 ;
+}
+
+BOOL // TRUE: success, FALSE: failure
+  //In g++ virtual methods can't be declared as stdcall
+  //WINAPI
+  wxDynLibCPUcontroller::WrmsrEx(
+    DWORD index,		// MSR index
+    DWORD dwLow ,//eax,			// bit  0-31
+    DWORD dwHigh, //edx,			// bit 32-63
+    DWORD affinityMask	// Thread Affinity Mask
+    )
+{
+  BOOL boolRet = FALSE ;
+  if( m_pfn_write_msr )
+  {
+  }
+  else
+    boolRet = mp_cpuaccess->WrmsrEx( 
+      index,		// MSR index
+      dwLow ,//eax,			// bit  0-31
+      dwHigh, //edx,			// bit 32-63
+      affinityMask	// Thread Affinity Mask
+      ) ;
+  return boolRet ;
 }

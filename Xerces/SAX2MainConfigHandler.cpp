@@ -84,22 +84,21 @@
 	
 	SAX2MainConfigHandler::SAX2MainConfigHandler(//PStates & pstates
 	  Model & model ,
-	  UserInterface * p_userinterface ,
-    //GriffinController * p_pumastatectrl
-    I_CPUcontroller * p_cpucontroller
+	  UserInterface * p_userinterface //,
+    //I_CPUcontroller * p_cpucontroller
 	  )
 	{
 	  //m_p_pstates = & pstates ;
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
-    //mp_pumastatectrl = p_pumastatectrl ;
-    p_cpucontroller = p_cpucontroller ;
+    //p_cpucontroller = p_cpucontroller ;
 	}
 	
   void SAX2MainConfigHandler::HandleDynamicVoltage_and_FrequencyScaling(
     const Attributes & attrs)
   {
     bool bEnableDVFS = false ;
+    float fValue ;
     std::string strAttributeName = "enable" ;
     WORD wValue ;
 	  if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),bEnableDVFS))
@@ -110,6 +109,28 @@
     if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),wValue))
     {
       m_p_model->m_cpucoredata.m_wMilliSecondsWaitBetweenDFVS = wValue ;
+    }
+    strAttributeName = "CPU_core_load_threshold_for_increase" ;
+    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+    {
+      m_p_model->m_cpucoredata.m_fCPUcoreLoadThresholdForIncreaseInPercent =
+        fValue ;
+      LOGN("using \"" << fValue << "\" as CPU core load threshold for increase" )
+    }
+    strAttributeName = "throttle_temp_in_deg_Celsius" ;
+    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+    {
+      m_p_model->m_cpucoredata.m_fThrottleTempInDegCelsius =
+        fValue ;
+      LOGN("using \"" << fValue << "\" as CPU core throttle temp thres" )
+    }
+    strAttributeName = "increase_factor" ;
+    if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue)
+      )
+    {
+      m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor = fValue ;
+      LOGN("using increase factor " <<
+        m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
   }
 

@@ -57,7 +57,7 @@
 #include <Xerces/XMLAccess.hpp>
 //#include <Windows/CalculationThread.hpp>
 #ifdef _WINDOWS
-#include <Windows/ServiceBase.hpp>
+#include <Windows/Service/ServiceBase.hpp>
 #include <Windows/DLLloadError.hpp>
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
@@ -265,7 +265,7 @@ MainFrame::MainFrame(
   mp_wxmenubar = new wxMenuBar;
 
   //mp_pumastatectrl = p_pumastatectrl ;
-  wxMenu * p_wxmenuFile = new wxMenu;
+  p_wxmenuFile = new wxMenu;
   //wxMenu * p_wxmenuCore1 = new wxMenu;
   //wxMenu * p_wxmenuCore0 = new wxMenu;
 //  wxMenu * p_wxmenuNorthBridge = new wxMenu;
@@ -274,10 +274,12 @@ MainFrame::MainFrame(
     _T("Attach CPU &controller DLL...") );
   p_wxmenuFile->Append( ID_Detach_CPU_controller_DLL, 
     _T("Detach CPU controller DLL") );
+  p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL, false ) ;
   p_wxmenuFile->Append( ID_Attach_CPU_usage_getter_DLL, 
     _T("Attach CPU &usage getter DLL...") );
   p_wxmenuFile->Append( ID_Detach_CPU_usage_getter_DLL, 
     _T("Detach CPU usage getter DLL") );
+  p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL, false ) ;
   p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
     _T("Save &performance states settings...") );
   p_wxmenuFile->AppendSeparator();
@@ -311,7 +313,7 @@ MainFrame::MainFrame(
   if( mp_i_cpucontroller != NULL )
     CreateDynamicMenus();
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
-  wxMenu * p_wxmenuExtras = NULL ;
+  p_wxmenuExtras = NULL ;
 //#ifdef COMPILE_WITH_SERVICE_CONTROL
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   if( ! p_wxmenuExtras ) 
@@ -1290,6 +1292,13 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
       mp_wxx86infoandcontrolapp->SetCPUcontroller( //p_wxdynlibcpucontroller 
         mp_wxdynlibcpucontroller ) ;
       CreateDynamicMenus() ;
+      p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
+        , //const bool enable
+        true ) ;
+      if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+        p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+          , //const bool enable
+          true ) ;
     }
     catch( CPUaccessException & ex )
     {
@@ -1332,6 +1341,13 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
         //mp_wxdynlibcpucoreusagegetter ) ;
         mp_cpucoreusagegetter = mp_wxdynlibcpucoreusagegetter ;
       //CreateDynamicMenus() ;
+      p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
+        , //const bool enable
+        true ) ;
+      if( mp_wxx86infoandcontrolapp->GetCPUcontroller() )
+        p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+          , //const bool enable
+          true ) ;
     }
     catch( CPUaccessException & ex )
     {
@@ -1351,6 +1367,12 @@ void MainFrame::OnDetachCPUcontrollerDLL (wxCommandEvent & event)
     mp_wxdynlibcpucontroller = NULL ;
     PossiblyReleaseMemory() ;
     //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
+    p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
+      , //const bool enable
+      false ) ;
+    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+      , //const bool enable
+      false ) ;
   }
 }
 
@@ -1367,6 +1389,12 @@ void MainFrame::OnDetachCPUcoreUsageGetterDLL (wxCommandEvent & event)
     //mp_wxdynlibcpucontroller = NULL ;
     //PossiblyReleaseMemory() ;
     //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
+    p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
+      , //const bool enable
+      false ) ;
+    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+      , //const bool enable
+      false ) ;
   }
 }
 void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent) 
@@ -1416,11 +1444,11 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
         //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
         p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
   	    ////Start the timer (it should have been stopped before else the timer had redrawn 
-  	    ////addtionally to the scaling thread).
+  	    ////additonally to the scaling thread).
        // m_wxtimer.Start() ;
         mp_wxmenuitemOwnDVFS->SetText(
           //We need a _T() macro (wide char-> L"", char->"") for EACH 
-          //line to make it compitable between char and wide char.
+          //line to make it compatible between char and wide char.
           _T("enable Own DVFS") 
           ) ;
       }
@@ -2099,8 +2127,14 @@ void MainFrame::DrawCurrentPstateInfo(
 //   ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts * ar_cnh_cpucore_ugpca = 
 //	   ;
 //#endif
+  WORD wFreqInMHz = 0 ;
+  float fVoltageInVolt = 0.0f ;
+  float fCPUload ;
+  float fTempInCelsius ;
   wxString wxstrCPUcoreUsage ;
   wxString wxstrCPUcoreVoltage ;
+  wxString wxstrTemperature ;
+  wxString wxstrFreqInMHz ;
    //::wxGetApp().mp_cpucoreusagegetter->
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
   {
@@ -2117,50 +2151,68 @@ void MainFrame::DrawCurrentPstateInfo(
    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
    {
-     WORD wFreqInMHz ;
-     float fVoltageInVolt ;
+     wFreqInMHz = 0 ;
+     fVoltageInVolt = 0.0f ;
      if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
      {
-       //mp_i_cpucontroller->
-       float fCPUload = -1.0 ;
-       if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
-       {
-         fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ] ;
-         wxstrCPUcoreUsage = wxString::Format(
-#ifdef _WINDOWS
-			      _T("usage in percent:%.3f")
+     }
+     fTempInCelsius = mp_i_cpucontroller->GetTemperatureInCelsius(byCPUcoreID) ;
+     if( fTempInCelsius == 
+#ifdef _MSC_VER
+       FLT_MIN
 #else
-            //when compiled with MSVC and running under WinXP the executable 
-            //crashes with this format string (surely because of the 1st "%")
-			      _T(" usage in %:%.3f")
+       __FLT_MIN__ 
 #endif
-          , fCPUload * 100.0f
-          ) ;
-       }
-       if( fVoltageInVolt == 0.0 )
-         wxstrCPUcoreVoltage = wxT("? Volt") ;
-       else
-         wxstrCPUcoreVoltage = wxString::Format("%.4f Volt", fVoltageInVolt 
-          ) ;
+       )
+       wxstrTemperature = wxT("? °C") ;
+     else
+       wxstrTemperature = wxString::Format( "%.3f °C" , fTempInCelsius ) ;
+     //mp_i_cpucontroller->
+     fCPUload = -1.0 ;
+     if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+     {
+       fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ] ;
+       wxstrCPUcoreUsage = wxString::Format(
+#ifdef _WINDOWS
+          _T("usage in percent:%.3f")
+#else
+          //when compiled with MSVC and running under WinXP the executable
+          //crashes with this format string (surely because of the 1st "%")
+          _T(" usage in %:%.3f")
+#endif
+        , fCPUload * 100.0f
+        ) ;
+     }
+
+     if( wFreqInMHz == 0 )
+       wxstrFreqInMHz = wxT("? MHz") ;
+     else
+       wxstrFreqInMHz = wxString::Format("%u MHz", wFreqInMHz ) ;
+     if( fVoltageInVolt == 0.0 )
+       wxstrCPUcoreVoltage = wxT("? Volt") ;
+     else
+       wxstrCPUcoreVoltage = wxString::Format("%.4f Volt", fVoltageInVolt
+        ) ;
 #ifdef _DEBUG
-       if ( fCPUload == 0.0 )
-       {
+     if ( fCPUload == 0.0 )
+     {
 //         //Breakpoint possibility
 //         int i = 0 ;
-       }
+     }
 #endif
-        //wxmemorydc
-        r_wxdc.DrawText(
-          wxString::Format(
-            //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
-            _T("Core %u: ")
-            _T("current p-state: ")
-            //.4f : 4 digits after comma
-            //_T("%.4f Volt ")
-            _T("%s ")
-            _T("%u MHz")
-            //.3f : 3 digits after comma
+      //wxmemorydc
+      r_wxdc.DrawText(
+        wxString::Format(
+          //We need a _T() macro (wide char-> L"", char->"") for EACH
+          //line to make it compitable between char and wide char.
+          _T("Core %u: ")
+          _T("current p-state: ")
+          //.4f : 4 digits after comma
+          //_T("%.4f Volt ")
+          _T("%s ")
+          //_T("%u MHz")
+          _T("%s")
+          //.3f : 3 digits after comma
 //#ifdef _WINDOWS
 //			      _T(" usage in percent:%.3f")
 //#else
@@ -2168,30 +2220,33 @@ void MainFrame::DrawCurrentPstateInfo(
 //            //crashes with this format string (surely because of the 1st "%")
 //			      _T(" usage in %:%.3f")
 //#endif
-            _T(" %s")
-			      //"counter val.:%I64u"
-			      ,
-            (WORD) byCPUcoreID ,
-            //fVoltageInVolt ,
-            wxstrCPUcoreVoltage.fn_str() ,
-            wFreqInMHz ,
-			      //mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ]
-            //fCPUload * 100.0f
-            wxstrCPUcoreUsage.fn_str()
-			      //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
-			      //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
-          )
-          //x coordinate
-          //, 10
-          , 40
-          //y coordinate
-          , //90 
-          //m_wDiagramHeight - ( 20 * 
-          //  (mp_cpucoredata->m_byNumberOfCPUCores + 1 ) ) + 
-          //  ( byCPUcoreID * 20 )
-          byCPUcoreID * 20
-          ) ;
-     }
+          _T(" %s")
+          _T(" %s")
+          //"counter val.:%I64u"
+          ,
+          (WORD) byCPUcoreID ,
+          //fVoltageInVolt ,
+          wxstrCPUcoreVoltage.fn_str() ,
+          //wFreqInMHz ,
+          wxstrFreqInMHz.fn_str() ,
+          //mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ]
+          //fCPUload * 100.0f
+          wxstrCPUcoreUsage.fn_str()
+          //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
+          //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
+          , wxstrTemperature.fn_str()
+        )
+        //x coordinate
+        //, 10
+        , 40
+        //y coordinate
+        , //90
+        //m_wDiagramHeight - ( 20 *
+        //  (mp_cpucoredata->m_byNumberOfCPUCores + 1 ) ) +
+        //  ( byCPUcoreID * 20 )
+        byCPUcoreID * 20
+        ) ;
+
    } //for-loop
 }
 

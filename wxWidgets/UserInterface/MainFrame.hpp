@@ -138,6 +138,8 @@ private:
   //wxMenuBar m_wxmenubar ;
   wxMemoryDC m_wxmemorydcStatic ;
   wxMenuBar * mp_wxmenubar ;
+  wxMenu * p_wxmenuExtras ;
+  wxMenu * p_wxmenuFile ;
   wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;

@@ -160,6 +160,15 @@ public:
     WORD wFreqInMHz
     , float fVoltage 
     ) ;
+  virtual float GetTemperatureInCelsius( WORD wCoreID )
+  {
+    return
+#ifdef _MSC_VER
+    FLT_MIN ;
+#else
+    __FLT_MIN__ ;
+#endif
+  }
   virtual float GetVoltageInVolt(WORD wVoltageID ) = 0 ;
   virtual WORD GetVoltageID(float fVoltageInVolt ) = 0 ;
   BYTE HandleCmdLineArgs() ;

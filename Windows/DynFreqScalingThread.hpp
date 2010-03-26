@@ -43,8 +43,10 @@ namespace Windows_API
       , CPUcoreData & r_cpucoredata
       ) ;
     //void Start() ;
-    int Run() ;
-    BYTE Start() ;
+    //int Run() ;
+    DWORD Run() ;
+    //BYTE Start() ;
+    DWORD Start() ;
     //void SetMembers(
     //  ICPUcoreUsageGetter * p_icpucoreusagegetter,
     //  //PumaStateCtrl * p_pumastatectrl
