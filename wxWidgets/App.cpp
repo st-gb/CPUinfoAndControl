@@ -48,76 +48,10 @@ FILE * fileDebug ; //for debug logging.
 //This global (important for using preprocessor macros) object is used for 
 //easy logging.
 Logger g_logger ;
+CPUcontrolBase * gp_cpucontrolbase ;
 
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
-
-#include<Controller/exported_functions.h> //for AM_LIB_EXPORT
-
-//from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-//("Calling an Exported Function in an EXE from Within a DLL"):
-// Do exactly as you would export a DLL...
-extern "C"
-{
-  //EXPORT
-  AM_LIB_EXPORT BOOL ReadMSR(
-    DWORD dwIndex,    // MSR index
-    PDWORD p_dweax,     // bit  0-31
-    PDWORD p_dwedx,     // bit 32-63
-    DWORD_PTR affinityMask  // Thread Affinity Mask
-  )
-  {
-//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
-    I_CPUaccess * p_cpuaccess = wxGetApp().
-      GetCPUaccess() ;
-    BOOL boolRet = p_cpuaccess->RdmsrEx(
-      dwIndex,
-      p_dweax,// bit  0-31 (register "EAX")
-      p_dwedx,
-      //m_dwAffinityMask
-      affinityMask
-      ) ;
-    #ifdef _DEBUG
-    //if( dwIndex == 0x1AD )
-      DEBUG_COUT( "exe::ReadMSR(Index,affinityMask): "
-        << dwIndex << " "
-        << *p_dweax << " "
-        << *p_dwedx << " "
-        << affinityMask
-        << "\n" )
-    #endif
-    return boolRet ;
-  }
-
-  AM_LIB_EXPORT BOOL WriteMSR(
-    DWORD dwIndex,    // MSR index
-    DWORD dwEAX,     // bit  0-31
-    DWORD dwEDX,     // bit 32-63
-    DWORD_PTR affinityMask  // Thread Affinity Mask
-    )
-  {
-//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
-    I_CPUaccess * p_cpuaccess = wxGetApp().
-      GetCPUaccess() ;
-    BOOL boolRet = p_cpuaccess->WrmsrEx(
-      dwIndex,
-      dwEAX,// bit  0-31 (register "EAX")
-      dwEDX,
-      //m_dwAffinityMask
-      affinityMask
-      ) ;
-    #ifdef _DEBUG
-    //if( dwIndex == 0x1AD )
-      DEBUG_COUT( "exe::WriteMSR(Index,affinityMask): "
-        << dwIndex << " "
-        << dwEAX << " "
-        << dwEDX << " "
-        << affinityMask
-        << "\n" )
-    #endif
-    return boolRet ;
-  }
-}
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
 {
@@ -290,6 +224,7 @@ bool wxX86InfoAndControlApp::OnInit()
 {
   //Init to NULL for "CPUcontrollerChanged()"
   mp_frame = NULL ;
+  gp_cpucontrolbase = this ;
 
 #ifdef COMPILE_WITH_SHARED_MEMORY
   mp_voidMappedViewStartingAddress = NULL ;
@@ -395,7 +330,7 @@ bool wxX86InfoAndControlApp::OnInit()
       //gets invalid after leaving the block where it was declared.
       //mp_winring0dynlinked 
       //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
-#ifdef _MSC_VER //possible because the import library is for MSVC
+#ifdef _MSC_VER_ //possible because the import library is for MSVC
       mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
         this ) ;
 #else //because no import library is available

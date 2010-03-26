@@ -90,6 +90,15 @@ typedef
   CALL_TYPE
   * dll_GetTemperatureInCelsius_type) ( WORD wCoreID
   ) ;
+typedef
+  float (//WINAPI
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dll_PrepareForNextPerformanceCounting)
+    ( DWORD dwAffMask
+      , BYTE byPerformanceEventSelectRegisterNumber
+    ) ;
 typedef BYTE (//WINAPI 
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
@@ -100,3 +109,13 @@ typedef BYTE (//WINAPI
       WORD p_wMilliVolt
     , WORD wCoreID 
   ) ;
+typedef BOOL ( // TRUE: success, FALSE: failure
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dll_WriteMSR_type) (
+    DWORD index,		// MSR index
+    DWORD dwLow ,//eax,			// bit  0-31
+    DWORD dwHigh, //edx,			// bit 32-63
+    DWORD affinityMask	// Thread Affinity Mask
+    ) ;

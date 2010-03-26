@@ -9,7 +9,7 @@
 #define	_SELECTPSTATEACTION_HPP
 
 class SelectPstateAction
-  : I
+  //: I
 {
 public:
   SelectPstateAction();

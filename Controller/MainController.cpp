@@ -283,7 +283,20 @@ BYTE MainController::Init(
       strCPUtypeRelativeDirPath
         + "/" + strProcessorName + ".xml"
       ;
-    //SAX2MainConfigHandler sax2mainconfighandler( *p_userinterface, model);
+    std::string stdstrMainConfigFileName = GetStdString( model.
+      m_stdtstrProgramName ) + "_config.xml" ;
+    SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
+      readXMLConfig(
+        //const char* xmlFile
+        stdstrMainConfigFileName.c_str()
+        , model
+        , p_userinterface
+        //Base class of implementing Xerces XML handlers.
+        //This is useful because there may be more than one XML file to read.
+        //So one calls this functions with different handlers passed.
+        //DefaultHandler & r_defaulthandler
+        , sax2mainconfighandler
+        ) ;
     SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency( 
       *p_userinterface, model );
     //#ifdef COMPILE_WITH_REGISTER_EXAMINATION

@@ -24,6 +24,8 @@ class CPUcoreData ;
 class ICPUcoreUsageGetter ;
 class I_CPUcontroller ;
 
+using namespace wxWidgets ;
+
 //"[...]It does not create or start execution of the real thread -- 
 //for this you should use the Create and Run methods.[...]"
 DynFreqScalingThread::DynFreqScalingThread(
@@ -73,12 +75,39 @@ DynFreqScalingThread::DynFreqScalingThread(
 //    DEBUG("constructor of freq scaling thread--end\n");
 }
 
-BYTE DynFreqScalingThread::Start()
+//BYTE
+DWORD DynFreqScalingThread::Start()
 {
+  BYTE byRet = 0 ;
   DynFreqScalingThreadBase::Start() ;
-  return 
+  byRet =
     //calls the Run() method of the base class "wxThread".
+    //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadrun:
+    //"Starts the thread execution. Should be called after Create.
+    //This function can only be called from another thread context."
     Run() ;
+  switch( byRet )
+  {
+  case wxTHREAD_NO_ERROR ://= 0,      // No error
+    byRet = DynFreqScalingThreadBase::THREAD_START_NO_ERROR ;
+    break ;
+  case wxTHREAD_NO_RESOURCE : // No resource left to create a new thread
+    byRet = DynFreqScalingThreadBase::THREAD_START_NO_RESOURCE ;
+    break ;
+  case wxTHREAD_RUNNING : // The thread is already running
+    byRet = DynFreqScalingThreadBase::THREAD_START_ALREADY_RUNNING ;
+    break ;
+  case wxTHREAD_NOT_RUNNING: // The thread isn't running
+    byRet = DynFreqScalingThreadBase::THREAD_START_NOT_RUNNING ;
+    break ;
+  case wxTHREAD_KILLED : // Thread we waited for had to be killed
+    byRet = DynFreqScalingThreadBase::THREAD_START_KILLED ;
+    break ;
+  case wxTHREAD_MISC_ERROR :
+    byRet = DynFreqScalingThreadBase::THREAD_START_MISC_ERROR ;
+    break ;
+  }
+  return byRet ;
 }
   ////http://docs.wxwidgets.org/stable/wx_wxthread.html#wxthreadentry:
   ////"This is the entry point of the thread. This function is pure virtual and must be implemented by any derived class. The thread execution will start here."

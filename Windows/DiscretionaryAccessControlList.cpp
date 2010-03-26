@@ -3,6 +3,8 @@
 
 #include "DiscretionaryAccessControlList.h"
 #include <windows.h> //SECURITY_ATTRIBUTES,...
+#include <Sddl.h> //ConvertStringSecurityDescriptorToSecurityDescriptor(...)
+
 #ifdef __CYGWIN__
   #include <mingw/tchar.h> //for _T(...)
 #else

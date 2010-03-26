@@ -6,8 +6,8 @@
 #include <fstream> //for class ofstream
 //#include "GriffinStateControlService.hpp"
 #include <Controller/stdtstr.hpp> //std::tstring
-#include "Windows/CPUcontrolService.hpp"
-#include "Windows/ServiceBase.hpp"
+#include "Windows/Service/CPUcontrolService.hpp"
+#include "Windows/Service/ServiceBase.hpp"
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
 #include <string>
@@ -22,6 +22,8 @@
 
 FILE * fileDebug ;
 Logger g_logger ;
+
+CPUcontrolBase * gp_cpucontrolbase ;
 
 //#include "wx/window.h"
 //#include "wx/power.h" //for power mgmt notification (wxPowerType et.c), EVT_POWER_RESUME
@@ -253,6 +255,7 @@ int main( int argc, char *  argv[] )
             //GriffinStateControlService griffinstatecontrolservice ;
             CPUcontrolService cpucontrolservice(argc,argv,
               stdtstrProgramName ) ;
+            gp_cpucontrolbase = & cpucontrolservice ;
             cpucontrolservice.StartService();
         }
     }

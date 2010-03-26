@@ -356,8 +356,8 @@ void CPUregisterWriteDialog::OnRegisterListBoxSelection(
   wxCommandEvent & evt )
 {
   wxArrayInt wxarrintSelections ;
-//  int nNumberOfSelections =
-//      p_wxlistbox->GetSelections(wxarrintSelections) ;
+  int nNumberOfSelections =
+      p_wxlistbox->GetSelections(wxarrintSelections) ;
   if( wxarrintSelections.GetCount () > 0 )
   {
     int nIndex = wxarrintSelections.Last () ;
@@ -498,6 +498,8 @@ void CPUregisterWriteDialog::OnWriteToMSR(
   #endif
     DWORD dwHigh = ullWriteToMSR >> 32 ;
     DWORD dwLow = ullWriteToMSR ;
+    //The CPU controller should be asked to write to the MSR because this is 
+    //the CPU-specific part that knows which MSRs are dangerous to write to.
     mp_cpucontroller->WrmsrEx( 
       mp_msrdata->m_dwIndex , 
       dwLow , 

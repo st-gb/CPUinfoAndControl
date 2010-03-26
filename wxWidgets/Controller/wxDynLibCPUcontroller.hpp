@@ -16,6 +16,9 @@ private:
   dll_GetMaximumFrequencyInMHz_type m_pfnGetMaximumFrequencyInMHz ;
   dll_GetMaximumFrequencyInMHz_type m_pfnGetMinimumFrequencyInMHz ;
   dll_GetTemperatureInCelsius_type m_pfngettemperatureincelsius ;
+  dll_PrepareForNextPerformanceCounting
+    m_pfn_preparefornextperformancecounting ;
+  dll_WriteMSR_type m_pfn_write_msr ;
   wxDynamicLibrary m_wxdynamiclibraryCPUctl ;
 public:
   wxDynLibCPUcontroller( 
@@ -37,6 +40,10 @@ public:
   float GetVoltageInVolt(WORD wVoltageID ) ;
   float GetTemperatureInCelsius(WORD wVoltageID ) ;
   WORD GetVoltageID(float fVoltageInVolt ) ;
+  void PrepareForNextPerformanceCounting(
+     DWORD dwAffinityBitMask
+     , BYTE byPerformanceEventSelectRegisterNumber
+     ) ;
   BYTE 
     //Let voltage be the first element from name because the same in
     //"Dyn Voltage And Freq. Sclaing"
@@ -46,4 +53,13 @@ public:
       , BYTE byCoreID 
       ) //{return 0 ; }
       ;
+  BOOL // TRUE: success, FALSE: failure
+  //In g++ virtual methods can't be declared as stdcall
+  //WINAPI
+  WrmsrEx(
+    DWORD index,		// MSR index
+    DWORD dwLow ,//eax,			// bit  0-31
+    DWORD dwHigh, //edx,			// bit 32-63
+    DWORD affinityMask	// Thread Affinity Mask
+    ) ;
 } ;

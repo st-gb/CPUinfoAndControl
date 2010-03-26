@@ -8,6 +8,7 @@
 
 //#include "../Windows/DynFreqScalingAccess.hpp"
 //#include <Windows/PowerProfDynLinked.hpp>
+#include <Controller/CPUcontrolBase.hpp>
 #include <Controller/ICPUcoreUsageGetter.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
@@ -46,6 +47,9 @@ class I_CPUcontroller ;
 class wxX86InfoAndControlApp
   : public wxApp
   , public UserInterface
+  //In order for the functions that are exported by this exe file to have 
+  //the CPU access.
+  , public CPUcontrolBase
 {
 private:
   TCHAR ** m_arartchCmdLineArgument ;
@@ -63,9 +67,9 @@ private:
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
-  //This member needs to be created on runtime because it may throw
-  //an exception (that should be catched, else runtime error) when it is created.
-  I_CPUaccess * mp_i_cpuaccess ;
+  ////This member needs to be created on runtime because it may throw
+  ////an exception (that should be catched, else runtime error) when it is created.
+  //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
 #ifdef COMPILE_WITH_SHARED_MEMORY
   HANDLE m_handleMapFile;

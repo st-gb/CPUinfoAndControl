@@ -35,6 +35,14 @@ protected:
     , float fLoad 
     ) ;
 public:
+  enum ThreadStartReturnCode {
+    THREAD_START_NO_ERROR = 0,      // No error
+    THREAD_START_NO_RESOURCE,       // No resource left to create a new thread
+    THREAD_START_ALREADY_RUNNING,           // The thread is already running
+    THREAD_START_NOT_RUNNING,       // The thread isn't running
+    THREAD_START_KILLED,            // Thread we waited for had to be killed
+    THREAD_START_MISC_ERROR
+  };
   //volatile is important because more than 1 thread may access this variable
   volatile bool m_vbRun ;
   DynFreqScalingThreadBase(  
@@ -47,6 +55,8 @@ public:
   //virtual int Run() = 0 ;
   //Return value for the subclass that is also inherited by "wxThread". 
   //So a wxThreadError can be returned to the caller to check for errors.
-  virtual BYTE Start() ;
+  virtual //BYTE
+    //Use DWORD because of GetLastError(...) return code.
+    DWORD Start() ;
   void Stop() ;
 };

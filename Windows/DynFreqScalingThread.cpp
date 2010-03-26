@@ -48,10 +48,16 @@ DWORD WINAPI DynFreqScalingThreadProc(LPVOID lpParameter)
   return 0 ;
 }
 
-int DynFreqScalingThread::Run()
+//int
+DWORD DynFreqScalingThread::Run()
 {
+  DWORD dwRet = ERROR_SUCCESS ;
   DWORD dwThreadId ;
-  HANDLE hThread = ::CreateThread( 
+  HANDLE hThread =
+    //http://msdn.microsoft.com/en-us/library/ms682453%28VS.85%29.aspx :
+    //"If the function fails, the return value is NULL.
+    //To get extended error information, call GetLastError."
+    ::CreateThread(
     NULL,                   // default security attributes
     0,                      // use default stack size  
     DynFreqScalingThreadProc ,       // thread function name
@@ -59,11 +65,22 @@ int DynFreqScalingThread::Run()
     0,                      // use default creation flags 
     & dwThreadId
     );   // returns the thread identifier 
+  if( hThread )
+  {
+    LOGN("CreateThread succeeded.")
+  }
+  else
+  {
+    LOGN("CreateThread failed.")
+    dwRet = GetLastError() ;
+  }
   //wxThread->Run() also returns 0 on success
-  return 0 ;
+  return //hThread != 0 ;
+    dwRet ;
 }
 
-BYTE DynFreqScalingThread::Start()
+//BYTE
+DWORD DynFreqScalingThread::Start()
 {
   return Run() ;
 }

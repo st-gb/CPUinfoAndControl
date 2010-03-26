@@ -1057,16 +1057,24 @@ extern Logger g_logger ;
           delete p_sax2xmlreader;
 //	        return FAILURE;
       }
-      catch (const SAXParseException & r_saxparseexception )
+      catch ( const SAXParseException & r_saxparseexception
+         //const SAXException & r_saxexception
+         )
       {
         LOGN( "SAXParseException" );
-        char * pchMessage = XMLString::transcode( r_saxparseexception.getMessage() );
+//        LOGN( "SAXException" );
+        char * pchMessage = XMLString::transcode(
+            r_saxparseexception.getMessage()
+//            r_saxexception.getMessage()
+          );
         cout << "Exception message is: \n"
              << pchMessage << "\n";
         std::string strMessage = "XML error in file: \"" +
           std::string(xmlFile)
           + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
           + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
+//          + "\", line " + to_stdstring( r_saxexception.getLineNumber() )
+//          + ", column " + to_stdstring( r_saxexception.getColumnNumber() )
           + ": " + pchMessage
           + "\nIn order to solve this problem you may look into the XML "
           "specifications for element names etc" ;
@@ -1082,7 +1090,7 @@ extern Logger g_logger ;
       }
       catch (...)
       {
-        DEBUG_COUT( "Unexpected Exception at parsing XML\n" ) ;
+        LOGN( "Unexpected Exception at parsing XML\n" ) ;
         p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
           //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
           //"The parser object returned by XMLReaderFactory is owned by
