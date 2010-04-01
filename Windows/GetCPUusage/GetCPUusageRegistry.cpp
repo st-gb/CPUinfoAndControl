@@ -1,19 +1,12 @@
+//#ifdef _MSC_VER
+//#include "stdafx.h"
+//#endif
 #define UNICODE
 #include <windows.h>
 #include <stdio.h>
 #include <strsafe.h>
 
 #pragma comment(lib, "advapi32.lib")
-
-// Contains the elements required to calculate a counter value.
-typedef struct _rawdata
-{
-    DWORD CounterType;
-    ULONGLONG Data;          // Raw counter data
-    LONGLONG Time;           // Is a time value or a base value
-    DWORD MultiCounterData;  // Second raw counter value for multi-valued counters
-    LONGLONG Frequency;
-}RAW_DATA, *PRAW_DATA;
 
 #define INIT_OBJECT_BUFFER_SIZE 48928   // Initial buffer size to use when querying specific objects.
 #define INIT_GLOBAL_BUFFER_SIZE 122880  // Initial buffer size to use when using "Global" to query all objects.
@@ -23,18 +16,27 @@ typedef struct _rawdata
 
 #include "GetCPUusageRegistry.hpp"
 
-LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize);
-BOOL GetCounterValues(DWORD dwObjectIndex, DWORD dwCounterIndex, LPWSTR pInstanceName, RAW_DATA* pRawData);
-BOOL GetValue(PERF_OBJECT_TYPE* pObject, PERF_COUNTER_DEFINITION* pCounter, PERF_COUNTER_BLOCK* pCounterDataBlock, PRAW_DATA pRawData);
-PERF_COUNTER_BLOCK* GetCounterBlock(PERF_OBJECT_TYPE* pObject, LPWSTR pInstanceName);
-PERF_COUNTER_DEFINITION* GetCounter(PERF_OBJECT_TYPE* pObject, DWORD dwCounterToFind);
-PERF_OBJECT_TYPE* GetObject(DWORD dwObjectToFind);
-PERF_INSTANCE_DEFINITION* GetObjectInstance(PERF_OBJECT_TYPE* pObject, LPWSTR pInstanceName);
-DWORD GetSerialNo(LPWSTR pInstanceName);
-BOOL GetFullInstanceName(PERF_INSTANCE_DEFINITION* pInstance, DWORD CodePage, WCHAR* pName);
-BOOL ConvertNameToUnicode(UINT CodePage, LPCSTR pNameToConvert, DWORD dwNameToConvertLen, LPWSTR pConvertedName);
-PERF_INSTANCE_DEFINITION* GetParentInstance(PERF_OBJECT_TYPE* pObject, DWORD dwInstancePosition);
-BOOL DisplayCalculatedValue(RAW_DATA* pSample1, RAW_DATA* pSample2 , double & r_dValue );
+inline LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize);
+inline BOOL GetCounterValues(DWORD dwObjectIndex, DWORD dwCounterIndex, 
+  LPWSTR pInstanceName, RAW_DATA* pRawData);
+inline BOOL GetValue(PERF_OBJECT_TYPE* pObject, PERF_COUNTER_DEFINITION* 
+  pCounter, PERF_COUNTER_BLOCK* pCounterDataBlock, PRAW_DATA pRawData);
+inline PERF_COUNTER_BLOCK* GetCounterBlock(PERF_OBJECT_TYPE* pObject, 
+  LPWSTR pInstanceName);
+inline PERF_COUNTER_DEFINITION* GetCounter(PERF_OBJECT_TYPE* pObject, 
+  DWORD dwCounterToFind);
+inline PERF_OBJECT_TYPE* GetObject(DWORD dwObjectToFind);
+inline PERF_INSTANCE_DEFINITION* GetObjectInstance(PERF_OBJECT_TYPE* pObject, 
+  LPWSTR pInstanceName);
+inline DWORD GetSerialNo(LPWSTR pInstanceName);
+inline BOOL GetFullInstanceName(PERF_INSTANCE_DEFINITION* pInstance, DWORD CodePage, 
+  WCHAR* pName);
+inline BOOL ConvertNameToUnicode(UINT CodePage, LPCSTR pNameToConvert, 
+  DWORD dwNameToConvertLen, LPWSTR pConvertedName);
+inline PERF_INSTANCE_DEFINITION* GetParentInstance(PERF_OBJECT_TYPE* pObject, 
+  DWORD dwInstancePosition);
+inline BOOL DisplayCalculatedValue(RAW_DATA* pSample1, RAW_DATA* pSample2 , 
+  double & r_dValue );
 
 //Global variables
 LPBYTE g_pPerfDataHead = NULL;   // Head of the performance data.
@@ -44,6 +46,7 @@ WinRegistryCPUcoreUsageGetter::WinRegistryCPUcoreUsageGetter()
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+  , m_ar_winregistrypercoreatts (NULL) 
 {
 }
 
@@ -52,14 +55,14 @@ float WinRegistryCPUcoreUsageGetter::GetPercentalUsageForCore(
   )
 {
   double dResultingValue = -1.0 ;
-  static RAW_DATA Sample1;
-  if( byCoreID == 0 )
+  //static RAW_DATA Sample1;
+  //if( byCoreID == 0 )
   {
   	//For the first time there are no previous values for difference .
     if( ( m_dwAtMask2ndTimeCPUcoreMask >> byCoreID ) & 1 )
     {
       BOOL fSuccess = FALSE;
-      RAW_DATA Sample2;
+      //RAW_DATA Sample2;
       //// Display five data points for the counter.
       //for (DWORD i = 0; i < 5; i++)
       {
@@ -68,10 +71,22 @@ float WinRegistryCPUcoreUsageGetter::GetPercentalUsageForCore(
           g_pPerfDataHead = (LPBYTE)GetPerformanceData(L"238", INIT_OBJECT_BUFFER_SIZE);
           if (NULL == g_pPerfDataHead)
           {
-              wprintf(L"GetPerformanceData in loop failed.\n");
+              //wprintf(L"GetPerformanceData in loop failed.\n");
               goto cleanup;
           }
-          fSuccess = GetCounterValues(238, 6, L"0", &Sample2);
+          m_stdowstringstream << (WORD) byCoreID ;
+          //m_stdowstringstream.flush() ;
+          
+          std::wstring stdwstr = m_stdowstringstream.str() ;
+          LPWSTR lpwstrCPUcoreNumber = (LPWSTR) stdwstr.c_str() ;
+          fSuccess = GetCounterValues(238, 6, //L"0"
+            lpwstrCPUcoreNumber , //&Sample2
+            & m_ar_winregistrypercoreatts[ byCoreID].Sample2 );
+          //m_stdowstringstream.clear() ;
+          //m_stdowstringstream.flush() ;
+          //Overwrite the first char next time.
+          //TODO this only works when <= 10 CPU cores!
+          m_stdowstringstream.seekp(0) ;
           if (FALSE == fSuccess)
           {
               wprintf(L"GetCounterValues failed.\n");
@@ -80,20 +95,27 @@ float WinRegistryCPUcoreUsageGetter::GetPercentalUsageForCore(
           // Calculate the value based on the two samples. For counter
           // types that do not use two samples, set the second parameter
           // to NULL.
-          fSuccess = DisplayCalculatedValue(&Sample1, &Sample2, dResultingValue );
+          fSuccess = DisplayCalculatedValue(//&Sample1, &Sample2, dResultingValue );
+            & m_ar_winregistrypercoreatts[ byCoreID].Sample1
+            , & m_ar_winregistrypercoreatts[ byCoreID].Sample2
+            , dResultingValue ) ;
+          // Sample2 becomes Sample1 for the next iteration.
+          //memcpy(&Sample1, &Sample2, sizeof(RAW_DATA));
+          memcpy( & m_ar_winregistrypercoreatts[ byCoreID].Sample1
+            , & m_ar_winregistrypercoreatts[ byCoreID].Sample2
+            , sizeof(RAW_DATA) 
+            ) ;
           if (FALSE == fSuccess)
           {
-              wprintf(L"DisplayCalculatedValue failed.\n");
+              //wprintf(L"DisplayCalculatedValue failed.\n");
               goto cleanup;
           }
-          // Sample2 becomes Sample1 for the next iteration.
-          memcpy(&Sample1, &Sample2, sizeof(RAW_DATA));
       }
   cleanup:
       if (g_pPerfDataHead)
           free(g_pPerfDataHead);
     }
-    else
+    else //if( ( m_dwAtMask2ndTimeCPUcoreMask >> byCoreID ) & 1 )
     {
       BOOL fSuccess = FALSE;
     	m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
@@ -101,14 +123,27 @@ float WinRegistryCPUcoreUsageGetter::GetPercentalUsageForCore(
       g_pPerfDataHead = (LPBYTE)GetPerformanceData( L"238", INIT_OBJECT_BUFFER_SIZE);
       if (NULL == g_pPerfDataHead)
       {
-          wprintf(L"GetPerformanceData failed.\n");
+          //wprintf(L"GetPerformanceData failed.\n");
           goto cleanup;
       }
+      m_stdowstringstream << (WORD) byCoreID ;
+      //m_stdowstringstream.flush() ;
+      std::wstring stdwstr = m_stdowstringstream.str() ;
+      //LPWSTR lpwstrCPUcoreNumber = (LPWSTR) m_stdowstringstream.str().c_str() ;
+      LPWSTR lpwstrCPUcoreNumber = (LPWSTR) stdwstr.c_str() ;
+      
       // Then, sample the "% Processor Time" counter for instance "0" of the Processor object.
-      fSuccess = GetCounterValues(238, 6, L"0", &Sample1);
+      fSuccess = GetCounterValues(238, 6, //L"0"
+        lpwstrCPUcoreNumber , //&Sample1
+        & m_ar_winregistrypercoreatts[ byCoreID].Sample1 
+        );
+      //m_stdowstringstream.clear() ;
+      //Overwrite the first char next time.
+      //TODO this only works when <= 10 CPU cores!
+      m_stdowstringstream.seekp(0) ;
       if (FALSE == fSuccess)
       {
-          wprintf(L"GetCounterValues failed.\n");
+          //wprintf(L"GetCounterValues failed.\n");
           goto cleanup;
       }
     }
@@ -126,7 +161,7 @@ float WinRegistryCPUcoreUsageGetter::GetPercentalUsageForCore(
 // and the RegQueryValueEx will set your size variable to the required buffer size. However, 
 // if the source is "Global" or one or more object index values, you will need to increment
 // the buffer size in a loop until RegQueryValueEx does not return ERROR_MORE_DATA. 
-LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize)
+inline LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize)
 {
     LPBYTE pBuffer = NULL;
     DWORD dwBufferSize = 0;        //Size of buffer, used to increment buffer size
@@ -139,7 +174,9 @@ LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize)
     pBuffer = (LPBYTE)malloc(dwBufferSize);
     if (pBuffer)
     {
-        while (ERROR_MORE_DATA == (status = RegQueryValueEx(HKEY_PERFORMANCE_DATA, pwszSource, NULL, NULL, pBuffer, &dwSize)))
+        while ( ERROR_MORE_DATA == (status = RegQueryValueEx(
+          HKEY_PERFORMANCE_DATA, pwszSource, NULL, NULL, pBuffer, &dwSize) )
+          )
         {
             //Contents of dwSize is unpredictable if RegQueryValueEx fails, which is why
             //you need to increment dwBufferSize and use it to set dwSize.
@@ -153,7 +190,7 @@ LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize)
             }
             else
             {
-                wprintf(L"Reallocation error.\n");
+                //wprintf(L"Reallocation error.\n");
                 free(pBuffer);
                 pBuffer = NULL;
                 goto cleanup;
@@ -162,18 +199,19 @@ LPBYTE GetPerformanceData(LPWSTR pwszSource, DWORD dwInitialBufferSize)
 
         if (ERROR_SUCCESS != status)
         {
-            wprintf(L"RegQueryValueEx failed with 0x%x.\n", status);
+            //wprintf(L"RegQueryValueEx failed with 0x%x.\n", status);
             free(pBuffer);
             pBuffer = NULL;
         }
     }
     else
     {
-        wprintf(L"malloc failed to allocate initial memory request.\n");
+        //wprintf(L"malloc failed to allocate initial memory request.\n");
     }
 
 cleanup:
 
+    //TODO RegCloseKey(...) really not needed?
     RegCloseKey(HKEY_PERFORMANCE_DATA);
 
     return pBuffer;
@@ -185,7 +223,8 @@ cleanup:
 // to the counter data in the counter block. The location of the counter block 
 // depends on whether the counter is a single instance counter or multiple instance counter.
 // After finding the counter block, retrieve the counter data.
-BOOL GetCounterValues(DWORD dwObjectIndex, DWORD dwCounterIndex, LPWSTR pInstanceName, RAW_DATA* pRawData)
+inline BOOL GetCounterValues(DWORD dwObjectIndex, DWORD dwCounterIndex, 
+  LPWSTR pInstanceName, RAW_DATA* pRawData)
 {
     PERF_OBJECT_TYPE* pObject = NULL;
     PERF_COUNTER_DEFINITION* pCounter = NULL;
@@ -226,7 +265,7 @@ cleanup:
 
 
 // Use the object index to find the object in the performance data.
-PERF_OBJECT_TYPE* GetObject(DWORD dwObjectToFind)
+inline PERF_OBJECT_TYPE* GetObject(DWORD dwObjectToFind)
 {
     LPBYTE pObject = g_pPerfDataHead + ((PERF_DATA_BLOCK*)g_pPerfDataHead)->HeaderLength;
     DWORD dwNumberOfObjects = ((PERF_DATA_BLOCK*)g_pPerfDataHead)->NumObjectTypes;
@@ -247,7 +286,7 @@ PERF_OBJECT_TYPE* GetObject(DWORD dwObjectToFind)
 }
 
 // Use the counter index to find the object in the performance data.
-PERF_COUNTER_DEFINITION* GetCounter(PERF_OBJECT_TYPE* pObject, DWORD dwCounterToFind)
+inline PERF_COUNTER_DEFINITION* GetCounter(PERF_OBJECT_TYPE* pObject, DWORD dwCounterToFind)
 {
     PERF_COUNTER_DEFINITION* pCounter = (PERF_COUNTER_DEFINITION*)((LPBYTE)pObject + pObject->HeaderLength);
     DWORD dwNumberOfCounters = pObject->NumCounters;
@@ -271,26 +310,29 @@ PERF_COUNTER_DEFINITION* GetCounter(PERF_OBJECT_TYPE* pObject, DWORD dwCounterTo
 // Returns a pointer to the beginning of the PERF_COUNTER_BLOCK. The location of the 
 // of the counter data block depends on whether the object contains single instance
 // counters or multiple instance counters (see PERF_OBJECT_TYPE.NumInstances).
-PERF_COUNTER_BLOCK* GetCounterBlock(PERF_OBJECT_TYPE* pObject, LPWSTR pInstanceName)
+inline PERF_COUNTER_BLOCK* GetCounterBlock(
+  PERF_OBJECT_TYPE* pObject,
+  LPWSTR pInstanceName
+  )
 {
-    PERF_COUNTER_BLOCK* pBlock = NULL;
-    PERF_INSTANCE_DEFINITION* pInstance = NULL;
+  PERF_COUNTER_BLOCK* pBlock = NULL;
+  PERF_INSTANCE_DEFINITION* pInstance = NULL;
 
-    // If there are no instances, the block follows the object and counter structures.
-    if (0 == pObject->NumInstances || PERF_NO_INSTANCES == pObject->NumInstances) 
-    {                                
-        pBlock = (PERF_COUNTER_BLOCK*)((LPBYTE)pObject + pObject->DefinitionLength);
-    }
-    else if (pObject->NumInstances > 0 && pInstanceName)  // Find the instance. The block follows the instance
-    {                                                     // structure and instance name.
-        pInstance = GetObjectInstance(pObject, pInstanceName);
-        if (pInstance)
-        {
-            pBlock = (PERF_COUNTER_BLOCK*)((LPBYTE)pInstance + pInstance->ByteLength);
-        }
-    }
-
-    return pBlock;
+  // If there are no instances, the block follows the object and counter
+  //structures.
+  if (0 == pObject->NumInstances || PERF_NO_INSTANCES == pObject->NumInstances)
+  {
+      pBlock = (PERF_COUNTER_BLOCK*)((LPBYTE)pObject + pObject->DefinitionLength);
+  }
+  else if (pObject->NumInstances > 0 && pInstanceName)  // Find the instance. The block follows the instance
+  {                                                     // structure and instance name.
+      pInstance = GetObjectInstance(pObject, pInstanceName);
+      if (pInstance)
+      {
+          pBlock = (PERF_COUNTER_BLOCK*)((LPBYTE)pInstance + pInstance->ByteLength);
+      }
+  }
+  return pBlock;
 }
 
 
@@ -306,7 +348,7 @@ PERF_COUNTER_BLOCK* GetCounterBlock(PERF_OBJECT_TYPE* pObject, LPWSTR pInstanceN
 // The convention for specifying an instance is parentinstancename/instancename#nnn.
 // If only instancename is specified, the first instance found that matches the name is used.
 // Specify parentinstancename if the instance is the child of a parent instance.
-PERF_INSTANCE_DEFINITION* GetObjectInstance(PERF_OBJECT_TYPE* pObject, LPWSTR pInstanceName)
+inline PERF_INSTANCE_DEFINITION* GetObjectInstance(PERF_OBJECT_TYPE* pObject, LPWSTR pInstanceName)
 {
     PERF_INSTANCE_DEFINITION* pInstance = (PERF_INSTANCE_DEFINITION*)((LPBYTE)pObject + pObject->DefinitionLength);
     BOOL fSuccess = FALSE;
@@ -376,117 +418,124 @@ DWORD GetSerialNo(LPWSTR pInstanceName)
 // use the CodePage value to convert the string to Unicode.
 BOOL GetFullInstanceName(PERF_INSTANCE_DEFINITION* pInstance, DWORD CodePage, WCHAR* pName)
 {
-    BOOL fSuccess = TRUE;
-    PERF_INSTANCE_DEFINITION *pParentInstance = NULL;
-    PERF_OBJECT_TYPE *pParentObject = NULL;
-    DWORD dwLength = 0;
-    WCHAR wszInstanceName[MAX_INSTANCE_NAME_LEN+1];
-    WCHAR wszParentInstanceName[MAX_INSTANCE_NAME_LEN+1];
+  BOOL fSuccess = TRUE;
+  PERF_INSTANCE_DEFINITION *pParentInstance = NULL;
+  PERF_OBJECT_TYPE *pParentObject = NULL;
+  DWORD dwLength = 0;
+  WCHAR wszInstanceName[MAX_INSTANCE_NAME_LEN+1];
+  WCHAR wszParentInstanceName[MAX_INSTANCE_NAME_LEN+1];
+
+  if (CodePage == 0)  // Instance name is a Unicode string
+  {
+    // PERF_INSTANCE_DEFINITION->NameLength is in bytes, so convert to characters.
+    dwLength = (MAX_INSTANCE_NAME_LEN < (pInstance->NameLength/2)) ? 
+      MAX_INSTANCE_NAME_LEN : pInstance->NameLength/2;
+    StringCchCopyN(wszInstanceName, MAX_INSTANCE_NAME_LEN+1, 
+      (LPWSTR)(((LPBYTE)pInstance)+pInstance->NameOffset), dwLength);
+    wszInstanceName[dwLength] = '\0';
+  }
+  else  // Convert the multi-byte instance name to Unicode
+  {
+      fSuccess = ConvertNameToUnicode(CodePage, 
+          (LPCSTR)(((LPBYTE)pInstance)+pInstance->NameOffset),  // Points to string
+          pInstance->NameLength,
+          wszInstanceName);
+
+      if (FALSE == fSuccess)
+      {
+          wprintf(L"ConvertNameToUnicode for instance failed.\n");
+          goto cleanup;
+      }
+  }
+
+  if (pInstance->ParentObjectTitleIndex)
+  {
+    // Use the index to find the parent object. The pInstance->ParentObjectInstance
+    // member tells you that the parent instance is the nth instance of the 
+    // parent object.
+    pParentObject = GetObject(pInstance->ParentObjectTitleIndex);
+    pParentInstance = GetParentInstance(pParentObject, 
+      pInstance->ParentObjectInstance);
 
     if (CodePage == 0)  // Instance name is a Unicode string
     {
-        // PERF_INSTANCE_DEFINITION->NameLength is in bytes, so convert to characters.
-        dwLength = (MAX_INSTANCE_NAME_LEN < (pInstance->NameLength/2)) ? MAX_INSTANCE_NAME_LEN : pInstance->NameLength/2;
-        StringCchCopyN(wszInstanceName, MAX_INSTANCE_NAME_LEN+1, (LPWSTR)(((LPBYTE)pInstance)+pInstance->NameOffset), dwLength);
-        wszInstanceName[dwLength] = '\0';
+      dwLength = (MAX_INSTANCE_NAME_LEN < pParentInstance->NameLength/2) ? 
+        MAX_INSTANCE_NAME_LEN : pParentInstance->NameLength/2;
+      StringCchCopyN(wszParentInstanceName, MAX_INSTANCE_NAME_LEN+1, 
+        (LPWSTR)(((LPBYTE)pParentInstance)+pParentInstance->NameOffset)
+        , dwLength);
+      wszParentInstanceName[dwLength] = '\0';
     }
     else  // Convert the multi-byte instance name to Unicode
     {
         fSuccess = ConvertNameToUnicode(CodePage, 
-            (LPCSTR)(((LPBYTE)pInstance)+pInstance->NameOffset),  // Points to string
+            (LPCSTR)(((LPBYTE)pParentInstance)+pParentInstance->NameOffset),  //Points to string.
             pInstance->NameLength,
-            wszInstanceName);
+            wszParentInstanceName);
 
         if (FALSE == fSuccess)
         {
-            wprintf(L"ConvertNameToUnicode for instance failed.\n");
+            wprintf(L"ConvertNameToUnicode for parent instance failed.\n");
             goto cleanup;
         }
     }
 
-    if (pInstance->ParentObjectTitleIndex)
-    {
-        // Use the index to find the parent object. The pInstance->ParentObjectInstance
-        // member tells you that the parent instance is the nth instance of the 
-        // parent object.
-        pParentObject = GetObject(pInstance->ParentObjectTitleIndex);
-        pParentInstance = GetParentInstance(pParentObject, pInstance->ParentObjectInstance);
-
-        if (CodePage == 0)  // Instance name is a Unicode string
-        {
-            dwLength = (MAX_INSTANCE_NAME_LEN < pParentInstance->NameLength/2) ? MAX_INSTANCE_NAME_LEN : pParentInstance->NameLength/2;
-            StringCchCopyN(wszParentInstanceName, MAX_INSTANCE_NAME_LEN+1, (LPWSTR)(((LPBYTE)pParentInstance)+pParentInstance->NameOffset), dwLength);
-            wszParentInstanceName[dwLength] = '\0';
-        }
-        else  // Convert the multi-byte instance name to Unicode
-        {
-            fSuccess = ConvertNameToUnicode(CodePage, 
-                (LPCSTR)(((LPBYTE)pParentInstance)+pParentInstance->NameOffset),  //Points to string.
-                pInstance->NameLength,
-                wszParentInstanceName);
-
-            if (FALSE == fSuccess)
-            {
-                wprintf(L"ConvertNameToUnicode for parent instance failed.\n");
-                goto cleanup;
-            }
-        }
-
-        StringCchPrintf(pName, MAX_FULL_INSTANCE_NAME_LEN+1, L"%s/%s", wszParentInstanceName, wszInstanceName);
-    }
-    else
-    {
-        StringCchPrintf(pName, MAX_INSTANCE_NAME_LEN+1, L"%s", wszInstanceName);
-    }
-
+    StringCchPrintf(pName, MAX_FULL_INSTANCE_NAME_LEN+1, L"%s/%s", 
+      wszParentInstanceName, wszInstanceName);
+  }
+  else
+  {
+      StringCchPrintf(pName, MAX_INSTANCE_NAME_LEN+1, L"%s", wszInstanceName);
+  }
 cleanup:
-
-    return fSuccess;
+  return fSuccess;
 }
 
 
 // Converts a multi-byte string to a Unicode string. If the input string is longer than 
 // MAX_INSTANCE_NAME_LEN, the input string is truncated.
-BOOL ConvertNameToUnicode(UINT CodePage, LPCSTR pNameToConvert, DWORD dwNameToConvertLen, LPWSTR pConvertedName)
+BOOL ConvertNameToUnicode(UINT CodePage, LPCSTR pNameToConvert, 
+  DWORD dwNameToConvertLen, LPWSTR pConvertedName)
 {
     BOOL fSuccess = FALSE;
     int CharsConverted = 0;
     DWORD dwLength = 0;
 
     // dwNameToConvertLen is in bytes, so convert MAX_INSTANCE_NAME_LEN to bytes.
-    dwLength = (MAX_INSTANCE_NAME_LEN*sizeof(WCHAR) < (dwNameToConvertLen)) ? MAX_INSTANCE_NAME_LEN*sizeof(WCHAR) : dwNameToConvertLen;
+    dwLength = (MAX_INSTANCE_NAME_LEN*sizeof(WCHAR) < (dwNameToConvertLen)) 
+      ? MAX_INSTANCE_NAME_LEN*sizeof(WCHAR) : dwNameToConvertLen;
 
-    CharsConverted = MultiByteToWideChar((UINT)CodePage, 0, pNameToConvert, dwLength, pConvertedName, MAX_INSTANCE_NAME_LEN);
+    CharsConverted = MultiByteToWideChar((UINT)CodePage, 0, pNameToConvert, 
+      dwLength, pConvertedName, MAX_INSTANCE_NAME_LEN);
     if (CharsConverted)
     {
         pConvertedName[dwLength] = '\0';
         fSuccess = TRUE;
     }
-
     return fSuccess;
 }
 
-
 // Find the nth instance of an object.
-PERF_INSTANCE_DEFINITION* GetParentInstance(PERF_OBJECT_TYPE* pObject, DWORD dwInstancePosition)
+inline PERF_INSTANCE_DEFINITION* GetParentInstance(PERF_OBJECT_TYPE* pObject, 
+  DWORD dwInstancePosition)
 {
     LPBYTE pInstance = (LPBYTE)pObject + pObject->DefinitionLength;
     PERF_COUNTER_BLOCK* pCounter = NULL;
 
     for (DWORD i = 0; i < dwInstancePosition; i++)
     {
-        pCounter = (PERF_COUNTER_BLOCK*)(pInstance + ((PERF_INSTANCE_DEFINITION*)pInstance)->ByteLength);
-        pInstance += ((PERF_INSTANCE_DEFINITION*)pInstance)->ByteLength + pCounter->ByteLength;
+        pCounter = (PERF_COUNTER_BLOCK*)(pInstance + ( 
+          (PERF_INSTANCE_DEFINITION*)pInstance)->ByteLength);
+        pInstance += ((PERF_INSTANCE_DEFINITION*)pInstance)->ByteLength + 
+          pCounter->ByteLength;
     }
-
     return (PERF_INSTANCE_DEFINITION*)pInstance;
 }
-
 
 // Use the CounterType to determine how to calculate the displayable
 // value. The case statement includes the formula used to calculate 
 // the value.
-BOOL DisplayCalculatedValue(RAW_DATA* pSample1, RAW_DATA* pSample2, double & r_dValue )
+inline BOOL DisplayCalculatedValue(RAW_DATA* pSample1, RAW_DATA* pSample2, double & r_dValue )
 {
     BOOL fSuccess = TRUE;
     ULONGLONG numerator = 0;
@@ -499,7 +548,7 @@ BOOL DisplayCalculatedValue(RAW_DATA* pSample1, RAW_DATA* pSample2, double & r_d
     if (PERF_DELTA_COUNTER == (pSample1->CounterType & PERF_DELTA_COUNTER) &&
         NULL == pSample2)
     {
-        wprintf(L"The counter type requires two samples but only one sample was passed.\n");
+        //wprintf(L"The counter type requires two samples but only one sample was passed.\n");
         fSuccess = FALSE;
         goto cleanup;
     }
@@ -508,138 +557,139 @@ BOOL DisplayCalculatedValue(RAW_DATA* pSample1, RAW_DATA* pSample2, double & r_d
     // sample 2 must be greater than the data from sample 1).
     if (pSample2 != NULL && pSample1->Data > pSample2->Data)
     {                     
-        // You would probably just drop the older sample and continue.                
-        wprintf(L"Sample1 (%I64u) is larger than sample2 (%I64u).\n", pSample1->Data, pSample2->Data);
+        //// You would probably just drop the older sample and continue.                
+        //wprintf(L"Sample1 (%I64u) is larger than sample2 (%I64u).\n", pSample1->Data, pSample2->Data);
         fSuccess = FALSE;
         goto cleanup;
     }
 
     switch (pSample1->CounterType) 
     {
-        case PERF_COUNTER_COUNTER:  //(N1 - N0)/((D1 - D0)/F)
-        case PERF_SAMPLE_COUNTER:
-        case PERF_COUNTER_BULK_COUNT:  
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue2 = (DWORD)(numerator/((double)denominator/pSample2->Frequency));
-            r_dValue = DisplayValue2 ;
-            wprintf(L"Display value is %u%s\n", DisplayValue2,
-            (pSample1->CounterType == PERF_SAMPLE_COUNTER) ? L"." : L"/sec.");
-            break;
+        //case PERF_COUNTER_COUNTER:  //(N1 - N0)/((D1 - D0)/F)
+        //case PERF_SAMPLE_COUNTER:
+        //case PERF_COUNTER_BULK_COUNT:  
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue2 = (DWORD)(numerator/((double)denominator/pSample2->Frequency));
+        //    r_dValue = DisplayValue2 ;
+        //    //wprintf(L"Display value is %u%s\n", DisplayValue2,
+        //    //  (pSample1->CounterType == PERF_SAMPLE_COUNTER) ? L"." : L"/sec.");
+        //    break;
 
-        case PERF_COUNTER_QUEUELEN_TYPE:  //(N1 - N0)/(D1 - D0)
-        case PERF_COUNTER_100NS_QUEUELEN_TYPE:  
-        case PERF_COUNTER_OBJ_TIME_QUEUELEN_TYPE:
-        case PERF_COUNTER_LARGE_QUEUELEN_TYPE:  
-        case PERF_AVERAGE_BULK:  //don't display
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = (double)numerator/denominator;
-            if (pSample1->CounterType != PERF_AVERAGE_BULK)
-                wprintf(L"Display value is %f.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_COUNTER_QUEUELEN_TYPE:  //(N1 - N0)/(D1 - D0)
+        //case PERF_COUNTER_100NS_QUEUELEN_TYPE:  
+        //case PERF_COUNTER_OBJ_TIME_QUEUELEN_TYPE:
+        //case PERF_COUNTER_LARGE_QUEUELEN_TYPE:  
+        //case PERF_AVERAGE_BULK:  //don't display
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue = (double)numerator/denominator;
+        //    //if (pSample1->CounterType != PERF_AVERAGE_BULK)
+        //    //    wprintf(L"Display value is %f.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_OBJ_TIME_TIMER:  // 100*(N1 - N0)/(D1 - D0)
-        case PERF_COUNTER_TIMER:  
-        case PERF_100NSEC_TIMER:
-        case PERF_PRECISION_SYSTEM_TIMER: 
-        case PERF_PRECISION_100NS_TIMER:
-        case PERF_PRECISION_OBJECT_TIMER:
-        case PERF_SAMPLE_FRACTION:  // 100*(N1 - N0)/(B1 - B0)
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = (double)(100*numerator)/denominator;
-            wprintf(L"PERF_SAMPLE_FRACTION--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_OBJ_TIME_TIMER:  // 100*(N1 - N0)/(D1 - D0)
+        //case PERF_COUNTER_TIMER:  
+        //case PERF_100NSEC_TIMER:
+        //case PERF_PRECISION_SYSTEM_TIMER: 
+        //case PERF_PRECISION_100NS_TIMER:
+        //case PERF_PRECISION_OBJECT_TIMER:
+        //case PERF_SAMPLE_FRACTION:  // 100*(N1 - N0)/(B1 - B0)
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue = (double)(100*numerator)/denominator;
+        //    //wprintf(L"PERF_SAMPLE_FRACTION--Display value is %f%%.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_COUNTER_TIMER_INV:  // 100*(1- ((N1 - N0)/(D1 - D0)))
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = 100*(1 - ((double)numerator/denominator));
-            wprintf(L"PERF_COUNTER_TIMER_INV--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_COUNTER_TIMER_INV:  // 100*(1- ((N1 - N0)/(D1 - D0)))
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue = 100*(1 - ((double)numerator/denominator));
+        //    //wprintf(L"PERF_COUNTER_TIMER_INV--Display value is %f%%.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
         case PERF_100NSEC_TIMER_INV:  // 100*(1- (N1 - N0)/(D1 - D0))
             numerator = pSample2->Data - pSample1->Data;
             denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = 100*(1 - (double)numerator/denominator);
-            wprintf(L"PERF_100NSEC_TIMER_INV--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
+            //DisplayValue = 100*(1 - (double)numerator/denominator);
+            //r_dValue = DisplayValue ;
+            //wprintf(L"PERF_100NSEC_TIMER_INV--Display value is %f%%.\n", DisplayValue);
+            r_dValue = 100*(1 - (double)numerator/denominator);
             break;
 
-        case PERF_COUNTER_MULTI_TIMER:  // 100*((N1 - N0)/((D1 - D0)/TB))/B1
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            denominator /= pSample2->Frequency;
-            DisplayValue = 100*((double)numerator/denominator)/pSample2->MultiCounterData;
-            wprintf(L"PERF_COUNTER_MULTI_TIMER--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_COUNTER_MULTI_TIMER:  // 100*((N1 - N0)/((D1 - D0)/TB))/B1
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    denominator /= pSample2->Frequency;
+        //    DisplayValue = 100*((double)numerator/denominator)/pSample2->MultiCounterData;
+        //    //wprintf(L"PERF_COUNTER_MULTI_TIMER--Display value is %f%%.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_100NSEC_MULTI_TIMER:  // 100*((N1 - N0)/(D1 - D0))/B1
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = 100*((double)numerator/denominator)/pSample2->MultiCounterData;
-            wprintf(L"PERF_100NSEC_MULTI_TIMER--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_100NSEC_MULTI_TIMER:  // 100*((N1 - N0)/(D1 - D0))/B1
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue = 100*((double)numerator/denominator)/pSample2->MultiCounterData;
+        //    //wprintf(L"PERF_100NSEC_MULTI_TIMER--Display value is %f%%.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_COUNTER_MULTI_TIMER_INV:  // 100*(B1- ((N1 - N0)/(D1 - D0)))
-        case PERF_100NSEC_MULTI_TIMER_INV:
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = 100*(pSample2->MultiCounterData - ((double)numerator/denominator));
-            wprintf(L"PERF_100NSEC_MULTI_TIMER_INV--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_COUNTER_MULTI_TIMER_INV:  // 100*(B1- ((N1 - N0)/(D1 - D0)))
+        //case PERF_100NSEC_MULTI_TIMER_INV:
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue = 100*(pSample2->MultiCounterData - ((double)numerator/denominator));
+        //    //wprintf(L"PERF_100NSEC_MULTI_TIMER_INV--Display value is %f%%.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_COUNTER_RAWCOUNT:  // N as decimal
-        case PERF_COUNTER_LARGE_RAWCOUNT:
-            wprintf(L"Display value is %I64u.\n", pSample1->Data);
-            r_dValue = (double) pSample1->Data ;
-            break;
+        //case PERF_COUNTER_RAWCOUNT:  // N as decimal
+        //case PERF_COUNTER_LARGE_RAWCOUNT:
+        //    //wprintf(L"Display value is %I64u.\n", pSample1->Data);
+        //    r_dValue = (double) pSample1->Data ;
+        //    break;
 
-        case PERF_COUNTER_RAWCOUNT_HEX:  // N as hexadecimal
-        case PERF_COUNTER_LARGE_RAWCOUNT_HEX:
-            wprintf(L"Display value is %I64x.\n", pSample1->Data);
-            r_dValue = (double) pSample1->Data ;
-            break;
+        //case PERF_COUNTER_RAWCOUNT_HEX:  // N as hexadecimal
+        //case PERF_COUNTER_LARGE_RAWCOUNT_HEX:
+        //    //wprintf(L"Display value is %I64x.\n", pSample1->Data);
+        //    r_dValue = (double) pSample1->Data ;
+        //    break;
 
-        case PERF_COUNTER_DELTA:  // N1 - N0
-        case PERF_COUNTER_LARGE_DELTA:
-            DisplayValue = (double)(pSample2->Data - pSample1->Data);
-            wprintf(L"Display value is %I64u.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_COUNTER_DELTA:  // N1 - N0
+        //case PERF_COUNTER_LARGE_DELTA:
+        //    DisplayValue = (double)(pSample2->Data - pSample1->Data);
+        //    //wprintf(L"Display value is %I64u.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_RAW_FRACTION:  // 100*N/B
-        case PERF_LARGE_RAW_FRACTION:
-            DisplayValue = (double)100*pSample1->Data/pSample1->Time;
-            wprintf(L"PERF_LARGE_RAW_FRACTION--Display value is %f%%.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_RAW_FRACTION:  // 100*N/B
+        //case PERF_LARGE_RAW_FRACTION:
+        //    DisplayValue = (double)100*pSample1->Data/pSample1->Time;
+        //    //wprintf(L"PERF_LARGE_RAW_FRACTION--Display value is %f%%.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_AVERAGE_TIMER:  // ((N1 - N0)/TB)/(B1 - B0)
-            numerator = pSample2->Data - pSample1->Data;
-            denominator = pSample2->Time - pSample1->Time;
-            DisplayValue = (double)numerator/pSample2->Frequency/denominator;
-            wprintf(L"Display value is %f in seconds.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_AVERAGE_TIMER:  // ((N1 - N0)/TB)/(B1 - B0)
+        //    numerator = pSample2->Data - pSample1->Data;
+        //    denominator = pSample2->Time - pSample1->Time;
+        //    DisplayValue = (double)numerator/pSample2->Frequency/denominator;
+        //    //wprintf(L"Display value is %f in seconds.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        case PERF_ELAPSED_TIME:  //(D0 - N0)/F
-            DisplayValue = (double)(pSample1->Time - pSample1->Data)/pSample1->Frequency;
-            wprintf(L"Display value is %f in seconds.\n", DisplayValue);
-            r_dValue = DisplayValue ;
-            break;
+        //case PERF_ELAPSED_TIME:  //(D0 - N0)/F
+        //    DisplayValue = (double)(pSample1->Time - pSample1->Data)/pSample1->Frequency;
+        //    //wprintf(L"Display value is %f in seconds.\n", DisplayValue);
+        //    r_dValue = DisplayValue ;
+        //    break;
 
-        default:
-            wprintf(L"Counter type not found.\n");
-            fSuccess = FALSE;
-            break;
+        //default:
+        //    //wprintf(L"Counter type not found.\n");
+        //    fSuccess = FALSE;
+        //    break;
     }
 
 cleanup:
@@ -650,7 +700,7 @@ cleanup:
 // Retrieve the raw counter value and any supporting data needed to calculate
 // a displayable counter value. Use the counter type to determine the information
 // needed to calculate the value.
-BOOL GetValue(PERF_OBJECT_TYPE* pObject, 
+inline BOOL GetValue(PERF_OBJECT_TYPE* pObject, 
     PERF_COUNTER_DEFINITION* pCounter, 
     PERF_COUNTER_BLOCK* pCounterDataBlock, 
     PRAW_DATA pRawData)
@@ -861,4 +911,17 @@ BOOL GetValue(PERF_OBJECT_TYPE* pObject,
     }
 
     return fSuccess;
+}
+
+void WinRegistryCPUcoreUsageGetter::SetNumberOfCPUcores( 
+  WORD wNumLogicalCPUcores )
+{
+  m_ar_winregistrypercoreatts = new WinRegistryPerCoreAtts[ 
+    wNumLogicalCPUcores ] ;
+}
+
+WinRegistryCPUcoreUsageGetter::~WinRegistryCPUcoreUsageGetter()
+{
+  if( m_ar_winregistrypercoreatts )
+    delete [] m_ar_winregistrypercoreatts ;
 }

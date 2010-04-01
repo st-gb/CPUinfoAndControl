@@ -18,7 +18,9 @@ I_CPUcontroller::I_CPUcontroller()
   :
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
-  mp_cpuaccess (NULL)
+  //1 power plane for all CPU cores is usual->set as default.
+  m_b1CPUcorePowerPlane( true )
+  , mp_cpuaccess (NULL)
   , mp_userinterface (NULL)
   , mp_model (NULL)
   , mp_calculationthread (NULL)
@@ -638,10 +640,15 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
     }
     ++ ci_stdsetvoltageandfreq ;
   }
-  if( ci_stdsetvoltageandfreqNearestHigherEqual!= 
+  if( ci_stdsetvoltageandfreqNearestHigherEqual != 
     r_stdsetvoltageandfreq.end() 
     )
   {
+    //Freq is lower than the ones in the list.
+    //if( wFreqInMHz < ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz )
+    //No entry  is lower equal than the freq.
+    if( ci_stdsetvoltageandfreqNearestLowerEqual == r_stdsetvoltageandfreq.end() )
+      wFreqInMHz = ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
     if( GetInterpolatedVoltageFromFreq(
         wFreqInMHz
         //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz

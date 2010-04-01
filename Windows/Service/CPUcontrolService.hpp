@@ -77,7 +77,6 @@ public:
     //static 
        SERVICE_STATUS_HANDLE   m_servicestatushandle; 
     //static 
-       //PumaStateCtrl * mp_pstatectrl ;
        I_CPUcontroller * mp_cpucontroller ;
     //static 
        std::ofstream m_ofstream ;

@@ -8,7 +8,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   //std::string & strDLLname 
   wxString & r_wxstrFilePath 
   //, std::string & strDLLfunctionName
-  , I_CPUaccess * p_cpuaccess 
+  //, I_CPUaccess * p_cpuaccess 
   , CPUcoreData & cpucoredata
   )
 {
@@ -81,5 +81,5 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
       arf[byCPUcoreNumber] = (*m_pfngetcpucoreusage)(byCPUcoreNumber);
 #endif
   }
-  return 0 ;
+  return 1 ;
 }

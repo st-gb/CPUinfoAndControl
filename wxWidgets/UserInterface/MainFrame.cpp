@@ -74,6 +74,8 @@
 
 class wxObject ;
 
+extern CPUcontrolBase * gp_cpucontrolbase ;
+
 enum
 {
   ID_Quit = 1
@@ -247,8 +249,8 @@ MainFrame::MainFrame(
   , mp_wxbitmap(NULL)
   , mp_wxbitmapStatic (NULL)
   , mp_wxbufferedpaintdcStatic( NULL) 
-  , mp_wxdynlibcpucontroller ( NULL )
-  , mp_wxdynlibcpucoreusagegetter ( NULL )
+  //, mp_wxdynlibcpucontroller ( NULL )
+  //, mp_wxdynlibcpucoreusagegetter ( NULL )
   , m_wxtimer(this)
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
   , m_xercesconfigurationhandler( p_model )
@@ -274,17 +276,22 @@ MainFrame::MainFrame(
     _T("Attach CPU &controller DLL...") );
   p_wxmenuFile->Append( ID_Detach_CPU_controller_DLL, 
     _T("Detach CPU controller DLL") );
-  p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL, false ) ;
+  if( ! gp_cpucontrolbase->mp_wxdynlibcpucontroller )
+    p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL, false ) ;
   p_wxmenuFile->Append( ID_Attach_CPU_usage_getter_DLL, 
     _T("Attach CPU &usage getter DLL...") );
   p_wxmenuFile->Append( ID_Detach_CPU_usage_getter_DLL, 
     _T("Detach CPU usage getter DLL") );
-  p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL, false ) ;
+  if( ! gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter )
+    p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL, false ) ;
   p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
     _T("Save &performance states settings...") );
   p_wxmenuFile->AppendSeparator();
   //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
+
+  LOG("after file menu creation\n")
+
 //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 #ifdef COMPILE_WITH_SERVICE_CONTROL
   CreateServiceMenuItems() ;
@@ -310,8 +317,6 @@ MainFrame::MainFrame(
 
   //UpdatePowerSettings(wxPOWER_UNKNOWN, wxBATTERY_UNKNOWN_STATE);
 
-  if( mp_i_cpucontroller != NULL )
-    CreateDynamicMenus();
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   p_wxmenuExtras = NULL ;
 //#ifdef COMPILE_WITH_SERVICE_CONTROL
@@ -355,6 +360,8 @@ MainFrame::MainFrame(
       );
   }
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
+  LOG("after extras menu creation\n")
+
   if( ! p_wxmenuExtras ) 
     p_wxmenuExtras = new wxMenu;
 
@@ -398,6 +405,9 @@ MainFrame::MainFrame(
 #endif
   if( p_wxmenuExtras )
     mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
+
+  if( mp_i_cpucontroller != NULL )
+    CreateDynamicMenus();
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //    ////Connect the action, that is a class derived from class xx directly
 //    ////with the menu item so that it is ensured to be the correct action
@@ -703,6 +713,7 @@ BYTE MainFrame::CreateDynamicMenus()
   WORD wMenuID = ID_LastStaticID;
   //m_vecwxstring.push_back(wxString)
   wxMenu * p_wxmenuCore ;
+  LOGN("CPU core menu creation")
 
   m_arp_freqandvoltagesettingdlg = new FreqAndVoltageSettingDlg * [
     mp_cpucoredata->m_byNumberOfCPUCores];
@@ -1105,7 +1116,7 @@ void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
       }
     }
     //::wxMilliSleep()
-  }
+  } //if( mp_i_cpucontroller )
 }
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
@@ -1285,12 +1296,13 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
     try
     {
       //wxDynLibCPUcontroller * p_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
-      mp_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
+      gp_cpucontrolbase->mp_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
         wxstrFilePath
         , mp_wxx86infoandcontrolapp->GetCPUaccess() 
         ) ;
       mp_wxx86infoandcontrolapp->SetCPUcontroller( //p_wxdynlibcpucontroller 
-        mp_wxdynlibcpucontroller ) ;
+        //mp_wxdynlibcpucontroller 
+        gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
       CreateDynamicMenus() ;
       p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
         , //const bool enable
@@ -1329,17 +1341,17 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
     try
     {
       //wxDynLibCPUcontroller * p_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
-      mp_wxdynlibcpucoreusagegetter = new wxDynLibCPUcoreUsageGetter(
+      gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = new wxDynLibCPUcoreUsageGetter(
         //std::string( 
         wxstrFilePath
           //.//fn_str() 
           //c_str() )
-        , mp_wxx86infoandcontrolapp->GetCPUaccess() 
+        //, mp_wxx86infoandcontrolapp->GetCPUaccess() 
         , * mp_cpucoredata
         ) ;
       mp_wxx86infoandcontrolapp->//SetCPUcoreUsageGetter( //p_wxdynlibcpucontroller 
         //mp_wxdynlibcpucoreusagegetter ) ;
-        mp_cpucoreusagegetter = mp_wxdynlibcpucoreusagegetter ;
+        mp_cpucoreusagegetter = gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
       //CreateDynamicMenus() ;
       p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
         , //const bool enable
@@ -1359,12 +1371,12 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
 
 void MainFrame::OnDetachCPUcontrollerDLL (wxCommandEvent & event)
 {
-  if( mp_wxdynlibcpucontroller )
+  if( gp_cpucontrolbase->mp_wxdynlibcpucontroller )
   {
     //mp_wxx86infoandcontrolapp->SetCPUcontroller( NULL ) ;  
     mp_wxx86infoandcontrolapp->DeleteCPUcontroller() ;
     //delete mp_wxdynlibcpucontroller ;
-    mp_wxdynlibcpucontroller = NULL ;
+    gp_cpucontrolbase->mp_wxdynlibcpucontroller = NULL ;
     PossiblyReleaseMemory() ;
     //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
     p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
@@ -1378,13 +1390,22 @@ void MainFrame::OnDetachCPUcontrollerDLL (wxCommandEvent & event)
 
 void MainFrame::OnDetachCPUcoreUsageGetterDLL (wxCommandEvent & event)
 {
-  if( mp_wxdynlibcpucoreusagegetter )
+  if( gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter )
   {
     //mp_wxx86infoandcontrolapp->SetCPUcontroller( NULL ) ;  
     //mp_wxx86infoandcontrolapp->DeleteCPUcontroller() ;
+    
+    PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
+      m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
+      0 ] ;
+    //If the dyn freq scaling thread is active the program would crash when it
+    //tries to get the CPU usage the next time and the usage getter is 
+    //destroyed.
+    if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+      EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
     mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter = NULL ;
-    delete mp_wxdynlibcpucoreusagegetter ;
-    mp_wxdynlibcpucoreusagegetter = NULL ;
+    delete gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
+    gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = NULL ;
     //delete mp_wxdynlibcpucontroller ;
     //mp_wxdynlibcpucontroller = NULL ;
     //PossiblyReleaseMemory() ;
@@ -1440,17 +1461,7 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
       //DynFreqScalingThread * p_dynfreqscalingthread
       if ( p_percpucoreattributes->mp_dynfreqscalingthread )
       {
-        p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
-        //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
-        p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
-  	    ////Start the timer (it should have been stopped before else the timer had redrawn 
-  	    ////additonally to the scaling thread).
-       // m_wxtimer.Start() ;
-        mp_wxmenuitemOwnDVFS->SetText(
-          //We need a _T() macro (wide char-> L"", char->"") for EACH 
-          //line to make it compatible between char and wide char.
-          _T("enable Own DVFS") 
-          ) ;
+        EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
       }
       else
       {
@@ -1651,9 +1662,9 @@ void MainFrame::DrawDiagramScale(
     WORD wLeftEndOfCurrFreqText ;
     WORD wXcoordinate ;
     WORD wYcoordinate ;
-    WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
-      //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-      mp_i_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    WORD wMaxFreqInMHz = 
+      //mp_i_cpucontroller->
+      mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
     std::map<WORD,WORD>::const_reverse_iterator 
       r_iterstdmapRightEndOfFreqString2yCoord ;
     std::map<WORD,WORD> mapRightEndOfFreqString2yCoord ;
@@ -1665,7 +1676,8 @@ void MainFrame::DrawDiagramScale(
       r_iterstdmap_ycoord2rightendoffreqstringToUse ;
 
     std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
-      mp_i_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
+      //mp_i_cpucontroller->
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
     std::set<WORD> setRightEndOfFreqString ;
     iterstdsetvoltageandfreq = r_stdsetvoltageandfreq.begin() ;
   #ifdef _DEBUG
@@ -1676,12 +1688,6 @@ void MainFrame::DrawDiagramScale(
 
     //fMinVoltage = mp_i_cpucontroller->GetMinimumVoltageInVolt() ;
     //fMaxMinusMinVoltage = m_fMaxVoltage - fMinVoltage ;
-    //p_wxpaintdc->DrawText( wxT("550") , arwxpoint[0].x, //200
-    //    wDiagramHeight ) ;
-    //p_wxpaintdc->DrawText( wxT("1100") , arwxpoint[1].x, //200
-    //    wDiagramHeight ) ;
-    //p_wxpaintdc->DrawText( wxT("2200") , arwxpoint[2].x, //200
-    //    wDiagramHeight ) ;
     for( ;
         //iterstdvecmaxvoltageforfreq != mp_pumastatectrl->mp_model->
         //iterstdsetmaxvoltageforfreq != //mp_pumastatectrl->mp_model->
@@ -2019,9 +2025,8 @@ void MainFrame::DrawOvervoltageProtectionCurve(
   {
     float fVoltage ;
     WORD wYcoordinate ;
-    WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
-      //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-      mp_i_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    WORD wMaxFreqInMHz = //mp_i_cpucontroller->
+      mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
     for( WORD wCurrentXcoordinateInDiagram = //wXcoordOfBeginOfYaxis 
         //0 
         //Begin with 1 to avoid div by zero.
@@ -2029,33 +2034,6 @@ void MainFrame::DrawOvervoltageProtectionCurve(
         wCurrentXcoordinateInDiagram < //wxcoordWidth 
         m_wDiagramWidth ; ++ wCurrentXcoordinateInDiagram )
     {
-        //mp_pumastatectrl->GetMinFreqToPreventOvervoltage( iter ) ;
-        //fVoltage = //1.05f - 
-          //p_cpucoredata->m_fVoltageForMaxCPUcoreFreq -
-          //(float) 
-          //( 
-          //  //log2f( 
-          //  //MSVC++ has no log2() function (in <math.h>).
-          //  //So emulate it by:  log(2)x = (log(10)x)/(log(10)2)
-          //  log10
-          //  (
-          //    //(double) 
-          //    ( //2200.0f 
-          //      (float) wMaxFreqInMHz
-          //      / (float) 
-          //      ( 
-          //        wMaxFreqInMHz / ( 400.0f / (float) wCurrentXcoordinateInDiagram) 
-          //      ) 
-          //    )
-          //  )
-          //  / log10(2.0f)
-          //  * 0.25f 
-          //) ;
-          //TODO just for gettint Pentium M working fast
-          //mp_pumastatectrl->GetMaxVoltageForFreq( (float) wMaxFreqInMHz /
-          //   ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram )
-          //   , fVoltage 
-          //  );
         mp_i_cpucontroller->GetInterpolatedVoltageFromFreq(
           //Explicit cast to avoid (g++) compiler warning.
           (WORD)
@@ -2138,15 +2116,25 @@ void MainFrame::DrawCurrentPstateInfo(
    //::wxGetApp().mp_cpucoreusagegetter->
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
   {
-     mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter->
-       GetPercentalUsageForAllCores(
-       mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
+    PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
+        m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
+        0 ] ;
+    //DynFreqScalingThread * p_dynfreqscalingthread
+    //If the drawing thread and the dyn freq scaling thread both try to get
+    //the CPU usage they could interfere/ the delay between the usage retrieval
+    //could be too short-> So only try to get usage here if no DVFS thread.
+    if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
+      mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter->
+        GetPercentalUsageForAllCores(
+        mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
   }
   else
     wxstrCPUcoreUsage = wxT("usage in percent: ?") ;
    #ifdef _DEBUG
    //::wxGetApp().mp_cpucoreusagegetter->Init() ;
    #endif
+  //May be NULL at startup.
+  if( mp_i_cpucontroller )
    //TODO respect # of cpu cores
    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
@@ -2264,9 +2252,8 @@ void MainFrame::DrawCurrentVoltageSettingsCurve(
   {
     float fVoltage ;
     WORD wYcoordinate ;
-    WORD wMaxFreqInMHz = //mp_pumastatectrl->GetMaximumFrequencyInMHz() ;
-      //mp_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
-      mp_i_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    WORD wMaxFreqInMHz = //mp_i_cpucontroller->
+      mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
     if( //If max. freq is assigned 
       wMaxFreqInMHz != 0 )
       for( WORD wCurrentXcoordinateInDiagram = //wXcoordOfBeginOfYaxis
@@ -2455,16 +2442,16 @@ void MainFrame::OnPaint(wxPaintEvent & event)
 
     wxPaintDC * p_wxpaintdc = new wxPaintDC(this);
       //dc->SetBackground(*wxBLUE_BRUSH);
-      wxPoint arwxpoint[3] ;
-      arwxpoint[0] = wxPoint(100, 
-          //Because the y-origin is top left.
-          200-80 ) ;
-      arwxpoint[1] = wxPoint(200, 
-          //Because the y-origin is top left.
-          200-95) ;
-      arwxpoint[2] = wxPoint(400, 
-          //Because the y-origin is top left.
-          200-110) ;
+      //wxPoint arwxpoint[3] ;
+      //arwxpoint[0] = wxPoint(100, 
+      //    //Because the y-origin is top left.
+      //    200-80 ) ;
+      //arwxpoint[1] = wxPoint(200, 
+      //    //Because the y-origin is top left.
+      //    200-95) ;
+      //arwxpoint[2] = wxPoint(400, 
+      //    //Because the y-origin is top left.
+      //    200-110) ;
 
       //p_wxpaintdc->DrawSpline(3, arwxpoint ) ;
     //for( std::vector<MaxVoltageForFreq>::iterator iter = 
@@ -2995,6 +2982,21 @@ enum
   //setp_state2 ,
 };
 
+void MainFrame::EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * p_percpucoreattributes )
+{
+  p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
+  //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
+  p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
+  ////Start the timer (it should have been stopped before else the timer had redrawn 
+  ////additonally to the scaling thread).
+ // m_wxtimer.Start() ;
+  mp_wxmenuitemOwnDVFS->SetText(
+    //We need a _T() macro (wide char-> L"", char->"") for EACH 
+    //line to make it compatible between char and wide char.
+    _T("enable Own DVFS") 
+    ) ;
+}
+
 void MainFrame::Notify() //overrides wxTimer::Notify()
 {
   m_bDrawFreqAndVoltagePointForCurrCoreSettings =
@@ -3087,7 +3089,6 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
      wxDynamicDialog * p_wxdlg = new wxDynamicDialog(
        this , 
        //msrdata 
-       //*mp_pumastatectrl->mp_model,
        //*mp_i_cpucontroller->mp_model,
        //mp_i_cpucontroller
        //mp_wxx86infoandcontrolapp->GetCPUaccess()
@@ -3634,7 +3635,7 @@ void MainFrame::RedrawEverything()
       //"Blit()" with the DC drawn to and the DC that shows it in the window.
       //if( mp_wxbufferedpaintdcStatic )
       {
-        std::set<VoltageAndFreq> & r_setvoltageforfreq = mp_i_cpucontroller->
+        std::set<VoltageAndFreq> & r_setvoltageforfreq = //mp_i_cpucontroller->
           mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
     //    std::set<MaxVoltageForFreq>::iterator iterstdsetmaxvoltageforfreq = 
         std::set<VoltageAndFreq>::reverse_iterator iterstdsetvoltageandfreq = 

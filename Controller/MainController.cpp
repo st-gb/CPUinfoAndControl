@@ -7,6 +7,8 @@
 
 #include "MainController.hpp"
 #include "I_CPUcontroller.hpp"
+#include <fstream>
+#include <Controller/CPUcontrolBase.hpp>
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/stdtstr.hpp>
 #include <Controller/stdstring_format.hpp>
@@ -19,6 +21,8 @@
 #include <Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <Controller/Intel/Nehalem/NehalemController.hpp>
 #include <Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
+#include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
+#include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
 #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #include <Xerces/SAX2MainConfigHandler.hpp>
 #include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
@@ -44,6 +48,10 @@
 //} ;
 
 //CPU_VendorFamilyModelTable g_table ;
+
+class CPUcontrolBase ;
+
+extern CPUcontrolBase * gp_cpucontrolbase ;
 
 #define INSERT_INTO_TABLE(vendor_id,fam,model,ctlr_name) \
   g_table.Insert(vendor_id,fam,model,ctlr_name)
@@ -144,6 +152,63 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   //  r_p_icpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
   //    0, (NehalemController *) r_p_cpucontroller ) ;
   //}
+  else
+  {
+    std::string stdstrCPUtypeRelativeDirPath ;
+    GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) ;
+    stdstrCPUtypeRelativeDirPath += "/" ;
+    std::string stdstr = stdstrCPUtypeRelativeDirPath + "CPUcontroller.cfg" ;
+    if( ReadDLLName( stdstr ) )
+    {
+      wxString wxstrFilePath( stdstr ) ;
+      wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
+      try
+      {
+        //r_p_cpucontroller = new wxDynLibCPUcontroller(
+        gp_cpucontrolbase->mp_wxdynlibcpucontroller = 
+          new wxDynLibCPUcontroller(
+          wxstrFilePath
+          , //mp_wxx86infoandcontrolapp->GetCPUaccess() 
+          NULL
+          ) ;
+        //gp_cpucontrolbase->mp_wxdynlibcpucontroller = r_p_cpucontroller ;
+        r_p_cpucontroller = gp_cpucontrolbase->mp_wxdynlibcpucontroller ;
+        //This number is important for CPU core creating usage getter.
+        p_cpucoredata->m_byNumberOfCPUCores = r_p_cpucontroller->
+          GetNumberOfCPUcores() ;
+      }
+      //Catch because: if executed from GUI it can continue.
+      catch( ... ) 
+      {
+        r_p_cpucontroller = NULL ;
+      }
+    }
+    stdstr = stdstrCPUtypeRelativeDirPath + "CPUcoreUsageGetter.cfg" ;
+    if( ReadDLLName( stdstr ) )
+    {
+      wxString wxstrFilePath( stdstr ) ;
+      wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
+      try
+      {
+        //r_p_icpucoreusagegetter = new wxDynLibCPUcoreUsageGetter (
+        gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = 
+          new wxDynLibCPUcoreUsageGetter (
+          wxstrFilePath
+          , //mp_wxx86infoandcontrolapp->GetCPUaccess() 
+          //NULL
+          //, 
+          * p_cpucoredata
+          ) ;
+        //gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = r_p_icpucoreusagegetter ;
+        r_p_icpucoreusagegetter = gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
+      }
+      //Catch because: if executed from GUI it can continue.
+      catch( ... ) 
+      {
+        r_p_icpucoreusagegetter = NULL ;
+      }
+    }
+  }
   if( r_p_cpucontroller )
   {
     //For Pentium Ms e.g. it enables SpeedStep.
@@ -156,15 +221,47 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
       r_p_icpucoreusagegetter->SetAttributeData( mp_model ) ;
     }
   }
-  if( r_p_cpucontroller && r_p_icpucoreusagegetter )
+  if( r_p_cpucontroller //&& r_p_icpucoreusagegetter 
+    )
   {
-
     return 1 ;
   }
   else
     return 0 ;
   //  //Needed for drawing the voltage-frequency curves.
   //  r_p_cpucontroller->GetMaximumFrequencyInMHz() ;
+}
+
+BYTE MainController::ReadDLLName( std::string & r_stdstrFilePath )
+{
+  BYTE by = 0 ;
+  std::ifstream ifstrDynLib ;
+  ifstrDynLib.open( r_stdstrFilePath.c_str()
+    , //std::ifstream::in
+    // std::ios_base::in
+    std::_S_in
+    );
+  if( ifstrDynLib.is_open() )
+  {
+    char * buffer ;
+    //http://www.cplusplus.com/reference/iostream/istream/seekg/:
+    ifstrDynLib.seekg(0, std::ios::end);
+    int length = ifstrDynLib.tellg();
+    ifstrDynLib.seekg (0, std::ios::beg);
+    // allocate memory:
+    buffer = new char [length + 1 ];
+
+    // read data as a block:
+    ifstrDynLib.read (buffer,length);
+    buffer[ length ] = 
+      //string terminating NULL char.
+      '\0' ;
+    r_stdstrFilePath = std::string( buffer ) ;
+    ifstrDynLib.close();
+    delete[] buffer;
+    by = 1 ;
+  }
+  return by ;
 }
 
 void MainController::SetCPUaccess(

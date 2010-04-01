@@ -19,6 +19,8 @@ private:
   dll_PrepareForNextPerformanceCounting
     m_pfn_preparefornextperformancecounting ;
   dll_WriteMSR_type m_pfn_write_msr ;
+
+  WORD m_wNumberOfLogicalCPUcores ;
   wxDynamicLibrary m_wxdynamiclibraryCPUctl ;
 public:
   wxDynLibCPUcontroller( 
@@ -53,6 +55,7 @@ public:
       , BYTE byCoreID 
       ) //{return 0 ; }
       ;
+  BYTE TooHot() ;
   BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI

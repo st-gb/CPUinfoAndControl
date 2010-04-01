@@ -125,8 +125,8 @@ private:
   wxBitmap * mp_wxbitmapStatic ;
   wxBufferedPaintDC * mp_wxbufferedpaintdcStatic ;
   wxCriticalSection m_wxcriticalsectionCPUctlAccess ;
-  wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
-  wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
+  //wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
+  //wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
   //http://docs.wxwidgets.org/2.6/wx_windowdeletionoverview.html#windowdeletionoverview:
   //"When a wxWindow is destroyed, it automatically deletes all its children. 
@@ -203,6 +203,8 @@ public:
 
   void AllowCPUcontrollerAccess() ;
   void DenyCPUcontrollerAccess() ;
+  void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * 
+    p_percpucoreattributes ) ;
 
   //Implement method declared in "class UserInterface" 
   //(even if with no instructions) for this class not be abstract.

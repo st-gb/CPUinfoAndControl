@@ -189,29 +189,81 @@ ExitCode DynFreqScalingThreadBase::Entry()
             //mp_pumastatectrl->SetFrequencyAndVoltageForAllCoresAccCPULoad();
             WORD wFreqInMHz ;
             float fVolt ;
-            for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
-              GetNumberOfCPUcores() ; ++ byCoreID )
+            //If ganged then there is only 1 power plane for ALL CPU cores.
+            //-> setting voltage affects _all_ CPU cores. So change it only 
+            //1 performance state.
+            if( //mp_cpucoredata->m_b1CPUcorePowerPlane
+              mp_cpucontroller->m_b1CPUcorePowerPlane )
             {
-              mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-              if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >= 
-                (float) mp_cpucoredata->m_wMaxFreqInMHz /
-                //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
-                wFreqInMHz >=
-                //50% of max. freq
-                0.5f 
-                //&& fTempInDegCelsius > 90.0f 
-                )
-                //mp_cpucontroller->SetFrequencyInMHz(
-                mp_cpucontroller->SetFreqAndVoltageFromFreq(
-                  //Set half of max. freq because the CPU is too hot
-                  mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
-                  , byCoreID ) ;
-              else
-                ChangeOperatingPointByLoad( byCoreID ,
-                  //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID] 
-                  mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
-                  ) ;
-            }// for-loop
+              float fHighestCPUcoreLoadInPercent = 0.0 ;
+              for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+                GetNumberOfCPUcores() ; ++ byCoreID )
+              {
+                if( fHighestCPUcoreLoadInPercent < mp_cpucoredata->
+                  m_arfCPUcoreLoadInPercent [byCoreID] )
+                  fHighestCPUcoreLoadInPercent = mp_cpucoredata->
+                    m_arfCPUcoreLoadInPercent [byCoreID] ;
+              }
+                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, 0 ) ;
+                //std::set<VoltageAndFreq> stdsetvoltageandfreq ;
+                //mp_cpucontroller->GetAllPossibleFrequencies(stdsetvoltageandfreq) ;
+
+                //Reduce the freq because because the CPU is too hot.
+                WORD wNewFreqInMHz = mp_cpucontroller->
+                  GetNearestLowerPossibleFreqInMHz( wFreqInMHz ) ;
+                WORD wNewFreqFromLoad = (WORD) ( fHighestCPUcoreLoadInPercent * 
+                  (float) wFreqInMHz ) ;
+                if( wNewFreqInMHz != 0 && 
+                  wNewFreqFromLoad > wNewFreqInMHz )
+                {
+                  mp_cpucontroller->SetFreqAndVoltageFromFreq(
+                    wNewFreqInMHz //) ;
+                    , 0 ) ;
+                }
+                //if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >= 
+                //  (float) mp_cpucoredata->m_wMaxFreqInMHz /
+                //  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
+                //  wFreqInMHz >=
+                //  //50% of max. freq
+                //  0.5f 
+                //  //&& fTempInDegCelsius > 90.0f 
+                //  )
+                //  //mp_cpucontroller->SetFrequencyInMHz(
+                //  mp_cpucontroller->SetFreqAndVoltageFromFreq(
+                //    //Set half of max. freq because the CPU is too hot
+                //    mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
+                //    , 0 ) ;
+                else
+                  //ChangeOperatingPointByLoad( 0 , fHighestCPUcoreLoadInPercent 
+                  mp_cpucontroller->SetFreqAndVoltageFromFreq( wNewFreqFromLoad, 0
+                ) ;
+            }
+            else
+            {
+              for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+                GetNumberOfCPUcores() ; ++ byCoreID )
+              {
+                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
+                if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >= 
+                  (float) mp_cpucoredata->m_wMaxFreqInMHz /
+                  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
+                  wFreqInMHz >=
+                  //50% of max. freq
+                  0.5f 
+                  //&& fTempInDegCelsius > 90.0f 
+                  )
+                  //mp_cpucontroller->SetFrequencyInMHz(
+                  mp_cpucontroller->SetFreqAndVoltageFromFreq(
+                    //Set half of max. freq because the CPU is too hot
+                    mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
+                    , byCoreID ) ;
+                else
+                  ChangeOperatingPointByLoad( byCoreID ,
+                    //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID] 
+                    mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
+                    ) ;
+              }// for-loop
+            }
             if( mp_cpucoredata->m_byUpdateViewOnDVFS )
 	            //e.g. force redraw if it's a GUI.
 	            //mp_pumastatectrl->GetUserInterface()->CurrenCPUfreqAndVoltageUpdated() ;
@@ -226,13 +278,34 @@ ExitCode DynFreqScalingThreadBase::Entry()
             m_arfCPUcoreLoadInPercent) 
           )
         {
-          for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
-            GetNumberOfCPUcores() ; ++ byCoreID )
+          //If ganged then there is only 1 power plane for ALL CPU cores.
+          //-> setting voltage affects _all_ CPU cores. So change it only 
+          //1 performance state.
+          if( //mp_cpucoredata->m_b1CPUcorePowerPlane
+             mp_cpucontroller->m_b1CPUcorePowerPlane  )
           {
-            ChangeOperatingPointByLoad( byCoreID ,
-              //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID] 
-              mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
-            ) ;
+            float fHighestCPUcoreLoadInPercent = 0.0 ;
+            for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+              GetNumberOfCPUcores() ; ++ byCoreID )
+            {
+              if( fHighestCPUcoreLoadInPercent < mp_cpucoredata->
+                m_arfCPUcoreLoadInPercent [byCoreID] )
+                fHighestCPUcoreLoadInPercent = mp_cpucoredata->
+                  m_arfCPUcoreLoadInPercent [byCoreID] ;
+            }
+            ChangeOperatingPointByLoad( 0 , fHighestCPUcoreLoadInPercent 
+              ) ;
+          }
+          else
+          {
+            for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+              GetNumberOfCPUcores() ; ++ byCoreID )
+            {
+              ChangeOperatingPointByLoad( byCoreID ,
+                //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID] 
+                mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
+              ) ;
+            }
           }
         }
       }
