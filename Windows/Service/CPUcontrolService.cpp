@@ -60,8 +60,6 @@ CPUcontrolService::CPUcontrolService(
 #endif //#ifdef COMPILE_WITH_IPC
     //m_bProcess ( true )
     //, m_bRun ( true ) 
-    //, 
-    //mp_pstatectrl(NULL)
     //, mp_winring0dynlinked (NULL)
     //, mar_tch(NULL)
     //, m_powerprofdynlinked ( r_stdwstrProgramName )
@@ -160,9 +158,7 @@ void CPUcontrolService::Initialize()
   m_handleMapFile = NULL ;
   mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService" ;
-  //mp_pstatectrl = NULL ;
-  //fileDebug //= fopen ("C:\\Temp\\GriffinStateControlSvc_debug.txt","w");
-  //  = fopen("GriffinStateControlSvc_debug.txt","w");
+
   m_hEndProcessingEvent = CreateEvent( 
       NULL,         // default security attributes
       TRUE,         // manual-reset event
@@ -174,7 +170,6 @@ void CPUcontrolService::Initialize()
   // the static member callback functions.
   // WARNING: This limits the application to only one CNTService object. 
   msp_cpucontrolservice = this;
-  //m_ofstream.open("D:\\Temp\\GriffinStateControlSvc_debug.txt");
   //m_winring0dynlinked.SetUserInterface(&m_dummyuserinterface);
   //DEBUG("end of constructor of service object\n");
 }
@@ -261,55 +256,6 @@ DWORD CPUcontrolService::MyServiceInitialization(
       WinRing0_1_3RunTimeDynLinked(
       & msp_cpucontrolservice->m_dummyuserinterface ) ;
 
-    //m_handleMapFile = CreateFileMapping(
-    //  INVALID_HANDLE_VALUE,    // use paging file
-    //  NULL,                    // default security 
-    //  PAGE_READWRITE,          // read/write access
-    //  0,                       // max. object size 
-    //  //BUF_SIZE,                // buffer size  
-    //  sizeof(Model)
-    //  , m_stdstrSharedMemoryName.c_str() 
-    //  );
-    //if( m_handleMapFile == NULL || m_handleMapFile == INVALID_HANDLE_VALUE )
-    //{
-    //  DWORD dwError = ::GetLastError() ;
-    //  LOG("unable to create shared memory: \""
-    //    << ::LocalLanguageMessageFromErrorCode(
-    //      dwError
-    //      )             
-    //    << "\" (error code: " << dwError << ")" 
-    //    );
-    //  return 1 ;
-    //}
-    //mp_voidMappedViewStartingAddress = MapViewOfFile(
-    //  m_handleMapFile ,   // handle to map object
-    //  FILE_MAP_ALL_ACCESS, // read/write permission
-    //  0,                   
-    //  0,                   
-    //  sizeof(Model) 
-    //  );
- 
-    //if ( mp_voidMappedViewStartingAddress == NULL) 
-    //{ 
-    //  DWORD dwError = ::GetLastError() ;
-    //  LOG("Could not map view of file : \"" << 
-    //    ::LocalLanguageMessageFromErrorCode(
-    //      dwError
-    //      )             
-    //    << "\" (error code: " << dwError << ")" 
-    //    );
-
-	   // CloseHandle(m_handleMapFile);
-    //  return 1 ;
-    //}
-    //else
-    //  LOGN("successfully created shared memory of " << sizeof(Model) << "bytes" )
-    //mp_modelData = (Model*) mp_voidMappedViewStartingAddress ;
-    ////Copy because: the buffer contains "random" data, the 
-    ////m_modelDataForCopying contains valid (INIITIALIZED) data.
-    //::CopyMemory( (PVOID) mp_modelData, 
-    //  & m_modelDataForCopying , sizeof(Model) 
-    //  );
     mp_modelData = new Model() ;
     LOGN("Address of service attributes: " << mp_modelData)
     if( mp_modelData )
@@ -372,18 +318,6 @@ DWORD CPUcontrolService::MyServiceInitialization(
       //mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
       //mp_cpucontroller->SetOtherDVFSaccess(& m_powerprofdynlinked) ;
 
-      //DWORD dwMajor = 0, dwMinor ;
-      //GetWindowsVersion(dwMajor, dwMinor ) ;
-      //if( dwMajor >= 6 //&& dwMinor >= 1 
-      //  ) 
-      //{
-      //  mp_dynfreqscalingaccess = new PowerProfFromWin6DynLinked() ;
-      //  //mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
-      //}
-      //else
-      //{
-      //  mp_dynfreqscalingaccess = new PowerProfUntilWin6DynLinked() ;
-      //}
       //mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) 
       mp_cpucontroller->SetOtherDVFSaccess( & m_powerprofdynlinked ) ;
       //m_modelData.SetGriffinController(mp_pstatectrl) ;
@@ -394,39 +328,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
       //  NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS ,
       //  m_arartchCmdLineArgument
       //  ) ;
-//      BYTE byReturn = //mp_pstatectrl->handleCmdLineArgs() ;
-//        mp_cpucontroller->HandleCmdLineArgs( ) ;
-//      LOGN("return code of handling command line args: " << (WORD) byReturn )
-//      switch(byReturn)
-//      {
-//        case FAILURE:
-//          m_dummyuserinterface.Confirm("An error occured (a message should have been "
-//            "shown previously)->exiting");
-//          return FALSE;
-//          break;
-//        case EXIT:
-//          return FALSE;
-//          break;
-//        default:
-//          LOGN("cpucoreusage address:" << mp_cpucontroller->mp_icpucoreusagegetter )
-//          //mp_cpucontroller->EnableOwnDVFS() ;
-//      }
-//      //Gets the data from the CPU and sets the info into the model data
-//      //(important step for drawing overvolt prot curve)
-//      //mp_pstatectrl->GetMaximumFrequencyInMHz() ;
-//      //mp_cpucontroller->GetMaximumFrequencyInMHz() ;
-//
-//      //mp_dynfreqscalingthread = new DynFreqScalingThread(
-//      //    & m_cpucoreusagegetteriwbemservices ,
-//      //    mp_pstatectrl,
-//      //    m_modelData.m_cpucoredata );
-//
-//      //mp_cpucontroller->GetProcessorNameByCPUID(m_modelData.m_strProcessorName);
-//      ////Important for the XML handler: setting a p-state from a given Freq in MHz
-//      //mp_pstatectrl->GetMaximumFrequencyInMHz() ;
-//      //BYTE byReturn = mp_pstatectrl->handleCmdLineArgs() ;
-//      //DEBUG("handling cmd line args result:%u\n",(WORD)byReturn)
-//      LOG("handling cmd line args result:" << (WORD)byReturn << "\n" )
+
       //DEBUG("initializing the service--end\n",argc)
       LOG( "End of initializing the service\n" //<< argc 
           )
@@ -468,16 +370,16 @@ DWORD CPUcontrolService::MyServiceInitialization(
 
 void CPUcontrolService::FillCmdLineOptionsList()
 {
-    if( m_vecstrCmdLineOptions.empty() )
-    {
-        m_vecstrCmdLineOptions.push_back("with no command line options: "
-            "open console window requesting input for the desired operation\n"
-            "(to install or deinstall/ delete)") ;
-        m_vecstrCmdLineOptions.push_back("-d >>service name<< Deinstall/ Delete "
-            "(this) Windows service named >>service name<<");
-        m_vecstrCmdLineOptions.push_back("-i >>service name<< Install "
-            "this Windows service as name >>service name<<");
-    }
+  if( m_vecstrCmdLineOptions.empty() )
+  {
+    m_vecstrCmdLineOptions.push_back("with no command line options: "
+        "open console window requesting input for the desired operation\n"
+        "(to install or deinstall/ delete)") ;
+    m_vecstrCmdLineOptions.push_back("-d >>service name<< Deinstall/ Delete "
+        "(this) Windows service named >>service name<<");
+    m_vecstrCmdLineOptions.push_back("-i >>service name<< Install "
+        "this Windows service as name >>service name<<");
+  }
 }
 
 #ifdef COMPILE_WITH_IPC

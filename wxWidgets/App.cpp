@@ -406,6 +406,7 @@ bool wxX86InfoAndControlApp::OnInit()
         , mp_modelData
         , this
         );
+      LOGN("after main frame creation")
       //p_frame->Show(TRUE);
       //SetTopWindow(p_frame);
       mp_frame->Show(TRUE);
@@ -424,7 +425,6 @@ bool wxX86InfoAndControlApp::OnInit()
         
         DEBUG("initialization of dialog--after get processor name\n");
 
-        //InitCpuUsage() ;
         //if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck && 
         //  ! m_modelData.m_bSkipCPUtypeCheck && 
         //  ! mp_pstatectrl->IsSupportedCPUModel() )

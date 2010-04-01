@@ -137,6 +137,7 @@ CPUcoreData::CPUcoreData()
 
 void CPUcoreData::Init()
 {
+  m_b1CPUcorePowerPlane = true ;
   m_fCPUcoreLoadThresholdForIncreaseInPercent =
     //expressed as core usage between [0...1]
       0.9f ;

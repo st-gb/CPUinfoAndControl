@@ -262,8 +262,10 @@ WORD
   NEHALEM_DLL_CALLING_CONVENTION 
   GetMinimumFrequencyInMHz(WORD wCoreID)
 {
-  return //931 ;
-    800 ;
+  //Lowest frequency is lowest multiplier (7) * FSB (133) = 700 + 210 + 21 
+  //= 931
+  return 931 ;
+    //800 ;
 }
 
 //_declspec(dllexport)

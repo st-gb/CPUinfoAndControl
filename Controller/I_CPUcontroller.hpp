@@ -64,6 +64,7 @@ protected:
   //against Don't Repeat Yourself principle) class.
   I_CPUaccess * mp_cpuaccess ;
 public:
+  bool m_b1CPUcorePowerPlane ;
   int m_byNumberOfCmdLineArgs;
   TCHAR ** m_arartcharCmdLineArg ;
   //std::vector<std::string> m_stdvecstdstringCmdLineArg ;

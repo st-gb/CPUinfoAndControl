@@ -15,6 +15,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   wxString & r_wxstrFilePath 
   , I_CPUaccess * p_cpuaccess 
   )
+  : m_wNumberOfLogicalCPUcores ( 1 )
 {
   //m_wxdynamiclibraryCPUctl ;
 
@@ -80,6 +81,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type) 
       m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
 
+    //m_pfn_too_hot = (dll_TooHot_type) 
+    //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
+
     wxstrFuncName = wxT("WriteMSR") ;
     if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
       m_pfn_write_msr = (dll_WriteMSR_type)
@@ -94,6 +98,10 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 
     m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
       m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetTemperatureInCelsius") ) ;
+
+    wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
+    if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+      m_b1CPUcorePowerPlane = false ;
       //dll_getMulti_type pfnGetMultiplier = (dll_getMulti_type)
       //  ::GetProcAddress(hinstanceCPUctlDLL,"GetMultiplier") ;
       //if( pfnGetMultiplier)
@@ -203,11 +211,12 @@ WORD wxDynLibCPUcontroller::GetMinimumVoltageID()
 
 WORD wxDynLibCPUcontroller::GetNumberOfCPUcores()
 {
+  m_wNumberOfLogicalCPUcores = 1 ;
   if( m_pfnGetNumberOfCPUcores )
   {
-    return (*m_pfnGetNumberOfCPUcores ) () ;
+    m_wNumberOfLogicalCPUcores = (*m_pfnGetNumberOfCPUcores ) () ;
   }
-  return 0 ;
+  return m_wNumberOfLogicalCPUcores ;
 }
 
 float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
@@ -266,6 +275,18 @@ BYTE wxDynLibCPUcontroller::
      return by ;
   }
   return 0 ;
+}
+
+BYTE wxDynLibCPUcontroller::TooHot() 
+{ 
+  BYTE by = 0 ;
+  for( WORD wCPUcoreIdx = 0 ; wCPUcoreIdx < m_wNumberOfLogicalCPUcores ; 
+    ++ wCPUcoreIdx )
+  {
+    if( GetTemperatureInCelsius( wCPUcoreIdx ) > 90.0 )
+      by = 1 ;
+  }
+  return by ;
 }
 
 BOOL // TRUE: success, FALSE: failure

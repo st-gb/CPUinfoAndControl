@@ -465,7 +465,7 @@ BYTE //SAX2MainConfigHandler::
               //Because atoi(...) returns "0" also for errors.
               fAtofResult ||
               ! fAtofResult // <=> nAtoiResult == 0
-              && strAttributeValue == "0"
+              && ( strAttributeValue == "0" || strAttributeValue == "0.0" )
               )
             {
               byReturn = SUCCESS;

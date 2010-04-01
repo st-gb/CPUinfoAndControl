@@ -372,6 +372,9 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   m_ullPerformanceEventCounter3 = dwHigh ;
   m_ullPerformanceEventCounter3 <<= 32 ;
   m_ullPerformanceEventCounter3 |= dwLow ;
+      
+  m_dwTickCount = ::GetTickCount();
+
 	//For the first time there are no previous values for difference .
   if( //m_bAtLeastSecondTime 
 	  (m_dwAtMask2ndTimeCPUcoreMask >> byCoreID ) & 1 )
@@ -418,7 +421,6 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
       , byVoltageID //BYTE & r_byVoltageID
       , byCoreID //BYTE byCoreID
       ) ;
-    m_dwTickCount = ::GetTickCount();
     m_dwTickCountDiff = 
       //http://msdn.microsoft.com/en-us/library/ms724408%28VS.85%29.aspx:
       //"Therefore, the time will wrap around to zero if the system is run 
@@ -437,6 +439,11 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
       (double) m_ullPerformanceEventCounter3Diff /
         fFrequencyClocksPassed ;
   #ifdef _DEBUG
+    //if( byCoreID == 0 )
+    //TRACE("fFrequencyClocksPassed:            %f\n,
+    //      "m_ullPerformanceEventCounter3Diff: %f\n"
+    //      , fFrequencyClocksPassed, 
+    //      (double) m_ullPerformanceEventCounter3Diff ) ;
   	if( dClocksNotHaltedDiffDivTCSdiff > 1.1 || 
       dClocksNotHaltedDiffDivTCSdiff < 0.02 )
   	{
@@ -448,7 +455,7 @@ float Nehalem::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   }
   else
     //m_bAtLeastSecondTime = true ;
-	m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
+	  m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
   
   m_ar_cnh_cpucore_ugpca[ byCoreID ].m_dwTickCount = m_dwTickCount ;
     //m_ullPreviousTimeStampCounterValue 

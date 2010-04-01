@@ -468,6 +468,8 @@ using namespace std;
 BYTE GriffinController::Init(//Model * mp_model
                     )
 {
+  //AMD Griffin has 2 power planes ( 1 for each CPU core).
+  m_b1CPUcorePowerPlane = false ;
   //mp_model->SetGriffinController(this) ;
   mp_model->SetCPUcontroller(this);
   mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );

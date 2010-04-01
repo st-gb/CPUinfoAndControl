@@ -88,6 +88,7 @@ private:
   //this Frequency IDentifier determines the max frequency (at Divisor ID 0)
   BYTE m_byMainPLLoperatingFrequencyIDmax ; 
 public:
+  bool m_b1CPUcorePowerPlane ;
   bool m_bEnableDVFS ;
   BYTE m_byUpdateViewOnDVFS ;
   BYTE m_byLowestEffectiveFreqID ;

@@ -35,7 +35,7 @@ public:
     //std::string & strDLLname 
     wxString & r_wxstrFilePath 
     //, std::string & strDLLfunctionName
-    , I_CPUaccess * p_cpuaccess 
+    //, I_CPUaccess * p_cpuaccess 
     , CPUcoreData & cpucoredata
     ) ;
 
