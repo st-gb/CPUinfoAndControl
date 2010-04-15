@@ -109,6 +109,14 @@ typedef BYTE (//WINAPI
       WORD p_wMilliVolt
     , WORD wCoreID 
   ) ;
+typedef void (
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dynlib_SetPstateFromFreq) (
+    WORD wFreqInMHz
+    , const std::set<VoltageAndFreq> & cr_stdsetvoltageandfreqForInterpolation
+    , BYTE byCoreID ) ;
 typedef BOOL ( // TRUE: success, FALSE: failure
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!

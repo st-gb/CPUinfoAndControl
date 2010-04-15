@@ -255,11 +255,15 @@ DWORD CPUcontrolService::MyServiceInitialization(
     mp_i_cpuaccess = new
       WinRing0_1_3RunTimeDynLinked(
       & msp_cpucontrolservice->m_dummyuserinterface ) ;
-
+    DEBUGN("MyServiceInitialization() CPU access address: " << mp_i_cpuaccess )
     mp_modelData = new Model() ;
     LOGN("Address of service attributes: " << mp_modelData)
     if( mp_modelData )
     {
+      //Important! because the DLLs assign their pointers to the model
+      //from the I_CPUaccess::mp_model
+      mp_i_cpuaccess->mp_model = mp_modelData ;
+
       //This assignment is needed for "CPUID" calls
       m_maincontroller.SetCPUaccess( //mp_winring0dynlinked) ;
         mp_i_cpuaccess ) ;
@@ -304,6 +308,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
         LOGN("no CPU controller and/ or usage getter->exiting");
         return 1 ;
       }
+      SetCPUcontroller(mp_cpucontroller) ;
       mp_cpucontroller->SetCmdLineArgs(
         NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
         *ppartch ) ;
@@ -881,7 +886,14 @@ void WINAPI //MyServiceStart
     msp_cpucontrolservice->
         m_servicestatus.dwServiceSpecificExitCode = 0; 
     msp_cpucontrolservice->
-      //Check-point value the service increments periodically to report its progress during a lengthy start, stop, pause, or continue operation. For example, the service should increment this value as it completes each step of its initialization when it is starting up. The user interface program that invoked the operation on the service uses this value to track the progress of the service during a lengthy operation. This value is not valid and should be zero when the service does not have a start, stop, pause, or continue operation pending. 
+      //Check-point value the service increments periodically to report its
+      //progress during a lengthy start, stop, pause, or continue operation.
+      //For example, the service should increment this value as it completes
+      //each step of its initialization when it is starting up. The user
+      //interface program that invoked the operation on the service uses this
+      //value to track the progress of the service during a lengthy operation.
+      //This value is not valid and should be zero when the service does not
+      //have a start, stop, pause, or continue operation pending.
         m_servicestatus.dwCheckPoint         = 0; 
     msp_cpucontrolservice->
       //Estimated time required for a pending start, stop, pause, or 
@@ -1142,7 +1154,9 @@ void CPUcontrolService::StartService()
 {
   DEBUG("begin of starting service\n");
   LOGN("before starting service ctrl dispatcher--current thread id:" <<
-    ::GetCurrentThreadId() )
+    ::GetCurrentThreadId()
+     << "\nNote: it may take 2 minutes or even more until the service control "
+     "dispachter has finished to start")
   //SERVICE_TABLE_ENTRYA ("char") or SERVICE_TABLE_ENTRYW ( wchar_t )
   SERVICE_TABLE_ENTRY ar_service_table_entry[] = 
   { 

@@ -7,18 +7,22 @@ wurde nicht angezeigt, dass der Dienst gar deinstalliert werden kann, da er nich
 installiert war.
 Lösungsmöglichkeit anbieten, wenn "Zugriff verweigert" beim Installieren des Dienstes.
 
-Bilder (betrifft den service) sind nicht verknüpt in den downloadbaren HTML-Dateien .
+Bilder (betrifft den service) sind nicht verknüpt in den downloadbaren HTML-Dateien.
+->erledigt
 
 P-states müssen in der GUI beginnend von der HOECHSTEN Taktfrequenz ABSTEIGEND 
 sortiert sein. Das ist der Standard/ so ist die Vereinbarung, bei Intel und AMD ist das so.
+->erledigt
 
 mit lesen aus 2 kleinen (35000 Elemenete) double-Arrays konnte ich viele L2 Cache 
 Hits erreichen.
 
 was passiert, wenn die Mesagebox vom Dienst vor der Anmeldng angezeigt wird?
 Dann wird hoffentlich nichts blockiert.
+->wird auch nicht
 
 bei logging: Zeitstempel in Ordnung bringen (nicht die aktuelle Zeit, sondern 2 h früher).
+->erledigt (GetLocalTime(...) statt wie vorher GetSystemTime(...) )
 
 Beim Einlesen der Konfig. zusätzlich nach der Revision gehen.
 Wenn die Konfig-Datei nicht da ist, als Messagebox ausgeben.
@@ -55,3 +59,4 @@ Datei schliessen, damit die Inhalte ( letzte probierte Spannung) auch wirklich g
    z.B. durch "if( ArrayTest[i] / 1 != Array[vorberechnet] )" -> "Rechenfehler"
    
 -es soll nicht mehr das mit AMD family 17 CPUs stehen bei der Pentium M-Version
+->erledigt?!

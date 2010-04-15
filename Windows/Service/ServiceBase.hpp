@@ -31,6 +31,7 @@ public:
   static DWORD PauseService(
    const TCHAR * tchServiceName
    ) ;
+  static void PrintPossibleSolution(DWORD dwWinError , const TCHAR * tchServiceName) ;
   static DWORD StartService(
     LPCTSTR lpServiceName ) ;
   static DWORD StartService(

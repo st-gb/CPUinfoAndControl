@@ -24,7 +24,7 @@ class UserInterface
 {
 //private:
 public:
-//  GriffinController * mp_pumastatectrl ;
+//  GriffinController * mp_griffincontroller ;
   bool m_bConfirmedYet ;
   UserInterface()
     //Set initially for ALL subclasses to "true".
@@ -44,6 +44,7 @@ public:
     //std::ostream & r_ostream
     ) = 0//{return true;}
     ;
+  virtual void CPUcoreUsageGetterDeleted() {} ;
   virtual void RedrawEverything() {} ;
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
 };

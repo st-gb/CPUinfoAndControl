@@ -1,3 +1,6 @@
+no Makefile found
+  -> the drive containing the makefile might not been have mounted BEFORE MSYS started
+
 C:\msys\1.0\bin\make.exe: *** couldn't commit memory for cygwin heap, Win32 error 0
 
 ->

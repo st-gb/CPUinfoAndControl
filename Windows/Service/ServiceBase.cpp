@@ -117,6 +117,27 @@ DWORD ServiceBase::PauseService(const TCHAR * cp_tchServiceName
   return 0 ;
 }
 
+void ServiceBase::PrintPossibleSolution(DWORD dwWinError ,
+    const TCHAR * tchServiceName )
+{
+  switch(dwWinError)
+  {
+    case ERROR_SERVICE_MARKED_FOR_DELETE:
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "possible solution:\n"
+        "-close the service control manager in order to let the service be deleted\n"
+        "-Stop the execution of the service: \"" <<
+        tchServiceName << "\"\n" <<
+        " -inside the service control manager\n"
+        " -via the task manager\n"
+        " -by another program/ etc.\n"
+        " and try again."
+        )
+        ;
+    break ;
+  }
+}
+
 DWORD ServiceBase::CreateService(
   const TCHAR * tchServiceName
   //, TCHAR * tchPathToServiceExe
@@ -192,11 +213,11 @@ DWORD ServiceBase::CreateService(
           //    << "\n" );
           //std::cout 
           WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-              "Creating the service failed: error number:" << 
-              dwLastError << "\nError: " << //"\n" 
-              LocalLanguageMessageFromErrorCode( dwLastError ) 
-              )
-              ; 
+            "Creating the service failed: error number:" <<
+            dwLastError << "\nError: " << //"\n"
+            LocalLanguageMessageFromErrorCode( dwLastError )
+            )
+            ;
           switch(dwLastError)
           {
           case ERROR_ACCESS_DENIED:
@@ -219,17 +240,8 @@ DWORD ServiceBase::CreateService(
               //DeleteService(schSCManager, tchServiceName);
               //CreateService(schService,tchServiceName,tchPathcToServiceExe);
               break;
-          case ERROR_SERVICE_MARKED_FOR_DELETE:
-              WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-                  "Stop the execution of the service: \"" << 
-                  tchServiceName << "\"\n" << 
-                  "-inside the service control manager\n"
-                  "-via the task manager\n"
-                  "-by another program/ etc.\n"
-                  "and try again."
-                  )
-                  ;
           } //switch(dwLastError)
+          PrintPossibleSolution( dwLastError , tchServiceName) ;
           //return FALSE;
       }//if (schService == NULL) 
       else
@@ -350,6 +362,7 @@ DWORD ServiceBase::DeleteService(
             std::cout << "Deleting service failed. Error code:  " << 
                 dwErrorCode << "\n" << "=>Message: " << 
                 LocalLanguageMessageFromErrorCode(dwErrorCode) << "\n" ;
+            PrintPossibleSolution( dwErrorCode , tchServiceName) ;
             return FALSE;
         }
         else 

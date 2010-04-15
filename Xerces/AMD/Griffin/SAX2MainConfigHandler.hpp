@@ -36,7 +36,7 @@ class SAX2MainConfigHandler
 private:
   //PStates * m_p_pstates ;
   Model * m_p_model ;
-  GriffinController * mp_pumastatectrl ;
+  GriffinController * mp_griffincontroller ;
   std::string m_strProcessorName ;
   std::string m_strElementName ;
   UserInterface * m_p_userinterface ;

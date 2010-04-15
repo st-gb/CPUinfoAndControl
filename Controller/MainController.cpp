@@ -23,7 +23,10 @@
 #include <Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
-#include <Xerces/SAX2_CPUspecificHandler.hpp>
+#ifdef COMPILE_WITH_MSR_EXAMINATION
+  //only useful for user interface
+  #include <Xerces/SAX2_CPUspecificHandler.hpp>
+#endif
 #include <Xerces/SAX2MainConfigHandler.hpp>
 #include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
 #include <Xerces/XMLAccess.hpp>
@@ -81,17 +84,17 @@ I_CPUcontroller * MainController::CreateCPUcontrollerAndUsageGetter(
 {
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
   #ifdef COMPILE_WITH_AMD_GRIFFIN
-  if( p_cpucoredata->m_strVendorID == "AuthenticAMD" 
-    && p_cpucoredata->m_wFamily == 17 
-    && p_cpucoredata->m_byModel ==  3 
-    )
-  {
-    GriffinController * p_gc = new GriffinController() ;
-    r_p_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(0,p_gc) ;
-    p_gc->mp_icpucoreusagegetter = r_p_icpucoreusagegetter ;
-    return //new GriffinController() ;
-      p_gc ;
-  }
+//  if( p_cpucoredata->m_strVendorID == "AuthenticAMD"
+//    && p_cpucoredata->m_wFamily == 17
+//    && p_cpucoredata->m_byModel ==  3
+//    )
+//  {
+//    GriffinController * p_gc = new GriffinController() ;
+//    r_p_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(0,p_gc) ;
+//    p_gc->mp_icpucoreusagegetter = r_p_icpucoreusagegetter ;
+//    return //new GriffinController() ;
+//      p_gc ;
+//  }
   #endif //#ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "GenuineIntel" 
     && p_cpucoredata->m_wFamily == 6 
@@ -119,20 +122,20 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   r_p_icpucoreusagegetter = NULL ;
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
   #ifdef COMPILE_WITH_AMD_GRIFFIN
-  if( p_cpucoredata->m_strVendorID == "AuthenticAMD" 
-    && p_cpucoredata->m_wFamily == 17 
-    && p_cpucoredata->m_byModel ==  3 
-    )
-  {
-    r_p_cpucontroller = new GriffinController( mp_model , mp_cpuaccessmethod ) ;
-    r_p_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
-      0
-      , (GriffinController*) r_p_cpucontroller
-      //, *mp_model
-      ) ;
-    //return //new GriffinController() ;
-    //  p_gc ;
-  }
+//  if( p_cpucoredata->m_strVendorID == "AuthenticAMD"
+//    && p_cpucoredata->m_wFamily == 17
+//    && p_cpucoredata->m_byModel ==  3
+//    )
+//  {
+//    r_p_cpucontroller = new GriffinController( mp_model , mp_cpuaccessmethod ) ;
+//    r_p_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
+//      0
+//      , (GriffinController*) r_p_cpucontroller
+//      //, *mp_model
+//      ) ;
+//    //return //new GriffinController() ;
+//    //  p_gc ;
+//  }
   #endif //  #ifdef COMPILE_WITH_AMD_GRIFFIN
   if( p_cpucoredata->m_strVendorID == "GenuineIntel" 
     && p_cpucoredata->m_wFamily == 6 
@@ -160,8 +163,9 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     std::string stdstr = stdstrCPUtypeRelativeDirPath + "CPUcontroller.cfg" ;
     if( ReadDLLName( stdstr ) )
     {
-      wxString wxstrFilePath( stdstr ) ;
+      wxString wxstrFilePath = wxT("CPUcontrollerDynLibs/") + wxString( stdstr ) ;
       wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
+      LOGN("should load/ attach " << wxstrFilePath << " as CPU controller" )
       try
       {
         //r_p_cpucontroller = new wxDynLibCPUcontroller(
@@ -169,8 +173,13 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           new wxDynLibCPUcontroller(
           wxstrFilePath
           , //mp_wxx86infoandcontrolapp->GetCPUaccess() 
-          NULL
+          //NULL
+          gp_cpucontrolbase->GetCPUaccess()
           ) ;
+        LOGN("CPU controller DLL: successfully loaded and function pointers to it assigned.")
+//        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
+//           //mp_wxdynlibcpucontroller
+//           gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
         //gp_cpucontrolbase->mp_wxdynlibcpucontroller = r_p_cpucontroller ;
         r_p_cpucontroller = gp_cpucontrolbase->mp_wxdynlibcpucontroller ;
         //This number is important for CPU core creating usage getter.
@@ -186,19 +195,35 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     stdstr = stdstrCPUtypeRelativeDirPath + "CPUcoreUsageGetter.cfg" ;
     if( ReadDLLName( stdstr ) )
     {
-      wxString wxstrFilePath( stdstr ) ;
+      wxString wxstrFilePath = wxT("CPUcoreUsageGetterDynLibs/") + ( stdstr ) ;
       wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
+      LOGN("should load/ attach " << wxstrFilePath << " as CPU core usage getter" )
       try
       {
         //r_p_icpucoreusagegetter = new wxDynLibCPUcoreUsageGetter (
         gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = 
           new wxDynLibCPUcoreUsageGetter (
           wxstrFilePath
-          , //mp_wxx86infoandcontrolapp->GetCPUaccess() 
+          ,
+          //mp_wxx86infoandcontrolapp->GetCPUaccess()  ,
+          gp_cpucontrolbase->GetCPUaccess() ,
           //NULL
           //, 
           * p_cpucoredata
           ) ;
+
+        //If no CPU controller DLL should be loaded or loading it failed it is
+        //"0".
+        if( p_cpucoredata->m_byNumberOfCPUCores == 0 )
+        {
+          WORD wNumberOfLogicalCPUcores = gp_cpucontrolbase->
+            mp_wxdynlibcpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
+          if( wNumberOfLogicalCPUcores == 0 )
+            wNumberOfLogicalCPUcores = 1 ;
+          //TODO correct CPU core number
+          //Set -> allocate array for OnPaint()
+          p_cpucoredata->SetCPUcoreNumber(wNumberOfLogicalCPUcores) ;
+        }
         //gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = r_p_icpucoreusagegetter ;
         r_p_icpucoreusagegetter = gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
       }
@@ -441,7 +466,8 @@ void MainController::ReadRegisterDataConfig(
   , UserInterface * p_userinterface
   )
 {
-   SAX2_CPUspecificHandler sax2handler( * p_userinterface, * mp_model );
+#ifdef COMPILE_WITH_MSR_EXAMINATION
+  SAX2_CPUspecificHandler sax2handler( * p_userinterface, * mp_model );
    if( readXMLConfig(
       //const char* xmlFile
       strFamilyAndModelFilePath.c_str()
@@ -459,4 +485,5 @@ void MainController::ReadRegisterDataConfig(
 	  {
 
     }
+#endif //#ifdef COMPILE_AS_SERVICE
 }

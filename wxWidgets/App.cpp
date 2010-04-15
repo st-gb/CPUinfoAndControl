@@ -134,6 +134,7 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
   //May be NULL.
   if( mp_cpucontroller )
   {
+    LOGN("before SetUserInterface")
     mp_cpucontroller->SetUserInterface(this) ;
     //Set the CPU access BEFORE getting number of CPU cores in
     //SetModelData(...) .
@@ -148,19 +149,22 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     mp_cpucontroller->SetCPUaccess( mp_i_cpuaccess ) ;
     mp_cpucontroller->SetModelData( //& m_modelData
        mp_modelData ) ;
+    LOGN("before GetMaximumFrequencyInMHz. number of CPU cores: " <<
+        (WORD) mp_modelData->m_cpucoredata.GetNumberOfCPUcores() )
     //Needed for drawing the voltage-frequency curves.
-    mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+    WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+    LOGN("after GetMaximumFrequencyInMHz: " << w )
     #ifdef _WINDOWS
     mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
     #else
     mp_i_cpucontroller->SetCalculationThread(NULL) ;
     #endif
+    LOGN("after SetCalculationThread")
     
     mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
 
     //Gets the data from the CPU and sets the info into the model data
     //(important step for drawing overvolt prot curve)
-    //mp_pstatectrl->GetMaximumFrequencyInMHz() ;
     mp_cpucontroller->GetMaximumFrequencyInMHz() ;
   }
   //m_modelData.SetCPUcontroller( mp_i_cpucontroller);
@@ -173,6 +177,11 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     mp_frame->SetCPUcontroller(mp_cpucontroller) ;
 }
 
+void wxX86InfoAndControlApp::CPUcoreUsageGetterDeleted()
+{
+  mp_frame->CPUcoreUsageGetterDeleted() ;
+}
+
 void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 {
   //Only when true the cross is drawn.
@@ -180,6 +189,20 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
   //Force redraw of the client area.
   mp_frame->//ReDraw() ;
     Refresh() ;
+}
+
+void wxX86InfoAndControlApp::EndDVFS()
+{
+  PerCPUcoreAttributes * p_percpucoreattributes = & //mp_cpucoredata->
+    mp_modelData->m_cpucoredata.
+    m_arp_percpucoreattributes[ //p_atts->m_byCoreID
+    0 ] ;
+  //If the dyn freq scaling thread is active the program would crash when it
+  //tries to get the CPU usage the next time and the usage getter is
+  //destroyed.
+  if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+    mp_frame->
+    EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
 }
 
 //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
@@ -333,7 +356,7 @@ bool wxX86InfoAndControlApp::OnInit()
 #ifdef _MSC_VER_ //possible because the import library is for MSVC
       mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
         this ) ;
-#else //because no import library is available
+#else //Because no import library is available for MinGW.
       mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
         this ) ;
 #endif
@@ -370,10 +393,10 @@ bool wxX86InfoAndControlApp::OnInit()
           ) 
         )
       {
-  			//Now we have created the CPU controller. It knows how many cores it has.
-  		  //The core count is an important information e.g. for the Linux MSR device
-  		  //file access.
-  			mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
+        //Now we have created the CPU controller. It knows how many cores it has.
+        //The core count is an important information e.g. for the Linux MSR device
+        //file access.
+        mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
           GetNumberOfCPUcores() ) ;
         mp_cpucontroller->SetCmdLineArgs(
           NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
@@ -423,7 +446,7 @@ bool wxX86InfoAndControlApp::OnInit()
         //char * archCPUID ;
         std::string strCPUID ;
         
-        DEBUG("initialization of dialog--after get processor name\n");
+//        DEBUG("initialization of dialog--after get processor name\n");
 
         //if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck && 
         //  ! m_modelData.m_bSkipCPUtypeCheck && 
@@ -436,103 +459,36 @@ bool wxX86InfoAndControlApp::OnInit()
         //}
   //#endif //	#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
 
-        DEBUG("initialization of dialog--after a possible CPU type check\n");
+//        DEBUG("initialization of dialog--after a possible CPU type check\n");
 
         mp_cpucontroller->SetCmdLineArgs(
           NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS ,
           m_arartchCmdLineArgument
           ) ;
-        BYTE byReturn = //mp_pstatectrl->handleCmdLineArgs() ;
-          mp_cpucontroller->HandleCmdLineArgs( ) ;
+//        BYTE byReturn = //mp_pstatectrl->handleCmdLineArgs() ;
+//          mp_cpucontroller->HandleCmdLineArgs( ) ;
 
-        DEBUG("initialization of dialog--after handling cmd line args\n");
-        //DEBUG("return value of handleCmdLineArgs(): %u\n",(WORD)byReturn);
-        LOG("return value of handling command line args: " << (WORD) byReturn << "\n" );
+//        DEBUG("initialization of dialog--after handling cmd line args\n");
+//        //DEBUG("return value of handleCmdLineArgs(): %u\n",(WORD)byReturn);
+//        LOG("return value of handling command line args: " << (WORD) byReturn << "\n" );
 
-        switch(byReturn)
-        {
-          case FAILURE:
-            mp_userinterface->Confirm("An error occured (a message should have been "
-              "shown previously)->exiting");
-            return FALSE;
-            break;
-          case EXIT:
-            return FALSE;
-            break;
-//          default:
-  //          DEBUG("Before starting timer\n");
-            //mp_wxdynfreqscalingtimer->mp_pumastatectrl = mp_pstatectrl ;
-//            DWORD dwValue = 0 ;
-            //TODO read values from CPU at first because the other values should not 
-            //be affected.
-
-  #ifdef COMPILE_WITH_CPU_SCALING
-
-            //http://docs.wxwidgets.org/stable/wx_wxtimer.html#wxtimer:
-            //"Note: A timer can only be used from the main thread."
-              //mp_wxdynfreqscalingtimer = new wxDynFreqScalingTimer(
-              //  //new CPUcoreUsageGetterIWbemServices()
-              //  //& cpucoreusagegetteriwbemservices 
-              //  & m_cpucoreusagegetteriwbemservices,
-              //  mp_pstatectrl
-              //  ) ; 
-            
-            //mp_wxdynfreqscalingtimer->Start(400);
-
-            //TODO remove memory leaks by dyn. alloc.
-            //mp_wxDynLinkedCPUcoreUsageGetter = new //wxDynLinkedCPUcoreUsageGetter(
-
-            //mp_dynfreqscalingthread = new DynFreqScalingThread(
-            //  //& m_cpucoreusagegetteriwbemservices
-            //  //mp_wxDynLinkedCPUcoreUsageGetter
-            //  mp_icpucoreusagegetter
-            //  , mp_pstatectrl
-            //  , //mp_pstatectrl->m_model.m_cpucoredata
-            //  m_modelData.m_cpucoredata
-            //);
-            //mp_dynfreqscalingthread->Create();
-            //mp_dynfreqscalingthread->Run();
-
-            //m_dynfreqscalingthread.SetMembers(
-            //  &m_cpucoreusagegetteriwbemservices,mp_pstatectrl);
-            //m_dynfreqscalingthread.Start();
-            //DEBUG("After starting timer\n");
-
-            //if( m_modelData.m_cpucoredata.m_bEnableDVFS )
-            //{
-            //  if( mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            //    )
-            //    mp_i_cpucontroller->DisableFrequencyScalingByOS();
-            //  PerCPUcoreAttributes * p_percpucoreattributes = 
-            //    & m_modelData.m_cpucoredata.
-            //    m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
-            //    0 ] ;
-            //  //DynFreqScalingThread * p_dynfreqscalingthread
-            //  if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
-            //  {
-            //    if( ! //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            //        mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            //      )
-            //    {
-            //      //p_percpucoreattributes->mp_dynfreqscalingthread 
-            //      p_percpucoreattributes->SetCPUcontroller( mp_i_cpucontroller ) ;
-            //      p_percpucoreattributes->CreateDynFreqScalingThread( 
-            //        mp_cpucoreusagegetter
-            //        ) ;
-            //    }
-            //  }
-            //}
-//ifdef COMPILE_WITH_SHARED_MEMORY the SERVICE should do the DVFS
-#ifndef COMPILE_WITH_SHARED_MEMORY
-            mp_i_cpucontroller->EnableOwnDVFS() ;
-#endif
-            DEBUG("After starting CPU freq thread\n");
-
-            //DEBUG("Address of AMD family 17 controller:%x\n",mp_pstatectrl);
-            //LOG("Address of AMD family 17 controller:" << mp_pstatectrl << "\n" );
-  //          mp_pstatectrl->DisableFrequencyScalingByOS();
-  #endif //#ifdef COMPILE_WITH_CPU_SCALING
-        }
+//        switch(byReturn)
+//        {
+//          case FAILURE:
+//            mp_userinterface->Confirm("An error occured (a message should have been "
+//              "shown previously)->exiting");
+//            return FALSE;
+//            break;
+//          case EXIT:
+//            return FALSE;
+//            break;
+////          default:
+//  //          DEBUG("Before starting timer\n");
+//            //mp_wxdynfreqscalingtimer->mp_pumastatectrl = mp_pstatectrl ;
+////            DWORD dwValue = 0 ;
+//            //TODO read values from CPU at first because the other values should not
+//            //be affected.
+//        }
       } //if( mp_i_cpucontroller )
       //else //CreateCPUcontrollerAndUsageGetter(...) failed
       //  mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
@@ -578,18 +534,27 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
     //performance state.
     mp_frame->DenyCPUcontrollerAccess() ;
     if( mp_cpucontroller )
+    {
       //Release memory.
       delete mp_cpucontroller ;
+      LOGN(" current CPU controller deleted")
+    }
+    LOGN("address of model: " << mp_modelData )
     mp_cpucontroller = p_cpucontrollerNew ;
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
       mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
+    LOGN("after setting CPU controller for usage getter")
     //mp_i_cpucontroller->SetModelData( //& m_modelData
     //  mp_modelData ) ;
     CPUcontrollerChanged() ;
+    LOGN("after CPUcontrollerChanged")
+
+    //mp_frame->mp_i_cpucontroller = mp_cpucontroller ;
     mp_frame->AllowCPUcontrollerAccess() ;
     //Force an update of the canvas.
     mp_frame->RedrawEverything() ;
+    LOGN("after redraweverything")
   }
 }
 
@@ -609,7 +574,7 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
       mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
     //mp_i_cpucontroller->SetModelData( //& m_modelData
     //  mp_modelData ) ;
-    CPUcontrollerChanged() ;
+//    CPUcontrollerChanged() ;
     mp_frame->AllowCPUcontrollerAccess() ;
     //Force an update of the canvas.
     mp_frame->RedrawEverything() ;

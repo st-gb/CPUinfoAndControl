@@ -20,6 +20,9 @@
 //typedef DWORD (WINAPI *_WrmsrEx) (DWORD index, DWORD eax, DWORD edx, DWORD_PTR affinityMask);
 //typedef DWORD (WINAPI *_InitializeOls) ();
 //typedef VOID (WINAPI *_DeinitializeOls) ();
+typedef BYTE ( WINAPI * _GetDetailedWinRing0Error) (PDWORD p_dwWinErrorCode, PBYTE
+    p_byErrorLocation) ;
+typedef TCHAR * ( WINAPI * _GetWinRing0DriverPath) () ;
 //
 //typedef BOOL 
 ////__stdcall

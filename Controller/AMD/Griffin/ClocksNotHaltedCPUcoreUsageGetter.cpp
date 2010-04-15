@@ -5,73 +5,105 @@
 #include <Controller/AMD/Griffin/AMD_family17.h>
 //#include <Controller/GriffinController.hpp>
 
-  ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
-    //BYTE byCoreID ,
-    WORD dwAffinityMask ,
-    GriffinController * p_griffincontroller
-    //Model * p_model
-    )
-    : 
-    //Initialize in the same order as textual in the declaration?
-    //(to avoid g++ warnings)
-    m_dwAtMask2ndTimeCPUcoreMask ( 0 )
-    , mp_griffincontroller (p_griffincontroller)
-    //, m_bAtLeastSecondTime (false)
-  {
-    BYTE byNumCPUs = p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
-    m_dMaximumCPUcoreFrequency = p_griffincontroller->mp_model->m_cpucoredata.
-      m_wMaxFreqInMHz ;
-    m_ar_cnh_cpucore_ugpca = new 
-      ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ byNumCPUs ];
-	//m_bAtLeastSecondTime
-    m_dwAffinityMask = //1 << byCoreID ;
-      dwAffinityMask ;
-  }
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
+  //BYTE byCoreID ,
+  DWORD dwAffinityMask ,
+  GriffinController * p_griffincontroller
+  //Model * p_model
+  )
+  :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_dwAtMask2ndTimeCPUcoreMask ( 0 )
+  , mp_griffincontroller (p_griffincontroller)
+  //, m_bAtLeastSecondTime (false)
+{
+  BYTE byNumCPUs = p_griffincontroller->mp_model->GetNumberOfCPUCores() ;
+  m_dMaximumCPUcoreFrequency = p_griffincontroller->mp_model->m_cpucoredata.
+    m_wMaxFreqInMHz ;
+  m_ar_cnh_cpucore_ugpca = new
+    ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ byNumCPUs ];
+  //m_bAtLeastSecondTime
+  m_dwAffinityMask = //1 << byCoreID ;
+    dwAffinityMask ;
+}
+#endif //#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+
+void ClocksNotHaltedCPUcoreUsageGetter::ProgramNecessaryPermanceCounters(
+    BYTE byCoreID)
+{
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+  mp_griffincontroller->AccuratelyStartPerformanceCounting(
+#else
+  AccuratelyStartPerformanceCounting(
+#endif
+    1 << byCoreID ,
+    //m_dwAffinityMask ,
+    //2
+    //1 +
+    //byCoreID //performance counter ID/ number
+    0
+    , CPU_CLOCKS_NOT_HALTED
+    , false //InvertCounterMask
+    ) ;
+//for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+  mp_griffincontroller->AccuratelyStartPerformanceCounting(
+#else
+  AccuratelyStartPerformanceCounting(
+#endif
+    1 << byCoreID ,
+    //m_dwAffinityMask ,
+    //2
+    //1 +
+    //byCoreID //performance counter ID/ number
+    1
+    , CPU_CLOCKS_NOT_HALTED
+    , true //InvertCounterMask
+    ) ;
+}
 
 BYTE ClocksNotHaltedCPUcoreUsageGetter::Init(
   //DWORD dwCPUcoreAffinityBitMask 
   )
 {
+  DEBUGN("ClocksNotHaltedCPUcoreUsageGetter::Init")
   //m_dwAffinityMask = dwCPUcoreAffinityBitMask ;
   if( //get for load all cores 
     //dwCPUcoreAffinityBitMask 
     m_dwAffinityMask == 0 
     )
   {
-    BYTE byNumCPUs = mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
+    BYTE byNumCPUs =
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+        mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
+#else
+      m_wNumLogicalCPUcores ;
+#endif
+    DEBUG_COUTN("ClocksNotHaltedCPUcoreUsageGetter # CPU cores" <<
+      m_wNumLogicalCPUcores )
     for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
-      mp_griffincontroller->AccuratelyStartPerformanceCounting( 
-        1 << byCoreID ,
-        //m_dwAffinityMask ,
-        //2 
-        //1 + 
-        //byCoreID //performance counter ID/ number
-        0
-        , CPU_CLOCKS_NOT_HALTED
-        , false //InvertCounterMask
-        ) ;
-    for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
-      mp_griffincontroller->AccuratelyStartPerformanceCounting( 
-        1 << byCoreID ,
-        //m_dwAffinityMask ,
-        //2 
-        //1 + 
-        //byCoreID //performance counter ID/ number
-        1
-        , CPU_CLOCKS_NOT_HALTED
-        , true //InvertCounterMask
-        ) ;
+      ProgramNecessaryPermanceCounters(byCoreID) ;
   }
   else
   {
-    mp_griffincontroller->AccuratelyStartPerformanceCounting( 
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+    mp_griffincontroller->AccuratelyStartPerformanceCounting(
+#else
+    AccuratelyStartPerformanceCounting(
+#endif
       //1 << byCoreID ,
       m_dwAffinityMask ,
       0, //performance counter ID/ number
       CPU_CLOCKS_NOT_HALTED
       , false //InvertCounterMask
       ) ;
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
     mp_griffincontroller->AccuratelyStartPerformanceCounting( 
+#else
+    AccuratelyStartPerformanceCounting(
+#endif
       //1 << byCoreID ,
       m_dwAffinityMask ,
       1, //performance counter ID/ number
@@ -106,7 +138,11 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
     //m_ull <<= 32 ;
     //m_ull |= m_dwLowmostBits ;
 
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
 	mp_griffincontroller->ReadPerformanceEventCounterRegister(
+#else
+	ReadPerformanceEventCounterRegister(
+#endif
       //2
       //1 + 
       //byCoreID //performance counter ID/ number
@@ -115,7 +151,11 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
       //m_dwAffinityMask 
 	    1 << byCoreID
       ) ;
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
 	mp_griffincontroller->ReadPerformanceEventCounterRegister(
+#else
+	ReadPerformanceEventCounterRegister(
+#endif
     //2
     //1 + 
     //byCoreID //performance counter ID/ number
@@ -147,6 +187,18 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
       m_ar_cnh_cpucore_ugpca[ byCoreID ].
         m_ullPreviousPerformanceEventCounter3
       ) ;
+    //TODO this is pretty sure, but might be tested:
+    //After an ACPI hibernation or standby the Performance
+    //event counter registers are static/ constant, so the
+    //differences have the value 0.
+    if( m_ullPerformanceEventCounter3Diff == 0
+        || m_ullTimeStampCounterValueDiff == 0 )
+    {
+      DEBUGN("m_ullPerformanceEventCounter3 == 0 && m_ull == 0")
+      //Reprogram performance event counter registers.
+//      Init() ;
+      ProgramNecessaryPermanceCounters(byCoreID) ;
+    }
 
     //This is the CPU core load/ usage expressed as clocks not halted from 
     //max. possible clocks. 
@@ -164,12 +216,14 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
     //  ca. 550 M / 1100 M = 0.5 = 50% although the usage was 100%.
     //  This is a problem because
     //  other software may manipulate the current frequency.
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
     float fVoltageInVolt ;
     WORD wFreqInMHz ;
     mp_griffincontroller->GetCurrentPstate( wFreqInMHz, fVoltageInVolt , 
       byCoreID ) ;
     m_dMaximumPossibleCPUclocksNotHalted = (double) m_ullTimeStampCounterValueDiff
       * ( (double) wFreqInMHz / m_dMaximumCPUcoreFrequency ) ;
+#endif
     // 
     //double 
 
@@ -224,7 +278,12 @@ BYTE ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
   )
 {
   BYTE byReturn = 1 ;
-  BYTE byNumCPUs = mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
+  BYTE byNumCPUs =
+#ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE
+      mp_griffincontroller->mp_model->GetNumberOfCPUCores() ;
+#else
+    m_wNumLogicalCPUcores ;
+#endif
   for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
   {
     arf[ byCoreID ] = GetPercentalUsageForCore( byCoreID ) ;
@@ -238,4 +297,13 @@ BYTE ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(
 	}
   }
   return byReturn ;
+}
+
+BYTE ClocksNotHaltedCPUcoreUsageGetter::SetNumberOfLogicalCPUcores(
+  WORD wNumLogicalCPUcores )
+{
+  m_wNumLogicalCPUcores = wNumLogicalCPUcores ;
+  m_ar_cnh_cpucore_ugpca = new
+    ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts[ wNumLogicalCPUcores ];
+  return m_ar_cnh_cpucore_ugpca != NULL ;
 }

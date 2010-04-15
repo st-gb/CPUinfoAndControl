@@ -152,6 +152,14 @@ bool PStates::IsSafe(BYTE byVID, BYTE byFrequencyID, BYTE byDivisorID)
     }
   }
 
+  void PStates::SetNumber(BYTE byNumber)
+  {
+    m_byNumber = byNumber ;
+    //DEBUG("Loading config--current p-state's number: %u\n", (WORD) byNumber);
+    LOG( "Loading config--current p-state's number: " << (WORD) byNumber
+        << "\n" );
+  }
+
   void PStates::SetPStateFID(BYTE byPStateID, BYTE byFID)
   {
     LOG( "Setting Frequency ID to: " << 

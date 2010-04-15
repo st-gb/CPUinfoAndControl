@@ -1,9 +1,12 @@
 #pragma once
 
 #include <global.h> //for DWORD
-#include <Windows.h> //for ULONGLONG
+//#include <Windows.h> //for ULONGLONG
+#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
 #include <Controller/AMD/Griffin/GriffinController.hpp>
+#endif //#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
 #include <Controller/ICPUcoreUsageGetter.hpp>
+#include <Controller/AMD/Griffin/UsageGetterAndControllerBase.hpp>
 #include <ModelData/ModelData.hpp>
 
 #ifndef _MSC_VER //if no MS compiler
@@ -26,7 +29,9 @@
   (current) - (prev)
 
 //pre-declare
+#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
 class GriffinController ;
+#endif //#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
 class Model ;
 //class ICPUcoreUsageGetter ;
 
@@ -37,8 +42,18 @@ public :
   ULONGLONG m_ullPreviousTimeStampCounterValue ;
 } ;
 
+//using namespace Griffin ;
+
+//inheritance:
+//  CPUcoreUsageGetterAndControllerBase (I_CPUaccess * mp_cpuaccess)
+//    I_CPUcontroller
+//  Griffin::UsageGetterAndControllerBase
+//  ClocksNotHaltedCPUcoreUsageGetter
 class ClocksNotHaltedCPUcoreUsageGetter
   : public ICPUcoreUsageGetter
+  ,
+  public Griffin::UsageGetterAndControllerBase
+  //public CPUcoreUsageGetterAndControllerBase
 {
 private :
   //bool m_bAtLeastSecondTime ;
@@ -47,7 +62,10 @@ private :
   DWORD m_dwAtMask2ndTimeCPUcoreMask ;
   DWORD m_dwLowmostBits , m_dwHighmostBits ;
   DWORD m_dwAffinityMask ;
+  WORD m_wNumLogicalCPUcores ;
+#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
   GriffinController * mp_griffincontroller ;
+#endif //#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
   ULONGLONG m_ullPerformanceEventCounter3Diff ;
   //ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
   ULONGLONG m_ull ;
@@ -60,18 +78,33 @@ public:
   //so they aren't created for every method call
   ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts * m_ar_cnh_cpucore_ugpca ;
   //ClocksNotHaltedCPUcoreUsageGetter() ;
+#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
   ClocksNotHaltedCPUcoreUsageGetter(
     //BYTE byCoreID ,
-    WORD dwAffinityMask ,
+    DWORD dwAffinityMask ,
     GriffinController * p_griffincontroller 
     ) ;
+#endif //#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
+  ClocksNotHaltedCPUcoreUsageGetter()
+  {
+    m_dwAffinityMask = 0 ;
+    m_wNumLogicalCPUcores = 0 ;
+  } ;
   ~ClocksNotHaltedCPUcoreUsageGetter()
   {
     delete [] m_ar_cnh_cpucore_ugpca ;
   }
   BYTE GetPercentalUsageForAllCores(float arf[] ) ; //{ return 0 ; } ;
   BYTE Init() ;
+  void ProgramNecessaryPermanceCounters(BYTE byCoreID) ;
 
   float GetPercentalUsageForCore(BYTE byCoreID) ;
-
+#ifdef COMPILE_WITHOUT_GRIFFINCONTROLLER_DEPENDANCE
+  void SetGriffinController(GriffinController * p_griffincontroller)
+  {
+    mp_griffincontroller = p_griffincontroller ;
+  }
+#endif
+  BYTE SetNumberOfLogicalCPUcores(
+    WORD wNumLogicalCPUcores ) ;
 } ; //end class

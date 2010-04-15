@@ -1,0 +1,5 @@
+-libwx_base[x].a ->enter "wx_base[x]"
+ for
+   -wxDynamicLibrary
+   -wxCriticalSection
+   -wxStringBase

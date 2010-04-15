@@ -73,27 +73,6 @@ CPUcontrolBase * gp_cpucontrolbase ;
 //VOID SvcDebugOut(LPSTR String, DWORD Status);
 //
 
-//std::string LocalLanguageMessageFromErrorCode(DWORD dwErrorCode)
-//{
-//    std::string stdstrMessage ;
-//    LPVOID lpMsgBuf;
-//
-//    ::FormatMessage(
-//        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-//        FORMAT_MESSAGE_FROM_SYSTEM,
-//        NULL,
-//        dwErrorCode,
-//        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-//        (LPTSTR) &lpMsgBuf,
-//        0, NULL );
-// 
-//    stdstrMessage = std::string((char*)lpMsgBuf) ;
-//    //Release memory allocated by "::FormatMessage(...)"?
-//    ::LocalFree(lpMsgBuf);
-//
-//    return stdstrMessage ;
-//}
-
 bool IsWithinCmdLineArgs( int argc, char *  argv[], LPCTSTR p_tstr )
 {
     bool bIsWithinCmdLineArgs = false ;
@@ -177,28 +156,10 @@ int main( int argc, char *  argv[] )
   std::tstring stdtstrProgramName(ptstrProgramName) ;
   std::tstring stdtstrProgramArg = std::tstring("-config=") + ptstrProgramName + 
     std::tstring("_config.xml") ;
-  std::string stdstrLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
+  //std::string stdstrLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
+  std::string stdstrLogFileName = std::string(argv[0]) + std::tstring("_log.txt") ;
   try
   {
-    ////TODO make file path variable.
-    //fileDebug = fopen ("C:\\Temp\\GriffinStateControlSvc_debug.txt","w");
-      //= fopen("GriffinStateControlSvc_debug.txt","w");
-    //g_logger.OpenFile( std::string("C:\\Temp\\GriffinStateControlSvc_log.txt") ) ;
-
-    //GriffinStateControlService griffinstatecontrolservice ;
-    //griffinstatecontrolservice.SetCommandLineArgs( argc, argv ) ;
-    //std::string stdstrLogFilePath = 
-    //    griffinstatecontrolservice.GetLogFilePath() ;
-    //if( //argc > 1 && //GriffinStateControlService::PathOption(argc, argv) 
-    //    stdstrLogFilePath != _T("")
-    //  )
-    //  g_logger.OpenFile(//griffinstatecontrolservice.GetLogFilePa 
-    //        stdstrLogFilePath) ;
-    //ofstream ofstreamLogFile;
-    //if( 
-        //ofstreamLogFile.open("GriffinContro_log.txt")
-        //if( ofstreamLogFile.good() )
-            
     DEBUG("Begin of main program entry point\n");
     SetExePathAsCurrentDir() ;
     //Must set the exe path as current dir before (else the file is located in

@@ -21,6 +21,7 @@ public:
   virtual ~ICPUcoreUsageGetter()
     //Also needs to be defined (else when linking: undefined referenc to it)
     {} ;
+  virtual WORD GetNumberOfLogicalCPUcores() { return 0 ; }
   virtual //float 
     BYTE GetPercentalUsageForAllCores(float arf[] ) = 0 ;
   //virtual float Init() = 0 ;//{return 0.0f; }

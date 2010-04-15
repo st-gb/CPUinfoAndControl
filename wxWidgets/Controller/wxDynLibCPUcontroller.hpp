@@ -18,6 +18,7 @@ private:
   dll_GetTemperatureInCelsius_type m_pfngettemperatureincelsius ;
   dll_PrepareForNextPerformanceCounting
     m_pfn_preparefornextperformancecounting ;
+  dynlib_SetPstateFromFreq m_pfn_set_pstate_from_freq ;
   dll_WriteMSR_type m_pfn_write_msr ;
 
   WORD m_wNumberOfLogicalCPUcores ;

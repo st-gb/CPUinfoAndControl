@@ -216,6 +216,8 @@ public:
       ICalculationThread::ended ) ;
   bool Confirm(const std::string & str) ;
   bool Confirm(std::ostrstream & r_ostrstream);
+  void CPUcontrollerDeleted() ;
+  void CPUcoreUsageGetterDeleted() ;
 
   void CreateServiceMenuItems() ;
   //void 
@@ -319,6 +321,7 @@ public:
 //        PState & pstate
 //      ) ;
   //void SetPumaStateController(GriffinController * p_pumastatectrl) ;
+  void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
 #ifdef wxHAS_POWER_EVENTS

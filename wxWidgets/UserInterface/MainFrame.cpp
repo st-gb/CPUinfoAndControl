@@ -388,7 +388,7 @@ MainFrame::MainFrame(
       p_wxmenuExtras = new wxMenu;
     mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
       ID_EnableOrDisableOtherDVFS
-      , _T("enable own DVFS") 
+      , _T("enable own Dynamic Voltage and Frequency Scaling")
       );
     if( //p_cpucontroller->mp_model->m_cpucoredata.
       mp_model->m_cpucoredata.
@@ -713,8 +713,8 @@ BYTE MainFrame::CreateDynamicMenus()
   WORD wMenuID = ID_LastStaticID;
   //m_vecwxstring.push_back(wxString)
   wxMenu * p_wxmenuCore ;
-  LOGN("CPU core menu creation")
-
+  LOGN("CPU core menu creation--number of CPU cores: " <<
+    (WORD) mp_cpucoredata->m_byNumberOfCPUCores )
   m_arp_freqandvoltagesettingdlg = new FreqAndVoltageSettingDlg * [
     mp_cpucoredata->m_byNumberOfCPUCores];
   if(m_arp_freqandvoltagesettingdlg)
@@ -1151,11 +1151,11 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 void MainFrame::OnStartService(wxCommandEvent & WXUNUSED(event))
 {
   #ifdef _WINDOWS
-  ServiceBase::StartService( //mp_model->m_strServiceName.c_str() 
-    //We need a _T() macro (wide char-> L"", char->"") for EACH 
-    //line to make it compitable between char and wide char.
-    _T("CPUcontrolService") 
-    );
+//  ServiceBase::StartService( //mp_model->m_strServiceName.c_str()
+//    //We need a _T() macro (wide char-> L"", char->"") for EACH
+//    //line to make it compitable between char and wide char.
+//    _T("CPUcontrolService")
+//    );
   #endif
 }
 
@@ -1230,83 +1230,44 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
     ) ;
   if ( ! wxstrFilePath.empty() )
   {
- //   wxDynamicLibrary wxdynamiclibraryCPUctl ;
-
- //   //wxstrFilePath = wxT("T:\SourceCodeManagement\X86Info_and_Control\x86InfoAndControl_MSVC\VS2010\x86InfoAndControlGUI\Debug\NehalemControllerDLL") ;
- //   //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html#wxdynamiclibraryload:
- //   //"Returns true if the library was successfully loaded, false otherwise."
- //   if( wxdynamiclibraryCPUctl.Load(wxstrFilePath) 
- //     )
- ///*   HINSTANCE hinstanceCPUctlDLL = ::LoadLibrary(wxstrFilePath);
- //   if ( hinstanceCPUctlDLL != 0)*/
- //   {
- //     typedef VOID (WINAPI *dll_init_type)(
- //       I_CPUaccess *
- //       //BYTE
- //       );
- //     typedef DWORD (*dll_getMulti_type)(WORD );
- //     //wxdynamiclibraryCPUctl.
- //     wxString wxstrFuncName = wxT("Init") ;
- //     if( wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) 
- //       )
- //     //dll_init_type pfnInit = (dll_init_type)
- //     //  ::GetProcAddress(hinstanceCPUctlDLL,"Init");
- //     //FARPROC __stdcall pfn = ::GetProcAddress(hinstanceCPUctlDLL,"nNehalemControllerDLL");
- //     //if( pfnInit )
- //     {
- //       wxDYNLIB_FUNCTION(dll_init_type, Init, wxdynamiclibraryCPUctl) ;
- //       wxDYNLIB_FUNCTION(dll_getMulti_type, GetMultiplier, wxdynamiclibraryCPUctl) ;
- //       //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
- //       (*pfnInit)( //wxGetApp().mp_i_cpuaccess 
- //         mp_wxx86infoandcontrolapp->GetCPUaccess() 
- //         //1 
- //         ) ;
- //       //dll_getMulti_type pfnGetMultiplier = (dll_getMulti_type)
- //       //  ::GetProcAddress(hinstanceCPUctlDLL,"GetMultiplier") ;
- //       //if( pfnGetMultiplier)
- //       //{
- //       //  DWORD dwM = (*pfnGetMultiplier) (0) ;
- //       //  dwM = dwM ;
- //       //}
- //       //DWORD dwMulti = (*pfnGetMultiplier)(0) ;
- //       //dwMulti = dwMulti ;
- //       //dll_Init
- //     }
- //     else
- //     {
- //       DWORD dw = ::GetLastError() ;
- //       std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
- //       stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
- //       //ERROR_PROC_NOT_FOUND
- //       ::wxMessageBox( 
- //         wxString::Format("function %s was not found within DLL", 
- //           wxstrFuncName) + wxString(stdstrErrMsg) , 
- //         wxT("Error ")
- //         ) ;
- //     }
- //   }
- //   else
- //   {
- //     DWORD dw = ::GetLastError() ;
- //     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCode( dw) ;
- //     std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
- //     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
- //     ::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
- //   }
     try
     {
       //wxDynLibCPUcontroller * p_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
+      LOGN(" before creating dyn lib controller object")
+      LOGN("address of model: " << mp_model )
+      LOGN("address of cpucoredata: " << & mp_model->m_cpucoredata )
+
+      //Before creating a new controller the old one should be deleted.
+      gp_cpucontrolbase->PossiblyDeleteCPUcontroller() ;
+
       gp_cpucontrolbase->mp_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
         wxstrFilePath
         , mp_wxx86infoandcontrolapp->GetCPUaccess() 
         ) ;
+
+      LOGN(" before setting dyn lib controller as CPU controller")
+
       mp_wxx86infoandcontrolapp->SetCPUcontroller( //p_wxdynlibcpucontroller 
         //mp_wxdynlibcpucontroller 
         gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
+
+      LOGN(" before setting dyn lib controller as CPU controller")
+
       CreateDynamicMenus() ;
+
+      LOGN("after creating per CPU core menus " )
+
       p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
         , //const bool enable
         true ) ;
+      p_wxmenuFile->SetLabel( ID_Detach_CPU_controller_DLL ,
+        wxT( //"detach"
+          //"unload" is a better word because it expresses that the Dynamic
+          //library is removed from the memory(?)
+          "unload"
+          " CPU controller ") + wxstrFilePath ) ;
+
+      //If both CPU controller and the CPU usage getter exist, DVFS is possible.
       if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
         p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
           , //const bool enable
@@ -1317,6 +1278,7 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
       wxMessageBox( wxT("Error message: ") +
         wxString(ex.m_stdstrErrorMessage) , wxT("DLL error") ) ;
     }
+    LOGN("OnAttachCPUcontrollerDLL end" )
   }
 }
 
@@ -1340,26 +1302,44 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
   {
     try
     {
+      gp_cpucontrolbase->PossiblyDeleteCPUcoreUsageGetter() ;
       //wxDynLibCPUcontroller * p_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
-      gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = new wxDynLibCPUcoreUsageGetter(
+      gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = new
+        wxDynLibCPUcoreUsageGetter(
         //std::string( 
         wxstrFilePath
           //.//fn_str() 
           //c_str() )
-        //, mp_wxx86infoandcontrolapp->GetCPUaccess() 
+        , mp_wxx86infoandcontrolapp->GetCPUaccess()
         , * mp_cpucoredata
         ) ;
       mp_wxx86infoandcontrolapp->//SetCPUcoreUsageGetter( //p_wxdynlibcpucontroller 
         //mp_wxdynlibcpucoreusagegetter ) ;
         mp_cpucoreusagegetter = gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
       //CreateDynamicMenus() ;
+
       p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
         , //const bool enable
         true ) ;
+      p_wxmenuFile->SetLabel( ID_Detach_CPU_usage_getter_DLL ,
+        wxT( //"detach"
+          //"unload" is a better word because it expresses that the Dynamic
+          //library is removed from the memory(?)
+          "unload "
+          " core usage getter ") + wxstrFilePath ) ;
       if( mp_wxx86infoandcontrolapp->GetCPUcontroller() )
         p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
           , //const bool enable
           true ) ;
+
+      WORD wNumberOfLogicalCPUcores = mp_wxx86infoandcontrolapp->
+        mp_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
+      if( wNumberOfLogicalCPUcores == 0 )
+        wNumberOfLogicalCPUcores = 1 ;
+      //TODO correct CPU core number
+      //Set -> allocate array for OnPaint()
+      mp_cpucoredata->SetCPUcoreNumber(wNumberOfLogicalCPUcores) ;
+      RedrawEverything() ;
     }
     catch( CPUaccessException & ex )
     {
@@ -1369,55 +1349,38 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
   }
 }
 
+void MainFrame::CPUcontrollerDeleted()
+{
+//    PossiblyReleaseMemory() ;
+  //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
+  p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
+    , //const bool enable
+    false ) ;
+  p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+    , //const bool enable
+    false ) ;
+}
+
+void MainFrame::CPUcoreUsageGetterDeleted()
+{
+  p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
+    , //const bool enable
+    false ) ;
+  p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+    , //const bool enable
+    false ) ;
+}
+
 void MainFrame::OnDetachCPUcontrollerDLL (wxCommandEvent & event)
 {
-  if( gp_cpucontrolbase->mp_wxdynlibcpucontroller )
-  {
-    //mp_wxx86infoandcontrolapp->SetCPUcontroller( NULL ) ;  
-    mp_wxx86infoandcontrolapp->DeleteCPUcontroller() ;
-    //delete mp_wxdynlibcpucontroller ;
-    gp_cpucontrolbase->mp_wxdynlibcpucontroller = NULL ;
-    PossiblyReleaseMemory() ;
-    //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
-    p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
-      , //const bool enable
-      false ) ;
-    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
-      , //const bool enable
-      false ) ;
-  }
+  gp_cpucontrolbase->PossiblyDeleteCPUcontroller() ;
 }
 
 void MainFrame::OnDetachCPUcoreUsageGetterDLL (wxCommandEvent & event)
 {
-  if( gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter )
-  {
-    //mp_wxx86infoandcontrolapp->SetCPUcontroller( NULL ) ;  
-    //mp_wxx86infoandcontrolapp->DeleteCPUcontroller() ;
-    
-    PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
-      m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
-      0 ] ;
-    //If the dyn freq scaling thread is active the program would crash when it
-    //tries to get the CPU usage the next time and the usage getter is 
-    //destroyed.
-    if ( p_percpucoreattributes->mp_dynfreqscalingthread )
-      EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
-    mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter = NULL ;
-    delete gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
-    gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = NULL ;
-    //delete mp_wxdynlibcpucontroller ;
-    //mp_wxdynlibcpucontroller = NULL ;
-    //PossiblyReleaseMemory() ;
-    //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
-    p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
-      , //const bool enable
-      false ) ;
-    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
-      , //const bool enable
-      false ) ;
-  }
+  gp_cpucontrolbase->PossiblyDeleteCPUcoreUsageGetter() ;
 }
+
 void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent) 
   wxevent )
 {
@@ -2097,14 +2060,6 @@ void MainFrame::DrawCurrentPstateInfo(
    //DWORD dwEDX ;
    //DWORD dwLowmostBitsCurrentLimitRegister, dwLowmostBits ;
    //ULONGLONG ull ;
-//   PState pstate ;
-
-//#ifdef _DEBUG
-//   ClocksNotHaltedCPUcoreUsageGetter & getter = 
-//	   
-//   ClocksNotHaltedCPUcoreUsageGetterPerCoreAtts * ar_cnh_cpucore_ugpca = 
-//	   ;
-//#endif
   WORD wFreqInMHz = 0 ;
   float fVoltageInVolt = 0.0f ;
   float fCPUload ;
@@ -2113,6 +2068,7 @@ void MainFrame::DrawCurrentPstateInfo(
   wxString wxstrCPUcoreVoltage ;
   wxString wxstrTemperature ;
   wxString wxstrFreqInMHz ;
+  DEBUGN("DrawCurrentPstateInfo CPU controller address:" << mp_i_cpucontroller )
    //::wxGetApp().mp_cpucoreusagegetter->
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
   {
@@ -2124,9 +2080,13 @@ void MainFrame::DrawCurrentPstateInfo(
     //the CPU usage they could interfere/ the delay between the usage retrieval
     //could be too short-> So only try to get usage here if no DVFS thread.
     if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
+    {
+      DEBUGN("DrawCurrentPstateInfo before GetPercentalUsageForAllCores" )
       mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter->
         GetPercentalUsageForAllCores(
         mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
+      DEBUGN("DrawCurrentPstateInfo after GetPercentalUsageForAllCores" )
+    }
   }
   else
     wxstrCPUcoreUsage = wxT("usage in percent: ?") ;
@@ -2134,27 +2094,33 @@ void MainFrame::DrawCurrentPstateInfo(
    //::wxGetApp().mp_cpucoreusagegetter->Init() ;
    #endif
   //May be NULL at startup.
-  if( mp_i_cpucontroller )
+  if( mp_i_cpucontroller || mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+  {
+    DEBUG_COUTN("OnPaint--Number of CPU cores:" <<
+        (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
    //TODO respect # of cpu cores
    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
    {
      wFreqInMHz = 0 ;
      fVoltageInVolt = 0.0f ;
-     if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
+     if( mp_i_cpucontroller )
      {
+       if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
+       {
+       }
+       fTempInCelsius = mp_i_cpucontroller->GetTemperatureInCelsius(byCPUcoreID) ;
+       if( fTempInCelsius ==
+  #ifdef _MSC_VER
+         FLT_MIN
+  #else
+         __FLT_MIN__
+  #endif
+         )
+         wxstrTemperature = wxT("? °C") ;
+       else
+         wxstrTemperature = wxString::Format( "%.3f °C" , fTempInCelsius ) ;
      }
-     fTempInCelsius = mp_i_cpucontroller->GetTemperatureInCelsius(byCPUcoreID) ;
-     if( fTempInCelsius == 
-#ifdef _MSC_VER
-       FLT_MIN
-#else
-       __FLT_MIN__ 
-#endif
-       )
-       wxstrTemperature = wxT("? °C") ;
-     else
-       wxstrTemperature = wxString::Format( "%.3f °C" , fTempInCelsius ) ;
      //mp_i_cpucontroller->
      fCPUload = -1.0 ;
      if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
@@ -2236,6 +2202,7 @@ void MainFrame::DrawCurrentPstateInfo(
         ) ;
 
    } //for-loop
+  }
 }
 
 void MainFrame::DrawCurrentVoltageSettingsCurve(
@@ -2417,8 +2384,12 @@ void MainFrame::OnEraseBackground(wxEraseEvent& event)
 
 void MainFrame::OnPaint(wxPaintEvent & event)
 {
+  DEBUGN("OnPaint CPU controller address:" << mp_i_cpucontroller <<
+    "usage getter addr.:" << mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
+    << "mp_wxbitmap:" << mp_wxbitmap )
   //May be NULL at startup.
-  if( mp_i_cpucontroller && 
+  if( ( mp_i_cpucontroller ||
+      mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter ) &&
     //Is NULL if CPUcontroller is NULL at startup.
     mp_wxbitmap 
     )
@@ -2435,25 +2406,13 @@ void MainFrame::OnPaint(wxPaintEvent & event)
     //m_wxCriticalSectionCPUctlAccess.Enter() ;
     //wxCriticalSectionLocker wxcriticalsectionlocker( 
     //  m_wxcriticalsectionCPUctlAccess ) ;
-    bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
-    if( //m_bAllowCPUcontrollerAccess 
-      bAllowCPUcontrollerAccess )
+//    bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
+//    if( //m_bAllowCPUcontrollerAccess
+//      bAllowCPUcontrollerAccess )
     {
 
     wxPaintDC * p_wxpaintdc = new wxPaintDC(this);
       //dc->SetBackground(*wxBLUE_BRUSH);
-      //wxPoint arwxpoint[3] ;
-      //arwxpoint[0] = wxPoint(100, 
-      //    //Because the y-origin is top left.
-      //    200-80 ) ;
-      //arwxpoint[1] = wxPoint(200, 
-      //    //Because the y-origin is top left.
-      //    200-95) ;
-      //arwxpoint[2] = wxPoint(400, 
-      //    //Because the y-origin is top left.
-      //    200-110) ;
-
-      //p_wxpaintdc->DrawSpline(3, arwxpoint ) ;
     //for( std::vector<MaxVoltageForFreq>::iterator iter = 
     //  //m_model.m_vecmaxvoltageforfreq.begin() ; 
     //  
@@ -2492,6 +2451,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
       {
         wxCoord wxcoordCanvasWidth ;
         wxCoord wxcoordCanvasHeight ;
+        DEBUGN("OnPaint wxmemorydc.IsOk()" )
         p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
         //m_wDiagramHeight = wxcoordCanvasHeight 
         //    //Space for drawing scale and scale values below the x-axis.
@@ -2769,18 +2729,6 @@ void MainFrame::OnPaint(wxPaintEvent & event)
                   , 270
                   , 90
                   ) ;
-              //wxmemorydc.DrawText(
-              //  wxString::Format("max. diff: %I64u" , m_ullHighestDiff )
-              //    , 270
-              //    , 90
-              //    ) ;
-              //wxmemorydc.DrawText(
-              //  wxString::Format(//"diff"
-              //    "retired microops/s : %I64u" , ullDiff )
-              //    , 270
-              //    , 110
-              //    ) ;
-
               //if( //If thes window has the focus 
               //  IsActive() )
               //{
@@ -2799,100 +2747,54 @@ void MainFrame::OnPaint(wxPaintEvent & event)
                 }
                 else
                   m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-
-                //wxmemorydc.DrawText(
-                //    wxString::Format("%0.2f" , fFreqInMHz )
-                //    , 170
-                //    , 70
-                //    ) ;
-
-                  //wxmemorydc.DrawText(
-                  //  wxString::Format("Freq by load:"
-                  //  //"%f"
-                  //  "%u"
-                  //  "voltage: %0.4f" , 
-                  //  //fFreqInMHz
-                  //  //wFreqInMHz
-                  //  pstate.GetFreqInMHz(), 
-                  //  //fVoltageInVolt 
-                  //  pstate.GetVoltageInVolt() 
-                  //  )
-                      //, 200
-                      //, 200
-                      //) ;
                //}
-               //else
-               //   wxmemorydc.DrawText(
-               //   wxString::Format("curr freq:%f NO current voltage %0.4f" , 
-               //     fFreqInMHz, fVoltageInVolt )
-               //       , 200
-               //       , 200
-               //       ) ;
-
-              if( //If this window has the focus 
-                //IsActive() 
-                ! m_vbAnotherWindowIsActive
-                )
-              {
-                //m_wFreqInMHzOfCurrentActiveCoreSettings = wFreqInMHz ;
-                //m_fVoltageInVoltOfCurrentActiveCoreSettings = fVoltageInVolt ;
-              }
             }
             else // m_bNotFirstTime == false 
               m_bNotFirstTime = true ;
-          //m_ullPreviousCPUusage = ull ;
-          //m_ullPreviousPerformanceEventCounter2 = 
-          //  ullPerformanceEventCounter2 ;
-          //m_ullPreviousPerformanceEventCounter3 =
-          //  ullPerformanceEventCounter3 ;
   #endif //_TEST_GRIFFIN
         //Just for testing:
         //wXcoordinate = wYcoordinate = 50 ;
-        if( //m_bDrawFreqAndVoltagePointForCurrCoreSettings 
-          m_vbAnotherWindowIsActive 
-          )
+        if( mp_i_cpucontroller )
         {
-          DrawVoltageFreqCross(
-            wxmemorydc
-            , m_fVoltageInVoltOfCurrentActiveCoreSettings
-            , m_wFreqInMHzOfCurrentActiveCoreSettings
-            , wxBLUE
-            ) ;
-        }
-        else
-        {
-          float fVoltageInVolt ;
-          WORD wFreqInMHz ;
-          for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
-            GetNumberOfCPUcores() ; ++ byCoreID )
+          bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
+          if( //m_bAllowCPUcontrollerAccess
+            bAllowCPUcontrollerAccess )
           {
-            mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCoreID);
-//            PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
-//              m_arp_percpucoreattributes[ byCoreID] ;
-            DrawVoltageFreqCross(
-              wxmemorydc
-              //, r_percpucoreattributes.m_fVoltageInVoltCalculatedFromCPUload
-              , fVoltageInVolt
-              //, r_percpucoreattributes.m_wFreqInMHzCalculatedFromCPUload 
-              , wFreqInMHz
-              , wxBLUE
-              ) ;
-          }
+            if( //m_bDrawFreqAndVoltagePointForCurrCoreSettings
+              m_vbAnotherWindowIsActive
+              )
+            {
+              DrawVoltageFreqCross(
+                wxmemorydc
+                , m_fVoltageInVoltOfCurrentActiveCoreSettings
+                , m_wFreqInMHzOfCurrentActiveCoreSettings
+                , wxBLUE
+                ) ;
+            }
+            else
+            {
+              float fVoltageInVolt ;
+              WORD wFreqInMHz ;
+              for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+                GetNumberOfCPUcores() ; ++ byCoreID )
+              {
+                mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCoreID);
+    //            PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
+    //              m_arp_percpucoreattributes[ byCoreID] ;
+                DrawVoltageFreqCross(
+                  wxmemorydc
+                  //, r_percpucoreattributes.m_fVoltageInVoltCalculatedFromCPUload
+                  , fVoltageInVolt
+                  //, r_percpucoreattributes.m_wFreqInMHzCalculatedFromCPUload
+                  , wFreqInMHz
+                  , wxBLUE
+                  ) ;
+              }
+            }
+          } //if( bAllowCPUcontrollerAccess)
         }
         //m_bDrawFreqAndVoltagePointForCurrCoreSettings =
         //    ! m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
-  //#ifndef _TEST_PENTIUM_M
-  //        //DWORD dwValue ;
-  //        float fTempInDegCelsius ;
-  //        if( mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius)
-  //          )
-  //          wxmemorydc.DrawText(
-  //            wxString::Format(_T("CPU temp.:%0.2f degrees C") ,
-  //              fTempInDegCelsius )
-  //              , 50
-  //              , 70
-  //              ) ;
-  //#endif //#ifndef _TEST_PENTIUM_M
   #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER__
          float arf[2] ;
          //m_cpucoreusagegetter.GetPercentalUsageForAllCores(arf) ;
@@ -2956,7 +2858,10 @@ void MainFrame::OnPaint(wxPaintEvent & event)
 
           //}
       }//if( wxmemorydc.IsOk() )
-
+      else
+      {
+        DEBUGN("OnPaint NOT wxmemorydc.IsOk()" )
+      }
       delete p_wxpaintdc; 
     }
     //m_wxCriticalSectionCPUctlAccess.Leave() ;
@@ -2982,8 +2887,10 @@ enum
   //setp_state2 ,
 };
 
-void MainFrame::EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * p_percpucoreattributes )
+void MainFrame::EndDynVoltAndFreqScalingThread(
+  PerCPUcoreAttributes * p_percpucoreattributes )
 {
+  LOGN("ending Dynamic Voltage and Frequency scaling thread")
   p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
   //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
   p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
@@ -3428,10 +3335,12 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
 
 void MainFrame::OnTimerEvent(wxTimerEvent &event)
 {
+  DEBUGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
   //May be NULL at startup.
   if( mp_i_cpucontroller )
   {
     bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
+    DEBUGN("CPU controller access allowed:" << bAllowCPUcontrollerAccess )
     if( //m_bAllowCPUcontrollerAccess 
       bAllowCPUcontrollerAccess )
     {
@@ -3478,6 +3387,12 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
     }
     //TRACE("OnTimerEvent\n") ;
   } // if( mp_i_cpucontroller )
+  else //if( mp_i_cpucontroller )
+  {
+    if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+      //Also refresh if just a core usage getter (for showing the usage per core)
+      Refresh() ;
+  }
 }
 
 void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
@@ -3569,6 +3484,52 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
 //      ) ;
 //}
 
+void MainFrame::RecreateDisplayBuffers()
+{
+  if( mp_wxbitmap )
+    delete mp_wxbitmap ;
+  wxRect rect = GetClientRect();
+
+  //wxCoord wxcoordCanvasWidth ;
+  //wxCoord wxcoordCanvasHeight ;
+  //p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
+  m_wDiagramHeight = rect.height
+      //Space for drawing scale and scale values below the x-axis.
+      - 50 ;
+  //WORD wXcoordOfBeginOfYaxis = 50 ;
+  m_wXcoordOfBeginOfYaxis = 50 ;
+  //WORD wDiagramWidth = wxcoordCanvasWidth - wXcoordOfBeginOfYaxis - 30 ;
+  m_wDiagramWidth = rect.width - m_wXcoordOfBeginOfYaxis - 30 ;
+
+  mp_wxbitmap = new wxBitmap(
+    rect.width,
+    rect.height ,
+    //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
+    //"A depth of -1 indicates the depth of the current screen or visual."
+    -1) ;
+
+  //if( mp_wxbufferedpaintdcStatic )
+  //  delete mp_wxbufferedpaintdcStatic ;
+  //create new objet so it uses internally an bitmap with the new client size.
+  //mp_wxbufferedpaintdcStatic = new wxBufferedPaintDC(this) ;
+  if( mp_wxbitmapStatic )
+    delete mp_wxbitmapStatic ;
+  mp_wxbitmapStatic = new wxBitmap(
+    rect.width,
+    rect.height ,
+    //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
+    //"A depth of -1 indicates the depth of the current screen or visual."
+    -1) ;
+  m_wxmemorydcStatic.SelectObject(*mp_wxbitmapStatic) ;
+  //Clears the device context using the current background brush.
+  //(else black background?)
+  m_wxmemorydcStatic.Clear();
+
+  m_wMinYcoordInDiagram =
+    //Let the diagram begin at the vertical middle of the topmost voltage value.
+    m_wxmemorydcStatic.GetCharHeight() / 2 ;
+}
+
 void MainFrame::RedrawEverything()
 {
   //May be NULL at startup.
@@ -3583,50 +3544,9 @@ void MainFrame::RedrawEverything()
       bAllowCPUcontrollerAccess )
     {
 //      int i = 0 ;
-      if( mp_wxbitmap )
-        delete mp_wxbitmap ;
-      wxRect rect = GetClientRect();
       m_fMinVoltage = mp_i_cpucontroller->GetMinimumVoltageInVolt() ;
       m_fMaxMinusMinVoltage = m_fMaxVoltage - m_fMinVoltage ;
-
-      //wxCoord wxcoordCanvasWidth ;
-      //wxCoord wxcoordCanvasHeight ;
-      //p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
-      m_wDiagramHeight = rect.height 
-          //Space for drawing scale and scale values below the x-axis.
-          - 50 ;
-      //WORD wXcoordOfBeginOfYaxis = 50 ;
-      m_wXcoordOfBeginOfYaxis = 50 ;
-      //WORD wDiagramWidth = wxcoordCanvasWidth - wXcoordOfBeginOfYaxis - 30 ;
-      m_wDiagramWidth = rect.width - m_wXcoordOfBeginOfYaxis - 30 ;
-
-      mp_wxbitmap = new wxBitmap( 
-        rect.width, 
-        rect.height , 
-        //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
-        //"A depth of -1 indicates the depth of the current screen or visual."
-        -1) ;
-
-      //if( mp_wxbufferedpaintdcStatic )
-      //  delete mp_wxbufferedpaintdcStatic ;
-      //create new objet so it uses internally an bitmap with the new client size.
-      //mp_wxbufferedpaintdcStatic = new wxBufferedPaintDC(this) ;
-      if( mp_wxbitmapStatic )
-        delete mp_wxbitmapStatic ;
-      mp_wxbitmapStatic = new wxBitmap( 
-        rect.width, 
-        rect.height , 
-        //http://docs.wxwidgets.org/stable/wx_wxbitmap.html#wxbitmapctor:
-        //"A depth of -1 indicates the depth of the current screen or visual."
-        -1) ;
-      m_wxmemorydcStatic.SelectObject(*mp_wxbitmapStatic) ;
-      //Clears the device context using the current background brush. 
-      //(else black background?)
-      m_wxmemorydcStatic.Clear();
-
-      m_wMinYcoordInDiagram = 
-        //Let the diagram begin at the vertical middle of the topmost voltage value.
-        m_wxmemorydcStatic.GetCharHeight() / 2 ;
+      RecreateDisplayBuffers() ;
       //m_wxbufferedpaintdcStatic.SelectObject(mp_wxbitmapStatic) ;
     //  if( mp_wxbufferedpaintdc
     //  wxBufferedPaintDC mp_wxbufferedpaintdc ( this ) ;
@@ -3686,6 +3606,12 @@ void MainFrame::RedrawEverything()
     }
     //m_wxcriticalsectionCPUctlAccess.Leave() ;
   } // if( mp_i_cpucontroller )
+  else
+  {
+    if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+      //Neccessary for OnPaint() ;
+      RecreateDisplayBuffers() ;
+  }
 }
 
 void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )

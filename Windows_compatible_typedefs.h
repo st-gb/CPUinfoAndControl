@@ -25,8 +25,10 @@ typedef int BOOL ;
 #ifndef TRUE //Avoid MSVC warning " warning C4005: 'TRUE': Macro-redefinition"
   #define TRUE !FALSE
 #endif
-//see winnt.h
-typedef unsigned long long ULONGLONG ;
+
+////see winnt.h
+//typedef unsigned long long ULONGLONG ;
+
 //Especially for Linux gcc/g++; see MSVC's "basetsd.h"
 //if compiled with cygwin? compiler:
 //  "error: duplicate â€˜unsignedâ€™"
@@ -48,6 +50,16 @@ typedef wchar_t WCHAR ;
 #endif //#ifndef _MSC_VER
 typedef void * LPVOID;
 //typedef ULONG_MAX ;
+
+////from winnt.h:
+//#define _HAVE_INT64
+//#if defined(_HAVE_INT64) || (defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 64)
+//typedef __int64 LONGLONG;
+//typedef unsigned __int64 DWORDLONG;
+//#else
+//typedef double LONGLONG,DWORDLONG;
+//#endif
+
 
 #ifdef	__cplusplus
 }

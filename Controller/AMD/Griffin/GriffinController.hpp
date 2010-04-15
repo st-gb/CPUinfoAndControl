@@ -2,14 +2,18 @@
 
 //for use with "/MD[d]" else: fatal error C1189: #error :  Building MFC application with /MD[d] (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or do not use /MD[d]
 #define _AFXDLL
-
-#include <ModelData/PStates.h>
+//Keep away the dependance on the Model class for dyn libs.
+//#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #include <ModelData/PStates.h>
 //#include "../UserInterface.hpp"
 #include "stdio.h" //for printf() in DEBUG() etc.
 #include <string> //for type "std::string"
 #include <string.h> //for memcpy(...)
 #include <stdlib.h> //for atoi()
-#include <Controller/IDynFreqScalingAccess.hpp> //for IDynFreqScalingAccess
+//Keep away the dependance on this class for dyn libs.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #include <Controller/IDynFreqScalingAccess.hpp> //for IDynFreqScalingAccess
+#endif
 //#ifdef WIN32 
 //#ifdef _WINDOWS
 #ifdef _MSC_VER //MicroSoft C compiler (macro in Visual Studio )
@@ -33,12 +37,17 @@
 //#include "../ModelData/ModelData.hpp"
 #include <preprocessor_helper_macros.h>
 #include <Controller/AMD/Griffin/AMD_family17.h>
+#include <Controller/AMD/Griffin/UsageGetterAndControllerBase.hpp>
 //#include "Windows/WinRing0dynLinked.hpp"
 //#include "../ISpecificController.hpp"
 #include <Controller/I_CPUaccess.hpp>
-#include <ModelData/PStates.h>
-#include <ModelData/VoltageAndFreq.hpp>
 #include <Controller/I_CPUcontroller.hpp>
+
+  //Keep away the dependance on this class for dyn libs.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #include <ModelData/PStates.h>
+#endif
+#include <ModelData/VoltageAndFreq.hpp>
 #include <tchar.h>
 #ifndef _WINDOWS
   #include <Windows_compatible_typedefs.h>
@@ -97,25 +106,26 @@ class MaxVoltageForFreq ;
 
 std::string getBinaryRepresentation(unsigned long ulValue);
 
+using namespace Griffin ;
+
+//inheritance:
+//  CPUcoreUsageGetterAndControllerBase (I_CPUaccess * mp_cpuaccess)
+//    I_CPUcontroller
+//  Griffin::UsageGetterAndControllerBase
+//  GriffinController
 //This class should only contain standard C++ and no plattform/OS
-//dependant/ specific code.
+//dependent/ specific code.
 class GriffinController
-  : public I_CPUcontroller
+  :
+//    public I_CPUcontroller
+//  ,
+  //public Griffin::UsageGetterAndControllerBase
+  public UsageGetterAndControllerBase
 {
 private:
   ////This should be private so that other classes can not access this
   ////member directly in order to avoid writes to dangerous MSR registers.
   //I_CPUaccess * mp_controller ;
-#ifdef _WINDOWS //win32, 64 Bit (etc.)
-  //HINSTANCE is available under MS Vis Studio/ C++
-  //HINSTANCE m_hinstanceThisModule;
-//#endif //#ifdef _WINDOWS
-//#ifdef WIN32
-  #ifndef LINK_TO_WINRING0_STATICALLY
-
-  #endif // #ifdef LINK_TO_WINRING0_STATICALLY
-//#endif //#ifdef WIN32
-#endif //#ifdef _WINDOWS
   UserInterface * mp_userinterface ;
 
   //Use the method with std::string parameter rather than this 
@@ -125,9 +135,9 @@ private:
     //Use a pointer to an array in order to allocate the array within 
     //this method.
     char * & parchCPUID ) ;
-  //CEvent m_event ;
   //HANDLE m_handleEvent;
 public :
+  BYTE m_byMainPLLoperatingFrequencyIDmax ;
   BYTE m_byPstateForFindingLowVoltage ;
   bool m_bFrequencyScalingByOSDisabled ;
   bool m_bPstateSet ;
@@ -140,19 +150,12 @@ public :
   //Model m_model ;
   //Model * mp_model ;
   //ISpecificController 
-  ICalculationThread * mp_calculationthread ;
-  ICalculationThread ** marp_calculationthread ;
+//  ICalculationThread * mp_calculationthread ;
+//  ICalculationThread ** marp_calculationthread ;
   //accessed by "IncreaseVoltage(...)" and "FindLowestOperatingVoltage(...)"
   PState m_pstate ;
   //CRITICAL_SECTION m_criticalsectionMSRaccess ;
 
-  void AccuratelyStartPerformanceCounting( 
-    DWORD dwAffinityBitMask ,
-    BYTE byPerformanceCounterNumber ,
-    WORD wEventSelect
-    //BYTE byCounterMask 
-    , bool bInvertCounterMask
-    );
   BYTE ApplyAllPStates() ;
   bool ApplyAllPStates(const PStates & pstates);
 
@@ -169,6 +172,11 @@ public :
       ++ wVoltageID ) ; 
   }
 
+  //For the AMD Griffins it it known which freqs are possible.
+  //(max., 1/2 max, 1/2 max - 50 ...)
+  //These freqs are used for the DynFreVoltscal.
+  void FillAvailableCPUcoreFrequenciesList() ;
+
   void GetAllPossibleFrequencies(
     std::set<VoltageAndFreq> & r_stdsetvoltageandfreq ) ;
 
@@ -182,6 +190,11 @@ public :
     ) ;
   BYTE GetCurrentPstate(DWORD dwAffinityMask) ;
 
+  inline float GetLowestPossibleMultiplier()
+  {
+    return (float) m_byMainPLLoperatingFrequencyIDmax /
+      (float) HIGHEST_EFFECTIVE_DIVISOR_ID ;
+  }
   //BYTE GetInterpolatedVoltageFromFreq(
   //  WORD wFreqInMHzToGetVoltageFrom,
   //  float & r_fVoltageInVolt ) ;
@@ -205,6 +218,8 @@ public :
 
   //void 
     BYTE Init() ;
+  //Initializes all member vars of _this_ class. So simply call it by all c'tors.
+  void InitMemberVars() ;
   void ResumeFromS3orS4() ;
 
 //#ifdef WIN32
@@ -257,7 +272,14 @@ public :
   BYTE handleCmdLineArgs(//int argc
     );
 
-  GriffinController() {};
+  //This parameterless c'tor is for use where this initialization
+  //comes later (e.g. as global var in a DLL module).
+  GriffinController()
+  {
+    InitMemberVars();
+  };
+//Keep away the dependance on the Model class for dyn libs.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   GriffinController(
     Model * p_modelData, 
     I_CPUaccess * p_cpuaccessmethod 
@@ -267,6 +289,7 @@ public :
     mp_cpuaccess = p_cpuaccessmethod ;
     Init() ;
   }
+#endif
   
   //GriffinController(
   //  int argc
@@ -279,6 +302,8 @@ public :
   //  , IDynFreqScalingAccess & p_dynfreqscalingaccess
   //  ) ;
 
+//Keep away the dependance on the Model class for dyn libs.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   GriffinController(
     int argc,
     _TCHAR * argv[] ,
@@ -291,6 +316,7 @@ public :
     ICalculationThread * p_calculationthread ,
     IDynFreqScalingAccess & p_dynfreqscalingaccess
     );
+#endif
 
   ~GriffinController() ;
 
@@ -299,25 +325,15 @@ public :
   void SetValuesOfClockPower_TimingControl2Register(
     BYTE byNbVid, BYTE byPstateMaxVal, BYTE byAltVid);
 
-//#ifdef WIN32 
-#ifdef _WINDOWS
-  #ifndef LINK_TO_WINRING0_STATICALLY
-
-  //bool isNBVIDOptionSpecified(
-
-  #endif //#ifndef LINK_TO_WINRING0_STATICALLY
-#endif//#ifdef WIN32
-
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on mp_dynfreqscalingaccess for dyn libs.
    void DisableFrequencyScalingByOS() ;
    void EnableFrequencyScalingByOS() ;
+#endif
 
    bool isValidPstateOption(BYTE & rbyP_State) ;
 
    static WORD getFrequencyInMHz(BYTE byFrequID,BYTE byDivID) ;
-
-//#ifdef WIN32
-//  bool InitWinRing0();
-//#endif//#ifdef WIN32
 
   float GetDefaultVoltageForFrequency(WORD wFrequInMHz);
   //float 
@@ -325,7 +341,7 @@ public :
       WORD wFreqToGetMaxVoltageFor
       , float & r_fMaxVoltageInVolt
       ) ;
-  WORD GetMinimumFrequencyInMHz() { return 150 ; }
+  WORD GetMinimumFrequencyInMHz() ;//{ return 150 ; }
   WORD GetMaximumVoltageID()  { return 64 ; }
   WORD GetMinimumVoltageID() { return 36 ; }
   //BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq
@@ -355,8 +371,6 @@ public :
 
   float GetMinimumVoltageInVolt() ;
 
-  BYTE GetNumberOfCPUCores() ;
-
   //bool
   BYTE GetSafefy(
     const PState & r_pstate
@@ -375,20 +389,6 @@ public :
     //Only value "1" means "safe". Values 0, 2 etc. mean "unsafe"
     return GetSafefy(cr_pstate) == SETTING_VOLTAGE_IS_SAFE ;
   }
-
-  void PerformanceEventSelectRegisterWrite(
-    DWORD dwAffinityBitMask ,
-    BYTE byPerformanceEventSelectRegisterNumber ,
-    WORD wEventSelect ,
-    BYTE byCounterMask ,
-    bool bInvertCounterMask ,
-    bool bEnablePerformanceCounter,
-    bool bEnableAPICinterrupt,
-    bool bEdgeDetect,
-    bool bOSmode,
-    bool bUserMode,
-    BYTE byEventQualification
-  ) ;
 
   void SetFreqAndVoltage(
     BYTE byCoreID 
@@ -469,18 +469,6 @@ public :
 	  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
     ) ;
   
-  //There was linker error 2019 when it was declared as inline under MSVC 2005.
-  //inline 
-  bool // TRUE: success, FALSE: failure
-   ReadPerformanceEventCounterRegister(
-	  //DWORD dwIndex,   // MSR index
-    BYTE byPerformanceEventCounterNumber ,
-	  //DWORD & dwLowmostBits,	   // bit  0-31 ( register "EAX" )
-	  //DWORD & dwHighmostBits,   // bit 32-63 (register "EDX")
-    ULONGLONG & r_ull ,
-	  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
-    ) ;
-
   bool UseDefaultFormulaForOvervoltageProtection(
     BYTE byVID,
     WORD wWantedFrequInMHz) ;
@@ -529,23 +517,6 @@ public :
   //The RDPMC instruction loads the contents of the PERF_CTR[3:0] register 
   //specified by the ECX register, into the EDX register and the EAX register.
 //
-//    //HQUERY hQuery;
-//    //HCOUNTER hCounter;
-//
-//    //PDH_FMT_COUNTERVALUE FmtValue;
-//
-//    //PdhOpenQuery(NULL, 0, &hQuery);
-//
-//    //PdhAddCounter(hQuery, "\\Processor(_Total)\\% Processor Time", 0, &hCounter);
-//
-//    //printf("Starting the process...\n");
-//
-//    //PdhCollectQueryData(hQuery);
-//
-//    //PdhGetFormattedCounterValue(hCounter, PDH_FMT_DOUBLE, NULL, &FmtValue);
-//    //printf("The cpu usage is : %f%%\n", FmtValue.doubleValue);
-//
-//    //PdhCloseQuery(hQuery);
 //  }
   
   bool SetCPUMiscControlDWORD(

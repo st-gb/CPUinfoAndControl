@@ -124,13 +124,7 @@ public:
     return p_pstatewithnearestfreqlowerequal ;
   }
 
-  void SetNumber(BYTE byNumber)
-  {
-    m_byNumber = byNumber ;
-    //DEBUG("Loading config--current p-state's number: %u\n", (WORD) byNumber);
-    LOG( "Loading config--current p-state's number: " << (WORD) byNumber 
-        << "\n" );
-  }
+  void SetNumber(BYTE byNumber) ;
 
     void SetPStateVID(BYTE byPStateID, BYTE byVID) ;
     void SetPStateDID( BYTE byPStateID, BYTE byDID) ;

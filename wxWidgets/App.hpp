@@ -58,10 +58,10 @@ private:
   //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
   //PowerProfDynLinked m_powerprofdynlinked ;
 //#endif //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
-  I_CPUcontroller * mp_cpucontroller ;
+  //I_CPUcontroller * mp_cpucontroller ;
   //e.g. point to console or GUI.
   MainFrame * mp_frame ;
-  UserInterface * mp_userinterface ;
+//  UserInterface * mp_userinterface ;
   #ifdef _WINDOWS
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
   #else
@@ -99,7 +99,7 @@ public:
     NamedPipeClient m_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
-  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
+//  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
   std::tstring m_stdtstrProgramName ;
 #ifdef COMPILE_WITH_CPU_SCALING
@@ -123,8 +123,10 @@ public:
 //#ifdef COMPILE_WITH_CPU_SCALING
 //    : mp_wxdynfreqscalingtimer(NULL)
 //#endif //#ifdef COMPILE_WITH_CPU_SCALING
-    : mp_cpucontroller(NULL)
-    , mp_dynfreqscalingaccess(NULL)
+    :
+//      mp_cpucontroller(NULL)
+//    ,
+    mp_dynfreqscalingaccess(NULL)
   {
 #ifdef COMPILE_WITH_DEBUG
   //fileDebug = fopen("PumaStateCtrl_debug.txt","w");
@@ -150,8 +152,10 @@ public:
   bool Confirm(const std::string & str) ;
   bool Confirm(std::ostrstream & r_ostrstream ) ;
   void CPUcontrollerChanged() ;
+  void CPUcoreUsageGetterDeleted() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
   void DeleteCPUcontroller() ;
+  void EndDVFS() ;
   I_CPUcontroller * GetCPUcontroller()
   {
     return mp_cpucontroller ;

@@ -44,8 +44,11 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
   , float fLoad 
   )
 {
+  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad")
   PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
     m_arp_percpucoreattributes[byCoreID] ;
+  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad "
+    " address of r_percpucoreattributes:" << & r_percpucoreattributes)
   //if ( //m_fPreviousCPUusage 
   //  ////mp_cpucoredata->m_arp_percpucoreattributes[byCoreID].
   //  //r_percpucoreattributes.
@@ -68,6 +71,8 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
       //  * 0.75
       )
     {
+      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+        "load > threshold for increase")
       //m_fPreviousCPUusage 
       r_percpucoreattributes.m_fPreviousCPUusage = 
         //dClocksNotHaltedDiffDivTCSdiff 
@@ -94,18 +99,24 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
     }
     else
     {
+      float fVoltage ;
+      WORD wFreqInMHz ;
+      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+        "load <= threshold for increase")
       //m_fPreviousCPUusage 
       r_percpucoreattributes.m_fPreviousCPUusage = 
         //dClocksNotHaltedDiffDivTCSdiff ;
         //mp_cpucoredata->m_arfCPUcoreLoadInPercent[byCoreID] ;
         fLoad ;
-      float fVoltage ;
-      WORD wFreqInMHz ;
+      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+        "before mp_cpucontroller->GetCurrentPstate")
       mp_cpucontroller->GetCurrentPstate(
         wFreqInMHz 
         , fVoltage
         , byCoreID
         ) ;
+      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+        "before mp_cpucontroller->SetFreqAndVoltageFromFreq")
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
         //Explicit cast to avoid (g++) compiler warning.
@@ -113,6 +124,8 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
           ( wFreqInMHz * fLoad )
         , byCoreID
         );
+      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+        "after mp_cpucontroller->SetFreqAndVoltageFromFreq")
     }
   }
   //else
@@ -128,10 +141,11 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 
 ExitCode DynFreqScalingThreadBase::Entry()
 {
-  LOGN("Dynamic Voltage and Frequency Scaling thread should run?" << 
-    m_vbRun )
+  LOGN("Dynamic Voltage and Frequency Scaling thread should run? " <<
+    ( m_vbRun ? "yes" : "no") )
   LOGN("CPU core usage getter--address: " << mp_icpu )
   mp_icpu->Init();
+  LOGN("DVFS after initializing CPU core usage getter")
   while(//1
     m_vbRun )
   {
@@ -163,6 +177,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
         //}
         //else
         {
+          DEBUG_COUTN("too hot")
           //TODO exit thread when getting CPU core load fails?
           if( mp_icpu->//GetPercentalUsageForBothCores
               GetPercentalUsageForAllCores(mp_cpucoredata->
@@ -273,6 +288,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
       }//too hot
       else
       {
+        DEBUG_COUTN("NOT too hot")
+        DEBUGN("NOT too hot")
         if( mp_icpu->//GetPercentalUsageForBothCores
             GetPercentalUsageForAllCores(mp_cpucoredata->
             m_arfCPUcoreLoadInPercent) 
@@ -285,6 +302,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
              mp_cpucontroller->m_b1CPUcorePowerPlane  )
           {
             float fHighestCPUcoreLoadInPercent = 0.0 ;
+            DEBUG_COUTN("1 CPU core power plane")
+            DEBUGN("1 CPU core power plane")
             for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
               GetNumberOfCPUcores() ; ++ byCoreID )
             {
@@ -298,6 +317,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
           }
           else
           {
+            DEBUG_COUTN("NOT 1 CPU core power plane")
+            DEBUGN("NOT 1 CPU core power plane")
             for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
               GetNumberOfCPUcores() ; ++ byCoreID )
             {

@@ -16,9 +16,12 @@ typedef float (
 typedef void (
   //WINAPI
   * dll_usage_getter_init_type)(
-      //I_CPUaccess *
-      WORD wNumLogicalCPUcores
+      I_CPUaccess *
+      //WORD wNumLogicalCPUcores
       );
+typedef WORD (
+  //WINAPI
+  * dll_usage_getter_num_logical_cpu_cores_type)();
 
 class wxDynLibCPUcoreUsageGetter
   : public ICPUcoreUsageGetter
@@ -27,19 +30,26 @@ class wxDynLibCPUcoreUsageGetter
   CPUcoreData * mp_cpucoredata ;
   _GetCPUcoreUsage m_pfngetcpucoreusage ; //= NULL ;
   dll_usage_getter_init_type m_pfn_dll_init_type ;
+  dll_usage_getter_num_logical_cpu_cores_type
+    m_pfn_dll_usage_getter_num_logical_cpu_cores_type ;
 
   wxDynamicLibrary m_wxdynamiclibraryCPUcoreUsage ;
 
 public:
+  I_CPUaccess * mp_cpuaccess ;
   wxDynLibCPUcoreUsageGetter(
     //std::string & strDLLname 
     wxString & r_wxstrFilePath 
     //, std::string & strDLLfunctionName
-    //, I_CPUaccess * p_cpuaccess 
+    , I_CPUaccess * p_cpuaccess
     , CPUcoreData & cpucoredata
     ) ;
+  ~wxDynLibCPUcoreUsageGetter() ;
+
+  WORD GetNumberOfLogicalCPUcores() ;
+
+  BYTE GetPercentalUsageForAllCores( float arf [] ) ;
 
   BYTE Init() { return 0 ; }
 
-  BYTE GetPercentalUsageForAllCores( float arf [] ) ;
 };

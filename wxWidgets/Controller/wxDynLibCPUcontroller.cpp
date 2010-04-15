@@ -30,6 +30,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     //wxdynamiclibraryCPUctl.
     wxString wxstrFuncName //= wxT
       ("Init") ;
+    LOGN("Dyn Lib " << r_wxstrFilePath << " successfully loaded")
     if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) 
       )
     //dll_init_type pfnInit = (dll_init_type)
@@ -37,6 +38,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     //FARPROC __stdcall pfn = ::GetProcAddress(hinstanceCPUctlDLL,"nNehalemControllerDLL");
     //if( pfnInit )
     {
+      LOGN("Dyn Lib symbol " << wxstrFuncName << " exists")
 //#ifdef _DEBUG
 //      wxMessageBox( wxString::Format( "CPU access address: %x "
 //        ", adress of ReadMSR fct:%x"
@@ -46,6 +48,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 //        ) ) ;
 //#endif
       wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
+      LOGN("Dyn Lib assigned fct ptr to symbol " << wxstrFuncName )
+      LOGN("Dyn Lib before calling " << wxstrFuncName )
+      DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
       //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
       (*pfnInit)( //wxGetApp().mp_i_cpuaccess 
         p_cpuaccess
@@ -53,12 +58,14 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         , & ::ReadMSR
         //1 
         ) ;
+      LOGN("Dyn Lib after calling " << wxstrFuncName )
       m_pfnGetMaximumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type) 
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumFrequencyInMHz") 
         ) ;
       m_pfnGetMinimumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type) 
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumFrequencyInMHz") 
         ) ;
+      LOGN("Dyn Lib after GetMinimumFrequencyInMHz")
 
       wxstrFuncName = wxT("PrepareForNextPerformanceCounting") ;
       if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
@@ -69,39 +76,42 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         m_pfn_preparefornextperformancecounting = NULL ;
       //Do not use wxDYNLIB_FUNCTION: it shows a wxWidgets error message if 
       // a DLL function does not exist.
-    //  wxDYNLIB_FUNCTION(dll_GetCurrentPstate_type, GetCurrentPstate, 
-    //  m_wxdynamiclibraryCPUctl) ;
-    //m_pfngetcurrentpstate = pfnGetCurrentPstate ;
-    m_pfngetcurrentpstate = (dll_GetCurrentPstate_type) 
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetCurrentPstate") ) ;
+      //  wxDYNLIB_FUNCTION(dll_GetCurrentPstate_type, GetCurrentPstate,
+      //  m_wxdynamiclibraryCPUctl) ;
+      //m_pfngetcurrentpstate = pfnGetCurrentPstate ;
+      m_pfngetcurrentpstate = (dll_GetCurrentPstate_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetCurrentPstate") ) ;
 
-    //wxDYNLIB_FUNCTION(dll_SetCurrentPstate_type, SetCurrentPstate, 
-    //  m_wxdynamiclibraryCPUctl) ;
-    //m_pfnsetcurrentpstate = pfnSetCurrentPstate ;
-    m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type) 
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
+      //wxDYNLIB_FUNCTION(dll_SetCurrentPstate_type, SetCurrentPstate,
+      //  m_wxdynamiclibraryCPUctl) ;
+      //m_pfnsetcurrentpstate = pfnSetCurrentPstate ;
+      m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
+      m_pfn_set_pstate_from_freq = (dynlib_SetPstateFromFreq)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
+      //m_pfn_too_hot = (dll_TooHot_type)
+      //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
 
-    //m_pfn_too_hot = (dll_TooHot_type) 
-    //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
+      wxstrFuncName = wxT("WriteMSR") ;
+      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+        m_pfn_write_msr = (dll_WriteMSR_type)
+          m_wxdynamiclibraryCPUctl.GetSymbol( wxT("WriteMSR") ) ;
+      else
+        m_pfn_write_msr = NULL ;
+      //wxDYNLIB_FUNCTION(dll_GetNumberOfCPUcores_type, GetNumberOfCPUcores,
+      //  m_wxdynamiclibraryCPUctl) ;
+      //m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
+      m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetNumberOfCPUcores") ) ;
 
-    wxstrFuncName = wxT("WriteMSR") ;
-    if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-      m_pfn_write_msr = (dll_WriteMSR_type)
-        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("WriteMSR") ) ;
-    else
-      m_pfn_write_msr = NULL ;
-    //wxDYNLIB_FUNCTION(dll_GetNumberOfCPUcores_type, GetNumberOfCPUcores, 
-    //  m_wxdynamiclibraryCPUctl) ;
-    //m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
-    m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetNumberOfCPUcores") ) ;
+      m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetTemperatureInCelsius") ) ;
 
-    m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetTemperatureInCelsius") ) ;
+      wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
+      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+        m_b1CPUcorePowerPlane = false ;
+      LOGN("Dyn Lib after moreThan1CPUcorePowerPlane")
 
-    wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
-    if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-      m_b1CPUcorePowerPlane = false ;
       //dll_getMulti_type pfnGetMultiplier = (dll_getMulti_type)
       //  ::GetProcAddress(hinstanceCPUctlDLL,"GetMultiplier") ;
       //if( pfnGetMultiplier)
@@ -133,6 +143,8 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCode( dw) ;
     std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
+    LOGN("loading CPU controller dynamic library failed:" <<
+        stdstrErrMsg )
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
     throw CPUaccessException(stdstrErrMsg) ;
   }
@@ -141,6 +153,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 wxDynLibCPUcontroller::~wxDynLibCPUcontroller()
 {
   m_wxdynamiclibraryCPUctl.Unload() ;
+  LOGN("Unloaded the CPU controller dynamic library")
 }
 
 void wxDynLibCPUcontroller::DecreaseVoltageBy1Step(float & r_fVoltage)
@@ -162,7 +175,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentPstate(
         , & wMilliVolt
         , byCoreID
         ) ;
-       r_fVolt = wMilliVolt * 1000 ;
+       r_fVolt = (float) wMilliVolt / 1000.0 ;
 //      DEBUG_COUT( "wxDynLibCPUcontroller::GetCurrentPstate("
 //        << r_wFreqInMHz << ","
 //        << r_fVolt << ","
@@ -264,18 +277,40 @@ BYTE wxDynLibCPUcontroller::
       , BYTE byCoreID 
       ) //{return 0 ; }
 {
+  DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...)")
   if( m_pfnsetcurrentpstate )
   {
     WORD wMilliVolt = (WORD) (fVolt * 1000.0) ;
+    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) "
+      "before calling fct. at address " << m_pfnsetcurrentpstate <<
+      " with args (" << wFreqInMHz << "," << wMilliVolt << ","
+      << (WORD) byCoreID << ")")
      BYTE by = (*m_pfnsetcurrentpstate)(
       wFreqInMHz
       , wMilliVolt
       , byCoreID
       ) ;
-     return by ;
+    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) res.:" << by)
+    return by ;
   }
   return 0 ;
 }
+
+//BYTE wxDynLibCPUcontroller::SetFreqAndVoltageFromFreq(
+//  WORD wFreqInMHz
+//  , const std::set<VoltageAndFreq> & cr_stdsetvoltageandfreqForInterpolation
+//  , BYTE byCoreID )
+//{
+//  BYTE byRet = 0 ;
+//  float fVoltageInVolt ;
+//  DEBUGN("wxDynLibCPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+//      "address of model: " << mp_model )
+//  if( m_pfn_set_pstate_from_freq )
+//  {
+//
+//  }
+//  return byRet ;
+//}
 
 BYTE wxDynLibCPUcontroller::TooHot() 
 { 

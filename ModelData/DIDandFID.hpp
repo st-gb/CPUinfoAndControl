@@ -27,4 +27,9 @@ public:
   {
     return ( WORD) (( m_byFreqID + 8 )*100 ) / ( 1 << m_byDivisorID ) ;
   }
+
+  float GetMultiplier()
+  {
+    return ( float) ( m_byFreqID + 8 ) / (float)( 1 << m_byDivisorID ) ;
+  }
 };

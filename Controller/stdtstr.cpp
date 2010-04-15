@@ -1,5 +1,5 @@
 //#ifdef _MSC_VER
-  #include "StdAfx.h"
+  #include "stdafx.h"
 //#endif//#ifdef _MSC_VER
 
 #include "stdtstr.hpp"

@@ -6,7 +6,7 @@
   //If not included: compiler error "C1010" under MSVC.
   //WinRing0's stdafx.h includes <windows.h>
   //But this cuases: fatal error C1189: #error :  WINDOWS.H already included.  MFC apps must not #include <windows.h>
-	#include "../stdafx.h"
+  #include <stdafx.h>
 #endif
 //#endif //#ifdef _WINDOWS
 #include <iostream> //for "cout"
@@ -17,12 +17,16 @@
 #include <Controller/Sleep.h>
 //#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/stdtstr.hpp> //GetStdString(...)
-#include <ModelData/ModelData.hpp>
+////Keep away the dependance on this class for dyn libs.
+//#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #include <ModelData/ModelData.hpp>
+//#endif
 #include <ModelData/PStates.h>
 #include <Windows/CalculationThread.hpp>
 #include <math.h> //for pow(...);
 #include <ios> //for ostream formatters "hex" and "dec"
 #include <global.h>
+#include <UserInterface.hpp>
 #include <iomanip> //std::setprecision(...)
 //#undef COMPILE_WITH_XERCES
 //#ifdef WIN32 //with Linux I can't compile with xerces yet.
@@ -150,23 +154,7 @@ using namespace std;
     if( byNewPstate < NUMBER_OF_PSTATES )
     {
       DWORD dwMSRlow = byNewPstate ;
-  //#ifndef LINK_TO_WINRING0_STATICALLY
-  //  fnWrMsrExDef * pfnwrmsrex ;
-  //	#ifdef WIN32
-  //	  //unsigned char byFreqID ;
-  //    std::string strFuncName = "WrmsrEx" ;
-  //    pfnwrmsrex = (fnWrMsrExDef *)GetProcAddress(m_hinstanceWinRingDLL,
-  //      strFuncName.c_str() );
-  //	#else
-  //	    //pfnwrmsrex = msr_write ;
-  //	    pfnwrmsrex = msr_write ;
-  //	#endif//#ifdef WIN32
-  //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
 
-  //#ifndef LINK_TO_WINRING0_STATICALLY
-  //    if(pfnwrmsrex)
-  //    {
-  //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
         dwMSRlow = (BYTE) byNewPstate ;
         //DEBUG("For core bitmask %lu: setting to pstate %u\n", dwCoreBitmask, byNewPstate);
         LOGN_VERBOSE( "For core bitmask " << dwCoreBitmask 
@@ -178,11 +166,7 @@ using namespace std;
 	      //waitForEnter("um in MSR zu schreiben") ;
 	      //if ((msr_write(msrfile, msr_register_number, &msrvalue)) != OK)
 	      //	printf("MSR write failed\n");
-  //#ifndef LINK_TO_WINRING0_STATICALLY
-  //      if((*pfnwrmsrex)(
-  //#else
-  //      if( WrmsrEx (
-  //#endif //#ifndef LINK_TO_WINRING0_STATICALLY
+
         //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
 #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
         if(
@@ -199,7 +183,7 @@ using namespace std;
           LOGN_VERBOSE("Setting p-state succeeded.");
           byReturn = SUCCESS ;
           //Wait 1 millisecond (> maximum stabilization time).
-          SLEEP_1_MILLI_SECOND
+//          SLEEP_1_MILLI_SECOND
         }
         else
         {
@@ -291,6 +275,8 @@ using namespace std;
 
 #ifdef WIN32
 
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on mp_dynfreqscalingaccess for dyn libs.
   void GriffinController::DisableFrequencyScalingByOS()
   {
     DEBUG("calling specific OS's DVFS disabler\n");
@@ -298,7 +284,10 @@ using namespace std;
       m_bFrequencyScalingByOSDisabled = mp_dynfreqscalingaccess->
           DisableFrequencyScalingByOS();
   }//void DisableFrequencyScaling()
+#endif
 
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on mp_dynfreqscalingaccess for dyn libs.
   void GriffinController::EnableFrequencyScalingByOS()
   {
     DEBUG("calling specific OS's DVFS disabler\n");
@@ -308,6 +297,7 @@ using namespace std;
     m_bFrequencyScalingByOSDisabled = false ;
     //return true ;
   }//void DisableFrequencyScaling()
+#endif
 
   WORD GriffinController::GetVoltageID(float fVoltageInVolt ) 
   { 
@@ -343,124 +333,6 @@ using namespace std;
       - ( (float)( wVoltageID ) * 0.0125f ) ;
   }
 
-//LRESULT CALLBACK //PumaStateCtrl::
-//  DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-//{
-//  DEBUG("DialogProc\n");
-//	switch (message)
-//  {
-//		case WM_POWERBROADCAST:
-//
-//			switch (wParam)
-//			{
-//				case (PBT_APMRESUMESUSPEND):
-//					//AfxMessageBox("OS-Event: Resume Event ( PBT_APMRESUMESUSPEND ) Occured & Captured.\nSystem is resuming after suspension.", "OS-Event", MB_ICONWARNING);
-//          cout << "PBT_APMRESUMESUSPEND" << endl;
-//          //m_event.SetEvent()
-//          SetEvent(g_handleEvent);
-//					break;
-//
-//				case (PBT_APMRESUMEAUTOMATIC):
-//					//AfxMessageBox("OS-Event: Automatic Resume Event ( PBT_APMRESUMEAUTOMATIC ) Occured & Captured.\nSystem is resuming after suspension.", "OS-Event", MB_ICONWARNING);
-//          cout << "PBT_APMRESUMEAUTOMATIC" << endl;
-//          //SetEvent(m_handleEvent);
-//          SetEvent(g_handleEvent);
-//					break;
-//
-//      }
-//  }
-//  return 0;
-//}
-
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-//  COMMENTS:
-//
-//    This function and its usage is only necessary if you want this code
-//    to be compatible with Win32 systems prior to the 'RegisterClassEx'
-//    function that was added to Windows 95. It is important to call this function
-//    so that the application will get 'well formed' small icons associated
-//    with it.
-//
-//ATOM PumaStateCtrl::MyRegisterClass(//HINSTANCE hInstance
-//                     )
-//{
-//  ATOM atom ;
-//  WNDCLASSEX wcex;
-//  HWND hwnd ;
-//  DEBUG("PumaStateCtrl::MyRegisterClass begin\n");
-//  hwnd = ::GetConsoleWindow();
-//  if(hwnd== NULL)
-//  {
-//    DEBUG("there is no such associated console.\n");
-//  }
-//  else
-//    DEBUG("hwnd: %lu\n", //(DWORD)
-//      hwnd);
-//  DEBUG("PumaStateCtrl::MyRegisterClass before ::GetModuleHandle(NULL)\n");
-//  //The following is only for getting standby and hibernate 
-//  //notifications for console apps (but it does not work yet).
-//#ifndef X64 //does not compile under x64 because of 
-//  //"Fehler	2	error C2065: 'GWL_HINSTANCE': nichtdeklarierter Bezeichner	"
-//  m_hinstanceThisModule = (HINSTANCE) ::GetWindowLong(
-//    hwnd,
-//    GWL_HINSTANCE//Retrieves a handle to the application instance.
-//    );
-//#endif
-//  ::SetWindowLongPtr(hwnd,GWLP_WNDPROC, (LONG)&DialogProc);
-//  //If the function fails, the return value is zero.
-//  if(m_hinstanceThisModule == 0 )
-//  {
-//    DEBUG("::GetWindowLong(...) failed\n");
-//  }
-//  else
-//    DEBUG("::GetWindowLong(...) succeeded\n");
-//  //m_hinstanceThisModule = //(HANDLE)
-//  //  ::GetModuleHandle(NULL); //If this parameter is NULL, GetModuleHandle returns a handle to the file used to create the calling process (.exe file).
-//  ////If the function fails, the return value is zero.
-//  //if(m_hinstanceThisModule == 0 )
-//  //{
-//  //  DEBUG("::GetModuleHandle(...) failed\n");
-//  //}
-//  //else
-//  //  DEBUG("::GetModuleHandle(...) succeeded\n");
-//
-//  DEBUG("PumaStateCtrl::MyRegisterClass begin\n");
-//  wcex.cbSize = sizeof(WNDCLASSEX); 
-//
-//  wcex.style			= CS_HREDRAW | CS_VREDRAW;
-//  //wcex.lpfnWndProc	= (WNDPROC)WndProc;
-//  wcex.lpfnWndProc	= (WNDPROC)DialogProc;
-//  wcex.cbClsExtra		= 0;
-//  //Reserve extra window memory by specifying a nonzero value in the 
-//  //cbWndExtra member of the WNDCLASSEX structure used with the RegisterClassEx function.
-//  wcex.cbWndExtra		= 0;
-//  //wcex.hInstance		= hInstance;
-//  wcex.hInstance		= m_hinstanceThisModule ;
-//  //wcex.hIcon			= LoadIcon(hInstance, (LPCTSTR)IDI_OS_EVENTS);
-//  wcex.hIcon = 0 ;
-//  //wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-//  wcex.hCursor		= 0;
-//  wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-//  //wcex.lpszMenuName	= (LPCSTR)IDC_OS_EVENTS;
-//  wcex.lpszMenuName	= 0;
-//  //wcex.lpszClassName	= szWindowClass;
-//  wcex.lpszClassName	= _T("PumaStateCtrl");
-//  //wcex.hIconSm		= LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
-//  wcex.hIconSm		= 0;
-//
-//  DEBUG("before RegisterClassEx(&wcex)\n");
-//  atom = RegisterClassEx(&wcex);
-//  //If the function fails, the return value is zero.
-//  if( atom == 0 )
-//    DEBUG("RegisterClassEx(...) failed. ::GetLastError():%lu\n",
-//      ::GetLastError());
-//  DEBUG("PumaStateCtrl::MyRegisterClass before return\n");
-//  return atom ;
-//}
 #endif//#ifdef WIN32
 
 //Method that does the essential things and thus should be called in 
@@ -468,17 +340,16 @@ using namespace std;
 BYTE GriffinController::Init(//Model * mp_model
                     )
 {
-  //AMD Griffin has 2 power planes ( 1 for each CPU core).
-  m_b1CPUcorePowerPlane = false ;
+  InitMemberVars() ;
   //mp_model->SetGriffinController(this) ;
   mp_model->SetCPUcontroller(this);
   mp_model->SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
-  marp_calculationthread = new ICalculationThread * [ 
-      mp_model->GetNumberOfCPUCores() ] ;
-  if( marp_calculationthread )
-    memset(marp_calculationthread, 0, mp_model->GetNumberOfCPUCores() * 
-        sizeof(ICalculationThread * ) 
-    ); 
+//  marp_calculationthread = new ICalculationThread * [
+//      mp_model->GetNumberOfCPUCores() ] ;
+//  if( marp_calculationthread )
+//    memset(marp_calculationthread, 0, mp_model->GetNumberOfCPUCores() *
+//        sizeof(ICalculationThread * )
+//    );
   
   DWORD dwEAX, dwEDX;
 //#ifndef EMULATE_EXECUTION_AS_SERVICE
@@ -547,6 +418,14 @@ BYTE GriffinController::Init(//Model * mp_model
   return 1 ;
 }
 
+//Inits all member vars of _this_ class. So simply call it by all c'tors.
+void GriffinController::InitMemberVars()
+{
+  m_byMainPLLoperatingFrequencyIDmax = CPU_CORE_DATA_NOT_SET ;
+  //AMD Griffin has 2 power planes ( 1 for each CPU core).
+  m_b1CPUcorePowerPlane = false ;
+}
+
 ////version without user interface parameter (so it can be called before 
 ////the user interface is created.
 //GriffinController::GriffinController(
@@ -578,6 +457,8 @@ BYTE GriffinController::Init(//Model * mp_model
 //  Init();
 //}
 
+//Keep away the dependance on the Model class for dyn libs.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
 GriffinController::GriffinController(
   int argc, 
   _TCHAR * argv[] , 
@@ -599,7 +480,7 @@ GriffinController::GriffinController(
   , m_bPstateSet(false)
   , m_byPstateID(0)
   , mp_dynfreqscalingaccess(&p_dynfreqscalingaccess)
-  , mp_calculationthread(p_calculationthread)
+  //, mp_calculationthread(p_calculationthread)
 {
   mp_cpuaccess = p_cpuaccess ;
   m_byNumberOfCmdLineArgs = argc ;
@@ -611,44 +492,26 @@ GriffinController::GriffinController(
 //    TRACE("Adress of argv[1]: %lx %lx\n",argv[1], &argv[1] );
 //#endif
   mp_userinterface = p_userinterface ;
-  //mp_userinterface->mp_pumastatectrl = this ;
-//#ifdef WIN32
-//  //m_handleEvent = CreateEvent(
-//  //g_handleEvent = CreateEvent(
-//  //  NULL, 
-//  //  FALSE,  //bManualReset
-//  //  FALSE,  //bInitialState
-//  //  NULL //LPTSTR lpName 
-//  //);
-//#else
-//  g_pfnRdMsrEx = readMSR ;
-//#endif
   //m_model.SetNumberOfCPUCores( mp_cpuaccess->GetNumberOfCPUCores() );
   mp_model = & m_modelData ;
-  //PumaStateCtrl();
   Init();
 }
-
+#endif
 
 GriffinController::~GriffinController()
 {
-#ifdef _WINDOWS
-  //If deinitialized here it is ensured for any kind of view /user interface.
-  //DeInitWinRing0() ;
-#endif //#ifdef _WINDOWS
-
-    //Release memory.
-    if( marp_calculationthread )
-    {
-        BYTE byNumberOfCPUcores = mp_model->GetNumberOfCPUCores() ;
-      for( BYTE byCPUcoreIndex = 0 ; byCPUcoreIndex < byNumberOfCPUcores ;
-          ++ byCPUcoreIndex )
-      {
-          if( marp_calculationthread[ byCPUcoreIndex ] )
-              delete marp_calculationthread[ byCPUcoreIndex ] ;
-      }
-      delete [] marp_calculationthread ;
-    }
+//  //Release memory.
+//  if( marp_calculationthread )
+//  {
+//    BYTE byNumberOfCPUcores = mp_model->GetNumberOfCPUCores() ;
+//    for( BYTE byCPUcoreIndex = 0 ; byCPUcoreIndex < byNumberOfCPUcores ;
+//        ++ byCPUcoreIndex )
+//    {
+//      if( marp_calculationthread[ byCPUcoreIndex ] )
+//        delete marp_calculationthread[ byCPUcoreIndex ] ;
+//    }
+//    delete [] marp_calculationthread ;
+//  }
 }
 
 bool GriffinController::ApplyAllPStates(const PStates & pstates)
@@ -739,202 +602,38 @@ bool GriffinController::ApplyAllPStates(const PStates & pstates)
   return bSuccess ;
 }
 
-
-  void GriffinController::PerformanceEventSelectRegisterWrite(
-    DWORD dwAffinityBitMask ,
-    //Griffin has 4 "Performance Event Select Register" from 
-    //  MSR 0xC001_0000_00 to MSRC001_00_03  for 
-    // 4 "Performance Event Counter Registers" from 
-    //  MSR 0xC001_0004 to 0xC001_0007 
-    //  that store the 48 bit counter value
-    BYTE byPerformanceEventSelectRegisterNumber ,
-    WORD wEventSelect ,
-    BYTE byCounterMask ,
-    bool bInvertCounterMask ,
-    bool bEnablePerformanceCounter,
-    bool bEnableAPICinterrupt,
-    bool bEdgeDetect,
-    bool bOSmode,
-    bool bUserMode,
-    BYTE byEventQualification
-  )
+void GriffinController::FillAvailableCPUcoreFrequenciesList()
+{
+  float fMultiplier ;
+  WORD wFreqInMHz ;
+  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
+    mp_model->m_cpucoredata.m_stdsetvoltageandfreqAvailableFreq ;
+  //->set m_byMainPLLoperatingFrequencyIDmax
+  GetMaximumFrequencyInMHz() ;
+  //for( WORD w = 0 ; ; )
+  wFreqInMHz =
+    //max. freq. in MHz
+    ( m_byMainPLLoperatingFrequencyIDmax + 8 ) * 100 ;
+  r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0, wFreqInMHz) ) ;
+  DEBUGN("FillAvailableCPUcoreFrequenciesList(): inserted new freq "
+    << wFreqInMHz)
+  wFreqInMHz =
+      //1/2 max. freq. in MHz
+      ( m_byMainPLLoperatingFrequencyIDmax + 8 ) * 50 ;
+  r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0, wFreqInMHz ) ) ;
+  DEBUGN("FillAvailableCPUcoreFrequenciesList(): inserted new freq "
+    << wFreqInMHz)
+  wFreqInMHz = GetNearestLowerPossibleFreqInMHz(wFreqInMHz - 1) ;
+  fMultiplier = (float) (m_byMainPLLoperatingFrequencyIDmax + 8 ) / 2.0f ;
+//  fMultiplier = GetNearestLowerMultiplier(fMultiplier) ;
+  while(wFreqInMHz)
   {
-    if( bInvertCounterMask == true )
-      //When Inv = 1, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
-      //number of events occurring in a clock cycle is less than CntMask value.
-      //Less than 1 = 0 -> so if Clocks not halted and 0 times "not halted": ->"halted"
-      byCounterMask = 1 ;
-    //see AMD Family 11h Processor BKDG, paragraph
-    //"MSRC001_00[03:00] Performance Event Select Register (PERF_CTL[3:0])"
-    //bits:
-    //31:24 CntMask: counter mask. Read-write. Controls the number of events 
-        //counted per clock cycle.
-      //00h The corresponding PERF_CTR[3:0] register is incremented by the number of events
-        //occurring in a clock cycle. Maximum number of events in one cycle is 3.
-      //01h-03h When Inv = 0, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
-        //number of events occurring in a clock cycle is greater than or equal to the CntMask value.
-         //When Inv = 1, the corresponding PERF_CTR[3:0] register is incremented by 1, if the
-         //number of events occurring in a clock cycle is less than CntMask value.
-      //04h-FFh Reserved.
-    //23 | Inv: invert counter mask. Read-write. See CntMask.
-    DWORD dwLow = 0 |
-      ( byCounterMask << 24 ) |
-      ( bInvertCounterMask << 23 ) |
-      ( bEnablePerformanceCounter << 22 ) |
-      ( bEnableAPICinterrupt << 20 ) |
-      ( bEdgeDetect << 18 ) |
-      ( bOSmode << 17 ) |
-      ( bUserMode << 16 ) |
-      ( byEventQualification << 8 ) |
-      ( wEventSelect & BITMASK_FOR_LOWMOST_8BIT )
-      ;
-#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-#else
-    mp_cpuaccess->WrmsrEx(
-      PERF_CTL_0 + byPerformanceEventSelectRegisterNumber ,
-      dwLow ,
-      wEventSelect >> 8 ,
-      //1=core 0
-      //1
-      dwAffinityBitMask 
-      ) ;
-#endif //_EMULATE_TURION_X2_ULTRA_ZM82
+    r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0, wFreqInMHz ) ) ;
+    DEBUGN("FillAvailableCPUcoreFrequenciesList(): inserted new freq "
+      << wFreqInMHz)
+    wFreqInMHz = GetNearestLowerPossibleFreqInMHz(wFreqInMHz-1) ;
   }
-
-  //this method is for this purpose: 
-  //"To accurately start counting with the write that enables the counter, 
-  //disable the counter when changing the event and then enable the counter 
-  //with a second MSR write."
-  void GriffinController::AccuratelyStartPerformanceCounting(
-    DWORD dwAffinityBitMask ,
-    BYTE byPerformanceCounterNumber ,
-    WORD wEventSelect ,
-    bool bInvertCounterMask
-    )
-  {
-    PerformanceEventSelectRegisterWrite(
-      dwAffinityBitMask ,
-      byPerformanceCounterNumber ,
-      wEventSelect ,
-      //0x0C1 ,
-//      0x076 ,
-      //byCounterMask: 00h: The corresponding PERF_CTR[3:0] register is incremented by the number of events
-      //occurring in a clock cycle. Maximum number of events in one cycle is 3.
-      //0,
-      //"When Inv = 0, the corresponding PERF_CTR[3:0] register is 
-      //incremented by 1, if the number of events occurring in a clock 
-      //cycle is greater than or equal to the CntMask"
-      1 ,
-      //bInvertCounterMask
-      0,
-      //bEnablePerformanceCounter
-      0,
-      //bEnableAPICinterrupt
-      0,
-      //bEdgeDetect
-      0,
-      //bOSmode[...]1=Events are only counted when CPL=0. 
-      //(CPL=Current Privilege Level?) http://en.wikipedia.org/wiki/Current_privilege_level
-      1,
-      //bUserMode
-      1,
-     //byEventQualification
-      0
-      ) ;
-    PerformanceEventSelectRegisterWrite(
-      dwAffinityBitMask ,
-      byPerformanceCounterNumber ,
-      //wEventSelect
-      //0x0C1 ,
-      wEventSelect ,
-//      0x076 ,
-      //byCounterMask: 00h: The corresponding PERF_CTR[3:0] register is incremented by the number of events
-      //occurring in a clock cycle. Maximum number of events in one cycle is 3.
-      0,
-      bInvertCounterMask ,
-      //0,
-      //bEnablePerformanceCounter
-      1,
-      //bEnableAPICinterrupt
-      0,
-      //bEdgeDetect
-      0,
-      //bOSmode
-      //0
-      true
-      ,
-      //bUserMode
-      true
-      ,
-     //byEventQualification
-      0
-      ) ;
-  }
-  //float
-  ULONGLONG GriffinController::GetCurrentCPUload(BYTE byCPUcoreID)
-  {
-#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-    //AMD Basic Performance Measurements for AMD Athlon™ 64,
-    //AMD Opteron™ and AMD Phenom™ Processors:
-    //chapter 4.2.1. Instructions per cycle (IPC).
-    DWORD dwLow, dwHigh;
-    mp_cpuaccess->RdmsrEx(
-      PERF_CTR_0,
-      & dwLow,
-      & dwHigh,
-      //1=core 0
-      //1
-      byCPUcoreID 
-      ) ;
-    ULONGLONG ull = dwHigh ;
-    ull <<= 32 ;
-    ull |= dwLow ;
-    float f = //dwHigh
-      ull ;
-//    f *= 4294967296.0f ,
-//    f += dwLow ;
-//    float fDiff = f - mp_model->m_dPreviousPERF_CTRvalue ;
-    mp_model->m_dPreviousPERF_CTRvalue = f ;
-//    f = dwLow ;
-    //BKDG: 
-    //"To accurately start counting with the write that enables the counter,
-    //disable the counter when changing the
-    //event and then enable the counter with a second MSR write."
-//    mp_cpuaccess->WrmsrEx(PERF_CTL_0,
-//      //1=core 0
-//      1) ;
-
-    //EventSelect 0C0h Retired Instructions
-//    EventSelect 0C1h Retired uops
-//    EventSelect 076h CPU Clocks not Halted
-//    EventSelect 0E8h Thermal Status
-    WORD wEventSelect = //0x0C0
-      0x0C1
-      //0xC0 //Retired Instructions
-      ;
-    AccuratelyStartPerformanceCounting(
-      1 << byCPUcoreID ,
-      PERF_CTR_0 ,
-      wEventSelect ,
-      false );
-
-//    DWORD dwPerfCounterValue ;
-    //LARGE_INTEGER liPerfCounterValue ;
-    //::SetThreadAffinityMask(::GetCurrentThread(), 0);
-    //::QueryPerformanceCounter(&liPerfCounterValue);
-//    DWORD dwMilliSecondsEleapsedSinceOSstart = ::GetTickCount();
-    //if( GetTickCount() - dwStart >= TIMELIMIT )
-
-    return //f
-      ull
-      //mp_model->m_dPreviousPERF_CTRvalue
-      //fDiff ;
-//      dwPerfCounterValue 
-      ;
-#else
-    return 0;
-#endif //_EMULATE_TURION_X2_ULTRA_ZM82
-  }
+}
 
   //Used to get values from 
   //-p-state registers
@@ -1436,37 +1135,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#endif //#ifdef COMPILE_WITH_WINRING0
 //#ifdef WIN32
 
-//  void PumaStateCtrl::DeInitWinRing0()
-//  {
-//    DEBUG("Deinitializing ring 0 access\n") ;
-//#ifdef LINK_TO_WINRING0_STATICALLY
-//    ////TODO which of the 2 fucntions is the correct one?
-//    //DeinitializeDll() ;
-//    //DeinitOpenLibSys() ;
-//    DeinitializeOls() ;
-//#else
-//    if (m_hinstanceWinRingDLL != 0)
-//    {
-//      //  //Returns pointer to symbol name in the library or NULL if the library contains no such symbol.
-//      //  GetSymbol(wxstrFuncName,&bSuccess);
-//      void * pfn=GetProcAddress(m_hinstanceWinRingDLL,"DeinitializeOls");
-//      if(pfn==NULL)
-//      {
-//        //wxMessageBox("no " +wxstrFuncName);
-//        printf("no DeinitializeOls");
-//      }
-//      else
-//      {
-//        //std::string strFuncName ;
-//        printf("function InitializeOls exists");
-//        //DeinitializeOls() ausfhren.
-//        (*(void (*)())pfn)();
-//        //DeinitOpenLibSys() ;
-//      }
-//    }
-//#endif //#ifdef LINK_TO_WINRING0_STATICALLY
-//  }
-
 //#ifndef LINK_TO_WINRING0_STATICALLY
 //#ifdef COMPILE_WITH_WINRING0
   BYTE GriffinController::GetValuesOfClockPower_TimingControl2Register(
@@ -1777,22 +1445,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   }
 #endif //#ifndef LINK_TO_WINRING0_STATICALLY
 
-//  bool GriffinController::InitWinRing0()
-//  {
-//    bool bOk = false ;
-//    //mp_userinterface->Confirm("initialisiere WinRing0");
-//#ifdef LINK_TO_WINRING0_STATICALLY
-//    ////TODO which of the 2 fucntions is the correct one?
-//    //InitOpenLibSys() ;
-//    //InitializeDll() ;
-//    //InitializeOls() ;
-//    bOk = true ;
-//#else
-//
-//#endif //#ifdef LINK_TO_WINRING0_STATICALLY
-//    return bOk ;
-//  }
-
 //  void PumaStateCtrl::messageLoop()
 //  {
 //	  MSG msg;
@@ -1973,7 +1625,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //mp_timecontroller->sleep();
       //::Sleep(1000);
       //::wxSleep(1);
-      SLEEP_1_MILLI_SECOND
+//      SLEEP_1_MILLI_SECOND
       //for( byCoreIndex = 0 ; byCoreIndex < byCoreCount ; ++byCoreIndex )
       //mp_userinterface->Confirm("");
       if( ! mp_userinterface->Confirm(ostrstream) )
@@ -2321,12 +1973,51 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     return didandfid = *p_didandfid ;
   }
 
+//  float GriffinController::GetNearestLowerMultiplier(float fMultiplier)
+//  {
+//    float fMulti ;
+//    float fMaxMultiplier = m_byMainPLLoperatingFrequencyIDmax + 8 ;
+//    //AMD BIOS and kernel dev guide for family 11h: "The frequency specified
+//    //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of
+//    //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
+//    //->no matter which DivisorID, the freq = 100 MHz * (FID+8) must be >50% &&
+//    //<=100% of max. freq.  | :100MHz
+//    //<=> no matter which DivisorID, (FID+8) must be >50% &&
+//    //  <=100% of max. FreqID.
+//
+//    //e.g. 22/11=2, 22/5.5=4, 22/ 12 =1
+//    BYTE byDivisor = fMaxMultiplier/fMultiplier ;
+//    // max multi: 23->max. FID=15
+//    // max multi: 22->max. FID=14
+//    //e.g. multiplier:12, max multi: 22: ; FID=12*1-8=4
+//    //e.g. multiplier:11, max multi: 23: divisor=23/11=2; FID=11*2-8=22-8=14
+//    //e.g. multiplier:11.5, max multi: 23: divisor=23/11.5=2;
+//    //  FID=11.5*2-8=23-8=15
+//    //e.g. multiplier:5.5, max multi: 22: divisor=22/5.5=4;
+//    //  FID=5.5*4-8=22-8=14
+//    //e.g. multiplier:5.0, max multi: 23: divisor=23/5=4;
+//    //  FID=5.0*4-8=20-8=12
+//    BYTE byFreqID = fMultiplier*byDivisor - 8 ;
+//    //e.g. 4 + 7 =11 = 22/2
+//    if( (byFreqID + 7 ) == m_byMainPLLoperatingFrequencyIDmax / 2 )
+//    {
+//      //e.g. multi 11, max. multi : 22: divisor=22/11=2 -> 4
+//      byDivisor *= 2 ;
+//      //multi = (14+8)/4=22/4=5.5
+//      fMulti = (m_byMainPLLoperatingFrequencyIDmax + 8) / byDivisor ;
+//    }
+//  }
+
   WORD GriffinController::GetNearestLowerPossibleFreqInMHz(
    WORD wFreqInMHz )
   {
+    WORD wFreqInMHzLess ;
     DIDandFID didandfid = GetNearestLowerPossibleFreqInMHzAsDIDnFID(
      wFreqInMHz ) ;
-    return didandfid.GetFreqInMHz() ;
+    wFreqInMHzLess = didandfid.GetFreqInMHz() ;
+    if( wFreqInMHzLess < GetLowestPossibleMultiplier() * 100 )
+      wFreqInMHzLess = 0 ;
+    return wFreqInMHzLess ;
   }
 
   DIDandFID GriffinController::GetNearestLowerPossibleFreqInMHzAsDIDnFID(
@@ -2382,18 +2073,17 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //2200/700  =  3         | 11              | 1     | = ceil( ~ 1,58) = 2
     //2200/550  =  4         | 100             | 2     | 2
 
-    float fMaxFreqDivMaxWantedFreq = 
+    float fMaxFreqDivWantedFreq = 
         (float) //wMaxFreq
-        //mp_pumastatectrl->
         //GetMaximumFrequencyInMHz() / (float) wFreqInMHz ;
         mp_model->m_cpucoredata.m_wMaxFreqInMHz / (float) wFreqInMHz ;
     //MSVC++ has no log2() function (in <math.h>).
     //So emulate it by:  log(2)x = (log(10)x)/(log(10)2)
-    float fLog2 = 
+    float fLog2OfFreqDivWantedFreq = 
       log10//(
       //(double) 
       ( 
-        fMaxFreqDivMaxWantedFreq
+        fMaxFreqDivWantedFreq
       )
       / 
       log10(2.0f) ;
@@ -2415,7 +2105,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         byDivisorID =
           (BYTE)
           //Explicit cast to avoid (g++) warning.
-          fLog2 ;
+          fLog2OfFreqDivWantedFreq ;
     //wMaxFreq / wFreq - 1 = byDivisorID ;
 
     //(FID+8)*100/2^divID = freqInMHz | : 100/2^divID
@@ -2442,21 +2132,28 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of 
     //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
     if( //byFID <= //MainPllOpFreqId/2
-        //mp_pumastatectrl->
         //mp_model->m_cpucoredata.
         //  m_byMainPLLoperatingFrequencyIDmax / 2
+        //E.g. ( 3 + 8 )=11 <= (14 + 8)/2=22/2=11
+        //E.g. ( 3 + 8 )=11 <= (15 + 8)/2=23/2=11
         ( byFID + 8 ) <= 
-        ( mp_model->m_cpucoredata.
-          //m_byMainPLLoperatingFrequencyIDmax 
-          GetMainPLLoperatingFrequencyIDmax() + 8 ) / 2
-        && byDivisorID < HIGHEST_EFFECTIVE_DIVISOR_ID )
+        (
+//          mp_model->m_cpucoredata.
+//          //m_byMainPLLoperatingFrequencyIDmax
+//          GetMainPLLoperatingFrequencyIDmax()
+          m_byMainPLLoperatingFrequencyIDmax
+          + 8 ) / 2
+        && byDivisorID
+        //"<" and not "<=" because byDivisorID is increased afterwards.
+        < HIGHEST_EFFECTIVE_DIVISOR_ID
+      )
     {
         ++ byDivisorID ;
         byFID = //MainPllOpFreqId 
-          //mp_pumastatectrl->
-          mp_model->m_cpucoredata.
-            //m_byMainPLLoperatingFrequencyIDmax 
-            GetMainPLLoperatingFrequencyIDmax() ;
+//          mp_model->m_cpucoredata.
+//            //m_byMainPLLoperatingFrequencyIDmax
+//            GetMainPLLoperatingFrequencyIDmax() ;
+          m_byMainPLLoperatingFrequencyIDmax ;
     }
     DIDandFID didandfid(byDivisorID,byFID) ;
     return didandfid ;
@@ -2470,116 +2167,134 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   WORD GriffinController::GetMaximumFrequencyInMHz()
   {
     WORD wMaximumFrequencyInMHz = 0;
-    //if( m_model.m_bUsePstate0AsMaxFreq )
-  //  if( mp_model->m_bUsePstate0AsMaxFreq )
-  //  {
-  //    DEBUG("GetMaximumFrequencyInMHz--getting max. freq from p-state 0\n" );
-  //    //We want the values directly from CPU, and not from user!
-  //    //if(m_model.m_pstates.m_arp_pstate[0] )
-  //    {
-  //      DWORD dwLow, dwHigh ;
-  //      PState pstateFromMSR ;
-  //      //wMaximumFrequencyInMHz = m_model.m_pstates.m_arp_pstate[0]->GetFreqInMHz() ;
-  //      if( GetPStateFromMSR(0,
-  //        dwLow,
-  //        dwHigh,
-  //        pstateFromMSR,//1
-  //        0
-  //        ) )
-  //      {
-  //        wMaximumFrequencyInMHz = pstateFromMSR.GetFreqInMHz() ;
-  //      }
-  //    }
-  //  }
-  //  else
-  //  {
-  //    DWORD dwEAX;
-  //    DWORD dwEBX;
-  //    DWORD dwECX;
-  //    DWORD dwEDX;
-  //    DEBUG("GetMaximumFrequencyInMHz--getting max. freq by CPU name\n" );
-  //    //TODO: the CPUID processor name string may be changed as the MSR 
-  //    //registers that map to it have read-write access. So determining
-  //    //max freq from it is not so safe.
-  //    if( GetCPUID(
-  //      //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
-  //      0x80000004,
-  //      dwEAX,
-  //      dwEBX,
-  //      dwECX,
-  //      dwEDX
-  //      ) )
-  //    {
-  //      DEBUG("GetMaximumFrequencyInMHz()--Calling GetCPUID succeeded\n");
-  //      DEBUG("get max freq--EDX register of function 4: %lu 2nd byte: %u\n", 
-  //        dwEDX,*(((char *)&dwEDX)+1) );
-  //      switch(//2nd byte from left/2nd most significant byte
-  //        *( ((char *) &dwEDX) + 1 )
-  //        )
-  //      {
-  //      case '0': //ZM-8>>0<<
-  //        wMaximumFrequencyInMHz = 2100 ;
-  //        break;
-  //      case '2': //ZM-8>>2<<
-  //        //DEBUG("PumaStateCtrl::GetMaximumFrequencyInMHz()--CPU is ZM-82\n");
-  //        wMaximumFrequencyInMHz = 2200 ;
-  //        break;
-  //      case '4': //ZM-8>>4<<
-  //        wMaximumFrequencyInMHz = 2300 ;
-  //        break;
-  //      case '6': //ZM-8>>6<<
-  //        wMaximumFrequencyInMHz = 2400 ;
-  //        break;
-  //      default:
-  //        this->mp_userinterface->Confirm("unknown CPU type");
-  //      }
-  //    }
-  //#ifdef COMPILE_WITH_DEBUG
-  //    else
-  //      DEBUG("GetMaximumFrequencyInMHz()--Calling GetCPUID failed\n");
-  //#endif
-  //  }
-    if ( mp_model->m_cpucoredata.
-        //m_byMainPLLoperatingFrequencyIDmax 
-        GetMainPLLoperatingFrequencyIDmax() == CPU_CORE_DATA_NOT_SET )
+//#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+#ifdef _DEBUG
+//    MessageBox( NULL, "GriffinController::GetMaximumFrequencyInMHz", TEXT("") ,
+//        MB_OK ) ;
+    DEBUGN("GriffinController::GetMaximumFrequencyInMHz")
+#endif
+    if ( //mp_model->m_cpucoredata.
+      //m_byMainPLLoperatingFrequencyIDmax
+      //GetMainPLLoperatingFrequencyIDmax()
+      m_byMainPLLoperatingFrequencyIDmax == CPU_CORE_DATA_NOT_SET
+      )
     {
       DWORD dwValue ;
+#ifdef _DEBUG
+//      MessageBox( NULL,
+//        "GetMainPLLoperatingFrequencyIDmax==CPU_CORE_DATA_NOT_SET", TEXT("") ,
+//        MB_OK ) ;
+      DEBUGN("GetMainPLLoperatingFrequencyIDmax==CPU_CORE_DATA_NOT_SET")
+#endif
       //Read the F3xD4 Clock Power/Timing Control 0 Register to get value 
       //"MainPllOpFreqId: main PLL operating frequency ID." at bits "5:0"
       if( GetCPUMiscControlDWORD(
         F3xD4_CLOCK_POWER_TIMING_CONTROL_0_REGISTER, dwValue) 
         )
       {
-          mp_model->m_cpucoredata.//m_byMainPLLoperatingFrequencyIDmax 
-            SetMainPLLoperatingFrequencyIDmax(
-              dwValue & BITMASK_FOR_LOWMOST_5BIT 
-              ) ;
+//        mp_model->m_cpucoredata.//m_byMainPLLoperatingFrequencyIDmax
+//          SetMainPLLoperatingFrequencyIDmax(
+//            dwValue & BITMASK_FOR_LOWMOST_5BIT
+//            ) ;
+        m_byMainPLLoperatingFrequencyIDmax =
+          dwValue & BITMASK_FOR_LOWMOST_5BIT ;
         //DEBUG("main PLL operating frequency ID: %lu\n" , 
         //  dwValue & BITMASK_FOR_LOWMOST_5BIT );
         LOG("Main PLL operating frequency ID: " 
             << ( dwValue & BITMASK_FOR_LOWMOST_5BIT ) << "\n" );
       }
     }
-    if ( mp_model->m_cpucoredata.
-        //m_byMainPLLoperatingFrequencyIDmax 
-        GetMainPLLoperatingFrequencyIDmax() != CPU_CORE_DATA_NOT_SET 
+    if (
+//        mp_model->m_cpucoredata.
+//        //m_byMainPLLoperatingFrequencyIDmax
+//        GetMainPLLoperatingFrequencyIDmax()
+      m_byMainPLLoperatingFrequencyIDmax != CPU_CORE_DATA_NOT_SET
         )
     {
-      if( mp_model->m_cpucoredata.//m_byMainPLLoperatingFrequencyIDmax
-        GetMainPLLoperatingFrequencyIDmax()
-        != NO_CPU_CORE_FREQUENCY_LIMIT 
+      if(
+//        mp_model->m_cpucoredata.//m_byMainPLLoperatingFrequencyIDmax
+//        GetMainPLLoperatingFrequencyIDmax()
+        m_byMainPLLoperatingFrequencyIDmax != NO_CPU_CORE_FREQUENCY_LIMIT
         )
+//#endif //COMPILE_FOR_CPUCONTROLLER_DYNLIB
         //"The maximum frequency is 100 MHz * (MainPllOpFreqIdMax + 08h)"
-        wMaximumFrequencyInMHz = 100 * ( mp_model->m_cpucoredata.
-            //m_byMainPLLoperatingFrequencyIDmax 
-            GetMainPLLoperatingFrequencyIDmax() + 0x08 ) ;
+        wMaximumFrequencyInMHz = 100 * (
+//          mp_model->m_cpucoredata.
+//            //m_byMainPLLoperatingFrequencyIDmax
+//            GetMainPLLoperatingFrequencyIDmax()
+          m_byMainPLLoperatingFrequencyIDmax + 0x08 ) ;
+//#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
     }
+//#endif //COMPILE_FOR_CPUCONTROLLER_DYNLIB
     //DEBUG("maximum core frequency "
     //  "in MHz is %u\n", wMaximumFrequencyInMHz);
     LOG("Maximum core frequency in MHz is " << wMaximumFrequencyInMHz 
         << "\n" );
+//#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
     mp_model->m_cpucoredata.m_wMaxFreqInMHz = wMaximumFrequencyInMHz ;
+//#endif //COMPILE_FOR_CPUCONTROLLER_DYNLIB
     return wMaximumFrequencyInMHz;
+  }
+
+  WORD GriffinController::GetMinimumFrequencyInMHz()
+  {
+    WORD wMinimumFrequencyInMHz = 0;
+    if ( mp_model->m_cpucoredata.
+      //m_byMainPLLoperatingFrequencyIDmax
+      GetMainPLLoperatingFrequencyIDmax() == CPU_CORE_DATA_NOT_SET
+      )
+    {
+      DWORD dwValue ;
+      //Read the F3xD4 Clock Power/Timing Control 0 Register to get value
+      //"MainPllOpFreqId: main PLL operating frequency ID." at bits "5:0"
+      if( GetCPUMiscControlDWORD(
+        F3xD4_CLOCK_POWER_TIMING_CONTROL_0_REGISTER, dwValue)
+        )
+      {
+          mp_model->m_cpucoredata.//m_byMainPLLoperatingFrequencyIDmax
+            SetMainPLLoperatingFrequencyIDmax(
+              dwValue & BITMASK_FOR_LOWMOST_5BIT
+              ) ;
+        //DEBUG("main PLL operating frequency ID: %lu\n" ,
+        //  dwValue & BITMASK_FOR_LOWMOST_5BIT );
+        LOG("Main PLL operating frequency ID: "
+            << ( dwValue & BITMASK_FOR_LOWMOST_5BIT ) << "\n" );
+      }
+    }
+    if ( mp_model->m_cpucoredata.
+        //m_byMainPLLoperatingFrequencyIDmax
+        GetMainPLLoperatingFrequencyIDmax() != CPU_CORE_DATA_NOT_SET
+        )
+    {
+      if( mp_model->m_cpucoredata.//m_byMainPLLoperatingFrequencyIDmax
+        GetMainPLLoperatingFrequencyIDmax()
+        != NO_CPU_CORE_FREQUENCY_LIMIT
+        )
+      {
+        //"The maximum frequency is 100 MHz * (MainPllOpFreqIdMax + 08h)"
+        WORD wMaxFrequencyInMHz = 100 * ( mp_model->m_cpucoredata.
+          //m_byMainPLLoperatingFrequencyIDmax
+          GetMainPLLoperatingFrequencyIDmax() + 0x08 ) ;
+
+        //Min Freq is:
+        // (lowest_possible_freqID + 8 ) * 100 / highest_divisor(8)
+        // highest_divisor = highest_divisor_ID^2 = 3^2
+        // lowest_possible_freqID = (MainPLLoperatingFrequencyIDmax + 8 / 2 ) -8
+        // ex.: MainPLLoperatingFrequencyIDmax = 14 ( max. (14+8)*100=2200 MHz)
+        // lowest_possible_freqID = ( (14 + 8 ) / 2 ) -8 = (22/2)-8 =11-8 =3
+        // (lowest_possible_freqID[3] + 8 ) * 100 / highest_divisor(8)
+        //  =11*100/ 8= 1100/8 = 137.5.
+        //  =wMaxFrequencyInMHz/16=137.5
+        // ( WORD) (( m_byFreqID + 8 )*100 ) / (1<<m_byDivisorID)
+        wMinimumFrequencyInMHz = wMaxFrequencyInMHz / 16 ;
+      }
+    }
+    //DEBUG("maximum core frequency "
+    //  "in MHz is %u\n", wMaximumFrequencyInMHz);
+//    LOG("Maximum core frequency in MHz is " << wMaximumFrequencyInMHz
+//        << "\n" );
+    //mp_model->m_cpucoredata.m_wMaxFreqInMHz = wMaximumFrequencyInMHz ;
+    return wMinimumFrequencyInMHz;
   }
 
   //@return 0.0 = error / false input value
@@ -2710,38 +2425,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         << " V : mininum frequency in MHz to prevent overvoltage: " 
         << wMinFreqToPreventOvervoltage << " \n" );
     return wMinFreqToPreventOvervoltage ;
-  }
-
-  BYTE GriffinController::GetNumberOfCPUCores()
-  {
-    BYTE byCoreNumber = 255 ;
-    DWORD dwEAX;
-    DWORD dwEBX;
-    DWORD dwECX;
-    DWORD dwEDX;
-    DEBUG("PSC--getting number of CPU cores\n");
-    if( //CpuidEx(
-      mp_cpuaccess->CpuidEx(
-      //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
-      0x80000008,
-      &dwEAX,
-      &dwEBX,
-      &dwECX,
-      &dwEDX,
-      1
-        ) 
-      )
-    {
-      byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT ) 
-        //"ECX 7:0 NC: number of physical cores - 1. 
-        //The number of cores in the processor is NC+1 (e.g., if
-        //NC=0, then there is one core). 
-        //See also section 2.9.2 [Number of Cores and Core Number]."
-        + 1 ;
-      //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
-      LOG("Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
-    }
-    return byCoreNumber ;
   }
 
   WORD GriffinController::getFrequencyInMHz(BYTE byFrequID,BYTE byDivID)
@@ -3201,22 +2884,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DWORD dwECX;
     DWORD dwEDX;
     DEBUG("Supported CPU Model?--begin\n");
-    //mp_userinterface->Confirm("PumaStateCtrl::IsSupportedCPUModel()");
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//    std::string strFuncName = "CpuidEx" ;
-//    _CpuidEx pfnCPU_ID;
-//    pfnCPU_ID = (_CpuidEx)GetProcAddress(m_hinstanceWinRingDLL,
-//      strFuncName.c_str() );
-//    if(pfnCPU_ID)
-//    {
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
       //"If the function succeeds, the return value is TRUE."
       if( 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//        (*pfnCPU_ID)
-//#else
-//        CpuidEx
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
         mp_cpuaccess->CpuidEx
         //if( CpuidEx
         (0x00000000,&dwEAX,&dwEBX,&dwECX,&dwEDX,1) 
@@ -3231,11 +2900,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
           && dwECX == 0x444D4163 //=1145913699dez = D M A c, ->cAMD
           //-> AuthenticAMD
           && 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//          (*pfnCPU_ID)
-//#else
-//          CpuidEx
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
           mp_cpuaccess->CpuidEx
           (
             //Query CPUID Function 0000_0001 for CPU model and family.
@@ -3321,11 +2985,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       }
       else
         mp_userinterface->Confirm("CPUID function failed");
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//    } //if(pfnCPU_ID)
-//    else
-//      mp_userinterface->Confirm("Error getting CPUID function from DLL");
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
     return false;
   }
 
@@ -3816,8 +3475,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //(double) ullDiff 
       /// (double) m_ullHighestDiff
       dCoreUsage
-      //* 2200.0
-      //mp_pumastatectrl->GetMaximumFrequencyInMHz() 
       * (double) //mp_cpucoredata->
         mp_model->m_cpucoredata.m_wMaxFreqInMHz 
       ;
@@ -3947,12 +3604,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //  , byCoreID
       //  ) ;
     }
-    //mp_pumastatectrl->SetPstate( byPstateNumber,
-    //  //1 = 1bin
-    //  //1 << m_byCoreID 
-    //  byCoreID
-    //  );
-    //mp_pumastatectrl->
     SetPstate( 
       //byPstateNumber,
       //The p-states should be sorted by frequency:
@@ -3972,17 +3623,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DWORD dwRegisterAddress, DWORD & dwValue )
   {
     bool bSuccess = false ;
-//#ifdef LINK_TO_WINRING0_STATICALLY
-//    if ( ReadPciConfigDwordEx(
-//      //DWORD pciAddress,
-//      //Bus 0, Device number 24, Function 3 is "CPU Miscellaneous Control"
-//      PciBusDevFunc(0,24,3) ,
-//      dwRegisterAddress,
-//      &dwValue )
-//      )
-//#else
-//    if( GetHandleToDLLFunction("ReadPciConfigDwordEx") )
-//#endif
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
     try
     {
@@ -4040,20 +3680,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
       ////bits 3- 7 Device Number 
       //dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //std::string strFuncName = "WritePciConfigDwordEx";
-      //if(!m_pfnreadpciconfigdwordex)
-      //  m_pfnwritepciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-      //    m_hinstanceWinRingDLL,strFuncName.c_str() );
 
-      //if(m_pfnreadpciconfigdwordex)
-//  #ifdef LINK_TO_WINRING0_STATICALLY
-//      if( WritePciConfigDwordEx (dwPCIAddress,//0xDC
-//        F3xDC_CLOCK_POWER_TIMING_CONTROL_2_REGISTER_ADDRESS,dwValue) )
-//  #else
-//      pfnwritepciconfigdwordex = GetHandleToDLLFunction(
-//        strFuncName ) ;
-//      if( pfnwritepciconfigdwordex )
-//  #endif //#ifdef LINK_TO_WINRING0_STATICALLY
       {
     //    char arch[33];
         //dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
@@ -4061,11 +3688,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         //DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
         LOG("PCI address: " << getBinaryRepresentation(dwPCIAddress).c_str() 
             << "\n" );
-//  #ifndef LINK_TO_WINRING0_STATICALLY
-//        if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xDC,&dwValue)
-//          )
-//        {
-//  #endif //#ifndef LINK_TO_WINRING0_STATICALLY
         if( mp_cpuaccess->WritePciConfigDwordEx(dwPCIAddress,//0xDC
           F3xDC_CLOCK_POWER_TIMING_CONTROL_2_REGISTER_ADDRESS,dwValue)
           )
@@ -4107,45 +3729,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //
 //#endif //ifdef WIN32
 
-  //inline 
-  bool GriffinController::ReadPerformanceEventCounterRegister(
-    BYTE byPerformanceEventCounterNumber ,
-    ULONGLONG & r_ull ,
-	  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
-    )
-  {
-    DWORD dwLow , dwHigh ;
-    bool bRet =
-    //TODO better use ReadPMC? : AMD Family 11h Processor BKDG :
-    //"The RDPMC instruction is not serializing, and it can be executed 
-    //out-of-order with respect to other instructions around it. 
-    //Even when bound by serializing instructions, the system environment at
-    //the time the instruction is executed can cause events to be counted 
-    //before the counter value is loaded into EDX:EAX."
-    RdmsrEx( 
-      PERFORMANCE_EVENT_COUNTER_0_REGISTER + byPerformanceEventCounterNumber ,
-      //PERFORMANCE_EVENT_COUNTER_1_REGISTER ,
-      dwLow,
-      dwHigh,
-      //1=core 0
-      dwAffinityMask
-      ) ;
-    //RdpmcEx seemed to cause a blue screen (maybe because of wrong param values)
-    //mp_cpuaccess->RdpmcEx(
-    //  PERFORMANCE_EVENT_COUNTER_0_REGISTER + byPerformanceEventCounterNumber ,
-    //  //PERFORMANCE_EVENT_COUNTER_1_REGISTER ,
-    //  & dwLow,
-    //  & dwHigh,
-    //  //1=core 0
-    //  dwAffinityMask      
-    //  ) ;
-    r_ull = dwHigh ;
-    r_ull <<= 32 ;
-    r_ull |= dwLow ;
-    return bRet ;
-  }
-
-  inline bool // TRUE: success, FALSE: failure
+   inline bool // TRUE: success, FALSE: failure
    GriffinController::RdmsrEx(
 	  DWORD dwIndex,		// MSR index
 	  DWORD & dwLowmostBits,			// bit  0-31 (register "EAX")
@@ -4581,6 +4165,10 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DWORD dwMSRhighmost, dwMSRlowmost ;
     PState pstateMergedFromUserAndMSR ;
     PState pstateFromUser ;
+    DEBUGN("GriffinController::SetVoltageAndFrequency("
+      << fVoltageInVolt
+      << "," << wFreqInMHz
+      << "," << (WORD) byCoreID )
     //GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
     pstateFromUser = pstateMergedFromUserAndMSR ;
     BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
@@ -4607,6 +4195,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //  //CPU core number, beginning from number "0"
     //  byCoreID
     //  ) ;
+    DEBUGN("GriffinController::SetVoltageAndFrequency(...)"
+      "before WrmsrEx" )
     if( WrmsrEx(
       dwMSRregisterIndex
       , dwMSRlowmost
@@ -4614,9 +4204,11 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       , 1 << byCoreID
       ) 
       )
+    {
       if( SetPstate( didandfid.m_byDivisorID , byCoreID ) 
         )
         byRet = true ;
+    }
     return byRet ;
   }
 
@@ -4630,19 +4222,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       byTooHot = true ;
     return byTooHot ;
   }
-
-  //BOOL // TRUE: success, FALSE: failure
-  //  GriffinController::
-  //  //WINAPI
-  //  WrmsrEx(
-  //    DWORD index,		// MSR index
-  //    DWORD dwLow ,//eax,			// bit  0-31
-  //    DWORD dwHigh, //edx,			// bit 32-63
-  //    DWORD affinityMask	// Thread Affinity Mask
-  //  )
-  //{
-
-  //}
 
   void GriffinController::WriteToCOFVID(PState & pstate, BYTE byCoreID)
   {
@@ -4698,6 +4277,11 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     )
   {
     BYTE byReturn = FAILURE ;
+    DEBUGN("GriffinController::WriteToPstateOrCOFVIDcontrolRegister("
+      << dwRegNr
+      << "," << dwMSRhigh
+      << "," << dwMSRlow
+      )
     //DEBUG("setVidAndFrequencyForPState_Puma--enable ov. prot.: %u\n",
     //  (WORD) //m_model.m_bEnableOvervoltageProtection);
     //  mp_model->m_bEnableOvervoltageProtection);
@@ -4728,25 +4312,12 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       //std::ostringstream ostrstream;
       std::ostrstream ostrstream;
       LOGN_VERBOSE("no overvoltage prot. or voltage is safe");
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//      fnWrMsrExDef * pfnwrmsrex ;
-//	    //unsigned char byFreqID ;
-//	    //unsigned long msr_register_number ;
-//      std::string strFuncName = "WrmsrEx" ;
-//      if(g_pfnRdMsrEx)
-//      {
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
         DWORD dwCOFVIDStatusRegisterHigh ;
         DWORD dwCOFVIDStatusRegisterLow ;
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
         byMaxVID = 64 ;
 #else
         if( 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//          (*g_pfnRdMsrEx)
-//#else
-//          RdmsrEx
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
           mp_cpuaccess->RdmsrEx
           (
           COFVID_STATUS_REGISTER,
@@ -4768,20 +4339,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         else
           mp_userinterface->Confirm("RdMsrEx function failed");
 #endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//      }
-//      else
-//        mp_userinterface->Confirm("No handle to RdMsrEx function");
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-//#ifdef WIN32
-//  #ifndef LINK_TO_WINRING0_STATICALLY
-//      pfnwrmsrex = 
-//        (fnWrMsrExDef *)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//  #endif //#ifndef LINK_TO_WINRING0_STATICALLY
-//#else
-//	  pfnwrmsrex = msr_write ;
-//#endif
+
       //DEBUG("For core %lu: setting ", dwCoreID);
       ostrstream << "For core " << 
         //cast to WORD in order to put out as number and not as ASCII char
@@ -4965,12 +4523,9 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 	      //	printf("MSR write failed\n");
         //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
         //LOG("Adress of mp_cpuaccess: " << mp_cpuaccess << "\n" );
+        DEBUGN("GriffinController::WriteToPstateOrCOFVIDcontrolRegister("
+           "before mp_cpuaccess->WrmsrEx(...)" )
         if( 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//          (*pfnwrmsrex)
-//#else
-//          WrmsrEx
-//#endif
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
           true
 #else
@@ -4986,6 +4541,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 #endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
           )
         {
+          DEBUGN("GriffinController::WriteToPstateOrCOFVIDcontrolRegister()"
+            "succeeded" )
 		      //if (stabilization_time > 100)
 			     // usleep(stabilization_time);
 		      //else
@@ -5038,51 +4595,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     mp_userinterface = p_userinterface ;
     mp_cpuaccess->SetUserInterface(*p_userinterface) ;
   }
-  
-//  BYTE GriffinController::StartOrStopCalculationThread( BYTE byCoreID)
-//  {
-//      BYTE byAction = STARTED;
-//      LOG("start or stop high load calc thread for core " <<
-//          (WORD) byCoreID << "\n");
-//      LOG("Thread has " <<
-//          ( marp_calculationthread[ byCoreID ] ?
-//              //is <> NULL
-//              "NOT " :
-//              //is NULL
-//              ""
-//          ) << "to be created first.\n");
-//      if( marp_calculationthread[ byCoreID ] )
-//      {
-//          if( //marp_calculationthread[ byCoreID ]->m_vbContinue == true
-//              marp_calculationthread[ byCoreID ]->IsRunning() )
-//          {
-//              LOG("Thread is running\n");
-//            //marp_calculationthread[ byCoreID ]->m_vbContinue = false ;
-//              marp_calculationthread[ byCoreID ]->EndCalculationThread() ;
-//              byAction = ENDED ;
-//            //::WaitForSingleObject(marp_calculationthread[ byCoreID ]->m_hThread);
-//            //delete marp_calculationthread[ byCoreID ] ;
-//            //marp_calculationthread[ byCoreID ] = NULL ;
-//          }
-//          else
-//          {
-//             LOG("Thread is NOT running\n");
-//              marp_calculationthread[ byCoreID ]->StartCalculationThread(byCoreID) ;
-//              marp_calculationthread[ byCoreID ]->StartCalculationThread(byCoreID) ;
-//          }
-//      }
-//      else
-//      {
-//          LOG("Creating high load calc thread for core "
-//              << (WORD) byCoreID << "\n");
-//          marp_calculationthread[ byCoreID ] = new CalculationThread( this ) ;
-//          if( //Check if allocation succeeded if it was NULL before
-//              marp_calculationthread[ byCoreID ] )
-//              marp_calculationthread[ byCoreID ]->
-//                StartCalculationThread( byCoreID ) ;
-//      }
-//      return byAction ;
-//  }
 
   BYTE GriffinController::SetPstate(BYTE byPstateID,BYTE byCoreID)
   {
@@ -5213,6 +4725,8 @@ BYTE GriffinController::UseMaxVoltageForFreqForOvervoltageProtection(
   return byReturn ;
 }
 
+//This class knows best which MSRn write can cause troubles.
+// So it this WrMSRex function  is supposed to be called for every MSR write.
 BOOL GriffinController::WrmsrEx(
   DWORD dwIndex,		// MSR index
   DWORD dwLow ,//eax,			// bit  0-31
@@ -5221,6 +4735,11 @@ BOOL GriffinController::WrmsrEx(
   )
 {
   BOOL bool_ = FALSE ;
+  DEBUGN("GriffinController::WrmsrEx("
+    << dwIndex
+    << "," << dwLow
+    << "," << dwHigh
+    << "," << dwAffinityMask )
   if( dwIndex >= MSR_P_STATE_0 && dwIndex <= MSR_P_STATE_7 
     || dwIndex == COFVID_CONTROL_REGISTER )
   {
@@ -5229,11 +4748,15 @@ BOOL GriffinController::WrmsrEx(
     //DWORD dwAffinityMaskCopy = dwAffinityMask ;
     PState pstateMergedFromUserAndMSR ;
     PState pstateFromUser ;
+    DEBUG("GriffinController::WrmsrEx(...): p-state changing register")
     GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
     pstateFromUser = pstateMergedFromUserAndMSR ;
     byCoreID = GetCoreIDFromAffinityMask(dwAffinityMask ) ;
+    DEBUGN(": FID:" << (WORD)pstateMergedFromUserAndMSR.m_byFreqID
+        << " DID:" << (WORD)pstateMergedFromUserAndMSR.m_byDivisorID )
     bDangerousFreq = pstateMergedFromUserAndMSR.m_byFreqID != 
-      mp_model->m_cpucoredata.GetMainPLLoperatingFrequencyIDmax() && 
+      //mp_model->m_cpucoredata.GetMainPLLoperatingFrequencyIDmax() &&
+      m_byMainPLLoperatingFrequencyIDmax &&
       pstateMergedFromUserAndMSR.m_byDivisorID == 0 ;
     if( //pstateMergedFromUserAndMSR.m_byDivisorID != 0 
       //Because the OS crashes / freezes when Freq is > 1/2 max freq and 
@@ -5262,13 +4785,22 @@ BOOL GriffinController::WrmsrEx(
         //CPU core number, beginning from number "0"
         byCoreID
         ) ;
+#ifdef _DEBUG
+    else
+    {
+      DEBUGN("GriffinController::WrmsrEx(...): bDangerousFreq==true")
+    }
+#endif
   }
   else
+  {
+    DEBUGN("GriffinController::WrmsrEx(...): NO p-state changing register")
     bool_ = mp_cpuaccess->WrmsrEx(
       dwIndex , //DWORD dwIndex,		// MSR index
       dwLow , //DWORD dwLow ,//eax,			// bit  0-31
       dwHigh , //DWORD dwHigh, //edx,			// bit 32-63
       dwAffinityMask //DWORD dwAffinityMask	// Thread Affinity Mask
     ) ;
+  }
   return bool_ ;
 }

@@ -1,6 +1,9 @@
 #include "CPUcoreData.hpp"
 #include <Controller/AMD/Griffin/AMD_family17.h>
-#include <wxWidgets/DynFreqScalingThread.hpp>
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
+  #include <wxWidgets/DynFreqScalingThread.hpp>
+#endif
 #include <Controller/ICPUcoreUsageGetter.hpp>
 
 extern Logger g_logger ;
@@ -9,8 +12,13 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     : 
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
-  mp_dynfreqscalingthread(NULL)
-  , m_fPreviousCPUusage(-1.0)
+
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
+    mp_dynfreqscalingthread(NULL)
+  ,
+#endif
+  m_fPreviousCPUusage(-1.0)
   , mp_icpucoreusagegetter(NULL)
   , m_wCurrentFreqInMHz (0)
   {
@@ -21,12 +29,17 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
   }
   PerCPUcoreAttributes::~PerCPUcoreAttributes()
   {
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
     if( mp_dynfreqscalingthread )
       delete mp_dynfreqscalingthread ;
+#endif
     if( mp_icpucoreusagegetter )
       delete mp_icpucoreusagegetter ;
   }
 
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
   void PerCPUcoreAttributes::CreateDynFreqScalingThread(
     ICPUcoreUsageGetter * p_icpucoreusagegetter 
     )
@@ -56,6 +69,7 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
       }
     }
   }
+#endif
   
   //when this class is an element of an array, the paramless ctor is
   //called?! So do the init with params here.
@@ -168,6 +182,10 @@ void CPUcoreData::Init()
 
   BYTE CPUcoreData::GetMainPLLoperatingFrequencyIDmax()
   {
+//#ifdef _DEBUG
+//    MessageBox( NULL, "CPUcoreData::GetMainPLLoperatingFrequencyIDmax",
+//      TEXT("") , MB_OK ) ;
+//#endif
     return m_byMainPLLoperatingFrequencyIDmax ;
   }
 
@@ -266,4 +284,3 @@ void CPUcoreData::Init()
     m_wAQuarterOfMaxFreq = wMaxFreqInMHz / 4 ;
     m_wAHalfOfMaxFreq = wMaxFreqInMHz / 2 ;
   }
-

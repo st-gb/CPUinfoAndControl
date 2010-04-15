@@ -20,10 +20,12 @@ I_CPUcontroller::I_CPUcontroller()
   //(to avoid g++ warnings)
   //1 power plane for all CPU cores is usual->set as default.
   m_b1CPUcorePowerPlane( true )
-  , mp_cpuaccess (NULL)
+//  , mp_cpuaccess (NULL)
   , mp_userinterface (NULL)
   , mp_model (NULL)
+#ifdef COMPILE_WITH_CALC_THREAD
   , mp_calculationthread (NULL)
+#endif //#ifdef COMPILE_WITH_CALC_THREAD
   , mp_dynfreqscalingaccess (NULL)
   , mp_icpucoreusagegetter (NULL)
 {
@@ -79,7 +81,9 @@ BYTE I_CPUcontroller::EnableOwnDVFS()
         & mp_model->m_cpucoredata.
         m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
         0 ] ;
+      #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
       LOGN("freq scaling thread:" << p_percpucoreattributes->mp_dynfreqscalingthread )
+      //Keep away the dependance on Logger class for dyn libs.
       //DynFreqScalingThread * p_dynfreqscalingthread
       if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
       {
@@ -98,6 +102,7 @@ BYTE I_CPUcontroller::EnableOwnDVFS()
           return 1 ;
         }
       }
+      #endif
     }
   }
   return 0 ;
@@ -112,13 +117,6 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
   , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
   )
 {
-  //WORD wFreqInMHzFromNearFreqAboveWantedFreq =
-    //mp_model->m_pstates.m_arp_pstate[0]->GetFreqInMHz() ;
-  //PState * p_pstateGreaterEqual = mp_model->m_pstates.
-  //  GetPstateWithNearestFreqGreaterEqual( wFreqInMHzToGetVoltageFrom , 4) ;
-  ////mp_model->
-  //PState * p_pstateLowerEqual = mp_model->m_pstates.
-  //  GetPstateWithNearestFreqLowerEqual( wFreqInMHzToGetVoltageFrom, 4 ) ;
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
     r_stdsetvoltageandfreq.begin() ;
   std::set<VoltageAndFreq>::const_iterator 
@@ -139,11 +137,7 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
     }
     ++ ci_stdsetvoltageandfreq ;
   }
-  if( //mp_model->m_pstates.m_arp_pstate[0] &&
-    //mp_model->m_pstates.m_arp_pstate[0]->GetFreqInMHz() >
-    //wFreqInMHzToGetVoltageFrom 
-    //p_pstateGreaterEqual && p_pstateLowerEqual
-    ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
+  if( ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
     && ci_stdsetvoltageandfreqNearestHigherEqual != 
       r_stdsetvoltageandfreq.end()
     )
@@ -160,6 +154,8 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
       //r_fVoltageInVolt = p_pstateGreaterEqual->GetVoltageInVolt() ;
       r_fVoltageInVolt = ci_stdsetvoltageandfreqNearestLowerEqual->
         m_fVoltageInVolt ;
+      DEBUGN("I_CPUcontroller::GetInterpolatedVoltageFromFreq()"
+        "voltage found: " << r_fVoltageInVolt )
       return true ;
     }
     else
@@ -602,6 +598,8 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
   WORD wFreqInMHz 
   , BYTE byCoreID)
 {
+  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
+    << (WORD) byCoreID << ")")
   return SetFreqAndVoltageFromFreq(
     wFreqInMHz 
     , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
@@ -615,9 +613,16 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
 {
   BYTE byRet = 0 ;
   float fVoltageInVolt ;
+  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+      "address of model: " << mp_model )
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted ;
+
+    //The set should have been filled by the CPU controller as it should
+    //have the knowledge/ Zuständigkeit wich multipliers can be set.
+    //for instance for AMD Griffin freqs are: "max. , 1/2 max,..."
+    //for Pnetium M multipliers 6,8,...
     mp_model->m_cpucoredata.m_stdsetvoltageandfreqAvailableFreq ;
     //* mp_model->m_cpucoredata.mp_stdsetvoltageandfreqAvailableFreq ;
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
@@ -644,30 +649,63 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
     r_stdsetvoltageandfreq.end() 
     )
   {
+    DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+      " higher element found: "
+      << ci_stdsetvoltageandfreqNearestHigherEqual->m_fVoltageInVolt
+      << "," << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz )
+#ifdef _DEBUG
+    if( ci_stdsetvoltageandfreqNearestLowerEqual !=
+      r_stdsetvoltageandfreq.end()
+      )
+    {
+      DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+        " lower element found: "
+        << ci_stdsetvoltageandfreqNearestLowerEqual->m_fVoltageInVolt
+        << "," << ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz )
+    }
+#endif
     //Freq is lower than the ones in the list.
     //if( wFreqInMHz < ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz )
     //No entry  is lower equal than the freq.
-    if( ci_stdsetvoltageandfreqNearestLowerEqual == r_stdsetvoltageandfreq.end() )
+//    if( ci_stdsetvoltageandfreqNearestLowerEqual == r_stdsetvoltageandfreq.end() )
+//    {
+//      wFreqInMHz = ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
+////      if( cr_stdsetvoltageandfreqForInterpolation.find())
+////        fVoltageInVolt =
+////      byRet = SetVoltageAndFrequency(//wFreqInMHz
+////        //fVoltageInVolt
+////        //ci_stdsetvoltageandfreqNearestHigherEqual->m_fVoltageInVolt
+////        , wFreqInMHz
+////        , byCoreID
+////        ) ;
+//    }
+      //Get the freq from the found element in the set (by default: of the
+      //available frequencies)
       wFreqInMHz = ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
-    if( GetInterpolatedVoltageFromFreq(
-        wFreqInMHz
-        //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
-        , fVoltageInVolt 
-        //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-        , cr_stdsetvoltageandfreqForInterpolation
-        ) 
-      )
-    {
-      byRet = SetVoltageAndFrequency(//wFreqInMHz
-        fVoltageInVolt
-        //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
-        , wFreqInMHz
-        , byCoreID
-        ) ;
-    }
+      //As we have the Freq now: calc the voltage from it.
+      //The freq should, but needn't be in the set (2 different sets:
+      //set of available freqs, set of voltages to set).
+      if( GetInterpolatedVoltageFromFreq(
+          wFreqInMHz
+          //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+          , fVoltageInVolt
+          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+          , cr_stdsetvoltageandfreqForInterpolation
+          )
+        )
+      {
+        byRet = SetVoltageAndFrequency(//wFreqInMHz
+          fVoltageInVolt
+          //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+          , wFreqInMHz
+          , byCoreID
+          ) ;
+      }
   }
   else //if e.g. the wanted freq is higher than the max. freq.
   {
+    DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+      "NO element found" )
     if( ci_stdsetvoltageandfreqNearestLowerEqual  != 
       r_stdsetvoltageandfreq.end() 
       )
@@ -675,6 +713,7 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
       wFreqInMHz = ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz ;
       if( GetInterpolatedVoltageFromFreq(
           //wFreqInMHz
+          //The freq that is nearest below.
           ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
           , fVoltageInVolt 
           //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
@@ -724,16 +763,13 @@ void I_CPUcontroller::SetModelData(
   p_model->SetNumberOfCPUCores( GetNumberOfCPUcores() ) ;
 }
 
-void I_CPUcontroller::SetCPUaccess(I_CPUaccess * p_cpuaccess)
-{
-  mp_cpuaccess = p_cpuaccess ;
-}
-
+#ifdef COMPILE_WITH_CALC_THREAD
 void I_CPUcontroller::SetCalculationThread(
   ICalculationThread * p_calculationthread )
 {
   mp_calculationthread = p_calculationthread ;
 }
+#endif //#ifdef COMPILE_WITH_CALC_THREAD
 
 void I_CPUcontroller::SetOtherDVFSaccess(
   IDynFreqScalingAccess * p_dynfreqscalingaccess)
@@ -741,140 +777,124 @@ void I_CPUcontroller::SetOtherDVFSaccess(
   mp_dynfreqscalingaccess = p_dynfreqscalingaccess ;
 }
 
-bool I_CPUcontroller::CmdLineParamsContain(
-  TCHAR * ptcharOption
-  , std::string & strValue
-  )
-{
-  bool bcmdLineParamsContain = false ;
-  int nIndex = 1 ;
-  signed short wPos = 0 ;
-  DEBUG("cmdLineParamsContain begin\n");
-  for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
-  {
-    std::string strCmdArg( //GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
-      GetStdString(m_arartcharCmdLineArg[ nIndex ]) ) ;
-    wPos = (WORD) strCmdArg.find( //std::string( GetCharPointer( 
-      //ptcharOption ) ) +
-      GetStdString(ptcharOption ) +
-      //TCHAR("=")
-      std::string("=") ) ;
-    if( wPos != std::string::npos && wPos == 0 )
-    {
-//#ifdef WIN32
-#ifdef MS_COMPILER
-      strValue = strCmdArg.substr(_tcslen(ptcharOption)
-        //Start after "="
-        +1);
-#else
-      strValue = strCmdArg.substr( //strlen( GetCharPointer( ptcharOption ) )
-        GetStdString( ptcharOption ).length()
-        //Start after "="
-        + 1 );
-#endif //#ifdef WIN32
-      bcmdLineParamsContain = true ;
-      break ;
-    }
-  }
-  DEBUG("cmdLineParamsContain end\n");
-  return bcmdLineParamsContain ;
-}
+//bool I_CPUcontroller::CmdLineParamsContain(
+//  TCHAR * ptcharOption
+//  , std::string & strValue
+//  )
+//{
+//  bool bcmdLineParamsContain = false ;
+//  int nIndex = 1 ;
+//  signed short wPos = 0 ;
+//  DEBUG("cmdLineParamsContain begin\n");
+//  for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
+//  {
+//    std::string strCmdArg( //GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
+//      GetStdString(m_arartcharCmdLineArg[ nIndex ]) ) ;
+//    wPos = (WORD) strCmdArg.find( //std::string( GetCharPointer(
+//      //ptcharOption ) ) +
+//      GetStdString(ptcharOption ) +
+//      //TCHAR("=")
+//      std::string("=") ) ;
+//    if( wPos != std::string::npos && wPos == 0 )
+//    {
+////#ifdef WIN32
+//#ifdef MS_COMPILER
+//      strValue = strCmdArg.substr(_tcslen(ptcharOption)
+//        //Start after "="
+//        +1);
+//#else
+//      strValue = strCmdArg.substr( //strlen( GetCharPointer( ptcharOption ) )
+//        GetStdString( ptcharOption ).length()
+//        //Start after "="
+//        + 1 );
+//#endif //#ifdef WIN32
+//      bcmdLineParamsContain = true ;
+//      break ;
+//    }
+//  }
+//  DEBUG("cmdLineParamsContain end\n");
+//  return bcmdLineParamsContain ;
+//}
 
-//this method may be overwritten for CPU-specific configuration
-BYTE I_CPUcontroller::HandleCmdLineArgs()
-{
-  std::string strValue ;
-  if( CmdLineParamsContain(_T("-config"),strValue) )
-  {
-#ifdef COMPILE_WITH_XERCES
-    SAX2MainConfigHandler saxhandler(//pstates
-      *mp_model ,
-      mp_userinterface //,
-      //this
-      );
-    if( 
-      readXMLConfig(//"config.xml"
+////this method may be overwritten for CPU-specific configuration
+//BYTE I_CPUcontroller::HandleCmdLineArgs()
+//{
+//  std::string strValue ;
+//  if( CmdLineParamsContain(_T("-config"),strValue) )
+//  {
+//#ifdef COMPILE_WITH_XERCES
+//    SAX2MainConfigHandler saxhandler(//pstates
+//      *mp_model ,
+//      mp_userinterface //,
+//      //this
+//      );
+//    if(
+//      readXMLConfig(//"config.xml"
+//
+//      //mp_configurationHandler->LoadConfiguration(
+//
+//      //strValue.c_str(),pstates) )
+//      //strValue.c_str(),pstatectrl.m_pstates) )
+//      strValue.c_str(), //m_pstates
+//      //m_model,
+//      *mp_model,
+//      mp_userinterface ,
+//      //this
+//      saxhandler
+//      )
+//      )
+//    {
+//      //if( pstates.AreSafe() )
+//      //{
+//      //  ChangePStates();
+//      //}
+//      //else
+//      //  printf("Unsafe values/voltage for p-state->not applying values\");
+//      //pstatectrl.ApplyAllPStates(pstates);
+//      //pstatectrl.ApplyAllPStates();
+//
+//      //If the file is NOT assigned/ opened yet.
+//      //if( fileDebug == NULL )
+//      if( //An empty string means: do NOT write to the log file.
+//          ! mp_model->m_stdstrLogFilePath.empty()
+//          &&
+//          ! //g_logger.m_ofstream.is_open()
+//          g_logger.IsOpen()
+//        )
+//      {
+//        //Convert std::string to wstring or remain std::string.
+//        std::tstring stdtstr = Getstdtstring(mp_model->m_stdstrLogFilePath) ;
+//          //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
+//          g_logger.OpenFile( stdtstr ) ;
+//      }
+//#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
+//      byReturn = SUCCESS ;
+//#else
+//    //if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck &&
+//    //  ! mp_model->m_bSkipCPUtypeCheck &&
+//    //  //! IsSupportedCPUModel()
+//    //  )
+//    //{
+//    //  mp_userinterface->Confirm("This CPU model is not supported by this program."
+//    //    "Use \"skip_cpu_type_check\" (see help) if you think it makes "
+//    //    "sense.\n->exiting");
+//    //  return byReturn ;
+//    //}
+//
+//      //byReturn = ApplyAllPStates();
+//
+//#endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
+//    }
+//    else
+//      mp_userinterface->Confirm("Error reading the XML-configuration file");
+//#else //COMPILE_WITH_XERCES
+//    //byReturn = SUCCESS ;
+//#endif //COMPILE_WITH_XERCES
+//  }
+//  return 1 ;
+//}
 
-      //mp_configurationHandler->LoadConfiguration(
-
-      //strValue.c_str(),pstates) )
-      //strValue.c_str(),pstatectrl.m_pstates) )
-      strValue.c_str(), //m_pstates
-      //m_model,
-      *mp_model,
-      mp_userinterface ,
-      //this
-      saxhandler
-      )
-      )
-    {
-      //if( pstates.AreSafe() )
-      //{
-      //  ChangePStates();
-      //}
-      //else
-      //  printf("Unsafe values/voltage for p-state->not applying values\");
-      //pstatectrl.ApplyAllPStates(pstates);
-      //pstatectrl.ApplyAllPStates();
-
-      //If the file is NOT assigned/ opened yet.
-      //if( fileDebug == NULL )
-      if( //An empty string means: do NOT write to the log file.
-          ! mp_model->m_stdstrLogFilePath.empty()
-          &&
-          ! //g_logger.m_ofstream.is_open() 
-          g_logger.IsOpen() 
-        )
-      {
-        //Convert std::string to wstring or remain std::string.
-        std::tstring stdtstr = Getstdtstring(mp_model->m_stdstrLogFilePath) ;
-          //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
-          g_logger.OpenFile( stdtstr ) ;
-      }
-#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-      byReturn = SUCCESS ;
-#else
-    //if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck && 
-    //  ! mp_model->m_bSkipCPUtypeCheck && 
-    //  //! IsSupportedCPUModel() 
-    //  )
-    //{
-    //  mp_userinterface->Confirm("This CPU model is not supported by this program."
-    //    "Use \"skip_cpu_type_check\" (see help) if you think it makes "
-    //    "sense.\n->exiting");
-    //  return byReturn ;
-    //}
-
-      //byReturn = ApplyAllPStates();
-
-#endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-    }
-    else
-      mp_userinterface->Confirm("Error reading the XML-configuration file");
-#else //COMPILE_WITH_XERCES
-    //byReturn = SUCCESS ;
-#endif //COMPILE_WITH_XERCES
-  }
-  return 1 ;
-}
-
-//If inline: linker error (maybe this method is NOT available
-//in derived classes then).
-//inline 
-bool // TRUE: success, FALSE: failure
- I_CPUcontroller::RdmsrEx(
-  DWORD dwIndex,		// MSR index
-  DWORD & dwLowmostBits,			// bit  0-31 (register "EAX")
-  DWORD & dwHighmostBits,			// bit 32-63 (register "EDX")
-  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
-  )
-{
-  if( mp_cpuaccess )
-    return mp_cpuaccess->RdmsrEx(
-      dwIndex,//&dwEAX
-      & dwLowmostBits,//&dwEDX
-      & dwHighmostBits,
-      dwAffinityMask
-      );
-  return false ;
-}
+//void I_CPUcontroller::SetCPUaccess(I_CPUaccess * p_cpu_access)
+//{
+//  return mp_cpuaccess ;
+//}

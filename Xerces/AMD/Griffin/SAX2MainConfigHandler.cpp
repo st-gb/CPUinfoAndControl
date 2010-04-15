@@ -89,7 +89,7 @@
 	  //m_p_pstates = & pstates ;
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
-    mp_pumastatectrl = p_pumastatectrl ;
+    mp_griffincontroller = p_pumastatectrl ;
 	}
 	
   void Griffin::SAX2MainConfigHandler::handleFreqAndLowestStableVoltageElement(
@@ -284,7 +284,7 @@
 	    if( XercesHelper::GetAttributeValue(attrs,"FreqInMHz",wValue) )
 	    {
         LOG( "XML attribute name: \"FreqInMHz\"; value: " << wValue << "\n" );
-        DIDandFID didandfid = mp_pumastatectrl->
+        DIDandFID didandfid = mp_griffincontroller->
           GetNearestPossibleFreqInMHzAsDIDnFID( wValue ) ;
             m_p_model->m_pstates.SetPStateDID(byPstateID, //p_didandfid->
               didandfid.m_byDivisorID);
@@ -298,7 +298,7 @@
 	    {
         LOG( "XML attribute name: \"" << stdstrAttributeName.c_str() << 
           "\"; value: " << fValue << "\n" );
-        m_p_model->m_pstates.SetPStateVID( byPstateID , mp_pumastatectrl->
+        m_p_model->m_pstates.SetPStateVID( byPstateID , mp_griffincontroller->
           GetVoltageIDFromVoltageInVolt( fValue )
           );
 	    }

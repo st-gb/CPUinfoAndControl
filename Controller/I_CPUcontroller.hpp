@@ -12,6 +12,7 @@
 #else //MSC, MINGW (,...)
     #include <tchar.h> ////for _T(), TCHAR
 #endif
+#include <Controller/UsageGetterAndControllerBase.hpp>
 #if __GNUC__ == 4 //cygwin 1.7 has w32api/basetsd.h
   #include <w32api/basetsd.h> //for DWORD_PTR
 #endif
@@ -40,7 +41,9 @@
 //from Winring0's "OlsDef.h"
 #define PciBusDevFunc(Bus, Dev, Func)	((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
 
+#ifdef COMPILE_WITH_CALC_THREAD
 class ICalculationThread ;
+#endif
 class I_CPUaccess ;
 class UserInterface ;
 class Model ;
@@ -53,16 +56,9 @@ class ICPUcoreUsageGetter ;
 //base class for specific CPU controllers like e.g. 
 //GriffinController and PentiumMcontroller
 class I_CPUcontroller
+  : public CPUcoreUsageGetterAndControllerBase
 {
 //protected or public to inherit the attributes (member vars)
-protected:
-//public:
-  //The CPU access should be protected against direct access by 
-  //not inherited classes because writing to an MSR may damage the CPU.
-  //A good place for direct write to MSR is the concrete CPU controller
-  //(NOT the CPU access class because there may be many of them->
-  //against Don't Repeat Yourself principle) class.
-  I_CPUaccess * mp_cpuaccess ;
 public:
   bool m_b1CPUcorePowerPlane ;
   int m_byNumberOfCmdLineArgs;
@@ -71,7 +67,9 @@ public:
 
   UserInterface * mp_userinterface ;
   Model * mp_model ;
+#ifdef COMPILE_WITH_CALC_THREAD
   ICalculationThread * mp_calculationthread ;
+#endif //#ifdef COMPILE_WITH_CALC_THREAD
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
   ICPUcoreUsageGetter * mp_icpucoreusagegetter ;
 public:
@@ -90,7 +88,8 @@ public:
     PDWORD p_dwEDX,
     DWORD_PTR affinityMask
   ) ;
-  bool CmdLineParamsContain( TCHAR * ptcharOption, std::string & strValue);
+//  virtual bool CmdLineParamsContain( TCHAR * ptcharOption,
+//      std::string & strValue );
   virtual void DecreaseVoltageBy1Step(float & r_fVoltage) {}
   BYTE DisableFrequencyScalingByOS() ;
   BYTE EnableOwnDVFS() ;
@@ -146,13 +145,17 @@ public:
   virtual WORD GetNumberOfCPUcores() ;
   //Must be declared pure virtual ("virtual ... = 0 ;") else 
   //GetMaximumFrequencyInMHz() of the derived class is NOT called.
-  virtual WORD GetMaximumFrequencyInMHz() //{ return 0; } ;
-    = 0 ;
+  virtual WORD GetMaximumFrequencyInMHz()
+    { return 0; } ;
+    //= 0 ;
   //Must be declared pure virtual ("virtual ... = 0 ;") else 
   //GetMinimumFrequencyInMHz() of the derived class is NOT called.
-  virtual WORD GetMinimumFrequencyInMHz() = 0 ;
-  virtual WORD GetMaximumVoltageID() = 0 ;
-  virtual WORD GetMinimumVoltageID() = 0 ;
+  virtual WORD GetMinimumFrequencyInMHz() //= 0 ;
+    { return 0 ; }
+  virtual WORD GetMaximumVoltageID() //= 0 ;
+    { return 0 ; }
+  virtual WORD GetMinimumVoltageID() //= 0 ;
+    { return 0 ; }
   virtual WORD GetNearestHigherPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   virtual WORD GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   virtual BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq) ;//= 0 ;
@@ -170,9 +173,14 @@ public:
     __FLT_MIN__ ;
 #endif
   }
-  virtual float GetVoltageInVolt(WORD wVoltageID ) = 0 ;
-  virtual WORD GetVoltageID(float fVoltageInVolt ) = 0 ;
-  BYTE HandleCmdLineArgs() ;
+  virtual float GetVoltageInVolt(WORD wVoltageID )
+    //= 0 ;
+    {
+      return 0.0f ;
+    }
+  virtual WORD GetVoltageID(float fVoltageInVolt ) //= 0 ;
+    { return 0 ; }
+//  BYTE HandleCmdLineArgs() ;
   virtual void IncreaseVoltageBy1Step(float & r_fVoltage) {}
   virtual void IncreaseVoltageForCurrentPstate(BYTE byCoreID)
   {
@@ -196,23 +204,6 @@ public:
     DWORD dwAffinityBitMask 
     , BYTE byPerformanceEventSelectRegisterNumber
     ) { }
-  //Advantage for a RdmsrEx() inside CPU controller: one does not
-  //need to MANUALLY check if cpuaccess is assigned. (not NULL)
-  //because this is done by this class' RdmsrEx() method.
-  //inline 
-  bool // TRUE: success, FALSE: failure
-   RdmsrEx(
-	  DWORD dwIndex,		// MSR index
-	  DWORD & dwLowmostBits,			// bit  0-31 (register "EAX")
-	  DWORD & dwHighmostBits,			// bit 32-63 (register "EDX")
-	  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
-    ) ;
-  //Possible handling for resume from standby (ACPI S3) or 
-  //hibernate  (S4). E.g. with Griffin CPUs undervolting
-  //is possible without an own DynVoltFreqScal. But  then 
-  //the performance state registers muste be rewritten after
-  //resume.
-  virtual void ResumeFromS3orS4() {} ;
   void SetCmdLineArgs(
     //std::vector<std::string> & r_stdvecstdstringCmdLineArg 
       int argc, 
@@ -224,6 +215,10 @@ public:
     TCHAR ** argv
   #endif
     ) ;
+//  void SetCPUaccess(I_CPUaccess * p_cpu_access)
+//  {
+//    mp_cpuaccess = p_cpu_access ;
+//  }
   void SetUserInterface( 
     //By using a pointer instead of a reference one can pass NULL 
     //to show that there is no object (e.g. if running as a service).
@@ -232,14 +227,12 @@ public:
     //By using a pointer instead of a reference one can pass NULL 
     //to show that there is no object.
     Model * p_model ) ;
-  void SetCPUaccess(
-    //By using a pointer instead of a reference one can pass NULL 
-    //to show that there is no object.
-    I_CPUaccess * ) ;
+#ifdef COMPILE_WITH_CALC_THREAD
   void SetCalculationThread( 
     //By using a pointer instead of a reference one can pass NULL 
     //to show that there is no object.
     ICalculationThread * calculationthread) ;
+#endif //#ifdef COMPILE_WITH_CALC_THREAD
   void SetOtherDVFSaccess(
     //By using a pointer instead of a reference one can pass NULL 
     //to show that there is no object.
@@ -275,8 +268,9 @@ public:
       float fVolt    
       , WORD wFreqInMHz 
       , BYTE byCoreID 
-      ) //{return 0 ; }
-      = 0 ;
+      )
+      {return 0 ; }
+      //= 0 ;
   //If this method should be implemented in a derived class it should check for
   // MSR indices and value for validity.
   inline virtual BOOL // TRUE: success, FALSE: failure

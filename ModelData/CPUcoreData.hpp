@@ -15,7 +15,10 @@
 //typedef wxCriticalSection criticalsection_type ;
 //#else
 #include <criticalsection_type.hpp>
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on mp_dynfreqscalingaccess for dyn libs.
 #include <wxWidgets/DynFreqScalingThread.hpp>
+#endif
 //#endif
 
 #define CPU_CORE_DATA_NOT_SET 255
@@ -31,10 +34,13 @@ class I_CPUcontroller ;
 //class wxWidgets::DynFreqScalingThread ;
 class ICPUcoreUsageGetter ;
 
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
 namespace wxWidgets
 {
   class DynFreqScalingThread ;
 }
+#endif
 
 class PerCPUcoreAttributes
 {
@@ -45,7 +51,10 @@ private :
   BYTE m_byCoreID ;
   CPUcoreData * mp_cpucoredata ;
 public:
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
   wxWidgets::DynFreqScalingThread * mp_dynfreqscalingthread ;
+#endif
   float m_fPreviousCPUusage ;
   float m_fVoltageInVoltCalculatedFromCPUload ;
 private:
@@ -55,11 +64,15 @@ private:
 public:
   WORD m_wFreqInMHzCalculatedFromCPUload ;
 
-  PerCPUcoreAttributes() ;
-  ~PerCPUcoreAttributes() ;
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  //Keep away the dependance on this class for dyn libs.
   void CreateDynFreqScalingThread(
     ICPUcoreUsageGetter * p_icpucoreusagegetter 
     ) ;
+#endif
+
+  PerCPUcoreAttributes() ;
+  ~PerCPUcoreAttributes() ;
 
   //when this class is an element of an array, the paramless ctor is
   //called?! So do the init with params here.

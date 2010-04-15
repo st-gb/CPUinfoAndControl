@@ -11,7 +11,9 @@
 #include <Controller/I_ServerProcess.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
 
-#include <Windows/CalculationThread.hpp>
+#ifdef COMPILE_WITH_CALC_THREAD
+  #include <Windows/CalculationThread.hpp>
+#endif
 //#include <Windows/CPUcoreUsageGetterIWbemServices.hpp>
 #include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/DynFreqScalingAccess.hpp>
@@ -60,7 +62,9 @@ public:
     //static 
       volatile bool m_bRun ;
     //static 
+#ifdef COMPILE_WITH_CALC_THREAD
       CalculationThread m_calculationthread ;
+#endif //COMPILE_WITH_CALC_THREADs
     //CPUcoreUsageGetterIWbemServices m_cpucoreusagegetteriwbemservices ;
     //Must be static. Else: runtime error when calling DummyUserInterface::Confirm(ostream)
     static 
@@ -77,7 +81,7 @@ public:
     //static 
        SERVICE_STATUS_HANDLE   m_servicestatushandle; 
     //static 
-       I_CPUcontroller * mp_cpucontroller ;
+//       I_CPUcontroller * mp_cpucontroller ;
     //static 
        std::ofstream m_ofstream ;
     //static 
@@ -159,6 +163,31 @@ public :
         LPVOID lpContext 
         ) ;
     void SetCommandLineArgs( int argc, char *  argv[] ) ;
+    void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew )
+    {
+      if( p_cpucontrollerNew )
+      {
+//        if( mp_cpucontroller )
+//        {
+//          //Release memory.
+//          delete mp_cpucontroller ;
+//          LOGN(" current CPU controller deleted")
+//        }
+        LOGN("address of model: " << mp_modelData )
+        mp_cpucontroller = p_cpucontrollerNew ;
+        //May be NULL at startup.
+        if( mp_cpucoreusagegetter )
+          mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
+        LOGN("after setting CPU controller for usage getter")
+        mp_cpucontroller->SetModelData( //& m_modelData
+           mp_modelData ) ;
+        LOGN("before GetMaximumFrequencyInMHz. number of CPU cores: " <<
+            (WORD) mp_modelData->m_cpucoredata.GetNumberOfCPUcores() )
+        //Needed for drawing the voltage-frequency curves.
+        WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+        LOGN("after GetMaximumFrequencyInMHz: " << w )
+      }
+    }
     void SetServiceStatus () ;
     static bool ShouldCreateService(
         const std::vector<std::string> & cr_vecstdstrParams ) ;
