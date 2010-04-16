@@ -1597,7 +1597,9 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     m_bPstateSet = true ;
     //byVID = pstate.m_byVoltageID ;
     //mp_cpuaccess->StartCalculationThread(0);
+#ifdef COMPILE_WITH_CALC_THREAD
     mp_calculationthread->StartCalculationThread(0);
+#endif //#ifdef COMPILE_WITH_CALC_THREAD
     //mp_cpuaccess->RdmsrEx( GetMSRregisterForPstate( byPstate) ) ;
     while( 
       //64 is the VID for the lowest voltage that the CPU sends to 

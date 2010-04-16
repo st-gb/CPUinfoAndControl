@@ -97,7 +97,7 @@ float WinRegistryCPUcoreUsageGetter::GetPercentalUsageForCore(
 //        wchar_t ar_wch[20] ;
         m_lpwstrCPUcoreNumber = _itow( byCoreID, m_ar_wch, 10 );
         //DEBUG_WCOUTN("core number as string: \"" << lpwstrCPUcoreNumber << "\"" )
-        DEBUG_WPRINTFN(L"core number as string: >>%ls<<", lpwstrCPUcoreNumber )
+        DEBUG_WPRINTFN(L"core number as string: >>%ls<<", m_lpwstrCPUcoreNumber )
         fSuccess = GetCounterValues(
           238,
           6,

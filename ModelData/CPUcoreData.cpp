@@ -6,7 +6,9 @@
 #endif
 #include <Controller/ICPUcoreUsageGetter.hpp>
 
+#ifdef COMPILE_WITH_LOG
 extern Logger g_logger ;
+#endif //#ifdef COMPILE_WITH_LOG
 
 PerCPUcoreAttributes::PerCPUcoreAttributes()
     : 

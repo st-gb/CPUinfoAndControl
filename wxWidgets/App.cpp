@@ -154,10 +154,12 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     //Needed for drawing the voltage-frequency curves.
     WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
     LOGN("after GetMaximumFrequencyInMHz: " << w )
-    #ifdef _WINDOWS
-    mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
-    #else
-    mp_i_cpucontroller->SetCalculationThread(NULL) ;
+    #if defined(COMPILE_WITH_CALC_THREAD)
+      #if defined(_WINDOWS)
+      mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
+      #else
+      mp_i_cpucontroller->SetCalculationThread(NULL) ;
+      #endif
     #endif
     LOGN("after SetCalculationThread")
     

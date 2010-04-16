@@ -70,13 +70,44 @@
   #if defined(COMPILE_FOR_CPUCONTROLLER_DYNLIB) //&& !defined(_DEBUG)
   //  #define LOG(...) /* ->empty/ no instructions*/
   //  #else
+    #ifdef _DEBUG //only debug DLLs should log
+      #define COMPILE_WITH_LOG
+      #define COMPILE_WITH_DEBUG
+    #endif
   #else //#if defined(COMPILE_FOR_CPUCONTROLLER_DYNLIB) && !defined(_DEBUG)
-    #define COMPILE_WITH_DEBUG
+    //Even release version of the service / GUI should output to the log file.
+    #define COMPILE_WITH_LOG
+    #if defined(_DEBUG)
+      #define COMPILE_WITH_DEBUG
+    #endif
   //  extern FILE * fileDebug ;
     //FILE * fileDebug;
   #endif//#if defined(COMPILE_FOR_CPUCONTROLLER_DYNLIB) && !defined(_DEBUG)
-  #ifdef COMPILE_WITH_DEBUG
-    //FILE * fileDebug = fopen("PumaStateCtrl_debug.txt","r");
+
+  #ifdef _DEBUG
+    //this macro may NOT be called like the other one with "..."/ "__VA_ARGS__",
+    //else many errors
+    #define DEBUG_COUT(coutArgs)  {std::cout << coutArgs ; std::cout.flush(); }
+    #define DEBUG_COUTN(coutArgs) { std::cout << coutArgs << "\n" ; \
+      std::cout.flush(); }
+    #define DEBUG_WCOUTN(coutArgs) { std::wcout << coutArgs << L"\n" ; \
+      std::cout.flush(); }
+    //MinGW is able to use wprintf() but not std::wcout()
+    #define DEBUG_WPRINTFN(...) { wprintf(__VA_ARGS__) ; wprintf(L"\n"); \
+      fflush(stdout) ; }
+  #else
+    #define DEBUG(...) //->empty
+    #define DEBUG(coutArgs) //->empty
+    //#define DEBUG(to_ostream) /*->empty / no instructions*/
+    #define DEBUGN(to_ostream) /*->empty / no instructions*/
+    #define DEBUG_COUT(coutArgs) //->empty
+    #define DEBUG_COUTN(coutArgs) //->empty
+    #define DEBUG_WCOUTN(coutArgs) //->empty
+    #define DEBUG_WPRINTFN(...) //->empty
+  #endif //#ifdef _DEBUG
+
+#ifdef COMPILE_WITH_LOG
+    //FILE * fileDebug = fopen("x86IandC_debug.txt","r");
     /*Use a block ( "{...}" to be usable in "else" statements.*/
     //#define DEBUG(...)  {fprintf(fileDebug,__VA_ARGS__);fflush(/*stdout*/fileDebug);}
     #include "./Controller/Logger.hpp" //for class Logger
@@ -97,11 +128,6 @@
 //    #endif
     //#ifdef COMPILE_WITH_LOG
     #define LOGN(to_ostream) LOG (to_ostream << "\n" )
-    #ifdef VERBOSE_LOGGING
-      #define LOGN_VERBOSE(to_ostream) LOGN(to_ostream)
-    #else
-      #define LOGN_VERBOSE(to_ostream) /*empty->do not log*/
-    #endif
     #if defined(__MINGW32__) //MinGW does not know wide strings
       #define LOGW(to_ostream) /*empty->do not log*/
       #define LOGWN(to_ostream) /*empty->do not log*/
@@ -119,6 +145,16 @@
         /*g_logger.Log("test ") ; */ }
       #define LOGWN(to_ostream) LOGW (to_ostream << L"\n" )
     #endif //#if defined(__MINGW32__)
+    #include <iostream> //forcstd::cout
+    //#endif
+    #define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(to_ostream) { \
+    LOG(to_ostream << std::endl; ); \
+      std::cout << to_ostream << std::endl ; std::cout.flush(); }
+
+  //The DEBUGxx() macros that use / depend on LOGxx(), should be inside the
+  //   #ifdef COMPILE_WITH_LOG
+  #ifdef COMPILE_WITH_DEBUG
+
     #ifdef _DEBUG
       //#define DEBUG(...) { g_logger->Log(__VA_ARGS__) ; }
       //This macro should only be expanded to log outputs on debug versions.
@@ -136,33 +172,19 @@
     //  printf(__VA_ARGS__); fflush(stdout); } */
     //#ifndef _MSC_VER //else compile errors with gcc
 
-    #include <iostream> //forcstd::cout
-    //#endif
-    #define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(to_ostream) { \
-    LOG(to_ostream << std::endl; ); \
-      std::cout << to_ostream << std::endl ; std::cout.flush(); }
-    #ifdef _DEBUG
-      //this macro may NOT be called like the other one with "..."/ "__VA_ARGS__",
-      //else many errors
-      #define DEBUG_COUT(coutArgs)  {std::cout << coutArgs ; std::cout.flush(); }
-      #define DEBUG_COUTN(coutArgs) { std::cout << coutArgs << "\n" ; \
-        std::cout.flush(); }
-      #define DEBUG_WCOUTN(coutArgs) { std::wcout << coutArgs << L"\n" ; \
-        std::cout.flush(); }
-      //MinGW is able to use wprintf() but not std::wcout()
-      #define DEBUG_WPRINTFN(...) { wprintf(__VA_ARGS__) ; wprintf(L"\n"); \
-        fflush(stdout) ; }
-    #endif //#ifdef _DEBUG
   #else
-    #define DEBUG(...) //->empty
-    #define DEBUG(coutArgs) //->empty
-    #define DEBUG_COUT(coutArgs) //->empty
-    #define DEBUG_COUTN(coutArgs) //->empty
-    #define DEBUG_WCOUTN(coutArgs) //->empty
-    #define DEBUG_WPRINTFN(...) //->empty
-    //#define DEBUG(to_ostream) /*->empty / no instructions*/
-    #define DEBUGN(to_ostream) /*->empty / no instructions*/
   #endif//#ifdef COMPILE_WITH_DEBUG
+#else //#ifdef COMPILE_WITH_LOG
+  #define LOG(to_ostream) /*empty->do not log*/
+  #define LOGN(to_ostream) /*empty->do not log*/
+  #define LOGW(to_ostream) /*empty->do not log*/
+  #define LOGWN(to_ostream) /*empty->do not log*/
+#endif //#ifdef COMPILE_WITH_LOG
+#ifdef VERBOSE_LOGGING
+  #define LOGN_VERBOSE(to_ostream) LOGN(to_ostream)
+#else
+  #define LOGN_VERBOSE(to_ostream) /*empty->do not log*/
+#endif
 
   #define SUCCESS 1
   #define FAILURE 0

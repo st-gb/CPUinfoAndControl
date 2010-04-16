@@ -87,8 +87,10 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       //m_pfnsetcurrentpstate = pfnSetCurrentPstate ;
       m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type)
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
-      m_pfn_set_pstate_from_freq = (dynlib_SetPstateFromFreq)
-        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
+
+//      m_pfn_set_pstate_from_freq = (dynlib_SetPstateFromFreq)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
+
       //m_pfn_too_hot = (dll_TooHot_type)
       //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
 
