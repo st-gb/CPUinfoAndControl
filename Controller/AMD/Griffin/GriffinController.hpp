@@ -342,8 +342,9 @@ public :
       , float & r_fMaxVoltageInVolt
       ) ;
   WORD GetMinimumFrequencyInMHz() ;//{ return 150 ; }
-  WORD GetMaximumVoltageID()  { return 64 ; }
-  WORD GetMinimumVoltageID() { return 36 ; }
+  //TODO the QL has a lower maximum voltage ID (-> higher min. voltage) than ZM.
+  WORD GetMaximumVoltageID() ;// { return 64 ; }
+  WORD GetMinimumVoltageID() ; //{ return 36 ; }
   //BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq
   //  ) { return 0 ; }
   //bool GetPstateSafefy(

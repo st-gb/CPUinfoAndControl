@@ -37,6 +37,8 @@ public:
   std::string m_strProcessorName ;
   std::string m_stdstrLogFilePath ;
   std::tstring m_stdtstrProgramName ;
+  std::string m_stdstrCPUcontrollerDynLibPath ;
+  std::string m_stdstrCPUcoreUsageGetterDynLibPath ;
   std::vector<MSRdata> m_stdvector_msrdata ;
   std::vector<CPUIDdata> m_stdvector_cpuiddata ;
   WORD m_wMaxFrequency ;

@@ -139,7 +139,7 @@ private:
   wxMemoryDC m_wxmemorydcStatic ;
   wxMenuBar * mp_wxmenubar ;
   wxMenu * p_wxmenuExtras ;
-  wxMenu * p_wxmenuFile ;
+  wxMenu * mp_wxmenuFile ;
   wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
@@ -216,9 +216,12 @@ public:
       ICalculationThread::ended ) ;
   bool Confirm(const std::string & str) ;
   bool Confirm(std::ostrstream & r_ostrstream);
+  void CPUcontrollerAttached(const wxString & wxstrFilePath ) ;
   void CPUcontrollerDeleted() ;
+  void CPUcoreUsageGetterAttached(const wxString & wxstrFilePath ) ;
   void CPUcoreUsageGetterDeleted() ;
 
+  void CreateFileMenu() ;
   void CreateServiceMenuItems() ;
   //void 
   BYTE CreateDynamicMenus() ;
@@ -278,6 +281,8 @@ public:
   void OnEraseBackground(wxEraseEvent& event) ;
   void OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnHighLoadThread( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnMinimizeToSystemTray( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnSysTrayIconClick( wxCommandEvent & WXUNUSED(event) ) ;
   void OnOwnDynFreqScaling( wxCommandEvent & WXUNUSED(wxevent) 
     //wxevent 
     ) ;

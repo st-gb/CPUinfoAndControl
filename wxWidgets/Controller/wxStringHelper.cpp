@@ -1,7 +1,7 @@
 //#include <wxWidgets/wxStringHelper.h>
 #include "wxStringHelper.h"
 
-wxString getwxString(std::string & str )
+wxString getwxString(const std::string & str )
 {
 //#ifdef wxUSE_WCHAR_T
 //see wx/chartype.h:wxUSE_UNICODE_WCHAR->"typedef wchar_t wxStringCharType;"
@@ -24,7 +24,7 @@ wxString getwxString(std::string & str )
 //#endif
 //}
 
-wxString getwxString(std::wstring & stdwstr )
+wxString getwxString(const std::wstring & stdwstr )
 {
 //#ifdef wxUSE_WCHAR_T
 //see wx/chartype.h:wxUSE_UNICODE_WCHAR->"typedef wchar_t wxStringCharType;"

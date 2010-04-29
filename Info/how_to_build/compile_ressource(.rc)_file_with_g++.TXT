@@ -1,0 +1,18 @@
+windres -i file.rc -o icons.o
+
+windres -i all_ressources.rc -o all_ressources.o
+
+for version info:
+-original from http://www.rodneybeede.com/Compiling_a_C___Windows_executable_with_embedded_version_information_and_icon.html:
+C:\MinGW\bin\windres.exe -D VER_FILEVERSION=2008,12,31,629 -D VER_FILEVERSION_STR=2008,12,31,629 project.rc project.opc
+- own: "windres.exe version_info.rc version_info.o"
+
+afterwards add the generated .o file to the linker:
+-eclipse: 
+  project properties
+    C/C++ build -> 
+      "Settings" ->
+        tab "Tool Settings"-> 
+          C++ Linker
+            "Miscelleaneous"
+              "Other objects"

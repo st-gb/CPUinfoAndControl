@@ -46,6 +46,8 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     ICPUcoreUsageGetter * p_icpucoreusagegetter 
     )
   {
+    DEBUGN("PerCPUcoreAttributes::CreateDynFreqScalingThread" <<
+        "mp_dynfreqscalingthread:" << mp_dynfreqscalingthread )
     mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
     if ( ! mp_dynfreqscalingthread )
     {
@@ -68,6 +70,10 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
 		    wxThreadError wxthreaderror = mp_dynfreqscalingthread->Run() ;
         LOGN("after starting Dynamic Voltage and Frequency Scaling thread"
           "--result: " << wxthreaderror )
+      }
+	    else
+      {
+        LOGN("creating Dynamic Voltage and Frequency Scaling thread failed")
       }
     }
   }

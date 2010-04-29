@@ -147,7 +147,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
       //LOGN("result of InitializeOls:" << dwValue );
 
       GetDllVersion (& major, & minor, & revision, & release);
-      LOGN("using DLL version "
+      LOGN("using WinRing0 DLL version "
         << (WORD)major << " "
         << (WORD)minor << " "
         << (WORD)revision << " "
@@ -184,7 +184,8 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
               " does not exist in WinRing0 DLL")
           //std::ostrstream ostrstreamErrorDesc;
           std::ostringstream ostrstreamErrorDesc;
-          std::string stdstrErrorMsg("WinRing0 error ") ;
+          std::string stdstrErrorMsg //("WinRing0 error ") ;
+            ;
           if( mp_userinterface )
           {
               DWORD dw =
@@ -214,18 +215,27 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
                   ) == (dw - 1)
                 )
               {
-                //TODO mysterios g++ error
+                //TODO mysterious g++ error
                 //"error: `ostrstreamErrorDesc' was not declared in this scope"
-//                ostrstreamErrorDesc << "current working dir:\""
+//                ostrstreamErrorDesc <<
+//                    "current working dir:\""
 //                  << //GetCharPointer(
 //                  GetStdString(
 //                    //is "wchar_t" if using unicode
 //                    lptstrCurrentDirectory
 //                    ) << "\"\n" ;
+                  stdstrErrorMsg +=
+                    "current working dir:\""
+                    + GetStdString(
+                      //is "wchar_t" if using unicode
+                      lptstrCurrentDirectory
+                      ) + "\"\n" ;
               }
-              //mysterios g++ error
+              //TODO mysterious g++ error
               //"error: `ostrstreamErrorDesc' was not declared in this scope"
-//              ostrstreamErrorDesc << "WinRing0 error:" ;
+//              ostrstreamErrorDesc <<
+                stdstrErrorMsg +=
+                  "WinRing0 error:" ;
               delete [] lptstrCurrentDirectory ;
               DWORD dwErrorAsSystemError ;
               switch( dwValue )
@@ -234,30 +244,32 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
                 //TODO Mysterios g++ error
                 //"error: `ostrstreamErrorDesc' was not declared in this scope"
 //                  ostrstreamErrorDesc <<
-//                      "The CPU access driver was not loaded.\n"
-//                      "This may be due to this programs needs high "
-//                      "privileges for the direct CPU access (=ring 0 access)\n"
-//                      "Possible solution(s):\n"
-//                      "-Run this program as administrator/ with elevated/ "
-//                      "administrative privileges\n"
-//                      "-Place the CPU access driver \"" WINRING0_DRIVER_NAME
-//                      "\" into the same directory as the DLL \"" DLL_NAME "\""
-//                      " (and this exe)\n" ;
+                stdstrErrorMsg +=
+                    "The CPU access driver was not loaded.\n"
+                    "This may be due to this programs needs high "
+                    "privileges for the direct CPU access (=ring 0 access)\n"
+                    "Possible solution(s):\n"
+                    "-Run this program as administrator/ with elevated/ "
+                    "administrative privileges\n"
+                    "-Place the CPU access driver \"" WINRING0_DRIVER_NAME
+                    "\" into the same directory as the DLL \"" DLL_NAME "\""
+                    " (and this exe)\n" ;
                   dwErrorAsSystemError = ERROR_FILE_NOT_FOUND ;
                   break;
               case OLS_DLL_DRIVER_NOT_FOUND:
                 //TODO Mysterios g++ error
                 //"error: `ostrstreamErrorDesc' was not declared in this scope"
 //                  ostrstreamErrorDesc <<
-//                      "The CPU access driver was not found.\n"
-//                      "Possible solution:\n"
-//                      "-Place the CPU access driver \"" WINRING0_DRIVER_NAME
-//                      "\" into the same directory as the DLL \"" DLL_NAME "\""
-//                      " (and this exe)\n"
-//                      "-file system: run THIS program from an ordinary file system"
-//                      " such as NTFS, and NOT from virtual file systems like"
-//                      " Truecrypt drives\n" ;
-                  dwErrorAsSystemError = ERROR_FILE_NOT_FOUND ;
+                stdstrErrorMsg +=
+                  "The CPU access driver was not found.\n"
+                  "Possible solution:\n"
+                  "-Place the CPU access driver \"" WINRING0_DRIVER_NAME
+                  "\" into the same directory as the DLL \"" DLL_NAME "\""
+                  " (and this exe)\n"
+                  "-file system: run THIS program from an ordinary file system"
+                  " such as NTFS, and NOT from virtual file systems like"
+                  " Truecrypt drives\n" ;
+                dwErrorAsSystemError = ERROR_FILE_NOT_FOUND ;
                   break;
               case OLS_DLL_UNKNOWN_ERROR:
                 //TODO Mysterios g++ error

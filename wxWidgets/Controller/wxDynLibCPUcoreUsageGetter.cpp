@@ -82,19 +82,22 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
 wxDynLibCPUcoreUsageGetter::~wxDynLibCPUcoreUsageGetter()
 {
   m_wxdynamiclibraryCPUcoreUsage.Unload() ;
+  DEBUGN("~wxDynLibCPUcoreUsageGetter()")
   LOGN("Unloaded the CPU core usage getter dynamic library")
 }
 
 WORD wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores()
 {
-  DEBUG_COUTN("wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
+  //DEBUG_COUTN(
+  DEBUGN( "wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
     "function pointer for # CPU cores : " <<
     m_pfn_dll_usage_getter_num_logical_cpu_cores_type )
   if( m_pfn_dll_usage_getter_num_logical_cpu_cores_type )
   {
     WORD wNumLogCPUcores =
         (*m_pfn_dll_usage_getter_num_logical_cpu_cores_type)() ;
-    DEBUG_COUTN("wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
+    //DEBUG_COUTN(
+    DEBUGN( "wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
       "# CPU cores : " << wNumLogCPUcores )
     return wNumLogCPUcores ;
   }
@@ -112,7 +115,8 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
 #ifdef _DEBUG
     {
       float f = (*m_pfngetcpucoreusage)(byCPUcoreNumber) ;
-      DEBUG_COUTN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
+      //DEBUG_COUTN(
+      DEBUGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
         "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
       arf[byCPUcoreNumber] = f ;
     }

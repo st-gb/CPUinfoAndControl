@@ -4,7 +4,7 @@
 #include "global.h" //for LOGN(...)
 #include "PowerProfUntilWin6DynLinked.hpp"
 #include <tchar.h> //for "_T(...)"
-#include <string> //std:.string
+#include <string> //std::string
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include <Powrprof.h> //for static linking 
 
@@ -256,6 +256,32 @@ BOOLEAN CALLBACK PwrSchemesEnumProcLogOutput (
 {
   LOGWN( L"Power scheme index:" << uiPowerSchemeID << L" name:" << 
     strPowerSchemeName )
+  return TRUE ;
+}
+
+//To continue until all power schemes have been enumerated, the
+//callback function must return TRUE.
+//To stop the enumeration, the callback function must return FALSE.
+BOOLEAN CALLBACK PwrSchemesEnumProcGetAllNames (
+  UINT uiPowerSchemeID ,      // power scheme index
+  DWORD dwName,      // size of the sName string, in bytes
+  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
+  //LPTSTR strPowerSchemeName,      // name of the power scheme
+  LPWSTR lpwstrPowerSchemeName,      // name of the power scheme
+  DWORD dwDesc,      // size of the sDesc string, in bytes
+  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
+  //LPTSTR sDesc,      // description string
+  LPWSTR sDesc,      // description string
+  PPOWER_POLICY pp,  // receives the power policy
+  LPARAM lParam      // user-defined value
+  )
+{
+  std::set<std::wstring> * p_stdset_stdwstr = (std::set<std::wstring> *)
+      lParam ;
+  if( p_stdset_stdwstr )
+  {
+    p_stdset_stdwstr->insert( std::wstring(lpwstrPowerSchemeName) ) ;
+  }
   return TRUE ;
 }
 
@@ -1007,6 +1033,8 @@ BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
   if( m_pfnsetactivepwrscheme )
   {
     //Call function in "powrprof.dll" .
+    //http://msdn.microsoft.com/en-us/library/aa373200%28VS.85%29.aspx:
+    //"If the function succeeds, the return value is nonzero."
     return (*m_pfnsetactivepwrscheme) (  
       uiID,
       lpGlobalPowerPolicy,
@@ -1044,9 +1072,9 @@ BYTE PowerProfUntilWin6DynLinked::GetPowerSchemeIndex(
   return byRet ;
 }
 
-BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
+BOOLEAN PowerProfUntilWin6DynLinked::SetActivePowerScheme(
   //LPTSTR strPowerSchemeName     // name of the power scheme
-  std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
+  const std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
   )
 {
   if( m_pfnsetactivepwrscheme )
@@ -1173,6 +1201,13 @@ bool PowerProfUntilWin6DynLinked::OtherDVFSisEnabled()
     }
   }
   return bReturn ;
+}
+
+void PowerProfUntilWin6DynLinked::GetAllPowerSchemeNames(
+  std::set<std::wstring> & r_stdset_stdwstrPowerSchemeName )
+{
+  EnumPwrSchemes(PwrSchemesEnumProcGetAllNames,
+    (LPARAM) & r_stdset_stdwstrPowerSchemeName ) ;
 }
 
 void PowerProfUntilWin6DynLinked::OutputAllPowerSchemes()

@@ -12,9 +12,9 @@
 #include <wx/string.h> //wxString
 //#include <Controller/stdtstr.hpp>
 
-wxString getwxString(std::string & str ) ;
+wxString getwxString(const std::string & str ) ;
 //wxString getwxString(std::tstring & tstr ) ;
-wxString getwxString(std::wstring & stdwstr ) ;
+wxString getwxString(const std::wstring & stdwstr ) ;
 
 std::string getstdstring(wxString & wxstr) ;
 

@@ -2441,6 +2441,31 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     return GetVoltageInVolt(mp_model->m_cpucoredata.m_byMaxVoltageID) ;
   }
 
+  WORD GriffinController::GetMaximumVoltageID()
+  {
+//    return 64 ;
+    DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
+    mp_cpuaccess->RdmsrEx(COFVID_STATUS_REGISTER,
+        & dwEAXlowMostBits, & dwEDXhighMostBits, 1 ) ;
+    BYTE byHighestVID = ( dwEDXhighMostBits >>
+        ( COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID - 32 )
+        ) & BITMASK_FOR_LOWMOST_7BIT;
+    DEBUGN("highest VID:" << (WORD)byHighestVID)
+    return byHighestVID ;
+  }
+  WORD GriffinController::GetMinimumVoltageID()
+  {
+//    return 36 ;
+    DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
+    mp_cpuaccess->RdmsrEx(COFVID_STATUS_REGISTER,
+        & dwEAXlowMostBits, & dwEDXhighMostBits, 1 ) ;
+    BYTE byLowestVID = ( dwEDXhighMostBits >>
+        ( COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID - 32 )
+        ) & BITMASK_FOR_LOWMOST_7BIT;
+    DEBUGN("lowest VID:" << (WORD)byLowestVID)
+    return byLowestVID ;
+  }
+
   UserInterface * GriffinController::GetUserInterface()
   {
     return mp_userinterface;
@@ -4174,6 +4199,30 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
     pstateFromUser = pstateMergedFromUserAndMSR ;
     BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
+    //At my laptop the current limit was set to "0" on AC power, "1" on DC power.
+    //If 100% CPU load and above freq calculated by the current p-state limit,
+    //the previous freq persists. To avoid this, retrieve the current limit.
+    mp_cpuaccess->RdmsrEx(
+        P_STATE_CURRENT_LIMIT_REGISTER,
+        & dwMSRlowmost,
+        & dwMSRhighmost,
+        1 << byCoreID ) ;
+    BYTE byCurPstateLimit = dwMSRlowmost & BITMASK_FOR_LOWMOST_3BIT ;
+    WORD wMaxFreqAccordingCurrentLimit =
+        mp_model->m_cpucoredata.m_wMaxFreqInMHz / ( 1 << byCurPstateLimit ) ;
+    DEBUGN("p-state current limit:" << //dwMSRlowmost
+        (WORD) byCurPstateLimit
+        << " -> current max. freq:" << wMaxFreqAccordingCurrentLimit )
+    if( wFreqInMHz > wMaxFreqAccordingCurrentLimit )
+      {
+//      wFreqInMHz = wMaxFreqAccordingCurrentLimit ;
+      //wFreqInMHz = //GetInterpolatedVoltageFromFreq() ;
+      //This indirectly calls _this_ function.
+        SetFreqAndVoltageFromFreq
+        ( wMaxFreqAccordingCurrentLimit, byCoreID) ;
+      }
+    else
+    {
     DIDandFID didandfid = GetNearestPossibleFreqInMHzAsDIDnFID( wFreqInMHz ) ;
     GetMSRregisterValue( byVoltageID, didandfid , dwMSRhighmost , dwMSRlowmost ) ;
 
@@ -4210,6 +4259,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       if( SetPstate( didandfid.m_byDivisorID , byCoreID ) 
         )
         byRet = true ;
+    }
     }
     return byRet ;
   }
@@ -4418,7 +4468,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         dwMSRlow |= (r_pstateFromUser.m_byDivisorID << 6 ) ;
       }
       //DEBUG("\n");
-      ostrstream<<"\n";
+      ostrstream << "\n";
 	    //ullMSRvalue &= 
 	    //	//invert the bitmask
 	    //	~BITMASK_FOR_CURRENT_DIVIDOR ;
@@ -4526,7 +4576,13 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
         //LOG("Adress of mp_cpuaccess: " << mp_cpuaccess << "\n" );
         DEBUGN("GriffinController::WriteToPstateOrCOFVIDcontrolRegister("
-           "before mp_cpuaccess->WrmsrEx(...)" )
+           "before mp_cpuaccess->WrmsrEx("
+            << dwRegNr << ","
+            << dwMSRlow << ","
+            << dwMSRhigh << ","
+            << w64ulAffinityMask
+            << ")"
+            )
         if( 
 #ifdef _EMULATE_TURION_X2_ULTRA_ZM82
           true
@@ -4543,8 +4599,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 #endif //#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
           )
         {
-          DEBUGN("GriffinController::WriteToPstateOrCOFVIDcontrolRegister()"
-            "succeeded" )
+          DEBUGN("GriffinController::WriteToPstateOrCOFVIDcontrolRegister():"
+            "mp_cpuaccess->WrmsrEx(...) succeeded" )
 		      //if (stabilization_time > 100)
 			     // usleep(stabilization_time);
 		      //else
@@ -4750,7 +4806,7 @@ BOOL GriffinController::WrmsrEx(
     //DWORD dwAffinityMaskCopy = dwAffinityMask ;
     PState pstateMergedFromUserAndMSR ;
     PState pstateFromUser ;
-    DEBUG("GriffinController::WrmsrEx(...): p-state changing register")
+    DEBUGN("GriffinController::WrmsrEx(...): p-state changing register")
     GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
     pstateFromUser = pstateMergedFromUserAndMSR ;
     byCoreID = GetCoreIDFromAffinityMask(dwAffinityMask ) ;

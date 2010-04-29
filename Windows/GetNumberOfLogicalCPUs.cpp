@@ -1,6 +1,8 @@
+#include "StdAfx.h"
 //#include <windef.h> //WINAPI
 #include <windows.h> //WINAPI
 #include "GetNumberOfLogicalCPUs.h"
+#include <stdlib.h> //malloc()
 //#include <winnt.h>
 
 typedef BOOL (WINAPI *LPFN_GLPI)(

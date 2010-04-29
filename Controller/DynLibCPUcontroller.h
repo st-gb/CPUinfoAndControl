@@ -57,6 +57,16 @@ typedef WORD (
   //function signature that calls this function?!
   CALL_TYPE
   * dll_GetMaximumFrequencyInMHz_type) (WORD wCPUcoreID) ;
+typedef WORD (
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dll_GetMaximumVoltageID_type) () ;
+typedef WORD (
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dll_GetMinimumVoltageID_type) () ;
 typedef 
   BYTE (//WINAPI 
   //Calling convention--must be the same as in the DLL
@@ -108,6 +118,20 @@ typedef BYTE (//WINAPI
     , //float & Volt
       WORD p_wMilliVolt
     , WORD wCoreID 
+  ) ;
+typedef
+  float (//WINAPI
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dll_GetVoltageInVolt_type) ( WORD wCoreID
+  ) ;
+typedef
+  WORD (//WINAPI
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * dll_GetVoltageID_type) ( float fVoltageInVolt
   ) ;
 //typedef void (
 //  //Calling convention--must be the same as in the DLL

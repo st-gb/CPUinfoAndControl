@@ -1,6 +1,6 @@
 #pragma once
 
-//#include <windef.h> BYTE etc.
+#include <windef.h> //for BYTE etc.
 //from MSVCs Windows v7.0a winnt.h:
 
 //other compilers than Microsoft's usually do not know the follwing.

@@ -17,6 +17,16 @@
 #include <UserInterface.hpp>
 #include <ModelData/ModelData.hpp>
 
+//TODO program Did not exit when a taskbar icon is included.
+#define COMPILE_WITH_SYSTEM_TRAY_ICON
+
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
+#endif
+
+#ifdef _WINDOWS
+//  #include "SystemTrayAccess.hpp"
+#endif
 //#include <wxWidgets/UserInterface/Mainframe.hpp>
 #ifdef _MSC_VER //MicroSoft compiler
   #pragma  message( "including tchar.h" )
@@ -31,6 +41,7 @@
 //class Windows_API::DynFreqScalingAccess ;
 class Model ;
 class MainFrame ;
+class MyTaskBarIcon ;
 class UserInterface ;
 #ifdef _WINDOWS
 class WinRing0_1_3RunTimeDynLinked ;
@@ -53,7 +64,10 @@ class wxX86InfoAndControlApp
 {
 private:
   TCHAR ** m_arartchCmdLineArgument ;
-
+  void * m_systemtray_icon_notification_window ;
+#ifdef _WINDOWS
+//  SystemTrayAccess m_systemtrayaccess ;
+#endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
   //PowerProfDynLinked m_powerprofdynlinked ;
@@ -79,6 +93,7 @@ private:
   //Model m_modelData ;
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
 
+  void InitSharedMemory() ;
   //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
 
   //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
@@ -95,6 +110,9 @@ private:
     CalculationThread m_calculationthread ;
   #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 public:
+  //Must be created on heap, else left mouse clicks were not processed?
+  MyTaskBarIcon * mp_taskbaricon ;
+//  MyTaskBarIcon m_taskbaricon ;
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     NamedPipeClient m_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
@@ -118,30 +136,7 @@ public:
  #endif //#ifndef COMPILE_WITHOUT_IWBEMSERVICES
 
 #endif //#ifdef COMPILE_WITH_CPU_SCALING
-  wxX86InfoAndControlApp()
-    //C++ style inits:
-//#ifdef COMPILE_WITH_CPU_SCALING
-//    : mp_wxdynfreqscalingtimer(NULL)
-//#endif //#ifdef COMPILE_WITH_CPU_SCALING
-    :
-//      mp_cpucontroller(NULL)
-//    ,
-    mp_dynfreqscalingaccess(NULL)
-  {
-#ifdef COMPILE_WITH_DEBUG
-  //fileDebug = fopen("PumaStateCtrl_debug.txt","w");
-  //if( ! fileDebug )
-  //  ::wxMessageBox("Error opening debug output file for writing.\n"
-  //    "Modifying access rights to file / dir containing it could help ");
-
-  //For g++ the std::string object passed to Logger::OpenFile(std::string & )
-  //has to be declared before. the call
-  //    ( error if  "logger.OpenFile( std::string("bla");"  )
-  //std::string stdstr("GriffinControl_log.txt") ;
-  //g_logger.OpenFile( stdstr ) ;
-#endif
-    //m_cpucoreusagegetteriwbemservices.Init() ;
-  }
+  wxX86InfoAndControlApp() ;
   //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
   //"You should delete all wxWidgets object that you created by 
     //the time OnExit finishes. 
@@ -170,6 +165,7 @@ public:
   }
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
+  void ShowTaskBarIcon(MainFrame * p_mf) ;
 };
 
 DECLARE_APP(wxX86InfoAndControlApp)

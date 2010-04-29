@@ -10,7 +10,8 @@ class DynFreqScalingDlg
 private:
   CfloatValidator m_floatvalidator ;
   CPUcoreData * mp_cpucoredata ;
-  wxButton * mp_wxbuttonApply ;
+  wxButton * mp_wxbuttonOK ;
+  wxButton * mp_wxbuttonCancel ;
   wxTextCtrl * p_wxtextctrlThrottleTemp ;
   wxTextCtrl * p_wxtextctrlMilliSecondsWait ;
   wxTextCtrl * p_wxtextctrlCPUusageForThrottleToPstate1 ;
@@ -19,7 +20,7 @@ public:
     wxWindow * p_wxwindowParent
     , CPUcoreData & r_cpucoredata
     );
-  void OnApplyButton(wxCommandEvent & );
+  void OnOK_Button(wxCommandEvent & );
   //Neccessary in order to get scroll events; to avoid compilation errors.
   DECLARE_EVENT_TABLE()
 } ;

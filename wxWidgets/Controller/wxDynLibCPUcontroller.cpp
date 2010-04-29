@@ -65,6 +65,12 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       m_pfnGetMinimumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type) 
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumFrequencyInMHz") 
         ) ;
+      m_pfnGetMaximumVoltageID = (dll_GetMaximumVoltageID_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumVoltageID")
+        ) ;
+      m_pfnGetMinimumVoltageID = (dll_GetMinimumVoltageID_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumVoltageID")
+        ) ;
       LOGN("Dyn Lib after GetMinimumFrequencyInMHz")
 
       wxstrFuncName = wxT("PrepareForNextPerformanceCounting") ;
@@ -87,6 +93,12 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       //m_pfnsetcurrentpstate = pfnSetCurrentPstate ;
       m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type)
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
+
+      m_pfn_GetVoltageID = (dll_GetVoltageID_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetVoltageID") ) ;
+
+      m_pfn_GetVoltageInVolt = (dll_GetVoltageInVolt_type)
+        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetVoltageInVolt") ) ;
 
 //      m_pfn_set_pstate_from_freq = (dynlib_SetPstateFromFreq)
 //        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
@@ -216,12 +228,22 @@ WORD wxDynLibCPUcontroller::GetMinimumFrequencyInMHz()
 
 WORD wxDynLibCPUcontroller::GetMaximumVoltageID()
 {
-  return 0 ;
+  WORD wRet = 0 ;
+  if( m_pfnGetMaximumVoltageID )
+  {
+    wRet = (*m_pfnGetMaximumVoltageID)() ;
+  }
+  return wRet ;
 }
 
 WORD wxDynLibCPUcontroller::GetMinimumVoltageID()
 {
-  return 0 ;
+  WORD wRet = 0 ;
+  if( m_pfnGetMinimumVoltageID )
+  {
+    wRet = (*m_pfnGetMinimumVoltageID)() ;
+  }
+  return wRet ;
 }
 
 WORD wxDynLibCPUcontroller::GetNumberOfCPUcores()
@@ -250,11 +272,17 @@ float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 
 float wxDynLibCPUcontroller::GetVoltageInVolt(WORD wVoltageID )
 {
-  return 0 ;
+  if( m_pfn_GetVoltageInVolt )
+    return (*m_pfn_GetVoltageInVolt)(wVoltageID) ;
+  return 0.0 ;
 }
 
+//Called after changing the p-state identifier in the GUI: get the voltage ID
+//for the voltage for the p-state x
 WORD wxDynLibCPUcontroller::GetVoltageID(float fVoltageInVolt )
 {
+  if( m_pfn_GetVoltageID )
+    return (*m_pfn_GetVoltageID)(fVoltageInVolt) ;
   return 0 ;
 }
 
@@ -272,7 +300,7 @@ void wxDynLibCPUcontroller::PrepareForNextPerformanceCounting(
 
 BYTE wxDynLibCPUcontroller::
     //Let voltage be the first element from name because the same in
-    //"Dyn Voltage And Freq. Sclaing"
+    //"Dyn Voltage And Freq. Scaling"
     SetVoltageAndFrequency(
       float fVolt    
       , WORD wFreqInMHz 

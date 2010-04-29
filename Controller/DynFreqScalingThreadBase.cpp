@@ -145,7 +145,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
     ( m_vbRun ? "yes" : "no") )
   LOGN("CPU core usage getter--address: " << mp_icpu )
   mp_icpu->Init();
-  LOGN("DVFS after initializing CPU core usage getter")
+  LOGN("DVFS after initializing CPU core usage getter. Should run?: "
+      << (m_vbRun ? "yes" : "no" ) )
   while(//1
     m_vbRun )
   {
@@ -163,6 +164,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
       //&& m_bSuccFullyGotPStateFromMSR 
       )
     {
+      DEBUGN("DynFreqScalingThreadBase::Entry: confirmed yet")
       //float fTempInDegCelsius ;
       //check if a temp. could be received:
       //Pentium M CPUs have no temperature register
@@ -177,7 +179,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
         //}
         //else
         {
-          DEBUG_COUTN("too hot")
+          //DEBUG_COUTN(
+          DEBUGN("too hot")
           //TODO exit thread when getting CPU core load fails?
           if( mp_icpu->//GetPercentalUsageForBothCores
               GetPercentalUsageForAllCores(mp_cpucoredata->
@@ -253,7 +256,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
                   mp_cpucontroller->SetFreqAndVoltageFromFreq( wNewFreqFromLoad, 0
                 ) ;
             }
-            else
+            else //if(mp_cpucontroller->m_b1CPUcorePowerPlane )
             {
               for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
                 GetNumberOfCPUcores() ; ++ byCoreID )
@@ -288,7 +291,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
       }//too hot
       else
       {
-        DEBUG_COUTN("NOT too hot")
+        //DEBUG_COUTN("NOT too hot")
         DEBUGN("NOT too hot")
         if( mp_icpu->//GetPercentalUsageForBothCores
             GetPercentalUsageForAllCores(mp_cpucoredata->
@@ -302,7 +305,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
              mp_cpucontroller->m_b1CPUcorePowerPlane  )
           {
             float fHighestCPUcoreLoadInPercent = 0.0 ;
-            DEBUG_COUTN("1 CPU core power plane")
+            //DEBUG_COUTN("1 CPU core power plane")
             DEBUGN("1 CPU core power plane")
             for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
               GetNumberOfCPUcores() ; ++ byCoreID )
@@ -312,12 +315,14 @@ ExitCode DynFreqScalingThreadBase::Entry()
                 fHighestCPUcoreLoadInPercent = mp_cpucoredata->
                   m_arfCPUcoreLoadInPercent [byCoreID] ;
             }
+            DEBUGN("highest load of a CPU cores:" <<
+                fHighestCPUcoreLoadInPercent )
             ChangeOperatingPointByLoad( 0 , fHighestCPUcoreLoadInPercent 
               ) ;
           }
           else
           {
-            DEBUG_COUTN("NOT 1 CPU core power plane")
+            //DEBUG_COUTN("NOT 1 CPU core power plane")
             DEBUGN("NOT 1 CPU core power plane")
             for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
               GetNumberOfCPUcores() ; ++ byCoreID )
@@ -331,6 +336,10 @@ ExitCode DynFreqScalingThreadBase::Entry()
         }
       }
     }//m_bConfirmedYet
+    else
+      {
+      DEBUGN("DynFreqScalingThreadBase::Entry: NOT confirmed yet")
+      }
     //LOGN("End of scaling thread loop");
     Sleep(//1000
       //m_wMilliSecondsToWait 
@@ -341,7 +350,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
 
 //BYTE
 //Use DWORD because of GetLastError(...) return code.
-DWORD DynFreqScalingThreadBase::Start() {
+DWORD DynFreqScalingThreadBase::Start()
+{
   m_vbRun = true ; 
   return 1 ;
 }

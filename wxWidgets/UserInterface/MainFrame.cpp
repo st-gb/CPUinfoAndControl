@@ -72,6 +72,10 @@
 #include <map> //std::map
 #include <set>
 
+#ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
+  #include "SystemTrayAccess.hpp"
+#endif //#ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
+
 class wxObject ;
 
 extern CPUcontrolBase * gp_cpucontrolbase ;
@@ -84,6 +88,7 @@ enum
   , ID_Detach_CPU_controller_DLL
   , ID_Attach_CPU_usage_getter_DLL
   , ID_Detach_CPU_usage_getter_DLL
+  , ID_MinimizeToSystemTray
 //#ifdef _TEST_PENTIUM_M
   , ID_MSR
   , ID_WriteToMSRdialog
@@ -140,6 +145,9 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_Detach_CPU_controller_DLL, MainFrame::OnDetachCPUcontrollerDLL)
   EVT_MENU(ID_Attach_CPU_usage_getter_DLL, MainFrame::OnAttachCPUcoreUsageGetterDLL)
   EVT_MENU(ID_Detach_CPU_usage_getter_DLL, MainFrame::OnDetachCPUcoreUsageGetterDLL)
+#ifdef _WINDOWS
+  EVT_MENU(ID_MinimizeToSystemTray, MainFrame::OnMinimizeToSystemTray)
+#endif
 //#ifdef _TEST_PENTIUM_M
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   EVT_MENU(ID_MSR, MainFrame::OnMSR)
@@ -202,7 +210,42 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_SIZE(MainFrame::OnSize)
   //EVT_TIMER(-1,MainFrame::OnTimerEvent)
   EVT_TIMER(TIMER_ID,MainFrame::OnTimerEvent)
+  //EVT_COMMAND_RIGHT_CLICK(FIRST_TRAYNOTIFY_ID, MainFrame::OnSysTrayIconClick)
+//  EVT_MOUSE_EVENTS(FIRST_TRAYNOTIFY_ID, MainFrame::OnSysTrayIconClick)
 END_EVENT_TABLE()
+
+void MainFrame::CreateFileMenu()
+{
+  mp_wxmenuFile = new wxMenu;
+  //wxMenu * p_wxmenuCore1 = new wxMenu;
+  //wxMenu * p_wxmenuCore0 = new wxMenu;
+//  wxMenu * p_wxmenuNorthBridge = new wxMenu;
+  mp_wxmenuFile->Append( ID_About, _T("&About...") );
+  mp_wxmenuFile->Append( ID_Attach_CPU_controller_DLL,
+    _T("Attach CPU &controller DLL...") );
+  mp_wxmenuFile->Append( ID_Detach_CPU_controller_DLL,
+    _T("Detach CPU controller DLL") );
+  if( ! gp_cpucontrolbase->mp_wxdynlibcpucontroller )
+    mp_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL, false ) ;
+  mp_wxmenuFile->Append( ID_Attach_CPU_usage_getter_DLL,
+    _T("Attach CPU &usage getter DLL...") );
+  mp_wxmenuFile->Append( ID_Detach_CPU_usage_getter_DLL,
+    _T("Detach CPU usage getter DLL") );
+  if( ! gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter )
+    mp_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL, false ) ;
+  mp_wxmenuFile->Append( ID_SaveAsDefaultPstates,
+    _T("Save &performance states settings...") );
+//#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  mp_wxmenuFile->AppendSeparator();
+  mp_wxmenuFile->Append( ID_MinimizeToSystemTray,
+    _T("minimize this window to the system tray") );
+//#endif //COMPILE_WITH_TASKBAR
+  mp_wxmenuFile->AppendSeparator();
+  //mp_wxmenuFile->Append( ID_Service, _T("Run As Service") );
+  mp_wxmenuFile->Append( ID_Quit, _T("E&xit") );
+
+  LOG("after file menu creation\n")
+}
 
 MainFrame::MainFrame(
   const wxString& title, 
@@ -266,31 +309,7 @@ MainFrame::MainFrame(
   m_bConfirmedYet = true ;
   mp_wxmenubar = new wxMenuBar;
 
-  //mp_pumastatectrl = p_pumastatectrl ;
-  p_wxmenuFile = new wxMenu;
-  //wxMenu * p_wxmenuCore1 = new wxMenu;
-  //wxMenu * p_wxmenuCore0 = new wxMenu;
-//  wxMenu * p_wxmenuNorthBridge = new wxMenu;
-  p_wxmenuFile->Append( ID_About, _T("&About...") );
-  p_wxmenuFile->Append( ID_Attach_CPU_controller_DLL, 
-    _T("Attach CPU &controller DLL...") );
-  p_wxmenuFile->Append( ID_Detach_CPU_controller_DLL, 
-    _T("Detach CPU controller DLL") );
-  if( ! gp_cpucontrolbase->mp_wxdynlibcpucontroller )
-    p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL, false ) ;
-  p_wxmenuFile->Append( ID_Attach_CPU_usage_getter_DLL, 
-    _T("Attach CPU &usage getter DLL...") );
-  p_wxmenuFile->Append( ID_Detach_CPU_usage_getter_DLL, 
-    _T("Detach CPU usage getter DLL") );
-  if( ! gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter )
-    p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL, false ) ;
-  p_wxmenuFile->Append( ID_SaveAsDefaultPstates, 
-    _T("Save &performance states settings...") );
-  p_wxmenuFile->AppendSeparator();
-  //p_wxmenuFile->Append( ID_Service, _T("Run As Service") );
-  p_wxmenuFile->Append( ID_Quit, _T("E&xit") );
-
-  LOG("after file menu creation\n")
+  CreateFileMenu() ;
 
 //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 #ifdef COMPILE_WITH_SERVICE_CONTROL
@@ -309,9 +328,9 @@ MainFrame::MainFrame(
 //#endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
 
   //wxMenuBar * mp_wxmenubar = new wxMenuBar;
-  //p_wxmenuBar->Append( p_wxmenuFile, _T("&File") );
-  //m_wxmenubar.Append( p_wxmenuFile, _T("&File") );
-  mp_wxmenubar->Append( p_wxmenuFile, _T("&File") );
+  //p_wxmenuBar->Append( mp_wxmenuFile, _T("&File") );
+  //m_wxmenubar.Append( mp_wxmenuFile, _T("&File") );
+  mp_wxmenubar->Append( mp_wxmenuFile, _T("&File") );
   //p_wxmenuBar->Append( p_wxmenuCore0, _T("for core &0") );
   //p_wxmenuBar->Append( p_wxmenuCore1, _T("for core &1") );
 
@@ -407,7 +426,9 @@ MainFrame::MainFrame(
     mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 
   if( mp_i_cpucontroller != NULL )
+  {
     CreateDynamicMenus();
+  }
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
 //    ////Connect the action, that is a class derived from class xx directly
 //    ////with the menu item so that it is ensured to be the correct action
@@ -450,6 +471,20 @@ MainFrame::MainFrame(
 #ifdef _COMPILE_WITH_IWBEMSERVICES
   m_cpucoreusagegetteriwbemservices.Init() ;
 #endif //_COMPILE_WITH_CPU_CORE_USAGE_GETTER
+
+  if( mp_wxx86infoandcontrolapp->mp_wxdynlibcpucontroller )
+  {
+    wxString wxstrCPUcontrollerDynLibPath(
+      mp_model->m_stdstrCPUcontrollerDynLibPath) ;
+    CPUcontrollerAttached(wxstrCPUcontrollerDynLibPath) ;
+  }
+  if( mp_wxx86infoandcontrolapp->mp_wxdynlibcpucoreusagegetter )
+  {
+    wxString wxstrCPUcoreUsageGetterDynLibPath(
+      mp_model->m_stdstrCPUcoreUsageGetterDynLibPath) ;
+    CPUcoreUsageGetterAttached(wxstrCPUcoreUsageGetterDynLibPath) ;
+  }
+  mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
   LOG("end of main frame creation\n")
 }
 
@@ -934,6 +969,7 @@ void MainFrame::DisableWindowsDynamicFreqScalingHint()
 
 void MainFrame::OnClose(wxCloseEvent & event )
 {
+  LOGN("Requested to close the main frame")
   //May be NULL at startup.
   if( mp_cpucoredata->m_arp_percpucoreattributes )
   {
@@ -943,7 +979,8 @@ void MainFrame::OnClose(wxCloseEvent & event )
     if ( p_percpucoreattributes->mp_dynfreqscalingthread )
     {
       p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
-      //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
+      LOGN("stopped the Dynamic Voltage and Frequency Scaling thread")
+     //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
       p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
     }
   }
@@ -974,8 +1011,23 @@ void MainFrame::OnClose(wxCloseEvent & event )
       }
     }
   }
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
+  {
+    //Removing the icon is neccessary to exit the app/
+    //else the icon may not be hidden after exit.
+//    mp_wxx86infoandcontrolapp->m_taskbaricon.RemoveIcon() ;
+    mp_wxx86infoandcontrolapp->mp_taskbaricon->RemoveIcon() ;
+    LOGN("after removing the system tray icon")
+    //Also deleted in the tbtest sample (not automatically deleted?!).
+    delete mp_wxx86infoandcontrolapp->mp_taskbaricon;
+    mp_wxx86infoandcontrolapp->mp_taskbaricon = NULL ;
+  }
+#endif //#ifdef COMPILE_WITH_TASKBAR
+  LOGN("before Destroy()")
   //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
   this->Destroy() ;
+  LOGN("after Destroy()")
 }
 
 void MainFrame::OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) )
@@ -1119,6 +1171,11 @@ void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
   } //if( mp_i_cpucontroller )
 }
 
+void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
+{
+  Hide() ;
+}
+
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
@@ -1163,6 +1220,11 @@ void MainFrame::OnStopService(wxCommandEvent & WXUNUSED(event))
 {
   //ServiceBase::StopService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
+}
+
+void MainFrame::OnSysTrayIconClick(wxCommandEvent & WXUNUSED(event))
+{
+  wxMessageBox(wxT("OnSysTrayIconClick") ) ;
 }
 
 void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
@@ -1257,21 +1319,7 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
 
       LOGN("after creating per CPU core menus " )
 
-      p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
-        , //const bool enable
-        true ) ;
-      p_wxmenuFile->SetLabel( ID_Detach_CPU_controller_DLL ,
-        wxT( //"detach"
-          //"unload" is a better word because it expresses that the Dynamic
-          //library is removed from the memory(?)
-          "unload"
-          " CPU controller ") + wxstrFilePath ) ;
-
-      //If both CPU controller and the CPU usage getter exist, DVFS is possible.
-      if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
-        p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
-          , //const bool enable
-          true ) ;
+      CPUcontrollerAttached(wxstrFilePath) ;
     }
     catch( CPUaccessException & ex )
     {
@@ -1318,27 +1366,8 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
         mp_cpucoreusagegetter = gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
       //CreateDynamicMenus() ;
 
-      p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
-        , //const bool enable
-        true ) ;
-      p_wxmenuFile->SetLabel( ID_Detach_CPU_usage_getter_DLL ,
-        wxT( //"detach"
-          //"unload" is a better word because it expresses that the Dynamic
-          //library is removed from the memory(?)
-          "unload "
-          " core usage getter ") + wxstrFilePath ) ;
-      if( mp_wxx86infoandcontrolapp->GetCPUcontroller() )
-        p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
-          , //const bool enable
-          true ) ;
+      CPUcoreUsageGetterAttached(wxstrFilePath) ;
 
-      WORD wNumberOfLogicalCPUcores = mp_wxx86infoandcontrolapp->
-        mp_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
-      if( wNumberOfLogicalCPUcores == 0 )
-        wNumberOfLogicalCPUcores = 1 ;
-      //TODO correct CPU core number
-      //Set -> allocate array for OnPaint()
-      mp_cpucoredata->SetCPUcoreNumber(wNumberOfLogicalCPUcores) ;
       RedrawEverything() ;
     }
     catch( CPUaccessException & ex )
@@ -1349,11 +1378,30 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
   }
 }
 
+void MainFrame::CPUcontrollerAttached(const wxString & wxstrFilePath )
+{
+  mp_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
+    , //const bool enable
+    true ) ;
+  mp_wxmenuFile->SetLabel( ID_Detach_CPU_controller_DLL ,
+    wxT( //"detach"
+      //"unload" is a better word because it expresses that the Dynamic
+      //library is removed from the memory(?)
+      "unload"
+      " CPU controller ") + wxstrFilePath ) ;
+
+  //If both CPU controller and the CPU usage getter exist, DVFS is possible.
+  if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+      , //const bool enable
+      true ) ;
+}
+
 void MainFrame::CPUcontrollerDeleted()
 {
 //    PossiblyReleaseMemory() ;
   //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
-  p_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
+  mp_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
     , //const bool enable
     false ) ;
   p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
@@ -1361,9 +1409,33 @@ void MainFrame::CPUcontrollerDeleted()
     false ) ;
 }
 
+void MainFrame::CPUcoreUsageGetterAttached(const wxString & wxstrFilePath)
+{
+  mp_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
+    , //const bool enable
+    true ) ;
+  mp_wxmenuFile->SetLabel( ID_Detach_CPU_usage_getter_DLL ,
+    wxT( //"detach"
+      //"unload" is a better word because it expresses that the Dynamic
+      //library is removed from the memory(?)
+      "unload "
+      " core usage getter ") + wxstrFilePath ) ;
+  if( mp_wxx86infoandcontrolapp->GetCPUcontroller() )
+    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+      , //const bool enable
+      true ) ;
+
+  WORD wNumberOfLogicalCPUcores = mp_wxx86infoandcontrolapp->
+    mp_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
+  if( wNumberOfLogicalCPUcores == 0 )
+    wNumberOfLogicalCPUcores = 1 ;
+  //TODO correct CPU core number
+  //Set -> allocate array for OnPaint()
+  mp_cpucoredata->SetCPUcoreNumber(wNumberOfLogicalCPUcores) ;
+}
 void MainFrame::CPUcoreUsageGetterDeleted()
 {
-  p_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
+  mp_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
     , //const bool enable
     false ) ;
   p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
@@ -1398,7 +1470,7 @@ void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent)
 void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent) 
   wxevent )
 {
-  //May be NULL at sartup.
+  //May be NULL at startup.
   if( mp_i_cpucontroller &&     
     //May be NULL at startup.
     mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter 
@@ -1428,41 +1500,63 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
       }
       else
       {
-          PossiblyAskForOSdynFreqScalingDisabling() ;
-          if( ! 
-              //mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
-              //mp_i_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
-              mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
-            )
-          {
-            //TODO is the memory released?
-            DynFreqScalingDlg * p_dynfreqscalingdlg = new DynFreqScalingDlg( 
-              this 
-              , *mp_cpucoredata 
-              ) ;
-            if( p_dynfreqscalingdlg )
-              p_dynfreqscalingdlg->
-              //Showing it "modal" is important because else the instructions below 
-              //continue before the dialog ic closed.
-              ShowModal();
-            //p_percpucoreattributes->mp_dynfreqscalingthread 
-            p_percpucoreattributes->SetCPUcontroller( mp_i_cpucontroller ) ;
-            p_percpucoreattributes->CreateDynFreqScalingThread( 
-              //& m_clocksnothaltedcpucoreusagegetter
-              //::wxGetApp().mp_cpucoreusagegetter
-              mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
-              //wxApp
-              ) ;
-  	        ////Stop the timer (else the timer redraws addtionally to the scaling thread).
-  	        //m_wxtimer.Stop() ;
-            mp_wxmenuitemOwnDVFS->SetText(
-              //We need a _T() macro (wide char-> L"", char->"") for EACH 
-              //line to make it compitable between char and wide char.
-              _T("disable Own DVFS") 
-              ) ;
-          }
+        PossiblyAskForOSdynFreqScalingDisabling() ;
+        if( !
+            //mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+            //mp_i_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
+            mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+          )
+        {
+          //TODO crashes after/ at closing the DVFS dialog
+//          //TODO is the memory released?
+//          DynFreqScalingDlg * p_dynfreqscalingdlg = new DynFreqScalingDlg(
+//            this
+//            , *mp_cpucoredata
+//            ) ;
+//          if( p_dynfreqscalingdlg )
+////              if(
+//              p_dynfreqscalingdlg->
+//              //Showing it "modal" is important because else the instructions below
+//              //continue before the dialog ic closed.
+//              ShowModal()
+//              ;
+////                == //wxID_OK
+////                    wxID_APPLY
+////                )
+//            {
+//              LOGN("closed the DVFS dialog with OK or apply")
+//              //p_percpucoreattributes->mp_dynfreqscalingthread
+//              //TODO uncomment
+                p_percpucoreattributes->SetCPUcontroller( //mp_i_cpucontroller
+                  gp_cpucontrolbase->mp_cpucontroller ) ;
+                p_percpucoreattributes->CreateDynFreqScalingThread(
+                  //& m_clocksnothaltedcpucoreusagegetter
+                  //::wxGetApp().mp_cpucoreusagegetter
+//                  mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
+                  gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter
+                  //wxApp
+                  ) ;
+                ////Stop the timer (else the timer redraws addtionally to the scaling thread).
+                //m_wxtimer.Stop() ;
+                mp_wxmenuitemOwnDVFS->SetText(
+                  //We need a _T() macro (wide char-> L"", char->"") for EACH
+                  //line to make it compitable between char and wide char.
+                  _T("disable Own Dynamic Voltage and Frequency Scaling")
+                  ) ;
+//            }
         }
+      }
     }
+  }
+  else
+  {
+    wxMessageBox(
+      wxT("no CPU controller and/ or CPU usage getter\n"
+        "->no usage based scaling possible. "
+        "Maybe attach a CPU controller and/ or "
+        "usage getter dynamic library (menu \"File\") ") ,
+      wxT("error")
+      ) ;
   }
 }
 
@@ -2096,7 +2190,7 @@ void MainFrame::DrawCurrentPstateInfo(
   //May be NULL at startup.
   if( mp_i_cpucontroller || mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
   {
-    DEBUG_COUTN("OnPaint--Number of CPU cores:" <<
+    DEBUGN("DrawCurrentPstateInfo--Number of CPU cores:" <<
         (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
    //TODO respect # of cpu cores
    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
@@ -2203,6 +2297,7 @@ void MainFrame::DrawCurrentPstateInfo(
 
    } //for-loop
   }
+  DEBUGN("MainFrame::DrawCurrentPstateInfo end")
 }
 
 void MainFrame::DrawCurrentVoltageSettingsCurve(
@@ -2532,226 +2627,6 @@ void MainFrame::OnPaint(wxPaintEvent & event)
          DrawCurrentPstateInfo(wxmemorydc) ;
   //#endif //#ifndef _TEST_PENTIUM_M
 
-            //ULONGLONG ullPerformanceEventCounter2 ;
-            //ULONGLONG ullPerformanceEventCounter3 ;
-//              DWORD dwAffinityMask = 1 ; //1= only CPU core 0
-  #ifdef _TEST_GRIFFIN
-            //These values must be fetched even for the 1st:
-            //else the difference between 2 values is wrong/ too high
-            mp_pumastatectrl->ReadPerformanceEventCounterRegister(
-              0 ,
-              ull ,
-              dwAffinityMask ) ;
-            mp_pumastatectrl->ReadPerformanceEventCounterRegister(
-              1 ,
-              ullPerformanceEventCounter2 ,
-              dwAffinityMask ) ;
-            mp_pumastatectrl->ReadPerformanceEventCounterRegister(
-              2 ,
-              ullPerformanceEventCounter3 ,
-              dwAffinityMask ) ;
-            if ( //at the 1st time prev valu is 0--so the difference 
-              //to the current valiue can be too high
-              m_bNotFirstTime )
-            {
-              //BYTE byCPUcoreID = 0 ;
-              DWORD dwHigh, dwLow ; 
-              //mp_pumastatectrl->//mp_controller->
-              //  RdmsrEx(
-              //  //PERF_CTR_0,
-              //  PERFORMANCE_EVENT_COUNTER_0_REGISTER ,
-              //  //PERFORMANCE_EVENT_COUNTER_1_REGISTER ,
-              //  dwLow,
-              //  dwHigh,
-              //  //1=core 0
-              //  //1
-              //  //byCPUcoreID 
-              //  dwAffinityMask
-              //  ) ;
-              //mp_pumastatectrl->AccuratelyStartPerformanceCounting( 
-              //  0, 
-              //  PERFORMANCE_EVENT_SELECT_RETIRED_INSTRUCTIONS 
-              //  ) ;
-              //mp_pumastatectrl->AccuratelyStartPerformanceCounting( 
-              //  1, 
-              //  CPU_CLOCKS_NOT_HALTED 
-              //  ) ;
-              //        //dDiff
-              //ullDiff = ull - m_ullPreviousCPUusage ;
-              ullDiff = PERFORMANCE_COUNTER_VALUE_DIFF( ull , 
-                m_ullPreviousCPUusage ) ;
-              ULONGLONG ullPerformanceEventCounter2Diff = 
-                PERFORMANCE_COUNTER_VALUE_DIFF( ullPerformanceEventCounter2 , 
-                m_ullPreviousPerformanceEventCounter2 ) ;
-              ULONGLONG ullPerformanceEventCounter3Diff = 
-                PERFORMANCE_COUNTER_VALUE_DIFF( ullPerformanceEventCounter3 , 
-                m_ullPreviousPerformanceEventCounter3 ) ;
-              if( ullDiff > m_ullHighestDiff )
-                m_ullHighestDiff = ullDiff ;
-              if( ullPerformanceEventCounter2Diff > 
-                m_ullHighestPerformanceEventCounter2Diff 
-                )
-                m_ullHighestPerformanceEventCounter2Diff = 
-                  ullPerformanceEventCounter2Diff ;
-              wxmemorydc.DrawText(
-                  //"%f"
-                  "clocks not halted diff:"
-                , 0
-                , 110
-                ) ;
-              wxmemorydc.DrawText(
-                wxString::Format(
-                  //print at least 10 chars
-                  "%10I64u"
-                  ,
-                  //ullPerformanceEventCounter2Diff
-                  ullPerformanceEventCounter3Diff
-                  )
-                , 150
-                , 110
-                ) ;
-                double dClocksNotHaltedDiffDivTCSdiff =
-                  (double) ullPerformanceEventCounter3Diff /
-                  (double) ullTimeStampCounterValueDiff ;
-              wxmemorydc.DrawText(
-                wxString::Format(
-                  //print at least 10 chars
-                  "clocks not halted diff / TimeStampCounter diff: %0.2f"
-                  ,
-                  //ullPerformanceEventCounter2Diff
-                  dClocksNotHaltedDiffDivTCSdiff
-                  )
-                , 0
-                , 130
-                ) ;
-              wxmemorydc.DrawText(
-                wxString::Format(
-                  //"%f"
-                  //"ret instr diff / clocks not halted diff: %f"
-                  "FPU load = " //"FPU usage: "
-                  //"\"( clocks not halted diff\"(%I64u) - "
-                  //"\"cycles with empty FPU diff\"(%I64u) )(%I64u) / "  //"max. usage:"
-                  "cycles at least 1 FPU op(%I64u) / "
-                  //"clocks not halted diff(%I64u) = %f"
-                  "TSC diff diff(%I64u) = %f"
-                  ,
-                  //ullPerformanceEventCounter3Diff ,
-                  ullPerformanceEventCounter2Diff ,
-                  //( ullPerformanceEventCounter3Diff - 
-                  //  ullPerformanceEventCounter2Diff ) ,
-                  //m_ullHighestPerformanceEventCounter2Diff,
-                  //ullPerformanceEventCounter3Diff ,
-                  ullTimeStampCounterValueDiff ,
-                  (double) //ullDiff 
-                  //( ullPerformanceEventCounter3Diff - 
-                    ullPerformanceEventCounter2Diff //)
-                  / (double) 
-                  //ullPerformanceEventCounter2Diff
-                  //m_ullHighestPerformanceEventCounter2Diff
-                  //ullPerformanceEventCounter3Diff
-                  ullTimeStampCounterValueDiff
-                )
-                , 50
-                , 150
-                ) ;
-              //        dDiff = ullDiff ;
-              wxmemorydc.DrawText(
-                wxString::Format(
-      //            "%64u"
-                  //"%f"
-                  "perf ctr diff: %I64u"
-                  ,
-                  //f
-                  //d - //m_fPreviousCPUusage
-                  //ull - m_ullPreviousCPUusage
-                  //dDiff
-                  //ull
-                  ullDiff
-                )
-                , 50
-                , 170
-                ) ;
-              wxmemorydc.DrawText(
-                wxString::Format(
-      //            "%64u"
-                  //"%f"
-                  "perf ctr: "
-                  "%I64u"
-                  //"%u"
-                  ,
-                  //f
-                  //d - //m_fPreviousCPUusage
-                  //ull - m_ullPreviousCPUusage
-                  //dDiff
-                  ull
-                  //dwLow
-                  //ullDiff
-                )
-                , 50
-                , 30
-                ) ;    //        DWORD dwValue ;
-
-      //        //fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
-      //        //p_maxvoltageforfreqFreqAbove->m_fVoltageInVolt -
-      //          = 1.062 -
-      //          mp_pumastatectrl->log_dualis
-      //            (//wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
-      //                (double) //p_maxvoltageforfreqFreqAbove->m_wFreqInMHz /
-      //                2200 /
-      //                (double) //wFreqToGetMaxVoltageFor
-      //                2000
-      //            )
-      //              *
-      //                //fVoltageDiffBetwOvVoltProtVnf_pairs
-      //                ( //p_maxvoltageforfreqFreqAbove->m_fVoltageInVolt -
-      //                1.062 -
-      //                //p_maxvoltageforfreqFreqBelow->m_fVoltageInVolt
-      //                0.85
-      //            )
-      //          ;
-
-              ////dPercentalFreq = (double) m_wFreqInMHz / 
-              ////  (double) mp_cpucoredata->m_wMaxFreqInMHz ;
-              //////If e.g. running at 1/4 of max. freq the maxium performance
-              //////counter value difference can just be 1/4 of the maximum 
-              ////// possible (=when runnung at highest frequency ) performance 
-              //////  counter value difference!
-              ////dMaximumPerfCounterDiffForCurrentFreq = dPercentalFreq 
-              ////  * (double) m_ullHighestDiff ;
-              double dCPUloadInPercent = (double) ullDiff  /
-                //dMaximumPerfCounterDiffForCurrentFreq ;
-                (double) 
-                //m_ullHighestDiff ;
-                //ullPerformanceEventCounter3Diff ;
-                ullTimeStampCounterValueDiff ;
-              wxmemorydc.DrawText(
-                wxString::Format("ALU load: %0.2f" , dCPUloadInPercent )
-                  , 270
-                  , 90
-                  ) ;
-              //if( //If thes window has the focus 
-              //  IsActive() )
-              //{
-                if ( m_fPreviousCPUusage != 0.0f )
-                {
-                  if ( dClocksNotHaltedDiffDivTCSdiff > 
-                    m_fPreviousCPUusage * 0.75 //* 1.5f 
-                    )
-                  {
-                    m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-                    //raise the freq.
-                    dClocksNotHaltedDiffDivTCSdiff *= 1.5 ;
-                  }
-                  else
-                    m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-                }
-                else
-                  m_fPreviousCPUusage = dClocksNotHaltedDiffDivTCSdiff ;
-               //}
-            }
-            else // m_bNotFirstTime == false 
-              m_bNotFirstTime = true ;
-  #endif //_TEST_GRIFFIN
         //Just for testing:
         //wXcoordinate = wYcoordinate = 50 ;
         if( mp_i_cpucontroller )
@@ -2874,6 +2749,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
     wxpaintdc.Clear();
     wxpaintdc.DrawText( wxT("no CPU controller available->e.g. attach a DLL") , 0 , 0 ) ;
   }
+  DEBUGN("OnPaint ende")
 }
 
 //order of submenus/ menu items of "core x" menus.

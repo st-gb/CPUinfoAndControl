@@ -2,6 +2,7 @@
 //Use "windows.h" because g++ (MinGW) is case sensitive.
 #include <windows.h> //for ::GetProcAddress(), ::GetSystemPowerStatus(), <PowrProf.h>
 #include "global.h"
+#include <stdio.h> //wprintf()
 #include <tchar.h> //for "_T(...)"
 ////This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
 ////ie. SDK version "6.1" .
@@ -665,7 +666,8 @@ DWORD PowerProfFromWin6DynLinked::GetPowerSchemeName(
   return dwRes ;
 }
 
-void PowerProfFromWin6DynLinked::OutputAllPowerSchemes()
+void PowerProfFromWin6DynLinked:://OutputAllPowerSchemes()
+  GetAllPowerSchemeNames(std::set<std::wstring> & stdset_stdwstrPowerSchemeName )
 {
   ULONG ulIndex = 0 ;
   DWORD dwPowerEnumerateRet ;
@@ -702,14 +704,17 @@ void PowerProfFromWin6DynLinked::OutputAllPowerSchemes()
   //    delete [] p_uchBuffer ;
       GetPowerSchemeName(GUIDscheme, stdwstr ) ;
       #if defined(_DEBUG)
-        #if !defined(__MINGW32__) //MinGW does not know "wcout"
+        #if defined(__MINGW32__) //MinGW does not know "wcout"
+//          wprintf(L"%s\n", stdwstr.c_str() ) ;
+        #else
           std::wcout << stdwstr << L'\n' ;
         #endif
       #endif
+      stdset_stdwstrPowerSchemeName.insert(stdwstr) ;
       ++ ulIndex ;
     }
   }while( dwPowerEnumerateRet == ERROR_SUCCESS ) ;
-  std::cout << "Numer of power schemes:" << ( ulIndex + 1 ) << "\n" ;
+  DEBUGN(  "Numer of power schemes:" << ( ulIndex + 1 ) )
   #ifdef _DEBUG
   ulIndex = ulIndex ; //instr. is only for breakpoint
   #endif
@@ -1277,6 +1282,9 @@ DWORD WINAPI PowerProfFromWin6DynLinked::PowerSetActiveScheme(
     __in      const GUID *SchemeGuid
   )
 {
+  //http://msdn.microsoft.com/en-us/library/aa372758%28VS.85%29.aspx:
+  //"Returns ERROR_SUCCESS (zero) if the call was successful, and a non-zero
+  //value if the call failed."
   return (*m_pfnpowersetactivescheme) (
     UserRootPowerKey,
     SchemeGuid //__in      const GUID *SchemeGuid
@@ -1475,6 +1483,63 @@ DWORD PowerProfFromWin6DynLinked::PowerWriteFriendlyName(
     Buffer,
     BufferSize
     ) ;
+}
+
+//0: power scheme does not exist
+//1: power scheme exists
+//2: error (enumerating) power scheme(s)
+BYTE PowerProfFromWin6DynLinked:: SetActivePowerScheme(
+  const std::wstring & r_stdwstrPowerSchemeName )
+{
+  ULONG ulIndex = 0 ;
+  DWORD dwPowerEnumerateRet ;
+  UCHAR * p_uchBuffer ;
+  GUID GUIDscheme ;
+  std::wstring stdwstr ;
+//http://msdn.microsoft.com/en-us/library/aa372730(VS.85).aspx:
+//"This function is normally called in a loop incrementing the Index parameter
+//to retrieve subkeys until they've all been enumerated."
+  do
+  {
+    dwPowerEnumerateRet = PowerEnumerate(
+      & GUIDscheme //__in_opt   const GUID *SchemeGuid,
+      //NULL
+      , NULL //__in_opt   const GUID *SubGroupOfPowerSettingsGuid,
+      //ACCESS_SCHEME: Enumerate power schemes. The
+      //SchemeGuid and
+      //SubgroupOfPowerSettingsGuid
+      //parameters will be ignored."
+      , ACCESS_SCHEME //__in POWER_DATA_ACCESSOR AccessFlags,
+      , ulIndex //__in       ULONG ulIndex,
+      //A pointer to a variable to receive the elements. If this parameter is NULL,
+      //the function retrieves the size of the buffer required.
+      , p_uchBuffer //UCHAR * & Buffer
+      ) ;
+    if( dwPowerEnumerateRet == ERROR_SUCCESS )
+    {
+      GetPowerSchemeName(GUIDscheme, stdwstr ) ;
+      DEBUGN("enumerating schemes. current power scheme name:" <<
+          GetStdString( stdwstr) )
+      if( stdwstr == r_stdwstrPowerSchemeName )
+      {
+        DWORD dwRet = PowerSetActiveScheme( NULL, & GUIDscheme ) ;
+        if( dwRet == ERROR_SUCCESS )
+          return 1 ;
+        else
+          return 2 ;
+      }
+      #ifdef _DEBUG
+        #if !defined(__MINGW32__) //MinGW does not know "wcout"
+          std::wcout << stdwstr << L'\n' ;
+        #endif
+      #endif
+      ++ ulIndex ;
+    }
+  }while( dwPowerEnumerateRet == ERROR_SUCCESS ) ;
+  #ifdef _DEBUG
+  ulIndex = ulIndex ; //instr. is only for breakpoint
+  #endif
+  return 0 ;
 }
 
 void PowerProfFromWin6DynLinked::SetFunctionPointersToNULL()

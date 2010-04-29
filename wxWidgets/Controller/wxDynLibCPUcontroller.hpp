@@ -14,10 +14,14 @@ private:
   dll_GetNumberOfCPUcores_type m_pfnGetNumberOfCPUcores ;
   dll_SetCurrentPstate_type m_pfnsetcurrentpstate ;
   dll_GetMaximumFrequencyInMHz_type m_pfnGetMaximumFrequencyInMHz ;
+  dll_GetMaximumVoltageID_type m_pfnGetMaximumVoltageID ;
+  dll_GetMinimumVoltageID_type m_pfnGetMinimumVoltageID ;
   dll_GetMaximumFrequencyInMHz_type m_pfnGetMinimumFrequencyInMHz ;
   dll_GetTemperatureInCelsius_type m_pfngettemperatureincelsius ;
   dll_PrepareForNextPerformanceCounting
     m_pfn_preparefornextperformancecounting ;
+  dll_GetVoltageInVolt_type m_pfn_GetVoltageInVolt ;
+  dll_GetVoltageID_type m_pfn_GetVoltageID ;
 //  dynlib_SetPstateFromFreq m_pfn_set_pstate_from_freq ;
   dll_WriteMSR_type m_pfn_write_msr ;
 

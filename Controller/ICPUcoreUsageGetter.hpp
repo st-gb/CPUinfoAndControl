@@ -19,8 +19,10 @@ public:
 
   //Must be virtual for the destructor of subclasses to be called?!
   virtual ~ICPUcoreUsageGetter()
-    //Also needs to be defined (else when linking: undefined referenc to it)
-    {} ;
+  //Also needs to be defined (else when linking: undefined referenc to it)
+  {
+    DEBUGN("~ICPUcoreUsageGetter()")
+  } ;
   virtual WORD GetNumberOfLogicalCPUcores() { return 0 ; }
   virtual //float 
     BYTE GetPercentalUsageForAllCores(float arf[] ) = 0 ;

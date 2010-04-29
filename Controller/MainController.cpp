@@ -176,6 +176,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           //NULL
           gp_cpucontrolbase->GetCPUaccess()
           ) ;
+        mp_model->m_stdstrCPUcontrollerDynLibPath = stdstr ;
         LOGN("CPU controller DLL: successfully loaded and function pointers to it assigned.")
 //        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
 //           //mp_wxdynlibcpucontroller
@@ -211,6 +212,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           //, 
           * p_cpucoredata
           ) ;
+        mp_model->m_stdstrCPUcoreUsageGetterDynLibPath = stdstr ;
 
         //If no CPU controller DLL should be loaded or loading it failed it is
         //"0".
@@ -269,6 +271,7 @@ BYTE MainController::ReadDLLName( std::string & r_stdstrFilePath )
   if( ifstrDynLib.is_open() )
   {
     char * buffer ;
+    LOGN("successfully opened file \"" << r_stdstrFilePath << "\"" )
     //http://www.cplusplus.com/reference/iostream/istream/seekg/:
     ifstrDynLib.seekg(0, std::ios::end);
     int length = ifstrDynLib.tellg();
@@ -285,6 +288,10 @@ BYTE MainController::ReadDLLName( std::string & r_stdstrFilePath )
     ifstrDynLib.close();
     delete[] buffer;
     by = 1 ;
+  }
+  else
+  {
+    LOGN("failed to open file \"" << r_stdstrFilePath << "\"" )
   }
   return by ;
 }

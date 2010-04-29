@@ -79,6 +79,8 @@ DynFreqScalingThread::DynFreqScalingThread(
 DWORD DynFreqScalingThread::Start()
 {
   BYTE byRet = 0 ;
+  //Call the base class' method that does the work needed for subclasses that
+  //(re-)start a DVFS thread.
   DynFreqScalingThreadBase::Start() ;
   byRet =
     //calls the Run() method of the base class "wxThread".

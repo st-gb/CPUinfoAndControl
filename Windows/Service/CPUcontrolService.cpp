@@ -1156,7 +1156,7 @@ void CPUcontrolService::StartService()
   LOGN("before starting service ctrl dispatcher--current thread id:" <<
     ::GetCurrentThreadId()
      << "\nNote: it may take 2 minutes or even more until the service control "
-     "dispachter has finished to start")
+     "dispatcher has finished to start")
   //SERVICE_TABLE_ENTRYA ("char") or SERVICE_TABLE_ENTRYW ( wchar_t )
   SERVICE_TABLE_ENTRY ar_service_table_entry[] = 
   { 

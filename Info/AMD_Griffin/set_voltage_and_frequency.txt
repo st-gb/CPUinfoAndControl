@@ -1,0 +1,12 @@
+
+  //  ////Alternate the p-state ID because of that: 
+  //  ////"The PstateId field must be updated to cause a new CpuFid value to take effect."
+
+
+    //////Setzen im COFVID_CONTROL_REGISTER hat NICHT funktioniert:
+    //////es wurde nur die Spannung gesenkt, nicht aber die Takfrequenz
+
+
+    //  //Use p-state 3 for setting for dyn. freq. scaling
+    //  //because setting via the MSR register 0xC0010070
+    //  //did not work.

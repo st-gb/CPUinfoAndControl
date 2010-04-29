@@ -17,63 +17,9 @@
     UINT, DWORD, LPTSTR, DWORD, LPTSTR, PPOWER_POLICY, LPARAM);
 #endif
 #include <string>
+#include <set> //std::set
 
-//g++ has neither "__in" nor "__out" 
-#ifndef __in
-  #define __in
-#endif
-#ifndef __out
-  #define __out
-#endif
-
-typedef BOOLEAN (WINAPI * pfnCanUserWritePwrScheme) () ;
-
-typedef BOOLEAN (WINAPI * pfnDeletePwrScheme) (
-  UINT uiIndex
-  );
-
-typedef BOOLEAN (WINAPI * pfnEnumPwrSchemes)(
-  //PWRSCHEMESENUMPROC 
-  PWRSCHEMESENUMPROC_SG lpfnPwrSchemesEnumProc,
-  LPARAM lParam
-);
-
-//http://msdn.microsoft.com/en-us/library/aa372688(VS.85).aspx:
-typedef BOOLEAN (WINAPI * pfnGetActivePwrScheme)(
-  __out  PUINT puiID
-  );
-
-//http://msdn.microsoft.com/en-us/library/aa372689(VS.85).aspx
-typedef BOOLEAN (WINAPI * pfnGetCurrentPowerPolicies) (
-  __out  PGLOBAL_POWER_POLICY pGlobalPowerPolicy,
-  __out  PPOWER_POLICY pPowerPolicy
-  );
-
-typedef BOOLEAN (WINAPI * pfnReadProcessorPwrScheme)(
-  __in   UINT uiID,
-  __out  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
-);
-
-typedef BOOLEAN (WINAPI * pfnReadPwrScheme) (
-  __in   UINT uiID,
-  __out  PPOWER_POLICY pPowerPolicy
-);
-
-typedef BOOLEAN (WINAPI * pfnSetActivePwrScheme)(
-  UINT uiID,
-  PGLOBAL_POWER_POLICY lpGlobalPowerPolicy,
-  PPOWER_POLICY lpPowerPolicy
-);
-
-typedef BOOLEAN (WINAPI * pfnWritePwrScheme) (
-  PUINT puiID,
-  //LPTSTR lpszName,
-  //LPTSTR lpszDescription,
-  //e.g. WinXP uses wide chars for service name (and for descr.?)
-  LPWSTR lpszName ,
-  LPWSTR lpszDescription ,
-  PPOWER_POLICY pPowerPolicy
-);
+#include "PowerProfUntilWin6_DLL_functions_definitions.h"
 
 ////ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/enumpwrschemes.htm:
 ////The EnumPwrSchemes function enumerates all power schemes. 
@@ -83,7 +29,6 @@ typedef BOOLEAN (WINAPI * pfnWritePwrScheme) (
 //  PWRSCHEMESENUMPROC lpfnPwrSchemesEnumProc,
 //  LPARAM lParam
 //);
-
 
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/enumpwrschemes.htm:
 //For each power scheme enumerated, the callback function is called with the following parameters:
@@ -184,6 +129,8 @@ public:
   void Initialize() ;
   void InitializeFunctionPointers() ;
   void OutputAllPowerSchemes() ;
+  void GetAllPowerSchemeNames( std::set<std::wstring> &
+      r_stdset_stdwstrPowerSchemeName ) ;
   BYTE PowerSchemeToSetExists() ;
   BOOLEAN WINAPI ReadPwrScheme (
     __in   UINT uiID,
@@ -204,9 +151,9 @@ public:
     PGLOBAL_POWER_POLICY lpGlobalPowerPolicy,
     PPOWER_POLICY lpPowerPolicy
     ) ;
-  BOOLEAN SetActivePwrScheme(
+  BOOLEAN SetActivePowerScheme(
     //LPTSTR strPowerSchemeName     // name of the power scheme
-    std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
+    const std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
     ) ;
   void SetFunctionPointersToNULL() ;
   BOOLEAN WINAPI WriteProcessorPwrScheme(

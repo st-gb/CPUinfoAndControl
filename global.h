@@ -66,7 +66,7 @@
   //#define PUBLIC_RELEASE
   //Uncomment the following line for performance reasons etc.
 
-  //Keep away the dependence on Logger class for dyn libs.
+  //Keep away the dependency on Logger class for dyn libs.
   #if defined(COMPILE_FOR_CPUCONTROLLER_DYNLIB) //&& !defined(_DEBUG)
   //  #define LOG(...) /* ->empty/ no instructions*/
   //  #else
@@ -97,9 +97,10 @@
       fflush(stdout) ; }
   #else
     #define DEBUG(...) //->empty
-    #define DEBUG(coutArgs) //->empty
+    //#define DEBUG(coutArgs) //->empty
     //#define DEBUG(to_ostream) /*->empty / no instructions*/
     #define DEBUGN(to_ostream) /*->empty / no instructions*/
+    #define DEBUGWN(to_ostream) /*->empty / no instructions*/
     #define DEBUG_COUT(coutArgs) //->empty
     #define DEBUG_COUTN(coutArgs) //->empty
     #define DEBUG_WCOUTN(coutArgs) //->empty
@@ -116,6 +117,7 @@
     #include <sstream> //for class std::stringstream
     //#endif
     extern Logger g_logger ;
+    //LOGxx macros: should log no matter whether release or debug
     #define LOG(to_ostream) { std::stringstream strstream ; \
       strstream << to_ostream; \
       /*/for g++ compiler:
@@ -128,7 +130,7 @@
 //    #endif
     //#ifdef COMPILE_WITH_LOG
     #define LOGN(to_ostream) LOG (to_ostream << "\n" )
-    #if defined(__MINGW32__) //MinGW does not know wide strings
+    #if defined(__MINGW32__) //MinGW does not know std::wstringstream
       #define LOGW(to_ostream) /*empty->do not log*/
       #define LOGWN(to_ostream) /*empty->do not log*/
     #else
@@ -145,7 +147,12 @@
         /*g_logger.Log("test ") ; */ }
       #define LOGWN(to_ostream) LOGW (to_ostream << L"\n" )
     #endif //#if defined(__MINGW32__)
-    #include <iostream> //forcstd::cout
+
+    //for outputting wide strings also with MinGW:
+//    #define LOG_VIA_WSPRINTFN(...) { wchar_t ar_wch[1024] ; \
+//      wwsprintfW(ar_wch,__VA_ARGS__) ;
+
+    #include <iostream> //for std::cout
     //#endif
     #define WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(to_ostream) { \
     LOG(to_ostream << std::endl; ); \
@@ -160,6 +167,7 @@
       //This macro should only be expanded to log outputs on debug versions.
       #define DEBUG(to_ostream) LOG(to_ostream)
       #define DEBUGN(to_ostream) LOGN(to_ostream)
+      #define DEBUGWN(to_ostream) LOGWN(to_ostream)
     #else
     #endif //#ifdef _DEBUG
     #define CPP_WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(coutArgs) { \

@@ -15,6 +15,7 @@
 //#include <Windows/GetNumberOfLogicalCPUs.h>
 #include <preprocessor_helper_macros.h>
 #include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
+#include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 
 ExportedExeFunctionsCPUaccess g_exportedexefunctionscpuaccess ;
 GriffinController g_griffincontroller ;
@@ -95,59 +96,6 @@ WORD
   //function signature that calls this function?!
   NEHALEM_DLL_CALLING_CONVENTION 
   GetMaximumFrequencyInMHz(WORD wCoreID) ;
-
-std::string GetExeFileNameWithoutDirs()
-{
-  std::string stdstr ;
-  TCHAR artchThisExesPath [ MAX_PATH //plus term. 0 char
-      + 1] ;
-  DWORD dwModuleFileNameReturn =
-  ::GetModuleFileName
-    (
-      //If this parameter is NULL, GetModuleFileName retrieves the path
-      //of the executable file of the current process.
-      NULL,
-      artchThisExesPath ,
-      //Size of the lpFilename buffer, in TCHARs.
-      MAX_PATH
-    ) ;
-  //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-  //    "Size of path: " << dwModuleFileNameReturn ) ;
-  if ( //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/getmodulefilename.htm:
-      //"If the function succeeds, the return value is the length of the
-      //string that is copied to the buffer, in TCHARs.
-      //If the function fails, the return value is 0 (zero). To get extended error information, call GetLastError."
-      dwModuleFileNameReturn == MAX_PATH || dwModuleFileNameReturn == 0
-      )
-  {
-    //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
-    //LOG(
-//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-//        "Getting file path for THIS executable file failed: " <<
-//        LocalLanguageMessageFromErrorCode( ::GetLastError() ) << ")" //<< \n"
-//        );
-    //return FALSE;
-  }
-  else
-  {
-    TCHAR * ptchLastBackslash =
-        //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.VisualStudio.v80.de/dv_vccrt/html/75cf2664-758e-49bb-bf6b-8a139cd474d2.htm:
-        //"Scan a string for the last occurrence of a character."
-        _tcsrchr(artchThisExesPath,'\\' ) ;
-    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.VisualStudio.v80.de/dv_vccrt/html/75cf2664-758e-49bb-bf6b-8a139cd474d2.htm:
-    //"Returns a pointer to the last occurrence of c in str, or
-    //NULL if c is not found."
-    if( ptchLastBackslash )
-    {
-      artchThisExesPath[ //pointer arithmetics:
-          //address of last backslash minus address of first char:
-          //If e.g. "C\", the diff is "1"-> string[1] ^= '\0' <=> "C"
-          ptchLastBackslash - artchThisExesPath ] = '\0' ;
-      stdstr = std::string(ptchLastBackslash + 1) ;
-    }
-  }
-  return stdstr ;
-}
 
 //_declspec(dllexport)
 //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
@@ -323,6 +271,38 @@ WORD
   return wMinimumFrequencyInMHz ;
 }
 
+//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
+//"When external names follow the C naming conventions, they must also be
+//declared as extern "C" in C++ code, to prevent them from using C++ naming
+//conventions."
+extern "C" __declspec(dllexport)
+WORD
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  NEHALEM_DLL_CALLING_CONVENTION
+  GetMaximumVoltageID()
+{
+  WORD wMaximumFrequencyInMHz =
+    g_griffincontroller.GetMaximumVoltageID() ;
+  return wMaximumFrequencyInMHz ;
+}
+
+//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
+//"When external names follow the C naming conventions, they must also be
+//declared as extern "C" in C++ code, to prevent them from using C++ naming
+//conventions."
+extern "C" __declspec(dllexport)
+WORD
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  NEHALEM_DLL_CALLING_CONVENTION
+  GetMinimumVoltageID()
+{
+  WORD wMinimumFrequencyInMHz =
+    g_griffincontroller.GetMinimumVoltageID() ;
+  return wMinimumFrequencyInMHz ;
+}
+
 //_declspec(dllexport)
 //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
 //"When external names follow the C naming conventions, they must also be
@@ -358,6 +338,27 @@ float
   float fTempInDegCelsius ;
   g_griffincontroller.GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
   return fTempInDegCelsius ;
+}
+
+//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
+//"When external names follow the C naming conventions, they must also be
+//declared as extern "C" in C++ code, to prevent them from using C++ naming
+//conventions."
+extern "C" __declspec(dllexport)
+WORD GetVoltageID(float fVoltageInVolt )
+{
+  WORD wVoltageID = g_griffincontroller.GetVoltageID(fVoltageInVolt) ;
+  return wVoltageID ;
+}
+
+//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
+//"When external names follow the C naming conventions, they must also be
+//declared as extern "C" in C++ code, to prevent them from using C++ naming
+//conventions."
+extern "C" __declspec(dllexport)
+float GetVoltageInVolt(WORD wVoltageID )
+{
+  return g_griffincontroller.GetVoltageInVolt(wVoltageID) ;
 }
 
 //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:

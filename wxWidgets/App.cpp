@@ -25,9 +25,12 @@
 #include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #include <ModelData/ModelData.hpp>
-#include <wxWidgets/UserInterface/MainFrame.hpp>
-//#include <wxWidgets/wxStringHelper.h>
 #include <wxWidgets/Controller/wxStringHelper.h> //getwxString(...)
+#include <wxWidgets/UserInterface/MainFrame.hpp>
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
+#endif
+//#include <wxWidgets/wxStringHelper.h>
 
 #include "DynFreqScalingThread.hpp"
 #ifdef _WINDOWS
@@ -52,6 +55,35 @@ CPUcontrolBase * gp_cpucontrolbase ;
 
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
+
+wxX86InfoAndControlApp::wxX86InfoAndControlApp()
+  //C++ style inits:
+  //#ifdef COMPILE_WITH_CPU_SCALING
+  //    : mp_wxdynfreqscalingtimer(NULL)
+  //#endif //#ifdef COMPILE_WITH_CPU_SCALING
+  :
+//      mp_cpucontroller(NULL)
+//    ,
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  mp_taskbaricon( NULL)
+  ,
+#endif //#ifdef COMPILE_WITH_TASKBAR
+  mp_dynfreqscalingaccess(NULL)
+{
+#ifdef COMPILE_WITH_DEBUG
+//fileDebug = fopen("PumaStateCtrl_debug.txt","w");
+//if( ! fileDebug )
+//  ::wxMessageBox("Error opening debug output file for writing.\n"
+//    "Modifying access rights to file / dir containing it could help ");
+
+//For g++ the std::string object passed to Logger::OpenFile(std::string & )
+//has to be declared before. the call
+//    ( error if  "logger.OpenFile( std::string("bla");"  )
+//std::string stdstr("GriffinControl_log.txt") ;
+//g_logger.OpenFile( stdstr ) ;
+#endif
+  //m_cpucoreusagegetteriwbemservices.Init() ;
+}
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
 {
@@ -215,7 +247,21 @@ void wxX86InfoAndControlApp::EndDVFS()
 //In particular, do not destroy them from application class' destructor!"
 int wxX86InfoAndControlApp::OnExit()
 {
-    //Release heap mem.
+  LOGN("OnExit() begin")
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  if( mp_taskbaricon )
+  {
+//  Removing the icon is neccessary to exit the app/
+//  else the icon may not be hidden after exit.
+    mp_taskbaricon->RemoveIcon() ;
+    LOGN("after removing the system tray icon")
+    //Also deleted in the tbtest sample (not automatically deleted?!).
+    delete mp_taskbaricon;
+  }
+  LOGN("OnExit() after deleting the system tray icon")
+#endif //#ifdef COMPILE_WITH_TASKBAR
+
+  //Release heap mem.
 #ifdef COMPILE_WITH_CPU_SCALING
     //if(mp_wxdynfreqscalingtimer)
     //  delete mp_wxdynfreqscalingtimer ;
@@ -242,7 +288,63 @@ int wxX86InfoAndControlApp::OnExit()
   if( m_handleMapFile != NULL )
     ::CloseHandle(m_handleMapFile);
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
+  LOGN("OnExit() before return 0")
   return 0;
+}
+
+void wxX86InfoAndControlApp::InitSharedMemory()
+{
+#ifdef COMPILE_WITH_SHARED_MEMORY
+  bool bSharedMemOk = false ;
+  m_handleMapFile = OpenFileMapping(
+    FILE_MAP_ALL_ACCESS,   // read/write access
+    FALSE,                 // do not inherit the name
+    m_stdstrSharedMemoryName.c_str()  // name of mapping object
+    );
+
+  if ( m_handleMapFile == NULL)
+  {
+    DWORD dwError = ::GetLastError() ;
+    LOG("unable to open shared memory: \""
+      << ::LocalLanguageMessageFromErrorCode(
+        dwError
+        )
+      << "\" (error code: " << dwError << ")"
+      );
+    //return 1;
+  }
+  else
+  {
+    mp_voidMappedViewStartingAddress = MapViewOfFile(
+      m_handleMapFile ,   // handle to map object
+      FILE_MAP_ALL_ACCESS, // read/write permission
+      0,
+      0,
+      sizeof(Model)
+      );
+  LOGN("Size of attributes:" << sizeof(Model) ) ;
+
+    if ( mp_voidMappedViewStartingAddress == NULL)
+    {
+      DWORD dwError = ::GetLastError() ;
+      LOG("Could not map view of file : \"" <<
+        ::LocalLanguageMessageFromErrorCode(
+          dwError
+          )
+        << "\" (error code: " << dwError << ")"
+        );
+      CloseHandle(m_handleMapFile);
+      //return 1 ;
+    }
+    else
+    {
+      bSharedMemOk = true ;
+      mp_modelData = (Model*) mp_voidMappedViewStartingAddress ;
+  LOGN("Address of attributes:" << mp_modelData ) ;
+    }
+  }
+//  if( ! bSharedMemOk )
+#endif //#ifdef COMPILE_WITH_SHARED_MEMORY
 }
 
 bool wxX86InfoAndControlApp::OnInit()
@@ -250,6 +352,10 @@ bool wxX86InfoAndControlApp::OnInit()
   //Init to NULL for "CPUcontrollerChanged()"
   mp_frame = NULL ;
   gp_cpucontrolbase = this ;
+
+  //from Florian Doersch:
+  //Hide the MinGW console window (was not necessary if compiled with MSVC)
+  ShowWindow(GetConsoleWindow(), SW_HIDE);
 
 #ifdef COMPILE_WITH_SHARED_MEMORY
   mp_voidMappedViewStartingAddress = NULL ;
@@ -292,55 +398,7 @@ bool wxX86InfoAndControlApp::OnInit()
     mp_userinterface = //p_frame ;
       this ;
 #ifdef COMPILE_WITH_SHARED_MEMORY
-    bool bSharedMemOk = false ;
-    m_handleMapFile = OpenFileMapping(
-      FILE_MAP_ALL_ACCESS,   // read/write access
-      FALSE,                 // do not inherit the name
-      m_stdstrSharedMemoryName.c_str()  // name of mapping object 
-      );
- 
-    if ( m_handleMapFile == NULL) 
-    { 
-      DWORD dwError = ::GetLastError() ;
-      LOG("unable to open shared memory: \""
-        << ::LocalLanguageMessageFromErrorCode(
-          dwError
-          )             
-        << "\" (error code: " << dwError << ")" 
-        );
-      //return 1;
-    }
-    else
-    {
-      mp_voidMappedViewStartingAddress = MapViewOfFile(
-        m_handleMapFile ,   // handle to map object
-        FILE_MAP_ALL_ACCESS, // read/write permission
-        0,                   
-        0,                   
-        sizeof(Model) 
-        );
-	  LOGN("Size of attributes:" << sizeof(Model) ) ;
-   
-      if ( mp_voidMappedViewStartingAddress == NULL) 
-      { 
-        DWORD dwError = ::GetLastError() ;
-        LOG("Could not map view of file : \"" << 
-          ::LocalLanguageMessageFromErrorCode(
-            dwError
-            )             
-          << "\" (error code: " << dwError << ")" 
-          );
-	      CloseHandle(m_handleMapFile);
-        //return 1 ;
-      }
-      else
-      {
-        bSharedMemOk = true ;
-        mp_modelData = (Model*) mp_voidMappedViewStartingAddress ;
-		LOGN("Address of attributes:" << mp_modelData ) ;
-      }
-    }
-    if( ! bSharedMemOk )
+    InitSharedMemory() ;
 #endif //COMPILE_WITH_SHARED_MEMORY
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   	m_ipcclient.Init() ;
@@ -435,6 +493,7 @@ bool wxX86InfoAndControlApp::OnInit()
       //p_frame->Show(TRUE);
       //SetTopWindow(p_frame);
       mp_frame->Show(TRUE);
+//      ShowTaskBarIcon() ;
       //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
       //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
       SetTopWindow(mp_frame);
@@ -558,6 +617,63 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
     mp_frame->RedrawEverything() ;
     LOGN("after redraweverything")
   }
+}
+
+void wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
+{
+//      m_systemtray_icon_notification_window = mp_frame->GetHandle() ;
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  mp_frame = p_mf ;
+      //from wxWidgets sample tbtest.cpp
+      // Created:     01/02/97
+      // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
+  if( ! mp_taskbaricon )
+  {
+    mp_taskbaricon = new MyTaskBarIcon(mp_frame);
+//      m_taskbaricon.SetMainFrame(mp_frame) ;
+    if( mp_taskbaricon )
+    {
+//    #if defined(__WXCOCOA__)
+//      m_dockIcon = new MyTaskBarIcon(wxTaskBarIcon::DOCK);
+//    #endif
+    wxIcon wxicon(
+      "x86IandC.ico" ,
+      wxBITMAP_TYPE_ICO
+      ) ;
+    if( !
+        mp_taskbaricon->SetIcon( //wxICON(sample),
+        //m_taskbaricon.SetIcon(
+          wxicon ,
+          wxT(mp_modelData->m_stdtstrProgramName)
+          )
+      )
+      ::wxMessageBox(wxT("Could not set icon."));
+    }
+  }
+#endif //#ifdef COMPILE_WITH_TASKBAR
+
+#ifdef _WINDOWS
+  #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
+      HICON hicon = (HICON) ::LoadImage(
+           //http://msdn.microsoft.com/en-us/library/ms648045%28v=VS.85%29.aspx:
+           //"To load a stand-alone resource (icon, cursor, or bitmap file)—for
+      //     example, c:\myimage.bmp—set this parameter to NULL."
+           NULL ,//__in  HINSTANCE hinst,
+      //     __in  LPCTSTR lpszName,
+           "x86IandC.ico" ,
+           IMAGE_ICON ,//__in  UINT uType,
+      //     0 ,//__in  int cxDesired,
+      //     0, //__in  int cyDesired,
+           16,
+           16,
+           LR_LOADFROMFILE //__in  UINT fuLoad
+         );
+//      std::cout << "wndproc hicon:" << hicon << "\n" ;
+      m_systemtrayaccess.m_hwndReceiveIconNotifications =
+          (HWND) m_systemtray_icon_notification_window ;
+      m_systemtrayaccess.ShowIconInSystemTray(hicon,"x86Info&Control") ;
+  #endif //  #ifdef USE_WINDOWA_API_SYSTEM_TRAY_ICON
+#endif
 }
 
 void wxX86InfoAndControlApp::DeleteCPUcontroller( )

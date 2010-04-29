@@ -101,10 +101,15 @@ public:
 
       EndDVFS() ;
       //mp_wxx86infoandcontrolapp->
-        mp_cpucoreusagegetter = NULL ;
       LOGN("deleting existing CPU core usage getter")
-      delete //gp_cpucontrolbase->
-        mp_wxdynlibcpucoreusagegetter ;
+      //Must delete instance of ICPUcoreUsageGetter (base class of
+      //wxDynLibCPUcoreUsageGetter).
+      //Else the destructor of wxDynLibCPUcoreUsageGetter was not called and
+      //so the DLL was not unloaded.
+      delete mp_cpucoreusagegetter ;
+        mp_cpucoreusagegetter = NULL ;
+//      delete //gp_cpucontrolbase->
+//        mp_wxdynlibcpucoreusagegetter ;
       //gp_cpucontrolbase->
         mp_wxdynlibcpucoreusagegetter = NULL ;
       //delete mp_wxdynlibcpucontroller ;

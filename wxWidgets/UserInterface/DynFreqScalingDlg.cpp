@@ -11,7 +11,9 @@
 #include <ModelData/CPUcoreData.hpp>
 
 BEGIN_EVENT_TABLE(DynFreqScalingDlg, wxDialog)
-  EVT_BUTTON(wxID_APPLY, DynFreqScalingDlg::OnApplyButton)
+//  EVT_BUTTON( //wxID_OK
+//    wxID_APPLY , DynFreqScalingDlg::OnOK_Button)
+//  EVT_BUTTON(wxID_CANCEL, DynFreqScalingDlg::OnCancelButton)
 END_EVENT_TABLE()
 
 DynFreqScalingDlg::DynFreqScalingDlg( 
@@ -31,9 +33,14 @@ DynFreqScalingDlg::DynFreqScalingDlg(
   , mp_cpucoredata( & r_cpucoredata )
 {
   wxBoxSizer * sizerVert = new wxBoxSizer(wxVERTICAL);
-  mp_wxbuttonApply = new wxButton(this, wxID_APPLY ) ;
-  p_wxtextctrlThrottleTemp = new wxTextCtrl(this, wxID_ANY ) ;
-  p_wxtextctrlMilliSecondsWait = new wxTextCtrl(this, wxID_ANY , wxT("200") ) ;
+  mp_wxbuttonOK = new wxButton(this, wxID_OK ) ;
+  mp_wxbuttonCancel = new wxButton(this, wxID_CANCEL ) ;
+  p_wxtextctrlThrottleTemp = new wxTextCtrl( this, wxID_ANY, //wxT("90")
+    wxString::Format("%f",mp_cpucoredata->m_fThrottleTempInDegCelsius)
+    ) ;
+  p_wxtextctrlMilliSecondsWait = new wxTextCtrl(this, wxID_ANY , //wxT("200")
+      wxString::Format("%u",mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS )
+    ) ;
   p_wxtextctrlCPUusageForThrottleToPstate1 = new wxTextCtrl(
     this
     , wxID_ANY 
@@ -43,23 +50,37 @@ DynFreqScalingDlg::DynFreqScalingDlg(
     , 0 //default style is 0
     , m_floatvalidator 
     ) ;
+  sizerVert->Add( new wxStaticText( this, wxID_ANY,
+    _T("threshold temperature in degrees Celsius for CPU core frequency throttling:") )
+    ) ;
   sizerVert->Add( p_wxtextctrlThrottleTemp ) ;
   sizerVert->Add( new wxStaticText( this, wxID_ANY, 
-    _T("milliseconds to wait till next DVFS") ) 
+    _T("milliseconds to wait till next temperature/ CPU core usage poll:") )
     ) ;
   sizerVert->Add( p_wxtextctrlMilliSecondsWait ) ;
-  sizerVert->Add( mp_wxbuttonApply ) ;
+  sizerVert->Add( mp_wxbuttonOK ) ;
+  sizerVert->Add( mp_wxbuttonCancel) ;
   SetSizer(sizerVert);
 }
 
-void DynFreqScalingDlg::OnApplyButton(wxCommandEvent & r_wxcommandevent)
+void DynFreqScalingDlg::OnOK_Button(wxCommandEvent & r_wxcommandevent)
 {
-  long lMilliSeconds ;
-  if( 
-    p_wxtextctrlMilliSecondsWait->GetValue().ToLong( & lMilliSeconds ) 
-    )
-  {
-    //m_floatvalidator.Validate(p_wxtextctrlMilliSecondsWait) ;
-    mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS = lMilliSeconds ;
-  }
+  double dThrottleTemp ;
+  unsigned long ulMilliSeconds ;
+  DEBUGN("DynFreqScalingDlg::OnOK_Button begin")
+  //TODO uncomment
+//  if(
+//    p_wxtextctrlMilliSecondsWait->GetValue().ToULong( & ulMilliSeconds )
+//    )
+//  {
+//    //m_floatvalidator.Validate(p_wxtextctrlMilliSecondsWait) ;
+//    mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS = ulMilliSeconds ;
+//  }
+//  if(
+//      p_wxtextctrlThrottleTemp->GetValue().ToDouble(& dThrottleTemp )
+//    )
+//  {
+//    mp_cpucoredata->m_fThrottleTempInDegCelsius = dThrottleTemp ;
+//  }
+  DEBUGN("DynFreqScalingDlg::OnOK_Button end")
 }

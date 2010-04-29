@@ -1,6 +1,9 @@
 //compile errors (indirect (sub-)includes of "sstream" or other) when it wasn't the
 //1st include.
 #include <global.h> //for LOGN(...)
+#include <stdio.h> //wprintf()
+#include <set> //std::set
+//#include <iostream>
 #include "PowerProfDynLinked.hpp"
 #include <Windows/GetWindowsVersion.h>
 #include <Windows/PowerProf/PowerProfFromWin6DynLinked.hpp>
@@ -30,9 +33,9 @@ PowerProfDynLinked::PowerProfDynLinked(
       //r_stdwstrProgramName 
       r_stdtstrProgramName ) ;
   }
-  #ifdef _DEBUG
-    mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
-  #endif
+//  #ifdef _DEBUG
+//    mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
+//  #endif
 }
 
 PowerProfDynLinked::~PowerProfDynLinked()
@@ -78,7 +81,7 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   LOGN("Should disable Windows' Dynamic Voltage And Frequency Scaling.\n"
     "All available power schemes:")
   #endif
-  mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
+//  mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
   //Even if the access to the power scheme differs between Windows Vista 
   //and XP the logic for setting the power scheme is the same.
   //So to ensure the same implementation, implement the logic here
@@ -129,6 +132,13 @@ bool PowerProfDynLinked::EnablingIsPossible()
   return mp_i_powerprofdynlinked->EnablingIsPossible() ;
 }
 
+void PowerProfDynLinked::GetAllPowerSchemeNames(
+  std::set<std::wstring> & r_stdset_stdwstrPowerSchemeName )
+{
+  mp_i_powerprofdynlinked->//OutputAllPowerSchemes() ;
+    GetAllPowerSchemeNames(r_stdset_stdwstrPowerSchemeName) ;
+}
+
 std::tstring PowerProfDynLinked::GetEnableDescription()
 {
   return mp_i_powerprofdynlinked->GetEnableDescription() ;
@@ -141,5 +151,27 @@ bool PowerProfDynLinked::OtherDVFSisEnabled()
 
 void PowerProfDynLinked::OutputAllPowerSchemes()
 {
-  mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
+  std::set<std::wstring> stdset_stdwstrPowerSchemeName ;
+  mp_i_powerprofdynlinked->//OutputAllPowerSchemes() ;
+    GetAllPowerSchemeNames(stdset_stdwstrPowerSchemeName) ;
+  for(std::set<std::wstring>::const_iterator c_iter =
+    stdset_stdwstrPowerSchemeName.begin() ;
+    c_iter != stdset_stdwstrPowerSchemeName.end() ; ++ c_iter
+    )
+  {
+#if defined(_DEBUG)
+//      #if defined(__MINGW32__) //MinGW does not know "wcout"
+      wprintf( L"%s\n", c_iter->c_str() ) ;
+//      #else
+//        std::wcout << *c_iter << L'\n' ;
+//      #endif
+    #endif
+  }
+}
+
+BYTE PowerProfDynLinked::SetActivePowerScheme(
+  const std::wstring & r_stdwstrPowerSchemeName )
+{
+  return mp_i_powerprofdynlinked->SetActivePowerScheme(
+    r_stdwstrPowerSchemeName ) ;
 }

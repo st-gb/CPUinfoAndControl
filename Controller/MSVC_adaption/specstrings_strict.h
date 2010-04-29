@@ -12,6 +12,10 @@
 extern "C" {
 #endif
 
+//  #define __allowed(p) __$allowed_##p
+//  #define __success(expr)          __allowed(on_function_or_typedecl)
+  #define __success(expr)
+
   //from VS2005 specstring_strict.h:
   // __in_opt -> __allowed(on_parameter) -> __$allowed_on_parameter
   //   #define __$allowed_on_parameter /* empty */

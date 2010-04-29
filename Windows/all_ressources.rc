@@ -1,0 +1,6 @@
+#include "version_info.rc"
+
+IDI_ICON1 ICON DISCARDABLE "App32.ico"
+
+#define MANIFEST_RESOURCE_ID 1
+MANIFEST_RESOURCE_ID RT_MANIFEST "x86InfoAndControl.exe.manifest"

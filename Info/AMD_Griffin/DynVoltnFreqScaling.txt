@@ -1,18 +1,4 @@
-//AMD Basic Performance Measurements for AMD Athlonâ„¢ 64,
-//AMD Opteronâ„¢ and AMD Phenomâ„¢ Processors:
-//chapter 4.2.1. Instructions per cycle (IPC).    
-   retired microops diff / timestamp counter diff
-    //EventSelect 0C0h Retired Instructions
-//    EventSelect 0C1h Retired uops
-//    EventSelect 076h CPU Clocks not Halted
 
--Idee für CPU usage: 
-  -da der TimeStampCounter mit einer festen Taktfreq läuft:
-   1.Clocks Halted mittels PerformanceEvent messen
-   2.Clocks NOT Halted mittels PerformanceEvent messen
-   3."Clocks Halted" + "Clocks NOT Halted" = "vergangene Clocks" 
-     (entspricht dem TimeStampCounter des Pentium M, der dort mit der aktuellen Taktfreq zählt)
-   4."vergangene Clocks" / "Clocks NOT Halted" = CPU usage
 -Grundlage für dyn. Frequ- Skalierung: get CPU usage per core
 -P-state 7 soll man laut "blackshard83" ueberscheiben mit den Werten (VID,DID, FID)
  von p-state 0: funktioniert nicht: Rechner spinnte: Maus konnte man noch bewegeen, 

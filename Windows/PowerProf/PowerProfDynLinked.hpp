@@ -4,6 +4,7 @@
 #include <Controller/stdtstr.hpp> //for std::tstring 
 #include <Windows_compatible_typedefs.h> //for BYTE
 //#include <string> //for std::wstring 
+#include <set> //std::set
 
 class I_PowerProfDynLinked ;
 
@@ -33,8 +34,12 @@ public:
   bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
   bool EnablingIsPossible() ;
+  void GetAllPowerSchemeNames( std::set<std::wstring> &
+      r_stdset_stdwstrPowerSchemeName ) ;
   IDynFreqScalingAccess::string_type GetEnableDescription() ;
   bool OtherDVFSisEnabled() ;
   void OutputAllPowerSchemes() ;
   virtual unsigned char PowerSchemeToSetExists() { return 0 ; }
+  BYTE SetActivePowerScheme(
+    const std::wstring & r_stdwstrPowerSchemeName ) ;
 };

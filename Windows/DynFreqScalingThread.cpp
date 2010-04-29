@@ -53,6 +53,9 @@ DWORD DynFreqScalingThread::Run()
 {
   DWORD dwRet = ERROR_SUCCESS ;
   DWORD dwThreadId ;
+  //Call the base class' method that does the work needed for subclasses that
+  //(re-)start a DVFS thread.
+  DynFreqScalingThreadBase::Start() ;
   HANDLE hThread =
     //http://msdn.microsoft.com/en-us/library/ms682453%28VS.85%29.aspx :
     //"If the function fails, the return value is NULL.

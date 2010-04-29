@@ -16,6 +16,10 @@ sh ../configure -LDFLAGS=-no-undefined --build=x86-winnt-mingw32 --with-extra-cf
 -use cygwin's "make" (MSYS' make did not work) only if MIngW/ MSYS' make do not work
   (but I uess it creates inconpatible libs that generate linker errors when linked with MinGW)
 
-ANSI static lib Release version:
+ANSI static lib Release version (create a batch or shell file because inserting into a 
+  MinGW shell is not possible):
 sh ../configure CPPFLAGS=-D_SYS_SELECT_H LDFLAGS=-no-undefined --build=x86-winnt-mingw32 --with-msw --with-extra-cflags=-mno-cygwin -–with-extra-cxxflags=-mno-cygwin --disable-shared
 sh ../configure --build=x86-winnt-mingw32 --with-extra-cflags=-mno-cygwin –with-extra-cxxflags=-mno-cygwin
+
+UNICODE release version:
+sh ../configure CPPFLAGS=-D_SYS_SELECT_H LDFLAGS=-no-undefined --enable-unicode --build=x86-winnt-mingw32 --with-msw --with-extra-cflags=-mno-cygwin -–with-extra-cxxflags=-mno-cygwin --disable-shared

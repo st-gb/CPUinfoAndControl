@@ -25,6 +25,11 @@
  {
    return cr_wstr ;
  }
+// tstring::tstring( TCHAR * ptch )
+// {
+//   wstring()
+// }
+
  #else
  std::tstring Getstdtstring(const std::string & cr_str )
  {
