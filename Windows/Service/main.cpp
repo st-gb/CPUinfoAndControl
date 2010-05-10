@@ -171,54 +171,57 @@ int main( int argc, char *  argv[] )
     OuputCredits() ;
     if( argc == 1 )
     {
-        //IDEA: to distinguish between if called as service or by a user:
-        //get the parent process name of this process.
-        //Programs that run as service have "services.exe" as their parent 
-        //process.
-        CPUcontrolService::outputUsage();
-        std::vector<std::string> vecstdstrParams ;
+      bool bStartService = true ;
+      //IDEA: to distinguish between if called as service or by a user:
+      //get the parent process name of this process.
+      //Programs that run as service have "services.exe" as their parent
+      //process.
+      CPUcontrolService::outputUsage();
+      std::vector<std::string> vecstdstrParams ;
 //Useful for debugging purposes.
 #ifdef EMULATE_EXECUTION_AS_SERVICE
 #else
-        CPUcontrolService::requestOption( vecstdstrParams
-          , stdtstrProgramName );
+      CPUcontrolService::requestOption( vecstdstrParams
+        , stdtstrProgramName );
 #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
-        if( vecstdstrParams.empty() )
+      if( vecstdstrParams.empty() )
+      {
+          LOGN("This exe is started as service (and not as installer)");
+      }
+      else
+      {
+          DEBUG("Entered strings: ")
+          for ( BYTE by = 0 ; by < vecstdstrParams.size() ; ++ by )
+              //DEBUG("\"%s\" ", vecstdstrParams.at(by).c_str() );
+              LOG("\"" << vecstdstrParams.at(by).c_str() << "\" " );
+          DEBUG("\n" );
+      }
+      if( CPUcontrolService::ShouldDeleteService(vecstdstrParams) )
+      {
+        if( vecstdstrParams.size() > 1 )
         {
-            LOG("This exe is started as service (and not as installer)\n");
+            ServiceBase::DeleteService(//"GriffinStateService"
+               vecstdstrParams.at(1).c_str() ) ;
+            PowerProfDynLinked powerprofdynlinked( stdtstrProgramName ) ;
+            powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+            powerprofdynlinked.OutputAllPowerSchemes() ;
         }
-        else
-        {
-            DEBUG("Entered strings: ")
-            for ( BYTE by = 0 ; by < vecstdstrParams.size() ; ++ by )
-                //DEBUG("\"%s\" ", vecstdstrParams.at(by).c_str() );
-                LOG("\"" << vecstdstrParams.at(by).c_str() << "\" " );
-            DEBUG("\n" );
-        }
-        if( CPUcontrolService::ShouldCreateService(vecstdstrParams) )
-        {
-            if( vecstdstrParams.size() > 1 )
-                ServiceBase::CreateService( vecstdstrParams.at(1).c_str() ) ;
-        }
-        else if( CPUcontrolService::ShouldDeleteService(vecstdstrParams) )
-        {
-            if( vecstdstrParams.size() > 1 )
-            {
-                ServiceBase::DeleteService(//"GriffinStateService"
-                   vecstdstrParams.at(1).c_str() ) ;
-                PowerProfDynLinked powerprofdynlinked( stdtstrProgramName ) ;
-                powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
-                powerprofdynlinked.OutputAllPowerSchemes() ;
-            }
-        }
-        else
-        {
-            //GriffinStateControlService griffinstatecontrolservice ;
-            CPUcontrolService cpucontrolservice(argc,argv,
-              stdtstrProgramName ) ;
-            gp_cpucontrolbase = & cpucontrolservice ;
-            cpucontrolservice.StartService();
-        }
+        bStartService = false ;
+      }
+      if( CPUcontrolService::ShouldCreateService(vecstdstrParams) )
+      {
+        if( vecstdstrParams.size() > 1 )
+            ServiceBase::CreateService( vecstdstrParams.at(1).c_str() ) ;
+        bStartService = false ;
+      }
+      if( bStartService )
+      {
+          //GriffinStateControlService griffinstatecontrolservice ;
+          CPUcontrolService cpucontrolservice(argc,argv,
+            stdtstrProgramName ) ;
+          gp_cpucontrolbase = & cpucontrolservice ;
+          cpucontrolservice.StartService();
+      }
     }
     else
     {

@@ -81,7 +81,8 @@ BYTE ClocksNotHaltedCPUcoreUsageGetter::Init(
 #else
       m_wNumLogicalCPUcores ;
 #endif
-    DEBUG_COUTN("ClocksNotHaltedCPUcoreUsageGetter # CPU cores" <<
+    //DEBUG_COUTN
+    DEBUGN("ClocksNotHaltedCPUcoreUsageGetter # CPU cores" <<
       m_wNumLogicalCPUcores )
     for( BYTE byCoreID = 0 ; byCoreID < byNumCPUs ; ++ byCoreID )
       ProgramNecessaryPermanceCounters(byCoreID) ;
@@ -168,7 +169,7 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   if( //m_bAtLeastSecondTime 
 	  (m_dwAtMask2ndTimeCPUcoreMask >> byCoreID ) & 1 )
   {
-
+    DEBUGN("class::GetPercentalUsageForCore(...) more than 1 time")
     //ULONGLONG ullTimeStampCounterValueDiff 
   	//m_ullTimeStampCounterValueDiff  = //ull - 
    // //  m_ullPreviousTimeStampCounterValue;
@@ -260,9 +261,11 @@ float ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
     //return (float) dClocksNotHaltedDiffDivTCSdiff ;
   }
   else
+  {
+    DEBUGN("class::GetPercentalUsageForCore(...) 1st time called")
     //m_bAtLeastSecondTime = true ;
-	m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
-
+    m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
+  }
       //m_ullPreviousTimeStampCounterValue 
     m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue 
       = m_ull ;

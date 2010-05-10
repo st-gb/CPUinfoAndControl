@@ -154,8 +154,8 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
       //r_fVoltageInVolt = p_pstateGreaterEqual->GetVoltageInVolt() ;
       r_fVoltageInVolt = ci_stdsetvoltageandfreqNearestLowerEqual->
         m_fVoltageInVolt ;
-      DEBUGN("I_CPUcontroller::GetInterpolatedVoltageFromFreq()"
-        "voltage found: " << r_fVoltageInVolt )
+//      DEBUGN("I_CPUcontroller::GetInterpolatedVoltageFromFreq()"
+//        "voltage found: " << r_fVoltageInVolt )
       return true ;
     }
     else
@@ -375,33 +375,42 @@ float I_CPUcontroller::GetMaximumVoltageInVolt()
 WORD I_CPUcontroller::GetNearestHigherPossibleFreqInMHz(WORD wFreqInMhzOld)
 {
   std::set<VoltageAndFreq>::const_iterator iter = 
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.begin( ) ;
+    mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.begin( ) ;
+    m_stdsetvoltageandfreqAvailableFreq.begin( ) ;
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->begin( ) ;
   while( iter != 
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.
+    mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.
+    m_stdsetvoltageandfreqAvailableFreq.
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->
     end() 
     )
   {
     if( iter->m_wFreqInMHz > wFreqInMhzOld )
     {
+      DEBUGN("GetNearestHigherPossibleFreqInMHz()--frequency above old freq:"
+          << iter->m_wFreqInMHz )
       return iter->m_wFreqInMHz ;
       //break ;
     }
     ++ iter ;
   }
+  DEBUGN("GetNearestHigherPossibleFreqInMHz()--return 0 (no higher freq found)" )
   return 0 ;
 }
 
 WORD I_CPUcontroller::GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld)
 {
   std::set<VoltageAndFreq>::const_iterator iter = 
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.begin( ) ;
+    mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.begin( ) ;
+    m_stdsetvoltageandfreqAvailableFreq.begin( ) ;
+
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->begin( ) ;
   std::set<VoltageAndFreq>::const_iterator iterLower = 
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.end( ) ;
+    mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.end( ) ;
+    m_stdsetvoltageandfreqAvailableFreq.end() ;
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->end( ) ;
-  while( iter != mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.
+  while( iter != mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.
+    m_stdsetvoltageandfreqAvailableFreq.
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->
     end() 
     )
@@ -598,8 +607,8 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
   WORD wFreqInMHz 
   , BYTE byCoreID)
 {
-  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
-    << (WORD) byCoreID << ")")
+//  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
+//    << (WORD) byCoreID << ")")
   return SetFreqAndVoltageFromFreq(
     wFreqInMHz 
     , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
@@ -613,8 +622,8 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
 {
   BYTE byRet = 0 ;
   float fVoltageInVolt ;
-  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
-      "address of model: " << mp_model )
+//  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+//      "address of model: " << mp_model )
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted ;
@@ -649,19 +658,19 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
     r_stdsetvoltageandfreq.end() 
     )
   {
-    DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
-      " higher element found: "
-      << ci_stdsetvoltageandfreqNearestHigherEqual->m_fVoltageInVolt
-      << "," << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz )
+//    DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
+//      " higher element found: "
+//      << ci_stdsetvoltageandfreqNearestHigherEqual->m_fVoltageInVolt
+//      << "," << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz )
 #ifdef _DEBUG
     if( ci_stdsetvoltageandfreqNearestLowerEqual !=
       r_stdsetvoltageandfreq.end()
       )
     {
-      DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
-        " lower element found: "
-        << ci_stdsetvoltageandfreqNearestLowerEqual->m_fVoltageInVolt
-        << "," << ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz )
+//      DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE)"
+//        " lower element found: "
+//        << ci_stdsetvoltageandfreqNearestLowerEqual->m_fVoltageInVolt
+//        << "," << ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz )
     }
 #endif
     //Freq is lower than the ones in the list.

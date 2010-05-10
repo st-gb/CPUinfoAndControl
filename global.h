@@ -3,7 +3,7 @@
   #define GLOBAL_H
 
   //#include <stdio.h> //for "FILE *"
-  #include <string>
+//  #include <string>
   //#define COMPILE_WITH_XERCES
 
   //For E.g. cygwin
@@ -99,12 +99,13 @@
     #define DEBUG(...) //->empty
     //#define DEBUG(coutArgs) //->empty
     //#define DEBUG(to_ostream) /*->empty / no instructions*/
-    #define DEBUGN(to_ostream) /*->empty / no instructions*/
+    #define DEBUGN(to_ostream) {} /* block can be used after "if"/"else"*/
     #define DEBUGWN(to_ostream) /*->empty / no instructions*/
     #define DEBUG_COUT(coutArgs) //->empty
     #define DEBUG_COUTN(coutArgs) //->empty
     #define DEBUG_WCOUTN(coutArgs) //->empty
     #define DEBUG_WPRINTFN(...) //->empty
+    #define DEBUGWN_WSPRINTF(...) { } /* block can be used after "if"/"else"*/
   #endif //#ifdef _DEBUG
 
 #ifdef COMPILE_WITH_LOG
@@ -112,6 +113,7 @@
     /*Use a block ( "{...}" to be usable in "else" statements.*/
     //#define DEBUG(...)  {fprintf(fileDebug,__VA_ARGS__);fflush(/*stdout*/fileDebug);}
     #include "./Controller/Logger.hpp" //for class Logger
+    #include <string>
     //class Logger ;
     //#ifndef _MSC_VER //else compile errors with gcc
     #include <sstream> //for class std::stringstream
@@ -130,6 +132,15 @@
 //    #endif
     //#ifdef COMPILE_WITH_LOG
     #define LOGN(to_ostream) LOG (to_ostream << "\n" )
+
+    //Necessary for MinGW that does not know "std::wstringstream"
+    #define LOGWN_WSPRINTF(...) { wchar_t arwch_buffer[1000] ; \
+      swprintf( arwch_buffer, __VA_ARGS__ ) ; \
+      std::wstring stdwstr(arwch_buffer) ; \
+      stdwstr += L'\n' ; \
+      std::string stdstr ( stdwstr.begin(), stdwstr.end() ) ;\
+      g_logger.Log( stdstr ) ; \
+      }
     #if defined(__MINGW32__) //MinGW does not know std::wstringstream
       #define LOGW(to_ostream) /*empty->do not log*/
       #define LOGWN(to_ostream) /*empty->do not log*/
@@ -168,7 +179,9 @@
       #define DEBUG(to_ostream) LOG(to_ostream)
       #define DEBUGN(to_ostream) LOGN(to_ostream)
       #define DEBUGWN(to_ostream) LOGWN(to_ostream)
+      #define DEBUGWN_WSPRINTF(...) LOGWN_WSPRINTF(__VA_ARGS__)
     #else
+      #define DEBUGWN_WSPRINTF(...) { } /* block can be used for "if"/"else"*/
     #endif //#ifdef _DEBUG
     #define CPP_WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(coutArgs) { \
       std::cout coutArgs ; std::cout.flush(); \

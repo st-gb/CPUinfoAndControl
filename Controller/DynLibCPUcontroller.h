@@ -75,7 +75,13 @@ typedef
   * dll_GetCurrentPstate_type) (
     PWORD p_wFreqInMHz 
     , //float & Volt
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
+    //When the voltage was converted to an integer with milliVolt there were
+    //rounding errors: 0.95 (float) became 940 (WORD) milliVolt
       PWORD p_wMilliVolt
+#else
+    float & r_f
+#endif
     , WORD wCoreID 
   ) ;
   //GET_CURRENT_PSTATE_SIG("(* dll_GetCurrentPstate_type)",;)

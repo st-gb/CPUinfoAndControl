@@ -13,7 +13,7 @@ public:
   //NamedPipeClient( LPTSTR lpszPipename ) ;
   void OnDisconnect() ;
   BYTE Init() ;
-  bool IsConnected() { return m_bConnected ; }
+  bool IsConnected() ; //{ return m_bConnected ; }
   BYTE SendMessage(BYTE byMessage) ;
   ~NamedPipeClient( )
   {

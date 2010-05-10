@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Controller/I_CPUaccess.hpp>
+#include <windef.h> //DWORD
 
 class UserInterface ;
 

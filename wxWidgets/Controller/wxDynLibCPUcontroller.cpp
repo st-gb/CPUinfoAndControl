@@ -2,6 +2,7 @@
 #include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/exported_functions.h> //ReadMSR
+#include <ModelData/ModelData.hpp>
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/DLLloadError.hpp>
 #include <wx/msgdlg.h>
@@ -177,19 +178,31 @@ void wxDynLibCPUcontroller::DecreaseVoltageBy1Step(float & r_fVoltage)
 
 BYTE wxDynLibCPUcontroller::GetCurrentPstate(
     WORD & r_wFreqInMHz 
-    , float & r_fVolt
+    , float & r_fVoltageInVolt
     , BYTE byCoreID 
     )
   {
     WORD wMilliVolt ;
+//    DEBUGN("wxDynLibCPUcontroller::GetCurrentPstate(...) begin")
     if( m_pfngetcurrentpstate )
     {
        BYTE by = (*m_pfngetcurrentpstate)(
         & r_wFreqInMHz
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
         , & wMilliVolt
+#else
+        , r_fVoltageInVolt
+#endif
         , byCoreID
         ) ;
-       r_fVolt = (float) wMilliVolt / 1000.0 ;
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
+       r_fVoltageInVolt = (float) wMilliVolt / 1000.0 ;
+#endif
+//       DEBUGN("wxDynLibCPUcontroller::GetCurrentPstate(...):"
+//#ifdef GET_VOLTAGE_IN_MILLIVOLT
+//           << " millivolt:" << wMilliVolt
+//#endif
+//           << " Volt:" << r_fVoltageInVolt  )
 //      DEBUG_COUT( "wxDynLibCPUcontroller::GetCurrentPstate("
 //        << r_wFreqInMHz << ","
 //        << r_fVolt << ","
@@ -307,20 +320,21 @@ BYTE wxDynLibCPUcontroller::
       , BYTE byCoreID 
       ) //{return 0 ; }
 {
-  DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...)")
+//  DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...)")
   if( m_pfnsetcurrentpstate )
   {
     WORD wMilliVolt = (WORD) (fVolt * 1000.0) ;
-    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) "
-      "before calling fct. at address " << m_pfnsetcurrentpstate <<
-      " with args (" << wFreqInMHz << "," << wMilliVolt << ","
-      << (WORD) byCoreID << ")")
+//    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) "
+//      "before calling fct. at address " << m_pfnsetcurrentpstate <<
+//      " with args (" << wFreqInMHz << "," << wMilliVolt << ","
+//      << (WORD) byCoreID << ")")
      BYTE by = (*m_pfnsetcurrentpstate)(
       wFreqInMHz
       , wMilliVolt
       , byCoreID
       ) ;
-    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) res.:" << by)
+//    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) res.:"
+//     << (WORD) by )
     return by ;
   }
   return 0 ;
@@ -345,11 +359,22 @@ BYTE wxDynLibCPUcontroller::
 BYTE wxDynLibCPUcontroller::TooHot() 
 { 
   BYTE by = 0 ;
+  float fTemperatureInCelsius ;
   for( WORD wCPUcoreIdx = 0 ; wCPUcoreIdx < m_wNumberOfLogicalCPUcores ; 
     ++ wCPUcoreIdx )
   {
-    if( GetTemperatureInCelsius( wCPUcoreIdx ) > 90.0 )
+    fTemperatureInCelsius = GetTemperatureInCelsius( wCPUcoreIdx ) ;
+    if( fTemperatureInCelsius > //90.0
+      mp_model->m_cpucoredata.m_fThrottleTempInDegCelsius
+      )
+    {
       by = 1 ;
+      DEBUGN("temperature of CPU core " << wCPUcoreIdx << ":"
+        << fTemperatureInCelsius
+        << "is > throttle temp:"
+        << mp_model->m_cpucoredata.m_fThrottleTempInDegCelsius )
+      break ; //at least 1 core too hot->break loop.
+    }
   }
   return by ;
 }

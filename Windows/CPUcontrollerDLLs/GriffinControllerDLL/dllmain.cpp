@@ -218,21 +218,35 @@ extern "C" __declspec(dllexport)
   NEHALEM_DLL_CALLING_CONVENTION 
   GetCurrentPstate(
     PWORD p_wFreqInMHz 
-    , //float & Volt
+    ,
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
       PWORD p_wMilliVolt
+#else
+    float & fVoltageInVolt
+#endif
     , WORD wCoreID 
   )
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
   DWORD dwLowmostBits , dwHighmostBits ;
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
   float fVoltageInVolt ;
+#endif
   BYTE byRet = 
     g_griffincontroller.GetCurrentPstate(
     * p_wFreqInMHz ,
     fVoltageInVolt,
     wCoreID ) ;
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
   *p_wMilliVolt = (WORD) (fVoltageInVolt * 1000.0 ) ;
+#endif
+  DEBUGN("GetCurrentPstate(...) "
+      " Volt:" << fVoltageInVolt
+#ifdef GET_VOLTAGE_IN_MILLIVOLT
+      << " milliVolt: " << *p_wMilliVolt
+#endif
+      )
   return byRet ;
 }
 

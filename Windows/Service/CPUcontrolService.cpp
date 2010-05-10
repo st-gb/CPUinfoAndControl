@@ -9,6 +9,15 @@
   #include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #endif //#ifdef COMPILE_WITH_IPC
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
+//for the #defines like "WTS_SESSION_LOGIN" in <wts32api.h>
+#define _WIN32_WINNT 0x0501
+#include <wtsapi32.h>
+//#include <windows.h>
+
+typedef struct tagWTSSESSION_NOTIFICATION {
+  DWORD cbSize;
+  DWORD dwSessionId;
+} WTSSESSION_NOTIFICATION, *PWTSSESSION_NOTIFICATION;
 
 #define USE_WINDOWS_THREAD
 
@@ -56,7 +65,7 @@ CPUcontrolService::CPUcontrolService(
     //C++ style inits:
     : 
 #ifdef COMPILE_WITH_IPC
-    m_ipcserver(this)
+    m_ipcserver(this) ,
 #endif //#ifdef COMPILE_WITH_IPC
     //m_bProcess ( true )
     //, m_bRun ( true ) 
@@ -137,6 +146,123 @@ void CPUcontrolService::Continue()
   StartDynVoltnFreqScaling() ;
   SetServiceStatus() ;
   LOG("Service is continued.\n");
+}
+
+void CPUcontrolService::HandleInitServiceFailed( DWORD dwStatus)
+{
+  // Handle error condition
+  if ( dwStatus == NO_ERROR )
+  {
+      LOG("The service was successfully initialized\n" ) ;
+  }
+  else
+  {
+      msp_cpucontrolservice->
+          m_servicestatus.dwCurrentState       = SERVICE_STOPPED;
+      msp_cpucontrolservice->
+          m_servicestatus.dwCheckPoint         = 0;
+      msp_cpucontrolservice->
+          m_servicestatus.dwWaitHint           = 0;
+      msp_cpucontrolservice->
+          m_servicestatus.dwWin32ExitCode      = dwStatus;
+      //msp_cpucontrolservice->
+      //    m_servicestatus.dwServiceSpecificExitCode = specificError;
+
+  #ifndef EMULATE_EXECUTION_AS_SERVICE
+      ::SetServiceStatus (msp_cpucontrolservice->
+          m_service_status_handle, & msp_cpucontrolservice->
+          m_servicestatus);
+  #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
+      //DEBUG("error in initialization of the service--returning\n" )
+  }
+}
+
+void CPUcontrolService::HandlePowerEvent(DWORD dwEventType )
+{
+  LOGN("power event")
+  //"If dwControl is SERVICE_CONTROL_POWEREVENT, this parameter can be one of
+  //the values specified in the wParam parameter of the WM_POWERBROADCAST
+  //message."
+  //http://msdn.microsoft.com/en-us/library/aa373247%28v=VS.85%29.aspx:
+  switch( //(int)
+      dwEventType )
+  {
+    //case PBT_APMPOWERSTATUSCHANGE:
+  case PBT_APMRESUMESUSPEND:
+     //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/pbt_apmresumesuspend.htm:
+     //"An application can receive this event only if it received the PBT_APMSUSPEND event before the computer was suspended. Otherwise, the application will receive a PBT_APMRESUMECRITICAL event."
+  case PBT_APMRESUMECRITICAL:
+       // handle event
+    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/handlerex.htm:
+    //"If your service handles SERVICE_CONTROL_POWEREVENT, return NO_ERROR to grant the request and an error code to deny the request."
+      //for(unsigned char by = 0 ; by < 255 ; by ++ )
+      //{
+      //  ::MessageBeep(15000);
+      //  ::Sleep(400);
+      //}
+    if( msp_cpucontrolservice->
+        m_bProcess
+      )
+      msp_cpucontrolservice->mp_cpucontroller->
+        ResumeFromS3orS4();
+      //After ACPI S3/ S4 the performance event select
+      //is cleared and has to be written again.
+      msp_cpucontrolservice->mp_cpucoreusagegetter->Init() ;
+      //return NO_ERROR;
+      break ;
+  case PBT_APMQUERYSUSPEND:
+   LOGN("querying suspend")
+     //TODO Before a hibernation set core 1 to a low freq and voltage
+     //to save current because I guess only the core 0 saves the
+     //RAM onto disk:
+     break;
+  default:
+   LOGN("other power event")
+   break ;
+  }
+}
+
+void CPUcontrolService::HandleStartDynVoltAndFreqScalingThread()
+{
+  msp_cpucontrolservice->m_powerprofdynlinked.DisableFrequencyScalingByOS();
+  //Windows_API::DynFreqScalingThread dynfreqscalingthread(
+  msp_cpucontrolservice->mp_dynfreqscalingthreadbase =
+  #ifdef USE_WINDOWS_THREAD
+    new Windows_API::DynFreqScalingThread(
+  #else //USE_WINDOWS_THREAD
+    new wxWidgets::DynFreqScalingThread(
+  #endif //USE_WINDOWS_THREAD
+    msp_cpucontrolservice->mp_cpucontroller->mp_icpucoreusagegetter
+    , msp_cpucontrolservice->mp_cpucontroller
+    , msp_cpucontrolservice->mp_modelData->m_cpucoredata
+    ) ;
+  bool bContinue = false ;
+  if( msp_cpucontrolservice->mp_dynfreqscalingthreadbase )
+  {
+    LOGN("trying to start the Dynamic Voltage and Frequency Scaling thread.")
+    //dynfreqscalingthread.Run() ;
+    DWORD dwRet = msp_cpucontrolservice->mp_dynfreqscalingthreadbase->Start() ;
+    if( dwRet == ERROR_SUCCESS )
+    {
+      LOGN( "Successfully started the Dynamic Voltage and Frequency Scaling "
+          "thread.")
+      bContinue = true ;
+    }
+    else
+    {
+      LOGN( "error starting Dynamic Voltage and Frequency Scaling thread :"
+        << LocalLanguageMessageFromErrorCode(dwRet) )
+    }
+  }
+  if( bContinue )
+  {
+    LOGN("Waiting for the stop service condition to become true")
+    LOGN("service main--current thread id:" << ::GetCurrentThreadId() )
+    msp_cpucontrolservice->m_vbServiceInitialized = true ;
+    //If not wait the thread object is destroyed at end of block.
+    ::WaitForSingleObject( msp_cpucontrolservice->
+      m_hEndProcessingEvent, INFINITE) ;
+  }
 }
 
 void CPUcontrolService::Initialize()
@@ -247,7 +373,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
     //  //(seen in the log file) so set 360 s = 6 min as a wait hint
     //  360000 ;
     //::SetServiceStatus (msp_cpucontrolservice->
-    //    m_servicestatushandle, & msp_cpucontrolservice->
+    //    m_service_status_handle, & msp_cpucontrolservice->
     //    m_servicestatus); 
     //Use parametrized constructor, because there were runtime errors with 
     //parameterless c'tor.
@@ -296,16 +422,30 @@ DWORD CPUcontrolService::MyServiceInitialization(
       //  mp_cpucontroller = 
       //  m_maincontroller.CreateCPUcontrollerAndUsageGetter(
       //    mp_cpucoreusagegetter ) ;
-      if( !
+      //if( !
         m_maincontroller.
         //Creates e.g. an AMD Griffin oder Intel Pentium M controller
         CreateCPUcontrollerAndUsageGetter( 
           mp_cpucontroller 
           , mp_cpucoreusagegetter
-          ) 
-        )
+          ) ;
+        //)
+      if( ! mp_cpucontroller )
       {
-        LOGN("no CPU controller and/ or usage getter->exiting");
+        if( ! mp_cpucoreusagegetter )
+        {
+          LOGN("no CPU controller and no usage getter->exiting");
+          return 1 ;
+        }
+        else
+        {
+          LOGN("no CPU controller ->exiting");
+          return 1 ;
+        }
+      }
+      if( ! mp_cpucoreusagegetter )
+      {
+        LOGN("no CPU controller and no usage getter->exiting");
         return 1 ;
       }
       SetCPUcontroller(mp_cpucontroller) ;
@@ -351,11 +491,11 @@ DWORD CPUcontrolService::MyServiceInitialization(
     //    "Exception: DLL was not loaded\n" ) ;
     dwReturnValue = ! NO_ERROR ;
     //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/interactive_services.htm:
-    //Display a message box by calling the MessageBox function with 
+    //"Display a message box by calling the MessageBox function with
     //MB_SERVICE_NOTIFICATION. This is recommended for displaying simple 
     //status messages. Do not call MessageBox during service initialization 
     //or from the HandlerEx routine, unless you call it from a separate 
-    //thread, so that you return to the SCM in a timely manner. 
+    //thread, so that you return to the SCM in a timely manner."
     ::MessageBox(
       //If this parameter is NULL, the message box has no owner window. 
       NULL
@@ -671,7 +811,9 @@ void CPUcontrolService::requestOption(
     //    "same format as if command line option:\n" ;
     std::cout << "\nSelect your option now:\n"
         "[i/I]nstall this program as service\n" 
-        "[d/D]einstall/ [d/D]elete (this) service\n" ;
+        "[d/D]einstall/ [d/D]elete (this) service\n"
+        "[r/R]einstall (this) service (delete->install)\n"
+        ;
     int nChar = getche();
     std::cout << "\n" ;
     switch( toupper(nChar) )
@@ -696,6 +838,16 @@ void CPUcontrolService::requestOption(
         //Valid input char->continue.
         bContinue = true ;
         break ;
+    case 'R':
+      std::cout << "You choosed to reinstall the service\n" ;
+      std::cout << "Now input the name for the service to delete and install afterwards. "
+        "Input no text to choose the default name \"" <<
+        stdstrDefaultProcessName <<
+        "\"\nPress ENTER/ Return to finish.\n" ;
+      r_vecstdstrParams.push_back(_T("-d") );
+      //Valid input char->continue.
+      bContinue = true ;
+      break ;
     default: 
         std::cout << "You did not input a valid option\n" ;
     }
@@ -706,10 +858,18 @@ void CPUcontrolService::requestOption(
             //stdstrInput 
             arch , 100 ) ; 
         stdstrInput = std::string ( arch ) ;
-        if( stdstrInput.empty() )
-            r_vecstdstrParams.push_back( stdstrDefaultProcessName ) ;
-        else
-            r_vecstdstrParams.push_back( stdstrInput ) ;
+//        if( stdstrInput.empty() )
+//            r_vecstdstrParams.push_back( stdstrDefaultProcessName ) ;
+//        else
+//            r_vecstdstrParams.push_back( stdstrInput ) ;
+        std::string & r_stdstrServiceName = stdstrInput.empty() ?
+          stdstrDefaultProcessName : stdstrInput ;
+        r_vecstdstrParams.push_back( r_stdstrServiceName ) ;
+        if ( toupper(nChar) == 'R' )
+        {
+          r_vecstdstrParams.push_back( _T("-i") ) ;
+          r_vecstdstrParams.push_back( r_stdstrServiceName ) ;
+        }
     }
 
     //std::cout << "select your option now: >>i/I<<nstall this program as service\n" ;
@@ -790,129 +950,75 @@ void CPUcontrolService::requestOption(
     //}
 }
 
+SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
+{
+  DWORD dwLastError ;
+  //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
+  //"The ServiceMain function should immediately call the
+  //RegisterServiceCtrlHandlerEx function to specify a HandlerEx
+  //function to handle control requests.
+  msp_cpucontrolservice->
+    //"If the function fails, the return value is zero."
+    m_service_status_handle =
+    //RegisterServiceCtrlHandler(
+    //"GriffinControlService",
+    //ServiceCtrlHandler);
+    //Use RegisterServiceCtrlHandlerEx  because:
+    //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
+    //"In addition, HandlerEx [RegisterServiceCtrlHandlerEx(...) is meant?]
+    //gets extra messages unique to itself. These messages help a service
+    //react appropriately to changes in the hardware configuration or the
+    //state of the machine. These service control messages are:
+    //[...] SERVICE_CONTROL_POWEREVENT
+    //To accept these new messages, the appropriate flags must be submitted using SetServiceStatus. In the SERVICE_STATUS structure, the dwControlsAccepted member should be updated to reflect the desired messages. The bitwise flags are:
+    //[...] SERVICE_ACCEPT_POWEREVENT
+    //[...] SERVICE_ACCEPT_POWEREVENT is the service equivalent of the WM_POWERBROADCAST message; dwEventType is the power event identifier, and lpEventData is optional data [Code 2]. This is the WPARAM and LPARAM of WM_POWERBROADCAST, respectively."
+    //If the function fails, the return value is zero.
+    RegSvcCtrlHandlerExAndGetErrMsg ( //"GriffinControlService",
+      msp_cpucontrolservice->m_stdtstrProgramName.c_str() ,
+      ServiceCtrlHandlerEx,
+      //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+      //"lpContext [in, optional]
+      //Any user-defined data. This parameter, which is passed to the
+      //handler function, can help identify the service when multiple
+      //services share a process."
+      (LPVOID) 2 ,
+      //stdstrErrorDescripition
+      dwLastError
+      );
+  if ( msp_cpucontrolservice->m_service_status_handle ==
+      (SERVICE_STATUS_HANDLE) 0 )
+  {
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "Registering the service contrl handler failed; "
+      "error code: " << dwLastError );
+    std::string stdstrErrorDescription ;
+    ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
+      dwLastError ,
+      stdstrErrorDescription ) ;
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      stdstrErrorDescription )
+  }
+  return msp_cpucontrolservice->m_service_status_handle ;
+}
+
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/startservicectrldispatcher.htm:
-//All initialization tasks are done in the service's ServiceMain function 
-//when the service is started.
+//"All initialization tasks are done in the service's ServiceMain function
+//when the service is started."
 void WINAPI //MyServiceStart 
     CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv) 
 { 
     BYTE byArgIndex = 0 ;
-    DWORD status; 
+    DWORD dwStatus; 
+    std::string stdstrErrorDescripition ;
 //    DWORD specificError;
 #ifndef EMULATE_EXECUTION_AS_SERVICE
-    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
-    //"The ServiceMain function should immediately call the 
-    //RegisterServiceCtrlHandlerEx function to specify a HandlerEx 
-    //function to handle control requests.
-    msp_cpucontrolservice->
-      //"If the function fails, the return value is zero."
-      m_servicestatushandle = 
-      //RegisterServiceCtrlHandler( 
-      //"GriffinControlService", 
-      //ServiceCtrlHandler); 
-      //Use RegisterServiceCtrlHandlerEx  because:
-      //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
-      //"In addition, HandlerEx [RegisterServiceCtrlHandlerEx(...) is meant?]
-      //gets extra messages unique to itself. These messages help a service 
-      //react appropriately to changes in the hardware configuration or the 
-      //state of the machine. These service control messages are:
-      //[...] SERVICE_CONTROL_POWEREVENT
-      //To accept these new messages, the appropriate flags must be submitted using SetServiceStatus. In the SERVICE_STATUS structure, the dwControlsAccepted member should be updated to reflect the desired messages. The bitwise flags are:
-      //[...] SERVICE_ACCEPT_POWEREVENT
-      //[...] SERVICE_ACCEPT_POWEREVENT is the service equivalent of the WM_POWERBROADCAST message; dwEventType is the power event identifier, and lpEventData is optional data [Code 2]. This is the WPARAM and LPARAM of WM_POWERBROADCAST, respectively."
-      //If the function fails, the return value is zero.
-      RegisterServiceCtrlHandlerEx ( //"GriffinControlService", 
-        msp_cpucontrolservice->m_stdtstrProgramName.c_str() ,
-        ServiceCtrlHandlerEx, 
-        (LPVOID) 2
-        );
-    if ( msp_cpucontrolservice->
-        m_servicestatushandle == (SERVICE_STATUS_HANDLE) 0 ) 
-    { 
-      //Get error code for RegisterServiceCtrlHandler(...).
-      DWORD dwLastError = GetLastError();
-      //SvcDebugOut(" [MY_SERVICE] RegisterServiceCtrlHandler failed %d\n", 
-      //    dwLastError); 
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-        "Registering the service contrl handler failed; "
-        "error code: " << dwLastError );
-      switch( dwLastError )
-      {
-        case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
-          //printf(
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-            "Typically, this error indicates that the program is "
-            "being run as a console application rather than as a "
-            "service. If the program will be run as a console "
-            "application for debugging purposes, structure it such "
-            "that service-specific code is not called when this "
-            "error is returned.\n" );
-             break;
-        case ERROR_INVALID_DATA:
-          //printf(
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-            "The specified dispatch table contains entries that are "
-            "not in the proper format.\n" );
-          break ;
-        case ERROR_SERVICE_ALREADY_RUNNING:
-          //printf(
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-            "The process has already called "
-            "StartServiceCtrlDispatcher. Each process can call "
-            "StartServiceCtrlDispatcher only one time.\n" );
-          break;
-      }
-      return; 
-    } 
+    if( //if error occurred
+        ! msp_cpucontrolservice->RegSvcCtrlHandlerAndHandleError() )
+      return ;
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
  
-    msp_cpucontrolservice->
-        m_servicestatus.dwServiceType        = SERVICE_WIN32; 
-    msp_cpucontrolservice->
-        m_servicestatus.dwCurrentState       = //SERVICE_START_PENDING; 
-        SERVICE_RUNNING ;
-    msp_cpucontrolservice->
-        m_servicestatus.dwControlsAccepted   = SERVICE_ACCEPT_STOP 
-        | SERVICE_ACCEPT_PAUSE_CONTINUE 
-    //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
-    //"To accept these new messages[SERVICE_CONTROL_POWEREVENT], the 
-    //appropriate flags must be submitted using SetServiceStatus. In the 
-    //SERVICE_STATUS structure, the dwControlsAccepted member should be 
-    //updated to reflect the desired messages. The bitwise flags are:
-    //[...] SERVICE_ACCEPT_POWEREVENT"
-        | SERVICE_ACCEPT_POWEREVENT ;
-    msp_cpucontrolservice->
-        m_servicestatus.dwWin32ExitCode      = 0; 
-    msp_cpucontrolservice->
-        m_servicestatus.dwServiceSpecificExitCode = 0; 
-    msp_cpucontrolservice->
-      //Check-point value the service increments periodically to report its
-      //progress during a lengthy start, stop, pause, or continue operation.
-      //For example, the service should increment this value as it completes
-      //each step of its initialization when it is starting up. The user
-      //interface program that invoked the operation on the service uses this
-      //value to track the progress of the service during a lengthy operation.
-      //This value is not valid and should be zero when the service does not
-      //have a start, stop, pause, or continue operation pending.
-        m_servicestatus.dwCheckPoint         = 0; 
-    msp_cpucontrolservice->
-      //Estimated time required for a pending start, stop, pause, or 
-      //continue operation, in milliseconds. Before the specified amount 
-      //of time has elapsed, the service should make its next call to the 
-      //SetServiceStatus function with either an incremented dwCheckPoint 
-      //value or a change in dwCurrentState. If the amount of time 
-      //specified by dwWaitHint passes, and dwCheckPoint has not been 
-      //incremented or dwCurrentState has not changed, the service 
-      //control manager or service control program can assume that an error 
-      //has occurred and the service should be stopped. 
-      m_servicestatus.dwWaitHint           = 0;
-
-    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
-    //The Service Control Manager (SCM) waits until the service reports a 
-    //status of SERVICE_RUNNING. It is recommended that the service 
-    //reports this status as quickly as possible, as other components in 
-    //the system that require interaction with SCM will be blocked during this time.
-    msp_cpucontrolservice->SetServiceStatus() ;
+    msp_cpucontrolservice->SetServiceStatusAttValues() ;
 
 #if defined( _DEBUG ) && !defined(EMULATE_EXECUTION_AS_SERVICE)
   //Give time to attach a debugger to THIS process if it was not started 
@@ -929,38 +1035,17 @@ void WINAPI //MyServiceStart
 
     // Initialization code goes here. 
     //"After these calls[...,ServiceStatus()], the function should complete the initialization of the service."
-    status = msp_cpucontrolservice->MyServiceInitialization(
+    dwStatus = msp_cpucontrolservice->MyServiceInitialization(
       argc
       , argv //&specificError
       ); 
  
-    // Handle error condition 
-    if ( status == NO_ERROR )
+    msp_cpucontrolservice->HandleInitServiceFailed(dwStatus ) ;
+    if( dwStatus != NO_ERROR )
     {
-        LOG("The service was successfully initialized\n" ) ;
+      LOG("error in initialization of the service--returning\n" )
+      return;
     }
-    else
-    { 
-        msp_cpucontrolservice->
-            m_servicestatus.dwCurrentState       = SERVICE_STOPPED; 
-        msp_cpucontrolservice->
-            m_servicestatus.dwCheckPoint         = 0; 
-        msp_cpucontrolservice->
-            m_servicestatus.dwWaitHint           = 0; 
-        msp_cpucontrolservice->
-            m_servicestatus.dwWin32ExitCode      = status; 
-        //msp_cpucontrolservice->
-        //    m_servicestatus.dwServiceSpecificExitCode = specificError; 
- 
-#ifndef EMULATE_EXECUTION_AS_SERVICE
-        ::SetServiceStatus (msp_cpucontrolservice->
-            m_servicestatushandle, & msp_cpucontrolservice->
-            m_servicestatus); 
-#endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
-        //DEBUG("error in initialization of the service--returning\n" )
-        LOG("error in initialization of the service--returning\n" )
-        return; 
-    } 
  
     //// Initialization complete - report running status. 
     ////ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
@@ -989,49 +1074,15 @@ void WINAPI //MyServiceStart
       IPC_ServerThread,       // thread function name
       & msp_cpucontrolservice->m_ipcserver ,// argument to thread function 
       0,                      // use default creation flags 
-      &dwThreadId);   // returns the thread identifier 
+      & dwThreadId
+      );   // returns the thread identifier
 #endif
 
-    msp_cpucontrolservice->m_powerprofdynlinked.DisableFrequencyScalingByOS();
-    //Windows_API::DynFreqScalingThread dynfreqscalingthread(
-    msp_cpucontrolservice->mp_dynfreqscalingthreadbase = 
-#ifdef USE_WINDOWS_THREAD
-      new Windows_API::DynFreqScalingThread(
-#else //USE_WINDOWS_THREAD
-      new wxWidgets::DynFreqScalingThread(
-#endif //USE_WINDOWS_THREAD
-      msp_cpucontrolservice->mp_cpucontroller->mp_icpucoreusagegetter
-      , msp_cpucontrolservice->mp_cpucontroller
-      , msp_cpucontrolservice->mp_modelData->m_cpucoredata
-      ) ;
-    bool bContinue = false ;
-    if( msp_cpucontrolservice->mp_dynfreqscalingthreadbase )
-    {
-      LOGN("trying to start the Dynamic Voltage and Frequency Scaling thread.")
-      //dynfreqscalingthread.Run() ;
-      DWORD dwRet = msp_cpucontrolservice->mp_dynfreqscalingthreadbase->Start() ;
-      if( dwRet == ERROR_SUCCESS )
-      {
-        LOGN( "Successfully started the Dynamic Voltage and Frequency Scaling "
-            "thread.")
-        bContinue = true ;
-      }
-      else
-      {
-        LOGN( "error starting Dynamic Voltage and Frequency Scaling thread :"
-          << LocalLanguageMessageFromErrorCode(dwRet) )
-      }
-    }
-    if( bContinue )
-    {
-      LOGN("Waiting for the stop service condition to become true")
-      LOGN("service main--current thread id:" << ::GetCurrentThreadId() )
-      msp_cpucontrolservice->m_vbServiceInitialized = true ;
-      //If not wait the thread object is destroyed at end of block.
-      ::WaitForSingleObject( msp_cpucontrolservice->
-        m_hEndProcessingEvent, INFINITE) ;
-    }
-
+//    //Create after IPC was initialzed by the service. So the GUI can connect to
+//    //it.
+//    CreateProcess() ;
+//    CreateProcessAsUser() ;
+    msp_cpucontrolservice->HandleStartDynVoltAndFreqScalingThread() ;
     //CreateProcessAsUser()
     //while(1)
     //{
@@ -1072,13 +1123,39 @@ void CPUcontrolService::SetCommandLineArgs( int argc, char *  argv[] )
         m_vecstdstrCommandLineArgs.push_back(std::string(argv[argc] ) ) ;
 }
 
+void CPUcontrolService::SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew )
+{
+  if( p_cpucontrollerNew )
+  {
+//        if( mp_cpucontroller )
+//        {
+//          //Release memory.
+//          delete mp_cpucontroller ;
+//          LOGN(" current CPU controller deleted")
+//        }
+    LOGN("address of model: " << mp_modelData )
+    mp_cpucontroller = p_cpucontrollerNew ;
+    //May be NULL at startup.
+    if( mp_cpucoreusagegetter )
+      mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
+    LOGN("after setting CPU controller for usage getter")
+    mp_cpucontroller->SetModelData( //& m_modelData
+       mp_modelData ) ;
+    LOGN("before GetMaximumFrequencyInMHz. number of CPU cores: " <<
+        (WORD) mp_modelData->m_cpucoredata.GetNumberOfCPUcores() )
+    //Needed for drawing the voltage-frequency curves.
+    WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+    LOGN("after GetMaximumFrequencyInMHz: " << w )
+  }
+}
+
 void CPUcontrolService::SetServiceStatus()
 {
 #ifndef EMULATE_EXECUTION_AS_SERVICE
    if ( ! ::SetServiceStatus (
      msp_cpucontrolservice->
      //this handle is the return value of "RegisterServiceCtrlHandlerEx()"
-     m_servicestatushandle, 
+     m_service_status_handle, 
      & msp_cpucontrolservice->m_servicestatus )
      )
    { 
@@ -1090,6 +1167,59 @@ void CPUcontrolService::SetServiceStatus()
           ); 
    }
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
+}
+
+void CPUcontrolService::SetServiceStatusAttValues()
+{
+  msp_cpucontrolservice->
+      m_servicestatus.dwServiceType        = SERVICE_WIN32;
+  msp_cpucontrolservice->
+      m_servicestatus.dwCurrentState       = //SERVICE_START_PENDING;
+      SERVICE_RUNNING ;
+  msp_cpucontrolservice->
+      m_servicestatus.dwControlsAccepted   = SERVICE_ACCEPT_STOP
+      | SERVICE_ACCEPT_PAUSE_CONTINUE
+  //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
+  //"To accept these new messages[SERVICE_CONTROL_POWEREVENT], the
+  //appropriate flags must be submitted using SetServiceStatus. In the
+  //SERVICE_STATUS structure, the dwControlsAccepted member should be
+  //updated to reflect the desired messages. The bitwise flags are:
+  //[...] SERVICE_ACCEPT_POWEREVENT"
+      | SERVICE_ACCEPT_POWEREVENT
+      | SERVICE_ACCEPT_SESSIONCHANGE
+      ;
+  msp_cpucontrolservice->
+      m_servicestatus.dwWin32ExitCode      = 0;
+  msp_cpucontrolservice->
+      m_servicestatus.dwServiceSpecificExitCode = 0;
+  msp_cpucontrolservice->
+    //Check-point value the service increments periodically to report its
+    //progress during a lengthy start, stop, pause, or continue operation.
+    //For example, the service should increment this value as it completes
+    //each step of its initialization when it is starting up. The user
+    //interface program that invoked the operation on the service uses this
+    //value to track the progress of the service during a lengthy operation.
+    //This value is not valid and should be zero when the service does not
+    //have a start, stop, pause, or continue operation pending.
+      m_servicestatus.dwCheckPoint         = 0;
+  msp_cpucontrolservice->
+    //Estimated time required for a pending start, stop, pause, or
+    //continue operation, in milliseconds. Before the specified amount
+    //of time has elapsed, the service should make its next call to the
+    //SetServiceStatus function with either an incremented dwCheckPoint
+    //value or a change in dwCurrentState. If the amount of time
+    //specified by dwWaitHint passes, and dwCheckPoint has not been
+    //incremented or dwCurrentState has not changed, the service
+    //control manager or service control program can assume that an error
+    //has occurred and the service should be stopped.
+    m_servicestatus.dwWaitHint           = 0;
+
+  //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
+  //The Service Control Manager (SCM) waits until the service reports a
+  //status of SERVICE_RUNNING. It is recommended that the service
+  //reports this status as quickly as possible, as other components in
+  //the system that require interaction with SCM will be blocked during this time.
+  msp_cpucontrolservice->SetServiceStatus() ;
 }
 
 bool CPUcontrolService::ShouldCreateService(
@@ -1153,10 +1283,6 @@ void CPUcontrolService::StartDynVoltnFreqScaling()
 void CPUcontrolService::StartService()
 {
   DEBUG("begin of starting service\n");
-  LOGN("before starting service ctrl dispatcher--current thread id:" <<
-    ::GetCurrentThreadId()
-     << "\nNote: it may take 2 minutes or even more until the service control "
-     "dispatcher has finished to start")
   //SERVICE_TABLE_ENTRYA ("char") or SERVICE_TABLE_ENTRYW ( wchar_t )
   SERVICE_TABLE_ENTRY ar_service_table_entry[] = 
   { 
@@ -1196,6 +1322,10 @@ void CPUcontrolService::StartService()
      argv
      ) ;
 #else
+  LOGN("Before starting service ctrl dispatcher--current thread id:" <<
+    ::GetCurrentThreadId()
+     << "\nNote: it may take 2 minutes or even more until the service control "
+     "dispatcher has finished to start")
   //The StartServiceCtrlDispatcher function connects the main thread of a 
   //service process to the service control manager, which causes the thread 
   //to be the service control dispatcher thread for the calling process.
@@ -1231,17 +1361,14 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
     ::GetCurrentThreadId() )
    //DWORD status; 
    // Local variables.
-
    static DWORD CachedState;
    //LPEVENTINFO pEventInfo; 
 //   DWORD dwBuffer;
   if( msp_cpucontrolservice->m_vbServiceInitialized )
   {
-
    // Do not replicate current state.
    // Controls codes greater than 127 are programmer
    //      defined service control codes.
-
    if(( CachedState == dwControl) && ( dwControl < 128))
       return NO_ERROR;
 
@@ -1261,7 +1388,6 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
 
       //if( msp_cpucontrolservice->mp_cpucontroller )
       //  msp_cpucontrolservice->mp_cpucontroller->EnableOwnDVFS() ;
-
       case SERVICE_CONTROL_STOP: 
         // Do whatever it takes to stop here. 
         msp_cpucontrolservice->Stop() ;
@@ -1275,44 +1401,107 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
  
       case SERVICE_CONTROL_POWEREVENT:
       {
-        LOGN("power event")
-         switch((int) dwEventType)
-         {
-            //case PBT_APMPOWERSTATUSCHANGE:
-         case PBT_APMRESUMESUSPEND:
-             //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/pbt_apmresumesuspend.htm:
-             //"An application can receive this event only if it received the PBT_APMSUSPEND event before the computer was suspended. Otherwise, the application will receive a PBT_APMRESUMECRITICAL event."
-         case PBT_APMRESUMECRITICAL:
-               // handle event 
-            //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/handlerex.htm:
-            //"If your service handles SERVICE_CONTROL_POWEREVENT, return NO_ERROR to grant the request and an error code to deny the request."
-              //for(unsigned char by = 0 ; by < 255 ; by ++ )
-              //{
-              //  ::MessageBeep(15000);
-              //  ::Sleep(400);
-              //}
-            if( msp_cpucontrolservice->
-                m_bProcess 
-              )
-              msp_cpucontrolservice->mp_cpucontroller->
-                ResumeFromS3orS4();
-              //After ACPI S3/ S4 the performance event select 
-              //is cleared and has to be written again.
-              msp_cpucontrolservice->mp_cpucoreusagegetter->Init() ;
-              //return NO_ERROR;
-              break ;
-         case PBT_APMQUERYSUSPEND:
-           LOGN("querying suspend")
-             //TODO Before a hibernation set core 1 to a low freq and voltage
-             //to save current because I guess only the core 0 saves the
-             //RAM onto disk:
-             break;
-         default:
-           LOGN("other power event")
-           break ;
-         }
+        msp_cpucontrolservice->HandlePowerEvent(dwEventType) ;
       }
       break ;
+      case SERVICE_CONTROL_SESSIONCHANGE:
+        //http://msdn.microsoft.com/en-us/library/ms683241%28v=VS.85%29.aspx:
+        //"If dwControl is SERVICE_CONTROL_SESSIONCHANGE, this parameter can be
+        //one of the values specified in the wParam parameter of the
+        //WM_WTSSESSION_CHANGE message."
+        //http://msdn.microsoft.com/en-us/library/aa383828%28v=VS.85%29.aspx:
+        switch( dwEventType )
+        {
+          case WTS_SESSION_LOGON:
+            LOGN("Logon event")
+          case WTS_SESSION_UNLOCK:
+            //http://msdn.microsoft.com/en-us/library/ms683241%28v=VS.85%29.aspx:
+            //"If dwControl is SERVICE_CONTROL_SESSIONCHANGE, this parameter is a pointer to a WTSSESSION_NOTIFICATION  structure."
+            PWTSSESSION_NOTIFICATION pwtssession_notification =
+                (PWTSSESSION_NOTIFICATION) lpEventData ;
+            LOGN("unlock or logon event--session ID is:" <<
+              pwtssession_notification->dwSessionId )
+//            //If createing a
+//            r_service_attributes = mp_modelData->m_service_attributes ;
+//            if( r_service_attributes.m_bStartGUIonLogon )
+#ifdef _DEBUG
+             //from http://msdn.microsoft.com/en-us/library/ms682512%28v=VS.85%29.aspx:
+            //http://msdn.microsoft.com/en-us/library/ms684859%28v=VS.85%29.aspx:
+            //"If a window station name was specified in the lpDesktop  member
+            //of the STARTUPINFO structure that was used when the process was
+            //created, the process connects to the specified window station."
+            STARTUPINFOW si;
+            PROCESS_INFORMATION pi;
+             ZeroMemory( &si, sizeof(si) );
+             ZeroMemory( &pi, sizeof(pi) );
+
+             std::ostringstream stdoss ;
+             stdoss << "\\Sessions\\"
+                 << pwtssession_notification->dwSessionId
+                 << "\\Windows\\WindowStations\\WinSta0"
+                 << "\\default" ;
+             std::string stdstrSession = stdoss.str() ;
+             LOGN("session to start GUI from:" << stdstrSession )
+             //http://msdn.microsoft.com/en-us/library/ms682429%28VS.85%29.aspx:
+             //"If you want the process to be interactive, specify
+             //winsta0\default."
+             si.lpDesktop = (wchar_t*) GetStdWstring( stdstrSession).c_str() ;
+             DEBUGWN_WSPRINTF(L"si.lpDesktop:%ls", si.lpDesktop ) ;
+             si.dwFlags =
+                 //"The wShowWindow member contains additional information."
+                 STARTF_USESHOWWINDOW ;
+             //"can be specified in the nCmdShow parameter for the ShowWindow
+             //function, except for SW_SHOWDEFAULT"
+             si.wShowWindow = SW_SHOW ;
+             si.cb = sizeof(si);
+             //http://msdn.microsoft.com/en-us/library/ms682425%28VS.85%29.aspx:
+             if( //"If the function succeeds, the return value is nonzero."
+               ::CreateProcessW(
+//               ::CreateProcessAsUserW(
+               L"x86InfoAndControl_GUI_MinGW32bit.exe" ,
+               //NULL,   // No module name (use command line)
+               //"The lpCommandLine parameter can be NULL."
+                 NULL ,        // Command line
+                 NULL,           // Process handle not inheritable
+                 NULL,           // Thread handle not inheritable
+                 FALSE,          // Set handle inheritance to FALSE
+                 0,              // No creation flags
+                 NULL,           // Use parent's environment block
+                 NULL,           // Use parent's starting directory
+                 &si,            // Pointer to STARTUPINFO structure
+                 &pi            // Pointer to PROCESS_INFORMATION structure
+                 )
+//               ::CreateProcessWithLogonW(
+//                 //__in         LPCWSTR lpUsername,
+//                 L"x86InfoAndControl_GUI_MinGW32bit.exe" ,
+//                 //"If this parameter is NULL, the user name must be specified
+//                 //in UPN format."
+//                 L"localhost", //  __in_opt     LPCWSTR lpDomain,
+//                   __in         LPCWSTR lpPassword,
+//                   __in         DWORD dwLogonFlags,
+//                   __in_opt     LPCWSTR lpApplicationName,
+//                   __inout_opt  LPWSTR lpCommandLine,
+//                   __in         DWORD dwCreationFlags,
+//                   __in_opt     LPVOID lpEnvironment,
+//                   __in_opt     LPCWSTR lpCurrentDirectory,
+//                   __in         LPSTARTUPINFOW lpStartupInfo,
+//                   __out        LPPROCESS_INFORMATION lpProcessInfo
+//               )
+             )
+             {
+               LOGN("creating process succeeded")
+//                 printf( "CreateProcess failed (%d).\n", GetLastError() );
+//                 return;
+             }
+//            CreateProcessW( r_service_attributes.m_stdtstring)
+//            //when IPC GUI<->service fully works:
+//            CreateProcessUserW( r_service_attributes.m_stdtstring)
+#endif
+            break ;
+          //If locked, the GUI does not need to to the work to show anything.
+//          case WTS_SESSION_LOCK:
+        }
+        break ;
      default: 
        LOGN("service control handler--call not impl.")
          //SvcDebugOut(" [MY_SERVICE] Unrecognized opcode %ld\n", 

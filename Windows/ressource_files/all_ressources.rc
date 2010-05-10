@@ -1,0 +1,12 @@
+#include "version_info.rc"
+
+IDI_ICON1 ICON DISCARDABLE "App32.ico"
+
+//#define MANIFEST_RESOURCE_ID 1
+//MANIFEST_RESOURCE_ID RT_MANIFEST "x86InfoAndControl.exe.manifest"
+//The manifest file may NOT have a commentc
+
+//<!--Do not put the comment before the manifest (else: side-by-side error because of comment when exe is started)
+//manifest file skeleton from http://msdn.microsoft.com/en-us/magazine/cc163486.aspx#S8-->
+//
+//#include "manifest.rc"

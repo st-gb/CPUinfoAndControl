@@ -4,12 +4,12 @@
 //#include <stdlib.h>
 //#include "stdafx.h"
 //#include "global.h"
-//#ifdef _MSC_VER //MicroSoft C compiler
-//  //#include <Windef.h> // DWORD
-//  #include <Windows.h> //for DWORD, WINAPI etc.
-//  //#include <StdAfx.h>
-//  //#include "../StdAfx.h"
-//#endif
+#ifdef _MSC_VER //MicroSoft C compiler
+  #include <Windef.h> // DWORD
+  //#include <Windows.h> //for DWORD, WINAPI etc.
+  //#include <StdAfx.h>
+  //#include "../StdAfx.h"
+#endif
 #include <string>
 
 //Use an object class like std::string instead of "char *". Advantage: 

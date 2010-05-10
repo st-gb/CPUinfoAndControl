@@ -2,7 +2,7 @@
 #include "I_CPUaccess.hpp"
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
 #include <string.h> //strcat(...)
-
+#include <windef.h> //for DWORD
 #define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
 
 /*//ULONG ulECX ;

@@ -57,10 +57,10 @@
 #include <Xerces/XMLAccess.hpp>
 //#include <Windows/CalculationThread.hpp>
 #ifdef _WINDOWS
-#include <Windows/Service/ServiceBase.hpp>
 #include <Windows/DLLloadError.hpp>
-//#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
+#include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/Service/ServiceBase.hpp>
 #endif
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include "Windows/CPUcoreUsageNTQSI_OO.hpp"
@@ -79,6 +79,8 @@
 class wxObject ;
 
 extern CPUcontrolBase * gp_cpucontrolbase ;
+
+#define COMPILE_WITH_SERVICE_PROCESS_CONTROL
 
 enum
 {
@@ -101,10 +103,13 @@ enum
   , ID_DisableOtherVoltageOrFrequencyAccess
   , ID_EnableOtherVoltageOrFrequencyAccess
   , ID_EnableOrDisableOtherDVFS //,
+
   , ID_ContinueService
   , ID_PauseService
   , ID_StartService
   , ID_StopService
+  , ID_ConnectToOrDisconnectFromService
+
   , ID_UpdateViewInterval
   , ID_SaveAsDefaultPstates
   , ID_Collect_As_Default_Voltage_PerfStates
@@ -170,6 +175,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnFindDifferentPstates )
   EVT_MENU( ID_Collect_As_Default_Voltage_PerfStates ,
     MainFrame::OnCollectAsDefaultVoltagePerfStates ) 
+
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   EVT_MENU( ID_ContinueService ,
     MainFrame::OnContinueService )
@@ -179,6 +185,8 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnStartService )
   EVT_MENU( ID_StopService ,
     MainFrame::OnStopService )
+  EVT_MENU( ID_ConnectToOrDisconnectFromService ,
+    MainFrame::OnConnectToOrDisconnectFromService )
 #endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
 //#endif
   //#ifdef _WINDOWS
@@ -244,6 +252,9 @@ void MainFrame::CreateFileMenu()
   //mp_wxmenuFile->Append( ID_Service, _T("Run As Service") );
   mp_wxmenuFile->Append( ID_Quit, _T("E&xit") );
 
+  //p_wxmenuBar->Append( mp_wxmenuFile, _T("&File") );
+  //m_wxmenubar.Append( mp_wxmenuFile, _T("&File") );
+  mp_wxmenubar->Append( mp_wxmenuFile, _T("&File") );
   LOG("after file menu creation\n")
 }
 
@@ -312,7 +323,7 @@ MainFrame::MainFrame(
   CreateFileMenu() ;
 
 //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-#ifdef COMPILE_WITH_SERVICE_CONTROL
+#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   CreateServiceMenuItems() ;
 #endif
   CreateAndInitMenuItemPointers() ;
@@ -328,9 +339,6 @@ MainFrame::MainFrame(
 //#endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
 
   //wxMenuBar * mp_wxmenubar = new wxMenuBar;
-  //p_wxmenuBar->Append( mp_wxmenuFile, _T("&File") );
-  //m_wxmenubar.Append( mp_wxmenuFile, _T("&File") );
-  mp_wxmenubar->Append( mp_wxmenuFile, _T("&File") );
   //p_wxmenuBar->Append( p_wxmenuCore0, _T("for core &0") );
   //p_wxmenuBar->Append( p_wxmenuCore1, _T("for core &1") );
 
@@ -595,11 +603,20 @@ bool MainFrame::Confirm(std::ostrstream & r_ostrstream
 
 void MainFrame::CreateServiceMenuItems()
 {
-  wxMenu * p_wxmenuService = new wxMenu;
+  wxString wxstrConnectOrDisconnect ;
+  p_wxmenuService = new wxMenu ;
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
+    wxstrConnectOrDisconnect = wxT("disconnect") ;
+  else
+    wxstrConnectOrDisconnect = wxT("connect") ;
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  p_wxmenuService->Append( ID_ConnectToOrDisconnectFromService,
+    wxstrConnectOrDisconnect );
   p_wxmenuService->Append( ID_ContinueService, _T("&Continue") );
   p_wxmenuService->Append( ID_PauseService , _T("&Pause") );
-  p_wxmenuService->Append( ID_StartService , _T("&Start") );
-  p_wxmenuService->Append( ID_StopService , _T("Sto&p") );
+//  p_wxmenuService->Append( ID_StartService , _T("&Start") );
+//  p_wxmenuService->Append( ID_StopService , _T("Sto&p") );
     
   mp_wxmenubar->Append( p_wxmenuService, _T("&Service") ) ;
 }
@@ -914,6 +931,13 @@ BYTE MainFrame::CreateDynamicMenus()
     //}
     if( byReturnValue )
     {
+      if( byCoreID == 0 )
+      {
+        m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticID ;
+        //For removing per-core menus after unloading a CPU controller.
+        m_byIndexOf1stCPUcontrollerRelatedMenu = mp_wxmenubar->GetMenuCount()
+          ;
+      }
         //marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
         //    p_wxmenuCore,wMenuID, _T("high load thread (for stability check)")) ;
         //m_wxmenubar.Append(p_wxmenuCore, _T("for core &")+ byCoreID);
@@ -930,8 +954,6 @@ BYTE MainFrame::CreateDynamicMenus()
           );
         //marp_wxmenuItemHighLoadThread[byCoreID]->Check(true) ;
         //marp_wxmenuItemHighLoadThread[byCoreID]->Enable(false);
-        if( byCoreID == 0 ) 
-          m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticID ;
     }
   } //for-loop
   //SetMenuBar(&m_wxmenubar);
@@ -947,9 +969,12 @@ void MainFrame::AllowCPUcontrollerAccess()
 
 void MainFrame::DenyCPUcontrollerAccess()
 {
+  DEBUGN("MainFrame::DenyCPUcontrollerAccess() begin" )
+
   wxCriticalSectionLocker wxcriticalsectionlocker( 
     m_wxcriticalsectionCPUctlAccess ) ;
   m_bAllowCPUcontrollerAccess = false ;
+  DEBUGN("MainFrame::DenyCPUcontrollerAccess() end" )
 }
 
 void MainFrame::DisableWindowsDynamicFreqScalingHint()
@@ -1036,12 +1061,28 @@ void MainFrame::OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(e
     mp_wxmenuitemCollectAsDefaultVoltagePerfStates->IsChecked () ;
 }
 
+
+void MainFrame::OnConnectToOrDisconnectFromService(
+  wxCommandEvent & WXUNUSED(event) )
+{
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  if( ::wxGetApp().m_ipcclient.IsConnected() )
+    ::wxMessageBox("already connected to the service") ;
+  else
+//    if( ::wxGetApp().m_ipcclient.Init() )
+//      p_wxmenuService->SetLabel( ID_ConnectToOrDisconnectFromService ,
+//        wxT( "disconnect" )
+//        ) ;
+    ::wxGetApp().m_ipcclient.Init() ;
+#endif
+}
+
 void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
 {
   //ServiceBase::ContinueService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-    if( ! ::wxGetApp().m_ipcclient.IsConnected() )
+  if( ! ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.Init() ;
   if( ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.SendMessage(continue_service) ;
@@ -1179,10 +1220,17 @@ void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-    if( ! ::wxGetApp().m_ipcclient.IsConnected() )
+  //The connection may have broken after it was established, so check it here.
+  if( ! ::wxGetApp().m_ipcclient.IsConnected() )
+  {
+    LOGN("not connected to the service")
     ::wxGetApp().m_ipcclient.Init() ;
+  }
   if( ::wxGetApp().m_ipcclient.IsConnected() )
+  {
+    LOGN("connected to the service")
     ::wxGetApp().m_ipcclient.SendMessage(pause_service) ;
+  }
   else
     try
     {
@@ -1244,10 +1292,10 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 //      _T("A tool for controlling performance states of AMD family 17\n, ")
 //      _T("codename \"griffin\" (mobile) CPUs, especially for undervolting.\n")
       //_T("A tool for controlling performance states of AMD family 17\n, ")
-      _T("A tool for giving info about and controlling performance states of\n")
+      _T("A tool for giving info about and controlling performance states of (built-in):\n")
       + stdtstr +
       _T( "\n")
-
+      _T("and for other CPUs as dynamic library\n\n")
       //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
       BUILT_TIME
       //"AMD--smarter choice than Intel?\n\n"
@@ -1296,11 +1344,11 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
     {
       //wxDynLibCPUcontroller * p_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
       LOGN(" before creating dyn lib controller object")
-      LOGN("address of model: " << mp_model )
-      LOGN("address of cpucoredata: " << & mp_model->m_cpucoredata )
+      DEBUGN("address of model: " << mp_model )
+      DEBUGN("address of cpucoredata: " << & mp_model->m_cpucoredata )
 
       //Before creating a new controller the old one should be deleted.
-      gp_cpucontrolbase->PossiblyDeleteCPUcontroller() ;
+      gp_cpucontrolbase->PossiblyDeleteCPUcontrollerDynLib() ;
 
       gp_cpucontrolbase->mp_wxdynlibcpucontroller = new wxDynLibCPUcontroller(
         wxstrFilePath
@@ -1399,7 +1447,7 @@ void MainFrame::CPUcontrollerAttached(const wxString & wxstrFilePath )
 
 void MainFrame::CPUcontrollerDeleted()
 {
-//    PossiblyReleaseMemory() ;
+  PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
   mp_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
     , //const bool enable
@@ -1445,7 +1493,7 @@ void MainFrame::CPUcoreUsageGetterDeleted()
 
 void MainFrame::OnDetachCPUcontrollerDLL (wxCommandEvent & event)
 {
-  gp_cpucontrolbase->PossiblyDeleteCPUcontroller() ;
+  gp_cpucontrolbase->PossiblyDeleteCPUcontrollerDynLib() ;
 }
 
 void MainFrame::OnDetachCPUcoreUsageGetterDLL (wxCommandEvent & event)
@@ -2147,10 +2195,100 @@ void MainFrame::DrawOvervoltageProtectionCurve(
   } //if( mp_i_cpucontroller )
 }
 
+//Purpose: the output for _all_ cores should be (left-)aligned.
+//So the max. width for the attribute values of the same attribute type
+//(MHz,...) needs to be known.
+void MainFrame::StoreCurrentVoltageAndFreqInArray(
+  wxDC & r_wxdc
+//  VoltageAndFreq * & r_ar_voltageandfreq
+  , wxString  r_ar_wxstrFreqInMHz []
+  , wxString r_ar_wxstrVoltageInVolt []
+//  , float r_ar_fTempInCelsius []
+  , wxString r_ar_wxstrTempInCelsius []
+  )
+{
+  if( mp_i_cpucontroller )
+  {
+    int nWidth ;
+    WORD wFreqInMHz = 0 ;
+    wxString wxstr ;
+    wxSize wxsize ;
+    float fVoltageInVolt = 0.0f ;
+    float fTempInCelsius ;
+    //mp_cpucoredata->
+    //respect # of cpu cores
+    for ( BYTE byCPUcoreID = 0 ; byCPUcoreID <
+      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
+    {
+//      wFreqInMHz = 0 ;
+//      fVoltageInVolt = 0.0f ;
+      if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt,
+          byCPUcoreID )
+        )
+      {
+        if( wFreqInMHz == 0 )
+          r_ar_wxstrFreqInMHz[ byCPUcoreID ] = wxT("? MHz ") ;
+        else
+          r_ar_wxstrFreqInMHz[ byCPUcoreID ] = wxString::Format("%u MHz ",
+            wFreqInMHz ) ;
+//        wxstr = wxString::Format( wxT("%u"), wFreqInMHz ) ;
+        wxsize = r_wxdc.GetTextExtent(//wxstr
+          r_ar_wxstrFreqInMHz[ byCPUcoreID ] ) ;
+        nWidth = wxsize.GetWidth() ;
+        //The max freq text widthcan not easyily be determined at startup:
+        //if e.g. the documented max. multiplier is "10" and the reference
+        //clock is 100MHz, then the freq can also get > 1000 MHz because the
+        //reference clock can be a bittle higher frequented or increased via
+        // BIOS etc.
+        //So it's best to determine it at runtime.
+        if( nWidth > m_wMaxFreqInMHzTextWidth )
+          m_wMaxFreqInMHzTextWidth = nWidth ;
+
+        if( fVoltageInVolt == 0.0 )
+          r_ar_wxstrVoltageInVolt[ byCPUcoreID ] = wxT("? Volt ") ;
+        else
+          r_ar_wxstrVoltageInVolt[ byCPUcoreID ] = wxString::Format(
+            "%.4f Volt ", fVoltageInVolt ) ;
+        wxsize = r_wxdc.GetTextExtent(//wxstr
+          r_ar_wxstrVoltageInVolt[ byCPUcoreID ] ) ;
+        nWidth = wxsize.GetWidth() ;
+        if( nWidth > m_wMaxVoltageInVoltTextWidth )
+          m_wMaxVoltageInVoltTextWidth = nWidth ;
+//        r_ar_voltageandfreq[byCPUcoreID].m_fVoltageInVolt = fVoltageInVolt ;
+//        r_ar_voltageandfreq[byCPUcoreID].m_wFreqInMHz = wFreqInMHz ;
+      }
+      fTempInCelsius = mp_i_cpucontroller->
+        GetTemperatureInCelsius(byCPUcoreID) ;
+      if( fTempInCelsius ==
+      #ifdef _MSC_VER
+            FLT_MIN
+      #else
+            __FLT_MIN__
+      #endif
+         )
+         r_ar_wxstrTempInCelsius[ byCPUcoreID ] = wxT("? °C ") ;
+      else
+        //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
+        //"Use the shorter of %e or %f"
+        //-> if "%.3g" (max 3 digits after decimal point):
+        //    for "60.0" it is "60"
+        //   for  "60.1755" it is "60.175"
+        r_ar_wxstrTempInCelsius[ byCPUcoreID ] = wxString::Format( "%.3g °C " ,
+          fTempInCelsius ) ;
+      wxsize = r_wxdc.GetTextExtent(//wxstr
+        r_ar_wxstrTempInCelsius[ byCPUcoreID ] ) ;
+      nWidth = wxsize.GetWidth() ;
+      if( nWidth > m_wMaxTemperatureTextWidth )
+        m_wMaxTemperatureTextWidth = nWidth ;
+    }
+  }
+}
+
 void MainFrame::DrawCurrentPstateInfo(
   wxDC & r_wxdc
   )
 {
+  BYTE byCPUcoreID = 0 ;
    //DWORD dwEDX ;
    //DWORD dwLowmostBitsCurrentLimitRegister, dwLowmostBits ;
    //ULONGLONG ull ;
@@ -2192,110 +2330,198 @@ void MainFrame::DrawCurrentPstateInfo(
   {
     DEBUGN("DrawCurrentPstateInfo--Number of CPU cores:" <<
         (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
-   //TODO respect # of cpu cores
-   for ( BYTE byCPUcoreID = 0 ; byCPUcoreID < 
-     mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
-   {
-     wFreqInMHz = 0 ;
-     fVoltageInVolt = 0.0f ;
-     if( mp_i_cpucontroller )
-     {
-       if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt, byCPUcoreID ) )
-       {
-       }
-       fTempInCelsius = mp_i_cpucontroller->GetTemperatureInCelsius(byCPUcoreID) ;
-       if( fTempInCelsius ==
-  #ifdef _MSC_VER
-         FLT_MIN
-  #else
-         __FLT_MIN__
-  #endif
-         )
-         wxstrTemperature = wxT("? °C") ;
-       else
-         wxstrTemperature = wxString::Format( "%.3f °C" , fTempInCelsius ) ;
-     }
-     //mp_i_cpucontroller->
-     fCPUload = -1.0 ;
-     if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
-     {
-       fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ] ;
-       wxstrCPUcoreUsage = wxString::Format(
-#ifdef _WINDOWS
-          _T("usage in percent:%.3f")
-#else
-          //when compiled with MSVC and running under WinXP the executable
-          //crashes with this format string (surely because of the 1st "%")
-          _T(" usage in %:%.3f")
-#endif
-        , fCPUload * 100.0f
+    wxString ar_wxstrCPUcoreVoltage [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+    wxString ar_wxstrTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+    wxString ar_wxstrFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+    if( mp_i_cpucontroller )
+    {
+//      VoltageAndFreq ar_voltageandfreq[mp_cpucoredata->m_byNumberOfCPUCores] ;
+//      float ar_fTempInDegCelsius [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+      StoreCurrentVoltageAndFreqInArray(
+//        ar_voltageandfreq,
+//        ar_fTempInDegCelsius
+        r_wxdc
+        , ar_wxstrFreqInMHz
+        , ar_wxstrCPUcoreVoltage
+        , ar_wxstrTemperature
         ) ;
-     }
-
-     if( wFreqInMHz == 0 )
-       wxstrFreqInMHz = wxT("? MHz") ;
-     else
-       wxstrFreqInMHz = wxString::Format("%u MHz", wFreqInMHz ) ;
-     if( fVoltageInVolt == 0.0 )
-       wxstrCPUcoreVoltage = wxT("? Volt") ;
-     else
-       wxstrCPUcoreVoltage = wxString::Format("%.4f Volt", fVoltageInVolt
-        ) ;
-#ifdef _DEBUG
-     if ( fCPUload == 0.0 )
-     {
-//         //Breakpoint possibility
-//         int i = 0 ;
-     }
-#endif
-      //wxmemorydc
-      r_wxdc.DrawText(
-        wxString::Format(
-          //We need a _T() macro (wide char-> L"", char->"") for EACH
-          //line to make it compitable between char and wide char.
-          _T("Core %u: ")
-          _T("current p-state: ")
-          //.4f : 4 digits after comma
-          //_T("%.4f Volt ")
-          _T("%s ")
-          //_T("%u MHz")
-          _T("%s")
-          //.3f : 3 digits after comma
-//#ifdef _WINDOWS
-//			      _T(" usage in percent:%.3f")
-//#else
-//            //when compiled with MSVC and running under WinXP the executable 
-//            //crashes with this format string (surely because of the 1st "%")
-//			      _T(" usage in %:%.3f")
+    }
+    else
+    {
+      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+        ++ wCoreID )
+      {
+        ar_wxstrCPUcoreVoltage [ wCoreID ] = wxT("?");
+        ar_wxstrTemperature [ wCoreID ] = wxT("?");
+        ar_wxstrFreqInMHz [ wCoreID ] = wxT("?");
+      }
+    }
+//     if( wFreqInMHz == 0 )
+//       wxstrFreqInMHz = wxT("? MHz") ;
+//     else
+//       wxstrFreqInMHz = wxString::Format("%u MHz", wFreqInMHz ) ;
+//     if( fVoltageInVolt == 0.0 )
+//       wxstrCPUcoreVoltage = wxT("? Volt") ;
+//     else
+//       wxstrCPUcoreVoltage = wxString::Format("%.4f Volt", fVoltageInVolt
+//        ) ;
+//#ifdef _DEBUG
+//     if ( fCPUload == 0.0 )
+//     {
+////         //Breakpoint possibility
+////         int i = 0 ;
+//     }
 //#endif
-          _T(" %s")
-          _T(" %s")
-          //"counter val.:%I64u"
-          ,
-          (WORD) byCPUcoreID ,
-          //fVoltageInVolt ,
-          wxstrCPUcoreVoltage.fn_str() ,
-          //wFreqInMHz ,
-          wxstrFreqInMHz.fn_str() ,
-          //mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ]
-          //fCPUload * 100.0f
-          wxstrCPUcoreUsage.fn_str()
-          //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
-          //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
-          , wxstrTemperature.fn_str()
-        )
-        //x coordinate
-        //, 10
-        , 40
-        //y coordinate
-        , //90
-        //m_wDiagramHeight - ( 20 *
-        //  (mp_cpucoredata->m_byNumberOfCPUCores + 1 ) ) +
-        //  ( byCPUcoreID * 20 )
-        byCPUcoreID * 20
-        ) ;
-
-   } //for-loop
+      //wxmemorydc
+     wxString wxstr ;
+     wxSize wxsize ;
+     int nWidth ;
+     WORD wMaxCoreNumberTextWidth = 0 ;
+     wxCoord wxcoordWidth ;
+     wxCoord wxcoordHeight ;
+     wxCoord wxcoordDescent ;
+     wxCoord wxcoordX ;
+     r_wxdc.GetTextExtent(
+       wxT("|"),
+       & wxcoordWidth , //wxCoord *w,
+       & wxcoordHeight , //wxCoord *h,
+       & wxcoordDescent //wxCoord *descent = NULL,
+       //wxCoord *externalLeading = NULL, wxFont *font = NULL
+       ) ;
+     WORD wTextHeight = wxcoordHeight + wxcoordDescent ;
+     wxcoordX = 45 ;
+     for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+       ++ wCoreID )
+     {
+       wxstr =  wxString::Format(
+         //We need a _T() macro (wide char-> L"", char->"") for EACH
+         //line to make it compitable between char and wide char.
+         wxT("Core %u: ")
+         , wCoreID
+         ) ;
+       wxsize = r_wxdc.GetTextExtent( wxstr ) ;
+       nWidth = wxsize.GetWidth() ;
+       if( nWidth > wMaxCoreNumberTextWidth )
+         wMaxCoreNumberTextWidth = nWidth ;
+       r_wxdc.DrawText(
+         wxstr
+         , wxcoordX //x-coord
+         , wCoreID * wTextHeight //y-coord
+         ) ;
+     }
+     wxcoordX += wMaxCoreNumberTextWidth ;
+//      r_wxdc.DrawText(
+//        wxString::Format(
+//          //We need a _T() macro (wide char-> L"", char->"") for EACH
+//          //line to make it compitable between char and wide char.
+//          _T("Core %u: ")
+////          _T("current p-state: ")
+//          //.4f : 4 digits after comma
+//          //_T("%.4f Volt ")
+////          _T("%s ")
+////          //_T("%u MHz")
+////          _T("%s")
+////          //.3f : 3 digits after comma
+////          _T(" %s")
+////          _T(" %s")
+//          //"counter val.:%I64u"
+//          ,
+//          (WORD) byCPUcoreID
+//          //fVoltageInVolt ,
+////         , wxstrCPUcoreVoltage.fn_str() ,
+////          //wFreqInMHz ,
+////          wxstrFreqInMHz.fn_str() ,
+////          //mp_cpucoredata->m_arfCPUcoreLoadInPercent[ byCPUcoreID ]
+////          //fCPUload * 100.0f
+////          wxstrCPUcoreUsage.fn_str()
+////          //, m_clocksnothaltedcpucoreusagegetter.m_ar_cnh_cpucore_ugpca[
+////          //	byCPUcoreID].m_ullPreviousPerformanceEventCounter3
+////          , wxstrTemperature.fn_str()
+//        )
+//        //x coordinate
+//        //, 10
+//        , 40
+//        //y coordinate
+//        , //90
+//        //m_wDiagramHeight - ( 20 *
+//        //  (mp_cpucoredata->m_byNumberOfCPUCores + 1 ) ) +
+//        //  ( byCPUcoreID * 20 )
+//        byCPUcoreID * 20
+//        ) ;
+      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+        ++ wCoreID )
+      {
+        r_wxdc.DrawText(
+//          wxString::Format( wxT("%s Volt ") ,
+//            ar_wxstrCPUcoreVoltage[ wCoreID ]
+//            //MUST use C-string, else the program hung and allocated a lot of RAM
+//            .fn_str()
+//            )
+          ar_wxstrCPUcoreVoltage[ wCoreID ]
+          , wxcoordX //x-coord
+          , wCoreID * wTextHeight //y-coord
+          ) ;
+      }
+      wxcoordX += m_wMaxVoltageInVoltTextWidth ;
+      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+        ++ wCoreID )
+      {
+        r_wxdc.DrawText(
+//          wxString::Format( wxT("%s MHz ") ,
+//            ar_wxstrCPUcoreVoltage[ wCoreID ]
+//            //MUST use C-string, else the program hung and allocated a lot of RAM
+//            .fn_str()
+//            )
+          ar_wxstrFreqInMHz[ wCoreID ]
+          , wxcoordX //x-coord
+          , wCoreID * wTextHeight //y-coord
+          ) ;
+      }
+      wxcoordX += m_wMaxFreqInMHzTextWidth ;
+      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+        ++ wCoreID )
+      {
+        r_wxdc.DrawText(
+//          wxString::Format( wxT("%s MHz ") ,
+//            ar_wxstrCPUcoreVoltage[ wCoreID ]
+//            //MUST use C-string, else the program hung and allocated a lot of RAM
+//            .fn_str()
+//            )
+          ar_wxstrTemperature[ wCoreID ]
+          , wxcoordX //x-coord
+          , wCoreID * wTextHeight //y-coord
+          ) ;
+      }
+      wxcoordX += m_wMaxTemperatureTextWidth ;
+      //mp_i_cpucontroller->
+      if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+      {
+        fCPUload = -1.0 ;
+        for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+          ++ wCoreID )
+        {
+          fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ wCoreID ] ;
+          wxstr = wxString::Format(
+   //#ifdef _WINDOWS
+   #ifdef _MSC_VER
+             _T("usage in percent:%.3f")
+   #else
+             //when compiled with MSVC and running under WinXP the executable
+             //crashes with this format string (surely because of the 1st "%")
+             //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
+             //"  A % followed by another % character will write % to stdout."
+             wxT("usage:%.3f%%")
+   #endif
+           , fCPUload * 100.0f
+           ) ;
+          r_wxdc.DrawText(
+            wxstr
+            , wxcoordX //x-coord
+            , wCoreID * wTextHeight //y-coord
+            ) ;
+        }
+      }
+      //   } //for-loop
   }
   DEBUGN("MainFrame::DrawCurrentPstateInfo end")
 }
@@ -2788,9 +3014,10 @@ void MainFrame::Notify() //overrides wxTimer::Notify()
 }
 
 //Called by the destructor and by OnDetachCPUcontrollerDLL()
-void MainFrame::PossiblyReleaseMemory()
+void MainFrame::PossiblyReleaseMemForCPUcontrollerUIcontrols()
 {
-  BYTE byMenuPosFor1stCPUcore = 2 ;
+  BYTE byMenuPosFor1stCPUcore = //2
+      m_byIndexOf1stCPUcontrollerRelatedMenu ;
   //May be NULL if the CPU controller is NULL.
   if( m_arp_freqandvoltagesettingdlg )
   {
@@ -3093,44 +3320,44 @@ void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 #ifdef COMPILE_WITH_SERVICE_CAPABILITY
   void MainFrame::OnStartService(wxCommandEvent& WXUNUSED(event))
   {
-    SERVICE_TABLE_ENTRY   DispatchTable[] = 
-    { 
-      { 
-        //"Pointer to a null-terminated string that specifies the name of a service to be run in this service process. 
-        //If the service is installed with the SERVICE_WIN32_OWN_PROCESS service type, this member is ignored, but cannot be NULL. This member can be an empty string ("").
-        //If the service is installed with the SERVICE_WIN32_SHARE_PROCESS service type, this member specifies the name of the service that uses the ServiceMain function pointed to by the lpServiceProc member."
-        "MyService", 
-        //Pointer to a ServiceMain function. 
-        MyServiceStart      }, 
-      //NULL values mark the end.
-      { NULL,              NULL          } 
-    }; 
-
-    if (!::StartServiceCtrlDispatcher( DispatchTable))
-      //If the function fails, the return value is zero. 
-    {
-      DWORD dwErrorCode = ::GetLastError() ;
-      DEBUG(" [MY_SERVICE] StartServiceCtrlDispatcher error number: %lu\n", 
-        dwErrorCode );
-      switch(dwErrorCode)
-      {
-      case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
-        DEBUG("Typically, this error indicates that the program is being run as a console application rather than as a service. "
-"If the program will be run as a console application for debugging purposes, structure it such that service-specific code is not called when this error is returned.\n");
-        break;
-      case ERROR_INVALID_DATA:
-        DEBUG("The specified dispatch table contains entries that are not in the proper format.\n");
-        break;
-      case ERROR_SERVICE_ALREADY_RUNNING:
-        DEBUG("The process has already called \n");
-        break;
-      default:
-        DEBUG("error code was not set by the service control manager directly\n");
-      }
-      ::wxMessageBox("error starting service");
-    }
-    else
-      ::wxMessageBox("service succ. started ");
+//    SERVICE_TABLE_ENTRY   DispatchTable[] =
+//    {
+//      {
+//        //"Pointer to a null-terminated string that specifies the name of a service to be run in this service process.
+//        //If the service is installed with the SERVICE_WIN32_OWN_PROCESS service type, this member is ignored, but cannot be NULL. This member can be an empty string ("").
+//        //If the service is installed with the SERVICE_WIN32_SHARE_PROCESS service type, this member specifies the name of the service that uses the ServiceMain function pointed to by the lpServiceProc member."
+//        "MyService",
+//        //Pointer to a ServiceMain function.
+//        MyServiceStart      },
+//      //NULL values mark the end.
+//      { NULL,              NULL          }
+//    };
+//
+//    if (!::StartServiceCtrlDispatcher( DispatchTable))
+//      //If the function fails, the return value is zero.
+//    {
+//      DWORD dwErrorCode = ::GetLastError() ;
+//      DEBUG(" [MY_SERVICE] StartServiceCtrlDispatcher error number: %lu\n",
+//        dwErrorCode );
+//      switch(dwErrorCode)
+//      {
+//      case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
+//        DEBUG("Typically, this error indicates that the program is being run as a console application rather than as a service. "
+//"If the program will be run as a console application for debugging purposes, structure it such that service-specific code is not called when this error is returned.\n");
+//        break;
+//      case ERROR_INVALID_DATA:
+//        DEBUG("The specified dispatch table contains entries that are not in the proper format.\n");
+//        break;
+//      case ERROR_SERVICE_ALREADY_RUNNING:
+//        DEBUG("The process has already called \n");
+//        break;
+//      default:
+//        DEBUG("error code was not set by the service control manager directly\n");
+//      }
+//      ::wxMessageBox("error starting service");
+//    }
+//    else
+//      ::wxMessageBox("service succ. started ");
   }
 #endif //#ifdef COMPILE_WITH_SERVICE_CAPABILITY
 
@@ -3406,11 +3633,36 @@ void MainFrame::RecreateDisplayBuffers()
     m_wxmemorydcStatic.GetCharHeight() / 2 ;
 }
 
+//in order to draw voltage and freq aligned if more than 1 core/ to draw at
+//the same pos for many intervals:
+//core 0:  0.9  V 1100 MHz
+//core 1:  1.11 V 550  MHz
+
+void MainFrame::DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc)
+{
+  wxString wxstrMaxFreq = wxString::Format( "%u",
+    mp_cpucoredata->m_wMaxFreqInMHz ) ;
+  //the max. freq. usually has the max draw width.
+  m_wMaxFreqWidth = r_wxdc.GetTextExtent(wxstrMaxFreq).GetWidth() ;
+  //Because max. voltage ID is lowest voltage for AMD Griffin but highest
+  //voltage for Pentium M.
+  float fVoltageForMaxVoltageID = mp_i_cpucontroller->GetVoltageInVolt(
+    mp_cpucoredata->m_byMaxVoltageID ) ;
+  float fVoltageForMinVoltageID = mp_i_cpucontroller->GetVoltageInVolt(
+    mp_cpucoredata->m_byMinVoltageID ) ;
+  float fMaxVoltage = fVoltageForMaxVoltageID > fVoltageForMinVoltageID ?
+      fVoltageForMaxVoltageID : fVoltageForMinVoltageID ;
+  wxString wxstrMaxVolt = wxString::Format( "%f", fMaxVoltage ) ;
+  //the max. voltage usually has the max draw width.
+  m_wMaxVoltageWidth = r_wxdc.GetTextExtent(wxstrMaxFreq).GetWidth() ;
+}
+
 void MainFrame::RedrawEverything()
 {
   //May be NULL at startup.
   if( mp_i_cpucontroller )
   {
+    DetermineMaxVoltageAndMaxFreqDrawWidth(m_wxmemorydcStatic) ;
     //Control access to m_bAllowCPUcontrollerAccess between threads.
     //m_wxCriticalSectionCPUctlAccess.Enter() ;
     //wxCriticalSectionLocker wxcriticalsectionlocker( 
@@ -3422,7 +3674,8 @@ void MainFrame::RedrawEverything()
 //      int i = 0 ;
       m_fMinVoltage = mp_i_cpucontroller->GetMinimumVoltageInVolt() ;
       m_fMaxMinusMinVoltage = m_fMaxVoltage - m_fMinVoltage ;
-      RecreateDisplayBuffers() ;
+      RecreateDisplayBuffers(//m_wxmemorydcStatic
+        ) ;
       //m_wxbufferedpaintdcStatic.SelectObject(mp_wxbitmapStatic) ;
     //  if( mp_wxbufferedpaintdc
     //  wxBufferedPaintDC mp_wxbufferedpaintdc ( this ) ;
@@ -3490,9 +3743,13 @@ void MainFrame::RedrawEverything()
   }
 }
 
+//Also called when CPU controller was changed.
 void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
 {
   mp_i_cpucontroller = p_cpucontroller ;
+  m_wMaxFreqInMHzTextWidth = 0 ;
+  m_wMaxVoltageInVoltTextWidth = 0 ;
+  m_wMaxTemperatureTextWidth = 0 ;
 }
 
 //void MainFrame::SetPumaStateController(GriffinController * p_pumastatectrl)

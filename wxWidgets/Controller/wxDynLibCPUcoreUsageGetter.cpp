@@ -49,11 +49,17 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         //By passing a pointer to an object the DLL that receives this pointer
         //has to interpret the struct (an object is a data/ a struct +
         //functions) in the same way as this executable.
-        //This means that the members of the struct must both habe the
+        //This means that the members of the struct must both have the
         //same alignment and (relative) position.
         //For instance there were crashes when exe was compiled with MinGW
         //and the DLL was compiled with MSVC.
+//#ifndef _DEBUG
+//        //TODO
+//        0 //just for testing what happens if the DLL wants to call operations
+            // of I_CPUaccess on a NULL pointer
+//#else
         mp_cpuaccess
+//#endif
         ) ;
       if( m_pfngetcpucoreusage //&& m_pfn_dll_init_type
           )
@@ -115,9 +121,8 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
 #ifdef _DEBUG
     {
       float f = (*m_pfngetcpucoreusage)(byCPUcoreNumber) ;
-      //DEBUG_COUTN(
-      DEBUGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
-        "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
+//      DEBUGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
+//        "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
       arf[byCPUcoreNumber] = f ;
     }
 #else

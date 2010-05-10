@@ -1,6 +1,6 @@
 #include "NamedPipeServer.hpp"
 #include <aclapi.h>
-#include "DiscretionaryAccessControlList.h"
+#include <Windows/DiscretionaryAccessControlList.h>
 #ifdef __CYGWIN__
   #include <mingw/tchar.h> //for _T(...)
 #else
@@ -112,16 +112,16 @@ VOID PipeClientThread(LPVOID lpvParam)
    // The thread's parameter is a handle to a pipe instance. 
    //hPipe = (HANDLE) lpvParam; 
    NamedPipeServer * p_namedpipeserver = (NamedPipeServer *) lpvParam ;
-   LOGN("p_namedpipeserver: " << p_namedpipeserver)
+   DEBUGN("p_namedpipeserver: " << p_namedpipeserver)
    if( p_namedpipeserver )
    {
      hPipe = p_namedpipeserver->m_handlePipe ;
-     LOGN("pipe handle: " << hPipe )      
+     DEBUGN("pipe handle: " << hPipe )
      while (1) 
      { 
         LOGN("waiting blocked for reading from pipe client")
        // Read client requests from the pipe. 
-        fSuccess = ReadFile( 
+        fSuccess = ::ReadFile(
            hPipe        // handle to pipe 
            //chRequest,    // buffer to receive data 
            , & byCommand
@@ -170,8 +170,12 @@ NamedPipeServer::NamedPipeServer(I_ServerProcess * p_serverprocess)
 
 NamedPipeServer::~NamedPipeServer()
 {
+  DEBUGN("~NamedPipeServer()")
    if ( mp_security_descriptor )
+   {
       free( mp_security_descriptor );
+      DEBUGN("freed the sec desc")
+   }
 }
 
 BYTE NamedPipeServer::CreateSecAttributes(
@@ -487,7 +491,7 @@ BYTE NamedPipeServer::Init(
     sa.bInheritHandle = TRUE;
     sa.lpSecurityDescriptor = mp_security_descriptor ;
 
-    if( CreateMyDACL(&sa) )
+    if( DowngradeDACL(&sa) )
     //{
     //}
     {
@@ -497,11 +501,16 @@ BYTE NamedPipeServer::Init(
       m_handlePipe = 
         //If the function succeeds, the return value is a handle to the 
         //server end of a named pipe instance.
+        //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
         ::CreateNamedPipe(
           //The string must have the following form: \\.\pipe\pipename
           //"\\\\.\\pipe\\CPUcontrollerService" //LPCTSTR lpName,
           lpszPipename
+
           , PIPE_ACCESS_DUPLEX //DWORD dwOpenMode,
+            //"The caller will have write access to the named pipe's
+            //discretionary access control list (ACL)."
+            | WRITE_DAC //necessary for changing the sec desc after creation?!
           , PIPE_TYPE_BYTE //DWORD dwPipeMode,
             | PIPE_WAIT        // blocking mode 
           , PIPE_UNLIMITED_INSTANCES //DWORD nMaxInstances,
@@ -510,11 +519,15 @@ BYTE NamedPipeServer::Init(
           //DWORD nDefaultTimeOut,
           , NMPWAIT_USE_DEFAULT_WAIT // client time-out 
           //LPSECURITY_ATTRIBUTES lpSecurityAttributes
-          //If lpSecurityAttributes is NULL, the named pipe gets a default 
-          //security descriptor and the handle cannot be inherited. 
+          //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
+          //"If lpSecurityAttributes is NULL, the named pipe gets a default
+          //security descriptor and the handle cannot be inherited."
           //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/security_descriptor.htm
-          //The ACLs in the default security descriptor for a named pipe grant full control to the LocalSystem account, administrators, and the creator owner. They also grant read access to members of the Everyone group and the anonymous account. 
-          //, NULL 
+          //"The ACLs in the default security descriptor for a named pipe grant
+          //full control to the LocalSystem account, administrators, and the
+          //creator owner. They also grant read access to members of the
+          //Everyone group and the anonymous account."
+//          , NULL
           , & sa
         );
       //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/impersonatenamedpipeclient.htm:
@@ -538,7 +551,8 @@ BYTE NamedPipeServer::Init(
       else
       {
         LOGN("CreatePipe succeeded"); 
-        OutputPipeInfo(m_handlePipe) ;
+//        AddLowPrivilegedACE(m_handlePipe) ;
+//        OutputPipeInfo(m_handlePipe) ;
         LOGN("Waiting for incoming client connections")
         // Wait for the client to connect; if it succeeds, 
         // the function returns a nonzero value. If the function
@@ -552,7 +566,7 @@ BYTE NamedPipeServer::Init(
         if (fConnected) 
         { 
           DWORD dwThreadId ;
-          LOGN("A client connected") ;
+          LOGN("pipe server: A client connected") ;
         // Create a thread for this client. 
           HANDLE hThread = ::CreateThread( 
               NULL,              // no security attribute 
@@ -564,9 +578,9 @@ BYTE NamedPipeServer::Init(
               & dwThreadId // returns thread ID 
               );
 
-           if (hThread == NULL) 
+           if ( hThread == NULL )
            {
-              LOGN("CreateThread failed"); 
+              LOGN("pipe server: CreateThread failed");
               return 0;
            }
            else ::CloseHandle(hThread); 

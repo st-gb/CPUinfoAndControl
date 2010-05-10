@@ -54,7 +54,9 @@ BYTE NamedPipeClient::Init()
  
       if ( ! ::WaitNamedPipe(lpszPipename, 20000)) 
       { 
-         LOGN("Could not open pipe"); 
+         dwLastError = ::GetLastError() ;
+         LOGN("Could not open pipe:" <<
+           ::LocalLanguageMessageFromErrorCode(dwLastError) );
          return 0;
       } 
    } 
@@ -76,6 +78,48 @@ BYTE NamedPipeClient::Init()
    return 1; 
 }
 
+bool NamedPipeClient::IsConnected()
+{
+  bool bConnected = false ;
+  DWORD dwState , dwCurInstances ;
+  DWORD nMaxUserNameSize ;
+  BOOL bool_ = ::GetNamedPipeHandleState(
+    m_handleClientPipe , //__in       HANDLE hNamedPipe,
+    & dwState , //__out_opt  LPDWORD lpState,
+    //http://msdn.microsoft.com/en-us/library/aa365443%28VS.85%29.aspx:
+    //"A pointer to a variable that receives the number of current pipe
+    //instances."
+    & dwCurInstances ,//__out_opt  LPDWORD lpCurInstances,
+    //http://msdn.microsoft.com/en-us/library/aa365443%28v=VS.85%29.aspx:
+    //"This parameter must be NULL if the specified pipe handle is to the
+    //server end of a named pipe or if client and server processes are on the
+    //same computer. This parameter can be NULL if this information is not
+    //required."
+    NULL , //__out_opt  LPDWORD lpMaxCollectionCount,
+    //http://msdn.microsoft.com/en-us/library/aa365443%28v=VS.85%29.aspx:
+    //"This parameter must be NULL if the specified pipe handle is to the
+    //server end of a named pipe or if client and server processes are on the
+    //same computer. This parameter can be NULL if this information is not
+    //required."
+    NULL ,//__out_opt  LPDWORD lpCollectDataTimeout,
+    //"This parameter must be NULL if the specified pipe handle is to the
+    //client end of a named pipe."
+    NULL ,//__out_opt  LPTSTR lpUserName,
+    nMaxUserNameSize //__in       DWORD nMaxUserNameSize
+  );
+  if( bool_ )
+  {
+    LOGN("pipe state:" << dwState << "# of current instances:" << dwCurInstances )
+    if( dwCurInstances > 0 )
+      bConnected = true ;
+  }
+  else //-> failed when it was not connected
+  {
+    DEBUGN("GetNamedPipeHandleState failed")
+  }
+  return bConnected ;
+}
+
 //void NamedPipeClient::SetDisconnectCallbackFunction(
 //  void (* pfnCallback)()  )
 //{
@@ -95,7 +139,7 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
     , 1
     , & dwNumberOfBytesWritten   // bytes written 
     , NULL );                  // not overlapped 
-   if (!fSuccess) 
+   if ( ! fSuccess )
    {
       LOGN("WriteFile failed"); 
       m_bConnected = false ;

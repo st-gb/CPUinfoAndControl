@@ -3,6 +3,7 @@
 #include "../global.h" //for BYTE, WORD
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
 #include <set>
+#include <string> //std::string
 //#ifdef __WXMSW__
 ////because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208:
 ////   'void': Keine Elemente definiert, die diesen Typ verwenden

@@ -176,7 +176,8 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           //NULL
           gp_cpucontrolbase->GetCPUaccess()
           ) ;
-        mp_model->m_stdstrCPUcontrollerDynLibPath = stdstr ;
+        mp_model->m_stdstrCPUcontrollerDynLibPath = //stdstr ;
+            wxstrFilePath ;
         LOGN("CPU controller DLL: successfully loaded and function pointers to it assigned.")
 //        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
 //           //mp_wxdynlibcpucontroller
@@ -212,7 +213,8 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           //, 
           * p_cpucoredata
           ) ;
-        mp_model->m_stdstrCPUcoreUsageGetterDynLibPath = stdstr ;
+        mp_model->m_stdstrCPUcoreUsageGetterDynLibPath = //stdstr ;
+          wxstrFilePath ;
 
         //If no CPU controller DLL should be loaded or loading it failed it is
         //"0".

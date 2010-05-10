@@ -34,93 +34,25 @@ public:
   ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
   wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
-  CPUcontrolBase( )
-    : 
-    mp_cpucontroller( NULL)
-    , mp_cpucoreusagegetter( NULL)
-    , mp_userinterface (NULL)
-    , mp_wxdynlibcpucontroller (NULL)
-    , mp_wxdynlibcpucoreusagegetter ( NULL )
-  {
-  }
+  CPUcontrolBase( ) ;
+
   //dtor must exist, else g++: "undefined reference to `vtable for
   //CPUcontrolBase'"?
   ~CPUcontrolBase( ) {}
-  virtual void DeleteCPUcontroller()
-  {
-    if( mp_cpucontroller )
-      //Release memory.
-      delete mp_cpucontroller ;
-    mp_cpucontroller = NULL ;
-    //May be NULL at startup.
-    if( mp_cpucoreusagegetter )
-      mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
-  }
-  virtual void EndDVFS() {}
-  //Declare here because e.g. either a service or a GUI may delete a CPU core
-  //usage getter.a
-  void PossiblyDeleteCPUcontroller()
-  {
-    if( //gp_cpucontrolbase->
-      //mp_wxdynlibcpucontroller
-      //This may either point to a built-in CPU controller or to a dyn lib
-      //CPU controller.
-      mp_cpucontroller
-      )
-    {
-      EndDVFS() ;
-      //mp_wxx86infoandcontrolapp->
-//        SetCPUcontroller( NULL ) ;
-      //mp_wxx86infoandcontrolapp->
-        DeleteCPUcontroller() ;
-//      delete //mp_wxx86infoandcontrolapp->
-//        //mp_wxdynlibcpucontroller ;
-//        //This may either point to a built-in CPU controller or to a dyn lib
-//        //CPU controller.
-//        mp_cpucontroller ;
-      //delete mp_wxdynlibcpucontroller ;
+  virtual void DeleteCPUcontroller() ;
 
-      //If the CPU controller was a dyn lib CPU controller this pointer also
-      //has do be set to NULL.
-      //gp_cpucontrolbase->
-        mp_wxdynlibcpucontroller = NULL ;
-      if( mp_userinterface )
-        //E.g. do stuff like disable "unload dyn lib CPU controller" in menue.
-        mp_userinterface->CPUcoreUsageGetterDeleted() ;
-    }
-  }
+  virtual void EndDVFS() {}
+  //Declare here because e.g. either a service or a GUI may delete a CPU
+  //controller.
+  //"Possibly" because: if the controller is NULL it is not being deleted.
+  void PossiblyDeleteCPUcontrollerDynLib() ;
+
   //Declare here because e.g. either a service or a GUI may delete a CPU core
   //usage getter.
-  void PossiblyDeleteCPUcoreUsageGetter()
-  {
-    if( //gp_cpucontrolbase->
-        mp_wxdynlibcpucoreusagegetter )
-    {
-      //mp_wxx86infoandcontrolapp->SetCPUcontroller( NULL ) ;
-      //mp_wxx86infoandcontrolapp->DeleteCPUcontroller() ;
+  void PossiblyDeleteCPUcoreUsageGetter() ;
 
-      EndDVFS() ;
-      //mp_wxx86infoandcontrolapp->
-      LOGN("deleting existing CPU core usage getter")
-      //Must delete instance of ICPUcoreUsageGetter (base class of
-      //wxDynLibCPUcoreUsageGetter).
-      //Else the destructor of wxDynLibCPUcoreUsageGetter was not called and
-      //so the DLL was not unloaded.
-      delete mp_cpucoreusagegetter ;
-        mp_cpucoreusagegetter = NULL ;
-//      delete //gp_cpucontrolbase->
-//        mp_wxdynlibcpucoreusagegetter ;
-      //gp_cpucontrolbase->
-        mp_wxdynlibcpucoreusagegetter = NULL ;
-      //delete mp_wxdynlibcpucontroller ;
-      //mp_wxdynlibcpucontroller = NULL ;
-      //PossiblyReleaseMemory() ;
-      //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
-    }
-  }
   I_CPUaccess * GetCPUaccess() { return mp_i_cpuaccess ; }
   virtual void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) {}
 } ;
-
 
 #endif /* CPUCONTROLBASE_HPP_ */

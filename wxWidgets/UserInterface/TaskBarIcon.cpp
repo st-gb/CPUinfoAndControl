@@ -4,7 +4,7 @@
  *  Created on: Apr 26, 2010
  *      Author: Stefan
  *
- * from tbtest.cpp
+ * from wxWidgets' "tbtest" sample: tbtest.cpp
 // Created:     01/02/97
 // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
  */
@@ -30,18 +30,19 @@
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 
 enum {
-    PU_RESTORE = 10001,
+    PU_RESTORE = //10001,
+        1,
     PU_EXIT,
-    PU_CHECKMARK,
-    PU_SUB1,
-    PU_SUB2,
-    PU_SUBMAIN
-    , LAST_ID
+//    PU_CHECKMARK,
+//    PU_SUB1,
+//    PU_SUB2,
+    SELECT_POWER_SCHEME ,
+    LAST_ID
 };
 
 BEGIN_EVENT_TABLE(MyTaskBarIcon, wxTaskBarIcon)
-//    EVT_MENU(PU_RESTORE, MyTaskBarIcon::OnMenuRestore)
-//    EVT_MENU(PU_EXIT,    MyTaskBarIcon::OnMenuExit)
+    EVT_MENU(PU_RESTORE, MyTaskBarIcon::OnMenuRestore)
+    EVT_MENU(PU_EXIT,    MyTaskBarIcon::OnMenuExit)
 //    EVT_MENU(PU_NEW_ICON,MyTaskBarIcon::OnMenuSetNewIcon)
 //    EVT_MENU(PU_OLD_ICON,MyTaskBarIcon::OnMenuSetOldIcon)
 //    EVT_MENU(PU_CHECKMARK,MyTaskBarIcon::OnMenuCheckmark)
@@ -52,15 +53,16 @@ BEGIN_EVENT_TABLE(MyTaskBarIcon, wxTaskBarIcon)
 //    EVT_MENU(PU_SUB2, MyTaskBarIcon::OnMenuSub)
 END_EVENT_TABLE()
 
-//void MyTaskBarIcon::OnMenuRestore(wxCommandEvent& )
-//{
-//    dialog->Show(true);
-//}
-//
-//void MyTaskBarIcon::OnMenuExit(wxCommandEvent& )
-//{
-//    dialog->Close(true);
-//}
+void MyTaskBarIcon::OnMenuRestore(wxCommandEvent& )
+{
+  if( mp_mainframe )
+    mp_mainframe->Show(true);
+}
+
+void MyTaskBarIcon::OnMenuExit(wxCommandEvent& )
+{
+  mp_mainframe->Close(true);
+}
 //
 //static bool check = true;
 //
@@ -86,8 +88,8 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
     // Try creating menus different ways
     // TODO: Probably try calling SetBitmap with some XPMs here
     wxMenu * menu = new wxMenu;
-//    menu->Append(PU_RESTORE, _T("&Restore TBTest"));
-//    menu->AppendSeparator();
+    menu->Append(PU_RESTORE, _T("&show window"));
+    menu->AppendSeparator();
 //    menu->Append(PU_CHECKMARK, _T("Checkmark"),wxT(""), wxITEM_CHECK);
 //    menu->AppendSeparator();
     wxMenu * wxmenuProfiles = new wxMenu;
@@ -95,7 +97,7 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
 //    wxmenuProfiles->Append(PU_SUB1, _T("One submenu"));
 //    wxmenuProfiles->AppendSeparator();
 //    wxmenuProfiles->Append(PU_SUB2, _T("Another submenu"));
-//    menu->Append(PU_SUBMAIN, _T("select profile"), wxmenuProfiles);
+//    menu->Append(SELECT_POWER_SCHEME, _T("select profile"), wxmenuProfiles);
 #ifdef __WXMSW__
     std::set<std::wstring> set_wstr ;
     PowerProfDynLinked * p_powerprofdynlinked =
@@ -116,12 +118,12 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
         wxCommandEventHandler(MyTaskBarIcon::OnDynamicallyCreatedUIcontrol)
         );
     }
-    menu->Append(PU_SUBMAIN, _T("select Windows power scheme"),
+    menu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
         wxmenuPowerSchemes);
 #endif //#ifdef __WXMSW__
 #ifndef __WXMAC_OSX__ /*Mac has built-in quit menu*/
-//    menu->AppendSeparator();
-//    menu->Append(PU_EXIT,    _T("E&xit"));
+    menu->AppendSeparator();
+    menu->Append(PU_EXIT,    _T("E&xit"));
 #endif
     return menu;
 }
@@ -142,6 +144,7 @@ void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
       LOGN( "setting power scheme" )
 //      LOGWN( L"before setting power scheme with name \"" << c_iter->second
 //        L"\" as active scheme" )
+      //TODO if own DVFS in GUI or service running: ask for pausing/ ending it
       BYTE by = p_powerprofdynlinked->SetActivePowerScheme(c_iter->second) ;
       LOGN( "res of setting power scheme:" << (WORD) by )
       if( by == 1 )
@@ -155,17 +158,6 @@ void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
     }
   }
 }
-
-//void MyTaskBarIcon::OnLeftButtonDClick(wxTaskBarIconEvent&)
-//{
-//    dialog->Show(true);
-//}
-
-//MyTaskBarIcon::MyTaskBarIcon()
-//  : mp_mainframe (NULL)
-//{
-//
-//}
 
 void MyTaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 {

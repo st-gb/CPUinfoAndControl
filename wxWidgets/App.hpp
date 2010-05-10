@@ -13,6 +13,7 @@
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
 #include <Controller/MainController.hpp>
+#include <Windows/NamedPipe/NamedPipeClient.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
 #include <UserInterface.hpp>
 #include <ModelData/ModelData.hpp>
@@ -147,6 +148,7 @@ public:
   bool Confirm(const std::string & str) ;
   bool Confirm(std::ostrstream & r_ostrstream ) ;
   void CPUcontrollerChanged() ;
+  void CPUcontrollerDeleted() ;
   void CPUcoreUsageGetterDeleted() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
   void DeleteCPUcontroller() ;

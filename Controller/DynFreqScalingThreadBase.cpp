@@ -44,11 +44,11 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
   , float fLoad 
   )
 {
-  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad")
+//  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad")
   PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
     m_arp_percpucoreattributes[byCoreID] ;
-  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad "
-    " address of r_percpucoreattributes:" << & r_percpucoreattributes)
+//  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad "
+//    " address of r_percpucoreattributes:" << & r_percpucoreattributes)
   //if ( //m_fPreviousCPUusage 
   //  ////mp_cpucoredata->m_arp_percpucoreattributes[byCoreID].
   //  //r_percpucoreattributes.
@@ -71,8 +71,8 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
       //  * 0.75
       )
     {
-      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
-        "load > threshold for increase")
+//      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+//        "load > threshold for increase")
       //m_fPreviousCPUusage 
       r_percpucoreattributes.m_fPreviousCPUusage = 
         //dClocksNotHaltedDiffDivTCSdiff 
@@ -101,22 +101,22 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
     {
       float fVoltage ;
       WORD wFreqInMHz ;
-      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
-        "load <= threshold for increase")
+//      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+//        "load <= threshold for increase")
       //m_fPreviousCPUusage 
       r_percpucoreattributes.m_fPreviousCPUusage = 
         //dClocksNotHaltedDiffDivTCSdiff ;
         //mp_cpucoredata->m_arfCPUcoreLoadInPercent[byCoreID] ;
         fLoad ;
-      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
-        "before mp_cpucontroller->GetCurrentPstate")
+//      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+//        "before mp_cpucontroller->GetCurrentPstate")
       mp_cpucontroller->GetCurrentPstate(
         wFreqInMHz 
         , fVoltage
         , byCoreID
         ) ;
-      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
-        "before mp_cpucontroller->SetFreqAndVoltageFromFreq")
+//      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+//        "before mp_cpucontroller->SetFreqAndVoltageFromFreq")
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
         //Explicit cast to avoid (g++) compiler warning.
@@ -124,19 +124,38 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
           ( wFreqInMHz * fLoad )
         , byCoreID
         );
-      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
-        "after mp_cpucontroller->SetFreqAndVoltageFromFreq")
+//      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
+//        "after mp_cpucontroller->SetFreqAndVoltageFromFreq")
     }
   }
   //else
     r_percpucoreattributes.m_fPreviousCPUusage = //dClocksNotHaltedDiffDivTCSdiff ;
       //mp_cpucoredata->m_arfCPUcoreLoadInPercent[byCoreID] ;
       fLoad ;
-  //mp_pumastatectrl->SetFreqAndVoltage(//dClocksNotHaltedDiffDivTCSdiff
   //mp_i_cpucontroller->SetFreqAndVoltage(
   //  byCoreID ,
   //  //mp_cpucoredata->m_arfCPUcoreLoadInPercent[byCoreID] 
   //  fLoad );
+}
+
+BYTE DynFreqScalingThreadBase::GetCPUcoreWithHighestLoad(
+  float & fHighestCPUcoreLoadInPercent )
+{
+  BYTE byCPUcoreWithHighestLoad = 0 ;
+//  float fHighestCPUcoreLoadInPercent = 0.0 ;
+  fHighestCPUcoreLoadInPercent = 0.0 ;
+  for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
+    GetNumberOfCPUcores() ; ++ byCoreID )
+  {
+    if( fHighestCPUcoreLoadInPercent < mp_cpucoredata->
+      m_arfCPUcoreLoadInPercent [byCoreID] )
+    {
+      fHighestCPUcoreLoadInPercent = mp_cpucoredata->
+        m_arfCPUcoreLoadInPercent [byCoreID] ;
+      byCPUcoreWithHighestLoad = byCoreID ;
+    }
+  }
+  return byCPUcoreWithHighestLoad ;
 }
 
 ExitCode DynFreqScalingThreadBase::Entry()
@@ -159,28 +178,22 @@ ExitCode DynFreqScalingThreadBase::Entry()
       //mp_icpu->Init();
     }
     //bool m_wCurrentFreqInMHz = false ;
-    if( //mp_pumastatectrl->GetUserInterface()->m_bConfirmedYet
+    if(
       mp_cpucontroller->GetUserInterface()->m_bConfirmedYet
       //&& m_bSuccFullyGotPStateFromMSR 
       )
     {
-      DEBUGN("DynFreqScalingThreadBase::Entry: confirmed yet")
+//      DEBUGN("DynFreqScalingThreadBase::Entry: confirmed yet")
       //float fTempInDegCelsius ;
       //check if a temp. could be received:
       //Pentium M CPUs have no temperature register
       if( 
-        //mp_pumastatectrl->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
         //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
         mp_cpucontroller->TooHot()
         )
-        //if ( fTempInDegCelsius > 90.0f )
-        //{
-        //  mp_pumastatectrl->SetPstate(BYTE byPstateID,BYTE byCoreID)
-        //}
-        //else
         {
           //DEBUG_COUTN(
-          DEBUGN("too hot")
+//          DEBUGN("too hot:yes")
           //TODO exit thread when getting CPU core load fails?
           if( mp_icpu->//GetPercentalUsageForBothCores
               GetPercentalUsageForAllCores(mp_cpucoredata->
@@ -213,47 +226,49 @@ ExitCode DynFreqScalingThreadBase::Entry()
             if( //mp_cpucoredata->m_b1CPUcorePowerPlane
               mp_cpucontroller->m_b1CPUcorePowerPlane )
             {
+              BYTE byCPUcoreWithHighestLoad = 0 ;
               float fHighestCPUcoreLoadInPercent = 0.0 ;
-              for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
-                GetNumberOfCPUcores() ; ++ byCoreID )
-              {
-                if( fHighestCPUcoreLoadInPercent < mp_cpucoredata->
-                  m_arfCPUcoreLoadInPercent [byCoreID] )
-                  fHighestCPUcoreLoadInPercent = mp_cpucoredata->
-                    m_arfCPUcoreLoadInPercent [byCoreID] ;
-              }
-                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, 0 ) ;
-                //std::set<VoltageAndFreq> stdsetvoltageandfreq ;
-                //mp_cpucontroller->GetAllPossibleFrequencies(stdsetvoltageandfreq) ;
+              byCPUcoreWithHighestLoad = GetCPUcoreWithHighestLoad(
+                  fHighestCPUcoreLoadInPercent ) ;
+              mp_cpucontroller->GetCurrentPstate( wFreqInMHz, fVolt,
+                //0
+                byCPUcoreWithHighestLoad ) ;
+              //std::set<VoltageAndFreq> stdsetvoltageandfreq ;
+              //mp_cpucontroller->GetAllPossibleFrequencies(stdsetvoltageandfreq) ;
 
-                //Reduce the freq because because the CPU is too hot.
-                WORD wNewFreqInMHz = mp_cpucontroller->
-                  GetNearestLowerPossibleFreqInMHz( wFreqInMHz ) ;
-                WORD wNewFreqFromLoad = (WORD) ( fHighestCPUcoreLoadInPercent * 
-                  (float) wFreqInMHz ) ;
-                if( wNewFreqInMHz != 0 && 
-                  wNewFreqFromLoad > wNewFreqInMHz )
-                {
-                  mp_cpucontroller->SetFreqAndVoltageFromFreq(
-                    wNewFreqInMHz //) ;
-                    , 0 ) ;
-                }
-                //if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >= 
-                //  (float) mp_cpucoredata->m_wMaxFreqInMHz /
-                //  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
-                //  wFreqInMHz >=
-                //  //50% of max. freq
-                //  0.5f 
-                //  //&& fTempInDegCelsius > 90.0f 
-                //  )
-                //  //mp_cpucontroller->SetFrequencyInMHz(
-                //  mp_cpucontroller->SetFreqAndVoltageFromFreq(
-                //    //Set half of max. freq because the CPU is too hot
-                //    mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
-                //    , 0 ) ;
-                else
-                  //ChangeOperatingPointByLoad( 0 , fHighestCPUcoreLoadInPercent 
-                  mp_cpucontroller->SetFreqAndVoltageFromFreq( wNewFreqFromLoad, 0
+              //Reduce the freq because because the CPU is too hot.
+              WORD wNewFreqInMHz = mp_cpucontroller->
+                GetNearestLowerPossibleFreqInMHz( wFreqInMHz ) ;
+              WORD wNewFreqFromLoad = (WORD) (
+                fHighestCPUcoreLoadInPercent *
+//                mp_cpucoredata->m_arfCPUcoreLoadInPercent[
+//                 byCPUcoreWithHighestLoad ] *
+                (float) wFreqInMHz ) ;
+              if( wNewFreqInMHz != 0 &&
+                wNewFreqFromLoad > wNewFreqInMHz )
+              {
+                mp_cpucontroller->SetFreqAndVoltageFromFreq(
+                  wNewFreqInMHz //) ;
+                  , //0
+                  byCPUcoreWithHighestLoad ) ;
+              }
+              //if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >=
+              //  (float) mp_cpucoredata->m_wMaxFreqInMHz /
+              //  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
+              //  wFreqInMHz >=
+              //  //50% of max. freq
+              //  0.5f
+              //  //&& fTempInDegCelsius > 90.0f
+              //  )
+              //  //mp_cpucontroller->SetFrequencyInMHz(
+              //  mp_cpucontroller->SetFreqAndVoltageFromFreq(
+              //    //Set half of max. freq because the CPU is too hot
+              //    mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
+              //    , 0 ) ;
+              else
+                //ChangeOperatingPointByLoad( 0 , fHighestCPUcoreLoadInPercent
+                mp_cpucontroller->SetFreqAndVoltageFromFreq(
+                    wNewFreqFromLoad, 0
                 ) ;
             }
             else //if(mp_cpucontroller->m_b1CPUcorePowerPlane )
@@ -292,7 +307,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
       else
       {
         //DEBUG_COUTN("NOT too hot")
-        DEBUGN("NOT too hot")
+//        DEBUGN("too hot:no")
         if( mp_icpu->//GetPercentalUsageForBothCores
             GetPercentalUsageForAllCores(mp_cpucoredata->
             m_arfCPUcoreLoadInPercent) 
@@ -304,26 +319,30 @@ ExitCode DynFreqScalingThreadBase::Entry()
           if( //mp_cpucoredata->m_b1CPUcorePowerPlane
              mp_cpucontroller->m_b1CPUcorePowerPlane  )
           {
+            BYTE byCPUcoreWithHighestLoad = 0 ;
             float fHighestCPUcoreLoadInPercent = 0.0 ;
             //DEBUG_COUTN("1 CPU core power plane")
-            DEBUGN("1 CPU core power plane")
-            for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
-              GetNumberOfCPUcores() ; ++ byCoreID )
-            {
-              if( fHighestCPUcoreLoadInPercent < mp_cpucoredata->
-                m_arfCPUcoreLoadInPercent [byCoreID] )
-                fHighestCPUcoreLoadInPercent = mp_cpucoredata->
-                  m_arfCPUcoreLoadInPercent [byCoreID] ;
-            }
-            DEBUGN("highest load of a CPU cores:" <<
-                fHighestCPUcoreLoadInPercent )
-            ChangeOperatingPointByLoad( 0 , fHighestCPUcoreLoadInPercent 
+//            DEBUGN("1 CPU core power plane")
+            byCPUcoreWithHighestLoad = GetCPUcoreWithHighestLoad(
+              fHighestCPUcoreLoadInPercent ) ;
+//            DEBUGN("highest load of a CPU cores:" <<
+//                fHighestCPUcoreLoadInPercent )
+            ChangeOperatingPointByLoad( //0
+              //It seems to matter which CPU core is set to the highest freq:
+              //if core #6 had the highest load and only core 0 was set to the
+              //new freq,
+              //-super Pi took 17s when affinity only to core 6 and 100% load at
+              //core 6
+              //-in contrast:
+              //super Pi took 8s when affinity only to core 0 and 100% load at
+              //core 6
+              byCPUcoreWithHighestLoad , fHighestCPUcoreLoadInPercent
               ) ;
           }
           else
           {
             //DEBUG_COUTN("NOT 1 CPU core power plane")
-            DEBUGN("NOT 1 CPU core power plane")
+//            DEBUGN("NOT 1 CPU core power plane")
             for( BYTE byCoreID = 0 ; byCoreID < mp_cpucoredata->
               GetNumberOfCPUcores() ; ++ byCoreID )
             {

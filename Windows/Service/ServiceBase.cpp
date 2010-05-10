@@ -61,6 +61,48 @@ DWORD ServiceBase::ContinueService(
   return FALSE;
 }
 
+void ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
+  DWORD dwLastError ,
+  std::string & r_stdstrErrorDescription
+  )
+{
+  switch( dwLastError )
+  {
+  //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+    case ERROR_NOT_ENOUGH_MEMORY:
+      r_stdstrErrorDescription =
+        "Not enough memory is available to convert an ANSI string parameter "
+        "to Unicode. This error does not occur for Unicode string "
+        "parameters." ;
+      break;
+    case ERROR_SERVICE_NOT_IN_EXE:
+      r_stdstrErrorDescription =
+        "The service entry was specified incorrectly when the process called "
+        "the StartServiceCtrlDispatcher function." ;
+      break;
+    case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
+      r_stdstrErrorDescription =
+        "Typically, this error indicates that the program is "
+        "being run as a console application rather than as a "
+        "service. If the program will be run as a console "
+        "application for debugging purposes, structure it such "
+        "that service-specific code is not called when this "
+        "error is returned." ;
+      break;
+    case ERROR_INVALID_DATA:
+      r_stdstrErrorDescription =
+        "The specified dispatch table contains entries that are "
+        "not in the proper format." ;
+      break ;
+    case ERROR_SERVICE_ALREADY_RUNNING:
+      r_stdstrErrorDescription =
+        "The process has already called "
+        "StartServiceCtrlDispatcher. Each process can call "
+        "StartServiceCtrlDispatcher only one time." ;
+      break;
+  }
+}
+
 DWORD ServiceBase::PauseService(const TCHAR * cp_tchServiceName
   )
 {
@@ -126,7 +168,9 @@ void ServiceBase::PrintPossibleSolution(DWORD dwWinError ,
       WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
         "possible solution:\n"
         "-close the service control manager in order to let the service be deleted\n"
-        "-Stop the execution of the service: \"" <<
+        "-if you want to install a service and a service with the same name "
+          "is still running->stop the service with the same name first\n"
+        "\n-Stop the execution of the service: \"" <<
         tchServiceName << "\"\n" <<
         " -inside the service control manager\n"
         " -via the task manager\n"
@@ -373,6 +417,67 @@ DWORD ServiceBase::DeleteService(
     //return TRUE;
   return 0 ;
 }
+
+SERVICE_STATUS_HANDLE //WINAPI
+  ServiceBase::RegSvcCtrlHandlerExAndGetErrMsg(
+  //__in
+    LPCTSTR lpServiceName,
+  //__in
+    LPHANDLER_FUNCTION_EX lpHandlerProc,
+  //__in_opt
+    LPVOID lpContext,
+//    std::string & r_stdstrErrorDescription
+    DWORD & r_dwErrorCode
+  )
+{
+  m_service_status_handle =
+    ::RegisterServiceCtrlHandlerEx ( //"GriffinControlService",
+      lpServiceName ,
+      lpHandlerProc,
+      //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+      //"lpContext [in, optional]
+      //Any user-defined data. This parameter, which is passed to the
+      //handler function, can help identify the service when multiple
+      //services share a process."
+      lpContext
+      );
+  //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+  //"If the function fails, the return value is zero. To get extended error
+  //information, call GetLastError."
+  if ( m_service_status_handle == (SERVICE_STATUS_HANDLE) 0 )
+  {
+    //Get error code for RegisterServiceCtrlHandler(...).
+//    DWORD dwLastError = ::GetLastError();
+    r_dwErrorCode = ::GetLastError();
+  }
+  return m_service_status_handle ;
+}
+
+//SERVICE_STATUS_HANDLE //WINAPI
+//  ServiceBase::RegSvcCtrlHandlerExAndGetErrMsg(
+//  //__in
+//    LPCTSTR lpServiceName,
+//  //__in_opt
+//    LPVOID lpContext ,
+////    std::string & r_stdstrErrorDescription
+//    DWORD & r_dwErrorCode
+// )
+//{
+//  m_service_status_handle =
+//    RegSvcCtrlHandlerExAndGetErrMsg ( //"GriffinControlService",
+//      lpServiceName ,
+//      (LPHANDLER_FUNCTION_EX) ServiceCtrlHandlerEx,
+//      //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+//      //"lpContext [in, optional]
+//      //Any user-defined data. This parameter, which is passed to the
+//      //handler function, can help identify the service when multiple
+//      //services share a process."
+//      lpContext ,
+//      //r_stdstrErrorDescription
+//      r_dwErrorCode
+//      );
+//  return m_service_status_handle ;
+//}
 
 DWORD ServiceBase::StartService(
   LPCTSTR lpServiceName )

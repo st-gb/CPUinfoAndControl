@@ -18,8 +18,9 @@
 #include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/DynFreqScalingAccess.hpp>
 #ifdef COMPILE_WITH_IPC
-  #include <Windows/NamedPipeServer.hpp>
+  #include <Windows/NamedPipe/NamedPipeServer.hpp>
 #endif //#ifdef COMPILE_WITH_IPC
+#include <Windows/Service/ServiceBase.hpp>
 //#include <Windows/WinRing0dynLinked.hpp>
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #include <vector>
@@ -39,6 +40,7 @@ class CPUcontrolService
   ,
 #endif //#ifdef COMPILE_WITH_IPC
   public CPUcontrolBase
+  , public ServiceBase //for register service ctrl manager ease etc.
 {
 private :
   //Flag for ServiceCtrlHandlerEx to indicate whether the service is REALLY
@@ -79,7 +81,7 @@ public:
     //static 
        SERVICE_STATUS          m_servicestatus; 
     //static 
-       SERVICE_STATUS_HANDLE   m_servicestatushandle; 
+//       SERVICE_STATUS_HANDLE   m_service_status_handle;
     //static 
 //       I_CPUcontroller * mp_cpucontroller ;
     //static 
@@ -128,6 +130,9 @@ public :
     std::string GetLogFilePath() ;
     std::string GetValueIfHasPrefix( 
         const std::string & r_stdstrPrefix ) ;
+    inline void HandlePowerEvent(DWORD dwEventType ) ;
+    inline void HandleInitServiceFailed( DWORD dwStatus) ;
+    inline void HandleStartDynVoltAndFreqScalingThread() ;
     void Initialize() ;
 #ifdef COMPILE_WITH_IPC
     void IPC_Message(BYTE byCommand) ;
@@ -145,6 +150,7 @@ public :
       //, UserInterface * p_userinterface
       ) ;
     void Pause() ;
+    SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
     static void requestOption(
       //Make as parameter as reference: more ressource-saving than
       //to return (=a copy).
@@ -163,32 +169,10 @@ public :
         LPVOID lpContext 
         ) ;
     void SetCommandLineArgs( int argc, char *  argv[] ) ;
-    void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew )
-    {
-      if( p_cpucontrollerNew )
-      {
-//        if( mp_cpucontroller )
-//        {
-//          //Release memory.
-//          delete mp_cpucontroller ;
-//          LOGN(" current CPU controller deleted")
-//        }
-        LOGN("address of model: " << mp_modelData )
-        mp_cpucontroller = p_cpucontrollerNew ;
-        //May be NULL at startup.
-        if( mp_cpucoreusagegetter )
-          mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
-        LOGN("after setting CPU controller for usage getter")
-        mp_cpucontroller->SetModelData( //& m_modelData
-           mp_modelData ) ;
-        LOGN("before GetMaximumFrequencyInMHz. number of CPU cores: " <<
-            (WORD) mp_modelData->m_cpucoredata.GetNumberOfCPUcores() )
-        //Needed for drawing the voltage-frequency curves.
-        WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
-        LOGN("after GetMaximumFrequencyInMHz: " << w )
-      }
-    }
+    void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) ;
+
     void SetServiceStatus () ;
+    void SetServiceStatusAttValues() ;
     static bool ShouldCreateService(
         const std::vector<std::string> & cr_vecstdstrParams ) ;
     static bool ShouldDeleteService(

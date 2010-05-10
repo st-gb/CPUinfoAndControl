@@ -33,10 +33,8 @@ public:
 //    MyTaskBarIcon() ;
 
     void OnLeftButtonClick(wxTaskBarIconEvent&);
-//    void OnMenuRestore(wxCommandEvent&);
-//    void OnMenuExit(wxCommandEvent&);
-//    void OnMenuSetNewIcon(wxCommandEvent&);
-//    void OnMenuSetOldIcon(wxCommandEvent&);
+    void OnMenuRestore(wxCommandEvent&);
+    void OnMenuExit(wxCommandEvent&);
 //     void OnMenuCheckmark(wxCommandEvent&);
 //     void OnMenuUICheckmark(wxUpdateUIEvent&);
 //    void OnMenuSub(wxCommandEvent&);

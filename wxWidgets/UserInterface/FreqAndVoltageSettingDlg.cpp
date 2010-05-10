@@ -1364,7 +1364,6 @@ WORD FreqAndVoltageSettingDlg::SetNearestHigherPossibleFreqInMHz(
     return wNewFreqInMhz ;
 }
 
-//TODO move to class PumaStateCtrl.
 //void 
 WORD FreqAndVoltageSettingDlg::SetNearestLowerPossibleFreqInMHz(
     WORD wFreqInMHz

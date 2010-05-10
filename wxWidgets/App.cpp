@@ -211,6 +211,11 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
     mp_frame->SetCPUcontroller(mp_cpucontroller) ;
 }
 
+void wxX86InfoAndControlApp::CPUcontrollerDeleted()
+{
+  mp_frame->CPUcontrollerDeleted() ;
+}
+
 void wxX86InfoAndControlApp::CPUcoreUsageGetterDeleted()
 {
   mp_frame->CPUcoreUsageGetterDeleted() ;
@@ -227,6 +232,7 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 
 void wxX86InfoAndControlApp::EndDVFS()
 {
+  DEBUGN("wxX86InfoAndControlApp::EndDVFS() begin")
   PerCPUcoreAttributes * p_percpucoreattributes = & //mp_cpucoredata->
     mp_modelData->m_cpucoredata.
     m_arp_percpucoreattributes[ //p_atts->m_byCoreID
@@ -237,6 +243,7 @@ void wxX86InfoAndControlApp::EndDVFS()
   if ( p_percpucoreattributes->mp_dynfreqscalingthread )
     mp_frame->
     EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
+  DEBUGN("wxX86InfoAndControlApp::EndDVFS() end")
 }
 
 //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
@@ -401,7 +408,8 @@ bool wxX86InfoAndControlApp::OnInit()
     InitSharedMemory() ;
 #endif //COMPILE_WITH_SHARED_MEMORY
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  	m_ipcclient.Init() ;
+  	if( m_ipcclient.Init() )
+  	  LOGN("initializing IPC (for connection to the service) succeeded")
 #endif
     //if( mp_modelData )
     {
@@ -678,6 +686,8 @@ void wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
 
 void wxX86InfoAndControlApp::DeleteCPUcontroller( )
 {
+  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() cpu controller:" <<
+      mp_cpucontroller )
   //if( p_cpucontroller )
   //{
     //Avoid porgram crash because of the mainframe tries to get the current
@@ -689,14 +699,25 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
     mp_cpucontroller = NULL ;
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
+    {
+      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--before "
+          "setting CPU controller access for the usage getter")
       mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
+      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
+          "setting CPU controller access for the usage getter")
+    }
     //mp_i_cpucontroller->SetModelData( //& m_modelData
     //  mp_modelData ) ;
 //    CPUcontrollerChanged() ;
+    //For the draw functions to function properly.
+    mp_frame->SetCPUcontroller( mp_cpucontroller ) ;
     mp_frame->AllowCPUcontrollerAccess() ;
+    DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
+        "calling AllowCPUcontrollerAccess()")
     //Force an update of the canvas.
     mp_frame->RedrawEverything() ;
   //}
+  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
 }
 
 //int main(int argc, char **argv)

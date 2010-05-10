@@ -82,6 +82,7 @@ public:
 private:
   bool m_bNotFirstTime ;
   bool m_bRangeBeginningFromMinVoltage ;
+  BYTE m_byIndexOf1stCPUcontrollerRelatedMenu ;
   BYTE m_byNumberOfSettablePstatesPerCore ;
   BYTE m_byMenuIndexOf1stPstate ;
   #ifdef COMPILE_WITH_CALC_THREAD
@@ -120,6 +121,11 @@ private:
   ULONGLONG m_ullPreviousTimeStampCounterValue ;
 public:
   WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
+  WORD m_wMaxFreqWidth ;
+  WORD m_wMaxVoltageWidth ;
+  WORD m_wMaxFreqInMHzTextWidth ;
+  WORD m_wMaxVoltageInVoltTextWidth ;
+  WORD m_wMaxTemperatureTextWidth ;
 private:
   wxBitmap * mp_wxbitmap ;
   wxBitmap * mp_wxbitmapStatic ;
@@ -140,6 +146,7 @@ private:
   wxMenuBar * mp_wxmenubar ;
   wxMenu * p_wxmenuExtras ;
   wxMenu * mp_wxmenuFile ;
+  wxMenu * p_wxmenuService ;
   wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
@@ -225,6 +232,7 @@ public:
   void CreateServiceMenuItems() ;
   //void 
   BYTE CreateDynamicMenus() ;
+  void DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc) ;
   void DisableWindowsDynamicFreqScalingHint();
 //  wxString GetSetPstateMenuItemLabel(
 //    BYTE byPstateNumber
@@ -295,6 +303,7 @@ public:
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));
   void OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event));
 
+  void OnConnectToOrDisconnectFromService(wxCommandEvent & WXUNUSED(event) ) ;
   void OnContinueService(wxCommandEvent & WXUNUSED(event));
   void OnPauseService(wxCommandEvent & WXUNUSED(event));
   void OnStartService(wxCommandEvent & WXUNUSED(event));
@@ -317,7 +326,7 @@ public:
   void OnAttachCPUcoreUsageGetterDLL(wxCommandEvent & event);
   void OnDetachCPUcontrollerDLL(wxCommandEvent & event);
   void OnDetachCPUcoreUsageGetterDLL(wxCommandEvent & event);
-  void PossiblyReleaseMemory() ;
+  void PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   void PossiblyAskForOSdynFreqScalingDisabling();
 //  void SetMenuItemLabel(
 //      BYTE byCoreID
@@ -329,6 +338,14 @@ public:
   void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
+  void StoreCurrentVoltageAndFreqInArray(
+    wxDC & r_wxdc
+  //  VoltageAndFreq * & r_ar_voltageandfreq
+    , wxString  r_ar_wxstrFreqInMHz []
+    , wxString r_ar_wxstrVoltageInVolt []
+  //  , float r_ar_fTempInCelsius []
+    , wxString r_ar_wxstrTempInCelsius []
+    ) ;
 #ifdef wxHAS_POWER_EVENTS
   //void OnSuspending(wxPowerEvent& event)
   //{

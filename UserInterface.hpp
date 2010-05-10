@@ -34,9 +34,6 @@ public:
   }
   //In order for destructorts of subclasses to be called
   virtual ~UserInterface() {}
-  void showHelp(){};
-  virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
-  void outputOtherRelevantVoltageInfo(){};
   //Make it pure ("= 0") virtual so that it needs to be implemented by subclasses.
   virtual bool Confirm(const std::string & str) = 0//{return true;}
     ;
@@ -44,7 +41,11 @@ public:
     //std::ostream & r_ostream
     ) = 0//{return true;}
     ;
+  virtual void CPUcontrollerDeleted() {} ;
   virtual void CPUcoreUsageGetterDeleted() {} ;
-  virtual void RedrawEverything() {} ;
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
+  virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
+  void outputOtherRelevantVoltageInfo(){};
+  virtual void RedrawEverything() {} ;
+  void showHelp(){};
 };

@@ -1,4 +1,5 @@
 #pragma once
 #include <windows.h> //SECURITY_ATTRIBUTES,...
 
-BOOL CreateMyDACL(SECURITY_ATTRIBUTES * pSA) ;
+void AddLowPrivilegedACE( HANDLE & r_handle );
+BOOL DowngradeDACL(SECURITY_ATTRIBUTES * pSA) ;
