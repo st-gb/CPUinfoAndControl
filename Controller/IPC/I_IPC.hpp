@@ -19,6 +19,10 @@ enum IPCcontrolCodes
   , other_DVFS_is_enabled
   , disable_other_DVFS
   , enable_other_DVFS
+  , sync_GUI_show_data_with_service
+  //This should get the current data like temperature, CPU core load, voltage,
+  // frequency.
+  , get_current_CPU_data
 };
 
 class I_IPC_Server

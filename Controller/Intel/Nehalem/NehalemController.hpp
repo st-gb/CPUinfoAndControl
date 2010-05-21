@@ -40,6 +40,13 @@ public:
     BYTE byCounterMask
     ) ;
   void DecreaseVoltageBy1Step(float & r_fVoltage) ;
+  BYTE GetCurrentVoltageAndFrequency(
+    //float because: the FSB*multiplier is not exactly an integer without
+    //floating point digits
+    float & r_fFreqInMHz
+    , float & r_fVoltageInVolt
+    , BYTE byCoreID
+    ) ;
   BYTE GetCurrentPstate(WORD & wFreqInMHz, float & Volt, BYTE byCoreID) ;
   BYTE GetCurrentPstate(
     BYTE & r_byFreqID

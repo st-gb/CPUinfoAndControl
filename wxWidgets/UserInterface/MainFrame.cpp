@@ -371,7 +371,10 @@ MainFrame::MainFrame(
     p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->EnablingIsPossible() 
     )
   {
-    std::tstring stdtstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
+
+//    std::tstring stdtstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
+//        GetEnableDescription() ;
+    std::wstring stdwstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
         GetEnableDescription() ;
     mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
       ID_EnableOtherVoltageOrFrequencyAccess
@@ -382,7 +385,8 @@ MainFrame::MainFrame(
       // -std::string although wxString uses wchar_t strings.
       , getwxString( 
         //mp_i_cpucontroller->mp_dynfreqscalingaccess->GetEnableDescription()
-        stdtstr
+//        stdtstr
+        stdwstr
          )
       );
   }
@@ -453,12 +457,12 @@ MainFrame::MainFrame(
   SetMenuBar( mp_wxmenubar );
 
   CreateStatusBar();
-  const char bits [] = {
-      0,0,0,0,
-      1,1,1,1,
-      0,0,0,0,
-      1,1,1,1
-    } ;
+//  const char bits [] = {
+//      0,0,0,0,
+//      1,1,1,1,
+//      0,0,0,0,
+//      1,1,1,1
+//    } ;
 //  wxIcon wxicon(bits,4,4) ;
 //  SetIcon(wxicon);
   Connect(wxEVT_PAINT, wxPaintEventHandler(MainFrame::OnPaint));
@@ -483,13 +487,25 @@ MainFrame::MainFrame(
   if( mp_wxx86infoandcontrolapp->mp_wxdynlibcpucontroller )
   {
     wxString wxstrCPUcontrollerDynLibPath(
-      mp_model->m_stdstrCPUcontrollerDynLibPath) ;
+//      //Use getwxString() to enable to compile with both unicode and ANSI.
+//      getwxString(
+//      mp_model->m_stdstrCPUcontrollerDynLibPath )
+//      ) ;
+    //http://wiki.wxwidgets.org/Converting_everything_to_and_from_wxString#std::string_to_wxString:
+    mp_model->m_stdstrCPUcontrollerDynLibPath.c_str(), wxConvUTF8 );
+#if wxUSE_UNICODE == 1
+    DEBUGWN_WSPRINTF(L"CPU controller path as wide string:%ls",
+      wxstrCPUcontrollerDynLibPath.c_str() ) ;
+#endif
     CPUcontrollerAttached(wxstrCPUcontrollerDynLibPath) ;
   }
   if( mp_wxx86infoandcontrolapp->mp_wxdynlibcpucoreusagegetter )
   {
     wxString wxstrCPUcoreUsageGetterDynLibPath(
-      mp_model->m_stdstrCPUcoreUsageGetterDynLibPath) ;
+      //Use getwxString() to enable to compile with both unicode and ANSI.
+      getwxString(
+      mp_model->m_stdstrCPUcoreUsageGetterDynLibPath)
+      ) ;
     CPUcoreUsageGetterAttached(wxstrCPUcoreUsageGetterDynLibPath) ;
   }
   mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
@@ -606,13 +622,14 @@ void MainFrame::CreateServiceMenuItems()
   wxString wxstrConnectOrDisconnect ;
   p_wxmenuService = new wxMenu ;
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
-    wxstrConnectOrDisconnect = wxT("disconnect") ;
-  else
+//  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
+//    wxstrConnectOrDisconnect = wxT("disconnect") ;
+//  else
     wxstrConnectOrDisconnect = wxT("connect") ;
-#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   p_wxmenuService->Append( ID_ConnectToOrDisconnectFromService,
     wxstrConnectOrDisconnect );
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  //pause and continue is possible via service ctrl mgr
   p_wxmenuService->Append( ID_ContinueService, _T("&Continue") );
   p_wxmenuService->Append( ID_PauseService , _T("&Pause") );
 //  p_wxmenuService->Append( ID_StartService , _T("&Start") );
@@ -1021,7 +1038,8 @@ void MainFrame::OnClose(wxCloseEvent & event )
   {
     std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/" +
       strPstateSettingsFileName ;
-    if( m_xercesconfigurationhandler.ConfigurationChanged(//strPstateSettingsFileName
+    LOGN("before checking for a changed p-states config ")
+    if( m_xercesconfigurationhandler.IsConfigurationChanged(//strPstateSettingsFileName
       stdstrCPUtypeRelativeFilePath ) )
     {
       int nReturn = ::wxMessageBox(
@@ -1039,6 +1057,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
   {
+    LOGN("before removing the system tray icon")
     //Removing the icon is neccessary to exit the app/
     //else the icon may not be hidden after exit.
 //    mp_wxx86infoandcontrolapp->m_taskbaricon.RemoveIcon() ;
@@ -1049,10 +1068,10 @@ void MainFrame::OnClose(wxCloseEvent & event )
     mp_wxx86infoandcontrolapp->mp_taskbaricon = NULL ;
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
-  LOGN("before Destroy()")
+  LOGN("before destroying the mainframe")
   //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
   this->Destroy() ;
-  LOGN("after Destroy()")
+  LOGN("after destroying the mainframe")
 }
 
 void MainFrame::OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) )
@@ -1067,13 +1086,21 @@ void MainFrame::OnConnectToOrDisconnectFromService(
 {
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   if( ::wxGetApp().m_ipcclient.IsConnected() )
-    ::wxMessageBox("already connected to the service") ;
+    ::wxMessageBox(
+      //Use wxT() to enable to compile with both unicode and ANSI.
+      wxT("already connected to the service")
+      ) ;
   else
 //    if( ::wxGetApp().m_ipcclient.Init() )
 //      p_wxmenuService->SetLabel( ID_ConnectToOrDisconnectFromService ,
 //        wxT( "disconnect" )
 //        ) ;
-    ::wxGetApp().m_ipcclient.Init() ;
+    if( ::wxGetApp().m_ipcclient.Init() )
+      ::wxMessageBox( wxT("connected to the service now")
+        ) ;
+    else
+      ::wxMessageBox( wxT("Could not connect to the service")
+        ) ;
 #endif
 }
 
@@ -1085,7 +1112,16 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
   if( ! ::wxGetApp().m_ipcclient.IsConnected() )
     ::wxGetApp().m_ipcclient.Init() ;
   if( ::wxGetApp().m_ipcclient.IsConnected() )
+  {
     ::wxGetApp().m_ipcclient.SendMessage(continue_service) ;
+    wxString wxstr = getwxString( ::wxGetApp().m_ipcclient.m_stdwstrMessage ) ;
+    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
+  }
+  else
+    wxMessageBox(
+      //Use wxT() to enable to compile with both unicode and ANSI.
+      wxT("could not continue because not connected to the service")
+      ) ;
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
@@ -1220,24 +1256,48 @@ void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  bool bTryViaSCM = false ;
   //The connection may have broken after it was established, so check it here.
   if( ! ::wxGetApp().m_ipcclient.IsConnected() )
   {
     LOGN("not connected to the service")
-    ::wxGetApp().m_ipcclient.Init() ;
+    if( ! ::wxGetApp().m_ipcclient.Init() )
+      bTryViaSCM = true ;
   }
   if( ::wxGetApp().m_ipcclient.IsConnected() )
   {
     LOGN("connected to the service")
+    //TODO possibly make IPC communication into a seperate thread because it
+    // may freeze the whole GUI.
     ::wxGetApp().m_ipcclient.SendMessage(pause_service) ;
+    wxString wxstr = getwxString( ::wxGetApp().m_ipcclient.m_stdwstrMessage ) ;
+    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
   }
   else
+    bTryViaSCM = true ;
+  if( bTryViaSCM )
     try
     {
-      ServiceBase::PauseService( //mp_model->m_strServiceName.c_str() 
+      std::string stdstrMsg ;
+      if( ServiceBase::PauseService( //mp_model->m_strServiceName.c_str()
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compitable between char and wide char.
-        _T("CPUcontrolService") );
+        //line to make it compatible between char and wide char.
+        //TODO make name variable because the user can change the name when
+        //installing the service.
+        _T("X86_info_and_control")
+        , stdstrMsg
+        )
+        )
+        ::wxMessageBox( wxT("successfully paused the service via the service "
+            "control manager")) ;
+      else
+      {
+        wxString wxstr = wxT("no connected to the service\n"
+          "->tried to pause via service control manager\n"
+          "Error pausing the service via the service control manager:\n")
+          + getwxString( stdstrMsg) ;
+        ::wxMessageBox( wxstr ) ;
+      }
     }
     catch(ConnectToSCMerror connecttoscmerror )
     {
@@ -1372,7 +1432,13 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
     catch( CPUaccessException & ex )
     {
       wxMessageBox( wxT("Error message: ") +
-        wxString(ex.m_stdstrErrorMessage) , wxT("DLL error") ) ;
+        //wxString(
+          //Use getwxString() to enable to compile with both unicode and ANSI.
+          getwxString(
+            ex.m_stdstrErrorMessage)
+//          )
+        , wxT("DLL error")
+        ) ;
     }
     LOGN("OnAttachCPUcontrollerDLL end" )
   }
@@ -1421,7 +1487,12 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
     catch( CPUaccessException & ex )
     {
       wxMessageBox( wxT("Error message: ") +
-        wxString(ex.m_stdstrErrorMessage) , wxT("DLL error") ) ;
+        //wxString(
+        //Use getwxString() to enable to compile with both unicode and ANSI.
+        getwxString(
+        ex.m_stdstrErrorMessage)
+        , wxT("DLL error")
+        ) ;
     }
   }
 }
@@ -1525,15 +1596,15 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
     )
   {
 //    WORD wEventID = wxevent.GetId() ;
-    #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-    //TODO
-    if( ::wxGetApp().m_ipcclient.IsConnected() )
-    {
-      ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
-      ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
-    }
-    else
-    #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+//    #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+//    //TODO
+//    if( ::wxGetApp().m_ipcclient.IsConnected() )
+//    {
+//      ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
+//      ::wxGetApp().m_ipcclient.SendMessage(start_DVFS) ;
+//    }
+//    else
+//    #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     {
       //if( mp_pumastatectrl->mp_dynfreqscalingaccess->DVFSisEnabled() ;
       //SpecificCPUcoreActionAttributes * p_atts = (CalculationThread *)
@@ -1548,7 +1619,7 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
       }
       else
       {
-        PossiblyAskForOSdynFreqScalingDisabling() ;
+        mp_wxx86infoandcontrolapp->PossiblyAskForOSdynFreqScalingDisabling() ;
         if( !
             //mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
             //mp_i_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
@@ -2229,7 +2300,9 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
         if( wFreqInMHz == 0 )
           r_ar_wxstrFreqInMHz[ byCPUcoreID ] = wxT("? MHz ") ;
         else
-          r_ar_wxstrFreqInMHz[ byCPUcoreID ] = wxString::Format("%u MHz ",
+          r_ar_wxstrFreqInMHz[ byCPUcoreID ] = wxString::Format(
+            //Use wxT() to enable to compile with both unicode and ANSI.
+            wxT("%u MHz "),
             wFreqInMHz ) ;
 //        wxstr = wxString::Format( wxT("%u"), wFreqInMHz ) ;
         wxsize = r_wxdc.GetTextExtent(//wxstr
@@ -2248,7 +2321,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
           r_ar_wxstrVoltageInVolt[ byCPUcoreID ] = wxT("? Volt ") ;
         else
           r_ar_wxstrVoltageInVolt[ byCPUcoreID ] = wxString::Format(
-            "%.4f Volt ", fVoltageInVolt ) ;
+            //Use wxT() to enable to compile with both unicode and ANSI.
+            wxT("%.4f Volt "), fVoltageInVolt ) ;
         wxsize = r_wxdc.GetTextExtent(//wxstr
           r_ar_wxstrVoltageInVolt[ byCPUcoreID ] ) ;
         nWidth = wxsize.GetWidth() ;
@@ -2266,14 +2340,30 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
             __FLT_MIN__
       #endif
          )
-         r_ar_wxstrTempInCelsius[ byCPUcoreID ] = wxT("? °C ") ;
+        r_ar_wxstrTempInCelsius[ byCPUcoreID ] =
+#if wxUSE_UNICODE == 1
+        //"converting to execution character set: Illegal byte sequence"
+        //for wxT("? °C ")
+      wxT("? deg C ") ;
+#else
+      wxT("? °C ") ;
+#endif
       else
         //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
         //"Use the shorter of %e or %f"
         //-> if "%.3g" (max 3 digits after decimal point):
         //    for "60.0" it is "60"
         //   for  "60.1755" it is "60.175"
-        r_ar_wxstrTempInCelsius[ byCPUcoreID ] = wxString::Format( "%.3g °C " ,
+        r_ar_wxstrTempInCelsius[ byCPUcoreID ] = wxString::Format(
+          //Use wxT() to enable to compile with both unicode and ANSI.
+#if wxUSE_UNICODE == 1
+        //"converting to execution character set: Illegal byte sequence"
+        //for wxT("%.3g °C ")
+          wxT("%.3g deg C ")
+#else
+          wxT("%.3g °C ")
+#endif
+          ,
           fTempInCelsius ) ;
       wxsize = r_wxdc.GetTextExtent(//wxstr
         r_ar_wxstrTempInCelsius[ byCPUcoreID ] ) ;
@@ -2288,19 +2378,19 @@ void MainFrame::DrawCurrentPstateInfo(
   wxDC & r_wxdc
   )
 {
-  BYTE byCPUcoreID = 0 ;
+//  BYTE byCPUcoreID = 0 ;
    //DWORD dwEDX ;
    //DWORD dwLowmostBitsCurrentLimitRegister, dwLowmostBits ;
    //ULONGLONG ull ;
-  WORD wFreqInMHz = 0 ;
-  float fVoltageInVolt = 0.0f ;
+//  WORD wFreqInMHz = 0 ;
+//  float fVoltageInVolt = 0.0f ;
   float fCPUload ;
-  float fTempInCelsius ;
+//  float fTempInCelsius ;
   wxString wxstrCPUcoreUsage ;
   wxString wxstrCPUcoreVoltage ;
   wxString wxstrTemperature ;
   wxString wxstrFreqInMHz ;
-  DEBUGN("DrawCurrentPstateInfo CPU controller address:" << mp_i_cpucontroller )
+//  DEBUGN("DrawCurrentPstateInfo CPU controller address:" << mp_i_cpucontroller )
    //::wxGetApp().mp_cpucoreusagegetter->
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
   {
@@ -2313,11 +2403,11 @@ void MainFrame::DrawCurrentPstateInfo(
     //could be too short-> So only try to get usage here if no DVFS thread.
     if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
     {
-      DEBUGN("DrawCurrentPstateInfo before GetPercentalUsageForAllCores" )
+//      DEBUGN("DrawCurrentPstateInfo before GetPercentalUsageForAllCores" )
       mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter->
         GetPercentalUsageForAllCores(
         mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
-      DEBUGN("DrawCurrentPstateInfo after GetPercentalUsageForAllCores" )
+//      DEBUGN("DrawCurrentPstateInfo after GetPercentalUsageForAllCores" )
     }
   }
   else
@@ -2328,8 +2418,8 @@ void MainFrame::DrawCurrentPstateInfo(
   //May be NULL at startup.
   if( mp_i_cpucontroller || mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
   {
-    DEBUGN("DrawCurrentPstateInfo--Number of CPU cores:" <<
-        (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
+//    DEBUGN("DrawCurrentPstateInfo--Number of CPU cores:" <<
+//        (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
     wxString ar_wxstrCPUcoreVoltage [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
@@ -2448,6 +2538,8 @@ void MainFrame::DrawCurrentPstateInfo(
 //        //  ( byCPUcoreID * 20 )
 //        byCPUcoreID * 20
 //        ) ;
+     if( mp_i_cpucontroller )
+     {
       for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
         ++ wCoreID )
       {
@@ -2493,6 +2585,7 @@ void MainFrame::DrawCurrentPstateInfo(
           ) ;
       }
       wxcoordX += m_wMaxTemperatureTextWidth ;
+     }
       //mp_i_cpucontroller->
       if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
       {
@@ -2504,13 +2597,13 @@ void MainFrame::DrawCurrentPstateInfo(
           wxstr = wxString::Format(
    //#ifdef _WINDOWS
    #ifdef _MSC_VER
-             _T("usage in percent:%.3f")
+             _T("%.3f percent usage")
    #else
              //when compiled with MSVC and running under WinXP the executable
              //crashes with this format string (surely because of the 1st "%")
              //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
              //"  A % followed by another % character will write % to stdout."
-             wxT("usage:%.3f%%")
+             wxT("%.3f%% usage")
    #endif
            , fCPUload * 100.0f
            ) ;
@@ -2523,7 +2616,7 @@ void MainFrame::DrawCurrentPstateInfo(
       }
       //   } //for-loop
   }
-  DEBUGN("MainFrame::DrawCurrentPstateInfo end")
+//  DEBUGN("MainFrame::DrawCurrentPstateInfo end")
 }
 
 void MainFrame::DrawCurrentVoltageSettingsCurve(
@@ -2705,9 +2798,9 @@ void MainFrame::OnEraseBackground(wxEraseEvent& event)
 
 void MainFrame::OnPaint(wxPaintEvent & event)
 {
-  DEBUGN("OnPaint CPU controller address:" << mp_i_cpucontroller <<
-    "usage getter addr.:" << mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
-    << "mp_wxbitmap:" << mp_wxbitmap )
+//  DEBUGN("OnPaint CPU controller address:" << mp_i_cpucontroller <<
+//    "usage getter addr.:" << mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
+//    << "mp_wxbitmap:" << mp_wxbitmap )
   //May be NULL at startup.
   if( ( mp_i_cpucontroller ||
       mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter ) &&
@@ -2772,7 +2865,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
       {
         wxCoord wxcoordCanvasWidth ;
         wxCoord wxcoordCanvasHeight ;
-        DEBUGN("OnPaint wxmemorydc.IsOk()" )
+//        DEBUGN("OnPaint wxmemorydc.IsOk()" )
         p_wxpaintdc->GetSize( & wxcoordCanvasWidth , & wxcoordCanvasHeight ) ;
         //m_wDiagramHeight = wxcoordCanvasHeight 
         //    //Space for drawing scale and scale values below the x-axis.
@@ -2975,7 +3068,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
     wxpaintdc.Clear();
     wxpaintdc.DrawText( wxT("no CPU controller available->e.g. attach a DLL") , 0 , 0 ) ;
   }
-  DEBUGN("OnPaint ende")
+//  DEBUGN("OnPaint ende")
 }
 
 //order of submenus/ menu items of "core x" menus.
@@ -3074,7 +3167,7 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
     )
     if (::wxMessageBox(
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compitable between char and wide char.
+        //line to make it compatible between char and wide char.
         _T("The OS's dynamic frequency scaling must be disabled ")
         _T("in order that the p-state isn' changed by the OS afterwards.")
         _T("If the OS's dynamic frequency isn't disabled, should it be done now?")
@@ -3086,7 +3179,8 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
         == wxYES
        )
       //mp_i_cpucontroller->DisableFrequencyScalingByOS();
-      mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
+      mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
+        DisableFrequencyScalingByOS() ;
 }
 
 //#ifdef _TEST_PENTIUM_M
@@ -3438,12 +3532,12 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
 
 void MainFrame::OnTimerEvent(wxTimerEvent &event)
 {
-  DEBUGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
+//  DEBUGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
   //May be NULL at startup.
   if( mp_i_cpucontroller )
   {
     bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
-    DEBUGN("CPU controller access allowed:" << bAllowCPUcontrollerAccess )
+//    DEBUGN("CPU controller access allowed:" << bAllowCPUcontrollerAccess )
     if( //m_bAllowCPUcontrollerAccess 
       bAllowCPUcontrollerAccess )
     {
@@ -3640,7 +3734,9 @@ void MainFrame::RecreateDisplayBuffers()
 
 void MainFrame::DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc)
 {
-  wxString wxstrMaxFreq = wxString::Format( "%u",
+  wxString wxstrMaxFreq = wxString::Format(
+    //Use wxT() to enable to compile with both unicode and ANSI.
+    wxT("%u"),
     mp_cpucoredata->m_wMaxFreqInMHz ) ;
   //the max. freq. usually has the max draw width.
   m_wMaxFreqWidth = r_wxdc.GetTextExtent(wxstrMaxFreq).GetWidth() ;
@@ -3652,7 +3748,9 @@ void MainFrame::DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc)
     mp_cpucoredata->m_byMinVoltageID ) ;
   float fMaxVoltage = fVoltageForMaxVoltageID > fVoltageForMinVoltageID ?
       fVoltageForMaxVoltageID : fVoltageForMinVoltageID ;
-  wxString wxstrMaxVolt = wxString::Format( "%f", fMaxVoltage ) ;
+  wxString wxstrMaxVolt = wxString::Format(
+    //Use wxT() to enable to compile with both unicode and ANSI.
+    wxT("%f"), fMaxVoltage ) ;
   //the max. voltage usually has the max draw width.
   m_wMaxVoltageWidth = r_wxdc.GetTextExtent(wxstrMaxFreq).GetWidth() ;
 }

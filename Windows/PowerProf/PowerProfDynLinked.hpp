@@ -17,10 +17,12 @@ class PowerProfDynLinked
 public:
     //return: true=success
   PowerProfDynLinked(
-    //std::wstring & r_stdwstrProgramName ) ;
-    std::tstring & r_stdtstrProgramName ) ;
+    std::wstring & r_stdwstrProgramName ) ;
+//    std::tstring & r_stdtstrProgramName ) ;
   //PowerProfDynLinked(std::string & stdstrPowerSchemeNameToChoose ) ;
-  ~PowerProfDynLinked() ;
+  //"virtual" too avoid g++ warning: "warning: `class PowerProfDynLinked' has
+  //  virtual functions but non-virtual destructor"
+  virtual ~PowerProfDynLinked() ;
   //Must be a pointer because the concrete type is determined at
   //runtime. The advantage of the other DVFS access as a member function 
   //instead of a factory is that as a member THIS class k�mmert sich um
@@ -34,6 +36,7 @@ public:
   bool DisableFrequencyScalingByOS() ;
   unsigned char EnableFrequencyScalingByOS() ;
   bool EnablingIsPossible() ;
+  void GetActivePowerSchemeName( std::wstring & r_wstr) ;
   void GetAllPowerSchemeNames( std::set<std::wstring> &
       r_stdset_stdwstrPowerSchemeName ) ;
   IDynFreqScalingAccess::string_type GetEnableDescription() ;

@@ -1,6 +1,7 @@
 #include "NamedPipeServer.hpp"
 #include <aclapi.h>
-#include <Windows/DiscretionaryAccessControlList.h>
+#include <Windows/access_rights/DiscretionaryAccessControlList.h>
+#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #ifdef __CYGWIN__
   #include <mingw/tchar.h> //for _T(...)
 #else
@@ -13,109 +14,52 @@
 //  HANDLE hPipe
 //  mp_serverprocess
 //};
-
-void OutputPipeInfo(HANDLE handlePipe)
+class PipeClientThreadAttributes
 {
-  PSID psidOwner ;
-  PSID psidGroup ;
-  PACL paclDACL ;
-  PACL paclSACL ;
-  PSECURITY_DESCRIPTOR psecurity_descriptor ;
-  
-  DWORD dw = ::GetSecurityInfo(
-    handlePipe , //HANDLE handle,
-    SE_SERVICE , // SE_OBJECT_TYPE ObjectType,
-    //SECURITY_INFORMATION SecurityInfo,
-      DACL_SECURITY_INFORMATION 
-      | SACL_SECURITY_INFORMATION 
-      | OWNER_SECURITY_INFORMATION
-      | GROUP_SECURITY_INFORMATION
-    , & psidOwner //PSID* ppsidOwner,
-    , & psidGroup //PSID* ppsidGroup,
-    , & paclDACL //PACL* ppDacl,
-    , & paclSACL //PACL* ppSacl,
-    , & psecurity_descriptor //PSECURITY_DESCRIPTOR* ppSecurityDescriptor
-  );
-  LOGN("GetSecurityInfo return value :" << dw )
-  if( dw == ERROR_SUCCESS )
+public:
+  HANDLE m_handlePipe ;
+  NamedPipeServer * mp_namedpipeserver ;
+  PipeClientThreadAttributes(
+    HANDLE handlePipe
+    , NamedPipeServer * p_namedpipeserver
+    )
+    :
+      m_handlePipe ( handlePipe)
+      , mp_namedpipeserver ( p_namedpipeserver )
   {
-    PACL pNewDACL = NULL;
 
-    PSID_IDENTIFIER_AUTHORITY psid_identifier_authority =
-      GetSidIdentifierAuthority(
-        psidOwner
-      );
-    LOGN("SID ID auth: " << *((DWORD*)psid_identifier_authority) )
-
-    EXPLICIT_ACCESS ea;
-    ZeroMemory(&ea, sizeof(EXPLICIT_ACCESS));
-    ea.grfAccessPermissions = GENERIC_ALL ;
-    ea.grfAccessMode = GRANT_ACCESS ;
-    ea.grfInheritance= NO_INHERITANCE ;
-    ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME ;
-    ea.Trustee.ptstrName = //char or wide char string 
-      _T("CURRENT_USER") ;
-
-    // Create a new ACL that merges the new ACE
-    // into the existing DACL.
-
-    DWORD dwRes = 0;
-    dwRes = SetEntriesInAcl(
-      1, 
-      & ea, 
-      paclDACL , //pOldDACL, 
-      & pNewDACL
-      );
-    if (ERROR_SUCCESS != dwRes)
-    {
-      LOGN( "SetEntriesInAcl Error:" << dwRes );
-      goto Cleanup; 
-    } 
-
-    // Attach the new ACL as the object's DACL.
-
-    dwRes = SetSecurityInfo(
-      handlePipe, 
-      SE_SERVICE, 
-      DACL_SECURITY_INFORMATION,
-      NULL, 
-      NULL, 
-      pNewDACL, 
-      NULL );
-    if (ERROR_SUCCESS != dwRes)
-    {
-      LOGN( "SetNamedSecurityInfo Error:" << dwRes );
-      goto Cleanup; 
-    } 
-
-    Cleanup:
-    //if(pSD != NULL) 
-    //  LocalFree((HLOCAL) pSD); 
-    if(pNewDACL != NULL) 
-      LocalFree((HLOCAL) pNewDACL); 
-      
-    LocalFree(psecurity_descriptor) ;
   }
-  //  LOGN("error" << GetLastError
-}
+};
 
 VOID PipeClientThread(LPVOID lpvParam) 
 { 
    //TCHAR chRequest[PIPE_BUFFER_SIZE]; 
    //TCHAR chReply[PIPE_BUFFER_SIZE]; 
-   BYTE byCommand ;
-   DWORD cbBytesRead, cbReplyBytes, cbWritten; 
-   BOOL fSuccess; 
-   HANDLE hPipe; 
+//   DWORD cbBytesRead, cbReplyBytes, cbWritten;
    LOGN("pipe thread for client")
  
    // The thread's parameter is a handle to a pipe instance. 
    //hPipe = (HANDLE) lpvParam; 
-   NamedPipeServer * p_namedpipeserver = (NamedPipeServer *) lpvParam ;
-   DEBUGN("p_namedpipeserver: " << p_namedpipeserver)
-   if( p_namedpipeserver )
+//   NamedPipeServer * p_namedpipeserver = (NamedPipeServer *) lpvParam ;
+   PipeClientThreadAttributes * p_pipeclientthreadattributes =
+     (PipeClientThreadAttributes * ) lpvParam ;
+//   DEBUGN("p_namedpipeserver: " << p_namedpipeserver)
+   DEBUGN("p_pipeclientthreadattributes: " << p_pipeclientthreadattributes)
+   if( //p_namedpipeserver
+       p_pipeclientthreadattributes )
    {
-     hPipe = p_namedpipeserver->m_handlePipe ;
+     BOOL fSuccess;
+     BYTE * arbyPipeDataToSend ;
+     BYTE byCommand ;
+     DWORD dwBytesRead ;
+     DWORD dwByteSize ;
+     DWORD dwNumBytesWritten ;
+     HANDLE hPipe;
+     NamedPipeServer * p_namedpipeserver =
+         p_pipeclientthreadattributes->mp_namedpipeserver ;
+//     std::wstring stdwstrMessage ;
+//     hPipe = p_namedpipeserver->m_handlePipe ;
+     hPipe = p_pipeclientthreadattributes->m_handlePipe ;
      DEBUGN("pipe handle: " << hPipe )
      while (1) 
      { 
@@ -127,31 +71,95 @@ VOID PipeClientThread(LPVOID lpvParam)
            , & byCommand
            //PIPE_BUFFER_SIZE * sizeof(TCHAR), // size of buffer 
            , 1
-           , & cbBytesRead, // number of bytes read 
+           , & dwBytesRead, // number of bytes read
            NULL);        // not overlapped I/O 
         //OutputPipeInfo();
-        if (! fSuccess || cbBytesRead == 0) 
-           break; 
+        if (! fSuccess || dwBytesRead == 0)
+        {
+          DWORD dw = ::GetLastError() ;
+          LOGN("reading from pipe failed: " <<
+            LocalLanguageMessageFromErrorCode(dw))
+          break;
+        }
         //switch( byCommand )
         //{
         //  case stop_service:
         //}
         //}
         LOGN("received client command: " << (WORD) byCommand )
-        p_namedpipeserver->mp_serverprocess->IPC_Message(byCommand) ;
+        dwByteSize =
+        p_namedpipeserver->mp_serverprocess->IPC_Message(
+          byCommand ,
+//          stdwstrMessage
+          arbyPipeDataToSend
+          ) ;
+//        DWORD dwByteSize = p_namedpipeserver->mr_ipc_datahandler.GetResponse(
+//          byCommand ,
+//          arbyPipeDataToSend
+//          ) ;
         //GetAnswerToRequest(chRequest, chReply, &cbReplyBytes); 
    
-     //// Write the reply to the pipe. 
-     //   fSuccess = WriteFile( 
-     //      hPipe,        // handle to pipe 
-     //      chReply,      // buffer to write from 
-     //      cbReplyBytes, // number of bytes to write 
-     //      &cbWritten,   // number of bytes written 
-     //      NULL);        // not overlapped I/O 
+        DEBUGN("before write 4 bytes to pipe")
+     // Write the reply to the pipe.
+        fSuccess = ::WriteFile(
+                   hPipe,        // handle to pipe
+                   & dwByteSize , //chReply,      // buffer to write from
+                   4 ,//cbReplyBytes, // number of bytes to write
+                   & dwNumBytesWritten,   // number of bytes written
+                   NULL // not overlapped I/O
+                   );
+        ::FlushFileBuffers(hPipe);
+        DEBUGN( dwNumBytesWritten << " bytes written to pipe")
+        if( fSuccess )
+          DEBUGN( " successfully written to pipe")
+        else
+          DEBUGN( "error writing to pipe")
 
-     //   if (! fSuccess || cbReplyBytes != cbWritten) break; 
-    } 
-   
+        if (! fSuccess )
+        {
+          DWORD dw = ::GetLastError() ;
+          LOGN("error writing to pipe:"
+            << LocalLanguageMessageFromErrorCode(dw) )
+          delete [] arbyPipeDataToSend ;
+          break;
+        }
+        if( fSuccess  )
+        {
+          DEBUGN("before write " << dwByteSize << " bytes to pipe")
+          fSuccess = ::WriteFile(
+             hPipe,        // handle to pipe
+             arbyPipeDataToSend , //chReply,      // buffer to write from
+             dwByteSize ,//cbReplyBytes, // number of bytes to write
+             & dwNumBytesWritten,   // number of bytes written
+             NULL // not overlapped I/O
+             );
+          ::FlushFileBuffers(hPipe);
+          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
+          if( fSuccess )
+            DEBUGN( " successfully written to pipe")
+          else
+            DEBUGN( "error writing to pipe")
+          if (! fSuccess || dwByteSize != dwNumBytesWritten )
+          {
+            DWORD dw = ::GetLastError() ;
+            LOGN("error writing to pipe:"
+              << LocalLanguageMessageFromErrorCode(dw) )
+            delete [] arbyPipeDataToSend ;
+            break;
+          }
+        }
+        delete [] arbyPipeDataToSend ;
+//        //Writing 0 bytes signals the end of the data
+//        ::WriteFile(
+//           hPipe,        // handle to pipe
+//           arbyPipeDataToSend , //chReply,      // buffer to write from
+//           0 ,//cbReplyBytes, // number of bytes to write
+//           & dwNumBytesWritten,   // number of bytes written
+//           NULL
+//           );
+    } //while
+     //was created on heap by thread for "create pipe client thread "
+     delete p_pipeclientthreadattributes ;
   // Flush the pipe to allow the client to read the pipe's contents 
   // before disconnecting. Then disconnect the pipe, and close the 
   // handle to this pipe instance. 
@@ -160,12 +168,30 @@ VOID PipeClientThread(LPVOID lpvParam)
      ::DisconnectNamedPipe(hPipe); 
      ::CloseHandle(hPipe); 
    }
+   LOGN("end of pipe client thread with thread ID:" << ::GetCurrentThreadId() )
 }
 
-NamedPipeServer::NamedPipeServer(I_ServerProcess * p_serverprocess)
+NamedPipeServer::NamedPipeServer(
+  I_ServerProcess * p_serverprocess
+// , I_IPC_DataHandler & r_ipc_datahandler
+  )
   : mp_security_descriptor (NULL)
+  , mp_ipc_datahandler( NULL)
+  , m_lpszPipename ( _T("\\\\.\\pipe\\CPUcontrollerService") )
+//  , mr_ipc_datahandler (r_ipc_datahandler)
 {
   mp_serverprocess = p_serverprocess ;
+}
+
+NamedPipeServer::NamedPipeServer(
+//      I_ServerProcess * p_serverprocess
+  I_IPC_DataHandler & r_ipc_datahandler
+  )
+  :
+  mp_ipc_datahandler ( & r_ipc_datahandler )
+  , mp_security_descriptor( NULL )
+{
+
 }
 
 NamedPipeServer::~NamedPipeServer()
@@ -178,263 +204,45 @@ NamedPipeServer::~NamedPipeServer()
    }
 }
 
-BYTE NamedPipeServer::CreateSecAttributes(
-  SECURITY_ATTRIBUTES & sa )
+void NamedPipeServer::CreateDownPrivilegedPipe()
 {
-  BYTE byReturn = 0 ;
-//  DWORD dwRes, dwDisposition;
-//  PSID pEveryoneSID = NULL , pAdminSID = NULL;
-//  PACL pACL = NULL;
-//  PSECURITY_DESCRIPTOR pSD = NULL;
-//  SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-//  SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-//  //SECURITY_ATTRIBUTES sa;
-//  LONG lRes;
-//  HKEY hkSub = NULL;
-//
-//  //SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-//  //SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-//  //SECURITY_ATTRIBUTES sa;
-//  EXPLICIT_ACCESS explicit_access , ar_explicit_access [2] ;
-//
-//  // Create a well-known SID for the Everyone group.
-//  if( ! AllocateAndInitializeSid(
-//      & SIDAuthWorld, 
-//      1,
-//     SECURITY_WORLD_RID,
-//     0, 0, 0, 0, 0, 0, 0,
-//     &pEveryoneSID )
-//    )
-//  {
-//    LOGN("AllocateAndInitializeSid Error %u\n", GetLastError());
-//    goto Cleanup;
-//  }
-//  ZeroMemory(&explicit_access, sizeof(EXPLICIT_ACCESS) );
-//  ZeroMemory(ar_explicit_access, 2 * sizeof(EXPLICIT_ACCESS) );
-//  // Initialize an EXPLICIT_ACCESS structure for an ACE.
-//  // The ACE will allow Everyone group full access to the key.
-//  explicit_access.grfAccessPermissions = KEY_ALL_ACCESS;
-//  explicit_access.grfAccessMode = SET_ACCESS;
-//  explicit_access.grfInheritance= NO_INHERITANCE;
-//  explicit_access.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-//  explicit_access.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP ;
-//  explicit_access.Trustee.ptstrName  = (LPTSTR) //pAdminSID;
-//    pEveryoneSID ;
-//  // Create a SID for the BUILTIN\Administrators group.
-//  if(! AllocateAndInitializeSid(
-//    & SIDAuthNT, 
-//    2,
-//     SECURITY_BUILTIN_DOMAIN_RID,
-//     DOMAIN_ALIAS_RID_ADMINS,
-//     0, 0, 0, 0, 0, 0,
-//     &pAdminSID )
-//    )
-//  {
-//    LOGN("AllocateAndInitializeSid Error %u\n", GetLastError());
-//    goto Cleanup; 
-//  }
-//
-//  // Initialize an EXPLICIT_ACCESS structure for an ACE.
-//  // The ACE will allow the Administrators group full access to the key.
-//  ar_explicit_access [1].grfAccessPermissions = KEY_ALL_ACCESS;
-//  ar_explicit_access [1].grfAccessMode = SET_ACCESS;
-//  ar_explicit_access [1].grfInheritance= NO_INHERITANCE;
-//  ar_explicit_access [1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-//  ar_explicit_access [1].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-//  ar_explicit_access [1].Trustee.ptstrName  = (LPTSTR) pAdminSID;
-//  
-//  ar_explicit_access [0] = explicit_access ;
-//  // Create a new ACL that contains the new ACEs.
-//    dwRes = 
-//      //The SetEntriesInAcl function creates a new access control list 
-//      //(ACL) by merging new access control or audit control information 
-//      //into an existing ACL structure.
-//      SetEntriesInAcl(
-//      //cCountOfExplicitEntries
-//      //1 
-//      2
-//      //, & explicit_access
-//      //, & ar_explicit_access [1]
-//      , ar_explicit_access
-//      , NULL //OldAcl
-//      , & pACL );
-//    if (ERROR_SUCCESS != dwRes) 
-//    {
-//        LOGN("SetEntriesInAcl Error %u\n", GetLastError());
-//        goto Cleanup;
-//    }
-//
-//    // Initialize a security descriptor.  
-//    pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(
-//      LPTR, 
-//      SECURITY_DESCRIPTOR_MIN_LENGTH ); 
-//    if (NULL == pSD) 
-//    { 
-//        LOGN("LocalAlloc Error %u\n", GetLastError());
-//        goto Cleanup; 
-//    } 
-// 
-//    if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) 
-//    {  
-//        LOGN("InitializeSecurityDescriptor Error %u\n",
-//                                GetLastError());
-//        goto Cleanup; 
-//    } 
-//    // Add the ACL to the security descriptor. 
-//    if ( ! SetSecurityDescriptorDacl(
-//          pSD, 
-//          TRUE,     // bDaclPresent flag   
-//          pACL, 
-//          FALSE // not a default DACL 
-//          )
-//       )
-//    {  
-//      LOGN("SetSecurityDescriptorDacl Error %u\n", GetLastError());
-//      goto Cleanup; 
-//    } 
-//    // Initialize a security attributes structure.
-//    sa.nLength = sizeof (SECURITY_ATTRIBUTES);
-//    sa.lpSecurityDescriptor = pSD;
-//    sa.bInheritHandle = //FALSE;
-//      TRUE ;
-//    byReturn = 1 ;
-//
-//Cleanup:
-//    if (pEveryoneSID) 
-//        FreeSid(pEveryoneSID);
-//    //if (pAdminSID) 
-//    //    FreeSid(pAdminSID);
-//    if (pACL) 
-//        LocalFree(pACL);
-//    if (pSD) 
-//        LocalFree(pSD);
-//    if (hkSub) 
-//        RegCloseKey(hkSub);
-//    LOGN("CreateSecAttributes return: " << (WORD) byReturn )
-
-    DWORD dwRes, dwDisposition;
-    PSID pEveryoneSID = NULL, pAdminSID = NULL;
-    PACL pACL = NULL;
-    PSECURITY_DESCRIPTOR pSD = NULL;
-    EXPLICIT_ACCESS ea[2];
-    SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-    SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-    //SECURITY_ATTRIBUTES sa;
-    LONG lRes;
-    HKEY hkSub = NULL;
-
-    // Create a well-known SID for the Everyone group.
-    if(!AllocateAndInitializeSid(&SIDAuthWorld, 1,
-                     SECURITY_WORLD_RID,
-                     0, 0, 0, 0, 0, 0, 0,
-                     &pEveryoneSID))
-    {
-        printf("AllocateAndInitializeSid Error %u\n", GetLastError());
-        goto Cleanup;
-    }
-
-    // Initialize an EXPLICIT_ACCESS structure for an ACE.
-    // The ACE will allow Everyone read access to the key.
-    ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
-    ea[0].grfAccessPermissions = KEY_READ;
-    ea[0].grfAccessMode = SET_ACCESS;
-    ea[0].grfInheritance= NO_INHERITANCE;
-    ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-    ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-    ea[0].Trustee.ptstrName  = (LPTSTR) pEveryoneSID;
-
-    // Create a SID for the BUILTIN\Administrators group.
-    if(! AllocateAndInitializeSid(&SIDAuthNT, 2,
-                     SECURITY_BUILTIN_DOMAIN_RID,
-                     DOMAIN_ALIAS_RID_ADMINS,
-                     0, 0, 0, 0, 0, 0,
-                     &pAdminSID)) 
-    // Create a SID for the BUILTIN\local system group.
-    if(! AllocateAndInitializeSid(
-        &SIDAuthNT, 
-        //http://support.microsoft.com/kb/288900/de:
-        //NT Bekannte SIDs (wie LocalSystem ) haben nur einen RID Wert 
-        //relativ zu der Bezeichnerautorit�t SECURITY_NT_AUTHORITY.
-        1,
-       SECURITY_LOCAL_SYSTEM_RID,
-       0, 0, 0, 0, 0, 0, 0,
-       &pAdminSID)
-       ) 
-    {
-        printf("AllocateAndInitializeSid Error %u\n", GetLastError());
-        goto Cleanup; 
-    }
-
-    // Initialize an EXPLICIT_ACCESS structure for an ACE.
-    // The ACE will allow the Administrators group full access to the key.
-    ea[1].grfAccessPermissions = KEY_ALL_ACCESS;
-    ea[1].grfAccessMode = SET_ACCESS;
-    ea[1].grfInheritance= NO_INHERITANCE;
-    ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-    ea[1].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-    ea[1].Trustee.ptstrName  = (LPTSTR) pAdminSID;
-
-    // Create a new ACL that contains the new ACEs.
-    //dwRes = SetEntriesInAcl(2, ea, NULL, &pACL);
-    dwRes = SetEntriesInAcl(1, & ea[1], NULL, &pACL);
-    if (ERROR_SUCCESS != dwRes) 
-    {
-        printf("SetEntriesInAcl Error %u\n", GetLastError());
-        goto Cleanup;
-    }
-
-    // Initialize a security descriptor.  
-    pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, 
-                             SECURITY_DESCRIPTOR_MIN_LENGTH); 
-    if (NULL == pSD) 
-    { 
-        printf("LocalAlloc Error %u\n", GetLastError());
-        goto Cleanup; 
-    } 
- 
-    if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) 
-    {  
-        printf("InitializeSecurityDescriptor Error %u\n",
-                                GetLastError());
-        goto Cleanup; 
-    } 
- 
-    // Add the ACL to the security descriptor. 
-    if (!SetSecurityDescriptorDacl(pSD, 
-            TRUE,     // bDaclPresent flag   
-            pACL, 
-            FALSE))   // not a default DACL 
-    {  
-        printf("SetSecurityDescriptorDacl Error %u\n", GetLastError());
-        goto Cleanup; 
-    } 
-
-    // Initialize a security attributes structure.
-    sa.nLength = sizeof (SECURITY_ATTRIBUTES);
-    sa.lpSecurityDescriptor = pSD;
-    sa.bInheritHandle = FALSE;
-    byReturn = 1;
-
-    //// Use the security attributes to set the security descriptor 
-    //// when you create a key.
-    //lRes = RegCreateKeyEx(HKEY_CURRENT_USER, "mykey", 0, "", 0, 
-    //        KEY_READ | KEY_WRITE, &sa, &hkSub, &dwDisposition); 
-    //printf("RegCreateKeyEx result %u\n", lRes );
-
-Cleanup:
-
-    if (pEveryoneSID) 
-        FreeSid(pEveryoneSID);
-    if (pAdminSID) 
-        FreeSid(pAdminSID);
-    if (pACL) 
-        LocalFree(pACL);
-    if (pSD) 
-        LocalFree(pSD);
-    if (hkSub) 
-        RegCloseKey(hkSub);   
-   
-    return byReturn ;
+  LOGN("create named pipe \"" << m_lpszPipename << "\"" )
+  //http://msdn.microsoft.com/en-us/library/ms707085(VS.85).aspx
+  //SECURITY_WORLD_SID_AUTHORITY
+  //Windows Me/98/95:  Named pipes cannot be created.
+  m_handlePipe =
+    //If the function succeeds, the return value is a handle to the
+    //server end of a named pipe instance.
+    //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
+    ::CreateNamedPipe(
+      //The string must have the following form: \\.\pipe\pipename
+      //"\\\\.\\pipe\\CPUcontrollerService" //LPCTSTR lpName,
+//      lpszPipename
+      m_lpszPipename
+      , PIPE_ACCESS_DUPLEX //DWORD dwOpenMode,
+        //"The caller will have write access to the named pipe's
+        //discretionary access control list (ACL)."
+        | WRITE_DAC //necessary for changing the sec desc after creation?!
+      , PIPE_TYPE_BYTE //DWORD dwPipeMode,
+        | PIPE_WAIT        // blocking mode
+      , PIPE_UNLIMITED_INSTANCES //DWORD nMaxInstances,
+      , PIPE_BUFFER_SIZE //DWORD nOutBufferSize,
+      , PIPE_BUFFER_SIZE  //DWORD nInBufferSize,
+      //DWORD nDefaultTimeOut,
+      , NMPWAIT_USE_DEFAULT_WAIT // client time-out
+      //LPSECURITY_ATTRIBUTES lpSecurityAttributes
+      //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
+      //"If lpSecurityAttributes is NULL, the named pipe gets a default
+      //security descriptor and the handle cannot be inherited."
+      //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/security_descriptor.htm
+      //"The ACLs in the default security descriptor for a named pipe grant
+      //full control to the LocalSystem account, administrators, and the
+      //creator owner. They also grant read access to members of the
+      //Everyone group and the anonymous account."
+//          , NULL
+      , //& security_attributes
+      & m_security_attributes
+    );
 }
 
 //e.g. create shared memory or create socket and listen on socket.
@@ -443,10 +251,10 @@ BYTE NamedPipeServer::Init(
   )
 {
   LOGN("init. pipe server ");
-  LPTSTR lpszPipename = _T("\\\\.\\pipe\\CPUcontrollerService") ;
+//  LPTSTR lpszPipename = _T("\\\\.\\pipe\\CPUcontrollerService") ;
 
   //SECURITY_DESCRIPTOR sd ;
-  SECURITY_ATTRIBUTES sa ;
+//  SECURITY_ATTRIBUTES security_attributes ;
   //SID_IDENTIFIER_AUTHORITY siaLocal = SECURITY_LOCAL_SID_AUTHORITY;
   //if( !AllocateAndInitializeSid( 
   //  & siaLocal, 
@@ -476,6 +284,13 @@ BYTE NamedPipeServer::Init(
    // create a security descriptor that allows anyone to write to
    //  the pipe...
    //
+
+  //http://msdn.microsoft.com/en-us/library/aa379561%28VS.85%29.aspx:
+   //"Several functions that use the SECURITY_DESCRIPTOR structure require that
+   //this structure be aligned on a valid pointer boundary in memory.
+  //These boundaries vary depending on the type of processor used.
+  //Memory allocation functions such as malloc  and LocalAlloc return properly
+  //aligned pointers."
    mp_security_descriptor = (PSECURITY_DESCRIPTOR) malloc( 
      // = (sizeof(SECURITY_DESCRIPTOR))
      SECURITY_DESCRIPTOR_MIN_LENGTH );
@@ -483,113 +298,119 @@ BYTE NamedPipeServer::Init(
   if ( mp_security_descriptor //)
    //{
      //if ( 
-     && InitializeSecurityDescriptor(mp_security_descriptor, 
-          SECURITY_DESCRIPTOR_REVISION)
+     && InitializeSecurityDescriptor(
+       mp_security_descriptor,
+       SECURITY_DESCRIPTOR_REVISION
+       )
      )
   {
-    sa.nLength = sizeof(sa);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = mp_security_descriptor ;
+//    security_attributes.nLength = sizeof(security_attributes);
+//    security_attributes.bInheritHandle = TRUE;
+//    security_attributes.lpSecurityDescriptor = mp_security_descriptor ;
+    m_security_attributes.nLength = sizeof(m_security_attributes);
+    m_security_attributes.bInheritHandle = TRUE;
+    m_security_attributes.lpSecurityDescriptor = mp_security_descriptor ;
 
-    if( DowngradeDACL(&sa) )
+    //ImpersonateNamedPipeClient() also allows less-privileged clients to
+    //connect?
+    if( DowngradeDACL( //& security_attributes
+      & m_security_attributes )
+      )
     //{
     //}
     {
-      //http://msdn.microsoft.com/en-us/library/ms707085(VS.85).aspx
-      //SECURITY_WORLD_SID_AUTHORITY
-      //Windows Me/98/95:  Named pipes cannot be created.
-      m_handlePipe = 
-        //If the function succeeds, the return value is a handle to the 
-        //server end of a named pipe instance.
-        //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
-        ::CreateNamedPipe(
-          //The string must have the following form: \\.\pipe\pipename
-          //"\\\\.\\pipe\\CPUcontrollerService" //LPCTSTR lpName,
-          lpszPipename
-
-          , PIPE_ACCESS_DUPLEX //DWORD dwOpenMode,
-            //"The caller will have write access to the named pipe's
-            //discretionary access control list (ACL)."
-            | WRITE_DAC //necessary for changing the sec desc after creation?!
-          , PIPE_TYPE_BYTE //DWORD dwPipeMode,
-            | PIPE_WAIT        // blocking mode 
-          , PIPE_UNLIMITED_INSTANCES //DWORD nMaxInstances,
-          , PIPE_BUFFER_SIZE //DWORD nOutBufferSize,
-          , PIPE_BUFFER_SIZE  //DWORD nInBufferSize,
-          //DWORD nDefaultTimeOut,
-          , NMPWAIT_USE_DEFAULT_WAIT // client time-out 
-          //LPSECURITY_ATTRIBUTES lpSecurityAttributes
-          //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
-          //"If lpSecurityAttributes is NULL, the named pipe gets a default
-          //security descriptor and the handle cannot be inherited."
-          //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/security_descriptor.htm
-          //"The ACLs in the default security descriptor for a named pipe grant
-          //full control to the LocalSystem account, administrators, and the
-          //creator owner. They also grant read access to members of the
-          //Everyone group and the anonymous account."
-//          , NULL
-          , & sa
-        );
-      //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/impersonatenamedpipeclient.htm:
-      //ImpersonateNamedPipeClient
-
-      //DWORD GetSecurityInfo(
-      //  m_handlePipe ,//HANDLE handle,
-      //  SE_OBJECT_TYPE ObjectType,
-      //  SECURITY_INFORMATION SecurityInfo,
-      //  PSID* ppsidOwner,
-      //  PSID* ppsidGroup,
-      //  PACL* ppDacl,
-      //  PACL* ppSacl,
-      //  PSECURITY_DESCRIPTOR* ppSecurityDescriptor
-      //);
-
-      if ( m_handlePipe == INVALID_HANDLE_VALUE) 
+      do
       {
-          LOGN("CreatePipe failed"); 
-      }
-      else
-      {
-        LOGN("CreatePipe succeeded"); 
-//        AddLowPrivilegedACE(m_handlePipe) ;
-//        OutputPipeInfo(m_handlePipe) ;
-        LOGN("Waiting for incoming client connections")
-        // Wait for the client to connect; if it succeeds, 
-        // the function returns a nonzero value. If the function
-        // returns zero, GetLastError returns ERROR_PIPE_CONNECTED. 
-        BOOL fConnected = ::ConnectNamedPipe( 
-          m_handlePipe, //handle to pipe
-          NULL //lpOverlapped
-          ) ? 
-          TRUE : (::GetLastError() == ERROR_PIPE_CONNECTED); 
+        CreateDownPrivilegedPipe() ;
+        //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/impersonatenamedpipeclient.htm:
+        //ImpersonateNamedPipeClient
 
-        if (fConnected) 
-        { 
-          DWORD dwThreadId ;
-          LOGN("pipe server: A client connected") ;
-        // Create a thread for this client. 
-          HANDLE hThread = ::CreateThread( 
-              NULL,              // no security attribute 
-              0,                 // default stack size 
-              (LPTHREAD_START_ROUTINE) PipeClientThread, 
-              //(LPVOID) m_handlePipe,    // thread parameter 
-              this ,
-              0,                 // not suspended 
-              & dwThreadId // returns thread ID 
-              );
+        //DWORD GetSecurityInfo(
+        //  m_handlePipe ,//HANDLE handle,
+        //  SE_OBJECT_TYPE ObjectType,
+        //  SECURITY_INFORMATION SecurityInfo,
+        //  PSID* ppsidOwner,
+        //  PSID* ppsidGroup,
+        //  PACL* ppDacl,
+        //  PACL* ppSacl,
+        //  PSECURITY_DESCRIPTOR* ppSecurityDescriptor
+        //);
+        if ( m_handlePipe == INVALID_HANDLE_VALUE)
+        {
+            LOGN("CreatePipe failed");
+        }
+        else
+        {
+          LOGN("CreatePipe succeeded");
+  //        AddLowPrivilegedACE(m_handlePipe) ;
+  //        OutputPipeInfo(m_handlePipe) ;
+            LOGN("Waiting for incoming client connections")
+            // Wait for the client to connect; if it succeeds,
+            // the function returns a nonzero value. If the function
+            // returns zero, GetLastError returns ERROR_PIPE_CONNECTED.
+            BOOL fConnected =
+              //http://msdn.microsoft.com/en-us/library/aa365146%28VS.85%29.aspx:
+              //"If hNamedPipe was not opened with FILE_FLAG_OVERLAPPED, the
+              //function does not return until a client is connected or an error
+              //occurs."
+              //if synchronous:
+              //"If the function succeeds, the return value is nonzero. If the
+              //function fails, the return value is zero."
+              ::ConnectNamedPipe(
+              m_handlePipe, //handle to pipe
+              //TODO maybe use asynchronous mode. This would make it possible to
+              // exit THIS thread gracefully (correctly free the ressources)
+              //when the program is requested to exit.
+              NULL //lpOverlapped
+              ) ?
+              TRUE : (::GetLastError() == ERROR_PIPE_CONNECTED);
 
-           if ( hThread == NULL )
-           {
-              LOGN("pipe server: CreateThread failed");
-              return 0;
-           }
-           else ::CloseHandle(hThread); 
-        } 
-        else 
-          // The client could not connect, so close the pipe. 
-          ::CloseHandle(m_handlePipe); 
-      }
-    }
+            if (fConnected)
+            {
+              DWORD dwThreadId ;
+              LOGN("pipe server: A client connected") ;
+              //Every pipe client thread must use its own/ a different pipe (handle)
+              //Must create on heap because else it would get invalid after
+              // leaving this block.
+              PipeClientThreadAttributes * pcta = new PipeClientThreadAttributes(
+                m_handlePipe
+                , this) ;
+            // Create a thread for this client.
+              HANDLE hThread = ::CreateThread(
+                  NULL,              // no security attribute
+                  0,                 // default stack size
+                  (LPTHREAD_START_ROUTINE) PipeClientThread,
+                  //(LPVOID) m_handlePipe,    // thread parameter
+//                  this ,
+                  pcta ,
+                  0,                 // not suspended
+                  & dwThreadId // returns thread ID
+                  );
+               if ( hThread == NULL )
+               {
+                  LOGN("pipe server: CreateThread failed");
+                  return 0;
+               }
+               else
+               {
+                 ::CloseHandle(hThread);
+                 LOGN("spawned thread for pipe client with thread ID "
+                   << dwThreadId ) ;
+               }
+            }
+            else
+            {
+              DWORD dw = ::GetLastError() ;
+              LOGN("connecting named pipe failed:" <<
+                LocalLanguageMessageFromErrorCode(dw) )
+              // The client could not connect, so close the pipe.
+              ::CloseHandle(m_handlePipe);
+              break;
+            }
+          }
+      }while(1) ;
+      LOGN("after end of loop for spawning pipe client threads")
+    } //DowngradeDACL
   }
   return 1 ;
 }

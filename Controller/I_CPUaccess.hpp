@@ -56,6 +56,8 @@ class Model ;
 //like via WinRing0 library or via /dev/msr0 etc.
 //So this dependancy that can also be Operating System specific is decoupled.
 
+class I_CPUcontroller ;
+
 //For succ. linking with gcc: if there is an error with vftable:
 ///usr/lib/gcc/i686-pc-cygwin/3.4.4/include/c++/bits/locale_facets.tcc:2498:
 //  undefined reference to `vtable for ISpecificController'
@@ -73,6 +75,13 @@ protected:
 
 public:
   Model * mp_model ;
+  //for an attempt to set the controller object pointer from the DLL:
+  //init() function the a controller class in that module?
+  //e.g. INit(CPUaccess * p_cpuaccess ) {
+  //   p_cpuaccess->m_cpucontroller = & g_NehalemCPUcontroller ;
+  // }
+  //This would avoid writing export functions.
+  I_CPUcontroller * mp_cpu_controller ;
   typedef BOOL ReadMSRex_type (
     //const I_CPUaccess * ,
     DWORD, DWORD*, DWORD*, long unsigned int ) ;

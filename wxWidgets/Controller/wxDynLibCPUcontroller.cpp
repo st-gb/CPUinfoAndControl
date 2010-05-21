@@ -29,8 +29,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   if ( hinstanceCPUctlDLL != 0)*/
   {
     //wxdynamiclibraryCPUctl.
-    wxString wxstrFuncName //= wxT
-      ("Init") ;
+    wxString wxstrFuncName (
+      //Use wxT() to enable to compile with both unicode and ANSI.
+        wxT("Init" ) ) ;
     LOGN("Dyn Lib " << r_wxstrFilePath << " successfully loaded")
     if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) 
       )
@@ -52,6 +53,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       LOGN("Dyn Lib assigned fct ptr to symbol " << wxstrFuncName )
       LOGN("Dyn Lib before calling " << wxstrFuncName )
       DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
+
+//      //TODO
+//      p_cpuaccess->mp_cpucontroller = NULL ;
       //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
       (*pfnInit)( //wxGetApp().mp_i_cpuaccess 
         p_cpuaccess
@@ -59,6 +63,15 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         , & ::ReadMSR
         //1 
         ) ;
+#ifdef _DEBUG
+      //TODO is that possible: change the cpu controller class inside the DLL's
+      //init() function the a controller class in that module?
+      //e.g. INit(CPUaccess * p_cpuaccess ) {
+      //   p_cpuaccess->m_cpucontroller = & g_NehalemCPUcontroller ;
+      // }
+      //This would avoid writing export functions.
+//      p_cpuaccess->mp_cpu = p_cpuaccess
+#endif
       LOGN("Dyn Lib after calling " << wxstrFuncName )
       m_pfnGetMaximumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type) 
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumFrequencyInMHz") 
@@ -182,7 +195,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentPstate(
     , BYTE byCoreID 
     )
   {
-    WORD wMilliVolt ;
+//    WORD wMilliVolt ;
 //    DEBUGN("wxDynLibCPUcontroller::GetCurrentPstate(...) begin")
     if( m_pfngetcurrentpstate )
     {

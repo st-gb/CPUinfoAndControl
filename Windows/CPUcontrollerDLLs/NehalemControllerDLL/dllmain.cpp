@@ -8,7 +8,7 @@
 #include <Controller\I_CPUaccess.hpp>
 #include <Controller\Intel_registers.h>
 #include <Controller/DynLibCPUcontroller.h>
-//#include <Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp> 
+#include <Controller/Intel/Nehalem/NehalemController.hpp>
 //#include <ModelData/ModelData.hpp>
 #include <Windows/GetNumberOfLogicalCPUs.h>
 #include <preprocessor_helper_macros.h>
@@ -18,7 +18,7 @@
 //
 //Nehalem::ClocksNotHaltedCPUcoreUsageGetter * gp_nehalem_clocksnothaltedcpucoreusagegetter ;
 //
-//NehalemController g_nehalemcontroller ;
+NehalemController g_nehalemcontroller ;
 //Nehalem::ClocksNotHaltedCPUcoreUsageGetter 
 //  g_nehalem_clocksnothaltedcpucoreusagegetter( 0, g_nehalemcontroller ) ;
 typedef BOOL (//WINAPI 
@@ -104,13 +104,16 @@ void
   //WINAPI 
   NEHALEM_DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
+  //CPUaccess object inside the exe.
   I_CPUaccess * pi_cpuaccess 
   , ReadMSR_func_type pfnreadmsr 
   //BYTE by 
   )
 {
   g_pi_cpuaccess = pi_cpuaccess ;
+  g_pi_cpuaccess->mp_cpu_controller = & g_nehalemcontroller ;
   AssignExeFunctionPointers() ;
+  g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
   //g_pfnreadmsr = pfnreadmsr ;
   //MSC-gerated version has no problems
 //#ifndef _MSC_VER
@@ -186,21 +189,22 @@ extern "C" __declspec(dllexport)
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
-  DWORD dwLowmostBits , dwHighmostBits ;
-  //Intel: 198H 408 IA32_PERF_STATUS
-  BYTE byRet = 
-    //g_pi_cpuaccess->RdmsrEx(
-    (*g_pfnreadmsr) (
-    IA32_PERF_STATUS,
-    & dwLowmostBits,// bit  0-31 (register "EAX")
-    & dwHighmostBits, 
-    //m_dwAffinityMask
-    1 << wCoreID
-    ) ;
-  //Intel: "15:0 Current performance State Value"
-  //   "63:16 Reserved"
-  *p_wFreqInMHz = (BYTE) ( dwLowmostBits & 255 ) * 133 ;
+//  DWORD dwLowmostBits , dwHighmostBits ;
+//  //Intel: 198H 408 IA32_PERF_STATUS
+//  BYTE byRet =
+//    //g_pi_cpuaccess->RdmsrEx(
+//    (*g_pfnreadmsr) (
+//    IA32_PERF_STATUS,
+//    & dwLowmostBits,// bit  0-31 (register "EAX")
+//    & dwHighmostBits,
+//    //m_dwAffinityMask
+//    1 << wCoreID
+//    ) ;
+//  //Intel: "15:0 Current performance State Value"
+//  //   "63:16 Reserved"
+//  *p_wFreqInMHz = (BYTE) ( dwLowmostBits & 255 ) * 133 ;
   *p_wMilliVolt = 0 ;
+  g_nehalemcontroller.GetCurrentVoltageAndFrequency() ;
   return byRet ;
 }
 

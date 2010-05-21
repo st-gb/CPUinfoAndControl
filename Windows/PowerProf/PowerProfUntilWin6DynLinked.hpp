@@ -139,8 +139,8 @@ public:
   bool OtherDVFSisEnabled() ;
 
   PowerProfUntilWin6DynLinked(
-    //std::wstring & r_stdwstrPowerSchemeName
-    std::tstring & r_stdtstrPowerSchemeName
+    std::wstring & r_stdwstrPowerSchemeName
+//    std::tstring & r_stdtstrPowerSchemeName
     ) ;
   BOOLEAN WINAPI ReadProcessorPwrScheme(
     __in   UINT uiPowerSchemeID,

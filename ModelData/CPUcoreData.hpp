@@ -15,7 +15,10 @@
 //#include <wx/thread.h> //for class wxCriticalSection
 //typedef wxCriticalSection criticalsection_type ;
 //#else
-#include <criticalsection_type.hpp>
+#include <Controller/multithread/condition_type.hpp>
+#include <Controller/multithread/criticalsection_type.hpp>
+#include <Controller/multithread/mutex_type.hpp>
+#include <ModelData/PerCPUcoreAttributes.hpp>
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   //Keep away the dependance on mp_dynfreqscalingaccess for dyn libs.
 #include <wxWidgets/DynFreqScalingThread.hpp>
@@ -29,68 +32,6 @@
 
 //using namespace wxWidgets ;
 
-class CPUcoreData ;
-//class GriffinController ;
-class I_CPUcontroller ;
-//class wxWidgets::DynFreqScalingThread ;
-class ICPUcoreUsageGetter ;
-
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
-namespace wxWidgets
-{
-  class DynFreqScalingThread ;
-}
-#endif
-
-class PerCPUcoreAttributes
-{
-//Sort the attributes  lexicographically for simplification of:
-//Initialize in the same order as textual in the declaration?
-//(to avoid g++ warnings)
-private :
-  BYTE m_byCoreID ;
-  CPUcoreData * mp_cpucoredata ;
-public:
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
-  wxWidgets::DynFreqScalingThread * mp_dynfreqscalingthread ;
-#endif
-  float m_fPreviousCPUusage ;
-  float m_fVoltageInVoltCalculatedFromCPUload ;
-private:
-  I_CPUcontroller * mp_cpucontroller ;
-  ICPUcoreUsageGetter * mp_icpucoreusagegetter ;
-  WORD m_wCurrentFreqInMHz ;
-public:
-  WORD m_wFreqInMHzCalculatedFromCPUload ;
-
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
-  void CreateDynFreqScalingThread(
-    ICPUcoreUsageGetter * p_icpucoreusagegetter 
-    ) ;
-#endif
-
-  PerCPUcoreAttributes() ;
-  ~PerCPUcoreAttributes() ;
-
-  //when this class is an element of an array, the paramless ctor is
-  //called?! So do the init with params here.
-  void Create(
-    BYTE byCoreID
-    //ICPUcoreUsageGetter * p_icpucoreusagegetter 
-    //, GriffinController * p_griffincontroller 
-    , I_CPUcontroller * p_cpucontroller
-    , CPUcoreData & r_cpucoredata
-    ) ;
-  void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
-  {
-    mp_cpucontroller = p_cpucontroller ;
-  }
-} ;
-
-//class GriffinController ;
 class I_CPUcontroller ;
 class MaxVoltageForFreq ;
 
@@ -137,7 +78,15 @@ public:
   WORD m_wMilliSecondsWaitBetweenDFVS ;
   WORD m_wFamily ;
   //wxCriticalSection m_wxcriticalsection ;
+  //Purpose: for multiple threads accessing the data:
+  //  prevent accessing the data while they are being changed by a thread (->the
+  // values could be inconsistent/ not integer ->this could lead to false values)
   criticalsection_type m_wxcriticalsection ;
+//  condition_type m_conditionDVFSthreadMayChangeData ;
+  condition_type m_conditionCPUdataCanBeSafelyRead ;
+  mutex_type m_mutexCPUdataCanBeSafelyRead ;
+  mutex_type m_mutexDVFSthreadMayChangeData ;
+//  condition_type * mp_condition ;
 
   //Intension: allocate this as an array at runtime. So releasing memory 
   //is easier because only memory of this array must be freed
@@ -154,6 +103,7 @@ public:
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
 
+  void ThreadFinishedAccess() ;
   BYTE GetNumberOfCPUcores() ;
   void PossiblyReleaseMem() ;
   BYTE GetMainPLLoperatingFrequencyIDmax(

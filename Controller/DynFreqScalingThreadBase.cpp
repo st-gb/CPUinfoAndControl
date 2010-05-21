@@ -21,7 +21,12 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
   , m_bCalledInit(false)
   , m_wMilliSecondsToWait(100)
   , m_vbRun(true)
+  , m_vbDVFSthreadStopped(true)
 {
+//  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+//  // the mutex should be initially locked
+//  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
+
     DEBUG("constructor of freq scaling thread base--begin\n");
     mp_icpu = p_icpu ;
     LOGN("core usage address: " << p_icpu )
@@ -160,6 +165,7 @@ BYTE DynFreqScalingThreadBase::GetCPUcoreWithHighestLoad(
 
 ExitCode DynFreqScalingThreadBase::Entry()
 {
+  m_vbDVFSthreadStopped = false ;
   LOGN("Dynamic Voltage and Frequency Scaling thread should run? " <<
     ( m_vbRun ? "yes" : "no") )
   LOGN("CPU core usage getter--address: " << mp_icpu )
@@ -167,7 +173,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
   LOGN("DVFS after initializing CPU core usage getter. Should run?: "
       << (m_vbRun ? "yes" : "no" ) )
   while(//1
-    m_vbRun )
+    m_vbRun
+    )
   {
     //LOGN("DVFS thread running ")
     //MessageBeep( (WORD) -1 );
@@ -183,12 +190,22 @@ ExitCode DynFreqScalingThreadBase::Entry()
       //&& m_bSuccFullyGotPStateFromMSR 
       )
     {
+      //Wait until all threads reading from the CPU core data have finished.
+//      mp_cpucoredata->m_conditionDVFSthreadMayChangeData.Wait() ;
+
+      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
+      //After the thread that called conditon.Wait() were woken up:
+      //"It then locks the mutex again and returns."
+      //So the mutex is unlocked at first if they call again "Wait()"?!
+      mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Lock() ;
 //      DEBUGN("DynFreqScalingThreadBase::Entry: confirmed yet")
       //float fTempInDegCelsius ;
       //check if a temp. could be received:
       //Pentium M CPUs have no temperature register
       if( 
         //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
+        //e.g. the CPU asserts "PROC_HOT" or the temp is above the throttle
+        //temperature.
         mp_cpucontroller->TooHot()
         )
         {
@@ -359,12 +376,38 @@ ExitCode DynFreqScalingThreadBase::Entry()
       {
       DEBUGN("DynFreqScalingThreadBase::Entry: NOT confirmed yet")
       }
+//    //All CPU core data is retrieved-> now the IPC can send the data without
+//    // data corruption (that can happen when accessing the data from the IPC
+//    // thread at the same time)
+//    if( mp_cpucoredata->m_eventCurrentCPUdataRetrieved.Broadcast()
+//        )
+    //use an inner block so that the mutexlocker object is destroyed early enough
+    // and so the mutex is unlocked when leaving this block.
+    {
+//      //from http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionctor:
+//      // tell the other(s) thread(s) that the CPU core data may be accessed now:
+//      //  we must
+//      // lock the mutex first or we might signal the condition before the
+//      // waiting threads start waiting on it!
+//      wxMutexLocker lock(m_mutexCPUdataCanBeSafelyRead);
+
+      //Let all threads waiting (that called condition.Wait() ) on the
+      // condition continue.
+      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast();
+    }
     //LOGN("End of scaling thread loop");
     Sleep(//1000
       //m_wMilliSecondsToWait 
       mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
   }//loop
+
+  m_vbDVFSthreadStopped = true ;
   return 0;
+}
+
+bool DynFreqScalingThreadBase::IsStopped()
+{
+  return m_vbDVFSthreadStopped ;
 }
 
 //BYTE
@@ -375,4 +418,10 @@ DWORD DynFreqScalingThreadBase::Start()
   return 1 ;
 }
 
-void DynFreqScalingThreadBase::Stop() { m_vbRun = false ; }
+//SyncOnStoppedState()
+
+//The DVFS thread is only stopped if the loop ended at first.
+void DynFreqScalingThreadBase::Stop()
+{
+  m_vbRun = false ;
+}

@@ -286,20 +286,21 @@ BOOLEAN CALLBACK PwrSchemesEnumProcGetAllNames (
 }
 
 PowerProfUntilWin6DynLinked::PowerProfUntilWin6DynLinked(
-  //std::wstring & stdwstrPowerSchemeName 
-  std::tstring & r_stdtstrPowerSchemeName 
+  std::wstring & r_stdwstrPowerSchemeName
+//  std::tstring & r_stdtstrPowerSchemeName
   )
   //: m_bGotPowerSchemeBeforeDisabling ( false)
 {
   //mp_stdwstrPowerSchemeName = & stdwstrPowerSchemeName ;
-#ifdef  UNICODE                     // r_winnt
-  m_stdwstrPowerSchemeName = r_stdtstrPowerSchemeName ;
-#else
-  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
-    //http://www.wer-weiss-was.de/theme158/article3047390.html:
-    std::wstring ( r_stdtstrPowerSchemeName.begin(), 
-      r_stdtstrPowerSchemeName.end() );
-#endif
+//#ifdef  UNICODE                     // r_winnt
+//  m_stdwstrPowerSchemeName = r_stdtstrPowerSchemeName ;
+//#else
+//  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+//    //http://www.wer-weiss-was.de/theme158/article3047390.html:
+//    std::wstring ( r_stdtstrPowerSchemeName.begin(),
+//      r_stdtstrPowerSchemeName.end() );
+//#endif
+  m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
   Initialize() ;
 }
 

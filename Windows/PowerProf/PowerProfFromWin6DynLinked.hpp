@@ -110,8 +110,8 @@ public:
     ) ;
   void InitializeFunctionPointers();
   PowerProfFromWin6DynLinked(
-    //std::wstring & r_stdwstrPowerSchemeName
-    std::tstring & r_stdtstrPowerSchemeName
+    std::wstring & r_stdwstrPowerSchemeName
+//    std::tstring & r_stdtstrPowerSchemeName
     ) ;
 
   IDynFreqScalingAccess::string_type GetEnableDescription() ;
@@ -222,6 +222,8 @@ public:
 
   bool OtherDVFSisEnabled() ;
 //  void OutputAllPowerSchemes() ;
+  void GetActivePowerSchemeName(
+    std::wstring & r_stdwstrActivePowerSchemeName) ;
   void GetAllPowerSchemeNames(std::set<std::wstring> &
       stdset_stdwstrPowerSchemeName ) ;
   BYTE SetActivePowerScheme(

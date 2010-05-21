@@ -2,6 +2,8 @@
 
 IDI_ICON1 ICON DISCARDABLE "App32.ico"
 
+//to create object file: windres -i all_ressources_do_not_requ_admin.rc -o all_ressources_do_not_requ_admin.o
+
 //#define MANIFEST_RESOURCE_ID 1
 //MANIFEST_RESOURCE_ID RT_MANIFEST "x86InfoAndControl.exe.manifest"
 //The manifest file may NOT have a commentc

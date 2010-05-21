@@ -100,10 +100,37 @@ void ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
         "StartServiceCtrlDispatcher. Each process can call "
         "StartServiceCtrlDispatcher only one time." ;
       break;
+    default:
+      r_stdstrErrorDescription =
+          LocalLanguageMessageFromErrorCode( dwLastError ) ;
   }
 }
 
-DWORD ServiceBase::PauseService(const TCHAR * cp_tchServiceName
+void ServiceBase::GetErrorDescriptionFromOpenServiceErrCode(
+  DWORD dwLastError ,
+  std::string & r_stdstrErrorDescription
+  )
+{
+  switch( dwLastError )
+  {
+    //http://msdn.microsoft.com/en-us/library/ms684330%28VS.85%29.aspx:
+    case ERROR_INVALID_NAME:
+      r_stdstrErrorDescription =
+        "The specified service name is invalid." ;
+      break;
+    case ERROR_SERVICE_DOES_NOT_EXIST:
+      r_stdstrErrorDescription =
+        "The specified service does not exist." ;
+      break;
+    default:
+      r_stdstrErrorDescription =
+          LocalLanguageMessageFromErrorCode( dwLastError ) ;
+  }
+}
+
+DWORD ServiceBase::PauseService(
+  const TCHAR * cp_tchServiceName
+  , std::string & r_stdstrMsg
   )
 {
   SC_HANDLE schService ;
@@ -136,15 +163,22 @@ DWORD ServiceBase::PauseService(const TCHAR * cp_tchServiceName
       throw ConnectToSCMerror( dwLastError ) ;
     }
     // Open a handle to the service. 
-    schService = OpenService( 
+    schService =
+      //http://msdn.microsoft.com/en-us/library/ms684330%28VS.85%29.aspx:
+      //"If the function fails, the return value is NULL.
+      //To get extended error information, call GetLastError."
+      ::OpenService(
       schSCManager,        // SCManager database 
       //TEXT("Sample_Srv"),  // name of service 
       cp_tchServiceName ,
-      SERVICE_PAUSE_CONTINUE );          // specify access 
-    if (schService == NULL) 
+      SERVICE_PAUSE_CONTINUE
+      );          // specify access
+    if ( schService == NULL)
     {
-        //printf("OpenService failed (%d)\n", GetLastError()); 
-        return FALSE;
+        //printf("OpenService failed (%d)\n", GetLastError());
+      DWORD dw = ::GetLastError() ;
+      GetErrorDescriptionFromOpenServiceErrCode( dw , r_stdstrMsg ) ;
+      return FALSE;
     }
  
     // Send a control value to the service. 
@@ -156,7 +190,7 @@ DWORD ServiceBase::PauseService(const TCHAR * cp_tchServiceName
         //printf("ControlService failed (%d)\n", GetLastError()); 
         return FALSE;
     }
-  return 0 ;
+  return TRUE ;
 }
 
 void ServiceBase::PrintPossibleSolution(DWORD dwWinError ,

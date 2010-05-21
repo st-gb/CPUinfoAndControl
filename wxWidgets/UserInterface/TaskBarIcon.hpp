@@ -20,6 +20,7 @@ private:
   std::map<WORD,std::wstring> m_stdmap_eventid2powerschemename ;
 #endif //#ifdef __WXMSW__
   MainFrame * mp_mainframe ;
+  wxMenu * p_wxmenu ;
 public:
 #if defined(__WXCOCOA__)
     MyTaskBarIcon(wxTaskBarIconType iconType = DEFAULT_TYPE)
@@ -39,6 +40,7 @@ public:
 //     void OnMenuUICheckmark(wxUpdateUIEvent&);
 //    void OnMenuSub(wxCommandEvent&);
     virtual wxMenu *CreatePopupMenu();
+    void CreatePowerSchemesMenu() ;
 //    void SetMainFrame(MainFrame * ) ;
     void OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent) ;
     DECLARE_EVENT_TABLE()

@@ -5,11 +5,14 @@
 #endif
 #include <windows.h> //LPTSTR 
 
+#include <string> //std::wstring
+
 class NamedPipeClient
 {
   bool m_bConnected ;
   HANDLE m_handleClientPipe; 
 public:
+  std::wstring m_stdwstrMessage ;
   //NamedPipeClient( LPTSTR lpszPipename ) ;
   void OnDisconnect() ;
   BYTE Init() ;

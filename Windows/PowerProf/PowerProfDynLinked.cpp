@@ -11,8 +11,8 @@
 #include <Controller/stdtstr.hpp> //class tstring
 
 PowerProfDynLinked::PowerProfDynLinked(
-  //std::wstring & r_stdwstrProgramName 
-  std::tstring & r_stdtstrProgramName 
+  std::wstring & r_stdwstrProgramName
+//  std::tstring & r_stdtstrProgramName
   )
   : mp_i_powerprofdynlinked ( NULL)
 {
@@ -22,16 +22,17 @@ PowerProfDynLinked::PowerProfDynLinked(
     ) 
   {
     mp_i_powerprofdynlinked = new PowerProfFromWin6DynLinked(
-      //r_stdwstrProgramName 
-      r_stdtstrProgramName 
+      r_stdwstrProgramName
+//      r_stdtstrProgramName
       ) ;
     //mp_i_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
   }
   else
   {
     mp_i_powerprofdynlinked = new PowerProfUntilWin6DynLinked(
-      //r_stdwstrProgramName 
-      r_stdtstrProgramName ) ;
+      r_stdwstrProgramName
+//      r_stdtstrProgramName
+      ) ;
   }
 //  #ifdef _DEBUG
 //    mp_i_powerprofdynlinked->OutputAllPowerSchemes() ;
@@ -130,6 +131,12 @@ unsigned char PowerProfDynLinked::EnableFrequencyScalingByOS()
 bool PowerProfDynLinked::EnablingIsPossible()
 {
   return mp_i_powerprofdynlinked->EnablingIsPossible() ;
+}
+
+void PowerProfDynLinked::GetActivePowerSchemeName( std::wstring & r_stdwstr)
+{
+  mp_i_powerprofdynlinked->//OutputAllPowerSchemes() ;
+    GetActivePowerSchemeName(r_stdwstr) ;
 }
 
 void PowerProfDynLinked::GetAllPowerSchemeNames(

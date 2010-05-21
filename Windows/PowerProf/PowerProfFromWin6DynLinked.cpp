@@ -590,9 +590,12 @@ bool PowerProfFromWin6DynLinked::EnablingIsPossible()
 }
 
 //std::tstring 
-IDynFreqScalingAccess::string_type PowerProfFromWin6DynLinked::GetEnableDescription()
+//IDynFreqScalingAccess::string_type
+std::wstring
+  PowerProfFromWin6DynLinked::GetEnableDescription()
 {
-  std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  //std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  std::wstring stdwstrReturn( L"no other power scheme available" ) ;
   if( mp_guidPowerSchemeBeforeDisabling )
   {
     std::wstring stdwstrPowerSchemeName ;
@@ -601,11 +604,13 @@ IDynFreqScalingAccess::string_type PowerProfFromWin6DynLinked::GetEnableDescript
     if( stdwstrPowerSchemeName == m_stdwstrPowerSchemeName )
       ;
     else
-      stdtstrReturn = _T("set power scheme \"") 
-        + Getstdtstring( stdwstrPowerSchemeName )
-        + _T("\"") ;
+//      stdtstrReturn = _T("set power scheme \"")
+//        + Getstdtstring( stdwstrPowerSchemeName )
+//        + _T("\"") ;
+      stdwstrReturn = L"set power scheme \"" + stdwstrPowerSchemeName + L"\"" ;
   }
-  return stdtstrReturn ;
+  return //stdtstrReturn ;
+    stdwstrReturn ;
 }
 
 //Return: ERROR_SUCCESS if everything succeeded.
@@ -664,6 +669,26 @@ DWORD PowerProfFromWin6DynLinked::GetPowerSchemeName(
     delete [] ar_ucharBuffer ;
   }
   return dwRes ;
+}
+
+void PowerProfFromWin6DynLinked::GetActivePowerSchemeName(
+  std::wstring & r_stdwstrActivePowerSchemeName )
+{
+  DWORD dwRet ;
+  GUID guidActivePowerScheme ;
+  dwRet = PowerGetActiveScheme( NULL, guidActivePowerScheme ) ;
+  if( dwRet == ERROR_SUCCESS )
+  {
+    dwRet = GetPowerSchemeName( guidActivePowerScheme ,
+      r_stdwstrActivePowerSchemeName ) ;
+    if( dwRet != ERROR_SUCCESS )
+      r_stdwstrActivePowerSchemeName =
+        L"Getting power scheme name for active scheme GUID failed" ;
+  }
+  else
+  {
+    r_stdwstrActivePowerSchemeName = L"Getting active scheme's GUID failed" ;
+  }
 }
 
 void PowerProfFromWin6DynLinked:://OutputAllPowerSchemes()
@@ -848,8 +873,8 @@ DWORD PowerProfFromWin6DynLinked::PowerEnumerate(
 }
 
 PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
-  //std::wstring & r_stdwstrPowerSchemeName
-  std::tstring & r_stdtstrPowerSchemeName
+  std::wstring & r_stdwstrPowerSchemeName
+//  std::tstring & r_stdtstrPowerSchemeName
   )
   :
   //Initialize in the same order as textual in the declaration?
@@ -859,15 +884,16 @@ PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
   , mp_guidPowerSchemeBeforeDisabling ( NULL )
 {
   //m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
-#ifdef  UNICODE                     // r_winnt
-  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
-    r_stdtstrPowerSchemeName ;
-#else
-  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
-    //http://www.wer-weiss-was.de/theme158/article3047390.html:
-    std::wstring ( r_stdtstrPowerSchemeName.begin(), 
-      r_stdtstrPowerSchemeName.end() );
-#endif
+//#ifdef  UNICODE                     // r_winnt
+//  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+//    r_stdtstrPowerSchemeName ;
+//#else
+//  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+//    //http://www.wer-weiss-was.de/theme158/article3047390.html:
+//    std::wstring ( r_stdtstrPowerSchemeName.begin(),
+//      r_stdtstrPowerSchemeName.end() );
+//#endif
+  m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
   m_hinstancePowerProfDLL = 
     //If the function fails, the return value is NULL.
     ::LoadLibraryA( "PowrProf.dll" //LPCSTR 

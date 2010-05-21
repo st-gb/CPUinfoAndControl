@@ -46,6 +46,8 @@ public:
     return m_stdwstrPowerSchemeName ;
   }
 //  virtual void OutputAllPowerSchemes() = 0 ;
+  virtual void GetActivePowerSchemeName(
+    std::wstring & r_stdwstrActivePowerSchemeName) {}
   virtual void GetAllPowerSchemeNames(std::set<std::wstring> &
       stdset_stdwstrPowerSchemeName ) {} ;
   virtual unsigned char PowerSchemeToSetExists() 

@@ -8,7 +8,10 @@
 
   //For E.g. cygwin
   //#ifndef _WINDOWS
-  #ifndef _MSC_VER //MicroSoft C compiler (macro in Visual Studio )
+
+  //if NOT using MicroSoft C compiler (macro in Visual Studio )
+  // (_tcscmp is already defined then-> redefined warning)
+  #if !defined(_MSC_VER) && !defined(_TCHAR_H_)
     #define _W64
     //If NO MultiByteCharacterSet
     #ifndef _MBCS
@@ -105,6 +108,7 @@
     #define DEBUG_COUTN(coutArgs) //->empty
     #define DEBUG_WCOUTN(coutArgs) //->empty
     #define DEBUG_WPRINTFN(...) //->empty
+    #define DEBUG_SPRINTF(...) { } /* block can be used for "if"/"else"*/
     #define DEBUGWN_WSPRINTF(...) { } /* block can be used after "if"/"else"*/
   #endif //#ifdef _DEBUG
 
@@ -131,6 +135,12 @@
       /*g_logger.Log("test ") ; */ }
 //    #endif
     //#ifdef COMPILE_WITH_LOG
+    #define LOG_SPRINTF(...) { char arch_buffer[1000] ; \
+      sprintf( arch_buffer, __VA_ARGS__ ) ; \
+      std::string stdstr(arch_buffer) ; \
+      stdstr += '\n' ; \
+      g_logger.Log( stdstr ) ; \
+      }
     #define LOGN(to_ostream) LOG (to_ostream << "\n" )
 
     //Necessary for MinGW that does not know "std::wstringstream"
@@ -160,7 +170,7 @@
     #endif //#if defined(__MINGW32__)
 
     //for outputting wide strings also with MinGW:
-//    #define LOG_VIA_WSPRINTFN(...) { wchar_t ar_wch[1024] ; \
+/*    #define LOG_VIA_WSPRINTFN(...) { wchar_t ar_wch[1024] ; \ */
 //      wwsprintfW(ar_wch,__VA_ARGS__) ;
 
     #include <iostream> //for std::cout
@@ -177,6 +187,7 @@
       //#define DEBUG(...) { g_logger->Log(__VA_ARGS__) ; }
       //This macro should only be expanded to log outputs on debug versions.
       #define DEBUG(to_ostream) LOG(to_ostream)
+      #define DEBUG_SPRINTF(...) LOG_SPRINTF(__VA_ARGS__)
       #define DEBUGN(to_ostream) LOGN(to_ostream)
       #define DEBUGWN(to_ostream) LOGWN(to_ostream)
       #define DEBUGWN_WSPRINTF(...) LOGWN_WSPRINTF(__VA_ARGS__)

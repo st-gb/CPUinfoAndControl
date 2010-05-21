@@ -11,14 +11,20 @@ std::string LocalLanguageMessageFromErrorCode(DWORD dwErrorCode)
     std::string stdstrMessage ;
     LPVOID lpMsgBuf;
 
-    ::FormatMessage(
+    //Explicitely use the ANSI version "FormatMessageA" (->always ANSI no matter
+    // if "UNICODE" is defined or not)
+    //because we return a std::string.
+    ::FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-        FORMAT_MESSAGE_FROM_SYSTEM,
+          FORMAT_MESSAGE_FROM_SYSTEM,
         NULL,
         dwErrorCode,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &lpMsgBuf,
-        0, NULL );
+//        (LPTSTR) &lpMsgBuf,
+        (LPSTR) & lpMsgBuf,
+        0,
+        NULL
+        );
  
     stdstrMessage = std::string((char*)lpMsgBuf) ;
     //Release memory allocated by "::FormatMessage(...)"?

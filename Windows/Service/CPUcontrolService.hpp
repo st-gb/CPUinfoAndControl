@@ -1,15 +1,14 @@
 #pragma once
 
-#include <fstream> //for class ofstream
-#include <windows.h> //for SERVICE_TABLE_ENTRY, ...
-#include "ModelData/ModelData.hpp"
 //#include "wxWidgets/DynFreqScalingThread.hpp"
 //#include "PumaStateCtrl.h"
 #include <DummyUserInterface.hpp>
 #include <Controller/CPUcontrolBase.hpp>
 #include <Controller/MainController.hpp>
 #include <Controller/I_ServerProcess.hpp>
+#include <Controller/IPC/I_IPC_DataHandler.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
+#include "ModelData/ModelData.hpp"
 
 #ifdef COMPILE_WITH_CALC_THREAD
   #include <Windows/CalculationThread.hpp>
@@ -23,11 +22,17 @@
 #include <Windows/Service/ServiceBase.hpp>
 //#include <Windows/WinRing0dynLinked.hpp>
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
+#include <Xerces/IPC.hpp> //class Xerces::IPCdataHandler
+
+#include <fstream> //for class ofstream
 #include <vector>
+#include <windows.h> //for SERVICE_TABLE_ENTRY, ...
 
 //#define _WIN32_WINNT 0x0400 //for MB_SERVICE_NOTIFICATION
 //#include <winuser.h> //MB_SERVICE_NOTIFICATION
-#define MB_SERVICE_NOTIFICATION 0x00200000L
+#ifndef _WINUSER_H
+  #define MB_SERVICE_NOTIFICATION 0x00200000L
+#endif
 
 class WinRing0DynLinked ;
 class I_DynFreqScalingAccess ;
@@ -48,13 +53,21 @@ private :
   //Service Control Manager is blocked for other services until the service
   //reports SERVICE_RUNNUNG)
   bool m_vbServiceInitialized ;
+//  bool m_bSyncGUIshowDataWithService ;
+#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   HANDLE m_handleMapFile;
+#endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   //LPSTR m_archServiceName ;
+  Xerces::IPCdataHandler m_ipc_datahandler ;
   std::string m_stdstrServiceName ;
   std::string m_stdstrSharedMemoryName ;//= "CPUcontrolService" ;
-  //std::wstring m_stdwstrProgramName ;
+//  std::wstring m_stdwstrProgramName ;
   std::tstring m_stdtstrProgramName ;
+#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   LPVOID mp_voidMappedViewStartingAddress ;
+#endif
+  //this might be changed to a pointer later
+//  I_IPC_DataHandler m_ipc_datahandler ;
 public:
     DWORD m_argc ;
     LPTSTR * m_argv ;
@@ -89,6 +102,7 @@ public:
     //static 
        //Model m_modelDataForCopying ;
        Model * mp_modelData ;
+       Model m_modelData ;
     //static 
        //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
        IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
@@ -108,18 +122,22 @@ public:
     DynFreqScalingThreadBase * mp_dynfreqscalingthreadbase ;
 public :
     CPUcontrolService(//const char* szServiceName
-      //std::wstring & r_stdwstrProgramName
-      std::tstring & r_stdtstrProgramName
+      std::wstring & r_stdwstrProgramName
+//      std::tstring & r_stdtstrProgramName
+//      , I_IPC_DataHandler & r_ipc_datahandler
       ) ;
     CPUcontrolService(
       DWORD argc, 
       LPTSTR *argv ,
-      //std::wstring & r_stdwstrProgramName
-      std::tstring & r_stdtstrProgramName
+      std::wstring & r_stdwstrProgramName
+//      std::tstring & r_stdtstrProgramName
+//      , I_IPC_DataHandler & r_ipc_datahandler
       ) ;
-    ~CPUcontrolService() ;
+    //"virtual" too avoid g++ warning: "warning: `class PowerProfDynLinked' has
+    //  virtual functions but non-virtual destructor"
+    virtual ~CPUcontrolService() ;
 
-    void Continue() ;
+    bool Continue() ;
     //"static" because: there needn't be an object for putting this info out.
     static void CreateStringVector(
       //char arch[] , 
@@ -135,7 +153,12 @@ public :
     inline void HandleStartDynVoltAndFreqScalingThread() ;
     void Initialize() ;
 #ifdef COMPILE_WITH_IPC
-    void IPC_Message(BYTE byCommand) ;
+    DWORD IPC_Message(
+      BYTE byCommand
+//      //wide string because the string may be a chinese string for a power scheme
+//      , std::wstring & stdwstrMessage
+      , BYTE * & r_arbyPipeDataToSend
+      ) ;
 #endif //#ifdef COMPILE_WITH_IPC
     ////static 
     //    bool HasLogFilePathOption( int argc, char *  argv[] ) ;
@@ -149,7 +172,7 @@ public :
       //, ISpecificController * p_ispecificcontroller
       //, UserInterface * p_userinterface
       ) ;
-    void Pause() ;
+    bool Pause() ;
     SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
     static void requestOption(
       //Make as parameter as reference: more ressource-saving than
@@ -178,7 +201,7 @@ public :
     static bool ShouldDeleteService(
         const std::vector<std::string> & cr_vecstdstrParams );
     static VOID SvcDebugOut(LPSTR String, DWORD Status);
-    void StartDynVoltnFreqScaling() ;
+    bool StartDynVoltnFreqScaling() ;
     void Stop() ;
     static void WINAPI ServiceMain(DWORD argc, LPTSTR *argv) ;
     void StartService() ;

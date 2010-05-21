@@ -10,6 +10,7 @@
 #include "Windows/Service/ServiceBase.hpp"
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
+#include <Xerces/IPC.hpp>
 #include <string>
 #include <conio.h> //for getche()
 
@@ -202,7 +203,9 @@ int main( int argc, char *  argv[] )
         {
             ServiceBase::DeleteService(//"GriffinStateService"
                vecstdstrParams.at(1).c_str() ) ;
-            PowerProfDynLinked powerprofdynlinked( stdtstrProgramName ) ;
+            std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
+            PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
+              stdwstr ) ;
             powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
             powerprofdynlinked.OutputAllPowerSchemes() ;
         }
@@ -216,9 +219,16 @@ int main( int argc, char *  argv[] )
       }
       if( bStartService )
       {
-          //GriffinStateControlService griffinstatecontrolservice ;
-          CPUcontrolService cpucontrolservice(argc,argv,
-            stdtstrProgramName ) ;
+         std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
+          CPUcontrolService cpucontrolservice(
+            argc,
+            argv,
+//            stdtstrProgramName
+            stdwstr
+//            , xerces_ipc_data_handler
+            ) ;
+//          Xerces::IPCdataHandler xerces_ipc_data_handler(
+//            cpucontrolservice.m_modelData ) ;
           gp_cpucontrolbase = & cpucontrolservice ;
           cpucontrolservice.StartService();
       }
@@ -241,37 +251,11 @@ int main( int argc, char *  argv[] )
     DEBUG("Run this program as \"local system account\" account within the "
         "service's properties in Windows->control panel->management->services "
         "else errors may occur\n");
-    if( argc == 1 )
-    {
-        //GriffinStateControlService::outputUsage();
-      //GriffinStateControlService griffinstatecontrolservice ;
-       //SERVICE_TABLE_ENTRY ar_service_table_entry[] = 
-       //{ 
-       //   { 
-       //       //Pointer to a null-terminated string that specifies the name of a service to be run in this service process. 
-       //       //If the service is installed with the SERVICE_WIN32_OWN_PROCESS service type, this member is ignored, but cannot be NULL. This member can be an empty string ("").
-       //       //If the service is installed with the SERVICE_WIN32_SHARE_PROCESS service type, this member specifies the name of the service that uses the ServiceMain function pointed to by the lpServiceProc member.
-       //       "GriffinControlService", 
-       //       //Pointer to a ServiceMain function. 
-       //       //MyServiceStart
-       //       ServiceMain
-       //   },
-       //   //NULL entries mark the end of the SERVICE_TABLE_ENTRY array.
-       //   { NULL,              NULL          }
-       //}; 
-     
-       //if ( !StartServiceCtrlDispatcher( ar_service_table_entry)
-       //    ) 
-       //{ 
-       //    SvcDebugOut("error: StartServiceCtrlDispatcher (%d)\n", 
-       //      GetLastError()); 
-       //}
-       //griffinstatecontrolservice.StartService();
-    }
   }
   catch( ConnectToSCMerror e )
   {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Error connecting to the service control manager:\n"
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "Error connecting to the service control manager:\n"
       << LocalLanguageMessageFromErrorCode(e.m_dwErrorCode) 
       << PossibleSolution(e.m_dwErrorCode) )
   }

@@ -165,6 +165,7 @@ public:
   {
     return mp_modelData ;
   }
+  void PossiblyAskForOSdynFreqScalingDisabling() ;
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   void ShowTaskBarIcon(MainFrame * p_mf) ;

@@ -39,8 +39,13 @@ public:
     DWORD dwLastError ,
     std::string & r_stdstrErrorDescription
     ) ;
+  static void GetErrorDescriptionFromOpenServiceErrCode(
+    DWORD dwLastError ,
+    std::string & r_stdstrErrorDescription
+    ) ;
   static DWORD PauseService(
    const TCHAR * tchServiceName
+   , std::string & r_stdstrMsg
    ) ;
   static void PrintPossibleSolution(DWORD dwWinError ,
     const TCHAR * tchServiceName) ;

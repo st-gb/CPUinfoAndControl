@@ -36,10 +36,14 @@ DynFreqScalingDlg::DynFreqScalingDlg(
   mp_wxbuttonOK = new wxButton(this, wxID_OK ) ;
   mp_wxbuttonCancel = new wxButton(this, wxID_CANCEL ) ;
   p_wxtextctrlThrottleTemp = new wxTextCtrl( this, wxID_ANY, //wxT("90")
-    wxString::Format("%f",mp_cpucoredata->m_fThrottleTempInDegCelsius)
+    wxString::Format(
+      //Use wxT() to enable to compile with both unicode and ANSI.
+      wxT("%f") ,mp_cpucoredata->m_fThrottleTempInDegCelsius)
     ) ;
   p_wxtextctrlMilliSecondsWait = new wxTextCtrl(this, wxID_ANY , //wxT("200")
-      wxString::Format("%u",mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS )
+      wxString::Format(
+        //Use wxT() to enable to compile with both unicode and ANSI.
+        wxT("%u") ,mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS )
     ) ;
   p_wxtextctrlCPUusageForThrottleToPstate1 = new wxTextCtrl(
     this

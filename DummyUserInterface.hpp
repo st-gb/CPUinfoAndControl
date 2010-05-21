@@ -1,6 +1,7 @@
 #pragma once //include guard
 
 #include "UserInterfaceBase.hpp"
+#include <global.h>
 
 class DummyUserInterface
     : public UserInterfaceBase

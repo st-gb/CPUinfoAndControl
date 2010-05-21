@@ -45,6 +45,7 @@ public:
   };
   //volatile is important because more than 1 thread may access this variable
   volatile bool m_vbRun ;
+  volatile bool m_vbDVFSthreadStopped ;
   DynFreqScalingThreadBase(  
     ICPUcoreUsageGetter * p_icpu
     //, GriffinController * p_pumastatectrl
@@ -52,6 +53,10 @@ public:
     , CPUcoreData & r_cpucoredata
     ) ;
   ExitCode Entry() ;
+  //implement in the API of the concrete thread class.
+  virtual bool IsRunning() const { return false ; }
+  //"virtual" because it may be overwritten.
+  virtual bool IsStopped() ; //{} ;
   BYTE GetCPUcoreWithHighestLoad( float & fHighestCPUcoreLoadInPercent) ;
   //virtual int Run() = 0 ;
   //Return value for the subclass that is also inherited by "wxThread". 

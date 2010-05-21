@@ -10,7 +10,11 @@
 #endif //#ifdef COMPILE_WITH_IPC
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 //for the #defines like "WTS_SESSION_LOGIN" in <wts32api.h>
-#define _WIN32_WINNT 0x0501
+//  ( is defined inside the #if (_WIN32_WINNT >= 0x0501)  )
+#if _WIN32_WINNT < 0x0501
+  #undef _WIN32_WINNT
+  #define _WIN32_WINNT 0x0501
+#endif
 #include <wtsapi32.h>
 //#include <windows.h>
 
@@ -59,32 +63,38 @@ DWORD WINAPI IPC_ServerThread( LPVOID lpParam )
 
 CPUcontrolService::CPUcontrolService(
     //const char * szServiceName
-  //std::wstring & r_stdwstrProgramName
-  std::tstring & r_stdtstrProgramName
+  std::wstring & r_stdwstrProgramName
+//  std::tstring & r_stdtstrProgramName
+//  , I_IPC_DataHandler & r_ipc_datahandler
   )
-    //C++ style inits:
-    : 
+  //C++ style inits:
+  :
+//    m_bSyncGUIshowDataWithService ( false ) ,
 #ifdef COMPILE_WITH_IPC
     m_ipcserver(this) ,
+//    mr_ipc_datahandler(r_ipc_datahandler) ,
+    m_ipc_datahandler ( m_modelData ) ,
 #endif //#ifdef COMPILE_WITH_IPC
     //m_bProcess ( true )
     //, m_bRun ( true ) 
     //, mp_winring0dynlinked (NULL)
     //, mar_tch(NULL)
-    //, m_powerprofdynlinked ( r_stdwstrProgramName )
+    m_powerprofdynlinked ( r_stdwstrProgramName )
     //,
-    m_powerprofdynlinked ( r_stdtstrProgramName )
-    //, m_stdwstrProgramName ( r_stdwstrProgramName)
-    , m_stdtstrProgramName ( r_stdtstrProgramName)
+//    m_powerprofdynlinked ( r_stdtstrProgramName )
+//    , m_stdwstrProgramName ( r_stdwstrProgramName)
+//    , m_stdtstrProgramName ( r_stdtstrProgramName)
 {
-    Initialize() ;
+  m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
+  Initialize() ;
 }
 
 CPUcontrolService::CPUcontrolService(
   DWORD argc , 
   LPTSTR *argv ,
-  //std::wstring & r_stdwstrProgramName
-  std::tstring & r_stdtstrProgramName
+  std::wstring & r_stdwstrProgramName
+//  std::tstring & r_stdtstrProgramName
+//  , I_IPC_DataHandler & r_ipc_datahandler
   )
   //C++ style init.
   :
@@ -93,11 +103,14 @@ CPUcontrolService::CPUcontrolService(
   m_argv(argv)
 #ifdef COMPILE_WITH_IPC
   , m_ipcserver(this)
+//  , mr_ipc_datahandler(r_ipc_datahandler)
+  , m_ipc_datahandler ( m_modelData )
 #endif //#ifdef COMPILE_WITH_IPC
-  //, m_powerprofdynlinked ( r_stdwstrProgramName )
-  , m_powerprofdynlinked ( r_stdtstrProgramName )
-  , m_stdtstrProgramName ( r_stdtstrProgramName )
+  , m_powerprofdynlinked ( r_stdwstrProgramName )
+//  , m_powerprofdynlinked ( r_stdtstrProgramName )
+//  , m_stdtstrProgramName ( r_stdtstrProgramName )
 {
+  m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
     //Calling the ctor inside another ctor created the object 2 times!
     //CPUcontrolService() ;
     Initialize() ;
@@ -120,14 +133,18 @@ CPUcontrolService::~CPUcontrolService()
   //    //runtime error here for some reason. I do not understand because
   //    //the array was allocated via "new".
   //    delete mar_tch ;
+#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   if( mp_voidMappedViewStartingAddress )
     ::UnmapViewOfFile(mp_voidMappedViewStartingAddress);
   if( m_handleMapFile != NULL )
     ::CloseHandle(m_handleMapFile);
+#endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
 }
 
-void CPUcontrolService::Continue()
+/**@ return true: already continued*/
+bool CPUcontrolService::Continue()
 {
+  bool bAlreadyContinued = false ;
    msp_cpucontrolservice->
        m_bProcess = true ;
    msp_cpucontrolservice->
@@ -143,9 +160,10 @@ void CPUcontrolService::Continue()
    //then performance event select register values.
    //values have to be restored.
   msp_cpucontrolservice->mp_cpucoreusagegetter->Init() ;
-  StartDynVoltnFreqScaling() ;
+  bAlreadyContinued = StartDynVoltnFreqScaling() ;
   SetServiceStatus() ;
   LOG("Service is continued.\n");
+  return bAlreadyContinued ;
 }
 
 void CPUcontrolService::HandleInitServiceFailed( DWORD dwStatus)
@@ -280,8 +298,10 @@ void CPUcontrolService::Initialize()
   DEBUG("begin of constructor of service object\n");
   m_bProcess = true ;
   m_bRun = true ;
+#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   mp_voidMappedViewStartingAddress = NULL ;
   m_handleMapFile = NULL ;
+#endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService" ;
 
@@ -318,7 +338,9 @@ DWORD CPUcontrolService::MyServiceInitialization(
   //specificError; 
   if( argc < 2 )
   {
-      LPTSTR ptchFirstArg ;
+    LPTSTR ptchFirstArg
+      //Initialize to avoid g++ warning (too many warnings are unuebersichtlich)
+      = NULL ;
       //TCHAR artchDefaultArg[] = "-config=GriffinControl_config.xml" ;
           //"-config=C:\\Users\\Public\\config.xml" ;
       //for( BYTE by = 0 ; by < argc ; ++by )
@@ -382,7 +404,8 @@ DWORD CPUcontrolService::MyServiceInitialization(
       WinRing0_1_3RunTimeDynLinked(
       & msp_cpucontrolservice->m_dummyuserinterface ) ;
     DEBUGN("MyServiceInitialization() CPU access address: " << mp_i_cpuaccess )
-    mp_modelData = new Model() ;
+    mp_modelData = //new Model() ;
+        & m_modelData ;
     LOGN("Address of service attributes: " << mp_modelData)
     if( mp_modelData )
     {
@@ -503,8 +526,8 @@ DWORD CPUcontrolService::MyServiceInitialization(
       //title bar
       //, "error initializing the CPU access"
       //, strProgramName.c_str()
-      //, m_stdwstrProgramName.c_str() 
-      , m_stdtstrProgramName.c_str() 
+//      , getstdstring( m_stdwstrProgramName ).c_str()
+      , m_stdtstrProgramName.c_str()
       //, "CPUcontrol service error"
       , MB_SERVICE_NOTIFICATION 
       ) ;
@@ -528,9 +551,17 @@ void CPUcontrolService::FillCmdLineOptionsList()
 }
 
 #ifdef COMPILE_WITH_IPC
-void CPUcontrolService::IPC_Message(BYTE byCommand)
+DWORD CPUcontrolService::IPC_Message(
+  BYTE byCommand
+//  std::wstring & stdwstrMessage
+  , BYTE * & r_arbyPipeDataToSend
+ )
 {
+  DWORD dwByteSize = 0 ;
   LOGN("IPC message: " << (WORD) byCommand )
+  //wide string because the power scheme may need it (e.g. for Chinese power
+  // scheme names with > 256 chars in charset)
+  std::wstring stdwstrMessage ;
   switch(byCommand)
   {
   case stop_service:
@@ -543,11 +574,31 @@ void CPUcontrolService::IPC_Message(BYTE byCommand)
     break ;
   case pause_service:
     LOGN("IPC requested to pause the service")
-    Pause() ;
+    bool bAlreadyPaused = Pause() ;
+    if( bAlreadyPaused )
+      stdwstrMessage = L"the dynamic voltage and frequency scaling thread is "
+        "ALREADY stopped" ;
+    else
+      stdwstrMessage = L"the dynamic voltage and frequency scaling thread is "
+        "stopped" ;
+    LOGWN_WSPRINTF(stdwstrMessage.c_str() )
+    dwByteSize = stdwstrMessage.size() * 2 ;
+    r_arbyPipeDataToSend = new BYTE [ dwByteSize ] ;
+    memcpy( r_arbyPipeDataToSend, stdwstrMessage.data(), dwByteSize ) ;
     break;
   case continue_service:
     LOGN("IPC requested to continue the service")
-    Continue() ;
+    bool bAlreadContinued = Continue() ;
+    if( bAlreadContinued )
+      stdwstrMessage = L"the dynamic voltage and frequency scaling thread is "
+        "ALREADY running" ;
+    else
+      stdwstrMessage = L"the dynamic voltage and frequency scaling thread is "
+        "running" ;
+    LOGWN_WSPRINTF(stdwstrMessage.c_str() )
+    dwByteSize = stdwstrMessage.size() * 2 ;
+    r_arbyPipeDataToSend = new BYTE [ dwByteSize ] ;
+    memcpy( r_arbyPipeDataToSend, stdwstrMessage.data(), dwByteSize ) ;
     break;
   case stop_DVFS:
     //if( mp_dynfreqscalingthreadbase ) 
@@ -558,14 +609,75 @@ void CPUcontrolService::IPC_Message(BYTE byCommand)
     StartDynVoltnFreqScaling() ;
     break ;
   case setVoltageAndFrequency:
+    //Setting the voltage and frequency means that it should not change. If
+    //the DVFS thread would run it would surely be changed afterwards.
+    //So stop the DVFS thread if it is running.
     if( mp_dynfreqscalingthreadbase ) 
        mp_dynfreqscalingthreadbase->Stop() ;
     //GetVoltage(fVoltage);
     //GetFrequency(wFrequency);
     break ;
+  case sync_GUI_show_data_with_service:
+    mp_modelData->m_bSyncGUIshowDataWithService = true ;
+    break ;
   }
+//  m_ipc_datahandler.GetResponse( byCommand ) ;
+  return dwByteSize ;
 }
 #endif //#ifdef COMPILE_WITH_IPC
+
+SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
+{
+  DWORD dwLastError ;
+  //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
+  //"The ServiceMain function should immediately call the
+  //RegisterServiceCtrlHandlerEx function to specify a HandlerEx
+  //function to handle control requests.
+  msp_cpucontrolservice->
+    //"If the function fails, the return value is zero."
+    m_service_status_handle =
+    //RegisterServiceCtrlHandler(
+    //"GriffinControlService",
+    //ServiceCtrlHandler);
+    //Use RegisterServiceCtrlHandlerEx  because:
+    //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
+    //"In addition, HandlerEx [RegisterServiceCtrlHandlerEx(...) is meant?]
+    //gets extra messages unique to itself. These messages help a service
+    //react appropriately to changes in the hardware configuration or the
+    //state of the machine. These service control messages are:
+    //[...] SERVICE_CONTROL_POWEREVENT
+    //To accept these new messages, the appropriate flags must be submitted using SetServiceStatus. In the SERVICE_STATUS structure, the dwControlsAccepted member should be updated to reflect the desired messages. The bitwise flags are:
+    //[...] SERVICE_ACCEPT_POWEREVENT
+    //[...] SERVICE_ACCEPT_POWEREVENT is the service equivalent of the WM_POWERBROADCAST message; dwEventType is the power event identifier, and lpEventData is optional data [Code 2]. This is the WPARAM and LPARAM of WM_POWERBROADCAST, respectively."
+    //If the function fails, the return value is zero.
+    RegSvcCtrlHandlerExAndGetErrMsg ( //"GriffinControlService",
+      msp_cpucontrolservice->m_stdtstrProgramName.c_str() ,
+      ServiceCtrlHandlerEx,
+      //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+      //"lpContext [in, optional]
+      //Any user-defined data. This parameter, which is passed to the
+      //handler function, can help identify the service when multiple
+      //services share a process."
+      (LPVOID) 2 ,
+      //stdstrErrorDescripition
+      dwLastError
+      );
+  if ( msp_cpucontrolservice->m_service_status_handle ==
+      (SERVICE_STATUS_HANDLE) 0 )
+  {
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "Registering the service contrl handler failed; "
+      "error code: " << dwLastError );
+    std::string stdstrErrorDescription ;
+    ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
+      dwLastError ,
+      stdstrErrorDescription ) ;
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      stdstrErrorDescription )
+  }
+  return msp_cpucontrolservice->m_service_status_handle ;
+}
+
 
 bool CPUcontrolService::IsWithinStrings(
     const std::vector<std::string> & vecstdstrParams
@@ -690,7 +802,8 @@ void CPUcontrolService::CreateStringVector(
 }
 
 std::string CPUcontrolService::GetValueIfHasPrefix( 
-    const std::string & r_stdstrPrefix )
+    const std::string & r_stdstrPrefix
+    )
 {
     std::string stdstrValue ;
     for( BYTE byCommandLineArgumentIndex = 0 ; 
@@ -784,15 +897,29 @@ std::string CPUcontrolService::GetLogFilePath()
 //    return bHasPrefix ;
 //}
 
-void CPUcontrolService::Pause()
+/**@ return true: already paused*/
+bool CPUcontrolService::Pause()
 {
+  bool bAlreadyPaused = false ;
    msp_cpucontrolservice->m_servicestatus.dwCurrentState = 
      SERVICE_PAUSED; 
    msp_cpucontrolservice->m_bProcess = false ;
-  if( mp_dynfreqscalingthreadbase ) 
-     mp_dynfreqscalingthreadbase->Stop() ;
-   LOG("Service is paused.\n");
+  if( mp_dynfreqscalingthreadbase )
+  {
+    if( mp_dynfreqscalingthreadbase->IsStopped()
+        )
+    {
+      bAlreadyPaused = true ;
+      LOG("Service is ALREADY paused.\n");
+    }
+    else
+    {
+      mp_dynfreqscalingthreadbase->Stop() ;
+      LOG("Service is paused.\n");
+    }
+  }
    SetServiceStatus() ;
+   return bAlreadyPaused ;
 }
 
 void CPUcontrolService::requestOption(
@@ -950,58 +1077,6 @@ void CPUcontrolService::requestOption(
     //}
 }
 
-SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
-{
-  DWORD dwLastError ;
-  //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
-  //"The ServiceMain function should immediately call the
-  //RegisterServiceCtrlHandlerEx function to specify a HandlerEx
-  //function to handle control requests.
-  msp_cpucontrolservice->
-    //"If the function fails, the return value is zero."
-    m_service_status_handle =
-    //RegisterServiceCtrlHandler(
-    //"GriffinControlService",
-    //ServiceCtrlHandler);
-    //Use RegisterServiceCtrlHandlerEx  because:
-    //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
-    //"In addition, HandlerEx [RegisterServiceCtrlHandlerEx(...) is meant?]
-    //gets extra messages unique to itself. These messages help a service
-    //react appropriately to changes in the hardware configuration or the
-    //state of the machine. These service control messages are:
-    //[...] SERVICE_CONTROL_POWEREVENT
-    //To accept these new messages, the appropriate flags must be submitted using SetServiceStatus. In the SERVICE_STATUS structure, the dwControlsAccepted member should be updated to reflect the desired messages. The bitwise flags are:
-    //[...] SERVICE_ACCEPT_POWEREVENT
-    //[...] SERVICE_ACCEPT_POWEREVENT is the service equivalent of the WM_POWERBROADCAST message; dwEventType is the power event identifier, and lpEventData is optional data [Code 2]. This is the WPARAM and LPARAM of WM_POWERBROADCAST, respectively."
-    //If the function fails, the return value is zero.
-    RegSvcCtrlHandlerExAndGetErrMsg ( //"GriffinControlService",
-      msp_cpucontrolservice->m_stdtstrProgramName.c_str() ,
-      ServiceCtrlHandlerEx,
-      //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
-      //"lpContext [in, optional]
-      //Any user-defined data. This parameter, which is passed to the
-      //handler function, can help identify the service when multiple
-      //services share a process."
-      (LPVOID) 2 ,
-      //stdstrErrorDescripition
-      dwLastError
-      );
-  if ( msp_cpucontrolservice->m_service_status_handle ==
-      (SERVICE_STATUS_HANDLE) 0 )
-  {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-      "Registering the service contrl handler failed; "
-      "error code: " << dwLastError );
-    std::string stdstrErrorDescription ;
-    ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
-      dwLastError ,
-      stdstrErrorDescription ) ;
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-      stdstrErrorDescription )
-  }
-  return msp_cpucontrolservice->m_service_status_handle ;
-}
-
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/startservicectrldispatcher.htm:
 //"All initialization tasks are done in the service's ServiceMain function
 //when the service is started."
@@ -1068,7 +1143,8 @@ void WINAPI //MyServiceStart
     //IPC_servers wait for client and are often BLOCKING, so THIS
     //block would not continue execution->start client
     //connection listening in dedicated thread.
-    HANDLE hThread = ::CreateThread( 
+//    HANDLE hThread =
+      ::CreateThread(
       NULL,                   // default security attributes
       0,                      // use default stack size  
       IPC_ServerThread,       // thread function name
@@ -1262,8 +1338,9 @@ bool CPUcontrolService::ShouldDeleteService(
     return bShouldDeleteService ;
 }
 
-void CPUcontrolService::StartDynVoltnFreqScaling()
+bool CPUcontrolService::StartDynVoltnFreqScaling()
 {
+  bool bAlreadyContinued = false ;
   if( ! mp_dynfreqscalingthreadbase ) 
     mp_dynfreqscalingthreadbase = new
 #ifdef USE_WINDOWS_THREAD
@@ -1277,7 +1354,13 @@ void CPUcontrolService::StartDynVoltnFreqScaling()
       ) ;
   //If allocating memory succeeded.
   if( mp_dynfreqscalingthreadbase ) 
-     mp_dynfreqscalingthreadbase->Start() ;
+  {
+    if( mp_dynfreqscalingthreadbase->m_vbRun )
+      bAlreadyContinued = true ;
+    else
+      mp_dynfreqscalingthreadbase->Start() ;
+  }
+  return bAlreadyContinued ;
 }
 
 void CPUcontrolService::StartService()
@@ -1295,9 +1378,7 @@ void CPUcontrolService::StartService()
       //If the service is installed with the SERVICE_WIN32_SHARE_PROCESS 
       //service type, this member specifies the name of the service that 
       //uses the ServiceMain function pointed to by the lpServiceProc member.
-      //"GriffinControlService"
       //m_stdstrServiceName.c_str()
-      //TODO use a variable rather than a literal
       //"CPUcontrolService"
       //Convert "const char *" -> "char *", "const wchar_t *" -> "wchar_t *".
       (TCHAR *) m_stdtstrProgramName.

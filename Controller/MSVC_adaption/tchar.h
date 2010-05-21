@@ -8,7 +8,7 @@
 #ifndef _TCHAR_H
 #define	_TCHAR_H
 
-#ifdef _UNICODE
+#if defined( _UNICODE) || defined(UNICODE)
   #ifndef _T //e.g. wxWidgets also defines _T() macro
     #define _T(x) L ## x
   #endif

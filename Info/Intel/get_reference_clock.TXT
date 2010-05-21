@@ -1,0 +1,26 @@
+Intel Soft dev manual 3B 
+-30.2.3 Pre-defined Architectural Performance Events
+
+  UnHalted Reference Cycles + Halted Reference Cycles = passed reference cycles ?
+  
+  "UnHalted Reference Cycles — Event select 3CH, Umask 01H 
+This event counts reference clock cycles while the clock signal on the core is 
+running. The reference clock operates at a fixed frequency, irrespective of core 
+frequency changes due to performance state transitions. Processors may 
+implement this behavior differently. See Table A-7 and Table A-9 in Appendix A, 
+“Performance-MonitoringEvents.”
+
+CPU_CLK_UNHALTED.BUS
+CPU_CLK_UNHALTED.REF
+
+30.10.2 Non-Sleep Clockticks
+
+Pentium M: wenn
+EMON_EST_TRANS58HNumber of Enhanced Intel SpeedStep 
+technology transitions:
+Mask = 00H - All transitions
+Mask = 02H - Only Frequency transitions
+
+wenn in der letzten Zeitspanne (1s) KEINE "Frequency transition" 
+(aktuelle Anzahl - vorige Anzahl = 0) stattfand,
+dann ist FSB(MHz) = TimeStampCounter 1s_diff / Multiplikator (FreqID)

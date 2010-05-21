@@ -37,6 +37,7 @@ BYTE NamedPipeClient::Init()
       if ( m_handleClientPipe != INVALID_HANDLE_VALUE )
       {
         m_bConnected = true ;
+        LOGN("got handle to the service's pipe--connected to it")
         // Break if the pipe handle is valid. 
         break;
       }
@@ -109,13 +110,17 @@ bool NamedPipeClient::IsConnected()
   );
   if( bool_ )
   {
-    LOGN("pipe state:" << dwState << "# of current instances:" << dwCurInstances )
+    DEBUGN("pipe state:" << dwState << "# of current instances:"
+      << dwCurInstances )
+    LOGN("already connected to the service's pipe")
     if( dwCurInstances > 0 )
       bConnected = true ;
   }
   else //-> failed when it was not connected
   {
-    DEBUGN("GetNamedPipeHandleState failed")
+    DWORD dw = ::GetLastError() ;
+//    DEBUGN("GetNamedPipeHandleState failed")
+    LOGN("Getting pipe info failed:" << LocalLanguageMessageFromErrorCode(dw) )
   }
   return bConnected ;
 }
@@ -128,7 +133,17 @@ bool NamedPipeClient::IsConnected()
 
 BYTE NamedPipeClient::SendMessage(BYTE byMessage)
 {
+//  BYTE byValue ;
   DWORD dwNumberOfBytesWritten ;
+//  DWORD dwError ;
+  DWORD dwNumBytesRead ;
+  DWORD dwValue ;
+//  WORD wTotalNumBytesRead = 0 ;
+//  std::wstring stdwstrMessage ;
+//  wchar_t wch ;
+  //clear before every pipe write.
+  m_stdwstrMessage = L"" ;
+  DEBUGN("before write to pipe ")
   // Send a message to the pipe server. 
   BOOL fSuccess = ::WriteFile( 
     m_handleClientPipe        // pipe handle 
@@ -145,22 +160,143 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
       m_bConnected = false ;
       return 0;
    }
+   //TODO maybe use asynchronous read or write
  
-   //do 
-   //{ 
-   //// Read from the pipe. 
- 
-   //  fSuccess = ::ReadFile( 
-   //      m_handleClientPipe ,    // pipe handle 
-   //      chBuf,    // buffer to receive reply 
-   //      BUFSIZE*sizeof(TCHAR),  // size of buffer 
-   //      &cbRead,  // number of bytes read 
-   //      NULL);    // not overlapped 
- 
-   //  if (! fSuccess && ::GetLastError() != ERROR_MORE_DATA) 
-   //      break; 
- 
-   //   _tprintf( TEXT("%s\n"), chBuf ); 
-   //} while (!fSuccess);  // repeat loop if ERROR_MORE_DATA 
+//   DEBUGN("before read from pipe loop")
+//   do
+//   {
+//     DEBUGN("before read from pipe ")
+//     // Read the server's response from the pipe.
+//     fSuccess =
+//
+//       //http://msdn.microsoft.com/en-us/library/aa365467%28VS.85%29.aspx:
+//       //"The ReadFile function returns when one of the following conditions occur:
+//         * The number of bytes requested is read.
+//         * A write operation completes on the write end of the pipe.
+//         * An asynchronous handle is being used and the read is occurring asynchronously.
+//         * An error occurs.""
+//       ::ReadFile(
+//       m_handleClientPipe ,    // pipe handle
+//       & byValue , //chBuf,    // buffer to receive reply
+//       1 ,//BUFSIZE * sizeof(TCHAR),  // size of buffer
+//       & dwNumBytesRead,  // number of bytes read
+//       NULL // NULL = not overlapped
+//       );
+//     if ( fSuccess )
+//     {
+//       DEBUGN("got byte #" << wTotalNumBytesRead << " from pipe: "
+//         << (WORD) byValue << byValue )
+//       if( dwNumBytesRead > 0 )
+//       {
+//         wTotalNumBytesRead += dwNumBytesRead ;
+//         if( wTotalNumBytesRead % 2 == 0 )
+//         {
+//           wch |= byValue ;
+////           stdwstrMessage += wch ;
+//           m_stdwstrMessage += wch ;
+//         }
+//         else
+//         {
+////           ((BYTE*) wch) = byValue ;
+//           wch = byValue ;
+//           wch <<= 8 ;
+//         }
+//       }
+//       else
+//       {
+//         DEBUGN("no more bytes from pipe")
+//         //Got no more bytes-> break loop.
+//         break ;
+//       }
+//     }
+//     else
+//     {
+//       dwError = ::GetLastError() ;
+//       if( dwError != ERROR_MORE_DATA )
+//       {
+//         LOGN( "reading form the pipe failed: " <<
+//           LocalLanguageMessageFromErrorCode(dwError) )
+//         break;
+//       }
+//     }
+//   //   _tprintf( TEXT("%s\n"), chBuf );
+//   } while ( //!fSuccess
+//       dwNumBytesRead > 0 );  // repeat loop if ERROR_MORE_DATA
+
+   DEBUGN("before read from pipe ")
+   fSuccess = ::ReadFile(
+     m_handleClientPipe ,    // pipe handle
+     & dwValue , //chBuf,    // buffer to receive reply
+     4 ,//BUFSIZE * sizeof(TCHAR),  // size of buffer
+     & dwNumBytesRead,  // number of bytes read
+     NULL // NULL = not overlapped
+     );
+   DEBUGN( (fSuccess ? "successfully got" : "failed to read")
+      << dwNumBytesRead << " bytes from pipe: " << dwValue )
+   if( fSuccess
+       // do NOT read 0 bytes! this blocks at ReadFile although the server
+       // finished to write 0 bytes
+       && dwValue )
+   {
+     BYTE * arby = new BYTE[dwValue + 2 ] ;
+     DEBUGN("before read " << dwValue << " bytes from pipe ")
+     ::ReadFile(
+      m_handleClientPipe ,    // pipe handle
+      arby , //chBuf,    // buffer to receive reply
+      dwValue  ,//BUFSIZE * sizeof(TCHAR),  // size of buffer
+      & dwNumBytesRead,  // number of bytes read
+      NULL // NULL = not overlapped
+      );
+     DEBUGN( (fSuccess ? "successfully got" : "failed to read")
+        << dwNumBytesRead << " bytes from pipe")
+     if( fSuccess )
+     {
+       //Term. NULL char
+       arby [dwValue ] = 0 ;
+       arby [dwValue + 1 ] = 0 ;
+       m_stdwstrMessage = std::wstring( (wchar_t*) arby ) ;
+       DEBUGWN_WSPRINTF(L"got message from pipe:%ls", m_stdwstrMessage.c_str() )
+     }
+     delete [] arby ;
+   }
    return 1 ;
 }
+
+//BYTE NamedPipeClient::SendMessage(BYTE [] arbyMessage , WORD wByteSize)
+//{
+//  DWORD dwNumberOfBytesWritten ;
+//  // Send a message to the pipe server.
+//  BOOL fSuccess = ::WriteFile(
+//    m_handleClientPipe        // pipe handle
+//    //lpvMessage,             // message
+//    //stop_service
+//    , arbyMessage
+//    // (lstrlen(lpvMessage)+1)*sizeof(TCHAR), // message length
+//    , wByteSize
+//    , & dwNumberOfBytesWritten   // bytes written
+//    , NULL );                  // not overlapped
+//   if ( ! fSuccess )
+//   {
+//      LOGN("WriteFile failed");
+//      m_bConnected = false ;
+//      return 0;
+//   }
+//
+//   //do
+//   //{
+//   //// Read from the pipe.
+//
+//   //  fSuccess = ::ReadFile(
+//   //      m_handleClientPipe ,    // pipe handle
+//   //      chBuf,    // buffer to receive reply
+//   //      BUFSIZE*sizeof(TCHAR),  // size of buffer
+//   //      &cbRead,  // number of bytes read
+//   //      NULL);    // not overlapped
+//
+//   //  if (! fSuccess && ::GetLastError() != ERROR_MORE_DATA)
+//   //      break;
+//
+//   //   _tprintf( TEXT("%s\n"), chBuf );
+//   //} while (!fSuccess);  // repeat loop if ERROR_MORE_DATA
+//   return 1 ;
+//}

@@ -23,6 +23,7 @@
 #include <Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
+#include <wxWidgets/Controller/wxStringHelper.h>
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   //only useful for user interface
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
@@ -163,9 +164,13 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     std::string stdstr = stdstrCPUtypeRelativeDirPath + "CPUcontroller.cfg" ;
     if( ReadDLLName( stdstr ) )
     {
-      wxString wxstrFilePath = wxT("CPUcontrollerDynLibs/") + wxString( stdstr ) ;
+      wxString wxstrFilePath = wxT("CPUcontrollerDynLibs/") + //wxString( stdstr ) ;
+          getwxString(stdstr ) ;
       wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
-      LOGN("should load/ attach " << wxstrFilePath << " as CPU controller" )
+      //http://wiki.wxwidgets.org/Converting_everything_to_and_from_wxString#wxString_to_std::string
+      std::string stlstring = std::string(wxstrFilePath.mb_str());
+      LOGN("should load/ attach " << //wxstrFilePath
+        stlstring << " as CPU controller" )
       try
       {
         //r_p_cpucontroller = new wxDynLibCPUcontroller(
@@ -177,8 +182,10 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           gp_cpucontrolbase->GetCPUaccess()
           ) ;
         mp_model->m_stdstrCPUcontrollerDynLibPath = //stdstr ;
-            wxstrFilePath ;
-        LOGN("CPU controller DLL: successfully loaded and function pointers to it assigned.")
+            getstdstring( wxstrFilePath ) ;
+        LOGN("CPU controller DynLib " <<
+          mp_model->m_stdstrCPUcontrollerDynLibPath <<
+          ": successfully loaded and function pointers to it assigned.")
 //        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
 //           //mp_wxdynlibcpucontroller
 //           gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
@@ -214,7 +221,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           * p_cpucoredata
           ) ;
         mp_model->m_stdstrCPUcoreUsageGetterDynLibPath = //stdstr ;
-          wxstrFilePath ;
+            getstdstring( wxstrFilePath ) ;
 
         //If no CPU controller DLL should be loaded or loading it failed it is
         //"0".

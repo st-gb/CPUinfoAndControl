@@ -3,5 +3,11 @@
 class I_ServerProcess
 {
 public:
-  virtual void IPC_Message(BYTE byCommand) = 0 ;
+  //return: number of bytes to send via IPC specific type.
+  virtual DWORD IPC_Message(
+    BYTE byCommand
+//    //wide string because the string may be a chinese string for a power scheme
+//    , std::wstring & stdwstrMessage
+    , BYTE * & r_arbyPipeDataToSend
+    ) = 0 ;
 };

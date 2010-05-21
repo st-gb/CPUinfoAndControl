@@ -27,6 +27,7 @@ public:
   volatile bool m_bCollectPstatesAsDefault ;
   bool m_bEnableOvervoltageProtection ;
   bool m_bSkipCPUtypeCheck ;
+  bool m_bSyncGUIshowDataWithService ;
   bool m_bTruncateLogFileForEveryStartup ;
   bool m_bUseDefaultFormularForOvervoltageProtection ;
   bool m_bUsePstate0AsMaxFreq ;

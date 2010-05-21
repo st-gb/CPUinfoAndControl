@@ -3,6 +3,7 @@
 #include <Controller/MSVC_adaption/tchar.h>
 
 #define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
+//#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
 Model::Model( //GriffinController * p_griffincontroller 
              )
@@ -10,6 +11,7 @@ Model::Model( //GriffinController * p_griffincontroller
     :
     //Initialize in the same order as textual in the declaration?
     //(to avoid g++ warnings)
+    m_bSyncGUIshowDataWithService ( false ) ,
     m_bCollectPstatesAsDefault(false)
     , m_bEnableOvervoltageProtection(true)
     , m_bSkipCPUtypeCheck(false)

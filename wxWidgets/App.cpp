@@ -230,6 +230,11 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
     Refresh() ;
 }
 
+//void wxX86InfoAndControlApp::DisableOwnDVFSAndDVFSbyService()
+//{
+//
+//}
+
 void wxX86InfoAndControlApp::EndDVFS()
 {
   DEBUGN("wxX86InfoAndControlApp::EndDVFS() begin")
@@ -447,7 +452,9 @@ bool wxX86InfoAndControlApp::OnInit()
       //MyServiceStart ( NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS, argv) ;
      
       #ifdef _WINDOWS
-      mp_dynfreqscalingaccess = new PowerProfDynLinked( m_stdtstrProgramName ) ;
+      std::wstring stdwstrProgramName = GetStdWstring(m_stdtstrProgramName ) ;
+      mp_dynfreqscalingaccess = new PowerProfDynLinked( //m_stdtstrProgramName
+        stdwstrProgramName ) ;
       #else
       mp_dynfreqscalingaccess = NULL ;
       #endif
@@ -589,6 +596,26 @@ void wxX86InfoAndControlApp::outputAllPstates(unsigned char byCurrentP_state, in
 
 }
 
+void wxX86InfoAndControlApp::PossiblyAskForOSdynFreqScalingDisabling()
+{
+  if( mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+    )
+    if( ::wxMessageBox(
+        //We need a _T() macro (wide char-> L"", char->"") for EACH
+        //line to make it compatible between char and wide char.
+        _T("The OS's dynamic frequency scaling must be disabled ")
+        _T("in order that the p-state isn' changed by the OS afterwards.")
+        _T("If the OS's dynamic frequency isn't disabled, should it be done now?")
+        ,
+        //We need a _T() macro (wide char-> L"", char->"") for EACH
+        //line to make it compitable between char and wide char.
+        _T("Question")
+        , wxYES_NO | wxICON_QUESTION )
+        == wxYES
+       )
+      mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
+}
+
 void wxX86InfoAndControlApp::RedrawEverything()
 {
   mp_frame->RedrawEverything() ;
@@ -645,14 +672,15 @@ void wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
 //      m_dockIcon = new MyTaskBarIcon(wxTaskBarIcon::DOCK);
 //    #endif
     wxIcon wxicon(
-      "x86IandC.ico" ,
+      //Use wxT() macro to enable to compile with both unicode and ANSI.
+      wxT("x86IandC.ico") ,
       wxBITMAP_TYPE_ICO
       ) ;
     if( !
         mp_taskbaricon->SetIcon( //wxICON(sample),
         //m_taskbaricon.SetIcon(
           wxicon ,
-          wxT(mp_modelData->m_stdtstrProgramName)
+          mp_modelData->m_stdtstrProgramName
           )
       )
       ::wxMessageBox(wxT("Could not set icon."));

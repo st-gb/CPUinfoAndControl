@@ -23,7 +23,11 @@ public:
   //with the same value.
   enum EnableRetCodes { enable_success, enable_failure, already_enabled } ;
   //Possibly typedef "string_type" to "std::string" if compiling with MinGW.
-  typedef std::tstring string_type ;
+//  typedef std::tstring string_type ;
+  //Use wstring (also possible for MinGW) because else there were problems
+  //when "tstring" was "char" in the PowerProf lib file binary and
+  //"wchar_t" when UNICODE was defined for the GUI.
+  typedef std::wstring string_type ;
     //return: true=success
   virtual bool ChangeOtherDVFSaccessPossible() { return false ; }
   virtual bool DisableFrequencyScalingByOS() = 0;
@@ -33,7 +37,8 @@ public:
   virtual unsigned char EnableFrequencyScalingByOS() = 0;
   virtual bool EnablingIsPossible() { return false ; }
   virtual string_type GetEnableDescription() {
-    return std::tstring(_T("") ) ;
+    //return std::tstring(_T("") ) ;
+    return std::wstring(L"" ) ;
   }
   //"Other DVFS" because the implementation may disable e.g. the OS's
   //DVFS or GNOME's DVFS (cpufreqd) , RMClock etc.

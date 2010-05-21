@@ -73,6 +73,26 @@ void NehalemController::GetAllPossibleFrequencies(
     r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0 , wFreqInMHz ) ) ;
 }
 
+BYTE NehalemController::GetCurrentVoltageAndFrequency(
+  //float because: the FSB*multiplier is not exactly an integer without
+  //floating point digits
+  float & r_fFreqInMHz
+  , float & r_fVoltageInVolt
+  , BYTE byCoreID
+  )
+{
+  WORD wFreqInMHz ;
+  //float fVoltageInVolt ;
+  GetCurrentPstate(
+    wFreqInMHz
+    , r_fVoltageInVolt
+    , byCoreID
+    ) ;
+  {
+//    mp_cpuaccess->ReadTSC() ;
+  }
+}
+
 BYTE NehalemController::GetCurrentPstate(
   WORD & r_wFreqInMHz 
   , float & r_fVoltageInVolt

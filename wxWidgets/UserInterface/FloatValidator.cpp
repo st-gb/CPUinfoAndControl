@@ -1,6 +1,8 @@
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"
 #include <Controller/tchar_conversion.h> //GetCharPointer()
+#include <Controller/stdstring_format.hpp>
+#include <wxWidgets/Controller/wxStringHelper.h>
 // for all others, include the necessary headers (this file is usually all you
 // need because it includes almost all "standard" wxWidgets headers)
 #ifndef WX_PRECOMP
@@ -59,19 +61,27 @@ bool CfloatValidator::TransferFromWindow()
     int r;
  
     if ( m_type == singleType )
-      r = sscanf( //GetCharPointer( wxstr.GetData() 
-        //wxstr.GetData().AsChar() ," %f", fpt_union_.s );
-        wxstr.GetData()," %f", fpt_union_.s );
+    {
+//      r = sscanf( //GetCharPointer( wxstr.GetData()
+//        //wxstr.GetData().AsChar() ," %f", fpt_union_.s );
+//        wxstr.GetData()," %f", fpt_union_.s );
+      std::string stdstr = getstdstring(wxstr) ;
+      from_stdstring<float>(*fpt_union_.s, stdstr ) ;
+    }
     else
-      r = sscanf( //GetCharPointer( wxstr.GetData() )
-        //wxstr.GetData().AsChar() , " %g", fpt_union_.d );
-        wxstr.GetData(),
-        //http://en.wikipedia.org/wiki/Scanf#Format_string_specifications:
-        //"'%lf' : Scan as a double floating-point number."
-        // (same format as datatype avoids g++ compiler warnings)
-        " %lf"
-        , fpt_union_.d );
- 
+    {
+//      r = sscanf( //GetCharPointer( wxstr.GetData() )
+//        //wxstr.GetData().AsChar() , " %g", fpt_union_.d );
+//        wxstr.GetData(),
+//        //http://en.wikipedia.org/wiki/Scanf#Format_string_specifications:
+//        //"'%lf' : Scan as a double floating-point number."
+//        // (same format as datatype avoids g++ compiler warnings)
+//        " %lf"
+//        , fpt_union_.d );
+      std::string stdstr = getstdstring(wxstr) ;
+      from_stdstring<double>(*fpt_union_.d, stdstr ) ;
+    }
+    r = 1 ;
     if ( r == 1 )
     {
         if (m_type == singleType)
@@ -86,14 +96,14 @@ bool CfloatValidator::TransferFromWindow()
  
 bool CfloatValidator::TransferToWindow()
 {
-   wxString buf;
+   wxString wxstrTransferToWindow;
  
    if (m_type == singleType)
-       buf=wxString::Format(wxT("%g"),*val.s);
+       wxstrTransferToWindow = wxString::Format( wxT("%g"),*val.s);
    else
-       buf=wxString::Format(wxT("%g"),*val.d);
+       wxstrTransferToWindow = wxString::Format( wxT("%g"),*val.d);
  
-    ((wxTextCtrl*)m_validatorWindow)->SetValue(buf);
+    ((wxTextCtrl*)m_validatorWindow)->SetValue(wxstrTransferToWindow);
  
     return true;
 }
@@ -105,24 +115,32 @@ bool CfloatValidator::Validate(wxWindow* parent)
     bool ret;
  
     if (m_type == singleType) {
-        int r = sscanf( //GetCharPointer( wxstr.GetData() )
-          //wxstr.GetData().AsChar() ," %f", t.s);
-          wxstr.GetData()," %f", t.s);
-        ret = ( (r==1) && ( * t.s > m_lBound ) && ( *t.s < m_hBound ) );
+//        int r = sscanf( //GetCharPointer( wxstr.GetData() )
+//          //wxstr.GetData().AsChar() ," %f", t.s);
+//          wxstr.GetData()," %f", t.s);
+//      ret = ( (r==1) && ( * t.s > m_lBound ) && ( *t.s < m_hBound ) );
+      std::string stdstr = getstdstring(wxstr) ;
+        from_stdstring<float>(*t.s, stdstr ) ;
+        ret = true ;
     }
-    else {
-        int r = sscanf( //GetCharPointer( wxstr.GetData() ) 
-          //wxstr.GetData().AsChar() ," %g",t.d);
-          wxstr.GetData() ,
-          //http://en.wikipedia.org/wiki/Scanf#Format_string_specifications:
-          //"'%lf' : Scan as a double floating-point number."
-          // (same format as datatype avoids g++ compiler warnings)
-          " %lf"
-          , t.d );
-        ret = ( (r==1) && ( * t.d > m_lBound ) && ( *t.d < m_hBound ) );
+    else
+    {
+//        int r = sscanf( //GetCharPointer( wxstr.GetData() )
+//          //wxstr.GetData().AsChar() ," %g",t.d);
+//          wxstr.GetData() ,
+//          //http://en.wikipedia.org/wiki/Scanf#Format_string_specifications:
+//          //"'%lf' : Scan as a double floating-point number."
+//          // (same format as datatype avoids g++ compiler warnings)
+//          " %lf"
+//          , t.d );
+//        ret = ( (r==1) && ( * t.d > m_lBound ) && ( *t.d < m_hBound ) );
+      std::string stdstr = getstdstring(wxstr) ;
+      from_stdstring<double>(*t.d, stdstr ) ;
+      ret = true ;
     }
  
-    if (!ret) {
+    if (!ret)
+    {
         wxString errmsg = wxString::Format( wxT( 
           "You must enter a number between %g and %g!"), m_lBound, m_hBound);
         wxMessageDialog dlg( parent, errmsg, wxT("Bad input"), wxOK );

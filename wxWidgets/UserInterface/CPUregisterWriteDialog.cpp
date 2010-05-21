@@ -15,6 +15,7 @@
 #include <Controller/I_CPUaccess.hpp>
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
+#include <wxWidgets/Controller/wxStringHelper.h>
 
 //An enum guarantees a unique number for each element.
 enum
@@ -99,7 +100,9 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
       // g++ warning: "taking addesss of temporary".
       wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        wxString::Format("%lu", itermsrdata->m_dwIndex ) ;
+        wxString::Format(
+          //Use wxT() to enable to compile with both unicode and ANSI.
+          wxT("%lu") , itermsrdata->m_dwIndex ) ;
       p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
     }
     else
@@ -108,7 +111,7 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
       // g++ warning: "taking addesss of temporary".
       wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        itermsrdata->m_stdstrRegisterName ;
+        getwxString( itermsrdata->m_stdstrRegisterName ) ;
       p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
     }
     ++ itermsrdata ;
@@ -166,7 +169,8 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
     //p_wxsizerAttributeNameAndValue->Add(
     mp_wxgridsizerAttributeNameAndValue->Add(
       new wxStaticText(this, wxID_ANY ,
-        iter_registerdata->m_strDataName ) 
+        getwxString( iter_registerdata->m_strDataName )
+        )
       , 0 //proportion
       , wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL
       ) ;
@@ -182,7 +186,9 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
       BitRange & r_br = iter_registerdata->m_stdvec_bitrange.at(0) ;
       mp_wxgridsizerAttributeNameAndValue->Add(
         new wxStaticText( this, wxID_ANY ,
-          wxString::Format( "%u:%u", r_br.m_byStartBit , 
+          wxString::Format(
+            //Use wxT() to enable to compile with both unicode and ANSI.
+            wxT("%u:%u"), r_br.m_byStartBit ,
           //End bit= start bit + bitlenght - 1: e.g. startbit 0, bitlenght: 8 -> endbit=7
           r_br.m_byStartBit + 
           r_br.m_byBitLength - 1 )
@@ -330,10 +336,14 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
                 ullFromTextCtrlToChange |= ullWriteToTextCtrl ;
                 //(*iter_p_wxtextctrl)->GetValue()
                 #ifdef __CYGWIN__
-                wxstrULL = wxString::Format( wxString( wxT("%llu") ), //ullWriteToTextCtrl
+                wxstrULL = wxString::Format( wxString(
+                  //Use wxT() to enable to compile with both unicode and ANSI.
+                  wxT("%llu") ), //ullWriteToTextCtrl
                   ullFromTextCtrlToChange ) ;
                 #else
-                wxstrULL = wxString::Format( wxString( wxT("%I64u") ), //ullWriteToTextCtrl
+                wxstrULL = wxString::Format( wxString(
+                  //Use wxT() to enable to compile with both unicode and ANSI.
+                  wxT("%I64u") ), //ullWriteToTextCtrl
                   ullFromTextCtrlToChange ) ;
                 #endif
                 //calling "SetValue()" causes an immediate jumo into this function (OnChangedText() ).
@@ -481,7 +491,10 @@ void CPUregisterWriteDialog::OnWriteToMSR(
               //e.g. bitlength 3: 1bin << 3 = 1000bin = 8;  8-1 = 7
               ( 1ULL << br.m_byBitLength ) - 1 ;
             if( ullFromTextCtrl > ullMaxValueForBitLength )
-              wxMessageBox("Wert zu gross") ;
+              wxMessageBox(
+                //Use wxT() to enable to compile with both unicode and ANSI.
+                wxT("Wert zu gross")
+                ) ;
             else
               ullWriteToMSR |= //( ullFromTextCtrl >> br.m_byBitLength ) << br.m_byStartBit ;
                 ullFromTextCtrl << br.m_byStartBit ;

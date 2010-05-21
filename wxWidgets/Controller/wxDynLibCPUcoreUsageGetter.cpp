@@ -33,14 +33,17 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
       LOGN("CPU core usage getter Dyn lib successfully loaded")
       m_pfngetcpucoreusage = (_GetCPUcoreUsage) 
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
-          "GetCPUcoreUsage" ) ;
+          //Use wxT() macro to enable to compile with both unicode and ANSI.
+          wxT( "GetCPUcoreUsage" ) ) ;
       m_pfn_dll_usage_getter_num_logical_cpu_cores_type =
         (dll_usage_getter_num_logical_cpu_cores_type)
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
-          "GetNumberOfLogicalCPUcores" ) ;
+          //Use wxT() macro to enable to compile with both unicode and ANSI.
+          wxT("GetNumberOfLogicalCPUcores") ) ;
       m_pfn_dll_init_type = (dll_usage_getter_init_type)
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
-          "Init" ) ;
+          //Use wxT() macro to enable to compile with both unicode and ANSI.
+          wxT("Init") ) ;
       LOGN("address of CPU access object: " << mp_cpuaccess )
       if( m_pfn_dll_init_type )
         (*m_pfn_dll_init_type) ( //p_cpuaccess 

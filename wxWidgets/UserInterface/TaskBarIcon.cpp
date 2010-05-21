@@ -82,50 +82,69 @@ void MyTaskBarIcon::OnMenuExit(wxCommandEvent& )
 //}
 
 // Overridables
+//http://docs.wxwidgets.org/stable/wx_wxtaskbaricon.html#wxtaskbariconpopupmenu:
+//"This method is called by the library when the user requests popup menu (on
+//Windows and Unix platforms, this is when the user right-clicks the icon).
+//Override this function in order to provide popup menu associated with the
+//icon"
 wxMenu * MyTaskBarIcon::CreatePopupMenu()
 {
-  WORD wEventID = LAST_ID ;
-    // Try creating menus different ways
-    // TODO: Probably try calling SetBitmap with some XPMs here
-    wxMenu * menu = new wxMenu;
-    menu->Append(PU_RESTORE, _T("&show window"));
-    menu->AppendSeparator();
+  // Try creating menus different ways
+  // TODO: Probably try calling SetBitmap with some XPMs here
+  //wxMenu * p_wxmenu = new wxMenu;
+  p_wxmenu = new wxMenu;
+  p_wxmenu->Append(PU_RESTORE, _T("&show window"));
+  p_wxmenu->AppendSeparator();
 //    menu->Append(PU_CHECKMARK, _T("Checkmark"),wxT(""), wxITEM_CHECK);
 //    menu->AppendSeparator();
-    wxMenu * wxmenuProfiles = new wxMenu;
-    wxMenu * wxmenuPowerSchemes = new wxMenu;
+//    wxMenu * wxmenuProfiles = new wxMenu;
 //    wxmenuProfiles->Append(PU_SUB1, _T("One submenu"));
 //    wxmenuProfiles->AppendSeparator();
 //    wxmenuProfiles->Append(PU_SUB2, _T("Another submenu"));
 //    menu->Append(SELECT_POWER_SCHEME, _T("select profile"), wxmenuProfiles);
 #ifdef __WXMSW__
-    std::set<std::wstring> set_wstr ;
-    PowerProfDynLinked * p_powerprofdynlinked =
-     (PowerProfDynLinked * ) wxGetApp().mp_dynfreqscalingaccess ;
-    p_powerprofdynlinked->GetAllPowerSchemeNames(set_wstr) ;
-    for( std::set<std::wstring>::const_iterator stdset_c_iter = set_wstr.begin() ;
-        stdset_c_iter != set_wstr.end() ; ++ stdset_c_iter
-      )
-    {
-      //TODO wxString should be unicode for e.g. Chinese language (more than 255
-      // characters)
-      wxString wxstr( getwxString(*stdset_c_iter) ) ;
-      wxmenuPowerSchemes->Append( wEventID , wxstr );
-      m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
-        (wEventID,*stdset_c_iter) ) ;
-      Connect( wEventID ++ , //wxID_ANY,
-        wxEVT_COMMAND_MENU_SELECTED ,
-        wxCommandEventHandler(MyTaskBarIcon::OnDynamicallyCreatedUIcontrol)
-        );
-    }
-    menu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
-        wxmenuPowerSchemes);
+    CreatePowerSchemesMenu() ;
 #endif //#ifdef __WXMSW__
 #ifndef __WXMAC_OSX__ /*Mac has built-in quit menu*/
-    menu->AppendSeparator();
-    menu->Append(PU_EXIT,    _T("E&xit"));
+    p_wxmenu->AppendSeparator();
+    p_wxmenu->Append(PU_EXIT,    _T("E&xit"));
 #endif
-    return menu;
+    return p_wxmenu;
+}
+
+void MyTaskBarIcon::CreatePowerSchemesMenu()
+{
+  WORD wEventID = LAST_ID ;
+  wxMenu * wxmenuPowerSchemes = new wxMenu;
+  std::set<std::wstring> set_wstr ;
+  std::wstring wstrActivePowerScheme ;
+  PowerProfDynLinked * p_powerprofdynlinked =
+   (PowerProfDynLinked * ) wxGetApp().mp_dynfreqscalingaccess ;
+  p_powerprofdynlinked->GetAllPowerSchemeNames(set_wstr) ;
+  p_powerprofdynlinked->GetActivePowerSchemeName(wstrActivePowerScheme) ;
+  LOGWN_WSPRINTF(L"active power scheme name:%ls",
+    wstrActivePowerScheme.c_str() )
+  for( std::set<std::wstring>::const_iterator stdset_c_iter = set_wstr.begin() ;
+      stdset_c_iter != set_wstr.end() ; ++ stdset_c_iter
+    )
+  {
+    //TODO wxString should be unicode for e.g. Chinese language (more than 255
+    // characters)
+    wxString wxstr( getwxString(*stdset_c_iter) ) ;
+//    wxmenuPowerSchemes->Append( wEventID , wxstr );
+    wxmenuPowerSchemes->AppendRadioItem( wEventID , wxstr );
+    if( wstrActivePowerScheme == *stdset_c_iter )
+      wxmenuPowerSchemes->Check( wEventID, true ) ;
+    m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
+      (wEventID,*stdset_c_iter) ) ;
+    Connect( wEventID ++ , //wxID_ANY,
+      wxEVT_COMMAND_MENU_SELECTED ,
+      wxCommandEventHandler(MyTaskBarIcon::OnDynamicallyCreatedUIcontrol)
+      );
+  }
+  p_wxmenu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
+    wxmenuPowerSchemes);
+//  wxmenuPowerSchemes->Check( LAST_ID , true ) ;
 }
 
 void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
@@ -145,6 +164,14 @@ void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 //      LOGWN( L"before setting power scheme with name \"" << c_iter->second
 //        L"\" as active scheme" )
       //TODO if own DVFS in GUI or service running: ask for pausing/ ending it
+//      wxGetApp().PossiblyAskForOSdynFreqScalingDisabling() ;
+//      PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
+//        m_arp_percpucoreattributes[ //p_atts->m_byCoreID
+//        0 ] ;
+//      //DynFreqScalingThread * p_dynfreqscalingthread
+//      if ( p_percpucoreattributes->mp_dynfreqscalingthread )
+//        mp_mainframe->EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
+
       BYTE by = p_powerprofdynlinked->SetActivePowerScheme(c_iter->second) ;
       LOGN( "res of setting power scheme:" << (WORD) by )
       if( by == 1 )

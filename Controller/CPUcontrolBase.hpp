@@ -21,7 +21,7 @@ class ICPUcoreUsageGetter ;
 class wxDynLibCPUcontroller ;
 class wxDynLibCPUcoreUsageGetter ;
 
-#define NULL 0
+//#define NULL 0
 
 //Base class for the service and the GUI.
 class CPUcontrolBase
@@ -36,9 +36,11 @@ public:
   wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   CPUcontrolBase( ) ;
 
-  //dtor must exist, else g++: "undefined reference to `vtable for
-  //CPUcontrolBase'"?
-  ~CPUcontrolBase( ) {}
+//  //dtor must exist, else g++: "undefined reference to `vtable for
+//  //CPUcontrolBase'"?
+//  //virtual because else g++ error:
+//  // `class CPUcontrolBase' has virtual functions but non-virtual destructor
+//  virtual ~CPUcontrolBase( ) {}
   virtual void DeleteCPUcontroller() ;
 
   virtual void EndDVFS() {}
