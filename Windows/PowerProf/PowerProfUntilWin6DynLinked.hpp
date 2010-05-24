@@ -118,8 +118,11 @@ public:
   );
 
   BOOLEAN WINAPI GetActivePwrScheme(
-    __out  PUINT puiID
+    //__out
+      PUINT puiID
     );
+  void GetActivePowerSchemeName(
+    std::wstring & r_stdwstrActivePowerSchemeName ) ;
   IDynFreqScalingAccess::string_type GetEnableDescription() ;
   BYTE GetPowerSchemeIndex(
     const std::wstring & cr_stdwstrPowerSchemeName 

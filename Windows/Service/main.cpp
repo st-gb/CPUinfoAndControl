@@ -201,20 +201,32 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-            ServiceBase::DeleteService(//"GriffinStateService"
-               vecstdstrParams.at(1).c_str() ) ;
-            std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
-            PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
-              stdwstr ) ;
-            powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
-            powerprofdynlinked.OutputAllPowerSchemes() ;
+          DWORD dwErrorCodeFor1stError ;
+          ServiceBase::DeleteService(//"GriffinStateService"
+             vecstdstrParams.at(1).c_str()
+             , dwErrorCodeFor1stError
+             ) ;
+          std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
+          PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
+            stdwstr ) ;
+          powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+          powerprofdynlinked.OutputAllPowerSchemes() ;
         }
         bStartService = false ;
       }
       if( CPUcontrolService::ShouldCreateService(vecstdstrParams) )
       {
         if( vecstdstrParams.size() > 1 )
+        {
+          try
+          {
             ServiceBase::CreateService( vecstdstrParams.at(1).c_str() ) ;
+          }
+          catch(ConnectToSCMerror & ctscme )
+          {
+            WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
+          }
+        }
         bStartService = false ;
       }
       if( bStartService )
@@ -236,8 +248,13 @@ int main( int argc, char *  argv[] )
     else
     {
         if( ShouldDeleteService(argc, argv) && argc > 2 )
+        {
+          DWORD dwErrorCodeFor1stError ;
             ServiceBase::DeleteService(//"GriffinStateService"
-                argv[2] ) ;
+              argv[2]
+              , dwErrorCodeFor1stError
+              ) ;
+        }
         if( ShouldCreateService(argc, argv) && argc > 2 )
         //    CreateService(
         //cout << "hhjhj\n" ;

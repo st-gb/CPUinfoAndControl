@@ -135,6 +135,7 @@
       /*g_logger.Log("test ") ; */ }
 //    #endif
     //#ifdef COMPILE_WITH_LOG
+    //Allows easy transition from "printf"
     #define LOG_SPRINTF(...) { char arch_buffer[1000] ; \
       sprintf( arch_buffer, __VA_ARGS__ ) ; \
       std::string stdstr(arch_buffer) ; \

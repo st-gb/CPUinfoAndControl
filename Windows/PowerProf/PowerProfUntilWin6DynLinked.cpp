@@ -864,7 +864,10 @@ BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
   return 0 ;
 }
 
-BOOLEAN WINAPI PowerProfUntilWin6DynLinked::GetActivePwrScheme(__out  PUINT puiID)
+BOOLEAN //WINAPI
+  PowerProfUntilWin6DynLinked::GetActivePwrScheme(
+  //__out
+    PUINT puiID )
 {
   if( m_pfngetactivepwrscheme )
   {
@@ -872,6 +875,26 @@ BOOLEAN WINAPI PowerProfUntilWin6DynLinked::GetActivePwrScheme(__out  PUINT puiI
     return (*m_pfngetactivepwrscheme) (puiID) ;
   }
   return FALSE ;
+}
+
+void PowerProfUntilWin6DynLinked::GetActivePowerSchemeName(
+  std::wstring & r_stdwstrActivePowerSchemeName )
+{
+  BOOL boolRet ;
+  UINT uiPowerSchemeID ;
+  boolRet = GetActivePwrScheme( & uiPowerSchemeID ) ;
+  if( boolRet )
+  {
+    boolRet = GetPowerSchemeName( uiPowerSchemeID ,
+      r_stdwstrActivePowerSchemeName ) ;
+    if( boolRet )
+      r_stdwstrActivePowerSchemeName =
+        L"Getting power scheme name for active scheme GUID failed" ;
+  }
+  else
+  {
+    r_stdwstrActivePowerSchemeName = L"Getting active scheme's GUID failed" ;
+  }
 }
 
 BOOLEAN PowerProfUntilWin6DynLinked::GetCurrentPowerPolicies(
@@ -887,26 +910,33 @@ BOOLEAN PowerProfUntilWin6DynLinked::GetCurrentPowerPolicies(
   return FALSE ;
 }
 
-IDynFreqScalingAccess::string_type PowerProfUntilWin6DynLinked::GetEnableDescription()
+IDynFreqScalingAccess::string_type PowerProfUntilWin6DynLinked::
+  GetEnableDescription()
 {
-  std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  //std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  std::wstring stdwstrReturn( L"no other power scheme available" ) ;
   if( mp_uiPowerSchemeIDBeforeDisabling )
   {
     std::wstring stdwstrPowerSchemeName ;
     if( GetPowerSchemeName( * mp_uiPowerSchemeIDBeforeDisabling 
       , stdwstrPowerSchemeName ) 
       )
-      stdtstrReturn = _T("set power scheme \"") 
-        + Getstdtstring( stdwstrPowerSchemeName )
-        + _T("\"") ;
+//      stdtstrReturn = _T("set power scheme \"")
+//        + Getstdtstring( stdwstrPowerSchemeName )
+//        + _T("\"") ;
+      stdwstrReturn = L"set power scheme \""
+            + stdwstrPowerSchemeName
+            + L"\"" ;
   }
-  return stdtstrReturn ;
+  return //stdtstrReturn ;
+    stdwstrReturn ;
 }
 
 bool PowerProfUntilWin6DynLinked::GetPowerSchemeName( 
   UINT ui , std::wstring & r_stdwstrPowerSchemeName )
 {
   m_bPowerSchemeFound = false ;
+  m_uiPowerSchemeIndexToSearch = ui ;
   EnumPwrSchemes( 
     PwrSchemesEnumProcSearchPowerSchemeByID
     , (LPARAM) this ) ;

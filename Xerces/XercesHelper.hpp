@@ -218,7 +218,7 @@ public:
       const char * lpctstrAttrName,
       DWORD & r_dwValue) ;
 
-static BYTE GetAttributeValue(
+    static BYTE GetAttributeValue(
     const Attributes & attrs,
     const char * lpctstrAttrName,
     float & rfValue
@@ -227,7 +227,14 @@ static BYTE GetAttributeValue(
   static BYTE GetAttributeValue(
     const Attributes & attrs,
     char * lpctstrAttrName,
+//    std::string & r_stdstrAttributeName ,
     std::string & r_strValue
+    ) ;
+  static BYTE GetAttributeValue
+    (
+    const Attributes & attrs,
+    const char * lpctstrAttrName,
+    std::wstring & r_stdwstrValue
     ) ;
   static std::string ToStdString(
     const XMLCh * p_xmlch

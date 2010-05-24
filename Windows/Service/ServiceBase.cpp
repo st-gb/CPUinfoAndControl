@@ -193,25 +193,34 @@ DWORD ServiceBase::PauseService(
   return TRUE ;
 }
 
-void ServiceBase::PrintPossibleSolution(DWORD dwWinError ,
-    const TCHAR * tchServiceName )
+void ServiceBase::GetPossibleSolution(
+  DWORD dwWinError ,
+  const TCHAR * tchServiceName
+  , std::string & r_stdstrPossibleSolution
+  )
 {
   switch(dwWinError)
   {
     case ERROR_SERVICE_MARKED_FOR_DELETE:
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+//      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      //Use std::stringstream (instead of widestring version) for
+      //MinGW compatibility
+        std::stringstream strstream ;
+        strstream <<
         "possible solution:\n"
         "-close the service control manager in order to let the service be deleted\n"
         "-if you want to install a service and a service with the same name "
           "is still running->stop the service with the same name first\n"
-        "\n-Stop the execution of the service: \"" <<
-        tchServiceName << "\"\n" <<
-        " -inside the service control manager\n"
+        "\n-Stop the execution of the service: \""
+        << tchServiceName
+        << "\"\n"
+        << " -inside the service control manager\n"
         " -via the task manager\n"
         " -by another program/ etc.\n"
         " and try again."
-        )
+//        )
         ;
+        r_stdstrPossibleSolution = strstream.str() ;
     break ;
   }
 }
@@ -222,9 +231,7 @@ DWORD ServiceBase::CreateService(
   )
 { 
 //  BOOL boolReturn = FALSE ;
-  SC_HANDLE schService ;
   SC_HANDLE schSCManager;
-  TCHAR szPath[MAX_PATH]; 
   
   schSCManager = OpenSCManager( 
     NULL,                    // local machine 
@@ -258,24 +265,15 @@ DWORD ServiceBase::CreateService(
   }
   else
   {
-    if( !GetModuleFileName( 
+    TCHAR szPath[MAX_PATH];
+    if( GetModuleFileName(
       //If this parameter is NULL, GetModuleFileName retrieves the path 
       //of the executable file of the current process. 
       NULL, 
-      szPath, MAX_PATH ) )
-      {
-          //DEBUG("GetModuleFileName failed (%d)\n", GetLastError()); 
-          //LOG( 
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-              "Getting file name for THIS executable file failed: " << 
-              LocalLanguageMessageFromErrorCode( ::GetLastError() ) << ")" //<< \n" 
-              );
-          //return FALSE;
-      }
-      //else
-      //    //DEBUG("Path of this executable:%s\n", szPath);
-      //    LOG("Path of this executable:" << szPath << "\n" );
-
+      szPath, MAX_PATH )
+      )
+    {
+      SC_HANDLE schService ;
       CreateService(
           schService
           , tchServiceName
@@ -319,7 +317,9 @@ DWORD ServiceBase::CreateService(
               //CreateService(schService,tchServiceName,tchPathcToServiceExe);
               break;
           } //switch(dwLastError)
-          PrintPossibleSolution( dwLastError , tchServiceName) ;
+          std::string stdstrPossibleSolution ;
+          GetPossibleSolution( dwLastError , tchServiceName ,
+            stdstrPossibleSolution ) ;
           //return FALSE;
       }//if (schService == NULL) 
       else
@@ -329,6 +329,21 @@ DWORD ServiceBase::CreateService(
           CloseServiceHandle(schService);
           //return TRUE;
       }
+    }
+    else
+
+      {
+          //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
+          //LOG(
+          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+              "Getting file name for THIS executable file failed: " <<
+              LocalLanguageMessageFromErrorCode( ::GetLastError() ) << ")" //<< \n"
+              );
+          //return FALSE;
+      }
+      //else
+      //    //DEBUG("Path of this executable:%s\n", szPath);
+      //    LOG("Path of this executable:" << szPath << "\n" );
   }//if ( schSCManager == NULL ) 
   //return boolReturn ;
   return 0 ;
@@ -390,11 +405,15 @@ DWORD ServiceBase::CreateService(
   return 0 ;
 }
 
+//Use number because that enables language-independent messaged
 //return: 0 = success
-DWORD ServiceBase::DeleteService(
+//DWORD
+BYTE ServiceBase::DeleteService(
      //SC_HANDLE & r_schSCManager
      //, 
      const TCHAR * tchServiceName
+     //Use number because that enables language-independent messaged
+     , DWORD  & dwErrorCodeFor1stError
      )
 { 
   SC_HANDLE schSCManager = OpenSCManager( 
@@ -406,48 +425,54 @@ DWORD ServiceBase::DeleteService(
     | DELETE
     );  // full access rights 
      
-    if ( schSCManager == NULL )
+  if ( schSCManager == NULL )
+  {
+    dwErrorCodeFor1stError = ::GetLastError() ;
+    //return dwLastError ;
+    //Throw exception because: an error code can be thrown for
+    //various reasons, so I do not need to return another value for
+    //the cause, e.g. connect to SCM error.
+//      throw ConnectToSCMerror( dwLastError ) ;
+    return OpenSCManagerFailed ;
+  }
+  else
+  {
+    SC_HANDLE schService = OpenService(
+        schSCManager,       // SCManager database
+        // name of service
+        //TEXT("Sample_Srv"),
+        tchServiceName ,
+        DELETE);            // only need DELETE access
+
+    if ( schService == NULL)
     {
-      DWORD dwLastError = ::GetLastError() ;
-      //return dwLastError ;
-      //Throw exception because: an error code can be thrown for 
-      //various reasons, so I do not need to return another value for 
-      //the cause, e.g. connect to SCM error.
-      throw ConnectToSCMerror( dwLastError ) ;
+      dwErrorCodeFor1stError = ::GetLastError() ;
+      std::cout << "Opening the service for service name \"" <<
+          tchServiceName << "\" failed. Error code: " <<
+          dwErrorCodeFor1stError << "\n" << "=>Message: " <<
+          LocalLanguageMessageFromErrorCode(dwErrorCodeFor1stError) << "\n" ;
+//            return FALSE;
+      return OpenServiceFailed ;
     }
+
+    if ( ::DeleteService(schService) )
+       std::cout << "Deleting service succeeded.\n" ;
     else
     {
-        SC_HANDLE schService = OpenService( 
-            schSCManager,       // SCManager database 
-            // name of service 
-            //TEXT("Sample_Srv"), 
-            tchServiceName ,
-            DELETE);            // only need DELETE access 
-     
-        if ( schService == NULL)
-        { 
-            DWORD dwErrorCode = ::GetLastError() ;
-            std::cout << "Opening the service for service name \"" << 
-                tchServiceName << "\" failed. Error code: " << 
-                dwErrorCode << "\n" << "=>Message: " << 
-                LocalLanguageMessageFromErrorCode(dwErrorCode) << "\n" ; 
-            return FALSE;
-        }
-     
-        if (! ::DeleteService(schService) ) 
-        {
-            DWORD dwErrorCode = ::GetLastError() ;
-            std::cout << "Deleting service failed. Error code:  " << 
-                dwErrorCode << "\n" << "=>Message: " << 
-                LocalLanguageMessageFromErrorCode(dwErrorCode) << "\n" ;
-            PrintPossibleSolution( dwErrorCode , tchServiceName) ;
-            return FALSE;
-        }
-        else 
-            std::cout << "Deleting service succeeded.\n" ; 
-     
-        CloseServiceHandle(schService); 
+      std::string stdstrPossibleSolution ;
+      dwErrorCodeFor1stError = ::GetLastError() ;
+        std::cout << "Deleting service failed. Error code:  " <<
+            dwErrorCodeFor1stError << "\n" << "=>Message: " <<
+            LocalLanguageMessageFromErrorCode(dwErrorCodeFor1stError) << "\n" ;
+        GetPossibleSolution(
+          dwErrorCodeFor1stError ,
+          tchServiceName
+          , stdstrPossibleSolution
+          ) ;
+        return DeleteServiceFailed ;
     }
+    CloseServiceHandle(schService);
+  }
     //return TRUE;
   return 0 ;
 }

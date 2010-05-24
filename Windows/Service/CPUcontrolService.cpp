@@ -1,5 +1,6 @@
 #include "CPUcontrolService.hpp"
 #include <conio.h> //for getche()
+
 #include <windows.h> //for SERVICE_TABLE_ENTRY, SERVICE_STATUS_HANDLE, ...
 
 #include <Controller/DynFreqScalingThreadBase.hpp> //
@@ -8,6 +9,8 @@
 #ifdef COMPILE_WITH_IPC
   #include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #endif //#ifdef COMPILE_WITH_IPC
+#include <Xerces/SAX2ServiceConfigHandler.hpp>
+#include <Xerces/XMLAccess.hpp> //readXMLconfig()
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 //for the #defines like "WTS_SESSION_LOGIN" in <wts32api.h>
 //  ( is defined inside the #if (_WIN32_WINNT >= 0x0501)  )
@@ -17,6 +20,7 @@
 #endif
 #include <wtsapi32.h>
 //#include <windows.h>
+#include <AccCtrl.h> //SE_SERVICE
 
 typedef struct tagWTSSESSION_NOTIFICATION {
   DWORD cbSize;
@@ -34,6 +38,7 @@ typedef struct tagWTSSESSION_NOTIFICATION {
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/PowerProfFromWin6DynLinked.hpp>
 //#include <Windows/PowerProfUntilWin6DynLinked.hpp>
+#include <Windows/CreateProcess.hpp> //Invoke...
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
 #define NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE 65535
@@ -420,6 +425,36 @@ DWORD CPUcontrolService::MyServiceInitialization(
         //m_modelData, 
         * mp_modelData 
         , & msp_cpucontrolservice->m_dummyuserinterface );
+      std::string stdstrServiceCfgFile = "service.xml" ;
+      SAX2ServiceConfigHandler sax2serviceconfighandler(
+        * mp_modelData ,
+        & msp_cpucontrolservice->m_dummyuserinterface );
+      if( readXMLConfig(
+          stdstrServiceCfgFile.c_str()
+          , *mp_modelData
+//          , p_userinterface
+          , & msp_cpucontrolservice->m_dummyuserinterface
+          //Base class of implementing Xerces XML handlers.
+          //This is useful because there may be more than one XML file to read.
+          //So one calls this functions with different handlers passed.
+          //DefaultHandler & r_defaulthandler
+          , sax2serviceconfighandler
+          )
+        )
+      {
+//        byRet = 1 ;
+      }
+      else
+      {
+        //std::tstring tstr(
+        //  _T("Running this program is unsafe because theres was an error ") ) ;
+        //tstr +=  _T("with the file containg the maximum voltages (") ;
+        //tstr = tstr + strProcessorFilePath ;
+        //tstr += _T(")") ;
+        //throw VoltageSafetyException(
+        //  tstr ) ;
+//        byRet = 1 ;
+      }
       if( mp_modelData->m_cpucoredata.
         m_stdsetvoltageandfreqDefault.size() == 0
         //mp_stdsetvoltageandfreqDefault->size() == 0
@@ -1143,7 +1178,7 @@ void WINAPI //MyServiceStart
     //IPC_servers wait for client and are often BLOCKING, so THIS
     //block would not continue execution->start client
     //connection listening in dedicated thread.
-//    HANDLE hThread =
+    HANDLE handleThread =
       ::CreateThread(
       NULL,                   // default security attributes
       0,                      // use default stack size  
@@ -1152,6 +1187,23 @@ void WINAPI //MyServiceStart
       0,                      // use default creation flags 
       & dwThreadId
       );   // returns the thread identifier
+      if ( handleThread == NULL )
+      {
+         LOGN("creating the IPC server thread failed");
+         return ;
+      }
+      else
+      {
+        //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
+        //"When a thread terminates, its thread object is not freed until all open
+        //handles to the thread are closed."
+        //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
+        //"Closing a thread handle does not terminate the associated thread or remove
+        //the thread object."
+        //Close the thread handle here (waiting for the end of the thread via
+        // WaitForSingleObject() would need another thread->not so good.)
+        ::CloseHandle(handleThread ) ;
+      }
 #endif
 
 //    //Create after IPC was initialzed by the service. So the GUI can connect to
@@ -1486,6 +1538,7 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
       }
       break ;
       case SERVICE_CONTROL_SESSIONCHANGE:
+//        LOGN("session change event")
         //http://msdn.microsoft.com/en-us/library/ms683241%28v=VS.85%29.aspx:
         //"If dwControl is SERVICE_CONTROL_SESSIONCHANGE, this parameter can be
         //one of the values specified in the wParam parameter of the
@@ -1495,7 +1548,7 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
         {
           case WTS_SESSION_LOGON:
             LOGN("Logon event")
-          case WTS_SESSION_UNLOCK:
+//          case WTS_SESSION_UNLOCK:
             //http://msdn.microsoft.com/en-us/library/ms683241%28v=VS.85%29.aspx:
             //"If dwControl is SERVICE_CONTROL_SESSIONCHANGE, this parameter is a pointer to a WTSSESSION_NOTIFICATION  structure."
             PWTSSESSION_NOTIFICATION pwtssession_notification =
@@ -1505,80 +1558,18 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
 //            //If createing a
 //            r_service_attributes = mp_modelData->m_service_attributes ;
 //            if( r_service_attributes.m_bStartGUIonLogon )
-#ifdef _DEBUG
-             //from http://msdn.microsoft.com/en-us/library/ms682512%28v=VS.85%29.aspx:
-            //http://msdn.microsoft.com/en-us/library/ms684859%28v=VS.85%29.aspx:
-            //"If a window station name was specified in the lpDesktop  member
-            //of the STARTUPINFO structure that was used when the process was
-            //created, the process connects to the specified window station."
-            STARTUPINFOW si;
-            PROCESS_INFORMATION pi;
-             ZeroMemory( &si, sizeof(si) );
-             ZeroMemory( &pi, sizeof(pi) );
-
-             std::ostringstream stdoss ;
-             stdoss << "\\Sessions\\"
-                 << pwtssession_notification->dwSessionId
-                 << "\\Windows\\WindowStations\\WinSta0"
-                 << "\\default" ;
-             std::string stdstrSession = stdoss.str() ;
-             LOGN("session to start GUI from:" << stdstrSession )
-             //http://msdn.microsoft.com/en-us/library/ms682429%28VS.85%29.aspx:
-             //"If you want the process to be interactive, specify
-             //winsta0\default."
-             si.lpDesktop = (wchar_t*) GetStdWstring( stdstrSession).c_str() ;
-             DEBUGWN_WSPRINTF(L"si.lpDesktop:%ls", si.lpDesktop ) ;
-             si.dwFlags =
-                 //"The wShowWindow member contains additional information."
-                 STARTF_USESHOWWINDOW ;
-             //"can be specified in the nCmdShow parameter for the ShowWindow
-             //function, except for SW_SHOWDEFAULT"
-             si.wShowWindow = SW_SHOW ;
-             si.cb = sizeof(si);
-             //http://msdn.microsoft.com/en-us/library/ms682425%28VS.85%29.aspx:
-             if( //"If the function succeeds, the return value is nonzero."
-               ::CreateProcessW(
-//               ::CreateProcessAsUserW(
-               L"x86InfoAndControl_GUI_MinGW32bit.exe" ,
-               //NULL,   // No module name (use command line)
-               //"The lpCommandLine parameter can be NULL."
-                 NULL ,        // Command line
-                 NULL,           // Process handle not inheritable
-                 NULL,           // Thread handle not inheritable
-                 FALSE,          // Set handle inheritance to FALSE
-                 0,              // No creation flags
-                 NULL,           // Use parent's environment block
-                 NULL,           // Use parent's starting directory
-                 &si,            // Pointer to STARTUPINFO structure
-                 &pi            // Pointer to PROCESS_INFORMATION structure
-                 )
-//               ::CreateProcessWithLogonW(
-//                 //__in         LPCWSTR lpUsername,
-//                 L"x86InfoAndControl_GUI_MinGW32bit.exe" ,
-//                 //"If this parameter is NULL, the user name must be specified
-//                 //in UPN format."
-//                 L"localhost", //  __in_opt     LPCWSTR lpDomain,
-//                   __in         LPCWSTR lpPassword,
-//                   __in         DWORD dwLogonFlags,
-//                   __in_opt     LPCWSTR lpApplicationName,
-//                   __inout_opt  LPWSTR lpCommandLine,
-//                   __in         DWORD dwCreationFlags,
-//                   __in_opt     LPVOID lpEnvironment,
-//                   __in_opt     LPCWSTR lpCurrentDirectory,
-//                   __in         LPSTARTUPINFOW lpStartupInfo,
-//                   __out        LPPROCESS_INFORMATION lpProcessInfo
-//               )
-             )
-             {
-               LOGN("creating process succeeded")
-//                 printf( "CreateProcess failed (%d).\n", GetLastError() );
-//                 return;
-             }
-//            CreateProcessW( r_service_attributes.m_stdtstring)
-//            //when IPC GUI<->service fully works:
-//            CreateProcessUserW( r_service_attributes.m_stdtstring)
-#endif
-            break ;
+            ServiceAttributes & r_sa =
+                msp_cpucontrolservice->mp_modelData->m_serviceattributes ;
+            LOGWN_WSPRINTF(L"GUI exe to start:%ls",
+              r_sa.m_stdwstrPathToGUIexe.c_str() )
+            if ( ! r_sa.m_stdwstrPathToGUIexe.empty() )
+            {
+              CreateGUIprocess create_gui_process(
+                r_sa ) ;
+              create_gui_process.StartProcess(
+                pwtssession_notification->dwSessionId) ;
+            }
+            break ; //WTS_SESSION_LOGON
           //If locked, the GUI does not need to to the work to show anything.
 //          case WTS_SESSION_LOCK:
         }

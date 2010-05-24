@@ -7,6 +7,13 @@
 #include <windows.h> //BOOL
 //#include <specstrings.h> // "__in" etc.
 
+enum errorCodes
+{
+  OpenSCManagerFailed = 1,
+  OpenServiceFailed,
+  DeleteServiceFailed
+};
+
 class ConnectToSCMerror
 {
 public:
@@ -32,8 +39,10 @@ public:
     , SC_HANDLE schSCManager
     ) ;
   //return: 0 = success
-  static DWORD DeleteService(
-   const TCHAR * tchServiceName
+  static //DWORD
+    BYTE DeleteService(
+      const TCHAR * tchServiceName
+      , DWORD & dwErrorCodeFor1stError
    ) ;
   static void GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
     DWORD dwLastError ,
@@ -47,8 +56,13 @@ public:
    const TCHAR * tchServiceName
    , std::string & r_stdstrMsg
    ) ;
-  static void PrintPossibleSolution(DWORD dwWinError ,
-    const TCHAR * tchServiceName) ;
+  static void GetPossibleSolution(
+    DWORD dwWinError ,
+    const TCHAR * tchServiceName
+    //use as reference param and do not return because so it is not copied
+    //->faster
+    , std::string & r_stdstrPossibleSolution
+    ) ;
   //from http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
   SERVICE_STATUS_HANDLE //WINAPI
     RegSvcCtrlHandlerExAndGetErrMsg(

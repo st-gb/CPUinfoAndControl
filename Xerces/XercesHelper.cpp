@@ -284,7 +284,8 @@ BYTE //SAX2MainConfigHandler::
     XercesHelper::GetAttributeValue(
   const Attributes & attrs,
   const char * lpctstrAttrName,
-  WORD & rwValue)
+  WORD & rwValue
+  )
 {
   BYTE byReturn = FAILURE;
   XMLCh * p_xmlchAttributeName = XMLString::transcode(lpctstrAttrName) ;
@@ -414,7 +415,8 @@ BYTE //SAX2MainConfigHandler::
     XercesHelper::GetAttributeValue(
   const Attributes & attrs,
   const char * lpctstrAttrName,
-  float & rfValue)
+  float & rfValue
+  )
 {
   BYTE byReturn = FAILURE;
   XMLCh * p_xmlchAttributeName = XMLString::transcode(lpctstrAttrName) ;
@@ -530,6 +532,35 @@ BYTE //SAX2MainConfigHandler::
       }
       //Release memory of dyn. alloc. buffer (else memory leaks).
       XMLString::release(&p_xmlchAttributeName);
+  }
+  return byReturn ;
+}
+
+BYTE //SAX2MainConfigHandler::
+    XercesHelper::GetAttributeValue
+  (
+  const Attributes & attrs,
+  const char * lpctstrAttrName,
+//  std::string & r_stdstrAttributeName ,
+  std::wstring & r_stdwstrValue
+  )
+{
+  BYTE byReturn = FAILURE;
+  XMLCh * p_xmlchAttributeName = XMLString::transcode(lpctstrAttrName) ;
+  if( p_xmlchAttributeName )
+  {
+    const XMLCh * pxmlch = attrs.getValue(// const XMLCh *const qName
+      p_xmlchAttributeName
+      //"number"
+      ) ;
+    //If the attribute exists.
+    if(pxmlch)
+    {
+      r_stdwstrValue = std::wstring(pxmlch);
+      byReturn = SUCCESS;
+    }
+    //Release memory of dyn. alloc. buffer (else memory leaks).
+    XMLString::release(&p_xmlchAttributeName);
   }
   return byReturn ;
 }

@@ -146,7 +146,8 @@ void PowerProfDynLinked::GetAllPowerSchemeNames(
     GetAllPowerSchemeNames(r_stdset_stdwstrPowerSchemeName) ;
 }
 
-std::tstring PowerProfDynLinked::GetEnableDescription()
+//std::tstring
+IDynFreqScalingAccess::string_type PowerProfDynLinked::GetEnableDescription()
 {
   return mp_i_powerprofdynlinked->GetEnableDescription() ;
 }

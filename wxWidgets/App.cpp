@@ -23,6 +23,7 @@
 //#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Controller/I_CPUcontroller.hpp>
 #include <Controller/tchar_conversion.h> //for GetCharPointer(...)
+#include <Controller/stdstring_format.hpp> //to_stdstring()
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #include <ModelData/ModelData.hpp>
 #include <wxWidgets/Controller/wxStringHelper.h> //getwxString(...)
@@ -390,12 +391,22 @@ bool wxX86InfoAndControlApp::OnInit()
     {
       std::tstring tstrArg0(argv[0]) ;
       stdtstrLogFilePath = std::tstring( //Getstdtstring(argv) +
-        tstrArg0 +
-        _T("_log.txt") ) ;
+        tstrArg0
+//        + _T("_log.txt")
+        ) ;
     }
     else
-      stdtstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName +
-        _T("_log.txt") ) ;
+      stdtstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName
+        //+ _T("_log.txt")
+        ) ;
+
+    //Because more than 1 GUI is possible at a time: append a process ID.
+    //So the log files are not overwritten by the GUI instances.
+    DWORD dwProcID = wxGetProcessId() ;
+    LOGN("process ID of this process: ")
+    stdtstrLogFilePath += Getstdtstring( to_stdstring<DWORD>(dwProcID) ) ;
+    stdtstrLogFilePath += _T("_log.txt") ;
+
     //Maybe it's better to use a file name for the log file that is derived 
     //from THIS executable's file name: e.g. so different log files for the 
     //x86I&C service and the x86I&C GUI are possible.

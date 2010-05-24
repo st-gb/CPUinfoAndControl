@@ -56,7 +56,7 @@ DWORD DynFreqScalingThread::Run()
   //Call the base class' method that does the work needed for subclasses that
   //(re-)start a DVFS thread.
   DynFreqScalingThreadBase::Start() ;
-  HANDLE hThread =
+  HANDLE handleThread =
     //http://msdn.microsoft.com/en-us/library/ms682453%28VS.85%29.aspx :
     //"If the function fails, the return value is NULL.
     //To get extended error information, call GetLastError."
@@ -68,13 +68,22 @@ DWORD DynFreqScalingThread::Run()
     0,                      // use default creation flags 
     & dwThreadId
     );   // returns the thread identifier 
-  if( hThread )
+  if( handleThread )
   {
-    LOGN("CreateThread succeeded.")
-  }
+    LOGN("Creating the DVFS thread succeeded.")
+    //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
+    //"When a thread terminates, its thread object is not freed until all open
+    //handles to the thread are closed."
+    //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
+    //"Closing a thread handle does not terminate the associated thread or remove
+    //the thread object."
+    //Close the thread handle here (waiting for the end of the thread via
+    // WaitForSingleObject() would need another thread->not so good.)
+    ::CloseHandle(handleThread ) ;
+}
   else
   {
-    LOGN("CreateThread failed.")
+    LOGN("Creating the DVFS thread failed.")
     dwRet = GetLastError() ;
   }
   //wxThread->Run() also returns 0 on success
@@ -448,295 +457,6 @@ Cleanup:
 
 	getchar();
     return 0;   // Program successfully completed.
-}
-
-DWORD WINAPI DynFreqScalingThreadProc(LPVOID lpParameter)
-{
-  DEBUG("DynFreqScalingThreadProc--begin\n");
-  //::InitExecRelease();
-  //ICPUcoreUsageGetter * p_icpucug = (ICPUcoreUsageGetter *) lpParameter;
-  Windows_API::
-  DynFreqScalingThread * p_dynfreqscalingthread = 
-    (Windows_API::
-    DynFreqScalingThread *) lpParameter;
-  //DEBUG("DynFreqScalingThreadProc begin--p_dynfreqscalingthread:%x\n",
-  //  p_dynfreqscalingthread);
-  LOG("DynFreqScalingThreadProc begin--p_dynfreqscalingthread:" 
-      << p_dynfreqscalingthread << "\n" );
-  //if( p_icpucug )
-  if( p_dynfreqscalingthread )
-  {
-      WORD wMaxFreqInMHz = p_dynfreqscalingthread->m_wMaxFreqInMHz ;
-  //  p_dynfreqscalingthread->mp_icpucoreusagegetter->Init();
-  //  DEBUG("after CPU usage getter->init()\n");
-    while(1)
-    {
-      //if( ! m_bCalledInit )
-      //{
-      //  m_bCalledInit = true ;
-      //  //mp_icpu->Init();
-      //}
-      //bool m_wCurrentFreqInMHz = false ;
-      if(p_dynfreqscalingthread->mp_pumastatectrl->
-        GetUserInterface()->m_bConfirmedYet
-        && p_dynfreqscalingthread->m_bSuccFullyGotPStateFromMSR)
-      {
-        bool bChangePstate = false ;
-        BYTE byDivisorID, byFrequencyID ;
-        float fVoltage ;
-        float arfPercentileUsage[2] ;
-        //p_dynfreqscalingthread->mp_icpucoreusagegetter->
-        //  GetPercentileUsageForBothCores(arfPercentileUsage);
-        ::InitExecRelease(///p_dynfreqscalingthread->m_arfCPUcorePercentage
-          arfPercentileUsage);
-        //DEBUG("core 0 usage: %lf, core 1 usage: %lf\n",arfPercentileUsage[0],
-        //  arfPercentileUsage[1]);
-        LOG("core 0 usage: " << arfPercentileUsage[0] << ", core 1 usage: " 
-            << arfPercentileUsage[1] << "\n" );
-      //  if(m_arf[0] == 100.0f )
-      //  {
-      //    //mp_pumastatectrl->GetMaximumFrequencyInMHz()
-      //    if( wCurrentFreqInMHz < mp_model->GetMaxFreq() )
-      //      controller->IncreaseFreq() ;
-      //  }
-      //  else
-      //    if(//m_arf[0] < 90.0f && 
-      //      m_arf[0] <= wCurrentFreqInMHz / mp_controller->
-      //      GetClosestLowerFreq(wCurrentFreqInMHz) )
-      //      wCurrentFreqInMHz = (WORD) ( (float) wCurrentFreqInMHz * m_arf[0] ) ;
-
-        //Percentile usage less than 100%
-        if( arfPercentileUsage[0] < 100.0f )
-        {
-          bChangePstate = true ;
-          p_dynfreqscalingthread->m_wCurrentFreqInMHz = (WORD) 
-            ( (float) p_dynfreqscalingthread->m_wCurrentFreqInMHz * 
-            //percentile usage
-            arfPercentileUsage[0] / 100.f
-            ) ;
-          //if( m_wCurrentFreqInMHz >= 550 )
-          if( p_dynfreqscalingthread->m_wCurrentFreqInMHz > 
-            p_dynfreqscalingthread->m_wAQuarterOfMaxFreq )
-          {
-            //bChangePstate = true ;
-            if( p_dynfreqscalingthread->m_wCurrentFreqInMHz <= 
-              p_dynfreqscalingthread->m_wAHalfOfMaxFreq )
-            {
-              //example: max. freq: 2200 MHz: 650 Mhz > 550 MHz, <=1100 MHz
-              //550 MHz would have been encoded as DivisorID:2, FrequencyID: 14:
-              //  (14+8)*100/2^2 =2200/4 = 550
-              //byDivisorID = 1 ;
-            }
-          }
-          else
-          {
-            p_dynfreqscalingthread->m_wCurrentFreqInMHz = 550 ;
-            //mp_pumastatectrl->SetPstate(2,
-            //  //1 = 1bin
-            //  1);
-          }
-        }
-        else // =100% CPU core load
-        {
-          //if( m_wCurrentFreqInMHz == m_wMaxFreqInMHz )
-          //  bChangePstate = false ;
-          //else
-          {
-            bChangePstate = true ;
-            p_dynfreqscalingthread->m_wCurrentFreqInMHz *= 
-              p_dynfreqscalingthread->m_fPercentileIncrease ;
-            if( p_dynfreqscalingthread->m_wCurrentFreqInMHz > 
-              p_dynfreqscalingthread->m_wMaxFreqInMHz )
-              p_dynfreqscalingthread->m_wCurrentFreqInMHz = 
-              p_dynfreqscalingthread->m_wMaxFreqInMHz ;
-          }
-        }
-        if( p_dynfreqscalingthread->m_wCurrentFreqInMHz > 
-          p_dynfreqscalingthread->m_wAQuarterOfMaxFreq )
-        {
-          //bChangePstate = true ;
-          if( p_dynfreqscalingthread->m_wCurrentFreqInMHz <= 
-            p_dynfreqscalingthread->m_wAHalfOfMaxFreq )
-          {
-            //example: max. freq: 2200 MHz: 650 Mhz > 550 MHz, <=1100 MHz
-            //550 MHz would have been encoded as DivisorID:2, FrequencyID: 14:
-            //  (14+8)*100/2^2 =2200/4 = 550
-            byDivisorID = 1 ;
-            //Given: freqinMHz: 650, DivisorID:1 -> (FID+8)*100/2^DivisorID = 650
-            //(FID+8)*100/2^1 = 650 <=> (FID+8)*100/2 = 650 <=> (FID+8)*50 = 650 |:50
-            //FID+8 = 13 |-8 <=> FID=5
-            //Test: (FID+8)*100/2^DivisorID = 650 <=> (5+8)*100/2^1 = 650
-            //      13*100/2 = 650 <=> 1300/2 = 650 <=> 650 = 650 <=> true
-            byFrequencyID = (p_dynfreqscalingthread->m_wCurrentFreqInMHz/50) - 8 ;
-          }
-          else //m_wCurrentFreqInMHz > wAHalfOfMaxFreq 
-          {
-            //example: max. freq: 2200 MHz: 650 Mhz > 550 MHz, <=1100 MHz
-            //1100 MHz would have been encoded as DivisorID:1, FrequencyID: 14:
-            //  (14+8)*100/2^1 =2200/2 = 1100
-            byDivisorID = 0 ;
-            //Given: freqinMHz: 1300, DivisorID:0 -> (FID+8)*100/2^DivisorID = 1300
-            //(FID+8)*100/2^0 = 1300 <=> (FID+8)*100/1 = 1300 <=> (FID+8)*100 = 1300 |:100
-            //FID+8 = 13 |-8 <=> FID=5
-            //Test: (FID+8)*100/2^DivisorID = 1300 <=> (5+8)*100/2^0 = 1300
-            //      13*100/1 = 1300 <=> 1300/1 = 1300 <=> 1300 = 1300 <=> true
-
-            //(FID+8)*100=FreqinMHz |:100 <=> (FID+8)=FreqinMHz/100 |-8 <=> 
-            //FID=FreqinMHz/100-8
-            //===================
-            byFrequencyID = (p_dynfreqscalingthread->m_wCurrentFreqInMHz/100) - 8 ;
-          }
-        }
-            //if( m_wCurrentFreqInMHz <= 2100 )
-            //{
-            //  bChangePstate = true ;
-            //  m_wCurrentFreqInMHz += 100 ;
-            //}
-        //  }
-        //}
-        fVoltage = 1.05f - 
-          (float) 
-          ( 
-            //log2f( 
-            //MSVC++ has no log2() function (in <math.h>).
-            //So emulate it by:  log(2)x = (log(10)x)/(log(10)2)
-            log10(
-              //(double) 
-              ( //2200.0f
-                (float) wMaxFreqInMHz / (float) p_dynfreqscalingthread->m_wCurrentFreqInMHz )
-                 )
-            / log10(2.0f)
-            * 0.25f 
-          ) ;
-        //DEBUG("timer--change p-state: %u,current freq:%u->optimal voltage:%f\n", 
-        //  (WORD) bChangePstate, 
-        //  p_dynfreqscalingthread->m_wCurrentFreqInMHz,
-        //  fVoltage);
-        LOG("timer--change p-state: " << (WORD) bChangePstate << 
-            ",current freq:" << p_dynfreqscalingthread->m_wCurrentFreqInMHz 
-            << "->optimal voltage:" << fVoltage << "\n" );
-        //DEBUG("timer--new voltage: %f\n",m_fVoltage);
-        if( bChangePstate )
-        {
-          BYTE byDID, byFID ;
-          DWORD dwMSRHigh, dwMSRLow ;
-          //PState::GetDIDandFID(m_wCurrentFreqInMHz);
-          if( p_dynfreqscalingthread->m_wCurrentFreqInMHz >
-            //1/2 of maxfreq
-            1100)
-          {
-            byDID = 0 ;
-            //freq_in_MHz = ( FreqID + 8 )*100 | :100
-            //freq_in_MHz / 100 = FreqID + 8 | -8
-            //freq_in_MHz / 100 - 8 = FID
-            byFID = 
-              ////max. FID for max freq of 2200 MHz
-              //14 
-              // -
-              //m_wCurrentFreqInMHz / 100 - 8 ;
-              
-              //Just for testing.
-              14 ;
-              //Just for testing.
-            //m_wCurrentFreqInMHz = 2200 ;
-            //mp_pumastatectrl->SetPstate(0,
-            //  //1 = 1bin
-            //  1);
-          }
-          else
-            if(p_dynfreqscalingthread->m_wCurrentFreqInMHz >
-              //1/4 of maxfreq
-              550)
-            {
-              byDID = 1 ;
-              //ex: 1100 MHz: 
-              //FID = 1100 * 2 / 100 - 8 
-              //= 2200 / 100 - 8
-              //= 22 - 8 
-              //= 14
-              //====
-              //check: FreqInMHz = (( FreqID + 8 )*100 ) / (1<<DivisorID) 
-              //=(( 14 + 8 )*100 ) / (1<<1) = 22*100 / 2 = 2200 / 2 
-              //= 1100
-              //======
-              //byFID = m_wCurrentFreqInMHz * 2 / 100 - 8 ;
-
-              //Just for testing.
-              byFID = 14 ;
-              //m_wCurrentFreqInMHz = 1100 ;
-              //mp_pumastatectrl->SetPstate(1,
-              //  //1 = 1bin
-              //  1);
-            }
-          //m_fVoltage = 1.1f - 
-          //  (float) 
-          //  ( 
-          //    //log2f( 
-          //    //MSVC++ has no log2() function (in <math.h>).
-          //    //So emulate it by:  log(2)x = (log(10)x)/(log(10)2)
-          //    log10(
-          //      //(double) 
-          //      ( 2200.0f / (float) m_wCurrentFreqInMHz ) 
-          //         )
-          //    / log10(2.0f)
-          //    * 0.15f 
-          //  ) ;
-          //DEBUG("timer--new voltage: %f\n",fVoltage);
-          LOG("timer--new voltage: " << fVoltage << "\n" );
-          if( fVoltage < 0.75f )
-          {
-            fVoltage = 0.75f ;
-            //DEBUG("after setting voltage to miniumum voltage sent to VRM:"
-            //  "%f\n",fVoltage);
-            LOG("after setting voltage to miniumum voltage sent to VRM:"
-              << fVoltage << "\n" );
-          }
-          //PState pstate(PState::GetVoltageID(m_fVoltage),byDID,byFID);
-          PState pstate(PState::GetVoltageID(fVoltage),byDivisorID,byFrequencyID,2);
-          //PState pstate2(pstate) ;
-          //DEBUG("VID: %u byDID: %u ,byFID: %u\n", 
-          //  //PState::GetVoltageID(m_fVoltage), byDID,byFID);
-          //  PState::GetVoltageID(fVoltage), byDivisorID,byFrequencyID);
-          LOG( "VID: " << 
-              //Convert to integer in order to output as number and not as char.
-              (WORD) PState::GetVoltageID(fVoltage) 
-              << " byDID: " << 
-              //Convert to integer in order to output as number and not as char.
-              (WORD) byDivisorID 
-              << " ,byFID: " << 
-              //Convert to integer in order to output as number and not as char.
-              (WORD) byFrequencyID << "\n" );
-          //DWORD dwHigh = 0, dwLow = 0 ;
-
-          //pstate.AssignChangesToPstateFromMSR(m_pstateFromMSR);
-
-          dwMSRHigh = 0 ;
-          dwMSRLow = 0 ;
-  #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-          //mp_pumastatectrl->setVidAndFrequencyForPState_Puma(
-          //  //mp_pumastatectrl->GetMSRregisterForPstate(
-          //  ////Use p-state 3 for setting for dyn. freq. scaling
-          //  ////because setting via the MSR register 0xC0010070
-          //  ////did not work.
-          //  //2),
-          //  COFVID_CONTROL_REGISTER,
-          //  pstate,
-          //  //m_pstateFromMSR,
-          //  //pstate2,
-          //  pstate,
-          //  m_dwMSRHigh,
-          //  m_dwMSRLow,
-          //  0) ;
-          ////Without setting the p-state changes are not applied.
-          //mp_pumastatectrl->SetPstate(2,1) ;
-  #endif //#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-        }//if( bChangePstate )
-      }//m_bConfirmedYet
-      DEBUG("End of Timer:Notify()\n");
-      Sleep(400);
-    }
-  } //if( p_icpug )
-  return 0;
 }
 
 void Windows_API::DynFreqScalingThread::SetMembers(

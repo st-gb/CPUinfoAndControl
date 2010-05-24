@@ -1,13 +1,15 @@
 #pragma once //include guard
 
-#include <string>
-#include <vector> //for std::vector
 #include <map> //for std::map
 #include <set> //for std::set
+#include <string>
+#include <vector> //for std::vector
+
 #include "CPUcoreData.hpp"
 #include "PStates.h" // for class PStates
 //because vector needs to know class MSRdata (else: build error)
 #include "RegisterData.hpp" 
+#include "ServiceAttributes.hpp"
 #include "ValueTables.hpp"
 #include "VoltageAndFreq.hpp"
 #include <Controller/stdtstr.hpp>
@@ -49,6 +51,7 @@ public:
   //file there is no error (because they are sorted by the set).
   std::set<MaxVoltageForFreq> m_setmaxvoltageforfreq ;
   CPUcoreData m_cpucoredata ;
+  ServiceAttributes m_serviceattributes ;
   ValueTables m_valuetables ;
   Model( ) ;//GriffinController * p_griffincontroller ) ;
 

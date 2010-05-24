@@ -393,6 +393,14 @@ BYTE NamedPipeServer::Init(
                }
                else
                {
+                 //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
+                 //"When a thread terminates, its thread object is not freed until all open
+                 //handles to the thread are closed."
+                 //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
+                 //"Closing a thread handle does not terminate the associated thread or remove
+                 //the thread object."
+                 //Close the thread handle here (waiting for the end of the thread via
+                 // WaitForSingleObject() would need another thread->not so good.)
                  ::CloseHandle(hThread);
                  LOGN("spawned thread for pipe client with thread ID "
                    << dwThreadId ) ;
