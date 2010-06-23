@@ -97,7 +97,7 @@ BYTE UsageGetterAndControllerBase::GetNumberOfCPUCores()
       + 1 ;
     //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
     DEBUG_COUTN("UsageGetterAndControllerBase::GetNumberOfCPUCores() "
-      "Number of CPU cores: " << (WORD) byCoreNumber );
+      "Number of CPU cores according to CPUID: " << (WORD) byCoreNumber );
   }
   else
   {

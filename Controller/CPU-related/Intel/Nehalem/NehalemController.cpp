@@ -25,6 +25,11 @@ void NehalemController::DecreaseVoltageBy1Step(float & r_fVoltage)
   r_fVoltage = GetVoltageInVolt( wVoltageID ) ;
 }
 
+float NehalemController::GetReferenceClock()
+{
+
+}
+
 BYTE NehalemController::Init()
 {
   if( mp_cpuaccess )

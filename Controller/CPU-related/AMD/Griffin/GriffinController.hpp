@@ -36,12 +36,12 @@
 #include <strstream> //for std::ostrstream
 //#include "../ModelData/ModelData.hpp"
 #include <preprocessor_helper_macros.h>
-#include <Controller/AMD/Griffin/AMD_family17.h>
-#include <Controller/AMD/Griffin/UsageGetterAndControllerBase.hpp>
+#include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
+#include <Controller/CPU-related/AMD/Griffin/UsageGetterAndControllerBase.hpp>
 //#include "Windows/WinRing0dynLinked.hpp"
 //#include "../ISpecificController.hpp"
 #include <Controller/I_CPUaccess.hpp>
-#include <Controller/I_CPUcontroller.hpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
 
   //Keep away the dependance on this class for dyn libs.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
@@ -94,11 +94,12 @@
 
   //extern HANDLE g_handleEvent ;
 #endif//#ifdef WIN32
-#include <ICalculationThread.hpp>
 
 ////Declare as "extern": else linker error "LNK2005" with MSVC.
 //extern pfnRdMsrExDef g_pfnRdMsrEx ;
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
 //class Model ;
 class UserInterface ;
 class Model ;

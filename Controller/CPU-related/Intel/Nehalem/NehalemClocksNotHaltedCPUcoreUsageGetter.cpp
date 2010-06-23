@@ -11,10 +11,11 @@
 //#include <ModelData/ModelData.hpp>
 
 //#include <PentiumM_registers.h> //for MSR_TIME_STAMP_COUNTER_REGISTER
-#include <Controller/Intel_registers.h> //for MSR_TIME_STAMP_COUNTER_REGISTER
+#include <Controller/CPU-related/Intel/Intel_registers.h> //for MSR_TIME_STAMP_COUNTER_REGISTER
 //#include <Controller/GriffinController.hpp>
 //#include <Controller/Intel/Nehalem/NehalemController.hpp>
 #include <Controller/I_CPUaccess.hpp>
+#include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include <preprocessor_helper_macros.h>
 #include <Windows.h> //for GetTickCount: include Winbase.h (include Windows.h)
 //#include <Controller/I_CPUcontroller.hpp> //ReadmsrEx

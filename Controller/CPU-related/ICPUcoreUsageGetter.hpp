@@ -1,5 +1,5 @@
 #pragma once //incl. guard
-#include "../global.h"
+#include <global.h>
 //#include "I_CPUcontroller.hpp"
 
 class I_CPUcontroller ;
@@ -27,7 +27,8 @@ public:
   virtual //float 
     BYTE GetPercentalUsageForAllCores(float arf[] ) = 0 ;
   //virtual float Init() = 0 ;//{return 0.0f; }
-  virtual BYTE Init() = 0 ;//{return 0.0f; }
+  virtual BYTE Init() //= 0 ;
+    {return 0 ; }
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
   {
     mp_cpucontroller = p_cpucontroller ;

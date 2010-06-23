@@ -14,9 +14,9 @@
   #include <Windows_compatible_typedefs.h>
 #endif
 
-#include <Controller/I_CPUcontroller.hpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
-#include <Controller/UsageGetterAndControllerBase.hpp>
+#include <Controller/CPU-related/UsageGetterAndControllerBase.hpp>
 
 //inheritance:
 //  CPUcoreUsageGetterAndControllerBase (member: I_CPUaccess * mp_cpuaccess)

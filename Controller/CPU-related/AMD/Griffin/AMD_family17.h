@@ -36,20 +36,6 @@
 //47:0 CTR: performance counter value -> 48 bit wide so the max value as binary
 //has 48 bits set to "1" which equals FFFFFFFFFFFF hexadecimal
 #define MAXIMUM_PERFORMANCE_COUNTER_VALUE 0xFFFFFFFFFFFFULL
-#define PERFORMANCE_COUNTER_VALUE_DIFF(current,prev) \
-  /* the performance counter values are increasing in time except a value wrap
-  occured */ \
-  (current) < (prev) ? \
-  /* for understanding this calculation: 
-    example: wrap at 255: current value: 2 old value : 250 
-    -> correct value is "maximum value" minus "old value" + 
-    "current value" + 1 (because first value is "0")
-    = 255 - 250 + 2 + 1 = 5 + 2 + 1 = 8 
-    example: wrap at 255: current value: 0 old value : 255: 255-255 + 0 + 1 = 1
-  */ \
-  (MAXIMUM_PERFORMANCE_COUNTER_VALUE - (prev) ) + (current) + 1 \
-  : \
-  (current) - (prev)
 
 //MSRC001_00[07:04] Performance Event Counter Registers (PERF_CTR[3:0])
 #define PERF_CTR_0 0xC0010004

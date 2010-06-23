@@ -1,18 +1,21 @@
+//Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany
 
 //Architectural(=for a bunch of Intel CPU types/ models) MSRs follow
 
 //Intel Volume 3A System Programming Guide (document number "253668"):
-//For Pentium M processors (family [06H], models [09H, 0DH]); for Pentium 4
+//"For Pentium M processors (family [06H], models [09H, 0DH]); for Pentium 4
 //processors, Intel Xeon processors (family [0FH], models [00H, 01H, or 02H]);
 //and for P6 family processors: the time-stamp counter increments with every
 //internal processor clock cycle.
 //The internal processor clock cycle is determined by the current core-clock to bus-
 //clock ratio. Intel® SpeedStep® technology transitions may also impact the
-//processor clock.
+//processor clock."
+
 //-> if 600MHz for 1 second, 1800 MHz the next second 600M+1800M=2400M 
 // time-stamp clocks have passed.
 
-//For Pentium 4 processors, Intel Xeon processors (family [0FH], models [03H and
+//Intel Volume 3A System Programming Guide (document number "253668"):
+//"For Pentium 4 processors, Intel Xeon processors (family [0FH], models [03H and
 //higher]); for Intel Core Solo and Intel Core Duo processors (family [06H], model
 //[0EH]); for the Intel Xeon processor 5100 series and Intel Core 2 Duo processors
 //(family [06H], model [0FH]); for Intel Core 2 and Intel Xeon processors (family
@@ -22,9 +25,12 @@
 //processor or may be set by the maximum resolved frequency at which the
 //processor is booted. The maximum resolved frequency may differ from the
 //maximum qualified frequency of the processor, see Section 30.10.5 for more
-//detail.
+//detail."
 #define IA32_TIME_STAMP_COUNTER 0x10 //16 decimal
 
+//Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3B
+//chapter 30.8.2 Performance Counters (Pentium 4):
+//"Each performance counter is 40-bits wide (see Figure30-24)"
 //number of performance counters: CPUID.0AH:EAX[15:8]
 #define IA32_MISC_ENABLE 0x1A0 //416
 #define IA32_PMC0 0xC1 //193 decimal, (PERFCTR0);General Performance Counter 0 (R/W)
@@ -53,6 +59,10 @@
 
 //Pentium M:
 #define INTEL_ARCHITECTURAL_CPU_CLOCKS_NOT_HALTED 121 //0x79
+//"Number of Enhanced Intel SpeedStep technology transitions:"
+#define EMON_EST_TRANS 0x58
+//"Mask = 02H - Only Frequency transitions"
+#define OnlyFrequencytransitionsMask 0x2
 
 //Intel Volume 3B System Programming Guide (document number "253669") 
 //appendix A.1, Table A-1:  event number

@@ -12,7 +12,7 @@
 #else //MSC, MINGW (,...)
     #include <tchar.h> ////for _T(), TCHAR
 #endif
-#include <Controller/UsageGetterAndControllerBase.hpp>
+#include <Controller/CPU-related/UsageGetterAndControllerBase.hpp>
 #if __GNUC__ == 4 //cygwin 1.7 has w32api/basetsd.h
   #include <w32api/basetsd.h> //for DWORD_PTR
 #endif
@@ -23,6 +23,9 @@
 #include <Windows_compatible_typedefs.h> //for BOOL,BYTE,DWORD_PTR,...
 #include <set> //for std::set
 #include <string> // std::string
+#ifdef _MSC_VER
+  #define __FLT_MIN__ FLT_MIN
+#endif
 //typedef unsigned char BYTE ;
 //#include "global.h" //for BYTE
 
@@ -41,6 +44,8 @@
 //from Winring0's "OlsDef.h"
 #define PciBusDevFunc(Bus, Dev, Func)	((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
 #ifdef COMPILE_WITH_CALC_THREAD
 class ICalculationThread ;
 #endif
@@ -60,6 +65,7 @@ class I_CPUcontroller
 {
 //protected or public to inherit the attributes (member vars)
 public:
+  float m_fReferenceClockInMHz ;
   bool m_b1CPUcorePowerPlane ;
   int m_byNumberOfCmdLineArgs;
   TCHAR ** m_arartcharCmdLineArg ;
@@ -104,8 +110,10 @@ public:
   //reference clock of 100 MHz.
   //The reference clock can be determined by querying the TimeStamp counter twice and
   //calculating a difference from these values.
-  virtual void GetAllPossibleFrequencies(std::set<VoltageAndFreq> & 
-    r_stdsetvoltageandfreq) {} ;
+//  virtual void GetAllPossibleFrequencies(std::set<VoltageAndFreq> &
+//    r_stdsetvoltageandfreq) {} ;
+  virtual void GetAvailableMultipliers(std::set<float> &
+    r_stdset_float) {} ;
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
   virtual BYTE GetCurrentPstate(
@@ -116,6 +124,21 @@ public:
   {
     return 0 ; 
   }
+  //Stores multiplier, reference clock and voltage into the model data.
+  virtual BYTE GetCurrentVoltageAndFrequency(
+    WORD wCoreID ) ;
+
+  virtual BYTE GetCurrentVoltageAndFrequency(
+    float & r_fVoltageInVolt
+    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+    , float & r_fMultiplier
+    , float & r_fReferenceClockInMHz
+    , WORD wCoreID
+    )
+  {
+    return 0 ;
+  }
+  virtual float GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex ) ;
 
   BYTE GetInterpolatedVoltageFromFreq(
     WORD wFreqInMHzToGetVoltageFrom,
@@ -260,7 +283,7 @@ public:
   virtual BYTE TooHot() { return 0 ; }
   void SetFrequencyInMHz(WORD wFre) {} ;
   //MUST be declared virtual ("virtual ...") else 
-  //GetCurrentPstate() of the derived class is NOT called.
+  //SetVoltageAndFrequency() of the derived class is NOT called.
   virtual BYTE 
     //Let voltage be the first element from name because the same in
     //"Dyn Voltage And Freq. Sclaing"
@@ -270,6 +293,15 @@ public:
       , BYTE byCoreID 
       )
       {return 0 ; }
+  //MUST be declared virtual ("virtual ...") else
+  //SetCurrentVoltageAndMultiplier() of the derived class is NOT called.
+  virtual BYTE SetCurrentVoltageAndMultiplier(
+    float fVoltageInVolt
+    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+    , float fMultiplier
+    , WORD wCoreID
+    )
+  {return 0 ; }
       //= 0 ;
   //If this method should be implemented in a derived class it should check for
   // MSR indices and value for validity.

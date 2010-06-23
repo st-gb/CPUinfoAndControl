@@ -84,6 +84,20 @@ typedef
 #endif
     , WORD wCoreID 
   ) ;
+typedef
+  BYTE (//WINAPI
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+  CALL_TYPE
+  * pfn_GetCurrentVoltageAndFrequency_type) (
+    float * p_fVoltageInVolt
+    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+    , float * p_fMultiplier
+    //
+    , float * p_fReferenceClockInMHz
+    , WORD wCoreID
+  ) ;
+
   //GET_CURRENT_PSTATE_SIG("(* dll_GetCurrentPstate_type)",;)
 typedef 
   WORD (//WINAPI 
@@ -115,15 +129,37 @@ typedef
     ( DWORD dwAffMask
       , BYTE byPerformanceEventSelectRegisterNumber
     ) ;
-typedef BYTE (//WINAPI 
+//typedef BYTE (//WINAPI
+//  //Calling convention--must be the same as in the DLL
+//  //function signature that calls this function?!
+//  CALL_TYPE
+//  * dll_SetCurrentPstate_type) (
+//    WORD wFreqInMHz
+//    , //float & Volt
+//      WORD p_wMilliVolt
+//    , WORD wCoreID
+//  ) ;
+typedef BYTE (
+  //Calling convention--must be the same as in the DLL
+  //function signature that calls this function?!
+//  CALL_TYPE
+//  WINAPI
+//  __stdcall
+  * pfnSetCurrentVoltageAndMultiplier_type) (
+    float fVoltageInVolt
+    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+    , float fMultiplier
+    , WORD wCoreID
+  ) ;
+
+typedef float * (
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
   CALL_TYPE
-  * dll_SetCurrentPstate_type) (
-    WORD wFreqInMHz 
-    , //float & Volt
-      WORD p_wMilliVolt
-    , WORD wCoreID 
+  //the reference clock might change. So better get the possible multipliers.
+  * pfnGetAvailableMultipliers_type) (
+    WORD wCoreID
+    , WORD * p_wNum
   ) ;
 typedef
   float (//WINAPI

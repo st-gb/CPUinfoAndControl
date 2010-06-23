@@ -14,6 +14,7 @@
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_7BIT
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/CalculationThreadProc.h>//for macros "STARTED" and "ENDED"
+#include <Controller/ICalculationThread.hpp>
 #include <Controller/Sleep.h>
 //#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/stdtstr.hpp> //GetStdString(...)
@@ -27,6 +28,7 @@
 #include <ios> //for ostream formatters "hex" and "dec"
 #include <global.h>
 #include <UserInterface.hpp>
+
 #include <iomanip> //std::setprecision(...)
 //#undef COMPILE_WITH_XERCES
 //#ifdef WIN32 //with Linux I can't compile with xerces yet.

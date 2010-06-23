@@ -2,13 +2,43 @@
 
 #include "PentiumM_Controller.hpp"
 //#include <windef.h> //for "NULL"
-#include <Controller/Intel_registers.h>
+#include <Controller/CPU-related/Intel/Intel_registers.h>
+#include <preprocessor_helper_macros.h> //BITMASK_FOR_LOWMOST_3BIT
+//for Pentium Ms the perf counter bit width seems to be 40:
+//                                    <8 bit > <8 bit > <8 bit > <8 bit > <8 bit >
+//previous value: 5497519814387   100 11111111 11111101 10110111 00110110 11110011
+//current value:  4398069455221   100 00000000 00000001 01011110 00011001 01110101
+//suffix "ULL" is not needed by MS compiler, but by g++
+//needed for "PERFORMANCE_COUNTER_VALUE_DIFF"
+#define MAXIMUM_PERFORMANCE_COUNTER_VALUE = 0xFFFFFFFFFFULL ; //10xF = 10x 4 bit =40 bit
+#include <Controller/CPU-related/PerformanceCounterValueDiff.h>
+#include <Controller/value_difference.h> //ULONG_VALUE_DIFF
+#ifdef COMPILE_WITH_ATTRIBUTES
 #include <ModelData/ModelData.hpp>
+#endif
 //#include <I_CPUaccess.hpp>
 #include <Controller/I_CPUaccess.hpp>
+#include <windows.h> //::GetTickCount()
+
+#define PERFORMANCE_COUNTER_FOR_FID_CHANGE IA32_PMC0
+
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+  #define MONITOR_NUMBER_OF_FREQUENCY_ID_TRANSITIONS \
+    MonitorNumberOfFrequencyIDtransitions() ;
+#else
+  #define MONITOR_NUMBER_OF_FREQUENCY_ID_TRANSITIONS
+#endif
 
 PentiumM_Controller::PentiumM_Controller()
-  //: mp_model(NULL)
+  :
+  //mp_model(NULL)
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+  m_b2ndTimeOrLaterReadTSCandFIDchange(false)
+  , m_dCurrentTSCclockInHz (0.0)
+  , m_dwMinimumTimeSpanInMilliseconds ( 100 )
+  ,
+#endif
+  m_fCurrentReferenceClockInMHz ( 0.0 )
 {
 }
 
@@ -38,6 +68,13 @@ BYTE PentiumM_Controller::Init()
       , dwHigh 
       , 1
       ) ;
+
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+    MonitorNumberOfFrequencyIDtransitions() ;
+#else
+    ReferenceClockAccordingToStepping() ;
+#endif
+
     bSpeedStepIsenabled = ! (dwHigh & 1 ) ;
     LOGN("SteedStep is " << ( bSpeedStepIsenabled ? "en" : "dis") << 
       " abled" )
@@ -61,6 +98,7 @@ BYTE PentiumM_Controller::Init()
   return 1 ;
 }
 
+#ifdef COMPILE_WITH_ATTRIBUTES
 void PentiumM_Controller::GetAllPossibleFrequencies(
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq )
 {
@@ -72,32 +110,40 @@ void PentiumM_Controller::GetAllPossibleFrequencies(
     ; wFreqInMHz += 100 )
     r_stdsetvoltageandfreq.insert( VoltageAndFreq( 0.0 , wFreqInMHz ) ) ;
 }
+#endif //#ifdef COMPILE_WITH_ATTRIBUTES
 
-BYTE PentiumM_Controller::GetCurrentPstate(
-  WORD & r_wFreqInMHz 
-  , float & r_fVoltageInVolt
-  , BYTE byCoreID
+//BYTE PentiumM_Controller:://GetCurrentPstate(
+//  WORD & r_wFreqInMHz
+//  , float & r_fVoltageInVolt
+//  , BYTE byCoreID
+BYTE PentiumM_Controller::GetCurrentVoltageAndFrequency(
+  float & r_fVoltageInVolt
+  , float & r_fMultiplier
+  , float & r_fReferencClockInMHz
   )
 {
   BYTE bySuccess = 0 ;
+  BYTE byFID = 0 ;
   DWORD dwHigh, dwLow ;
-  if( RdmsrEx(
+  if( mp_cpuaccess->RdmsrEx(
       IA32_PERF_STATUS
-      , dwLow
-      , dwHigh
+      , & dwLow
+      , & dwHigh
       , 1
       )
     )
   {
 //#ifdef _DEBUG
-    BYTE byFID = dwLow >> 8 ;
+//    BYTE byFID = dwLow >> 8 ;
+    byFID = dwLow >> 8 ;
+    r_fMultiplier = byFID ;
 //#endif
-    r_wFreqInMHz = //( ( dwLow >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ) * 100 ;
-      byFID * 100 ;
-#ifdef _DEBUG
-    if( r_wFreqInMHz > 1800 )
-      r_wFreqInMHz = r_wFreqInMHz ;
-#endif
+//    r_wFreqInMHz = //( ( dwLow >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ) * 100 ;
+//      byFID * 100 ;
+//#ifdef _DEBUG
+//    if( r_wFreqInMHz > 1800 )
+//      r_wFreqInMHz = r_wFreqInMHz ;
+//#endif
     BYTE byVoltageID = ( dwLow & 255 ) ;
     //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step
     //63= 0.7V 62=0.716 V,...
@@ -115,6 +161,170 @@ BYTE PentiumM_Controller::GetCurrentPstate(
     bySuccess = 0 ;
   }
 #endif
+
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+  m_dwTickCountInMilliseconds = ::GetTickCount();
+  //For taking a difference we need to have recorded a value before.
+  if( m_b2ndTimeOrLaterReadTSCandFIDchange )
+  {
+    m_dwTickCountDiffInMilliseconds = ULONG_VALUE_DIFF( m_dwTickCountInMilliseconds ,
+      m_dwTickCountInMillisecondsPrev ) ;
+    if( m_dwTickCountDiffInMilliseconds > m_dwMinimumTimeSpanInMilliseconds )
+    {
+      if( mp_cpuaccess->ReadTSC( dwLow, dwHigh) )
+//      if( mp_cpuaccess->RdmsrEx( IA32_TIME_STAMP_COUNTER, & dwLow, & dwHigh , 1 ) )
+      {
+        m_ullTSCvalue = dwHigh ;
+        m_ullTSCvalue <<= 32 ;
+        m_ullTSCvalue |= dwLow ;
+//        //For taking a difference we need to have recorded a value before.
+//        if( m_b2ndTimeOrLaterReadTSCandFIDchange )
+//        {
+        if( mp_cpuaccess->RdmsrEx(
+          //IA32_PERFEVTSEL0
+          //Intel vol. 3B:
+          //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
+          //address space; the number of MSRs per logical processor is reported using
+          //CPUID.0AH:EAX[15:8]."
+          //"30.2.1.1 Architectural Performance Monitoring Version 1 Facilities":
+          //The bit width of an IA32_PMCx MSR is reported using the
+          //CPUID.0AH:EAX[23:16]
+          //
+          //IA32_PMC1
+          PERFORMANCE_COUNTER_FOR_FID_CHANGE
+          , & dwLow
+          , & dwHigh
+          , 1 )
+          )
+        {
+          m_ullPerformanceEventCounterNumberOfFIDchange = dwHigh ;
+          m_ullPerformanceEventCounterNumberOfFIDchange <<= 32 ;
+          m_ullPerformanceEventCounterNumberOfFIDchange |= dwLow ;
+
+          if( m_ullPerformanceEventCounterNumberOfFIDchange )
+          {
+  //        //For taking a difference we need to have recorded a value before.
+  //        if( m_b2ndTimeOrLaterReadTSCandFIDchange )
+  //        {
+            m_ullNumberOfFIDchangeDiff = //PERFORMANCE_COUNTER_VALUE_DIFF(
+              PerformanceCounterValueDiff(
+              m_ullPerformanceEventCounterNumberOfFIDchange ,
+              m_ullNumberOfFIDchangePrevious
+              ) ;
+      //      LOGN("m_ullNumberOfFIDchangeDiff:" << m_ullNumberOfFIDchangeDiff)
+            //no FID change
+            if( m_ullNumberOfFIDchangeDiff == 0
+  //              &&
+  //              //else: <expr> / 0 = infinite
+  //              m_dwTickCountDiffInMilliseconds > //0
+  //            m_dwMinimumTimeSpanInMilliseconds
+              )
+            {
+              //Assign all previous values when everything succeeded at first.
+              m_dwTickCountInMillisecondsPrev = m_dwTickCountInMilliseconds ;
+              m_ullTSCdiff = //PERFORMANCE_COUNTER_VALUE_DIFF(
+                ULONGLONG_VALUE_DIFF(
+                m_ullTSCvalue ,
+                m_ullTSCvaluePrevious
+                ) ;
+    //        }
+            m_ullTSCvaluePrevious = m_ullTSCvalue ;
+              //e.g. time diff is "100 ms", TSC diff is "90.000.000":
+              // 90.000.000 * 1000 / 100 = 90.000.000.000 / 100 = 900.000.000(900MHz)
+              m_dCurrentTSCclockInHz = (double) m_ullTSCdiff * 1000.0 /// byFID
+                / (double) m_dwTickCountDiffInMilliseconds ;
+      //        LOGN("TSC diff:" << m_ullTSCdiff
+      //          << " milliseconds diff:" << m_dwTickCountDiffInMilliseconds
+      //          << " ->MHz=TSC diff * 1000 / ms_diff="
+      //            << (double) m_ullTSCdiff * 1000.0
+      //            << "/ " << (double) m_dwTickCountDiffInMilliseconds
+      //          << "\n=" << dMHz
+      //          << "FSB(MHz) = MHz/ multiplier=" << dMHz << "/" << (float)byFID
+      //          << "\n=" << dMHz / (float)byFID
+      //          )
+      //        r_wFreqInMHz = dMHz ;
+              m_fCurrentReferenceClockInMHz = m_dCurrentTSCclockInHz /
+                  (float) byFID / 1000000.0 ;
+              m_ullNumberOfFIDchangePrevious =
+                  m_ullPerformanceEventCounterNumberOfFIDchange ;
+            }
+  //        }
+          }
+          //After a standby or hibernate the PMC value remains 0.
+          //I was not able to detect standby or hibernate on Linux to re-init
+          //the performance countung, so this is a universal (also Windows)
+          //workaround.
+          else
+          {
+            MonitorNumberOfFrequencyIDtransitions() ;
+          }
+
+        }
+//        //The Pentium M model 13, stepping 8 has the effect (bug?) that it
+//        // does not increment the TimeStampCounter at a low multiplier (e,g. 6)
+//        //at the same rate as the CPU clock: e.g. 400 M timestamp ticks /s
+//        // for 800 MHz clock speed.
+//        // So try as a workaround to reset the TSC to 0.
+//        mp_cpuaccess->WrmsrEx( IA32_TIME_STAMP_COUNTER , 0 , 0 , 1 ) ;
+//        m_ullTSCvaluePrevious = 0 ;
+     }
+    }
+  }
+  else //1st time the values are read.
+  {
+    m_dwTickCountInMillisecondsPrev = m_dwTickCountInMilliseconds ;
+    if( mp_cpuaccess->ReadTSC( dwLow, dwHigh) )
+    {
+      m_ullTSCvaluePrevious = dwHigh ;
+      m_ullTSCvaluePrevious <<= 32 ;
+      m_ullTSCvaluePrevious |= dwLow ;
+//    //The Pentium M model 13, stepping 8 has the effect (bug?) that it
+//    // does not increment the TimeStampCounter at a low multiplier (e,g. 6)
+//    //at the same rate as the CPU clock: e.g. 400 M timestamp ticks /s
+//    // for 800 MHz clock speed.
+//    // So try as a workaround to reset the TSC to 0.
+//    mp_cpuaccess->WrmsrEx( IA32_TIME_STAMP_COUNTER , 0 , 0 , 1) ;
+////    m_ullTSCvalue = 0 ;
+//    m_ullTSCvaluePrevious = 0 ;
+      if( mp_cpuaccess->RdmsrEx(
+        //IA32_PERFEVTSEL0
+        //Intel vol. 3B:
+        //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
+        //address space; the number of MSRs per logical processor is reported using
+        //CPUID.0AH:EAX[15:8]."
+        //"30.2.1.1 Architectural Performance Monitoring Version 1 Facilities":
+        //The bit width of an IA32_PMCx MSR is reported using the
+        //CPUID.0AH:EAX[23:16]
+        //
+  //      IA32_PMC1
+        PERFORMANCE_COUNTER_FOR_FID_CHANGE
+        , & dwLow
+        , & dwHigh
+        , 1 )
+        )
+      {
+        m_ullNumberOfFIDchangePrevious = dwHigh ;
+        m_ullNumberOfFIDchangePrevious <<= 32 ;
+        m_ullNumberOfFIDchangePrevious |= dwLow ;
+        //After a standby or hibernate the PMC value remains 0.
+        //I was not able to detect standby or hibernate on Linux to re-init
+        //the performance countung, so this is a universal (also Windows)
+        //workaround.
+       if( ! m_ullNumberOfFIDchangePrevious )
+          MonitorNumberOfFrequencyIDtransitions() ;
+       else
+         //All values have been got successfully-> can get the 2nd values.
+         m_b2ndTimeOrLaterReadTSCandFIDchange = true ;
+      }
+      else
+      {
+        LOGN("read PMC failed")
+      }
+  //    else
+    }
+  }
+#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+  r_fReferencClockInMHz = m_fCurrentReferenceClockInMHz ;
   //return 1 ;
   return bySuccess ;
 }
@@ -126,10 +336,10 @@ BYTE PentiumM_Controller::GetCurrentPstate(
   )
 {
   DWORD dwHigh, dwLow ;
-  if( RdmsrEx(
+  if( mp_cpuaccess->RdmsrEx(
       IA32_PERF_STATUS
-      , dwLow
-      , dwHigh
+      , & dwLow
+      , & dwHigh
       , 1 << byCoreID
       )
     )
@@ -140,6 +350,7 @@ BYTE PentiumM_Controller::GetCurrentPstate(
   return 1 ;
 }
 
+#ifdef COMPILE_WITH_ATTRIBUTES
 WORD PentiumM_Controller::GetMaximumFrequencyInMHz()
 {
   //I do not know if there are information about the max. freq. saved 
@@ -177,6 +388,7 @@ WORD PentiumM_Controller::GetMinimumFrequencyInMHz()
       m_wFreqInMHz ;
   return 0 ;
 }
+#endif //#ifdef COMPILE_WITH_ATTRIBUTES
 
 WORD PentiumM_Controller::GetMaximumVoltageID()
 {
@@ -196,6 +408,7 @@ float PentiumM_Controller::GetMinimumVoltageInVolt()
   return 0.7 ;
 }
 
+#ifdef COMPILE_WITH_ATTRIBUTES
 WORD PentiumM_Controller::GetNumberOfPstates()
 {
   return 
@@ -240,6 +453,7 @@ BYTE PentiumM_Controller::GetPstate(WORD wPstateID,
   }
   return byPstateExists ;
 }
+#endif //#ifdef COMPILE_WITH_ATTRIBUTES
 
 //bool PentiumM_Controller::GetPstateSafefy(
 //  WORD wFreqInMHz
@@ -293,46 +507,87 @@ void PentiumM_Controller::IncreaseVoltageBy1Step(float & r_fVoltage)
   r_fVoltage = GetVoltageInVolt( wVoltageID ) ;
 }
 
-void PentiumM_Controller::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
-{
-  float fVoltageInVolt ;
-  WORD wFreqInMHz ;
-  if( GetCurrentPstate(
-    wFreqInMHz 
-    , fVoltageInVolt
-    , byCoreID 
-    ) )
-  {
-    fVoltageInVolt += 
-      //Suffix "f" to avoid MSVC's 
-      //"warning C4305: '+=' : truncation from 'double' to 'float'"
-      0.032f ; //increase by 2 voltage ID steps
-    SetVoltageAndFrequency(
-      fVoltageInVolt
-      , wFreqInMHz
-      , byCoreID
-      ) ;
-    fVoltageInVolt += 
-      //Suffix "f" to avoid MSVC's 
-      //"warning C4305: '+=' : truncation from 'double' to 'float'"
-      0.32f ; //increase by 2 voltage ID steps
-  }
-  //BYTE byFreqID ;
-  //BYTE byVoltageID ;
-  //BYTE byCoreID  ;
-  //GetCurrentPstate(
-  //  byFreqID
-  //  , byVoltageID
-  //  , byCoreID
-  //  ) ;
-  //byVoltageID += 2 ;
-  //SetPstate(
-  //  byFreqID
-  //  , byVoltageID
-  //  , byCoreID
-  //  ) ;
-}
+//void PentiumM_Controller::IncreaseVoltageForCurrentPstate(BYTE byCoreID)
+//{
+//  float fVoltageInVolt ;
+//  WORD wFreqInMHz ;
+//  if( GetCurrentPstate(
+//    wFreqInMHz
+//    , fVoltageInVolt
+//    , byCoreID
+//    ) )
+//  {
+//    fVoltageInVolt +=
+//      //Suffix "f" to avoid MSVC's
+//      //"warning C4305: '+=' : truncation from 'double' to 'float'"
+//      0.032f ; //increase by 2 voltage ID steps
+//    SetVoltageAndFrequency(
+//      fVoltageInVolt
+//      , wFreqInMHz
+//      , byCoreID
+//      ) ;
+//    fVoltageInVolt +=
+//      //Suffix "f" to avoid MSVC's
+//      //"warning C4305: '+=' : truncation from 'double' to 'float'"
+//      0.32f ; //increase by 2 voltage ID steps
+//  }
+//  //BYTE byFreqID ;
+//  //BYTE byVoltageID ;
+//  //BYTE byCoreID  ;
+//  //GetCurrentPstate(
+//  //  byFreqID
+//  //  , byVoltageID
+//  //  , byCoreID
+//  //  ) ;
+//  //byVoltageID += 2 ;
+//  //SetPstate(
+//  //  byFreqID
+//  //  , byVoltageID
+//  //  , byCoreID
+//  //  ) ;
+//}
 
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+void PentiumM_Controller::MonitorNumberOfFrequencyIDtransitions()
+{
+  PerformanceEventSelectRegisterWrite(
+    1 //<< byCoreID ,
+    ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from
+    //  MSR ... to MSR ...  for
+    // 1 or 2 "Performance Event Counter Registers" from
+    //  ... to ...
+    //  that store the 48 bit counter value
+    //Performance Event Counter number
+//    1 ,
+    0 ,
+    EMON_EST_TRANS ,
+    //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
+    OnlyFrequencytransitionsMask ,
+    1, //User Mode
+    1, //OS mode
+    0, //edge
+    0, //pin control
+    0, //APIC
+    1, //enable counters
+    0 , //invert counter mask
+    0 //counter mask
+    ) ;
+  mp_cpuaccess->WrmsrEx( //IA32_PMC1
+//    IA32_PMC0
+    PERFORMANCE_COUNTER_FOR_FID_CHANGE
+    //Set to 1 so that next time no more 0 so that this function is called again.
+    , 1
+    , 0
+    , 1 ) ;
+  //Cause to fetch 2 values for taking a diff for _each_ value type (TSC, time,
+  //  FID changes)
+  m_b2ndTimeOrLaterReadTSCandFIDchange = false ;
+}
+#endif
+
+//AFAIK performance counter for counter other than 0 also needs counter 0
+// to have the enable flag set to "1".
 void PentiumM_Controller::PerformanceEventSelectRegisterWrite(
   DWORD dwAffinityBitMask ,
   //Pentium M has 1 or 2 "Performance Event Select Register" from 
@@ -384,6 +639,33 @@ void PentiumM_Controller::PerformanceEventSelectRegisterWrite(
     ) ;
 }
 
+void PentiumM_Controller::ReferenceClockAccordingToStepping()
+{
+  DWORD dwEAX, dwEBX, dwECX , dwEDX ;
+  bool bRet = mp_cpuaccess->CpuidEx(
+    //http://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits:
+    //"EAX=1: Processor Info and Feature Bits"
+    0x00000001
+    , & dwEAX
+    , & dwEBX
+    , & dwECX
+    , & dwEDX
+    , 1
+    ) ;
+  if( bRet )
+  {
+    //http://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits:
+    //"The format of the information in EAX is as follows:"
+    //"3:0 - Stepping"
+    BYTE byStepping = dwEAX & BITMASK_FOR_LOWMOST_4BIT ;
+    DEBUGN("stepping via CPUID:" << (WORD) byStepping )
+    if( byStepping == 8) //e.g. 1.86 GHz
+      m_fCurrentReferenceClockInMHz = 133.3 ;
+    else //e.g. 1.8 GHz 745
+      m_fCurrentReferenceClockInMHz = 100.0 ;
+  }
+}
+
 BYTE PentiumM_Controller::SetVoltageAndFrequency(
   float fVoltageInVolt
   , WORD wFreqInMHz
@@ -415,6 +697,7 @@ BYTE PentiumM_Controller::SetVoltageAndFrequency(
   return byRet ;
 }
 
+#ifdef COMPILE_WITH_ATTRIBUTES
 BYTE PentiumM_Controller::SetFreqAndVoltageFromFreq(
   WORD wFreqInMHz 
   , const std::set<VoltageAndFreq> & cr_stdsetvoltageandfreqForInterpolation
@@ -508,6 +791,7 @@ BYTE PentiumM_Controller::SetFreqAndVoltageFromFreq(
   }
   return byRet ;
 }
+#endif //#ifdef COMPILE_WITH_ATTRIBUTES
 
 BYTE PentiumM_Controller::TooHot()
 {
@@ -545,6 +829,7 @@ BOOL // TRUE: success, FALSE: failure
     if( //Writing to this register may damage the CPU
       index == IA32_PERF_CTL )
     {
+#ifdef COMPILE_WITH_ATTRIBUTES
       WORD wFreqInMHz = ( dwLow >> 8 ) * 100 ;
       BYTE byVoltageID = ( dwLow & 255 ) ;
       //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step
@@ -573,6 +858,7 @@ BOOL // TRUE: success, FALSE: failure
             ) ;
           //i = 0 ;
       }
+#endif //#ifdef COMPILE_WITH_ATTRIBUTES
     }
     else
       mp_cpuaccess->// TRUE: success, FALSE: failure

@@ -2,7 +2,8 @@
 //#include <ModelData/ModelData.hpp>
 
 //for MSR_TIME_STAMP_COUNTER_REGISTER
-#include <Controller/AMD/Griffin/AMD_family17.h>
+#include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
+#include <Controller/CPU-related/CPU-specific/PerformanceCounterValueDiff.h>
 //#include <Controller/GriffinController.hpp>
 
 #ifdef COMPILE_WITH_GRIFFINCONTROLLER_DEPENDANCE

@@ -1,5 +1,4 @@
 #include "I_CPUcontroller.hpp"
-#include "UserInterface.hpp"
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
@@ -7,6 +6,7 @@
 #include <Controller/stdtstr.hpp> //get...
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
+#include <UserInterface/UserInterface.hpp>
 #include <Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
@@ -18,8 +18,9 @@ I_CPUcontroller::I_CPUcontroller()
   :
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
+  m_fReferenceClockInMHz(0)
   //1 power plane for all CPU cores is usual->set as default.
-  m_b1CPUcorePowerPlane( true )
+  , m_b1CPUcorePowerPlane( true )
 //  , mp_cpuaccess (NULL)
   , mp_userinterface (NULL)
   , mp_model (NULL)
@@ -42,6 +43,7 @@ BOOL I_CPUcontroller::CpuidEx(
   DWORD_PTR affinityMask
 )
 {
+  //May be NULL.
   if( mp_cpuaccess )
   {
     return mp_cpuaccess->CpuidEx(
@@ -106,6 +108,49 @@ BYTE I_CPUcontroller::EnableOwnDVFS()
     }
   }
   return 0 ;
+}
+
+float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
+{
+  float fCPUcoreFrequencyInMHz = 0 ;
+  if( mp_model && m_fReferenceClockInMHz )
+  {
+//    std::set<float>::const_iterator c_iter_stdset_fAvaiableMultipliers =
+//      mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.find(
+//        wMultiplierIndex ) ;
+    std::set<float>::const_iterator c_iter_stdset_fAvaiableMultipliers =
+          mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.begin() ;
+    for( WORD wCurrentMultiplierIndex = 0 ;
+      c_iter_stdset_fAvaiableMultipliers !=
+          mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.end() &&
+      wCurrentMultiplierIndex < wMultiplierIndex ;
+      ++ c_iter_stdset_fAvaiableMultipliers , ++ wCurrentMultiplierIndex
+      )
+    {
+
+    }
+    if (c_iter_stdset_fAvaiableMultipliers !=
+        mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.end()
+        )
+    {
+      fCPUcoreFrequencyInMHz = *c_iter_stdset_fAvaiableMultipliers *
+          m_fReferenceClockInMHz ;
+    }
+  }
+  return fCPUcoreFrequencyInMHz ;
+}
+
+//Stores multiplier, reference clock and voltage into the model data.
+BYTE I_CPUcontroller::GetCurrentVoltageAndFrequency(
+  WORD wCoreID )
+{
+  PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
+    m_arp_percpucoreattributes  ;
+  return GetCurrentVoltageAndFrequency(
+    arp_percpucoreattributes[wCoreID].m_fVoltageInVolt,
+    arp_percpucoreattributes[wCoreID].m_fMultiplier,
+    arp_percpucoreattributes[wCoreID].m_fReferenceClockInMhz ,
+    wCoreID ) ;
 }
 
 // returns: true: p-state with freq >= wanted freq and 
@@ -433,50 +478,50 @@ WORD I_CPUcontroller::GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld)
 
 WORD I_CPUcontroller::GetNumberOfCPUcores()
 {
-  if( mp_cpuaccess )
-  {
-    DWORD dwEAX ;
-    DWORD dwEBX ;
-    DWORD dwECX ;
-    DWORD dwEDX ;
-    //Check if register 8000_0008h is available
-    if( mp_cpuaccess->CpuidEx( 
-        0x80000000
-        , & dwEAX,
-        & dwEBX,
-        & dwECX,
-        & dwEDX,
-        1 // CPU (core) affinityMask
-        )
-      )
-    {
-      if( //http://www.sandpile.org/ia32/cpuid.htm:
-        //"EAX=xxxx_xxxxh maximum supported extended level"
-        dwEAX >= 0x80000008
-        )
-      {
-        //http://www.sandpile.org/ia32/cpuid.htm:
-        //extended level 8000_0008h
-        //ECX: 7...0 cores per die - 1 
-        if( mp_cpuaccess->CpuidEx( 
-            0x80000008
-            , & dwEAX,
-            & dwEBX,
-            & dwECX,
-            & dwEDX,
-            1 // CPU (core) affinityMask
-            )
-          )
-          return (dwECX && 127 ) + 1 ; //127=1111111bin
-      }
-      //e.g. Pentium Ms maximum supported extended level is
-      //0x80000004, so it does not have register 8000_0008h
-      else
-        return 1 ;
-    }
-    else
-      return 1 ;
-  }
+//  if( mp_cpuaccess )
+//  {
+//    DWORD dwEAX ;
+//    DWORD dwEBX ;
+//    DWORD dwECX ;
+//    DWORD dwEDX ;
+//    //Check if register 8000_0008h is available
+//    if( mp_cpuaccess->CpuidEx(
+//        0x80000000
+//        , & dwEAX,
+//        & dwEBX,
+//        & dwECX,
+//        & dwEDX,
+//        1 // CPU (core) affinityMask
+//        )
+//      )
+//    {
+//      if( //http://www.sandpile.org/ia32/cpuid.htm:
+//        //"EAX=xxxx_xxxxh maximum supported extended level"
+//        dwEAX >= 0x80000008
+//        )
+//      {
+//        //http://www.sandpile.org/ia32/cpuid.htm:
+//        //extended level 8000_0008h
+//        //ECX: 7...0 cores per die - 1
+//        if( mp_cpuaccess->CpuidEx(
+//            0x80000008
+//            , & dwEAX,
+//            & dwEBX,
+//            & dwECX,
+//            & dwEDX,
+//            1 // CPU (core) affinityMask
+//            )
+//          )
+//          return (dwECX && 127 ) + 1 ; //127=1111111bin
+//      }
+//      //e.g. Pentium Ms maximum supported extended level is
+//      //0x80000004, so it does not have register 8000_0008h
+//      else
+//        return 1 ;
+//    }
+//    else
+//      return 1 ;
+//  }
   return 0 ;
 }
 
@@ -607,12 +652,22 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
   WORD wFreqInMHz 
   , BYTE byCoreID)
 {
-//  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
-//    << (WORD) byCoreID << ")")
-  return SetFreqAndVoltageFromFreq(
+  BYTE byRet ;
+  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
+    << (WORD) byCoreID << ")")
+  byRet = SetFreqAndVoltageFromFreq(
     wFreqInMHz 
     , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
     , byCoreID ) ;
+  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
+    << (WORD) byCoreID << ") ret value from "
+    <<"I_CPUcontroller::SetFreqAndVoltageFromFreq("
+    << "wFreqInMHz:" << wFreqInMHz
+    << ",stdset:" << & mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+    << ",byCoreID:" << (WORD) byCoreID
+    << ") : " << (WORD) byRet
+    )
+  return byRet ;
 }
 
 BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
@@ -703,12 +758,31 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
           )
         )
       {
+        DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+          << "wFreqInMHz:" << wFreqInMHz
+          << ",stdset:" << & cr_stdsetvoltageandfreqForInterpolation
+          << ",byCoreID:" << (WORD) byCoreID
+          << ") before "
+          << "SetVoltageAndFrequency("
+          << fVoltageInVolt << ","
+          << wFreqInMHz << ","
+          << (WORD) byCoreID << ")" )
         byRet = SetVoltageAndFrequency(//wFreqInMHz
           fVoltageInVolt
           //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
           , wFreqInMHz
           , byCoreID
           ) ;
+        DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+          << "wFreqInMHz:" << wFreqInMHz
+          << ",stdset:" << & cr_stdsetvoltageandfreqForInterpolation
+          << ",byCoreID:" << (WORD) byCoreID
+          << ") after "
+          << "SetVoltageAndFrequency("
+          << fVoltageInVolt << ","
+          << wFreqInMHz << ","
+          << (WORD) byCoreID << ")"
+          "ret val: " << (WORD) byRet )
       }
   }
   else //if e.g. the wanted freq is higher than the max. freq.
@@ -769,7 +843,9 @@ void I_CPUcontroller::SetModelData(
   Model * p_model )
 {
   mp_model = p_model ;
-  p_model->SetNumberOfCPUCores( GetNumberOfCPUcores() ) ;
+  WORD w = GetNumberOfCPUcores() ;
+  if( w )
+    p_model->SetNumberOfCPUCores( w ) ;
 }
 
 #ifdef COMPILE_WITH_CALC_THREAD

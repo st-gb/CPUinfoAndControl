@@ -2,9 +2,9 @@
 //#include <ModelData/ModelData.hpp>
 
 //#include <PentiumM_registers.h> //for MSR_TIME_STAMP_COUNTER_REGISTER
-#include <Controller/Intel_registers.h> //for MSR_TIME_STAMP_COUNTER_REGISTER
+#include <Controller/CPU-related/Intel/Intel_registers.h> //for MSR_TIME_STAMP_COUNTER_REGISTER
 //#include <Controller/GriffinController.hpp>
-#include <Controller/Intel/PentiumM/PentiumM_Controller.hpp>
+#include <Controller/CPU-related/Intel/PentiumM/PentiumM_Controller.hpp>
 #include <preprocessor_helper_macros.h>
 #include <Windows_compatible_typedefs.h> //DWORD, ...
 //#include <Controller/I_CPUcontroller.hpp> //ReadmsrEx
@@ -70,27 +70,16 @@ PentiumM::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //performance counters (see also Section 30.2.1.1) is reported in
   //CPUID.0AH:EAX[23:16]"
     ( dwEAX >> 16 ) & BITMASK_FOR_LOWMOST_8BIT ;
-  m_ullMaximumPerfCounterValue = 1 ;
-  m_ullMaximumPerfCounterValue 
-    //example: 1bin << 1 = 10bin - 1 = 1bin
-    //example: 1bin << 2 = 100bin - 1 = 11bin
-    //example: 1bin << 4 = 10000bin - 1 = 1111bin
-    //example: 1bin << 59 = 
-    //  1000 00000000 00000000 00000000 00000000 00000000 00000000 00000000bin 
-    //   - 1 
-    //=  111 11111111 11111111 11111111 11111111 11111111 11111111 11111111bin
-    = ( m_ullMaximumPerfCounterValue << m_byPerfCounterBitWidth ) - 1 ;
-
-  //for Pentium Ms the perf counter bit width seems to be 40:
-  //                                    <8 bit > <8 bit > <8 bit > <8 bit > <8 bit >
-  //previous value: 5497519814387   100 11111111 11111101 10110111 00110110 11110011
-  //current value:  4398069455221   100 00000000 00000001 01011110 00011001 01110101
-  //#infdef _MSC_VER
-  //suffix "ULL" is not needed by MS compiler, but by g++
-  m_ullMaximumPerfCounterValue = 0xFFFFFFFFFFULL ; //10xF = 10x 4 bit =40 bit
-  //#else
-  //m_ullMaximumPerfCounterValue = 0xFFFFFFFFFF ; //10xF = 10x 4 bit =40 bit
-  //#endif
+//  m_ullMaximumPerfCounterValue = 1 ;
+//  m_ullMaximumPerfCounterValue
+//    //example: 1bin << 1 = 10bin - 1 = 1bin
+//    //example: 1bin << 2 = 100bin - 1 = 11bin
+//    //example: 1bin << 4 = 10000bin - 1 = 1111bin
+//    //example: 1bin << 59 =
+//    //  1000 00000000 00000000 00000000 00000000 00000000 00000000 00000000bin
+//    //   - 1
+//    //=  111 11111111 11111111 11111111 11111111 11111111 11111111 11111111bin
+//    = ( m_ullMaximumPerfCounterValue << m_byPerfCounterBitWidth ) - 1 ;
 }
 
 //The Performance event select is cleared after ACPI S3 or S4
@@ -142,26 +131,26 @@ BYTE PentiumM::ClocksNotHaltedCPUcoreUsageGetter::Init(
         0 , //invert counter mask
         0 //counter mask
         ) ;
-      mp_pentium_m_controller->PerformanceEventSelectRegisterWrite(
-        1 << byCoreID ,
-        //Pentium M has 1 or 2 "Performance Event Select Register" from 
-        //  MSR ... to MSR ...  for 
-        // 1 or 2 "Performance Event Counter Registers" from 
-        //  ... to ...
-        //  that store the 48 bit counter value
-        1 , //Performance Event Counter number
-        LAST_LEVEL_CACHE_MISSES_EVENT_SELECT ,
-        //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
-        LAST_LEVEL_CACHE_REFERENCES_UMASK ,
-        1, //User Mode
-        1, //OS mode
-        0, //edge
-        0, //pin control
-        0, //APIC
-        1, //enable counters
-        0 , //invert counter mask
-        0 //counter mask
-        ) ;
+//      mp_pentium_m_controller->PerformanceEventSelectRegisterWrite(
+//        1 << byCoreID ,
+//        //Pentium M has 1 or 2 "Performance Event Select Register" from
+//        //  MSR ... to MSR ...  for
+//        // 1 or 2 "Performance Event Counter Registers" from
+//        //  ... to ...
+//        //  that store the 48 bit counter value
+//        1 , //Performance Event Counter number
+//        LAST_LEVEL_CACHE_MISSES_EVENT_SELECT ,
+//        //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
+//        LAST_LEVEL_CACHE_REFERENCES_UMASK ,
+//        1, //User Mode
+//        1, //OS mode
+//        0, //edge
+//        0, //pin control
+//        0, //APIC
+//        1, //enable counters
+//        0 , //invert counter mask
+//        0 //counter mask
+//        ) ;
     }
   }
   //else
@@ -175,31 +164,7 @@ BYTE PentiumM::ClocksNotHaltedCPUcoreUsageGetter::Init(
   return 0 ;
 }
 
-ULONGLONG PentiumM::ClocksNotHaltedCPUcoreUsageGetter::
-  PerformanceCounterValueDiff(
-  ULONGLONG ullPerformanceCounterCurrent ,
-  ULONGLONG ullPerformanceCounterPrevious 
-  )
-{
-  ULONGLONG ullDiff =
-  /* the performance counter values are increasing in time except a value wrap
-  occured */ \
-  (ullPerformanceCounterCurrent) < (ullPerformanceCounterPrevious) ? 
-  /* for understanding this calculation: 
-    example: wrap at 255: current value: 2 old value : 250 
-    -> correct value is "maximum value" minus "old value" + 
-    "current value" + 1 (because first value is "0")
-    = 255 - 250 + 2 + 1 = 5 + 2 + 1 = 8 
-    example: wrap at 255: current value: 0 old value : 255: 255-255 + 0 + 1 = 1
-  */ \
-    (m_ullMaximumPerfCounterValue - (ullPerformanceCounterPrevious) ) + 
-      (ullPerformanceCounterCurrent) + 1 
-    : //else
-    (ullPerformanceCounterCurrent) - (ullPerformanceCounterPrevious) ;
-  return ullDiff ;
-}
-
-  //double 
+//double
 float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   BYTE byCoreID
   )
