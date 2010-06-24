@@ -1,19 +1,17 @@
 #pragma once
 
-//#include "wxWidgets/DynFreqScalingThread.hpp"
-//#include "PumaStateCtrl.h"
-#include <DummyUserInterface.hpp>
 #include <Controller/CPUcontrolBase.hpp>
 #include <Controller/MainController.hpp>
 #include <Controller/I_ServerProcess.hpp>
 #include <Controller/IPC/I_IPC_DataHandler.hpp>
 #include <Controller/stdtstr.hpp> //std::tstring
-#include "ModelData/ModelData.hpp"
+#include <ModelData/ModelData.hpp>
+#include <UserInterface/DummyUserInterface.hpp>
+//#include "wxWidgets/DynFreqScalingThread.hpp"
 
 #ifdef COMPILE_WITH_CALC_THREAD
   #include <Windows/CalculationThread.hpp>
 #endif
-//#include <Windows/CPUcoreUsageGetterIWbemServices.hpp>
 #include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/DynFreqScalingAccess.hpp>
 #ifdef COMPILE_WITH_IPC
@@ -47,6 +45,8 @@ class CPUcontrolService
   public CPUcontrolBase
   , public ServiceBase //for register service ctrl manager ease etc.
 {
+public:
+  DWORD m_dwArgCount ;
 private :
   //Flag for ServiceCtrlHandlerEx to indicate whether the service is REALLY
   //running (the service report SERVICE_RUNNUNG immediately because the
@@ -69,8 +69,6 @@ private :
   //this might be changed to a pointer later
 //  I_IPC_DataHandler m_ipc_datahandler ;
 public:
-    DWORD m_argc ;
-    LPTSTR * m_argv ;
     LPTSTR * mar_tch ;
     //static 
       volatile bool m_bProcess ;
@@ -80,14 +78,15 @@ public:
 #ifdef COMPILE_WITH_CALC_THREAD
       CalculationThread m_calculationthread ;
 #endif //COMPILE_WITH_CALC_THREADs
-    //CPUcoreUsageGetterIWbemServices m_cpucoreusagegetteriwbemservices ;
-    //Must be static. Else: runtime error when calling DummyUserInterface::Confirm(ostream)
+    //Must be static. Else: runtime error when calling
+    // DummyUserInterface::Confirm(ostream)
     static 
       DummyUserInterface m_dummyuserinterface ;
     //Use non-objects rather than MFC objects because I don't want to be
-    //dependand on MFC (porting is easier ).
+    //dependent on MFC (porting is easier ).
     HANDLE m_hEndProcessingEvent ;
-    //This method is form: http://msdn.microsoft.com/en-us/library/ms810429.aspx
+    //This method (C++ class for a service) is from:
+    //http://msdn.microsoft.com/en-us/library/ms810429.aspx
     static 
       CPUcontrolService * 
         msp_cpucontrolservice;   // nasty hack to get object ptr
@@ -106,8 +105,12 @@ public:
     //static 
        //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
        IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
-    PowerProfDynLinked m_powerprofdynlinked ;
+#ifdef COMPILE_WITH_IPC
+    NamedPipeServer m_ipcserver ;
+#endif //#ifdef COMPILE_WITH_IPC
     MainController m_maincontroller ;
+    PTSTR * m_p_ptstrArgument ;
+    PowerProfDynLinked m_powerprofdynlinked ;
     /*DynFreqScalingThread * mp_dynfreqscalingthread ;*/
     //static 
     //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
@@ -116,9 +119,6 @@ public:
     std::tstring m_stdtstrProgramArg ;
     std::vector<std::string> m_vecstdstrCommandLineArgs ;
     ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
-#ifdef COMPILE_WITH_IPC
-    NamedPipeServer m_ipcserver ;
-#endif //#ifdef COMPILE_WITH_IPC
     DynFreqScalingThreadBase * mp_dynfreqscalingthreadbase ;
 public :
     CPUcontrolService(//const char* szServiceName
@@ -155,7 +155,8 @@ public :
 #ifdef COMPILE_WITH_IPC
     DWORD IPC_Message(
       BYTE byCommand
-//      //wide string because the string may be a chinese string for a power scheme
+//      //wide string because the string may be a chinese string for a power
+//      scheme
 //      , std::wstring & stdwstrMessage
       , BYTE * & r_arbyPipeDataToSend
       ) ;

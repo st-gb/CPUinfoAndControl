@@ -205,6 +205,30 @@ CPUcoreUsageGetterNtQuerySystemInformation::
       ar_sppiAfter[0].KernelTime.QuadPart - ar_sppi[0].KernelTime.QuadPart ;
     ar_sysprocperfinfo[0].UserTime.QuadPart = 
       ar_sppiAfter[0].UserTime.QuadPart - ar_sppi[0].UserTime.QuadPart ;
+
+    LARGE_INTEGER liKernelMinusIdle ;
+    liKernelMinusIdle.QuadPart =
+      ar_sysprocperfinfo[0].KernelTime.QuadPart
+      - ar_sysprocperfinfo[0].IdleTime.QuadPart ;
+
+//    LARGE_INTEGER liOverall ;
+//    liOverall.QuadPart =
+//      //liKernelMinusIdle.QuadPart +
+//      ar_sysprocperfinfo[0].KernelTime.QuadPart +
+//      ar_sysprocperfinfo[0].IdleTime.QuadPart +
+//      ar_sysprocperfinfo[0].UserTime.QuadPart ;
+//
+//    "idle:%f kernel:%f kernel-idle:%f user:%f dPassedNanos:%f",
+//      (double) ar_sysprocperfinfo[0].IdleTime.QuadPart /
+//        (double) liOverall.QuadPart ,
+//      (double) ar_sysprocperfinfo[0].KernelTime.QuadPart /
+//        (double) liOverall.QuadPart ,
+//      (double) liKernelMinusIdle.QuadPart /
+//        (double) liOverall.QuadPart ,
+//      (double) ar_sysprocperfinfo[0].UserTime.QuadPart /
+//        (double) liOverall.QuadPart ,
+//        dPassedNanos
+//      )
     return 0 ;
   }
 

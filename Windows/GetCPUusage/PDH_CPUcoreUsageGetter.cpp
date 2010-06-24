@@ -30,16 +30,18 @@
 #include "PDH_CPUcoreUsageGetter.hpp"
 
 //from http://msdn.microsoft.com/en-us/library/aa373046%28v=VS.85%29.aspx:
-BYTE GetPDHerrorCodeString(DWORD dwErrorCode,std::wstring & wstr )
+BYTE PDH_CPUcoreUsageGetter::GetPDHerrorCodeString(
+  DWORD dwErrorCode,std::wstring & wstr )
 {
   //std::wstring wstr ;
-  HANDLE hPdhLibrary = NULL;
+//  HANDLE hPdhLibrary = NULL;
     LPWSTR pMessage = NULL;
     DWORD_PTR pArgs[] = { (DWORD_PTR)L"<collectionname>" };
     //DWORD dwErrorCode = PDH_PLA_ERROR_ALREADY_EXISTS;
 
-    hPdhLibrary = LoadLibraryW(L"pdh.dll");
-    if (NULL == hPdhLibrary)
+//    hPdhLibrary = LoadLibraryW(L"pdh.dll");
+    if ( NULL == //hPdhLibrary
+        m_hinstancePDH_DLL )
     {
         DEBUGN(L"LoadLibrary failed with " << GetLastError() );
         return 0;
@@ -47,30 +49,33 @@ BYTE GetPDHerrorCodeString(DWORD dwErrorCode,std::wstring & wstr )
 
     // Use the arguments array if the message contains insertion points, or you
     // can use FORMAT_MESSAGE_IGNORE_INSERTS to ignore the insertion points.
-
-    if (!FormatMessageW(FORMAT_MESSAGE_FROM_HMODULE |
-                       FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                       /*FORMAT_MESSAGE_IGNORE_INSERTS |*/
-                       FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                       hPdhLibrary, 
-                       dwErrorCode,
-                       0,  
-                       (LPWSTR)&pMessage, 
-                       0, 
-                       //NULL))
-                       (va_list*)pArgs))
+    if ( ! ::FormatMessageW(
+      FORMAT_MESSAGE_FROM_HMODULE |
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        /*FORMAT_MESSAGE_IGNORE_INSERTS |*/
+        FORMAT_MESSAGE_ARGUMENT_ARRAY,
+//       hPdhLibrary,
+      m_hinstancePDH_DLL ,
+      dwErrorCode,
+      0,
+      (LPWSTR)&pMessage,
+      0,
+      //NULL))
+      (va_list*)pArgs)
+      )
     {
-        DEBUGN(L"Format message failed with " << GetLastError() );
+        DEBUGWN_WSPRINTF( L"Format message failed with error code %u",
+          ::GetLastError() );
         return 0;
     }
 
-    DEBUGN(L"Formatted message: " << pMessage);
+    DEBUGWN_WSPRINTF( L"Formatted message: %ls", pMessage);
     wstr = std::wstring(pMessage) ;
-    LocalFree(pMessage);
+    ::LocalFree(pMessage);
     return 1 ;
 }
 
-void PDH_CPUcoreUsageGetter::InitPDH_DLLaccess()
+BYTE PDH_CPUcoreUsageGetter::InitPDH_DLLaccess()
 {
   DEBUGN("PDH_CPUcoreUsageGetter::InitPDH_DLLaccess()" )
   m_hinstancePDH_DLL =
@@ -86,8 +91,12 @@ void PDH_CPUcoreUsageGetter::InitPDH_DLLaccess()
   else
   {
     DEBUGN("could not load pdh.dll")
-    throw std::exception() ;
+//    throw std::exception() ;
+    //When thrown a  std::exception()  the last log instructions were missing
+    //inside the log file.
+    return 0 ;
   }
+  return 1 ;
 }
 
 PDH_CPUcoreUsageGetter::PDH_CPUcoreUsageGetter()
@@ -105,7 +114,7 @@ PDH_CPUcoreUsageGetter::PDH_CPUcoreUsageGetter()
 //#endif
   DEBUGN("PDH_CPUcoreUsageGetter::PDH_CPUcoreUsageGetter" )
 #ifdef _MSC_VER
-  GetProcentProcessorTimeName() ;
+  GetPercentProcessorTimeName() ;
     //StartPerfCounting() ;
 #endif //#ifndef _MSC_VER
 }
@@ -129,49 +138,56 @@ PDH_CPUcoreUsageGetter::~PDH_CPUcoreUsageGetter()
 void PDH_CPUcoreUsageGetter::AssignDLLfunctionPointers()
 {
 #ifdef COMPILE_RUNTIME_DYN_LINKED
-  std::string strFuncName ;
+  std::string stdstrFuncName ;
 
-  strFuncName = "PdhAddCounterW" ;
+  stdstrFuncName = "PdhAddCounterW" ;
   m_pfnPdhAddCounterW = (PdhAddCounterW_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhAddCounterW == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+    ExceptionWithStdString(stdstrFuncName) ;
 
-  strFuncName = "PdhCloseQuery" ;
+  stdstrFuncName = "PdhCloseQuery" ;
   m_pfnPdhCloseQuery = (PdhCloseQuery_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhCloseQuery == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+    ExceptionWithStdString(stdstrFuncName) ;
 
-  strFuncName = "PdhCollectQueryData" ;
+  stdstrFuncName = "PdhCollectQueryData" ;
   m_pfnPdhCollectQueryData = (PdhCollectQueryData_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhCollectQueryData == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+  ExceptionWithStdString(stdstrFuncName) ;
 
-  strFuncName = "PdhEnumObjectsW" ;
+  stdstrFuncName = "PdhEnumObjectsW" ;
   m_pfnPdhEnumObjectsW = (PdhEnumObjectsW_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhCollectQueryData == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+  ExceptionWithStdString(stdstrFuncName) ;
 
-  strFuncName = "PdhGetFormattedCounterValue" ;
+  stdstrFuncName = "PdhGetFormattedCounterValue" ;
   m_pfnPdhGetFormattedCounterValue = (PdhGetFormattedCounterValue_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhGetFormattedCounterValue == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+  ExceptionWithStdString(stdstrFuncName) ;
 
-  strFuncName = "PdhOpenQueryW" ;
+  stdstrFuncName = "PdhOpenQueryW" ;
   m_pfnPdhOpenQueryW = (PdhOpenQueryW_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhOpenQueryW == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+  ExceptionWithStdString(stdstrFuncName) ;
 
-  strFuncName = "PdhLookupPerfNameByIndexW" ;
+  stdstrFuncName = "PdhLookupPerfNameByIndexW" ;
   m_pfnPdhLookupPerfNameByIndexW = (PdhLookupPerfNameByIndexW_type)
-    ::GetProcAddress( m_hinstancePDH_DLL, strFuncName.c_str() );
+    ::GetProcAddress( m_hinstancePDH_DLL, stdstrFuncName.c_str() );
   if( m_pfnPdhLookupPerfNameByIndexW == NULL )
-    throw std::exception() ;
+    throw //std::exception() ;
+  ExceptionWithStdString(stdstrFuncName) ;
 
   DEBUGN("all DLL fct ptrs assigned")
 #endif //#ifndef COMPILE_RUNTIME_DYN_LINKED
@@ -179,8 +195,14 @@ void PDH_CPUcoreUsageGetter::AssignDLLfunctionPointers()
 
 LPWSTR PDH_CPUcoreUsageGetter::GetPerfnameByIndex(WORD wIndex )
 {
-  DWORD dwNameBufferSize = 0 ;
-  LPWSTR lpwstrCounterName = NULL ;
+  DWORD dwNameBufferSize =
+    //http://msdn.microsoft.com/en-us/library/aa372648%28VS.85%29.aspx:
+    //"Windows XP:  You must specify a buffer and buffer size."
+    //1 ;
+    PDH_MAX_COUNTER_NAME ;
+  LPWSTR lpwstrCounterName //= NULL ;
+    = new WCHAR [ dwNameBufferSize ] ;
+//  WCHAR lpwstrCounterName [1] ;
   //  LPTSTR szNameBuffer ;
   //http://msdn.microsoft.com/en-us/library/aa372648(v=VS.85).aspx:
   //Performance counter names for PdhAddCounter(...) depend on the
@@ -191,52 +213,85 @@ LPWSTR PDH_CPUcoreUsageGetter::GetPerfnameByIndex(WORD wIndex )
     //"If NULL, the function uses the local computer."
     NULL ,//__in   LPCTSTR szMachineName,
     wIndex, //__in   DWORD dwNameIndex,
+    //__out  LPTSTR szNameBuffer,
     //"Set to NULL if pcchNameBufferSize is zero."
-    NULL ,//__out  LPTSTR szNameBuffer,
+//    NULL ,
+    lpwstrCounterName ,
     //"If zero on input, the function returns PDH_MORE_DATA and sets this
     //parameter to the required buffer size."
+    //"If the specified size on input is greater than zero but less than the
+    //required size, you should not rely on the returned size to reallocate the
+    //buffer."
     & dwNameBufferSize //__in   LPDWORD pcchNameBufferSize
     ) ;
-  if( pdh_status == PDH_MORE_DATA )
+  switch( pdh_status )
   {
-    DEBUGN( "PdhLookupPerfNameByIndexW: namebuffer size:" << dwNameBufferSize )
-    lpwstrCounterName = new WCHAR[ dwNameBufferSize] ;
-    if( lpwstrCounterName )
+    case ERROR_SUCCESS:
+      DEBUGN("PdhLookupPerfNameByIndexW succeeded for index " << wIndex )
+      break ;
+    case PDH_MORE_DATA:
+      //http://msdn.microsoft.com/en-us/library/aa372648%28VS.85%29.aspx
+      //paragraph "Remarks" -> "Windows XP":
+      //"If the buffer is too small, the function returns PDH_INSUFFICIENT_BUFFER
+      //instead of PDH_MORE_DATA"
+    case PDH_INSUFFICIENT_BUFFER:
     {
-    //  DEBUGWN(L"percent processor time name:" <<
-    //    m_lpwstrProcentProcessorTimeCounterName )
-    //  DEBUGWN_WSPRINTF( L"percent processor time name:%ls" ,
-    //    m_lpwstrProcentProcessorTimeCounterName )
-      //"If the function succeeds, it returns ERROR_SUCCESS. "
-      PDH_STATUS pdh_status =
-        PdhLookupPerfNameByIndexW(
-        //"If NULL, the function uses the local computer."
-        NULL ,//__in   LPCTSTR szMachineName,
-        //// "% Processor Time" in the English language
-        wIndex , //__in   DWORD dwNameIndex,
-        lpwstrCounterName ,// __out  LPTSTR szNameBuffer,
-        //"If zero on input, the function returns PDH_MORE_DATA and sets this
-        //parameter to the required buffer size."
-        & dwNameBufferSize //__in   LPDWORD pcchNameBufferSize
-        ) ;
-      if( pdh_status == ERROR_SUCCESS )
+      //Release dynamically (on heap) created memory.
+      delete [] lpwstrCounterName ;
+      DEBUGN( "PdhLookupPerfNameByIndexW: namebuffer size:" << dwNameBufferSize )
+      lpwstrCounterName = new WCHAR[ dwNameBufferSize] ;
+      if( lpwstrCounterName )
       {
-        DEBUGN("PdhLookupPerfNameByIndexW succeeded for index " << wIndex )
-      }
-      else
-      {
-        lpwstrCounterName = NULL ;
-        DEBUGN("PdhLookupPerfNameByIndexW failed for index " << wIndex )
+      //  DEBUGWN(L"percent processor time name:" <<
+      //    m_lpwstrProcentProcessorTimeCounterName )
+      //  DEBUGWN_WSPRINTF( L"percent processor time name:%ls" ,
+      //    m_lpwstrProcentProcessorTimeCounterName )
+        //"If the function succeeds, it returns ERROR_SUCCESS. "
+        PDH_STATUS pdh_status =
+          PdhLookupPerfNameByIndexW(
+          //"If NULL, the function uses the local computer."
+          NULL ,//__in   LPCTSTR szMachineName,
+          //// "% Processor Time" in the English language
+          wIndex , //__in   DWORD dwNameIndex,
+          lpwstrCounterName ,// __out  LPTSTR szNameBuffer,
+          //"If zero on input, the function returns PDH_MORE_DATA and sets this
+          //parameter to the required buffer size."
+          & dwNameBufferSize //__in   LPDWORD pcchNameBufferSize
+          ) ;
+        if( pdh_status == ERROR_SUCCESS )
+        {
+          DEBUGN("PdhLookupPerfNameByIndexW succeeded for index " << wIndex )
+        }
+        else
+        {
+          lpwstrCounterName = NULL ;
+          DEBUGN("PdhLookupPerfNameByIndexW failed for index " << wIndex )
+        }
       }
     }
+    break ;
+    default:
+    {
+      std::wstring wstr ;
+      if ( GetPDHerrorCodeString( pdh_status , wstr ) )
+        DEBUGWN_WSPRINTF(L"PdhLookupPerfNameByIndexW failed for index %u :%ls",
+          wIndex ,
+          wstr.c_str() )
+    }
   }
+//  //Release dynamically (on heap) created memory.
+//  delete [] lpwstrCounterName ;
   return lpwstrCounterName ;
 }
 
-void PDH_CPUcoreUsageGetter::GetProcentProcessorTimeName()
+void PDH_CPUcoreUsageGetter::GetPercentProcessorTimeName()
 {
-  DEBUGN("PDH_CPUcoreUsageGetter::GetProcentProcessorTimeName" )
+  DEBUGN("PDH_CPUcoreUsageGetter::GetPercentProcessorTimeName" )
   m_lpwstrProcentProcessorTimeCounterName = GetPerfnameByIndex(
+    //http://msdn.microsoft.com/en-us/library/aa372648%28VS.85%29.aspx:
+    //can be seen in registry path
+    //"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009"
+    //, name: "Counter"
     // "% Processor Time" in the English language
     6
     ) ;
@@ -254,7 +309,7 @@ void PDH_CPUcoreUsageGetter::GetProcentProcessorTimeName()
   }
   else
   {
-    DEBUGWN("PdhLookupPerfNameByIndexW failed")
+    DEBUGN("GetPercentProcessorTimeName--GetPerfnameByIndex failed")
     throw std::exception() ;
   }
   //TODO: PdhEnumObjects() :
@@ -536,7 +591,7 @@ void PDH_CPUcoreUsageGetter::SetNumberOfCPUcores( WORD wNumLogicalCPUcores )
 
 void PDH_CPUcoreUsageGetter::InitPDH_Names()
 {
-  GetProcentProcessorTimeName() ;
+  GetPercentProcessorTimeName() ;
   //GetCounterObjects() ;
   //LPWSTR lpwstr
   m_lpwstrProcessorPerfObjectName = GetPerfnameByIndex(

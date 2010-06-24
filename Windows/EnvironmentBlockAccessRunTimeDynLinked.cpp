@@ -50,16 +50,20 @@ BYTE EnvironmentBlockAccessRunTimeDynLinked::CreateEnvironmentBlock(
   BOOL bInherit
   )
 {
+  BOOL bool_ = FALSE ;
   if ( m_lpfnCreateEnvironmentBlock )
   {
-    if ( m_lpfnCreateEnvironmentBlock(
-        lpEnvironment,
-  //          hTokenDup,
-        hToken,
-        //"Specifies whether to inherit from the current process's environment."
-        bInherit
-        )
-      )
+    bool_ =
+      //http://msdn.microsoft.com/en-us/library/bb762270%28VS.85%29.aspx:
+      //"TRUE if successful; otherwise, FALSE."
+      m_lpfnCreateEnvironmentBlock(
+      lpEnvironment,
+//          hTokenDup,
+      hToken,
+      //"Specifies whether to inherit from the current process's environment."
+      bInherit
+      ) ;
+    if( bool_ )
     {
     }
     else
@@ -68,12 +72,14 @@ BYTE EnvironmentBlockAccessRunTimeDynLinked::CreateEnvironmentBlock(
 //            OutputDebugString( _T(" CreateEnvironmentBlock() -- FAILED") );
 //      DEBUGN("for spawning a process: CreateEnvironmentBlock() failed") ;
     }
+    return bool_ ;
   }
   else
   {
 //        OutputDebugString(_T(" FAILED - GetProcAddress(CreateEnvironmentBlock)"));
 //    DEBUGN( " FAILED - GetProcAddress(CreateEnvironmentBlock)") ;
   }
+  return bool_ ;
 }
 
 BOOL //WINAPI
@@ -83,5 +89,9 @@ BOOL //WINAPI
   )
 {
   if ( m_lpfnDestroyEnvironmentBlock )
-    m_lpfnDestroyEnvironmentBlock( lpEnvironment );
+    return
+      //http://msdn.microsoft.com/en-us/library/bb762274%28v=VS.85%29.aspx:
+      //"TRUE if successful; otherwise, FALSE."
+      m_lpfnDestroyEnvironmentBlock( lpEnvironment );
+  return FALSE ;
 }

@@ -39,7 +39,7 @@ std::tstring GetExeFileNameWithoutDirs()
     //LOG(
 //    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
 //        "Getting file path for THIS executable file failed: " <<
-//        LocalLanguageMessageFromErrorCode( ::GetLastError() ) << ")" //<< \n"
+//        LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
 //        );
     //return FALSE;
   }

@@ -25,6 +25,10 @@
 #ifndef _MSC_VER //MinGW does not have a PDH_MORE_DATA #define
   //from http://msdn.microsoft.com/en-us/library/aa373046%28v=VS.85%29.aspx:
   #define PDH_MORE_DATA 0x800007D2
+  #define PDH_INSUFFICIENT_BUFFER 0xC0000BC2
+
+  //from Windows Platform SDK version 6.1's "pdh.h":
+  #define PDH_MAX_COUNTER_NAME    1024  // Maximum counter name length.
 #endif
 void OutputMultiWStringValue(LPWSTR mszObjectList) ;
 
@@ -33,6 +37,16 @@ class PDH_CPUcoreUsageGetterPerCoreAtts
 public:
   HCOUNTER hCounter;
   HQUERY hQuery;
+} ;
+
+class ExceptionWithStdString
+{
+public:
+  std::string m_stdstr ;
+  ExceptionWithStdString(const std::string & r_stdstr )
+  {
+    m_stdstr = r_stdstr ;
+  }
 } ;
 
 class PDH_CPUcoreUsageGetter
@@ -59,10 +73,12 @@ public:
   void AssignDLLfunctionPointers() ;
   void GetCounterObjects() ;
   LPWSTR GetPerfnameByIndex(WORD) ;
-  void GetProcentProcessorTimeName() ;
+  void GetPercentProcessorTimeName() ;
   float GetPercentalUsageForCore(
     BYTE byCoreID
     ) ;
+  BYTE GetPDHerrorCodeString(
+    DWORD dwErrorCode,std::wstring & wstr ) ;
   PDH_CPUcoreUsageGetter() ;
   ~PDH_CPUcoreUsageGetter() ;
 #ifdef COMPILE_RUNTIME_DYN_LINKED
@@ -111,7 +127,7 @@ public:
       __out    PDH_HQUERY * phQuery
   );
 #endif //#ifdef COMPILE_RUNTIME_DYN_LINKED
-  void InitPDH_DLLaccess() ;
+  BYTE InitPDH_DLLaccess() ;
   void InitPDH_Names() ;
   void SetNumberOfCPUcores( WORD wNumLogicalCPUcores ) ;
   void StartPerfCounting() ;

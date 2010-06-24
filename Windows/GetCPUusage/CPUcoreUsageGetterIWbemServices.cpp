@@ -288,9 +288,10 @@ int CPUcoreUsageGetterIWbemServices::GetValues(//IWbemServices *pSvc,
       //TODO error here:
       m_hresult = mp_ienumwbemclassobject->Next(
         //TODO : idea: replace WBEM_INFINITE by a ~1 second timeout.
-        //maximum amount of time in milliseconds that the call blocks before returning
-        //The thread hung at this method call. This seems to be so beause of the
-        //"WBEM_INFINITE".
+        //maximum amount of time in milliseconds that the call blocks before
+        //returning
+        //The thread hung at this method call. This seems to be so because of
+        //the "WBEM_INFINITE".
         //WBEM_INFINITE, 
         1000,
         1, //uCount 
@@ -300,6 +301,7 @@ int CPUcoreUsageGetterIWbemServices::GetValues(//IWbemServices *pSvc,
         //&&iwbemclassobject, 
         //arp_iwbemclassobject,
         & uReturn);
+
       //DEBUG("ccugiwb usage-GetValues Next's hresult:%d\n",hresult);
       LOG( "ccugiwb usage-GetValues Next's hresult:" << m_hresult << "\n" );
       //because this program hung at the above instruction 
@@ -312,11 +314,15 @@ int CPUcoreUsageGetterIWbemServices::GetValues(//IWbemServices *pSvc,
         DEBUG("Getting objects from WMI enumeration timed out. Trying again.\n");
         m_hresult = mp_ienumwbemclassobject->Next(
           //TODO : idea: replace WBEM_INFINITE by a ~1 second timeout.
-          //maximum amount of time in milliseconds that the call blocks before returning
-          //WBEM_INFINITE, 
+          //maximum amount of time in milliseconds that the call blocks before
+          //returning WBEM_INFINITE,
           1000,
           1, //uCount 
-          //[out] Pointer to enough storage to hold the number of IWbemClassObject interface pointers specified by uCount. This storage must be supplied by the caller. This parameter cannot be NULL. The caller must call Release on each of the received interface pointers when they are no longer needed.
+          //[out] Pointer to enough storage to hold the number of
+          //IWbemClassObject interface pointers specified by uCount. This
+          //storage must be supplied by the caller. This parameter cannot be
+          //NULL. The caller must call Release on each of the received
+          //interface pointers when they are no longer needed.
           //=array of pointers?!
           & mp_iwbemclassobject,
           //&&iwbemclassobject, 
@@ -348,8 +354,13 @@ int CPUcoreUsageGetterIWbemServices::GetValues(//IWbemServices *pSvc,
       DEBUG("cpu usage-GetValues 2009 02 28 15:38:40\n");
 
 	    //hr = p_iwbemclassobject->Get(L"PercentProcessorTime", 0, &variant, 0, 0);
-	    m_hresult = mp_iwbemclassobject->Get( L"PercentProcessorTime", 0,
-        & m_variant, 0, 0);
+	    m_hresult = mp_iwbemclassobject->Get(
+	      L"PercentProcessorTime",
+	      0,
+        & m_variant,
+        0,
+        0
+        );
       //DEBUG("cpu usage-GetValues percent proc time:%s\n",m_variant.bstrVal);
       LOG( "cpu usage-GetValues percent proc time:" << m_variant.bstrVal 
           << "\n" );
@@ -361,7 +372,8 @@ int CPUcoreUsageGetterIWbemServices::GetValues(//IWbemServices *pSvc,
 	    //arulong[nCurrentArrayIndex] = _wtof(variant.bstrVal);
 	    ar_ulongPercentCPUTime[nCurrentArrayIndex] = _wtof(m_variant.bstrVal);
       //DEBUG("PercentProcessorTime: %lu\n",arulong[nCurrentArrayIndex]);
-      LOG( "PercentProcessorTime: " << ar_ulongPercentCPUTime[nCurrentArrayIndex] << "\n" );
+      LOG( "PercentProcessorTime: " <<
+        ar_ulongPercentCPUTime[nCurrentArrayIndex] << "\n" );
       //"Use this function to clear variables of type VARIANTARG (or VARIANT) 
       //before the memory that contains the VARIANTARG is freed (as when a
       //local variable goes out of scope).
@@ -372,10 +384,17 @@ int CPUcoreUsageGetterIWbemServices::GetValues(//IWbemServices *pSvc,
       VariantClear(&m_variant);
       DEBUG("cpu usage-GetValues 2009 02 28 15:37\n");
 
+      //TODO VariantInit() needed here?
       //VariantInit(&variant);
       VariantInit(&m_variant);
 	    //hr = p_iwbemclassobject->Get(L"TimeStamp_Sys100NS", 0, &variant, 0, 0);
-	    m_hresult = mp_iwbemclassobject->Get(L"TimeStamp_Sys100NS", 0, &m_variant, 0, 0);
+	    m_hresult = mp_iwbemclassobject->Get(
+	      L"TimeStamp_Sys100NS",
+	      0,
+	      &m_variant,
+	      0,
+	      0
+	      );
 	    //arulong[nCurrentArrayIndex+1] = _wtol(variant.bstrVal);
       
       //http://www.codeproject.com/KB/system/MultiCPUUsage.aspx:
@@ -465,8 +484,8 @@ BYTE CPUcoreUsageGetterIWbemServices::Init()
       }
       DEBUG("\n");
         //return -1.0;                  // Program has failed.
-      //return CoInitializeExFailed ;
-      byReturn = CoInitializeExFailed ;
+      return CoInitializeExFailed ;
+//      byReturn = CoInitializeExFailed ;
     }
     // Step 2: --------------------------------------------------
     // Set general COM security levels --------------------------
@@ -494,14 +513,23 @@ BYTE CPUcoreUsageGetterIWbemServices::Init()
       //RPC_E_TOO_LATE occured within this project but not within the
       //original project called "Check". But it is possible to continue
       //in spite of this error code.
-      if( hres == RPC_E_TOO_LATE )
+      switch(hres)
+      {
+      case S_OK:
+        DEBUG("error code means: success\n");
+        break;
+      case RPC_E_TOO_LATE :
         DEBUG("Error: CoInitializeSecurity has already been called."
           "But this should be no problem\n")
-      else
+        break ;
+      case RPC_E_NO_GOOD_SECURITY_PACKAGES :
+        DEBUG("error code means: asAuthSvc was not NULL, and none of the authentication services in the list could be registered. Check the results saved in asAuthSvc for authentication service�specific error codes. \n");
+        break;
+      default:
       {
         //cout << "Failed to initialize security. Error code = 0x" 
         //    << hex << hres << endl;
-        CoUninitialize();
+//        CoUninitialize();
         ShowMessage("for getting CPU usage:Registration of security and "
           "setting the default "
           "security values for the process for COM failed.");
@@ -515,10 +543,13 @@ BYTE CPUcoreUsageGetterIWbemServices::Init()
           //Reset to decimal output.
           << dec );
         //return -2.0;                    // Program has failed.
-        //return CoInitializeSecurityFailed ;
-        byReturn = CoInitializeSecurityFailed ;
       }
+      CoUninitialize();
+      //        byReturn = CoInitializeSecurityFailed ;
+      return CoInitializeSecurityFailed ;
     }
+    else
+      DEBUG( "CoInitializeSecurity succ.\n");
     // Step 3: ---------------------------------------------------
     // Obtain the initial locator to WMI -------------------------
 

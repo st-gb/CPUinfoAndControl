@@ -154,7 +154,8 @@ public:
     PGLOBAL_POWER_POLICY lpGlobalPowerPolicy,
     PPOWER_POLICY lpPowerPolicy
     ) ;
-  BOOLEAN SetActivePowerScheme(
+//  BOOLEAN
+  DWORD SetActivePowerScheme(
     //LPTSTR strPowerSchemeName     // name of the power scheme
     const std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
     ) ;

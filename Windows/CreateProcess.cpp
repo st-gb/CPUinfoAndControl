@@ -13,7 +13,8 @@
 #include <windows.h>
 #include <winnt.h> //TOKEN_ELEVATION_TYPE
 
-//from http://social.msdn.microsoft.com/Forums/en/windowssecurity/thread/31bfa13d-982b-4b1a-bff3-2761ade5214f:
+//from http://social.msdn.microsoft.com/Forums/en/windowssecurity/thread/
+//31bfa13d-982b-4b1a-bff3-2761ade5214f:
 #include "userenv.h"
 #include <Aclapi.h> //GetSecurityInfo()
 #include <tchar.h>
@@ -50,7 +51,7 @@ void LogTokenInfo(HANDLE TokenHandle)
 //  TOKEN_ELEVATION_TYPE token_elevation_type ;
 //  BOOL bool_ = GetTokenInformation(
 //    TokenHandle, //__in       HANDLE TokenHandle,
-//    TokenElevationType ,//__in       TOKEN_INFORMATION_CLASS TokenInformationClass,
+//    TokenElevationType ,//__in TOKEN_INFORMATION_CLASS TokenInformationClass,
 //    & token_elevation_type ,//__out_opt  LPVOID TokenInformation,
 //    sizeof(token_elevation_type) ,//__in       DWORD TokenInformationLength,
 //    & dwReturnLength //__out      PDWORD ReturnLength
@@ -78,7 +79,7 @@ void LogTokenInfo(HANDLE TokenHandle)
 //    DWORD dwErrorCode = 0;
 //    dwErrorCode = GetLastError();
 //    LOGN("GetTokenInformation error:" << dwErrorCode <<
-//      LocalLanguageMessageFromErrorCode(dwErrorCode) );
+//      LocalLanguageMessageFromErrorCodeA(dwErrorCode) );
 //  }
 }
 
@@ -93,7 +94,8 @@ DWORD GetProcessSecurityDescriptor(
     //When SE_SERVICE: "GetSecurityInfo error:6The handle is invalid."
 //        SE_SERVICE , //__in       SE_OBJECT_TYPE ObjectType,
     SE_KERNEL_OBJECT ,
-    //"A set of bit flags that indicate the type of security information to retrieve."
+    //"A set of bit flags that indicate the type of security information to
+    // retrieve."
     0 ,//__in       SECURITY_INFORMATION SecurityInfo,
 //    OWNER_SECURITY_INFORMATION ,
 //        NULL ,//__out_opt  PSID *ppsidOwner,
@@ -103,7 +105,7 @@ DWORD GetProcessSecurityDescriptor(
     NULL ,//__out_opt  PACL *ppSacl,
     //"When you have finished using the pointer, free the returned buffer
     //by calling the LocalFree function."
-    & rp_security_descriptor //__out_opt  PSECURITY_DESCRIPTOR *ppSecurityDescriptor
+    & rp_security_descriptor //__out_opt  PSECURITY_DESCRIPTOR * ppSecDescr
   );
   return dwRtnCode ;
 }
@@ -126,7 +128,7 @@ HANDLE GetHandleForCurrentProcess()
     DWORD dwErrorCode = 0;
     dwErrorCode = GetLastError();
     LOGN("OpenProcess error:" << dwErrorCode <<
-      LocalLanguageMessageFromErrorCode(dwErrorCode) );
+      LocalLanguageMessageFromErrorCodeA(dwErrorCode) );
   }
   return handleCurrentProcess ;
 }
@@ -155,7 +157,7 @@ bool GetTokenHandleForThisProcess(
       dwErrorCode = GetLastError();
       LOGN("error opening a token for this process:"
         << dwErrorCode
-        << LocalLanguageMessageFromErrorCode(dwErrorCode) );
+        << LocalLanguageMessageFromErrorCodeA(dwErrorCode) );
     }
   }
   return bSuccess ;
@@ -192,7 +194,7 @@ BOOL SetSessionForToken(HANDLE hTokenDup, DWORD dwSessionID)
   {
     DWORD dw = GetLastError() ;
     LOGN("setting token information failed:"
-      <<  dw << LocalLanguageMessageFromErrorCode(dw) ) ;
+      <<  dw << LocalLanguageMessageFromErrorCodeA(dw) ) ;
   }
   return bool_ ;
 }
@@ -249,7 +251,7 @@ BOOL DuplicateTokenAsNeeded(HANDLE hToken, HANDLE & r_hTokenDup)
   {
     DWORD dw = GetLastError() ;
     LOGN("Duplicating token failed:"
-      <<  dw << LocalLanguageMessageFromErrorCode(dw) ) ;
+      <<  dw << LocalLanguageMessageFromErrorCodeA(dw) ) ;
   }
   return boolSuccess ;
 }
@@ -322,6 +324,7 @@ BOOL CreateGUIprocess::CreateProcessAsNeeded(
     );
 }
 
+#ifdef COMPILE_WITH_WTSQueryUserToken
 BOOL GetUserTokenForSession( DWORD dwSessionID, HANDLE & r_hToken )
 {
   BOOL bool_ = WTSQueryUserToken(dwSessionID, & r_hToken ) ;
@@ -333,6 +336,7 @@ BOOL GetUserTokenForSession( DWORD dwSessionID, HANDLE & r_hToken )
   else
     LOGN("WTSQueryUserToken failed")
 }
+#endif
 
 DWORD GetSecurityDescriptorAndAssignToSecurityAttributes(
   SECURITY_ATTRIBUTES & r_security_attributes ,
@@ -365,7 +369,7 @@ DWORD GetSecurityDescriptorAndAssignToSecurityAttributes(
     DWORD dwErrorCode = 0;
     dwErrorCode = GetLastError();
     LOGN("GetSecurityInfo error:" << dwErrorCode <<
-      LocalLanguageMessageFromErrorCode(dwErrorCode) );
+      LocalLanguageMessageFromErrorCodeA(dwErrorCode) );
 //    return ;
   }
   return dwRtnCode ;
@@ -381,6 +385,12 @@ void CreateGUIprocess::StartProcess(DWORD dwSessionID)
   ZeroMemory( & process_information, sizeof( PROCESS_INFORMATION ) );
 
   startupinfo.cb = sizeof( STARTUPINFOW );
+  //http://msdn.microsoft.com/en-us/library/ms682429%28VS.85%29.aspx:
+  //"If you want the process to be interactive, specify winsta0\default."
+  //http://msdn.microsoft.com/en-us/library/ms684859%28v=VS.85%29.aspx:
+  //"If a window station name was specified in the lpDesktop  member
+  //of the STARTUPINFO structure that was used when the process was
+  //created, the process connects to the specified window station."
 //  startupinfo.lpDesktop = _T("Winsta0\\Default");
   startupinfo.lpDesktop = L"Winsta0\\Default" ;
 
@@ -435,10 +445,6 @@ void CreateGUIprocess::StartProcess(DWORD dwSessionID)
 //    GetSecurityDescriptorSacl()()
 
   BOOL bool_ = CreateProcessAsNeeded(hTokenDup) ;
-
-//  CloseHandle( hToken );
-  CloseHandle(hTokenService) ;
-//    CloseHandle( hTokenDup );
   if( bool_ )
   {
     LOGN("creating process succeeded.") ;
@@ -447,8 +453,12 @@ void CreateGUIprocess::StartProcess(DWORD dwSessionID)
   {
     DWORD dw = GetLastError() ;
     LOGN("creating process failed:"
-      <<  dw << LocalLanguageMessageFromErrorCode(dw) ) ;
+      <<  dw << LocalLanguageMessageFromErrorCodeA(dw) ) ;
   }
+
+//  CloseHandle( hToken );
+  CloseHandle(hTokenService) ;
+//    CloseHandle( hTokenDup );
 //  LocalFree(p_security_descriptor) ;
 
 //  env_block_dyn_linked.DestroyEnvironmentBlock() ;

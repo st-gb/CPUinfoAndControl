@@ -108,14 +108,13 @@ public:
     , DWORD & dwDCProcThrottleMaxValue 
     , DWORD & dwDCProcThrottleMinValue 
     ) ;
-  void InitializeFunctionPointers();
-  PowerProfFromWin6DynLinked(
-    std::wstring & r_stdwstrPowerSchemeName
-//    std::tstring & r_stdtstrPowerSchemeName
-    ) ;
 
   IDynFreqScalingAccess::string_type GetEnableDescription() ;
 
+  void GetActivePowerSchemeName(
+    std::wstring & r_stdwstrActivePowerSchemeName) ;
+  void GetAllPowerSchemeNames(std::set<std::wstring> &
+      stdset_stdwstrPowerSchemeName ) ;
   DWORD GetPowerSchemeName(
     GUID & guidPowerScheme , std::wstring & r_stdwstr ) ;
 
@@ -158,6 +157,9 @@ public:
     __in_opt HKEY UserRootPowerKey,
     __deref_out GUID & ActivePolicyGuid
     ) ;
+  //avoid g++ warning "`class PowerProfFromWin6DynLinked' has virtual
+  // functions but non-virtual destructor"
+  ~PowerProfFromWin6DynLinked() { }
   DWORD WINAPI PowerReadACValueIndex (
     __in_opt HKEY RootPowerKey,
     __in_opt CONST GUID *SchemeGuid,
@@ -219,14 +221,15 @@ public:
     __in      UCHAR *Buffer,
     __in      DWORD BufferSize
   );
-
+  void InitializeFunctionPointers();
   bool OtherDVFSisEnabled() ;
+  PowerProfFromWin6DynLinked(
+    std::wstring & r_stdwstrPowerSchemeName
+//    std::tstring & r_stdtstrPowerSchemeName
+    ) ;
 //  void OutputAllPowerSchemes() ;
-  void GetActivePowerSchemeName(
-    std::wstring & r_stdwstrActivePowerSchemeName) ;
-  void GetAllPowerSchemeNames(std::set<std::wstring> &
-      stdset_stdwstrPowerSchemeName ) ;
-  BYTE SetActivePowerScheme(
+  //BYTE
+  DWORD SetActivePowerScheme(
     const std::wstring & r_stdwstrPowerSchemeName ) ;
   void SetFunctionPointersToNULL() ;
 };//end class

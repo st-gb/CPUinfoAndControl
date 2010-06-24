@@ -47,7 +47,7 @@ BYTE NamedPipeClient::Init()
       if ( ::GetLastError() != ERROR_PIPE_BUSY ) 
       {
         LOGN("Could not open pipe:" << 
-          ::LocalLanguageMessageFromErrorCode(dwLastError) ); 
+          ::LocalLanguageMessageFromErrorCodeA(dwLastError) ); 
          return 0;
       }
  
@@ -57,7 +57,7 @@ BYTE NamedPipeClient::Init()
       { 
          dwLastError = ::GetLastError() ;
          LOGN("Could not open pipe:" <<
-           ::LocalLanguageMessageFromErrorCode(dwLastError) );
+           ::LocalLanguageMessageFromErrorCodeA(dwLastError) );
          return 0;
       } 
    } 
@@ -83,7 +83,7 @@ bool NamedPipeClient::IsConnected()
 {
   bool bConnected = false ;
   DWORD dwState , dwCurInstances ;
-  DWORD nMaxUserNameSize ;
+  DWORD nMaxUserNameSize = 0 ;
   BOOL bool_ = ::GetNamedPipeHandleState(
     m_handleClientPipe , //__in       HANDLE hNamedPipe,
     & dwState , //__out_opt  LPDWORD lpState,
@@ -112,7 +112,7 @@ bool NamedPipeClient::IsConnected()
   {
     DEBUGN("pipe state:" << dwState << "# of current instances:"
       << dwCurInstances )
-    LOGN("already connected to the service's pipe")
+//    DEBUGN("already connected to the service's pipe")
     if( dwCurInstances > 0 )
       bConnected = true ;
   }
@@ -120,7 +120,7 @@ bool NamedPipeClient::IsConnected()
   {
     DWORD dw = ::GetLastError() ;
 //    DEBUGN("GetNamedPipeHandleState failed")
-    LOGN("Getting pipe info failed:" << LocalLanguageMessageFromErrorCode(dw) )
+    LOGN("Getting pipe info failed:" << LocalLanguageMessageFromErrorCodeA(dw) )
   }
   return bConnected ;
 }
@@ -131,13 +131,13 @@ bool NamedPipeClient::IsConnected()
 //  m_pfnCallback = pfnCallback ;
 //}
 
-BYTE NamedPipeClient::SendMessage(BYTE byMessage)
+BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
 {
 //  BYTE byValue ;
   DWORD dwNumberOfBytesWritten ;
 //  DWORD dwError ;
   DWORD dwNumBytesRead ;
-  DWORD dwValue ;
+//  DWORD dwNumberOfBytes ;
 //  WORD wTotalNumBytesRead = 0 ;
 //  std::wstring stdwstrMessage ;
 //  wchar_t wch ;
@@ -156,7 +156,11 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
     , NULL );                  // not overlapped 
    if ( ! fSuccess )
    {
-      LOGN("WriteFile failed"); 
+     DWORD dwLastError = ::GetLastError() ;
+     //http://msdn.microsoft.com/en-us/library/aa365747%28VS.85%29.aspx:
+     //"To get extended error information, call the GetLastError function."
+      LOGN("WriteFile failed:" << LocalLanguageMessageFromErrorCodeA(
+        dwLastError) );
       m_bConnected = false ;
       return 0;
    }
@@ -170,10 +174,12 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
 //     fSuccess =
 //
 //       //http://msdn.microsoft.com/en-us/library/aa365467%28VS.85%29.aspx:
-//       //"The ReadFile function returns when one of the following conditions occur:
+//       //"The ReadFile function returns when one of the following conditions
+//       // occur:
 //         * The number of bytes requested is read.
 //         * A write operation completes on the write end of the pipe.
-//         * An asynchronous handle is being used and the read is occurring asynchronously.
+//         * An asynchronous handle is being used and the read is occurring
+//           asynchronously.
 //         * An error occurs.""
 //       ::ReadFile(
 //       m_handleClientPipe ,    // pipe handle
@@ -215,7 +221,7 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
 //       if( dwError != ERROR_MORE_DATA )
 //       {
 //         LOGN( "reading form the pipe failed: " <<
-//           LocalLanguageMessageFromErrorCode(dwError) )
+//           LocalLanguageMessageFromErrorCodeA(dwError) )
 //         break;
 //       }
 //     }
@@ -226,24 +232,35 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
    DEBUGN("before read from pipe ")
    fSuccess = ::ReadFile(
      m_handleClientPipe ,    // pipe handle
-     & dwValue , //chBuf,    // buffer to receive reply
-     4 ,//BUFSIZE * sizeof(TCHAR),  // size of buffer
+     // buffer to receive reply
+//     & dwNumberOfBytes , //chBuf,
+     & m_dwSizeInByte ,
+     // size of buffer
+     4 ,//BUFSIZE * sizeof(TCHAR),
      & dwNumBytesRead,  // number of bytes read
      NULL // NULL = not overlapped
      );
    DEBUGN( (fSuccess ? "successfully got" : "failed to read")
-      << dwNumBytesRead << " bytes from pipe: " << dwValue )
+      << dwNumBytesRead << " bytes from pipe: " << dwNumberOfBytes )
    if( fSuccess
        // do NOT read 0 bytes! this blocks at ReadFile although the server
        // finished to write 0 bytes
-       && dwValue )
+       && //dwNumberOfBytes
+       m_dwSizeInByte
+     )
    {
-     BYTE * arby = new BYTE[dwValue + 2 ] ;
-     DEBUGN("before read " << dwValue << " bytes from pipe ")
+     if( m_arbyIPCdata )
+       delete [] m_arbyIPCdata ;
+//     BYTE * arby = new BYTE[dwValue + 2 ] ;
+     m_arbyIPCdata = new BYTE[ m_dwSizeInByte ] ;
+     DEBUGN("before read " << m_dwSizeInByte << " bytes from pipe ")
      ::ReadFile(
       m_handleClientPipe ,    // pipe handle
-      arby , //chBuf,    // buffer to receive reply
-      dwValue  ,//BUFSIZE * sizeof(TCHAR),  // size of buffer
+//      arby , //chBuf,    // buffer to receive reply
+      m_arbyIPCdata ,
+      // size of buffer
+//      dwNumberOfBytes  ,//BUFSIZE * sizeof(TCHAR),
+      m_dwSizeInByte ,
       & dwNumBytesRead,  // number of bytes read
       NULL // NULL = not overlapped
       );
@@ -251,18 +268,25 @@ BYTE NamedPipeClient::SendMessage(BYTE byMessage)
         << dwNumBytesRead << " bytes from pipe")
      if( fSuccess )
      {
-       //Term. NULL char
-       arby [dwValue ] = 0 ;
-       arby [dwValue + 1 ] = 0 ;
-       m_stdwstrMessage = std::wstring( (wchar_t*) arby ) ;
+//       //Term. NULL char
+//       arby [dwNumberOfBytes ] = 0 ;
+//       arby [dwNumberOfBytes + 1 ] = 0 ;
+       m_stdwstrMessage = std::wstring( (wchar_t*) //arby
+         m_arbyIPCdata
+         //http://www.cplusplus.com/reference/string/string/string/:
+         //"Content is initialized to a copy of the string formed by the first
+         //n  characters in the array of characters pointed by s."
+         , m_dwSizeInByte / 2
+         ) ;
        DEBUGWN_WSPRINTF(L"got message from pipe:%ls", m_stdwstrMessage.c_str() )
      }
-     delete [] arby ;
+//     delete [] arby ;
    }
    return 1 ;
 }
 
-//BYTE NamedPipeClient::SendMessage(BYTE [] arbyMessage , WORD wByteSize)
+//BYTE NamedPipeClient::SendCommandAndGetResponse(
+//  BYTE [] arbyMessage , WORD wByteSize)
 //{
 //  DWORD dwNumberOfBytesWritten ;
 //  // Send a message to the pipe server.

@@ -54,6 +54,10 @@ public:
   { 
     return 0 ; 
   }
-  virtual BYTE SetActivePowerScheme(
+  //to avoid g++ compiler warning "`class PowerProfUntilWin6DynLinked' has
+  // virtual functions but non-virtual destructor"
+  virtual ~I_PowerProfDynLinked() { } ;
+  virtual //BYTE
+    DWORD SetActivePowerScheme(
     const std::wstring & r_stdwstrPowerSchemeName ) { return 0 ; }
 } ;

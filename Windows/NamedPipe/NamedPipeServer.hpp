@@ -12,6 +12,11 @@
   class NamedPipeServer
     : public I_IPC_Server
   {
+    //    //The data handler should be a separate class because the received data or
+    //    //the data to send should be able to be in different data formats.
+    //    //So one class could send (and receive) XML data while another class might
+    //    //send/ receive binary encoded data.
+    I_IPC_DataHandler * mp_ipc_datahandler ;
     //http://msdn.microsoft.com/en-us/library/aa379561%28VS.85%29.aspx:
     //"Several functions that use the SECURITY_DESCRIPTOR structure require that
     //this structure be aligned on a valid pointer boundary in memory.
@@ -23,11 +28,6 @@
   public:
     HANDLE m_handlePipe ;
     LPTSTR m_lpszPipename ;
-//    //The data handler should be a seperate class because the received data or
-//    //the data to send should be able to be in different data formats.
-//    //So one class could send (and receive) XML data while another class might
-//    //send/ receive binary encoded data.
-    I_IPC_DataHandler * mp_ipc_datahandler ;
 
     void CreateDownPrivilegedPipe() ;
     NamedPipeServer(

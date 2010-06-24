@@ -4,14 +4,15 @@
 #include <windows.h> //for SERVICE_TABLE_ENTRY, SERVICE_STATUS_HANDLE, ...
 
 #include <Controller/DynFreqScalingThreadBase.hpp> //
-#include <Controller/I_CPUcontroller.hpp>
-#include <Controller/ICPUcoreUsageGetter.hpp> //for ICPUcoreUsageGetter::Init()
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
+//for ICPUcoreUsageGetter::Init()
+#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #ifdef COMPILE_WITH_IPC
   #include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #endif //#ifdef COMPILE_WITH_IPC
+#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Xerces/SAX2ServiceConfigHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //readXMLconfig()
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
 //for the #defines like "WTS_SESSION_LOGIN" in <wts32api.h>
 //  ( is defined inside the #if (_WIN32_WINNT >= 0x0501)  )
 #if _WIN32_WINNT < 0x0501
@@ -34,10 +35,10 @@ typedef struct tagWTSSESSION_NOTIFICATION {
 #else //#ifdef USE_WINDOWS_THREAD
   #include <wxWidgets/DynFreqScalingThread.hpp>
 #endif //#ifdef USE_WINDOWS_THREAD
-//#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/PowerProfFromWin6DynLinked.hpp>
 //#include <Windows/PowerProfUntilWin6DynLinked.hpp>
+//#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #include <Windows/CreateProcess.hpp> //Invoke...
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
@@ -45,7 +46,9 @@ typedef struct tagWTSSESSION_NOTIFICATION {
 
 extern FILE * fileDebug ;
 //The static member must also be DEFINED here additional to the declaration 
-//, else linker error LNK2019: Verweis auf nicht aufgelöstes externes Symbol ""public: static class CPUcontrolService * CPUcontrolService::msp_cpucontrolservice"
+//, else linker error LNK2019: Verweis auf nicht aufgelöstes externes Symbol
+//""public: static class CPUcontrolService * CPUcontrolService::
+// msp_cpucontrolservice"
 CPUcontrolService * CPUcontrolService::msp_cpucontrolservice ;
 std::vector<std::string> CPUcontrolService::m_vecstrCmdLineOptions ;
 DummyUserInterface CPUcontrolService::m_dummyuserinterface ;
@@ -76,15 +79,16 @@ CPUcontrolService::CPUcontrolService(
   :
 //    m_bSyncGUIshowDataWithService ( false ) ,
 #ifdef COMPILE_WITH_IPC
-    m_ipcserver(this) ,
 //    mr_ipc_datahandler(r_ipc_datahandler) ,
-    m_ipc_datahandler ( m_modelData ) ,
+  m_ipc_datahandler ( m_modelData ) ,
+  m_ipcserver(this)
 #endif //#ifdef COMPILE_WITH_IPC
     //m_bProcess ( true )
     //, m_bRun ( true ) 
     //, mp_winring0dynlinked (NULL)
     //, mar_tch(NULL)
-    m_powerprofdynlinked ( r_stdwstrProgramName )
+  , m_maincontroller( & m_dummyuserinterface )
+  , m_powerprofdynlinked ( r_stdwstrProgramName )
     //,
 //    m_powerprofdynlinked ( r_stdtstrProgramName )
 //    , m_stdwstrProgramName ( r_stdwstrProgramName)
@@ -103,17 +107,18 @@ CPUcontrolService::CPUcontrolService(
   )
   //C++ style init.
   :
-  m_argc(argc)
-  , 
-  m_argv(argv)
+  m_dwArgCount(argc)
 #ifdef COMPILE_WITH_IPC
-  , m_ipcserver(this)
 //  , mr_ipc_datahandler(r_ipc_datahandler)
   , m_ipc_datahandler ( m_modelData )
+  , m_ipcserver(this)
 #endif //#ifdef COMPILE_WITH_IPC
-  , m_powerprofdynlinked ( r_stdwstrProgramName )
 //  , m_powerprofdynlinked ( r_stdtstrProgramName )
 //  , m_stdtstrProgramName ( r_stdtstrProgramName )
+  , m_maincontroller( & m_dummyuserinterface )
+  ,
+    m_p_ptstrArgument(argv)
+  , m_powerprofdynlinked ( r_stdwstrProgramName )
 {
   m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
     //Calling the ctor inside another ctor created the object 2 times!
@@ -274,7 +279,7 @@ void CPUcontrolService::HandleStartDynVoltAndFreqScalingThread()
     else
     {
       LOGN( "error starting Dynamic Voltage and Frequency Scaling thread :"
-        << LocalLanguageMessageFromErrorCode(dwRet) )
+        << LocalLanguageMessageFromErrorCodeA(dwRet) )
     }
   }
   if( bContinue )
@@ -554,8 +559,9 @@ DWORD CPUcontrolService::MyServiceInitialization(
     //status messages. Do not call MessageBox during service initialization 
     //or from the HandlerEx routine, unless you call it from a separate 
     //thread, so that you return to the SCM in a timely manner."
+
     ::MessageBox(
-      //If this parameter is NULL, the message box has no owner window. 
+      //If this parameter is NULL, the message box has no owner window.
       NULL
       , cpuaccessexception.m_stdstrErrorMessage.c_str()
       //title bar
@@ -564,8 +570,39 @@ DWORD CPUcontrolService::MyServiceInitialization(
 //      , getstdstring( m_stdwstrProgramName ).c_str()
       , m_stdtstrProgramName.c_str()
       //, "CPUcontrol service error"
-      , MB_SERVICE_NOTIFICATION 
+      , MB_SERVICE_NOTIFICATION
       ) ;
+    //TODO http://msdn.microsoft.com/en-us/library/ms683502%28v=VS.85%29.aspx:
+    // MessageBox with MB_SERVICE_NOTIFICATION works only for
+    // for Windows Server 2003, Windows XP, and Windows 2000->
+    // Better use WTSSendMessage(...) ?!
+    //TODO WTSSendMessage is not in MinGW's <wtsapi.h>
+//    DWORD dwResponse ;
+//    //Citations from:
+//    //http://msdn.microsoft.com/en-us/library/aa383842%28VS.85%29.aspx:
+//    ::WTSSendMessage(
+//      //"WTS_CURRENT_SERVER_HANDLE to indicate the RD Session Host server on "
+//      //"which your application is running."
+//      WTS_CURRENT_SERVER_HANDLE
+//      //"To indicate the current session, specify WTS_CURRENT_SESSION"
+//      , WTS_CURRENT_SESSION
+//      , m_stdtstrProgramName.c_str()
+//      , //"The length, in bytes, of the title bar string."
+//      m_stdtstrProgramName.length()
+//      //"A pointer to a null-terminated string that contains the message to
+//      //display."
+//      , cpuaccessexception.m_stdstrErrorMessage.c_str()
+//      , //"The length, in bytes, of the message string."
+//      cpuaccessexception.m_stdstrErrorMessage.size()
+//      , MB_OK
+//      //"If the Timeout parameter is zero, WTSSendMessage  waits indefinitely
+//      //for the user to respond."
+//      , 0
+//      , dwResponse
+//      //"If TRUE, WTSSendMessage does not return until the user responds or the
+//      //time-out interval elapses."
+//      , FALSE
+//      ) ;
     //delete e ;
   }
   return dwReturnValue; 
@@ -599,6 +636,11 @@ DWORD CPUcontrolService::IPC_Message(
   std::wstring stdwstrMessage ;
   switch(byCommand)
   {
+  case get_current_CPU_data :
+    LOGN("IPC: get_current_CPU_data")
+    r_arbyPipeDataToSend = m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
+      dwByteSize ) ;
+    break ;
   case stop_service:
     LOGN("IPC requested to stop the service")
     //msp_cpucontrolservice->mp_dynfreqscalingbase->m_Stop() ;
@@ -1449,9 +1491,9 @@ void CPUcontrolService::StartService()
   LPTSTR argv[1] ;
   argv[0] = "GriffinControlService" ;
   ServiceMain( 
-     //m_argc,
+     //m_dwArgCount,
      1,
-     //m_argv
+     //m_p_lptstrArgument
      argv
      ) ;
 #else
@@ -1466,11 +1508,15 @@ void CPUcontrolService::StartService()
   //When the service control manager starts a service process, it waits for the process to call the StartServiceCtrlDispatcher function. The main thread of a service process should make this call as soon as possible after it starts up.
   //Starts the "ServiceMain" function in a new thread.
   if ( ! ::StartServiceCtrlDispatcher( ar_service_table_entry)
-     ) 
+     )
   { 
-    //SvcDebugOut("error: StartServiceCtrlDispatcher (%d)\n", 
-    // GetLastError() ); 
-    LOGN("error: StartServiceCtrlDispatcher" << ::GetLastError() )
+    DWORD dw = ::GetLastError() ;
+    std::string stdstr ;
+    LOGN("StartServiceCtrlDispatcher failed:" <<
+      LocalLanguageMessageAndErrorCodeA( dw ) )
+    ServiceBase::GetErrorDescriptionFromStartServiceCtrlDispatcherErrCode(
+      dw , stdstr) ;
+    LOGN(stdstr)
   }
 #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
   //The execution continues here if the service was stopped.

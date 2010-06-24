@@ -1,7 +1,8 @@
 #pragma once
 
 //Must be included BEFORE Windows-specific inlcudes (else: comp. errors like:
-//C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/istream.tcc:1164: error: expected primary-expression before '.' token
+//C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+// istream.tcc:1164: error: expected primary-expression before '.' token
 
 #include <string> //
 #include <windows.h> //BOOL
@@ -44,6 +45,10 @@ public:
       const TCHAR * tchServiceName
       , DWORD & dwErrorCodeFor1stError
    ) ;
+  static void GetErrorDescriptionFromStartServiceCtrlDispatcherErrCode(
+    DWORD dwLastError ,
+    std::string & r_stdstrErrorDescription
+    ) ;
   static void GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
     DWORD dwLastError ,
     std::string & r_stdstrErrorDescription

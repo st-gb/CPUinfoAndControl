@@ -1,15 +1,16 @@
-//Else: "fatal error C1189: #error :  Building MFC application with /MD[d] (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or do not use /MD[d]"
+//Else: "fatal error C1189: #error :  Building MFC application with /MD[d]
+// (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or
+// do not use /MD[d]"
 //#define _AFXDLL
-//#include <AfxWin.h> //for AfxMessageBox(...)->muss MultiThreaded DLL ("/MD") sein
+//#include <AfxWin.h> //for AfxMessageBox(...)->muss MultiThreaded DLL ("/MD")
+// sein
 #include <stdio.h> //for sprintf(...)
-//#include "PumaStateCtrl.h"
 #include <fstream> //for class ofstream
-//#include "GriffinStateControlService.hpp"
 #include <Controller/stdtstr.hpp> //std::tstring
+#include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
+#include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
-#include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
 #include <Xerces/IPC.hpp>
 #include <string>
 #include <conio.h> //for getche()
@@ -25,54 +26,6 @@ FILE * fileDebug ;
 Logger g_logger ;
 
 CPUcontrolBase * gp_cpucontrolbase ;
-
-//#include "wx/window.h"
-//#include "wx/power.h" //for power mgmt notification (wxPowerType et.c), EVT_POWER_RESUME
-
-//SERVICE_STATUS          g_servicestatus; 
-//SERVICE_STATUS_HANDLE   g_servicestatushandle; 
-//volatile bool g_bProcess = true ;
-//volatile bool g_bRun = true ;
-//
-////from wx/event.h:
-////error C2374: 'sm_eventTableEntries': Neudefinition; Mehrfachinitialisierung
-////static const wxEventTableEntry sm_eventTableEntries[]; 
-////static const wxEventTable        sm_eventTable; 
-////error C2270: 'GetEventTable': Modifizierer f�r Funktionen, die keine Memberfunktionen sind, nicht zul�ssig
-////virtual const wxEventTable*      GetEventTable() const; 
-////error C2374: 'sm_eventHashTable': Neudefinition; Mehrfachinitialisierung
-////static wxEventHashTable          sm_eventHashTable; 
-////error C2270: 'GetEventHashTable': Modifizierer f�r Funktionen, die keine Memberfunktionen sind, nicht zul�ssig
-////virtual wxEventHashTable&        GetEventHashTable() const;
-//
-////void OnResume(wxPowerEvent& WXUNUSED(event)) ;
-////
-////const wxEventTableEntry sm_eventTableEntries[] = { 
-//// #ifdef wxHAS_POWER_EVENTS
-////  //EVT_POWER_SUSPENDING(MyFrame::OnSuspending)
-////  //EVT_POWER_SUSPENDED(MyFrame::OnSuspended)
-////  //EVT_POWER_SUSPEND_CANCEL(MyFrame::OnSuspendCancel)
-////#endif // wxHAS_POWER_EVENTS
-////  EVT_POWER_RESUME(OnResume)
-////    END_EVENT_TABLE()
-////    //DECLARE_EVENT_TABLE_ENTRY( wxEVT_NULL, 0, 0, 0, 0 ) 
-////  //};
-////const wxEventTable sm_eventTable = { //&wxWindow::sm_eventTable, 
-////    sm_eventTableEntries[0] };
-//////error C2270: 'GetEventTable': Modifizierer f�r Funktionen, die keine Memberfunktionen sind, nicht zul�ssig
-//////const wxEventTable GetEventTable() const 
-//////{ 
-//////    return & sm_eventTable; 
-//////} 
-////wxEventHashTable sm_eventHashTable( sm_eventTable); 
-////error C2270: 'GetEventHashTable': Modifizierer f�r Funktionen, die keine Memberfunktionen sind, nicht zul�ssig
-////wxEventHashTable & GetEventHashTable() const 
-////{ 
-////    return sm_eventHashTable; 
-////}
-//
-//VOID SvcDebugOut(LPSTR String, DWORD Status);
-//
 
 bool IsWithinCmdLineArgs( int argc, char *  argv[], LPCTSTR p_tstr )
 {
@@ -100,7 +53,7 @@ bool ShouldCreateService(int argc, char *  argv[])
     if( ! bShouldCreateService )
     {
       std::cout << "\n"
-          "Should the undervolting service be installed now? [Y]es/ "
+          "Should the CPU controlling service be installed now? [Y]es/ "
         "other key: no\n"//; finish with ENTER/RETURN key\n" 
         ;
         char ch ;
@@ -134,7 +87,7 @@ void OuputCredits()
     stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
     //"This program is an undervolting program for AMD family 17 CPUs.\n" 
-    "This program is a CPU information and control program for \n"
+    "This program is a CPU information and control program for (built-in):\n"
     //maincontroller.GetSupportedCPUtypes() ;
     + stdtstr +
     //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" 
@@ -142,8 +95,8 @@ void OuputCredits()
     )
   std::cout << 
     "This executable is both in one:\n"
-    "-a(n) (de-)installer for the undervolting service\n"
-    "-the undervolting service itself\n" ;
+    "-a(n) (de-)installer for the CPU controlling service\n"
+    "-the CPU controlling service itself\n" ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
 }
@@ -257,7 +210,6 @@ int main( int argc, char *  argv[] )
         }
         if( ShouldCreateService(argc, argv) && argc > 2 )
         //    CreateService(
-        //cout << "hhjhj\n" ;
         //if( //::AfxMessageBox("Should the undervolting service be installed now?",
         //    //IDYES | IDNO ) == IDYES  )
            ServiceBase::CreateService(//"GriffinControlService"
@@ -269,12 +221,12 @@ int main( int argc, char *  argv[] )
         "service's properties in Windows->control panel->management->services "
         "else errors may occur\n");
   }
-  catch( ConnectToSCMerror e )
+  catch( ConnectToSCMerror & r_connect_to_scm_error )
   {
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
       "Error connecting to the service control manager:\n"
-      << LocalLanguageMessageFromErrorCode(e.m_dwErrorCode) 
-      << PossibleSolution(e.m_dwErrorCode) )
+      << LocalLanguageMessageFromErrorCodeA(r_connect_to_scm_error.m_dwErrorCode)
+      << PossibleSolution(r_connect_to_scm_error.m_dwErrorCode) )
   }
   std::cout << //"Waiting for input in order for the output to be readable."
      " Hit any key to exit this program\n" ;

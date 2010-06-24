@@ -177,7 +177,8 @@ void PowerProfDynLinked::OutputAllPowerSchemes()
   }
 }
 
-BYTE PowerProfDynLinked::SetActivePowerScheme(
+//BYTE
+DWORD PowerProfDynLinked::SetActivePowerScheme(
   const std::wstring & r_stdwstrPowerSchemeName )
 {
   return mp_i_powerprofdynlinked->SetActivePowerScheme(

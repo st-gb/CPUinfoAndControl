@@ -12,6 +12,7 @@
 #include <preprocessor_helper_macros.h>
 #include <Controller/stdstring_format.hpp>
 #include <Controller/tchar_conversion.h> //GetCharPointer(...)
+#include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 
 //WinRing0 docu:
@@ -64,11 +65,24 @@ WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
   //,mp_userinterface(pui)
   //mp_userinterface(NULL)
 {
+//#ifdef _DEBUG
+//  std::stringstream stdstrstream ;
+  //For checking if the members are on the same RAM address between MSVC and MinGW:
+  LOGN( "WinRing0_1_3RunTimeDynLinked c'tor (...)--Address of this:"
+    << this
+    << "address of I_CPUaccess::mp_model: " << & mp_model <<"\n"
+    << "address in I_CPUaccess::mp_model: " << mp_model
+    //<< "address in I_CPUaccess::RdmsrEx: " << & pi_cpuaccess->RdmsrEx()
+    << "address of I_CPUaccess::mp_cpu_controller: " << & mp_cpu_controller
+    << "address in I_CPUaccess::mp_cpu_controller: "
+    << mp_cpu_controller
+    ) ;
+//#endif //#ifdef _DEBUG
   Init(pui) ;
 }
 void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 {
-  char * archDLLName = DLL_NAME ;
+//  char * archDLLName = DLL_NAME ;
   //m_hinstanceWinRingDLL = NULL ;
   m_pfnrdmsrex = NULL ;
   m_pfnwrmsrex = NULL ;
@@ -111,9 +125,12 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
     ::SetLastError(0) ;
 //    _InitializeOls pfnInitializeOls = (_InitializeOls)
 //      ::GetProcAddress(m_hinstanceWinRingDLL,"InitializeOls");
+
     //WinRing0 Run-Time Dynamic Linking docu step 2: "Call InitOpenLibSys(). "
-    //BOOL boolInit = InitOpenLibSys( & m_hModuleWinRing0DLL ) ;
-    InitOpenLibSys( & m_hModuleWinRing0DLL ) ;
+    BOOL boolInit = InitOpenLibSys( & m_hModuleWinRing0DLL ) ;
+    //FALSE e.g. if the WinRing0 DLL could not be loaded.
+    if( boolInit )
+//    InitOpenLibSys( & m_hModuleWinRing0DLL ) ;
     //if( pfn == NULL )
 //    if( pfnInitializeOls == NULL )
 //    {
@@ -165,9 +182,9 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
       {
         std::string stdstrFunctionName = "GetDriverPath" ;
 //        DWORD dw = ::GetLastError() ;
-        _GetDetailedWinRing0Error pfnGetDetailedWinRing0Error =
-          (_GetDetailedWinRing0Error)
-          ::GetProcAddress(m_hModuleWinRing0DLL,"GetDetailedWinRing0Error");
+//        _GetDetailedWinRing0Error pfnGetDetailedWinRing0Error =
+//          (_GetDetailedWinRing0Error)
+//          ::GetProcAddress(m_hModuleWinRing0DLL,"GetDetailedWinRing0Error");
 
         _GetWinRing0DriverPath pfnGetWinRing0DriverPath =
           (_GetWinRing0DriverPath)
@@ -348,6 +365,23 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
       //if( ! m_pfnreadpmcex )
         //throw DynLinkToDLLfunctionException("RdpmcEx") ;
     }
+    else
+    {
+      std::string stdstrErrorMsg("WinRing0: InitOpenLibSys failed\n"
+          "Is the WinRing0 DLL in the Windows system path or in the current"
+          "directory of this program?") ;
+      LOGN( stdstrErrorMsg )
+      //When throwing an exception by creating the exception object on the
+      //stack VS 2005 reported an "stack buffer error"?.
+      //Oh, that was rather because the exception was not catched.
+       throw //new
+         CPUaccessException(
+             //TODO Mysterios g++ error
+             //"error: `ostrstreamErrorDesc' was not declared in this scope"
+            //ostrstreamErrorDesc.str()
+             stdstrErrorMsg
+             ) ;
+    }
   }
 }
 
@@ -449,7 +483,8 @@ BYTE WinRing0_1_3RunTimeDynLinked::GetNumberOfCPUCores()
       //See also section 2.9.2 [Number of Cores and Core Number]."
       + 1 ;
     //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
-    LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
+    DEBUGN( "WinRing0: Number of CPU cores according to AMDs calculation with "
+      "CPUID: " << (WORD) byCoreNumber );
   }
   DEBUG("WRDL--end of getting number of CPU cores\n");
   return byCoreNumber ;
@@ -623,6 +658,14 @@ BOOL WinRing0_1_3RunTimeDynLinked::ReadPciConfigDwordEx(
         "\"WinRing0[...].dll\"?\n");
   }
   return bReturn ;
+}
+
+BOOL WinRing0_1_3RunTimeDynLinked::ReadTSC(
+  DWORD & r_dwLowEAX ,
+  DWORD & r_dwHighEDX
+  )
+{
+  return Rdtsc( & r_dwLowEAX, & r_dwHighEDX ) ;
 }
 
 void WinRing0_1_3RunTimeDynLinked::SetUserInterface(UserInterface * pui)

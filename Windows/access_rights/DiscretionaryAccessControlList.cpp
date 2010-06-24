@@ -6,10 +6,10 @@
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 
 #include <windows.h> //SECURITY_ATTRIBUTES,...
-#include <aclapi.h> // GetSecurityInfo() , SetEntriesInAcl, SetSecurityInfo
 #include <accctrl.h> //EXPLICIT_ACCESS
+#include <aclapi.h> // GetSecurityInfo() , SetEntriesInAcl, SetSecurityInfo
 #include <Sddl.h> //ConvertStringSecurityDescriptorToSecurityDescriptor(...)
-#include "global.h" //for DEBUGN(...)
+#include <global.h> //for DEBUGN(...)
 
 #ifdef __CYGWIN__
   #include <mingw/tchar.h> //for _T(...)
@@ -198,10 +198,12 @@ BOOL DowngradeDACL(SECURITY_ATTRIBUTES * p_security_attributes)
   DEBUGN("result of SetSecurityDescriptorDacl: " << _bool )
   if( ! _bool )
   {
+#ifdef _DEBUG
     DWORD dw =
         ::GetLastError() ;
+#endif
     DEBUGN("SetSecurityDescriptorDacl failed: error code:" << dw
-      << " " << LocalLanguageMessageFromErrorCode(dw) )
+      << " " << LocalLanguageMessageFromErrorCodeA(dw) )
   }
   return _bool ;
 }
