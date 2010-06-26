@@ -42,6 +42,7 @@
 #include <wx/frame.h>
 #include <wx/dcclient.h> //for class wxPaintDC
 #include <wx/dcbuffer.h> //class wxBufferedPaintDC
+#include <ICalculationThread.hpp> //for "started", "ended"
 //#include "FreqAndVoltageSettingDlg.hpp"
 
 class wxBufferedPaintDC ;
@@ -57,6 +58,7 @@ class I_CPUcontrollerAction ;
 class SpecificCPUcoreActionAttributes ;
 class wxX86InfoAndControlApp ;
 class wxDynLibCPUcontroller ;
+class wxDynLibCPUcoreUsageGetter ;
 
 class MainFrame:
   public wxFrame, 
@@ -66,10 +68,6 @@ class MainFrame:
 {
 public:
   volatile bool m_vbAnotherWindowIsActive ;
-  WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
-  float m_fVoltageInVoltOfCurrentActiveCoreSettings ;
-  bool m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
-  bool m_bRangeBeginningFromMinVoltage ;
 #ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
   //CPUcoreUsageGetterNtQuerySystemInformation m_cpucoreusagegetter ;
 #endif
@@ -77,62 +75,86 @@ public:
   CPUcoreUsageGetterIWbemServices m_cpucoreusagegetteriwbemservices ;
 #endif
   void Notify() ; //overrides wxTimer::Notify()
-  wxTimer m_timer;
-  DWORD m_dwTimerIntervalInMilliseconds ;
 private: 
-  //PumaStateCtrl m_pumastatectrl(
-  //  0, 
-  //  NULL,//UserInterface()
-  //  //&PumaStateCtrlDlg()
-  //  this) ;
-  //PumaStateCtrl * m_pumastatectrl ;
-  bool b_NotFirstTime ;
   bool m_bAllowCPUcontrollerAccess ;
+public:
+  bool m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
+private:
+  bool m_bNotFirstTime ;
+  bool m_bRangeBeginningFromMinVoltage ;
+  BYTE m_byIndexOf1stCPUcontrollerRelatedMenu ;
   BYTE m_byNumberOfSettablePstatesPerCore ;
   BYTE m_byMenuIndexOf1stPstate ;
-  CPUcoreData * mp_cpucoredata ;
   #ifdef COMPILE_WITH_CALC_THREAD
   CalculationThread * mp_calculationthread ;
   #endif
+  CPUcoreData * mp_cpucoredata ;
+public:
+  DWORD m_dwTimerIntervalInMilliseconds ;
+private:
   //ClocksNotHaltedCPUcoreUsageGetter m_clocksnothaltedcpucoreusagegetter ;
-  float m_fPreviousCPUusage ;
+  float m_fMaxMinusMinVoltage ;
   float m_fMaxVoltage ;
   float m_fMinVoltage ;
-  float m_fMaxMinusMinVoltage ;
-  ULONGLONG m_ullPreviousCPUusage ;
-  ULONGLONG m_ullHighestDiff ;
-  ULONGLONG m_ullHighestPerformanceEventCounter2Diff ;
-  ULONGLONG m_ullPreviousTimeStampCounterValue ;
-  ULONGLONG m_ullPreviousPerformanceEventCounter2 ;
-  ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
-  //GriffinController * mp_pumastatectrl ;
-  I_CPUcontroller * mp_cpucontroller ;
-  //CPUcoreUsageNTQSI m_cpucoreusagentqsi ;
+  float m_fPreviousCPUusage ;
+public:
+  float m_fVoltageInVoltOfCurrentActiveCoreSettings ;
+private:
+  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
+  FreqAndVoltageSettingDlg ** m_arp_freqandvoltagesettingdlg ;
+  I_CPUcontroller * mp_i_cpucontroller ;
   int m_nLowestIDForSetVIDnFIDnDID ;
   int m_nNumberOfMenuIDsPerCPUcore ;
   Model * mp_model ;
   std::map<WORD, I_CPUcontrollerAction *> m_stdmapwmenuid2i_cpucontrolleraction ;
-  std::vector<//classes derived from wxObject
-    wxObject> m_stdvectorwxuicontroldata ;
   std::map<//classes derived from wxObject
     WORD, //wxObject *
     SpecificCPUcoreActionAttributes *> m_stdmapwxuicontroldata ;
+  std::vector<//classes derived from wxObject
+    wxObject> m_stdvectorwxuicontroldata ;
+  std::vector<wxMenu *> m_vecp_wxmenuCore ;
+  ULONGLONG m_ullHighestDiff ;
+  ULONGLONG m_ullHighestPerformanceEventCounter2Diff ;
+  ULONGLONG m_ullPreviousCPUusage ;
+  ULONGLONG m_ullPreviousPerformanceEventCounter2 ;
+  ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
+  ULONGLONG m_ullPreviousTimeStampCounterValue ;
+public:
+  WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
+  WORD m_wMaxFreqWidth ;
+  WORD m_wMaxVoltageWidth ;
+  WORD m_wMaxFreqInMHzTextWidth ;
+  WORD m_wMaxVoltageInVoltTextWidth ;
+  WORD m_wMaxTemperatureTextWidth ;
+private:
   wxBitmap * mp_wxbitmap ;
   wxBitmap * mp_wxbitmapStatic ;
   wxBufferedPaintDC * mp_wxbufferedpaintdcStatic ;
   wxCriticalSection m_wxcriticalsectionCPUctlAccess ;
-  wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
+  //wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
+  //wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
-  //"When a wxWindow is destroyed, it automatically deletes all its children. These children are all the objects that received the window as the parent-argument in their constructors.  
-  //As a consequence, if you're creating a derived class that contains child windows, you should use a pointer to the child windows instead of the objects themself as members of the main window."
+  //http://docs.wxwidgets.org/2.6/wx_windowdeletionoverview.html#windowdeletionoverview:
+  //"When a wxWindow is destroyed, it automatically deletes all its children. 
+  //These children are all the objects that received the window as the 
+  //parent-argument in their constructors.  
+  //As a consequence, if you're creating a derived class that contains child 
+  //windows, you should use a pointer to the child windows instead of the 
+  //objects themself as members of the main window."
   //wxMenuBar m_wxmenubar ;
   wxMemoryDC m_wxmemorydcStatic ;
   wxMenuBar * mp_wxmenubar ;
+  wxMenu * p_wxmenuExtras ;
+  wxMenu * mp_wxmenuFile ;
+  wxMenu * p_wxmenuService ;
   wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
   wxMenuItem ** marp_wxmenuItemHighLoadThread ;
   wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
+public:
+  wxTimer m_wxtimer;
+private:
   wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
   WORD m_wXcoordOfBeginOfYaxis ;
   WORD m_wMinYcoordInDiagram ;
@@ -146,8 +168,6 @@ private:
   //  //a menu for each core at runtime. Use pointer to menus because the vector
   //  //stores copies->copy a pointer is faster than to copy a complete object.
   //  wxMenu *> m_vecp_wxmenuCore ;
-  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
-  FreqAndVoltageSettingDlg ** m_arp_freqandvoltagesettingdlg ;
 
   //void 
   wxMenuItem * AddDynamicallyCreatedMenu(
@@ -190,6 +210,8 @@ public:
 
   void AllowCPUcontrollerAccess() ;
   void DenyCPUcontrollerAccess() ;
+  void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * 
+    p_percpucoreattributes ) ;
 
   //Implement method declared in "class UserInterface" 
   //(even if with no instructions) for this class not be abstract.
@@ -197,13 +219,20 @@ public:
 
   wxString BuildHighLoadThreadMenuText(std::string str,
     //for displaying "start" the result of the previous action must be "ended"
-    BYTE byPreviousAction = ENDED ) ;
+    BYTE byPreviousAction = //ENDED
+      ICalculationThread::ended ) ;
   bool Confirm(const std::string & str) ;
   bool Confirm(std::ostrstream & r_ostrstream);
+  void CPUcontrollerAttached(const wxString & wxstrFilePath ) ;
+  void CPUcontrollerDeleted() ;
+  void CPUcoreUsageGetterAttached(const wxString & wxstrFilePath ) ;
+  void CPUcoreUsageGetterDeleted() ;
 
+  void CreateFileMenu() ;
   void CreateServiceMenuItems() ;
   //void 
   BYTE CreateDynamicMenus() ;
+  void DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc) ;
   void DisableWindowsDynamicFreqScalingHint();
 //  wxString GetSetPstateMenuItemLabel(
 //    BYTE byPstateNumber
@@ -260,6 +289,8 @@ public:
   void OnEraseBackground(wxEraseEvent& event) ;
   void OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnHighLoadThread( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnMinimizeToSystemTray( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnSysTrayIconClick( wxCommandEvent & WXUNUSED(event) ) ;
   void OnOwnDynFreqScaling( wxCommandEvent & WXUNUSED(wxevent) 
     //wxevent 
     ) ;
@@ -272,6 +303,7 @@ public:
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));
   void OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event));
 
+  void OnConnectToOrDisconnectFromService(wxCommandEvent & WXUNUSED(event) ) ;
   void OnContinueService(wxCommandEvent & WXUNUSED(event));
   void OnPauseService(wxCommandEvent & WXUNUSED(event));
   void OnStartService(wxCommandEvent & WXUNUSED(event));
@@ -291,7 +323,10 @@ public:
   //void OnSetPstate2ForBothCores(wxCommandEvent& WXUNUSED(event)) ;//{} ;
   void OnAbout(wxCommandEvent & event);
   void OnAttachCPUcontrollerDLL(wxCommandEvent & event);
+  void OnAttachCPUcoreUsageGetterDLL(wxCommandEvent & event);
   void OnDetachCPUcontrollerDLL(wxCommandEvent & event);
+  void OnDetachCPUcoreUsageGetterDLL(wxCommandEvent & event);
+  void PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   void PossiblyAskForOSdynFreqScalingDisabling();
 //  void SetMenuItemLabel(
 //      BYTE byCoreID
@@ -300,8 +335,17 @@ public:
 //        PState & pstate
 //      ) ;
   //void SetPumaStateController(GriffinController * p_pumastatectrl) ;
+  void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
+  void StoreCurrentVoltageAndFreqInArray(
+    wxDC & r_wxdc
+  //  VoltageAndFreq * & r_ar_voltageandfreq
+    , wxString  r_ar_wxstrFreqInMHz []
+    , wxString r_ar_wxstrVoltageInVolt []
+  //  , float r_ar_fTempInCelsius []
+    , wxString r_ar_wxstrTempInCelsius []
+    ) ;
 #ifdef wxHAS_POWER_EVENTS
   //void OnSuspending(wxPowerEvent& event)
   //{

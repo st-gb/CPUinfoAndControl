@@ -15,6 +15,7 @@
 #include <Controller/I_CPUaccess.hpp>
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
+#include <wxWidgets/Controller/wxStringHelper.h>
 
 //An enum guarantees a unique number for each element.
 enum
@@ -53,9 +54,11 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
       , wxSize(400, 200)
       , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
       )
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  , mp_cpucontroller ( p_cpucontroller )
   , mp_modeldata( & r_modeldata )
   , m_wNumIgnoreChanges( 0 )
-  , mp_cpucontroller ( p_cpucontroller )
 {
   std::vector<MSRdata>::iterator itermsrdata =
     mp_modeldata->m_stdvector_msrdata.begin() ;
@@ -92,15 +95,25 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
     //BuildGUI( *itermsrdata ) ,
     //itermsrdata->m_dwIndex ;
     if( itermsrdata->m_stdstrRegisterName.empty() )
-      p_wxlistbox->InsertItems( 1,
+    {
+      //Create object here and not as parameter (else:
+      // g++ warning: "taking addesss of temporary".
+      wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        & wxString::Format("%u", itermsrdata->m_dwIndex )
-        , p_wxlistbox->GetCount() ) ;
+        wxString::Format(
+          //Use wxT() to enable to compile with both unicode and ANSI.
+          wxT("%lu") , itermsrdata->m_dwIndex ) ;
+      p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
+    }
     else
-      p_wxlistbox->InsertItems( 1,
+    {
+      //Create object here and not as parameter (else:
+      // g++ warning: "taking addesss of temporary".
+      wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        & wxString( itermsrdata->m_stdstrRegisterName )
-        , p_wxlistbox->GetCount() ) ;
+        getwxString( itermsrdata->m_stdstrRegisterName ) ;
+      p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
+    }
     ++ itermsrdata ;
   }
   itermsrdata =
@@ -156,7 +169,8 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
     //p_wxsizerAttributeNameAndValue->Add(
     mp_wxgridsizerAttributeNameAndValue->Add(
       new wxStaticText(this, wxID_ANY ,
-        iter_registerdata->m_strDataName ) 
+        getwxString( iter_registerdata->m_strDataName )
+        )
       , 0 //proportion
       , wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL
       ) ;
@@ -172,7 +186,9 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
       BitRange & r_br = iter_registerdata->m_stdvec_bitrange.at(0) ;
       mp_wxgridsizerAttributeNameAndValue->Add(
         new wxStaticText( this, wxID_ANY ,
-          wxString::Format( "%u:%u", r_br.m_byStartBit , 
+          wxString::Format(
+            //Use wxT() to enable to compile with both unicode and ANSI.
+            wxT("%u:%u"), r_br.m_byStartBit ,
           //End bit= start bit + bitlenght - 1: e.g. startbit 0, bitlenght: 8 -> endbit=7
           r_br.m_byStartBit + 
           r_br.m_byBitLength - 1 )
@@ -221,7 +237,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 
       wxTextCtrl * p_wxtextctrl = m_stdvec_p_wxtextctrl.at( wRegisterDataIndexChangedContent ) ;
       wxString wxstrChanged = p_wxtextctrl->GetValue() ;
-      char * p_ch = (char *) wxstrChanged.fn_str() ;
+//      char * p_ch = (char *) wxstrChanged.fn_str() ;
       ULONGLONG ullFromChangedTextCtrl ;
       if( wxstrChanged.
         //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
@@ -320,10 +336,14 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
                 ullFromTextCtrlToChange |= ullWriteToTextCtrl ;
                 //(*iter_p_wxtextctrl)->GetValue()
                 #ifdef __CYGWIN__
-                wxstrULL = wxString::Format( wxString( wxT("%llu") ), //ullWriteToTextCtrl
+                wxstrULL = wxString::Format( wxString(
+                  //Use wxT() to enable to compile with both unicode and ANSI.
+                  wxT("%llu") ), //ullWriteToTextCtrl
                   ullFromTextCtrlToChange ) ;
                 #else
-                wxstrULL = wxString::Format( wxString( wxT("%I64u") ), //ullWriteToTextCtrl
+                wxstrULL = wxString::Format( wxString(
+                  //Use wxT() to enable to compile with both unicode and ANSI.
+                  wxT("%I64u") ), //ullWriteToTextCtrl
                   ullFromTextCtrlToChange ) ;
                 #endif
                 //calling "SetValue()" causes an immediate jumo into this function (OnChangedText() ).
@@ -347,7 +367,7 @@ void CPUregisterWriteDialog::OnRegisterListBoxSelection(
 {
   wxArrayInt wxarrintSelections ;
   int nNumberOfSelections =
-  p_wxlistbox->GetSelections(wxarrintSelections) ;
+      p_wxlistbox->GetSelections(wxarrintSelections) ;
   if( wxarrintSelections.GetCount () > 0 )
   {
     int nIndex = wxarrintSelections.Last () ;
@@ -456,7 +476,7 @@ void CPUregisterWriteDialog::OnWriteToMSR(
       {
         BitRange & br = iter_registerdata->m_stdvec_bitrange.front() ;
         wxstr = (*c_iter_p_wxtextctrl)->GetValue() ;
-        char * p_ch = (char *) wxstr.fn_str() ;
+//        char * p_ch = (char *) wxstr.fn_str() ;
         //ullMSR = 
         if( wxstr.
           //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
@@ -471,7 +491,10 @@ void CPUregisterWriteDialog::OnWriteToMSR(
               //e.g. bitlength 3: 1bin << 3 = 1000bin = 8;  8-1 = 7
               ( 1ULL << br.m_byBitLength ) - 1 ;
             if( ullFromTextCtrl > ullMaxValueForBitLength )
-              wxMessageBox("Wert zu gross") ;
+              wxMessageBox(
+                //Use wxT() to enable to compile with both unicode and ANSI.
+                wxT("Wert zu gross")
+                ) ;
             else
               ullWriteToMSR |= //( ullFromTextCtrl >> br.m_byBitLength ) << br.m_byStartBit ;
                 ullFromTextCtrl << br.m_byStartBit ;
@@ -488,6 +511,8 @@ void CPUregisterWriteDialog::OnWriteToMSR(
   #endif
     DWORD dwHigh = ullWriteToMSR >> 32 ;
     DWORD dwLow = ullWriteToMSR ;
+    //The CPU controller should be asked to write to the MSR because this is 
+    //the CPU-specific part that knows which MSRs are dangerous to write to.
     mp_cpucontroller->WrmsrEx( 
       mp_msrdata->m_dwIndex , 
       dwLow , 

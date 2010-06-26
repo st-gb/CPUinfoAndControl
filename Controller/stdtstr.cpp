@@ -1,3 +1,7 @@
+//#ifdef _MSC_VER
+  #include "stdafx.h"
+//#endif//#ifdef _MSC_VER
+
 #include "stdtstr.hpp"
 
  #if defined _UNICODE || defined UNICODE
@@ -21,6 +25,11 @@
  {
    return cr_wstr ;
  }
+// tstring::tstring( TCHAR * ptch )
+// {
+//   wstring()
+// }
+
  #else
  std::tstring Getstdtstring(const std::string & cr_str )
  {
@@ -53,3 +62,4 @@
    std::string stdstr( cr_wstr.begin(), cr_wstr.end() ) ;
    return stdstr ;
  }
+ //Let newline below to avoid g++ warning "no newline at end of file".

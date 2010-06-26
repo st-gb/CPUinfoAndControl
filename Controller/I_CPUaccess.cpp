@@ -2,7 +2,7 @@
 #include "I_CPUaccess.hpp"
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
 #include <string.h> //strcat(...)
-
+#include <windef.h> //for DWORD
 #define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
 
 /*//ULONG ulECX ;
@@ -182,14 +182,14 @@ bool //ISpecificController
         }
         else
         {
-          DEBUG("Error getting processor name of this CPU\n");
+          //DEBUG("Error getting processor name of this CPU\n");
           bSuccess = false ;
           break ;
         }
       }//end for-loop
-      if( bSuccess )
-        //DEBUG("processor name of this CPU is: %s\n", archCPUID );
-        LOG("Processor name of this CPU is: " << archCPUID << "\n" );
+//      if( bSuccess )
+//        //DEBUG("processor name of this CPU is: %s\n", archCPUID );
+//        LOG("Processor name of this CPU is: " << archCPUID << "\n" );
     }
   }
   return bSuccess ;
@@ -429,7 +429,7 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
   DWORD dwEBX;
   DWORD dwECX;
   DWORD dwEDX;
-  DEBUG("WRDL--getting number of CPU cores\n");
+  //DEBUG("WRDL--getting number of CPU cores\n");
 //  if( CpuidEx(
 //    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
 //    0x80000008,
@@ -460,8 +460,13 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
       //See also section 2.9.2 [Number of Cores and Core Number]."
       + 1 ;
     //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
-    LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
+    //LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
   }
-  DEBUG("WRDL--end of getting number of CPU cores\n");
+  //DEBUG("WRDL--end of getting number of CPU cores\n");
   return byCoreNumber ;
 }
+
+//I_CPUaccess::~I_CPUaccess()
+//{
+//
+//}

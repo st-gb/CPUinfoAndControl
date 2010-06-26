@@ -8,7 +8,7 @@
 #ifndef _TCHAR_H
 #define	_TCHAR_H
 
-#ifdef _UNICODE
+#if defined( _UNICODE) || defined(UNICODE)
   #ifndef _T //e.g. wxWidgets also defines _T() macro
     #define _T(x) L ## x
   #endif
@@ -20,7 +20,9 @@
     #define _T(x) x
   #endif
   typedef char TCHAR ;
+#ifdef _MSC_VER //MicroSoft compiler
   #pragma  message( "using char for TCHAR" )
+#endif
 #endif
 typedef TCHAR * LPTSTR ;
 typedef TCHAR _TCHAR ;

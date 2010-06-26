@@ -1,12 +1,14 @@
 #include "RegisterData.hpp"
 
 MSRdata::MSRdata(//DWORD
-    unsigned long dwIndex
-    , std::string & stdstrRegisterName )
+  unsigned long dwIndex
+  , std::string & stdstrRegisterName )
   :
-    m_byCoreID(0)
-    , m_stdstrRegisterName ( stdstrRegisterName )
-    , m_dwIndex ( dwIndex )
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_byCoreID(0)
+  , m_dwIndex ( dwIndex )
+  , m_stdstrRegisterName ( stdstrRegisterName )
 {
 }
 
@@ -17,7 +19,7 @@ bool //GetTableContainingDataName
   const std::vector<std::string> & stdvector_stdstringAttributeValue ,
   std::string & strValue )
 {
-  bool bReplace =false ;
+//  bool bReplace =false ;
   std::string stdstrCurrentRegisterDataTableAttributeValue ;
   std::string stdstrCurrentRegisterDataValue ;
   std::string stdstrRegisterDataTableAttributeName ;

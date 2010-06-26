@@ -412,7 +412,7 @@
     <conf name="Debug" type="1">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <compilerSet>Cygwin_4.x|Cygwin_4.x</compilerSet>
+        <compilerSet>MinGW|MinGW</compilerSet>
         <cRequired>false</cRequired>
         <platform>3</platform>
       </toolsSet>
@@ -423,7 +423,7 @@
           </incDir>
         </cTool>
         <ccTool>
-          <commandlineTool>g++-4.exe</commandlineTool>
+          <commandlineTool>g++.exe</commandlineTool>
           <incDir>
             <pElem>../..</pElem>
             <pElem>../../Controller/MSVC_adaption_</pElem>
@@ -434,6 +434,7 @@
             <pElem>${WINRING0_CYGWIN_PATH}/source/dll</pElem>
             <pElem>../../MS_PlatformSDK6.1</pElem>
             <pElem>T:/MS_PlatformSDK6.1</pElem>
+            <pElem>C:/Programme/cygwin/usr/include/mingw</pElem>
           </incDir>
           <preprocessorList>
             <Elem>_WINDOWS</Elem>

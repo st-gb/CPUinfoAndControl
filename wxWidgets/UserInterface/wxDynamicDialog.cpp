@@ -13,7 +13,8 @@
 #include <Controller/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
-#include <wxWidgets/wxStringHelper.h>
+//#include <wxWidgets/wxStringHelper.h>
+#include <wxWidgets/Controller/wxStringHelper.h>
 
 //An enum guarantees a unique number for each element.
 enum
@@ -67,7 +68,7 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
       , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
       )
   //, mp_pumastatecontrol ( p_pumastatecontrol )
-  //, mp_cpucontroller ( p_cpucontroller )
+  //, mp_i_cpucontroller ( p_cpucontroller )
   , mp_cpuaccess ( p_wxx86infoandcontrolapp->GetCPUaccess() )
   , mp_modeldata ( //& r_modeldata
     p_wxx86infoandcontrolapp->GetModel() )
@@ -426,16 +427,17 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
   std::vector<wxStaticText *>::iterator iterp_wxstatictext = 
     m_stdvector_p_wxstatictext.begin() ;
 
-  DWORD dwEAX = 0, dwEDX = 0, dwAffMask = //TODO change to be compatible with more 
-    //than 1 CPU core
-    1 ;
+  DWORD dwEAX = 0, dwEDX = 0 ;
+//  DWORD dwAffMask = //TODO change to be compatible with more
+//    //than 1 CPU core
+//    1 ;
   DWORD dwEBX = 0, dwECX = 0 ;
   ULONGLONG ullMSR ;
   DWORD dwValue ; 
   //ULONGLONG ullDiff ;
   try
   {
-    //mp_cpucontroller->RdmsrEx(
+    //mp_i_cpucontroller->RdmsrEx(
     mp_cpuaccess->CpuidEx(
       r_cpuiddata.m_dwIndex,
       & dwEAX,
@@ -537,7 +539,8 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
   }
   catch(ReadMSRexception ex)
   {
-    int i = 0 ;
+//    //Breakpoint possibility
+//    int i = 0 ;
   }
 }
 
@@ -548,14 +551,15 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
   std::vector<wxStaticText *>::iterator iterp_wxstatictext = 
     m_stdvector_p_wxstatictext.begin() ;
 
-  DWORD dwEAX,dwEDX, dwAffMask = //TODO change to be compatible with more 
-    //than 1 CPU core
-    1 ;
+  DWORD dwEAX,dwEDX ;
+//  DWORD dwAffMask = //TODO change to be compatible with more
+//    //than 1 CPU core
+//    1 ;
   ULONGLONG ullMSR , ullValue ; 
   //ULONGLONG ullDiff ;
   try
   {
-    //mp_cpucontroller->RdmsrEx(
+    //mp_i_cpucontroller->RdmsrEx(
     mp_cpuaccess->RdmsrEx(
       r_msrdata.m_dwIndex,
       & dwEAX,
@@ -621,7 +625,8 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
   }
   catch(ReadMSRexception ex)
   {
-    int i = 0 ;
+//    //Breakpoint possibility
+//    int i = 0 ;
   }
 }
 
@@ -650,8 +655,8 @@ void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
         strCPUtypeRelativeDirPath)
       )
     {
-      BYTE byModel ;
-      BYTE byStepping ;
+//      BYTE byModel ;
+//      BYTE byStepping ;
       //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
       std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
       mp_wxx86infoandcontrolapp->m_maincontroller.ReadRegisterDataConfig(

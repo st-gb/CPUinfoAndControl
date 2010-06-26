@@ -89,7 +89,7 @@
 	  //m_p_pstates = & pstates ;
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
-    mp_pumastatectrl = p_pumastatectrl ;
+    mp_griffincontroller = p_pumastatectrl ;
 	}
 	
   void Griffin::SAX2MainConfigHandler::handleFreqAndLowestStableVoltageElement(
@@ -180,7 +180,7 @@
 	  //is fundamental important.
 	  if(XercesHelper::GetAttributeValue(attrs,"number",byPstateID))
 	  {
-	    bool bChange = false ;
+//	    bool bChange = false ;
 	//#ifdef PRIVATE_RELEASE //hide the other possibilities
 	    BYTE byFreqID;
     //#endif
@@ -284,13 +284,13 @@
 	    if( XercesHelper::GetAttributeValue(attrs,"FreqInMHz",wValue) )
 	    {
         LOG( "XML attribute name: \"FreqInMHz\"; value: " << wValue << "\n" );
-        DIDandFID didandfid = mp_pumastatectrl->
+        DIDandFID didandfid = mp_griffincontroller->
           GetNearestPossibleFreqInMHzAsDIDnFID( wValue ) ;
             m_p_model->m_pstates.SetPStateDID(byPstateID, //p_didandfid->
               didandfid.m_byDivisorID);
             m_p_model->m_pstates.SetPStateFID(byPstateID, //p_didandfid->
               didandfid.m_byFreqID);
-        //mp_cpucontroller->SetNearestFreqInMHz( wValue ) ;
+        //mp_i_cpucontroller->SetNearestFreqInMHz( wValue ) ;
 	    }
       std::string stdstrAttributeName = "VoltageInVolt" ;
       float fValue ;
@@ -298,7 +298,7 @@
 	    {
         LOG( "XML attribute name: \"" << stdstrAttributeName.c_str() << 
           "\"; value: " << fValue << "\n" );
-        m_p_model->m_pstates.SetPStateVID( byPstateID , mp_pumastatectrl->
+        m_p_model->m_pstates.SetPStateVID( byPstateID , mp_griffincontroller->
           GetVoltageIDFromVoltageInVolt( fValue )
           );
 	    }

@@ -55,6 +55,7 @@ public:
   }
   void SetCPUaccess(//ISpecificController 
     I_CPUaccess * p_ispecificcontroller ) ;
+  BYTE ReadDLLName( std::string & r_stdstrFilePath ) ;
   void ReadRegisterDataConfig(
     std::string & strFamilyAndModelFilePath
     , UserInterface * p_userinterface

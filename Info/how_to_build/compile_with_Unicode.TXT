@@ -1,0 +1,4 @@
+defined symbol"UNICODE" (for the Windows API functions to use the [...]W (=unicode) versions, e.g. ReadFileW instead of ReadFileA
+defined symbol: "wxUSE_UNICODE=1" for wxWidgets unicode strings
+_UNICODE for MinGW's tchar.h
+do NOT define _GLIBCXX_USE_WCHAR_T for std::wistringstream (else undefined references)

@@ -1,0 +1,37 @@
+no Makefile found
+  -> the drive containing the makefile might not been have mounted BEFORE MSYS started
+
+C:\msys\1.0\bin\make.exe: *** couldn't commit memory for cygwin heap, Win32 error 0
+
+->
+http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=51843&start=0:
+"have just experienced the same problem with the ARM tools. Turning off Norman anti virus fixed the problem, re-launching it immediately re-created the problem. "
+
+"I had the same problem in Micro$oft Windows Vista Sad - I deactivated defender and that stupid things and It worked again. " 
+
+"just encountered this error from cygwin and this thread was helpful - the tips regarding Panda Antivirus.
+
+I turned off under unknown threats tab...
+TruPrevent-Blocking of unknown threats...
+Settings...
+Behavioural analysis based on artificial intelligence...
+UNCHECK - Enable behavioral analysis
+
+This resolved the issue for me and I didn't have to disable anything else."
+
+"Well .. after second run of nmake, the darned heap error re-appeared, with windows defender and virusshield completely off.
+
+Solution? Run the compile environment in Win XP SP2 compatibility mode (Shortcut properties->Compatibility Tab->Use compatibility->WinXP SP2) and everything works sight and sound!
+"
+
+"I have just experienced the same problem with the ARM tools. Turning off Norman anti virus fixed the problem, re-launching it immediately re-created the problem.
+
+Googling for "Couldn't reserve space for cygwin's heap" brings up quite a lot of stuff, and there are several references to problems with other anti-virus programs."
+
+
+
+http://lists-archives.org/mingw-users/13692-make-exe-dies-with-cygwin-heap-error-when-cross-compiling-gcc-4-1-2.html:
+"Actually, you're warned not to have a PATH to cygwin in the  
+documentation provided at /doc/msys/."
+
+Data exec prevention abschalten?

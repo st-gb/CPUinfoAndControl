@@ -1,0 +1,3 @@
+#include "winuser.h" //this include is necessary for MinGW?!
+#define MANIFEST_RESOURCE_ID 1
+MANIFEST_RESOURCE_ID RT_MANIFEST "x86InfoAndControl.exe.manifest"

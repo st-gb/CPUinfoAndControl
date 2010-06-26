@@ -50,12 +50,15 @@ class ReadMSRexception
 //class Windows_API::CalculationThread ;
 //class CalculationThread ;
 class UserInterface ;
+class Model ;
 
 //This class is the base class/ interface for CPU access implementations
 //like via WinRing0 library or via /dev/msr0 etc.
 //So this dependancy that can also be Operating System specific is decoupled.
 
-//For succ. linling with gcc: if there is an error with vftable:
+class I_CPUcontroller ;
+
+//For succ. linking with gcc: if there is an error with vftable:
 ///usr/lib/gcc/i686-pc-cygwin/3.4.4/include/c++/bits/locale_facets.tcc:2498:
 //  undefined reference to `vtable for ISpecificController'
 //http://gcc.gnu.org/faq.html#vtables:
@@ -71,6 +74,18 @@ protected:
   UserInterface * mp_userinterface ;
 
 public:
+  Model * mp_model ;
+  //for an attempt to set the controller object pointer from the DLL:
+  //init() function the a controller class in that module?
+  //e.g. INit(CPUaccess * p_cpuaccess ) {
+  //   p_cpuaccess->m_cpucontroller = & g_NehalemCPUcontroller ;
+  // }
+  //This would avoid writing export functions.
+  I_CPUcontroller * mp_cpu_controller ;
+  typedef BOOL ReadMSRex_type (
+    //const I_CPUaccess * ,
+    DWORD, DWORD*, DWORD*, long unsigned int ) ;
+
   //All methods must be "virtual": so they needn't have a definition HERE.
   virtual BOOL CpuidEx(
     DWORD dwIndex,
@@ -135,6 +150,20 @@ public:
 
   virtual void InitPerCPUcoreAccess(BYTE byNumCPUcores) {}
 
+//  //For succ. linking with gcc: if there is an error with vftable:
+//  ///usr/lib/gcc/i686-pc-cygwin/3.4.4/include/c++/bits/locale_facets.tcc:2498:
+//  //  undefined reference to `vtable for ISpecificController'
+//  //http://gcc.gnu.org/faq.html#vtables:
+//  //"Note that a destructor must be defined even if it is declared
+//  //pure-virtual [class.dtor]/7."
+//  ~//ISpecificController()
+//    I_CPUaccess() {} ;
+  //AFAIK destructors of subclasses are not called if it is not declared
+  //"virtual" in its superclass.
+  virtual
+    ~I_CPUaccess() //= 0 ;
+    {}
+
   virtual BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI
@@ -145,6 +174,16 @@ public:
           //1bin =core 0; 10bin=2dec= core 1
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   ) = 0 ;
+//  virtual static BOOL // TRUE: success, FALSE: failure
+//  //In g++ virtual methods can't be declared as stdcall
+//  //WINAPI
+//  RdmsrExClassFct(
+//	  DWORD index,		// MSR index
+//	  PDWORD eax,			// bit  0-31
+//	  PDWORD edx,			// bit 32-63
+//          //1bin =core 0; 10bin=2dec= core 1
+//	  DWORD_PTR affinityMask	// Thread Affinity Mask
+//  ) { return 1  ; }
   inline virtual BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI
@@ -181,12 +220,4 @@ public:
       DWORD dwHigh, //edx,			// bit 32-63
       DWORD affinityMask	// Thread Affinity Mask
     ) = 0 ;
-  //For succ. linking with gcc: if there is an error with vftable:
-  ///usr/lib/gcc/i686-pc-cygwin/3.4.4/include/c++/bits/locale_facets.tcc:2498:
-  //  undefined reference to `vtable for ISpecificController'
-  //http://gcc.gnu.org/faq.html#vtables:
-  //"Note that a destructor must be defined even if it is declared
-  //pure-virtual [class.dtor]/7."
-  ~//ISpecificController()
-    I_CPUaccess() {} ;
 };

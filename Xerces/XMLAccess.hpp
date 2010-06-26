@@ -33,6 +33,7 @@ XERCES_CPP_NAMESPACE_BEGIN
   class DOMElement ;
   class DOMImplementation ;
   class DOMLSParser ;
+  class DOMNode ;
   class DOMXPathNSResolver ;
   class DOMXPathResult ;
 
@@ -42,24 +43,31 @@ XERCES_CPP_NAMESPACE_BEGIN
     //: public I_ConfigurationHandler
   {
   private:
+    const char * mpc_chFullXMLFilePath ;
     std::map<WORD,WORD> m_stdmapFreqInMHzInDOMtree2DOMindex ;
     XERCES_CPP_NAMESPACE::DOMDocument * mp_dom_document ;
     XERCES_CPP_NAMESPACE::DOMElement * mp_dom_elementRoot ;
     XERCES_CPP_NAMESPACE::DOMElement * mp_dom_elementFreqnVolt ;
+    XERCES_CPP_NAMESPACE::DOMImplementation * mp_dom_implementation ;
+    XERCES_CPP_NAMESPACE::DOMLSParser * mp_dom_ls_parser ;
     XERCES_CPP_NAMESPACE::DOMXPathResult * mp_domxpathresult ;
+    //    , DOMDocument * & p_dom_document
+
     Model * mp_model ;
     //void 
     //std::map<WORD,WORD>::const_iterator AddFrequencyToDOMtree(WORD wFreq) ;
+
     XERCES_CPP_NAMESPACE::DOMElement * AddFrequencyToDOMtree(WORD wFreq) ;
     void AppendDefaultVoltages() ;
-    XERCES_CPP_NAMESPACE::DOMXPathNSResolver * BuildStdmapFreqInMHzInDOMtree2DOMindex(
+    XERCES_CPP_NAMESPACE::DOMXPathNSResolver *
+      BuildStdmapFreqInMHzInDOMtree2DOMindex(
       std::map<WORD,WORD> & r_stdmapFreqInMHzInDOMtree2DOMindex
       ) ;
     void GetDOM_XPathResultForFrequencies() ;
     void GetFreqnVoltDOMelement( WORD wFreqInMHz 
       , XERCES_CPP_NAMESPACE::DOMElement * & mp_dom_element ) ;
-    bool PossiblyAddDefaultVoltages() ;
-    bool PossiblyAddLowestStableVoltages() ;
+//    bool PossiblyAddDefaultVoltages() ;
+//    bool PossiblyAddLowestStableVoltages() ;
     bool PossiblyAddVoltages(
       const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq 
       , //e.g. "max_voltage_in_Volt"
@@ -69,9 +77,19 @@ XERCES_CPP_NAMESPACE_BEGIN
       //save the changes.
       , bool bOnlySimulate 
       ) ;
-    bool PossiblyAddWantedVoltages() ;
+    bool PossiblyAddVoltages(
+        //true: do not change, only test if it would be changed.
+        bool bTest
+        ) ;
+//    bool PossiblyAddWantedVoltages() ;
+    short WriteDOM(
+      XERCES_CPP_NAMESPACE::DOMNode * p_dom_node
+//        , const char * const cpc_chFilePath
+        //For creating a DOMLSOutput instance via createLSOutput().
+//        , DOMImplementation * p_dom_implementation
+        ) ;
   public:
-    bool ConfigurationChanged(std::string & r_strPstateSettingsFileName ) ;
+    bool IsConfigurationChanged(std::string & r_strPstateSettingsFileName ) ;
     XercesConfigurationHandler(Model * p_model ) ;
     BYTE //mergeXMLfileDOM( 
       MergeWithExistingConfigFile(
@@ -79,6 +97,16 @@ XERCES_CPP_NAMESPACE_BEGIN
       , Model & r_model,
       std::string & r_strPstateSettingsFileName 
       ) ;
+    BYTE readXMLfileDOM(
+//      const char * p_chFullXMLFilePath
+//      , XERCES_CPP_NAMESPACE::DOMDocument * & p_dom_document
+//      , XERCES_CPP_NAMESPACE::DOMLSParser * & parser
+//      , XERCES_CPP_NAMESPACE::DOMImplementation * & p_dom_implementation
+      ) ;
+    bool TestIfCfgIsChangedOrChangeCfg(
+        //true: do not change, only test if it would be changed.
+        bool bTest
+        ) ;
   } ;
 
   char readXMLConfig(
@@ -91,11 +119,5 @@ XERCES_CPP_NAMESPACE_BEGIN
    //So one calls this functions with different handlers passed.
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     );
-  BYTE readXMLfileDOM( 
-    const char * p_chFullXMLFilePath 
-    , XERCES_CPP_NAMESPACE::DOMDocument * & p_dom_document
-    , XERCES_CPP_NAMESPACE::DOMLSParser * & parser
-    , XERCES_CPP_NAMESPACE::DOMImplementation * & p_dom_implementation 
-    ) ;
 
 #endif //#ifdef COMPILE_WITH_XERCES

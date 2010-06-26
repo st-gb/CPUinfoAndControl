@@ -15,7 +15,8 @@
 CPUIDaccess::CPUIDaccess()
 {
   m_wxdynamiclibraryHWaccess.Load(
-    "WinRing0.dll"
+    //Use wxT() to enable to compile with both unicode and ANSI.
+    wxT("WinRing0.dll")
     //WINRING_DLL_NAME
     //, int flags = wxDL_DEFAULT
     ) ;

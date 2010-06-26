@@ -1,79 +1,5 @@
 #include "CPUcoreData.hpp"
-#include <Controller/AMD/Griffin/AMD_family17.h>
-#include <wxWidgets/DynFreqScalingThread.hpp>
-#include <Controller/ICPUcoreUsageGetter.hpp>
-
-extern Logger g_logger ;
-
-PerCPUcoreAttributes::PerCPUcoreAttributes()
-    : 
-    mp_dynfreqscalingthread(NULL)
-    , mp_icpucoreusagegetter(NULL)
-    , m_wCurrentFreqInMHz (0)
-    , m_fPreviousCPUusage(-1.0)
-  {
-    //mp_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
-    //  m_byCoreID
-    //  , 
-    //  ) ;
-  }
-  PerCPUcoreAttributes::~PerCPUcoreAttributes()
-  {
-    if( mp_dynfreqscalingthread )
-      delete mp_dynfreqscalingthread ;
-    if( mp_icpucoreusagegetter )
-      delete mp_icpucoreusagegetter ;
-  }
-
-  void PerCPUcoreAttributes::CreateDynFreqScalingThread(
-    ICPUcoreUsageGetter * p_icpucoreusagegetter 
-    )
-  {
-    mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
-    if ( ! mp_dynfreqscalingthread )
-    {
-		//http://docs.wxwidgets.org/2.6/wx_wxthread.html:
-		//"[...]"This means, of course, that all detached threads must be 
-		//created on the heap because the thread will call delete this; 
-		//upon termination.[...]"
-      mp_dynfreqscalingthread = new DynFreqScalingThread(
-        mp_icpucoreusagegetter
-        //, mp_griffincontroller 
-        , mp_cpucontroller
-        , *mp_cpucoredata
-        );
-      //mp_dynfreqscalingthread->
-	    if( mp_dynfreqscalingthread->Create() == wxTHREAD_NO_ERROR )
-      {
-        LOGN("Dynamic Voltage and Frequency Scaling thread successfully "
-          "created")
-		    wxThreadError wxthreaderror = mp_dynfreqscalingthread->Run() ;
-        LOGN("after starting Dynamic Voltage and Frequency Scaling thread"
-          "--result: " << wxthreaderror )
-      }
-    }
-  }
-  
-  //when this class is an element of an array, the paramless ctor is
-  //called?! So do the init with params here.
-  void PerCPUcoreAttributes::Create(
-    BYTE byCoreID
-    //ICPUcoreUsageGetter * p_icpucoreusagegetter 
-    //, GriffinController * p_griffincontroller 
-    , I_CPUcontroller * p_cpucontroller
-    , CPUcoreData & r_cpucoredata
-    )
-  {
-    m_byCoreID = byCoreID ;
-    //mp_griffincontroller = p_griffincontroller ;
-    mp_cpucontroller = p_cpucontroller ;
-    //mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
-    mp_cpucoredata = & r_cpucoredata ;
-    //mp_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
-    //  m_byCoreID
-    //  , mp_griffincontroller
-    //  ) ;
-  }
+//#include <Controller/AMD/Griffin/AMD_family17.h>
 
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {
@@ -106,16 +32,27 @@ void CPUcoreData::AddPreferredVoltageForFreq(float fValue, WORD wFreqInMHz)
     VoltageAndFreq(fValue,wFreqInMHz) ) ;
 }
 
+void CPUcoreData::ClearCPUcontrollerSpecificAtts()
+{
+  m_stdsetvoltageandfreqDefault.clear() ;
+  m_stdsetvoltageandfreqWanted.clear() ;
+  m_stdsetvoltageandfreqLowestStable.clear() ;
+  m_stdsetvoltageandfreqAvailableFreq.clear() ;
+}
+
 CPUcoreData::CPUcoreData()
-    //C++ style initialisations:
-    //: m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
-    //, m_fPercentalCPUcoreFreqIncrease(1.5f)
-    //, m_fVoltageForMaxCPUcoreFreq(1.05f)
-    //, m_arfCPUcoreLoadInPercent(NULL)
-    //, m_arwCurrentFreqInMHz(NULL)
-    //, m_byMaxVoltageID(MAX_VALUE_FOR_VID)
-    //, m_byMinVoltageID(0)
-    //, m_byMainPLLoperatingFrequencyIDmax(CPU_CORE_DATA_NOT_SET)
+  //C++ style initializations:
+  :
+  m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
+  //, m_fCPUcoreFreqIncreaseFactor(1.5f)
+  //, m_fVoltageForMaxCPUcoreFreq(1.05f)
+  //, m_arfCPUcoreLoadInPercent(NULL)
+  //, m_arwCurrentFreqInMHz(NULL)
+  //, m_byMaxVoltageID(MAX_VALUE_FOR_VID)
+  //, m_byMinVoltageID(0)
+  //, m_byMainPLLoperatingFrequencyIDmax(CPU_CORE_DATA_NOT_SET)
+  , m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
+//  , m_conditionDVFSthreadMayChangeData( m_mutexDVFSthreadMayChangeData )
   {
     //LOGN("CPU attributes ctor")
     //TODO get the actual number of CPU cores and set THIS one.
@@ -124,15 +61,44 @@ CPUcoreData::CPUcoreData()
     Init() ;
   }
 
+CPUcoreData::CPUcoreData(
+  BYTE byNumberOfCPUcores,
+  WORD wMaxFreqInMHz
+  )
+  //C++ style initializations:
+  : //m_wMaxFreqInMHz(wMaxFreqInMHz)
+  m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
+{
+  //LOGN("CPU attributes ctor 2")
+  //Call default constructor.
+  //CPUcoreData();
+  Init() ;
+  SetMaxFreqInMHz(wMaxFreqInMHz) ;
+  SetCPUcoreNumber(byNumberOfCPUcores);
+}
+
+CPUcoreData::~CPUcoreData()
+{
+  PossiblyReleaseMem();
+}
+
 void CPUcoreData::Init()
 {
-  m_fCPUcoreLoadThresholdForIncreaseInPercent = 80.0f ;
-  m_fPercentalCPUcoreFreqIncrease = 1.5f ;
-  m_fThrottleTemp = 90.0 ; //a good default value.
+//  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionctor:
+//  // the mutex should be initially locked
+//  m_mutexCPUdataCanBeSafelyRead.Lock();
+
+  m_b1CPUcorePowerPlane = true ;
+  m_fCPUcoreLoadThresholdForIncreaseInPercent =
+    //expressed as core usage between [0...1]
+      0.9f ;
+  m_fCPUcoreFreqIncreaseFactor = 1.5f ;
+  m_fThrottleTempInDegCelsius = 90.0 ; //a good default value.
   m_fVoltageForMaxCPUcoreFreq = 1.05f ;
   m_arfCPUcoreLoadInPercent = NULL ;
   m_arwCurrentFreqInMHz = NULL ;
-  m_byMaxVoltageID = MAX_VALUE_FOR_VID ;
+  m_byMaxVoltageID = //MAX_VALUE_FOR_VID ;
+      0 ;
   m_byMinVoltageID = 0 ;
   //Important to set to NULL when the CPU controller is NULL. 
   //(creation of menus per CPU core )
@@ -154,6 +120,10 @@ void CPUcoreData::Init()
 
   BYTE CPUcoreData::GetMainPLLoperatingFrequencyIDmax()
   {
+//#ifdef _DEBUG
+//    MessageBox( NULL, "CPUcoreData::GetMainPLLoperatingFrequencyIDmax",
+//      TEXT("") , MB_OK ) ;
+//#endif
     return m_byMainPLLoperatingFrequencyIDmax ;
   }
 
@@ -179,24 +149,57 @@ void CPUcoreData::Init()
      SetMaxFreqInMHz( ( byMainPLLoperatingFrequencyIDmax + 8 ) * 100 ) ;
   }
 
-  CPUcoreData::CPUcoreData(
-    BYTE byNumberOfCPUcores, 
-    WORD wMaxFreqInMHz
-    )
-    //: m_wMaxFreqInMHz(wMaxFreqInMHz)
+  void CPUcoreData::ThreadFinishedAccess()
   {
-    //LOGN("CPU attributes ctor 2")
-    //Call default constructor.
-    //CPUcoreData();
-    Init() ;
-    SetMaxFreqInMHz(wMaxFreqInMHz) ;
-    SetCPUcoreNumber(byNumberOfCPUcores);
+//    //Only 1 thread should safely access the var (decrementing a value is
+//    //not an atomic operation)
+//    m_criticalsectionThreads.Enter() ;
+//    -- m_wNumThreadsAccessingThisObject ;
+//    if( m_wNumThreadsAccessingThisObject == 0 )
+//    {
+//
+//      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+//      // tell the other(s) thread(s) that we're about to terminate: we must
+//      // lock the mutex first or we might signal the condition before the
+//      // waiting threads start waiting on it!
+//
+//      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+//      //Waits until the mutex is unlocked.
+//      //when "condition.Wait()" is called in the other thread then
+//      // the mutex is unlocked and so con
+//      wxMutexLocker lock(m_mutexDVFSthreadMayChangeData);
+//      //All threads finished reading from the data now the DVFS thread can
+//      //safely modify the data.
+//      m_conditionDVFSthreadMayChangeData.Broadcast() ;
+//    }
+//    m_criticalsectionThreads.Leave() ;
   }
-  
-  CPUcoreData::~CPUcoreData()
-  {
-    PossiblyReleaseMem();
-  }
+
+//  void CPUcoreData::ThreadWantsAccess()
+//  {
+//    //Only 1 thread should safely access the var (decrementing a value is
+//    //not an atomic operation)
+//    m_criticalsectionThreads.Enter() ;
+//    ++ m_wNumThreadsAccessingThisObject ;
+//    if( m_wNumThreadsAccessingThisObject == 0 )
+//    {
+//
+//      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+//      // tell the other(s) thread(s) that we're about to terminate: we must
+//      // lock the mutex first or we might signal the condition before the
+//      // waiting threads start waiting on it!
+//
+//      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+//      //Waits until the mutex is unlocked.
+//      //when "condition.Wait()" is called in the other thread then
+//      // the mutex is unlocked and so con
+//      wxMutexLocker lock(m_mutexDVFSthreadMayChangeData);
+//      //All threads finished reading from the data now the DVFS thread can
+//      //safely modify the data.
+//      m_conditionDVFSthreadMayChangeData.Broadcast() ;
+//    }
+//    m_criticalsectionThreads.Leave() ;
+//  }
 
   BYTE CPUcoreData::GetNumberOfCPUcores()
   {
@@ -252,4 +255,3 @@ void CPUcoreData::Init()
     m_wAQuarterOfMaxFreq = wMaxFreqInMHz / 4 ;
     m_wAHalfOfMaxFreq = wMaxFreqInMHz / 2 ;
   }
-

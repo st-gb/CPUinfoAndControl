@@ -2,6 +2,7 @@
 //Use "windows.h" because g++ (MinGW) is case sensitive.
 #include <windows.h> //for ::GetProcAddress(), ::GetSystemPowerStatus(), <PowrProf.h>
 #include "global.h"
+#include <stdio.h> //wprintf()
 #include <tchar.h> //for "_T(...)"
 ////This must be the PowrProf.h from the Windows (platform) SDK for Vista, 
 ////ie. SDK version "6.1" .
@@ -22,9 +23,11 @@
                 = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 #endif
 //#else
-//#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+//Use C comment, else compiler warning: multi-line comment because of "\" at
+// line end.
+/*#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
 //    EXTERN_C const GUID FAR name
-//#endif // INITGUID
+//#endif // INITGUID */
 //
 // Specifies the subgroup which will contain all of the processor
 // settings for a single policy.
@@ -67,7 +70,7 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
   DWORD dwPowerEnumerateRet ;
   UCHAR * p_uchBuffer ;
   GUID GUIDscheme ;
-  GUID guidNewPowerScheme ;
+//  GUID guidNewPowerScheme ;
   GUID * p_guidNewPowerScheme = NULL ;
   std::wstring stdwstr ;
 //http://msdn.microsoft.com/en-us/library/aa372730(VS.85).aspx:
@@ -122,7 +125,7 @@ BYTE PowerProfFromWin6DynLinked::CreatePowerScheme(
       * 2 
     //#endif
       ;
-    const wchar_t * p_wch = cr_stdwstrPowerSchemeName.c_str() ;
+//    const wchar_t * p_wch = cr_stdwstrPowerSchemeName.c_str() ;
     //dwBufferSize = wcslen( p_wch ) ;
     r_dwRetValue =
       //"Returns ERROR_SUCCESS (zero) if the call was successful, and a non-zero
@@ -587,9 +590,12 @@ bool PowerProfFromWin6DynLinked::EnablingIsPossible()
 }
 
 //std::tstring 
-IDynFreqScalingAccess::string_type PowerProfFromWin6DynLinked::GetEnableDescription()
+//IDynFreqScalingAccess::string_type
+std::wstring
+  PowerProfFromWin6DynLinked::GetEnableDescription()
 {
-  std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  //std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  std::wstring stdwstrReturn( L"no other power scheme available" ) ;
   if( mp_guidPowerSchemeBeforeDisabling )
   {
     std::wstring stdwstrPowerSchemeName ;
@@ -598,11 +604,13 @@ IDynFreqScalingAccess::string_type PowerProfFromWin6DynLinked::GetEnableDescript
     if( stdwstrPowerSchemeName == m_stdwstrPowerSchemeName )
       ;
     else
-      stdtstrReturn = _T("set power scheme \"") 
-        + Getstdtstring( stdwstrPowerSchemeName )
-        + _T("\"") ;
+//      stdtstrReturn = _T("set power scheme \"")
+//        + Getstdtstring( stdwstrPowerSchemeName )
+//        + _T("\"") ;
+      stdwstrReturn = L"set power scheme \"" + stdwstrPowerSchemeName + L"\"" ;
   }
-  return stdtstrReturn ;
+  return //stdtstrReturn ;
+    stdwstrReturn ;
 }
 
 //Return: ERROR_SUCCESS if everything succeeded.
@@ -663,7 +671,28 @@ DWORD PowerProfFromWin6DynLinked::GetPowerSchemeName(
   return dwRes ;
 }
 
-void PowerProfFromWin6DynLinked::OutputAllPowerSchemes()
+void PowerProfFromWin6DynLinked::GetActivePowerSchemeName(
+  std::wstring & r_stdwstrActivePowerSchemeName )
+{
+  DWORD dwRet ;
+  GUID guidActivePowerScheme ;
+  dwRet = PowerGetActiveScheme( NULL, guidActivePowerScheme ) ;
+  if( dwRet == ERROR_SUCCESS )
+  {
+    dwRet = GetPowerSchemeName( guidActivePowerScheme ,
+      r_stdwstrActivePowerSchemeName ) ;
+    if( dwRet != ERROR_SUCCESS )
+      r_stdwstrActivePowerSchemeName =
+        L"Getting power scheme name for active scheme GUID failed" ;
+  }
+  else
+  {
+    r_stdwstrActivePowerSchemeName = L"Getting active scheme's GUID failed" ;
+  }
+}
+
+void PowerProfFromWin6DynLinked:://OutputAllPowerSchemes()
+  GetAllPowerSchemeNames(std::set<std::wstring> & stdset_stdwstrPowerSchemeName )
 {
   ULONG ulIndex = 0 ;
   DWORD dwPowerEnumerateRet ;
@@ -700,14 +729,17 @@ void PowerProfFromWin6DynLinked::OutputAllPowerSchemes()
   //    delete [] p_uchBuffer ;
       GetPowerSchemeName(GUIDscheme, stdwstr ) ;
       #if defined(_DEBUG)
-        #if !defined(__MINGW32__) //MinGW does not know "wcout"
+        #if defined(__MINGW32__) //MinGW does not know "wcout"
+//          wprintf(L"%s\n", stdwstr.c_str() ) ;
+        #else
           std::wcout << stdwstr << L'\n' ;
         #endif
       #endif
+      stdset_stdwstrPowerSchemeName.insert(stdwstr) ;
       ++ ulIndex ;
     }
   }while( dwPowerEnumerateRet == ERROR_SUCCESS ) ;
-  std::cout << "Numer of power schemes:" << ( ulIndex + 1 ) << "\n" ;
+  DEBUGN(  "Numer of power schemes:" << ( ulIndex + 1 ) )
   #ifdef _DEBUG
   ulIndex = ulIndex ; //instr. is only for breakpoint
   #endif
@@ -841,23 +873,27 @@ DWORD PowerProfFromWin6DynLinked::PowerEnumerate(
 }
 
 PowerProfFromWin6DynLinked::PowerProfFromWin6DynLinked(
-  //std::wstring & r_stdwstrPowerSchemeName
-  std::tstring & r_stdtstrPowerSchemeName
+  std::wstring & r_stdwstrPowerSchemeName
+//  std::tstring & r_stdtstrPowerSchemeName
   )
-  : mp_guidPowerSchemeBeforeDisabling ( NULL ) 
-  , m_bActivePowerSchemeAssigned ( false )
+  :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_bActivePowerSchemeAssigned ( false )
   , m_bThrottleSettingsAssigned ( false )
+  , mp_guidPowerSchemeBeforeDisabling ( NULL )
 {
   //m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
-#ifdef  UNICODE                     // r_winnt
-  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
-    r_stdtstrPowerSchemeName ;
-#else
-  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
-    //http://www.wer-weiss-was.de/theme158/article3047390.html:
-    std::wstring ( r_stdtstrPowerSchemeName.begin(), 
-      r_stdtstrPowerSchemeName.end() );
-#endif
+//#ifdef  UNICODE                     // r_winnt
+//  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+//    r_stdtstrPowerSchemeName ;
+//#else
+//  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+//    //http://www.wer-weiss-was.de/theme158/article3047390.html:
+//    std::wstring ( r_stdtstrPowerSchemeName.begin(),
+//      r_stdtstrPowerSchemeName.end() );
+//#endif
+  m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
   m_hinstancePowerProfDLL = 
     //If the function fails, the return value is NULL.
     ::LoadLibraryA( "PowrProf.dll" //LPCSTR 
@@ -1272,6 +1308,9 @@ DWORD WINAPI PowerProfFromWin6DynLinked::PowerSetActiveScheme(
     __in      const GUID *SchemeGuid
   )
 {
+  //http://msdn.microsoft.com/en-us/library/aa372758%28VS.85%29.aspx:
+  //"Returns ERROR_SUCCESS (zero) if the call was successful, and a non-zero
+  //value if the call failed."
   return (*m_pfnpowersetactivescheme) (
     UserRootPowerKey,
     SchemeGuid //__in      const GUID *SchemeGuid
@@ -1470,6 +1509,68 @@ DWORD PowerProfFromWin6DynLinked::PowerWriteFriendlyName(
     Buffer,
     BufferSize
     ) ;
+}
+
+//0: power scheme does not exist
+//1: power scheme exists
+//2: error (enumerating) power scheme(s)
+//BYTE
+DWORD PowerProfFromWin6DynLinked:: SetActivePowerScheme(
+  const std::wstring & r_stdwstrPowerSchemeName )
+{
+  ULONG ulIndex = 0 ;
+  DWORD dwPowerEnumerateRet ;
+  UCHAR * p_uchBuffer ;
+  GUID GUIDscheme ;
+  std::wstring stdwstr ;
+//http://msdn.microsoft.com/en-us/library/aa372730(VS.85).aspx:
+//"This function is normally called in a loop incrementing the Index parameter
+//to retrieve subkeys until they've all been enumerated."
+  do
+  {
+    dwPowerEnumerateRet = PowerEnumerate(
+      & GUIDscheme //__in_opt   const GUID *SchemeGuid,
+      //NULL
+      , NULL //__in_opt   const GUID *SubGroupOfPowerSettingsGuid,
+      //ACCESS_SCHEME: Enumerate power schemes. The
+      //SchemeGuid and
+      //SubgroupOfPowerSettingsGuid
+      //parameters will be ignored."
+      , ACCESS_SCHEME //__in POWER_DATA_ACCESSOR AccessFlags,
+      , ulIndex //__in       ULONG ulIndex,
+      //A pointer to a variable to receive the elements. If this parameter is NULL,
+      //the function retrieves the size of the buffer required.
+      , p_uchBuffer //UCHAR * & Buffer
+      ) ;
+    if( dwPowerEnumerateRet == ERROR_SUCCESS )
+    {
+      GetPowerSchemeName(GUIDscheme, stdwstr ) ;
+      DEBUGN("enumerating schemes. current power scheme name:" <<
+          GetStdString( stdwstr) )
+      if( stdwstr == r_stdwstrPowerSchemeName )
+      {
+        DWORD dwRet =
+          //"Returns ERROR_SUCCESS (zero) if the call was successful, and a
+          //non-zero value if the call failed."
+          PowerSetActiveScheme( NULL, & GUIDscheme ) ;
+//        if( dwRet == ERROR_SUCCESS )
+//          return 1 ;
+//        else
+//          return 2 ;
+        return dwRet ;
+      }
+      #ifdef _DEBUG
+        #if !defined(__MINGW32__) //MinGW does not know "wcout"
+          std::wcout << stdwstr << L'\n' ;
+        #endif
+      #endif
+      ++ ulIndex ;
+    }
+  }while( dwPowerEnumerateRet == ERROR_SUCCESS ) ;
+  #ifdef _DEBUG
+  ulIndex = ulIndex ; //instr. is only for breakpoint
+  #endif
+  return 0 ;
 }
 
 void PowerProfFromWin6DynLinked::SetFunctionPointersToNULL()

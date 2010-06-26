@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <tchar.h> //TCHAR
 //#include <string_typedefs.h> //LPCTSTR
 
 //char * GetCharPointer( LPCTSTR pstr )
@@ -26,6 +27,10 @@ namespace std {
 
     #endif
 
+   //class tstring
+   //{
+   //    tstring( TCHAR * ptch ) ;
+   //} ;
 }
 
  #if defined _UNICODE || defined UNICODE

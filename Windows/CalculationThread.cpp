@@ -1,11 +1,10 @@
 #include "CalculationThread.hpp"
 #include <Controller/CalculationThreadProc.h>
-#include <UserInterface.hpp>
+#include <UserInterface/UserInterface.hpp>
 
 //class CalculationThread;
 //using namespace Windows_API;
 
-//class PumaStateCtrl ;
 class CalculationThread ;
 //namespace Windows_API ;
 
@@ -32,34 +31,37 @@ CalculationThread::CalculationThread(
   , I_CPUcontroller * p_cpucontroller
   )
   :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
   m_byCoreID ( byCoreID )
 //  m_bCalcError(false) ,
 //  m_vbContinue(true) ,
   //, mpfn_CalculationThreadProc (pCalculationThreadProc)
-  , mp_userinterface (p_userinterface)
-  , mp_cpucontroller (p_cpucontroller )
   , mpfn_CalculationThreadProc ( pCalculationThreadProc )
+  , mp_cpucontroller (p_cpucontroller )
+  , mp_userinterface (p_userinterface)
   //NULL also indicates failure for ::CreateThread(...).
 //  , m_hThread (NULL)
 {
   Init() ;
   //GCC 4's g++ :
-  //../../Windows/CalculationThread.cpp: In constructor â€˜CalculationThread::CalculationThread(BYTE, DWORD (*)(void*), UserInterface*, I_CPUcontroller*)â€™:
-  //../../Windows/CalculationThread.cpp:44: error: invalid conversion from â€˜DWORD (*)(void*)â€™ to â€˜DWORD (*)(void*)â€™
-  //mpfn_CalculationThreadProc = (DWORD (*)(void*)) pCalculationThreadProc ;
+  //../../Windows/CalculationThread.cpp: In constructor â€˜
+  // CalculationThread::CalculationThread(BYTE, DWORD (*)(void*),
+  // UserInterface*, I_CPUcontroller*)â€™:
+  //../../Windows/CalculationThread.cpp:44: error: invalid conversion from
+  // â€˜DWORD (*)(void*)â€™ to â€˜DWORD (*)(void*)â€™
+  // mpfn_CalculationThreadProc = (DWORD (*)(void*)) pCalculationThreadProc ;
 }
 
-CalculationThread::CalculationThread(//PumaStateCtrl 
-  //GriffinController * p_pumastatectrl 
+CalculationThread::CalculationThread(
   I_CPUcontroller * p_cpucontroller
   )
   //: m_bCalcError(false)
   //: CalculationThread()
 {
-    LOG("Creating high load calc thread\n");
+  LOG("Creating high load calc thread\n");
   //CalculationThread();
   Init() ;
-  //SetPumaStateCtrl(p_pumastatectrl);
   SetCPUcontroller(p_cpucontroller);
   LOG("Finished creating high load calc thread\n");
 }
@@ -83,7 +85,8 @@ void CalculationThread::Init()
 //void
 BYTE CalculationThread::Execute()
 {
-  BYTE byAction = STARTED;
+  BYTE byAction = //STARTED;
+    started ;
   DWORD dwExitCode ;
 
   LOG("start or stop high load calc thread for core " <<
@@ -102,7 +105,8 @@ BYTE CalculationThread::Execute()
     //marp_calculationthread[ byCoreID ]->m_vbContinue = false ;
       EndCalculationThread() ;
       m_hThread = NULL ;
-      byAction = ENDED ;
+      byAction = //ENDED ;
+        ended ;
 //    mp_userinterface->//SetMenuItemText(
 //      ChangeUserInterface(
 //      //Pass a pointer to THIS object to let the UserInterface select the
@@ -129,7 +133,8 @@ BYTE CalculationThread::Execute()
 //        //"stdmapmenuitem2ui.get(cpucontrolleraction)->SetMenuItemText(str) ;
 //        this,
 //        "end thread" ) ;
-      byAction = STARTED;
+      byAction = //STARTED;
+          started ;
   }
   return byAction ;
 }
@@ -145,17 +150,18 @@ CalculationThread::StartCalculationThread(
     //If the function fails, the return value is NULL. 
     ::CreateThread(
     //LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    //"If lpThreadAttributes is NULL, the thread gets a default security descriptor."
+    //"If lpThreadAttributes is NULL, the thread gets a default security
+    //descriptor."
     NULL,
     //SIZE_T dwStackSize,
-    //If this parameter is zero, the new thread uses the default size for the executable.
+    //If this parameter is zero, the new thread uses the default size for the
+    //executable.
     0,
     //LPTHREAD_START_ROUTINE lpStartAddress,
     pCalculationThreadProc,
     //LPVOID lpParameter,
     //NULL,
     //this,
-    //mp_pumastatectrl,
     this,
     //DWORD dwCreationFlags,
     //If this value is zero, the thread runs immediately after creation. 
@@ -179,17 +185,18 @@ CalculationThread::StartCalculationThread(BYTE byCoreID)
     //If the function fails, the return value is NULL. 
     ::CreateThread(
     //LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    //"If lpThreadAttributes is NULL, the thread gets a default security descriptor."
+    //"If lpThreadAttributes is NULL, the thread gets a default security
+    //descriptor."
     NULL,
     //SIZE_T dwStackSize,
-    //If this parameter is zero, the new thread uses the default size for the executable.
+    //If this parameter is zero, the new thread uses the default size for the
+    //executable.
     0,
     //LPTHREAD_START_ROUTINE lpStartAddress,
     mpfn_CalculationThreadProc,
     //LPVOID lpParameter,
     //NULL,
     //this,
-    //mp_pumastatectrl,
     this,
     //DWORD dwCreationFlags,
     //If this value is zero, the thread runs immediately after creation. 
@@ -205,13 +212,6 @@ CalculationThread::StartCalculationThread(BYTE byCoreID)
     //if( mp_wxthread->Create() == wxTHREAD_NO_ERROR )
     //  m_wxthread->Run() ;
 }
-
-//void //Windows_API::
-//CalculationThread::SetPumaStateCtrl(//PumaStateCtrl * p_pumastatectrl
-//  GriffinController * p_pumastatectrl )
-//{
-//  mp_pumastatectrl = p_pumastatectrl ;
-//}
 
 void CalculationThread::SetCPUcontroller(
   I_CPUcontroller * p_cpucontroller )

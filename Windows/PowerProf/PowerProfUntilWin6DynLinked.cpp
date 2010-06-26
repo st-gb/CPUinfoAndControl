@@ -3,8 +3,9 @@
 //locale_facets.h:1974: error: expected primary-expression before ',' token"
 #include "global.h" //for LOGN(...)
 #include "PowerProfUntilWin6DynLinked.hpp"
+#include <string.h> //wscmp(wchar_t *,wchar_t *)
 #include <tchar.h> //for "_T(...)"
-#include <string> //std:.string
+#include <string> //std::string
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include <Powrprof.h> //for static linking 
 
@@ -123,7 +124,8 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchByDynamicThrottle (
         ::GetSystemPowerStatus(& system_power_status)
         )
       {
-        BYTE byDynamicThrottle ;
+        //Initialize just to avoid (g++) compiler warning.
+        BYTE byDynamicThrottle = 0 ;
         //DWORD dwACProcThrottleMaxValue ;
         if( system_power_status.ACLineStatus == 1 // Online
           )
@@ -167,7 +169,7 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByName (
   DWORD dwName,      // size of the sName string, in bytes
   //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
   //LPTSTR strPowerSchemeName,      // name of the power scheme
-  LPWSTR strPowerSchemeName,      // name of the power scheme
+  LPWSTR lpwstrPowerSchemeName,      // name of the power scheme
   DWORD dwDesc,      // size of the sDesc string, in bytes
   //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
   //LPTSTR sDesc,      // description string
@@ -176,15 +178,18 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByName (
   LPARAM lParam      // user-defined value
   )
 {
-  LOGWN( L"Power scheme index:" << uiPowerSchemeID << " name:" << strPowerSchemeName )
+//  LOGWN_WSPRINTF( L"Power scheme index: %u name:%ls" ,
+//    uiPowerSchemeID , lpwstrPowerSchemeName )
   PowerProfUntilWin6DynLinked * p_powerprofuntilwin6dynlinked = 
     (PowerProfUntilWin6DynLinked *) lParam ;
   if( p_powerprofuntilwin6dynlinked )
   {
     p_powerprofuntilwin6dynlinked->m_bPowerSchemeWithP0ThrottleNoneFound = false ;
-    if( strPowerSchemeName == p_powerprofuntilwin6dynlinked->
-      //m_strWantedPowerScheme 
-      m_stdwstrWantedPowerScheme 
+    if( //If identical
+      ! wcscmp( lpwstrPowerSchemeName , p_powerprofuntilwin6dynlinked->
+        //m_strWantedPowerScheme
+        m_stdwstrWantedPowerScheme.c_str()
+        )
       //m_stdwstrPowerSchemeName
       )
     {
@@ -208,7 +213,7 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByID (
   DWORD dwName,      // size of the sName string, in bytes
   //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
   //LPTSTR strPowerSchemeName,      // name of the power scheme
-  LPWSTR strPowerSchemeName,      // name of the power scheme
+  LPWSTR lpwstrPowerSchemeName,      // name of the power scheme
   DWORD dwDesc,      // size of the sDesc string, in bytes
   //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
   //LPTSTR sDesc,      // description string
@@ -217,17 +222,26 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByID (
   LPARAM lParam      // user-defined value
   )
 {
-  //LOGWN( L"Power scheme index:" << uiPowerSchemeID << " name:" << strPowerSchemeName )
   PowerProfUntilWin6DynLinked * p_powerprofuntilwin6dynlinked = 
     (PowerProfUntilWin6DynLinked *) lParam ;
+  //DEBUGWN_WSPRINTF
+//  LOGWN_WSPRINTF( L"Power scheme index: %u name: %ls "
+//    "PowerProfUntilWin6DynLinked: %x",
+//    uiPowerSchemeID
+//    , lpwstrPowerSchemeName ,
+//    p_powerprofuntilwin6dynlinked
+//    )
   if( p_powerprofuntilwin6dynlinked )
   {
+    LOGN("current power scheme index:" << uiPowerSchemeID << " wanted ID: " <<
+      p_powerprofuntilwin6dynlinked->m_uiPowerSchemeIndexToSearch )
     if( uiPowerSchemeID == p_powerprofuntilwin6dynlinked->
       m_uiPowerSchemeIndexToSearch
       )
     {
+      LOGN("current power scheme index = wanted index " )
       p_powerprofuntilwin6dynlinked->m_stdwstrPowerSchemeNameOfIDtoSearch = 
-        std::wstring( strPowerSchemeName) ;
+        std::wstring( lpwstrPowerSchemeName) ;
       p_powerprofuntilwin6dynlinked->m_bPowerSchemeFound = true ;
       //ok, we found the scheme. Returning "FALSE" stops further enumeration.
       return FALSE ;
@@ -255,24 +269,57 @@ BOOLEAN CALLBACK PwrSchemesEnumProcLogOutput (
 {
   LOGWN( L"Power scheme index:" << uiPowerSchemeID << L" name:" << 
     strPowerSchemeName )
+  //http://msdn.microsoft.com/en-us/library/aa372687%28VS.85%29.aspx:
+  //"To continue until all power schemes have been enumerated, the callback
+  //function must return TRUE"
+  return TRUE ;
+}
+
+//To continue until all power schemes have been enumerated, the
+//callback function must return TRUE.
+//To stop the enumeration, the callback function must return FALSE.
+BOOLEAN CALLBACK PwrSchemesEnumProcGetAllNames (
+  UINT uiPowerSchemeID ,      // power scheme index
+  DWORD dwName,      // size of the sName string, in bytes
+  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
+  //LPTSTR strPowerSchemeName,      // name of the power scheme
+  LPWSTR lpwstrPowerSchemeName,      // name of the power scheme
+  DWORD dwDesc,      // size of the sDesc string, in bytes
+  //The sName and sDesc parameters are null-terminated strings; they are ANSI strings on Windows Me/98/95 and Unicode strings otherwise.
+  //LPTSTR sDesc,      // description string
+  LPWSTR sDesc,      // description string
+  PPOWER_POLICY pp,  // receives the power policy
+  LPARAM lParam      // user-defined value
+  )
+{
+  std::set<std::wstring> * p_stdset_stdwstr = (std::set<std::wstring> *)
+      lParam ;
+  if( p_stdset_stdwstr )
+  {
+    p_stdset_stdwstr->insert( std::wstring(lpwstrPowerSchemeName) ) ;
+  }
+  //http://msdn.microsoft.com/en-us/library/aa372687%28VS.85%29.aspx:
+  //"To continue until all power schemes have been enumerated, the callback
+  //function must return TRUE"
   return TRUE ;
 }
 
 PowerProfUntilWin6DynLinked::PowerProfUntilWin6DynLinked(
-  //std::wstring & stdwstrPowerSchemeName 
-  std::tstring & r_stdtstrPowerSchemeName 
+  std::wstring & r_stdwstrPowerSchemeName
+//  std::tstring & r_stdtstrPowerSchemeName
   )
   //: m_bGotPowerSchemeBeforeDisabling ( false)
 {
   //mp_stdwstrPowerSchemeName = & stdwstrPowerSchemeName ;
-#ifdef  UNICODE                     // r_winnt
-  m_stdwstrPowerSchemeName = r_stdtstrPowerSchemeName ;
-#else
-  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
-    //http://www.wer-weiss-was.de/theme158/article3047390.html:
-    std::wstring ( r_stdtstrPowerSchemeName.begin(), 
-      r_stdtstrPowerSchemeName.end() );
-#endif
+//#ifdef  UNICODE                     // r_winnt
+//  m_stdwstrPowerSchemeName = r_stdtstrPowerSchemeName ;
+//#else
+//  m_stdwstrPowerSchemeName = //r_stdwstrPowerSchemeName ;
+//    //http://www.wer-weiss-was.de/theme158/article3047390.html:
+//    std::wstring ( r_stdtstrPowerSchemeName.begin(),
+//      r_stdtstrPowerSchemeName.end() );
+//#endif
+  m_stdwstrPowerSchemeName = r_stdwstrPowerSchemeName ;
   Initialize() ;
 }
 
@@ -299,24 +346,22 @@ BYTE PowerProfUntilWin6DynLinked:: PowerSchemeToSetExists()
       m_bPowerSchemeFound 
       )
     {
-      //LOGN("Power scheme \"" << m_strWantedPowerScheme << "\" exists." )
-      //LOGN("Power scheme \"" << m_strWantedPowerScheme.c_str() << "\" exists." )
       //LOGWN(L"Power scheme \"" << m_stdwstrWantedPowerScheme << L"\" exists." )
       //wcstombs
-      std::string str( m_stdwstrPowerSchemeName.begin(), m_stdwstrPowerSchemeName.end() );
-      LOGN("Power scheme \"" << str.c_str() << "\" exists" )
-      LOGWN(L"Power scheme \"" << m_stdwstrPowerSchemeName.c_str() << L"\" exists" )
+//      std::string str( m_stdwstrPowerSchemeName.begin(), m_stdwstrPowerSchemeName.end() );
+//      LOGN("Power scheme \"" << str.c_str() << "\" exists" )
+      LOGWN_WSPRINTF(L"Power scheme \"%ls\" exists for the user this "
+        "process runs as" , m_stdwstrPowerSchemeName.c_str() )
       //uiPowerSchemeIndex = m_uiPowerSchemeIndex ;
       //bDesiredPowerSchemeExists = true ;
     }
     else
     {
-      //LOGN("Power scheme " << m_strWantedPowerScheme << " does not exist." )
-      //LOGN("Power scheme " << m_strWantedPowerScheme.c_str() << " does not exist." )
       //LOGWN(L"Power scheme " << m_stdwstrWantedPowerScheme << L" does not exist." )
-      std::string str( m_stdwstrPowerSchemeName.begin(), m_stdwstrPowerSchemeName.end() );
-      LOGWN(L"Power scheme \"" << m_stdwstrPowerSchemeName.c_str() << L"\" does NOT exist" )
-      LOGN("Power scheme \"" << str.c_str() << "\" does NOT exist" )
+//      std::string str( m_stdwstrPowerSchemeName.begin(), m_stdwstrPowerSchemeName.end() );
+      LOGWN_WSPRINTF( L"Power scheme \"%ls\" does NOT exist for the user this "
+          "process runs as" , m_stdwstrPowerSchemeName.c_str() )
+//      LOGN("Power scheme \"" << str.c_str() << "\" does NOT exist" )
 			//bCreatePowerScheme = true ;
     }
   }
@@ -372,7 +417,7 @@ BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
   BOOLEAN booleanRet ;
   BYTE byRet = 0 ;
   POWER_POLICY power_policy ;
-  LOGWN( L"trying to create power scheme \"" << lpszName << "\" " )
+  LOGWN_WSPRINTF( L"trying to create power scheme \"%ls\" " , lpszName )
   std::wstring stdwstrName(lpszName );
   std::wstring stdwstrDescription (lpszDescription) ;
   //UINT uiCurrentPowerSchemeID = 0 ;
@@ -386,7 +431,7 @@ BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
   //update the active power scheme.
   do
   {
-    LOGN( "power scheme " << uiCurrentPowerSchemeID )
+//    LOGN( "power scheme " << uiCurrentPowerSchemeID )
     booleanRet = ReadPwrScheme(
         uiCurrentPowerSchemeID ,
         & power_policy
@@ -437,17 +482,20 @@ BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
         )
       )
     {
-		  LOGWN( L"writing power scheme " << lpszName << L"succeeded" )
+		  LOGWN_WSPRINTF( L"writing power scheme \"%ls\" succeeded" , lpszName )
 		  //LOGN("writing power scheme " << stdwstrName.c_str()  << "succeeded")
       byRet = 1 ;
     }
     else
     {
+      //Wrong g++ compiler warning "unused variable" here:
       DWORD dwLastError = ::GetLastError() ;
-      LOGWN( L"writing power scheme " << stdwstrName.c_str()  << 
-        L"failed. Error code: " << dwLastError //)
-        << L" error message: " << 
-        ::GetStdWstring( ::LocalLanguageMessageFromErrorCode(dwLastError) )
+      LOGWN_WSPRINTF( L"writing power scheme \"%ls\" failed. Error code: %u"
+        L" error message: %ls"
+        , stdwstrName.c_str()
+        , dwLastError
+        , ::GetStdWstring( ::LocalLanguageMessageFromErrorCodeA(dwLastError) ).
+          c_str()
         )
     }
   }
@@ -456,7 +504,7 @@ BYTE PowerProfUntilWin6DynLinked::CreatePowerScheme(
     DWORD dwLastError = ::GetLastError() ;
     LOGN("getting current power policies failed. Error code: " 
       << dwLastError << " error message: " << 
-      LocalLanguageMessageFromErrorCode(dwLastError) 
+      LocalLanguageMessageFromErrorCodeA(dwLastError)
       )
   }
   return byRet ;
@@ -786,7 +834,7 @@ bool PowerProfUntilWin6DynLinked::EnablingIsPossible()
 //Returns the return value from the call to the pwrprof.DLL's "EnumPwrSchemes"
 //function.
 //"If the function fails, the return value is zero."
-//I experienced that it fails if either not power prfs for the user 
+//I experienced that it fails if either not power profiles for the user
 //the process runs for or that maybe the user has no rights to enumerate the schemes.
 BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
   //PWRSCHEMESENUMPROC 
@@ -807,7 +855,7 @@ BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
 		//the process runs for or that maybe the user has no rights to enumerate the schemes.
 		if( ! booleanRes )
     {
-      DWORD dw = ::GetLastError() ;
+      DWORD dwGetLastError = ::GetLastError() ;
 //#ifdef _DEBUG
 //      booleanRes = ::EnumPwrSchemes(PwrSchemesEnumProc, 0) ;
 //      dw = ::GetLastError() ;
@@ -826,8 +874,13 @@ BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
       //  pp,  // receives the power policy
       //  lParam      // user-defined value
       //  );
-      std::string str = LocalLanguageMessageFromErrorCode(dw) ;
-      LOGN( "enumerating power schemes failed: " << str ) ;
+      if( dwGetLastError )
+      {
+        std::string str = LocalLanguageMessageFromErrorCodeA(dwGetLastError) ;
+        LOGN( "enumerating power schemes failed: " << str ) ;
+      }
+      else //dwGetLastError == ERROR_SUCCESS
+        LOGN( "Enumerating power schemes failed." ) ;
     }
     //If the function succeeds, the return value is nonzero.
     return booleanRes ;
@@ -835,14 +888,39 @@ BOOLEAN PowerProfUntilWin6DynLinked::EnumPwrSchemes(
   return 0 ;
 }
 
-BOOLEAN WINAPI PowerProfUntilWin6DynLinked::GetActivePwrScheme(__out  PUINT puiID)
+BOOLEAN //WINAPI
+  PowerProfUntilWin6DynLinked::GetActivePwrScheme(
+  //__out
+    PUINT puiID )
 {
   if( m_pfngetactivepwrscheme )
   {
-    //If the function succeeds, the return value is nonzero.
+    //http://msdn.microsoft.com/en-us/library/aa372688%28v=VS.85%29.aspx:
+    //"If the function succeeds, the return value is nonzero."
     return (*m_pfngetactivepwrscheme) (puiID) ;
   }
   return FALSE ;
+}
+
+void PowerProfUntilWin6DynLinked::GetActivePowerSchemeName(
+  std::wstring & r_stdwstrActivePowerSchemeName )
+{
+  BOOL boolRet ;
+  UINT uiPowerSchemeID ;
+  boolRet = GetActivePwrScheme( & uiPowerSchemeID ) ;
+  if( boolRet )
+  {
+    LOGN( "Active Power scheme index: " << uiPowerSchemeID )
+    boolRet = GetPowerSchemeName( uiPowerSchemeID ,
+      r_stdwstrActivePowerSchemeName ) ;
+    if( ! boolRet )
+      r_stdwstrActivePowerSchemeName =
+        L"Getting power scheme name for active scheme's index failed" ;
+  }
+  else
+  {
+    r_stdwstrActivePowerSchemeName = L"Getting active power scheme's index failed" ;
+  }
 }
 
 BOOLEAN PowerProfUntilWin6DynLinked::GetCurrentPowerPolicies(
@@ -858,26 +936,34 @@ BOOLEAN PowerProfUntilWin6DynLinked::GetCurrentPowerPolicies(
   return FALSE ;
 }
 
-IDynFreqScalingAccess::string_type PowerProfUntilWin6DynLinked::GetEnableDescription()
+IDynFreqScalingAccess::string_type PowerProfUntilWin6DynLinked::
+  GetEnableDescription()
 {
-  std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  //std::tstring stdtstrReturn(_T("no other power scheme available") ) ;
+  std::wstring stdwstrReturn( L"no other power scheme available" ) ;
   if( mp_uiPowerSchemeIDBeforeDisabling )
   {
     std::wstring stdwstrPowerSchemeName ;
     if( GetPowerSchemeName( * mp_uiPowerSchemeIDBeforeDisabling 
       , stdwstrPowerSchemeName ) 
       )
-      stdtstrReturn = _T("set power scheme \"") 
-        + Getstdtstring( stdwstrPowerSchemeName )
-        + _T("\"") ;
+//      stdtstrReturn = _T("set power scheme \"")
+//        + Getstdtstring( stdwstrPowerSchemeName )
+//        + _T("\"") ;
+      stdwstrReturn = L"set power scheme \""
+            + stdwstrPowerSchemeName
+            + L"\"" ;
   }
-  return stdtstrReturn ;
+  return //stdtstrReturn ;
+    stdwstrReturn ;
 }
 
 bool PowerProfUntilWin6DynLinked::GetPowerSchemeName( 
   UINT ui , std::wstring & r_stdwstrPowerSchemeName )
 {
   m_bPowerSchemeFound = false ;
+  m_uiPowerSchemeIndexToSearch = ui ;
+  LOGN("trying to get power scheme name for scheme index " << ui )
   EnumPwrSchemes( 
     PwrSchemesEnumProcSearchPowerSchemeByID
     , (LPARAM) this ) ;
@@ -958,8 +1044,10 @@ void PowerProfUntilWin6DynLinked::InitializeFunctionPointers()
 
 //If the function succeeds, the return value is nonzero.
 BOOLEAN WINAPI PowerProfUntilWin6DynLinked::ReadProcessorPwrScheme(
-  __in   UINT uiPowerSchemeID,
-  __out  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
+  //__in
+    UINT uiPowerSchemeID,
+  //__out
+    PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
   )
 {
   BOOLEAN booleanRet ;
@@ -971,7 +1059,7 @@ BOOLEAN WINAPI PowerProfUntilWin6DynLinked::ReadProcessorPwrScheme(
     if( ! booleanRet )
     {
       DWORD dwErrorCode = ::GetLastError() ;
-      std::string str = LocalLanguageMessageFromErrorCode(dwErrorCode) ;
+      std::string str = LocalLanguageMessageFromErrorCodeA(dwErrorCode) ;
       LOGN("error getting CPU power info: error code: " << dwErrorCode << str )
     }
     //If the function succeeds, the return value is nonzero.
@@ -981,13 +1069,15 @@ BOOLEAN WINAPI PowerProfUntilWin6DynLinked::ReadProcessorPwrScheme(
 }
 
 BOOLEAN WINAPI PowerProfUntilWin6DynLinked::ReadPwrScheme (
-  __in   UINT uiID,
-  __out  PPOWER_POLICY pPowerPolicy
+  //__in
+    UINT uiID,
+  //__out
+    PPOWER_POLICY pPowerPolicy
   )
 {
   if( m_pfnreadpwrscheme )
   {
-    LOGN( "power scheme " << uiID )
+//    LOGN( "power scheme " << uiID )
     return (* m_pfnreadpwrscheme) (
       uiID,
       pPowerPolicy
@@ -1005,6 +1095,8 @@ BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
   if( m_pfnsetactivepwrscheme )
   {
     //Call function in "powrprof.dll" .
+    //http://msdn.microsoft.com/en-us/library/aa373200%28VS.85%29.aspx:
+    //"If the function succeeds, the return value is nonzero."
     return (*m_pfnsetactivepwrscheme) (  
       uiID,
       lpGlobalPowerPolicy,
@@ -1042,11 +1134,13 @@ BYTE PowerProfUntilWin6DynLinked::GetPowerSchemeIndex(
   return byRet ;
 }
 
-BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
+//BOOLEAN
+DWORD PowerProfUntilWin6DynLinked::SetActivePowerScheme(
   //LPTSTR strPowerSchemeName     // name of the power scheme
-  std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
+  const std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
   )
 {
+  DWORD dwRet = 65535 ;
   if( m_pfnsetactivepwrscheme )
   {
     //UINT uiPowerSchemeIndex ;
@@ -1063,7 +1157,13 @@ BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
     {
       //if( m_bPowerSchemeWithP0ThrottleNoneFound )
       if( m_bPowerSchemeFound )
-        return SetActivePwrScheme( //m_uiPowerSchemeIndexWithP0ThrottleNone 
+      {
+        BOOLEAN boolean =
+        //return
+          //http://msdn.microsoft.com/en-us/library/aa373200%28VS.85%29.aspx:
+          //"If the function fails, the return value is zero. To get extended
+          //error information, call GetLastError."
+          SetActivePwrScheme( //m_uiPowerSchemeIndexWithP0ThrottleNone
           //m_uiPowerSchemeIndexOfFoundName
           m_uiPowerSchemeIndexOfWantedName
         //http://msdn.microsoft.com/en-us/library/aa373200(VS.85).aspx:
@@ -1073,8 +1173,10 @@ BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
         //current global power policy settings.
         , NULL 
         , NULL ) ;
+        if( !boolean )
+          dwRet = ::GetLastError() ;
       //else
-
+      }
     }
     //return (*m_pfnsetactivepwrscheme) (  
     //  uiID,
@@ -1082,7 +1184,8 @@ BOOLEAN PowerProfUntilWin6DynLinked::SetActivePwrScheme(
     //  lpPowerPolicy
     //  ) ;
   }
-  return FALSE ;
+  return //FALSE ;
+    dwRet ;
 }
 
 void PowerProfUntilWin6DynLinked::SetFunctionPointersToNULL()
@@ -1099,8 +1202,10 @@ void PowerProfUntilWin6DynLinked::SetFunctionPointersToNULL()
 }
 
 BOOLEAN WINAPI PowerProfUntilWin6DynLinked::WriteProcessorPwrScheme(
-  __in   UINT uiPowerSchemeID,
-  __in  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
+  //__in
+  UINT uiPowerSchemeID,
+  //__in
+  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
   )
 {
   if( m_pfnwriteprocessorpwrscheme )
@@ -1173,9 +1278,17 @@ bool PowerProfUntilWin6DynLinked::OtherDVFSisEnabled()
   return bReturn ;
 }
 
+void PowerProfUntilWin6DynLinked::GetAllPowerSchemeNames(
+  std::set<std::wstring> & r_stdset_stdwstrPowerSchemeName )
+{
+  EnumPwrSchemes(PwrSchemesEnumProcGetAllNames,
+    (LPARAM) & r_stdset_stdwstrPowerSchemeName ) ;
+}
+
 void PowerProfUntilWin6DynLinked::OutputAllPowerSchemes()
 {
-  EnumPwrSchemes(PwrSchemesEnumProcLogOutput,NULL) ;
+  EnumPwrSchemes(PwrSchemesEnumProcLogOutput, //NULL
+    0 ) ;
 }
 
 BOOLEAN PowerProfUntilWin6DynLinked::WritePwrScheme(

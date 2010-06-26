@@ -3,22 +3,27 @@
 #include <Controller/MSVC_adaption/tchar.h>
 
 #define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
+//#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
 Model::Model( //GriffinController * p_griffincontroller 
              )
     //C++ style inits:
-    : m_bSkipCPUtypeCheck(false) 
-    , m_bUsePstate0AsMaxFreq (false)
+    :
+    //Initialize in the same order as textual in the declaration?
+    //(to avoid g++ warnings)
+    m_bSyncGUIshowDataWithService ( false ) ,
+    m_bCollectPstatesAsDefault(false)
     , m_bEnableOvervoltageProtection(true)
-    , m_bUseDefaultFormularForOvervoltageProtection(false)
+    , m_bSkipCPUtypeCheck(false)
     , m_bTruncateLogFileForEveryStartup(true)
+    , m_bUseDefaultFormularForOvervoltageProtection(false)
+    , m_bUsePstate0AsMaxFreq (false)
     , mp_cpucontroller (NULL)
     , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
-    , m_bCollectPstatesAsDefault(false)
   {
     //m_cpucoredata
 #ifdef _DEBUG
-      const Model * pmodel = this ;
+//      const Model * pmodel = this ;
 #endif
     m_dPreviousPERF_CTRvalue = 0.0 ;
     //m_cpucoredata.SetGriffinController( p_griffincontroller ) ;

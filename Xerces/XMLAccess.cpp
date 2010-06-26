@@ -43,45 +43,6 @@ extern Logger g_logger ;
 	XERCES_CPP_NAMESPACE_USE
 	
 	using namespace std;
-	
-  // ---------------------------------------------------------------------------
-  //  This is a simple class that lets us do easy (though not terribly efficient)
-  //  trancoding of char* data to XMLCh data.
-  // ---------------------------------------------------------------------------
-  class XStr
-  {
-  public :
-      // -----------------------------------------------------------------------
-      //  Constructors and Destructor
-      // -----------------------------------------------------------------------
-      XStr(const char* const toTranscode)
-      {
-          // Call the private transcoding method
-          fUnicodeForm = XMLString::transcode(toTranscode);
-      }
-
-      ~XStr()
-      {
-          XMLString::release(&fUnicodeForm);
-      }
-      // -----------------------------------------------------------------------
-      //  Getter methods
-      // -----------------------------------------------------------------------
-      const XMLCh* unicodeForm() const
-      {
-          return fUnicodeForm;
-      }
-  private :
-      // -----------------------------------------------------------------------
-      //  Private data members
-      //
-      //  fUnicodeForm
-      //      This is the Unicode XMLCh format of the string.
-      // -----------------------------------------------------------------------
-      XMLCh*   fUnicodeForm;
-  };
-
-  #define X(str) XStr(str).unicodeForm()
 
   //void 
   //std::map<WORD,WORD>::const_iterator
@@ -127,8 +88,8 @@ extern Logger g_logger ;
     //DOMElement * p_dom_elementRoot = p_dom_document->getDocumentElement();
     mp_dom_elementRoot = mp_dom_document->getDocumentElement();
 
-    DOMXPathNSResolver * p_dom_xpath_ns_resolver = mp_dom_document->createNSResolver(
-      mp_dom_elementRoot);
+    DOMXPathNSResolver * p_dom_xpath_ns_resolver = mp_dom_document->
+      createNSResolver( mp_dom_elementRoot);
     //DOMXPathResult * p_domxpathresult = p_dom_document->evaluate(
     mp_domxpathresult = mp_dom_document->evaluate(
       p_xmlchXpath,
@@ -138,7 +99,7 @@ extern Logger g_logger ;
       NULL 
       );
 
-    XMLSize_t nLength = mp_domxpathresult->getSnapshotLength();
+    XMLSize_t nDOMqueryResultsetLength = mp_domxpathresult->getSnapshotLength();
     DOMNamedNodeMap * p_dom_namednodemap ;
     DOMNode * p_domnodeAttribute ;
     XMLCh * xmlchAttributeName = XMLString::transcode("frequency_in_MHz");
@@ -147,9 +108,11 @@ extern Logger g_logger ;
     XercesHelper xerceshelper ;
 
     //Iterate over all "freq_and_voltage" XML elements.
-    for(XMLSize_t i = 0; i < nLength; i++)
+    for( //XMLSize_t 
+      WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength; 
+      wResultSetIndex ++ )
     {
-      mp_domxpathresult->snapshotItem(i);
+      mp_domxpathresult->snapshotItem(wResultSetIndex);
       //theSerializer->write(p_domxpathresult->getNodeValue(), 
       //  theOutputDesc);
       //Get all attributes for the current XML element.
@@ -169,7 +132,7 @@ extern Logger g_logger ;
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
           xerceshelper.ToDWORD( stdstr , & dwValue ) ;
           m_stdmapFreqInMHzInDOMtree2DOMindex.insert( 
-            std::pair<WORD,WORD> ( dwValue, i ) ) ;
+            std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
         }
       //}
     }
@@ -178,143 +141,43 @@ extern Logger g_logger ;
     return p_dom_xpath_ns_resolver ;
   }
 
-  bool XercesConfigurationHandler::ConfigurationChanged(
+  bool XercesConfigurationHandler::IsConfigurationChanged(
     std::string & r_strPstateSettingsFileName )
   {
-    bool bConfigurationChanged = false ;
-    BYTE retval ;
+    bool bIsConfigurationChanged = false ;
+    //setting/ assigning the value is Important: for readXMLfileDOM() and
+    //writeXML(...)
+    mpc_chFullXMLFilePath = r_strPstateSettingsFileName.c_str() ;
+
+//    BYTE retval ;
     //// "/*": das Wurzel-Element unabh�ngig vom Namen 
     ////  (jedes wohlgeformte XML-Dokument hat genau ein Wurzel-Element)
     //char * archXPath = "/*/freq_and_voltage" ; 
-    DOMDocument * p_dom_document ;
-    DOMLSParser * p_dom_ls_parser ;
-    DOMImplementation * p_dom_implementation ;
+//    DOMDocument * p_dom_document ;
+//    DOMLSParser * p_dom_ls_parser ;
+//    DOMImplementation * p_dom_implementation ;
 
     readXMLfileDOM( 
       //p_chFullXMLFilePath 
-      r_strPstateSettingsFileName.c_str()
-      , p_dom_document 
-      , p_dom_ls_parser 
-      , p_dom_implementation ) ;
+//      r_strPstateSettingsFileName.c_str()
+//      , p_dom_document
+//      , p_dom_ls_parser
+//      , p_dom_implementation
+      ) ;
 
     //Is NULL if the XML file could not be read.
-    if( p_dom_document )
+    if( mp_dom_document )
     {
-      mp_dom_document = p_dom_document ;
+//      mp_dom_document = p_dom_document ;
       //XMLCh * p_xmlchXpath = XMLString::transcode(archXPath);
       //DOMElement * p_dom_elementRoot = p_dom_document->getDocumentElement();
       //mp_dom_elementRoot = p_dom_document->getDocumentElement();
-      try
-      {
-        //DOMXPathNSResolver * p_dom_xpath_ns_resolver = p_dom_document->createNSResolver(
-        //  mp_dom_elementRoot);
-        ////DOMXPathResult * p_domxpathresult = p_dom_document->evaluate(
-        //mp_domxpathresult = p_dom_document->evaluate(
-        //  p_xmlchXpath,
-        //  mp_dom_elementRoot,
-        //  p_dom_xpath_ns_resolver,
-        //  DOMXPathResult::ORDERED_NODE_SNAPSHOT_TYPE,
-        //  NULL 
-        //  );
 
-        //XMLSize_t nLength = mp_domxpathresult->getSnapshotLength();
-        //DOMNamedNodeMap * p_dom_namednodemap ;
-        //DOMNode * p_domnodeAttribute ;
-        //XMLCh * xmlchElementName = XMLString::transcode("frequency_in_MHz");
-        //const XMLCh * cp_xmlchAttrValue ;
-        //DWORD dwValue ;
-        //XercesHelper xerceshelper ;
+      bIsConfigurationChanged = TestIfCfgIsChangedOrChangeCfg(
+        //true: do not change, only test if it would be changed.
+        true
+        ) ;
 
-        ////Iterate over all "freq_and_voltage" XML elements.
-        //for(XMLSize_t i = 0; i < nLength; i++)
-        //{
-        //  mp_domxpathresult->snapshotItem(i);
-        //  //theSerializer->write(p_domxpathresult->getNodeValue(), 
-        //  //  theOutputDesc);
-        //  //Get all attributes for the current XML element.
-        //  p_dom_namednodemap = mp_domxpathresult->getNodeValue()->getAttributes() ;
-        //  //for( XMLSize_t xmlsize_tAttIdx = 0 ; p_dom_namednodemap->getLength() ;
-        //  //    ++ xmlsize_tAttIdx )
-        //  //{
-        //    p_domnodeAttribute = p_dom_namednodemap->getNamedItem( 
-        //      //"frequency_in_MHz" 
-        //      xmlchElementName ) ;
-        //    //Attribute exists.
-        //    if ( p_domnodeAttribute )
-        //    {
-        //      std::string stdstr = xerceshelper.ToStdString(
-        //        cp_xmlchAttrValue) ;
-        //      cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
-        //      //cp_xmlchAttrValue = cp_xmlchAttrValue ;
-        //      xerceshelper.ToDWORD( stdstr , & dwValue ) ;
-        //      m_stdmapFreqInMHzInDOMtree2DOMindex.insert( 
-        //        std::pair<WORD,WORD> ( dwValue, i ) ) ;
-        //    }
-        //  //}
-        //}
-        //XMLString::release( & xmlchElementName );
-        DOMXPathNSResolver * p_dom_xpath_ns_resolver =
-          BuildStdmapFreqInMHzInDOMtree2DOMindex(
-            m_stdmapFreqInMHzInDOMtree2DOMindex ) ;
-
-        bool bDOMtreeModified = false ;
-        bool bCreateMaxVoltageAttribute ;
-        //Prevent insertions or deletions while accessing the STL container.
-        mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
-
-      //  //WORD wSize = model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
-      //  WORD wFreq ;
-      //  //for( WORD wIndex = 0 ; wIndex < wSize ; ++ wIndex )
-
-      //  if( PossiblyAddDefaultVoltages() )
-      //    bDOMtreeModified = true ;
-      //  if( PossiblyAddLowestStableVoltages() )
-      //    bDOMtreeModified = true ;
-      //  if( PossiblyAddWantedVoltages() )
-      //    bDOMtreeModified = true ;
-        if( PossiblyAddVoltages(
-          mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
-          , "max_voltage_in_Volt" 
-          , true ) 
-          )
-          bDOMtreeModified = true ;
-        if( PossiblyAddVoltages(
-          mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable
-          , "min_voltage_in_Volt"
-          , true )
-          )
-          bDOMtreeModified = true ;
-        if( PossiblyAddVoltages(
-          mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-          , "voltage_in_Volt" 
-          , true )
-          )
-          bDOMtreeModified = true ;
-
-        mp_model->m_cpucoredata.m_wxcriticalsection.Leave() ;
-        if( bDOMtreeModified )
-        {
-          bConfigurationChanged = true ;
-        }
-        mp_dom_document->release();
-        mp_domxpathresult->release();
-        //This finally writes to the file.
-        p_dom_xpath_ns_resolver->release ();
-      }
-      catch(const DOMXPathException& e)
-      {
-          //XERCES_STD_QUALIFIER cerr << "An error occurred during processing of the XPath expression. Msg is:"
-          //    << XERCES_STD_QUALIFIER endl
-          //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
-          retval = 4;
-      }
-      catch(const DOMException& e)
-      {
-          //XERCES_STD_QUALIFIER cerr << "An error occurred during processing of the XPath expression. Msg is:"
-          //    << XERCES_STD_QUALIFIER endl
-          //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
-          retval = 4;
-      }
       //XMLString::release(&p_xmlchXpath);
     }// if( p_dom_document )
     //Is NULL if the XML file could not be read (=may not exist).
@@ -322,13 +185,13 @@ extern Logger g_logger ;
     {
       CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
       if( r_cpucoredata.m_stdsetvoltageandfreqDefault.size() > 0 )
-        bConfigurationChanged = true ;
+        bIsConfigurationChanged = true ;
       if( r_cpucoredata.m_stdsetvoltageandfreqLowestStable.size() > 0 )
-        bConfigurationChanged = true ;
+        bIsConfigurationChanged = true ;
       if( r_cpucoredata.m_stdsetvoltageandfreqWanted.size() > 0 )
-        bConfigurationChanged = true ;
+        bIsConfigurationChanged = true ;
     }
-    return bConfigurationChanged ;
+    return bIsConfigurationChanged ;
   }
   //XercesConfigurationHandler::AppendDefaultVoltages( //Model & r_model 
   //  )
@@ -514,12 +377,18 @@ extern Logger g_logger ;
     )
   {
     bool bDOMtreeModified = false ;
+
     bool bCreateVoltageAttribute = false ;
     DOMElement * p_dom_elementFreqnVolt = NULL ;
+    DOMNamedNodeMap * p_dom_namednodemap ;
+    DOMNode * p_domnodeAttribute ;
+    float fVoltageFromFile ;
     std::map<WORD,WORD>::const_iterator c_iterFrequenciesStoredInDOMtree ;
     std::set<VoltageAndFreq>::const_iterator citer_stdset_voltageandfreq = 
       r_stdsetvoltageandfreq.begin() ;
+    std::string stdstr ;
     WORD wFreq ;
+    const XMLCh * cp_xmlchAttrName ;
     //While the iterator is valid.
     while( citer_stdset_voltageandfreq != 
       r_stdsetvoltageandfreq.end() 
@@ -550,13 +419,13 @@ extern Logger g_logger ;
       }
       else //XML element with "freq_and_voltage" exists.
       {
-        const XMLCh * cp_xmlchAttrName ;
+//        const XMLCh * cp_xmlchAttrName ;
         if( citer_stdset_voltageandfreq->m_fVoltageInVolt != 0.0 )
         {
           //If config. file already exists.
           if( mp_domxpathresult )
           {
-            DOMNamedNodeMap * p_dom_namednodemap ;
+//            DOMNamedNodeMap * p_dom_namednodemap ;
             mp_domxpathresult->snapshotItem( 
               c_iterFrequenciesStoredInDOMtree->second);
             p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
@@ -565,7 +434,7 @@ extern Logger g_logger ;
               mp_domxpathresult->getNodeValue() ;
             if( p_dom_namednodemap )
             {
-              DOMNode * p_domnodeAttribute ;
+//              DOMNode * p_domnodeAttribute ;
               cp_xmlchAttrName = X(cpc_XMLAttrName) ;
               p_domnodeAttribute = p_dom_namednodemap->getNamedItem( 
                 //cp_xmlchAttrName 
@@ -574,8 +443,8 @@ extern Logger g_logger ;
               if ( p_domnodeAttribute //&& c_iterator->m_fVoltageInVolt != 
                 )
               {
-                float fVoltageFromFile ;
-                std::string stdstr = XercesHelper::ToStdString(
+//                float fVoltageFromFile ;
+                stdstr = XercesHelper::ToStdString(
                   p_domnodeAttribute->getNodeValue() ) ;
                 from_stdstring<float>( fVoltageFromFile ,
                   stdstr
@@ -636,339 +505,6 @@ extern Logger g_logger ;
     return bDOMtreeModified ;
   }
 
-  bool XercesConfigurationHandler::PossiblyAddDefaultVoltages()
-  {
-    bool bDOMtreeModified = false ;
-    bool bCreateMaxVoltageAttribute = false ;
-    DOMElement * p_dom_elementFreqnVolt = NULL ;
-    std::map<WORD,WORD>::const_iterator c_iterFrequenciesStoredInFile ;
-    std::set<VoltageAndFreq>::const_iterator citer_stdset_voltageandfreq = 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.begin() ;
-    WORD wFreq ;
-    //While the iterator is valid.
-    while( citer_stdset_voltageandfreq != 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.end() 
-      )
-    {
-      bCreateMaxVoltageAttribute = false ;
-      //DOMElement * p_dom_elementFreqnVolt ;
-      //if( model.m_cpucoredata.m_stdsetvoltageandfreqDefault..find() 
-      wFreq = citer_stdset_voltageandfreq->m_wFreqInMHz ;
-      c_iterFrequenciesStoredInFile = 
-        m_stdmapFreqInMHzInDOMtree2DOMindex.find(wFreq ) ;
-      //The frequency does not exist in the file.
-      if( c_iterFrequenciesStoredInFile == 
-          m_stdmapFreqInMHzInDOMtree2DOMindex.end()
-        )
-      {
-        //AddToDOM(
-        //p_dom_document->
-        //wFreq = c_iterator->m_wFreqInMHz ;
-        //DOMElement * p_dom_elementFreqnVolt = p_dom_document->
-        p_dom_elementFreqnVolt = AddFrequencyToDOMtree(wFreq) ;
-        bDOMtreeModified = true ;
-        bCreateMaxVoltageAttribute = true ;
-        //p_dom_namednodemap = NULL ;
-      }
-      else //XML element with "freq_and_voltage" exists.
-      {
-        const XMLCh * cp_xmlchAttrName ;
-        if( citer_stdset_voltageandfreq->m_fVoltageInVolt != 0.0 )
-        {
-          //If config. file already exists.
-          if( mp_domxpathresult )
-          {
-            DOMNamedNodeMap * p_dom_namednodemap ;
-            mp_domxpathresult->snapshotItem(c_iterFrequenciesStoredInFile->
-              second);
-            p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
-              getAttributes() ;
-            p_dom_elementFreqnVolt = (DOMElement * ) 
-              mp_domxpathresult->getNodeValue() ;
-            if( p_dom_namednodemap )
-            {
-              DOMNode * p_domnodeAttribute ;
-              cp_xmlchAttrName = X("max_voltage_in_Volt") ;
-              p_domnodeAttribute = p_dom_namednodemap->getNamedItem( 
-                //cp_xmlchAttrName 
-                X("max_voltage_in_Volt") ) ;
-              ////Attribute exists.
-              if ( p_domnodeAttribute //&& c_iterator->m_fVoltageInVolt != 
-                )
-              {
-                float fVoltageFromFile ;
-                std::string stdstr = XercesHelper::ToStdString(
-                  p_domnodeAttribute->getNodeValue() ) ;
-                from_stdstring<float>( fVoltageFromFile ,
-                  stdstr
-                  //, & fVoltage
-                  ) ;
-                //DOMElement * p_dom_elementFreqnVolt = 
-                mp_dom_elementFreqnVolt =
-                  (DOMElement *) mp_domxpathresult->getNodeValue() ;
-                if( fVoltageFromFile != citer_stdset_voltageandfreq->m_fVoltageInVolt )
-                {
-                  mp_dom_elementFreqnVolt->setAttribute( 
-                    //cp_xmlchAttrName , //attribute name
-                    X("max_voltage_in_Volt") ,
-                    X( to_stdstring<float>( 
-                      citer_stdset_voltageandfreq->m_fVoltageInVolt ).c_str() ) //attribute value
-                    );
-                  bDOMtreeModified = true ;
-                }
-              }
-              else //Attribute does not exist in file.
-              {
-                mp_dom_elementFreqnVolt =
-                  (DOMElement *) mp_domxpathresult->getNodeValue() ;
-                bCreateMaxVoltageAttribute = true ;
-              }
-            }
-          }
-          else
-            bCreateMaxVoltageAttribute = true ;
-        }
-      }
-      if( bCreateMaxVoltageAttribute )
-      {
-        if( p_dom_elementFreqnVolt )
-        {
-          //DOMElement * p_dom_elementFreqnVolt = 
-          //  (DOMElement *) p_domxpathresult->getNodeValue() ;
-          p_dom_elementFreqnVolt->setAttribute( 
-            //cp_xmlchAttrName , //attribute name
-            X("max_voltage_in_Volt") ,
-            //attribute value
-            X( to_stdstring<float>( 
-              citer_stdset_voltageandfreq->m_fVoltageInVolt ).c_str() ) 
-            );
-          bDOMtreeModified = true ;
-        }
-      }
-      ++ citer_stdset_voltageandfreq ;
-    }//while
-    return bDOMtreeModified ;
-  }
-
-  bool XercesConfigurationHandler::PossiblyAddLowestStableVoltages()
-  {
-    bool bDOMtreeModified = false ;
-    DOMElement * p_dom_elementFreqnVolt = NULL ;
-    //bool bCreateMinVoltageAttribute = false ;
-    WORD wFreq ;
-    std::map<WORD,WORD>::const_iterator c_iterFrequenciesStoredInFile ;
-    std::set<VoltageAndFreq>::const_iterator citer_stdset_voltageandfreq = 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.begin() ;
-    //While the iterator is valid.
-    while( citer_stdset_voltageandfreq != 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.end() 
-      )
-    {
-      bool bCreateMinVoltageAttribute = false ;
-      //std::set<VoltageAndFreq>::const_iterator 
-      //  citerstdsetvoltageandfreq =
-      //  mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.find( 
-      //  VoltageAndFreq( 0.0 , wFreq ) ) ;
-      wFreq = citer_stdset_voltageandfreq->m_wFreqInMHz ;
-      c_iterFrequenciesStoredInFile = 
-        m_stdmapFreqInMHzInDOMtree2DOMindex.find(wFreq ) ;
-      //The frequency does not exist in the file.
-      if( c_iterFrequenciesStoredInFile == 
-          m_stdmapFreqInMHzInDOMtree2DOMindex.end()
-        )
-      {
-        //AddToDOM(
-        //p_dom_document->
-        //wFreq = c_iterator->m_wFreqInMHz ;
-        //DOMElement * p_dom_elementFreqnVolt = p_dom_document->
-        p_dom_elementFreqnVolt = AddFrequencyToDOMtree(wFreq) ;
-        bDOMtreeModified = true ;
-        bCreateMinVoltageAttribute = true ;
-        //p_dom_namednodemap = NULL ;
-      }
-      else //XML element with "freq_and_voltage" exists.
-      ////exists
-      //if( citerstdsetvoltageandfreq != 
-      //  mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.end() )
-      {
-        XStr xstr("min_voltage_in_Volt" ) ;
-        const XMLCh * cp_xmlchAttrName = //X("min_voltage_in_Volt" ) ;
-          xstr.unicodeForm() ;
-        //const XMLCh * cp_xmlchAttrName ;
-        if( citer_stdset_voltageandfreq->m_fVoltageInVolt != 0.0 )
-        {
-          //If config. file already exists.
-          if( mp_domxpathresult )
-          {
-            DOMNamedNodeMap * p_dom_namednodemap ;
-            mp_domxpathresult->snapshotItem( c_iterFrequenciesStoredInFile->
-              second);
-            p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
-              getAttributes() ;
-            //cp_xmlchAttrName = X("max_voltage_in_Volt") ;
-            //p_domnodeAttribute = p_dom_namednodemap->getNamedItem( 
-            //  //cp_xmlchAttrName 
-            //  X("min_voltage_in_Volt") ) ;
-            p_dom_elementFreqnVolt = (DOMElement * ) 
-              mp_domxpathresult->getNodeValue() ;
-            if( p_dom_namednodemap )
-            {
-              DOMNode * p_domnodeAttribute ;
-              p_domnodeAttribute = p_dom_namednodemap->getNamedItem( 
-                 cp_xmlchAttrName ) ;
-              //XML attribute exists.
-              if ( p_domnodeAttribute )
-              {
-                float fVoltageFromFile ;
-                std::string stdstr = XercesHelper::ToStdString(
-                  p_domnodeAttribute->getNodeValue() ) ;
-                from_stdstring<float>( fVoltageFromFile , stdstr ) ;
-                if( fVoltageFromFile != 
-                  citer_stdset_voltageandfreq->m_fVoltageInVolt )
-                {
-                  //DOMElement * p_dom_elementFreqnVolt = 
-                  //  (DOMElement *) p_domxpathresult->getNodeValue() ;
-                  bCreateMinVoltageAttribute = true ;
-                }
-              }
-              else
-                bCreateMinVoltageAttribute = true ;
-            }
-          }
-          else
-            bCreateMinVoltageAttribute = true ;
-        }
-        if( bCreateMinVoltageAttribute )
-        {
-          if( p_dom_elementFreqnVolt )
-          {
-            p_dom_elementFreqnVolt->setAttribute( 
-              cp_xmlchAttrName , //attribute name
-              //attribute value
-              X( to_stdstring<float>(
-              citer_stdset_voltageandfreq->m_fVoltageInVolt).c_str() ) 
-              );
-            bDOMtreeModified = true ;
-          }
-        }
-      }
-      ++ citer_stdset_voltageandfreq ;
-    }//while
-    return bDOMtreeModified ;
-  }
-
-  bool XercesConfigurationHandler::PossiblyAddWantedVoltages()
-  {
-    bool bDOMtreeModified = false ;
-    DOMElement * p_dom_elementFreqnVolt = NULL ;
-    std::map<WORD,WORD>::const_iterator c_iterFrequenciesStoredInFile ;
-    std::set<VoltageAndFreq>::const_iterator citer_stdset_voltageandfreq = 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.begin() ;
-    WORD wFreq ;
-    //While the iterator is valid.
-    while( citer_stdset_voltageandfreq != 
-      mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.end() 
-      )
-    {
-      bool bCreateVoltageAttribute = false ;
-      //std::set<VoltageAndFreq>::const_iterator 
-      //citer_stdset_voltageandfreq =
-      //  mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.find( 
-      //  VoltageAndFreq( 0.0 , wFreq ) ) ;
-      wFreq = citer_stdset_voltageandfreq->m_wFreqInMHz ;
-      c_iterFrequenciesStoredInFile = 
-        m_stdmapFreqInMHzInDOMtree2DOMindex.find(wFreq ) ;
-      //The frequency does not exist in the file.
-      if( c_iterFrequenciesStoredInFile == 
-          m_stdmapFreqInMHzInDOMtree2DOMindex.end()
-        )
-      {
-        //AddToDOM(
-        //p_dom_document->
-        //wFreq = c_iterator->m_wFreqInMHz ;
-        //DOMElement * p_dom_elementFreqnVolt = p_dom_document->
-        //c_iterFrequenciesStoredInFile = AddFrequencyToDOMtree(wFreq) ;
-        p_dom_elementFreqnVolt = AddFrequencyToDOMtree(wFreq) ;
-        bDOMtreeModified = true ;
-        bCreateVoltageAttribute = true ;
-        //p_dom_namednodemap = NULL ;
-      }
-      else //XML element with "freq_and_voltage" exists.
-      ////exists
-      //if( citerstdsetvoltageandfreq != 
-      //  mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.end() )
-      {
-        XStr xstr("voltage_in_Volt" ) ;
-        const XMLCh * cp_xmlchAttrName = xstr.unicodeForm() ;
-        //XStr xstr("min_voltage_in_Volt" ) ;
-        //const XMLCh * cp_xmlchAttrName = //X("min_voltage_in_Volt" ) ;
-        //  xstr.unicodeForm() ;
-        //const XMLCh * cp_xmlchAttrName ;
-        if( citer_stdset_voltageandfreq->m_fVoltageInVolt != 0.0 )
-        {
-          //If config. file already exists.
-          if( mp_domxpathresult 
-            //EnsureDOM_XPathResult() 
-            )
-          {
-            DOMNamedNodeMap * p_dom_namednodemap = NULL ;
-            mp_domxpathresult->snapshotItem( 
-              c_iterFrequenciesStoredInFile->second);
-            p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
-              getAttributes() ;
-            p_dom_elementFreqnVolt = (DOMElement * ) 
-              mp_domxpathresult->getNodeValue() ;
-            if( p_dom_namednodemap )
-            {
-              DOMNode * p_domnodeAttribute ;
-              p_domnodeAttribute = p_dom_namednodemap->getNamedItem( 
-                 cp_xmlchAttrName ) ;
-              //Attribute exists.
-              if ( p_domnodeAttribute )
-              {
-                float fVoltageFromFile ;
-                std::string stdstr = XercesHelper::ToStdString(
-                  p_domnodeAttribute->getNodeValue() ) ;
-                from_stdstring<float>( fVoltageFromFile , stdstr ) ;
-                if( fVoltageFromFile != citer_stdset_voltageandfreq->
-                  m_fVoltageInVolt )
-                {
-                  //DOMElement * p_dom_elementFreqnVolt = 
-                  //  (DOMElement *) p_domxpathresult->getNodeValue() ;
-                  bCreateVoltageAttribute = true ;
-                }
-              }
-              else
-                bCreateVoltageAttribute = true ;
-            }
-          }
-          else
-            bCreateVoltageAttribute = true ;
-        }
-        if( bCreateVoltageAttribute )
-        {
-          //GetFreqnVoltDOMelement( 
-          //  citer_stdset_voltageandfreq->m_wFreqInMHz
-          //  , mp_dom_elementFreqnVolt ) ;
-          if( //mp_dom_elementFreqnVolt
-            p_dom_elementFreqnVolt
-            )
-          {
-            p_dom_elementFreqnVolt->setAttribute( 
-              cp_xmlchAttrName , //attribute name
-              //attribute value
-              X( to_stdstring<float>(
-                citer_stdset_voltageandfreq->m_fVoltageInVolt).c_str() ) 
-              );
-            bDOMtreeModified = true ;
-          }
-        }
-      }
-      ++ citer_stdset_voltageandfreq ;
-    } //while
-    return bDOMtreeModified ;
-  }
-
   char readXMLConfig(
     const char * xmlFile, //PStates & pstates
 	  Model & model, 
@@ -979,7 +515,7 @@ extern Logger g_logger ;
    //This is useful because there may be more than one XML file to read.
    //So one calls this functions with different handlers passed.
     DefaultHandler & r_defaulthandler
-      )
+    )
 	{
     BYTE byReturn = FAILURE ;
       //DEBUG("readXMLConfig begin--filename:%s\n",xmlFile);
@@ -990,6 +526,7 @@ extern Logger g_logger ;
       //"Independent of the API you want to use, DOM, SAX, or SAX2, your
       //application must initialize the Xerces system before using the API[...]"
 	    XMLPlatformUtils::Initialize();
+      LOG( "XML successfully initialized\n" );
 	  }
 	  catch (const XMLException & toCatch )
 	  {
@@ -1002,98 +539,111 @@ extern Logger g_logger ;
 	    XMLString::release(&message);
 //	    return FAILURE;
 	  }
-	
-	  SAX2XMLReader * p_sax2xmlreader = XMLReaderFactory::createXMLReader();
-      if( p_sax2xmlreader )
-      {
-	      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreValidation, true);   
-	      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreNameSpaces, true);   // optional
-    	
-	      //DefaultHandler * p_defaultHandler = new DefaultHandler();
-	      DefaultHandler defaultHandler;
-	      //p_sax2xmlreader->setContentHandler(defaultHandler);
+    //Initialize to NULL just to avoid (g++) compiler warning.
+	  SAX2XMLReader * p_sax2xmlreader = NULL ;
+	  p_sax2xmlreader = XMLReaderFactory::createXMLReader();
+    if( p_sax2xmlreader )
+    {
+      LOGN( "XML reader successfully created" );
+      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreValidation, true);
+      p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreNameSpaces, true);   // optional
+
+      //DefaultHandler * p_defaultHandler = new DefaultHandler();
+      DefaultHandler defaultHandler;
+      //p_sax2xmlreader->setContentHandler(defaultHandler);
 //	      SAX2MainConfigHandler sax2(//pstates
 //	        model ,
 //            p_userinterface ,
 //            p_pumastatectrl
 //            );
-	      p_sax2xmlreader->setContentHandler(//&sax2
-          & r_defaulthandler );
-	      p_sax2xmlreader->setErrorHandler(//p_defaultHandler
-          & defaultHandler );
-    	
-	      try 
-	      {
-	        p_sax2xmlreader->parse(xmlFile);
-	        DEBUG("-----------End of loading from config file\n") ;
-           //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
-           //"The parser object returned by XMLReaderFactory is owned by the 
-            //calling users, and it's the responsiblity of the users to delete 
-            //that parser object, once they no longer need it."
-              delete p_sax2xmlreader;
-            if( model.m_bTruncateLogFileForEveryStartup )
-                g_logger.TruncateFileToZeroAndRewrite() ;
-           byReturn = SUCCESS;
-	      }
-	      catch (const XMLException& toCatch) 
-	      {
-	        char * message = XMLString::transcode(toCatch.getMessage());
-	        cout << "XML exception. Message is: \n"
-	             << message << "\n";
-          p_userinterface->Confirm( std::string( "XML exception in file" ) + 
-            xmlFile + ":" + message );
-	        XMLString::release(&message);
-            //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
-            //"The parser object returned by XMLReaderFactory is owned by 
-            //the calling users, and it's the responsiblity of the users to 
-            //delete that parser object, once they no longer need it."
+      p_sax2xmlreader->setContentHandler(//&sax2
+        & r_defaulthandler );
+      p_sax2xmlreader->setErrorHandler(//p_defaultHandler
+        & defaultHandler );
+
+      try
+      {
+        LOGN( "before parsing XML file" );
+        p_sax2xmlreader->parse(xmlFile);
+        DEBUG("-----------End of loading from config file\n") ;
+         //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
+         //"The parser object returned by XMLReaderFactory is owned by the
+          //calling users, and it's the responsiblity of the users to delete
+          //that parser object, once they no longer need it."
             delete p_sax2xmlreader;
-//	        return FAILURE;
-	      }
-	      catch (const SAXParseException & r_saxparseexception )
-	      {
-	        char * pchMessage = XMLString::transcode( r_saxparseexception.getMessage() );
-	        cout << "Exception message is: \n"
-	             << pchMessage << "\n";
-          std::string strMessage = "XML error in file: \"" + 
-            std::string(xmlFile) 
-            + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() ) 
-            + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() ) 
-            + ": " + pchMessage 
-            + "\nIn order to solve this problem you may look into the XML "
-            "specifications for element names etc" ;
-	        p_userinterface->Confirm(//pchMessage
-            strMessage);
-	        XMLString::release( & pchMessage );
-            //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
-            //"The parser object returned by XMLReaderFactory is owned by 
-            //the calling users, and it's the responsiblity of the users to 
-            //delete that parser object, once they no longer need it."
+          if( model.m_bTruncateLogFileForEveryStartup )
+              g_logger.TruncateFileToZeroAndRewrite() ;
+         byReturn = SUCCESS;
+      }
+      catch (const XMLException& toCatch)
+      {
+        LOGN( "XMLException" );
+        char * message = XMLString::transcode(toCatch.getMessage());
+        cout << "XML exception. Message is: \n"
+             << message << "\n";
+        p_userinterface->Confirm( std::string( "XML exception in file" ) +
+          xmlFile + ":" + message );
+        XMLString::release(&message);
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
+          //"The parser object returned by XMLReaderFactory is owned by
+          //the calling users, and it's the responsiblity of the users to
+          //delete that parser object, once they no longer need it."
           delete p_sax2xmlreader;
 //	        return FAILURE;
-	      }
-	      catch (...) 
-	      {
-	        DEBUG_COUT( << "Unexpected Exception at parsing XML\n" ) ;
-	        p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
-            //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
-            //"The parser object returned by XMLReaderFactory is owned by 
-            //the calling users, and it's the responsiblity of the users to 
-            //delete that parser object, once they no longer need it."
-            delete p_sax2xmlreader;
-//	        return FAILURE;
-	      }
-	      //__finally
-       //   {
-       ////        //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
-       //   //"The parser object returned by XMLReaderFactory is owned by the 
-       //   //calling users, and it's the responsiblity of the users to 
-       //   //delete that parser object, once they no longer need it."
-       //   delete p_sax2xmlreader;
-       //   }
-    	  //delete p_defaultHandler;
       }
-
+      catch ( const SAXParseException & r_saxparseexception
+         //const SAXException & r_saxexception
+         )
+      {
+        LOGN( "SAXParseException" );
+//        LOGN( "SAXException" );
+        char * pchMessage = XMLString::transcode(
+            r_saxparseexception.getMessage()
+//            r_saxexception.getMessage()
+          );
+        cout << "Exception message is: \n"
+             << pchMessage << "\n";
+        std::string strMessage = "XML error in file: \"" +
+          std::string(xmlFile)
+          + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
+          + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
+//          + "\", line " + to_stdstring( r_saxexception.getLineNumber() )
+//          + ", column " + to_stdstring( r_saxexception.getColumnNumber() )
+          + ": " + pchMessage
+          + "\nIn order to solve this problem you may look into the XML "
+          "specifications for element names etc" ;
+        p_userinterface->Confirm(//pchMessage
+          strMessage);
+        XMLString::release( & pchMessage );
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
+          //"The parser object returned by XMLReaderFactory is owned by
+          //the calling users, and it's the responsiblity of the users to
+          //delete that parser object, once they no longer need it."
+        delete p_sax2xmlreader;
+//	        return FAILURE;
+      }
+      catch (...)
+      {
+        LOGN( "Unexpected Exception at parsing XML\n" ) ;
+        p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html:
+          //"The parser object returned by XMLReaderFactory is owned by
+          //the calling users, and it's the responsiblity of the users to
+          //delete that parser object, once they no longer need it."
+          delete p_sax2xmlreader;
+//	        return FAILURE;
+      }
+      //__finally
+     //   {
+     ////        //http://xerces.apache.org/xerces-c/apiDocs-2/classXMLReaderFactory.html#_details:
+     //   //"The parser object returned by XMLReaderFactory is owned by the
+     //   //calling users, and it's the responsiblity of the users to
+     //   //delete that parser object, once they no longer need it."
+     //   delete p_sax2xmlreader;
+     //   }
+      //delete p_defaultHandler;
+    }
+    LOGN( "terminating XML usage" );
     //http://xerces.apache.org/xerces-c/program-3.html:
     //"Independent of the API you want to use, DOM, SAX, or SAX2, your
     //application must [...] and terminate it after you are done.
@@ -1102,17 +652,20 @@ extern Logger g_logger ;
     return byReturn ;
 	}
 
-  BYTE readXMLfileDOM( 
-    const char * p_chFullXMLFilePath 
-    , DOMDocument * & p_dom_document
-    , DOMLSParser * & rp_dom_ls_parser
-    , DOMImplementation * & p_dom_implementation 
+  BYTE XercesConfigurationHandler::readXMLfileDOM(
+//    const char * p_chFullXMLFilePath
+//    , DOMDocument * & p_dom_document
+//    , DOMLSParser * & rp_dom_ls_parser
+//    , DOMImplementation * & p_dom_implementation
     )
   {
-    try {
-        XMLPlatformUtils::Initialize();
+//    BYTE byRet = FAILURE ;
+    try
+    {
+      XMLPlatformUtils::Initialize();
     }
-    catch (const XMLException& toCatch) {
+    catch (const XMLException& toCatch)
+    {
         char* message = XMLString::transcode(toCatch.getMessage());
         //cout << "Error during initialization! :\n"
         //     << message << "\n";
@@ -1123,196 +676,256 @@ extern Logger g_logger ;
     XMLCh tempStr[100];
     XMLString::transcode("LS", tempStr, 99);
     //DOMImplementation * 
-    p_dom_implementation = DOMImplementationRegistry::
+    mp_dom_implementation = DOMImplementationRegistry::
+      //"Return the first registered implementation that has the desired features,
+      // or null if none is found."
       getDOMImplementation(tempStr);
-    //DOMLSParser * 
-    rp_dom_ls_parser = ((DOMImplementationLS*)p_dom_implementation)->createLSParser( 
-      DOMImplementationLS::MODE_SYNCHRONOUS, 0);
 
-    //// optionally you can set some features on this builder
-    //if (rp_dom_ls_parser->getDomConfig()->canSetParameter(XMLUni::fgDOMValidate, true))
-    //    rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMValidate, true);
-    //if (rp_dom_ls_parser->getDomConfig()->canSetParameter(XMLUni::fgDOMNamespaces, true))
-    //    rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMNamespaces, true);
-    //if (rp_dom_ls_parser->getDomConfig()->canSetParameter(XMLUni::fgDOMDatatypeNormalization, true))
-    //    rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMDatatypeNormalization, true);
-
-
-    //// optionally you can implement your DOMErrorHandler (e.g. MyDOMErrorHandler)
-    //// and set it to the builder
-    //MyDOMErrorHandler* errHandler = new myDOMErrorHandler();
-    //rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMErrorHandler, errHandler);
-
-    //DOMDocument * p_dom_document = 0;
-
-    try {
-        p_dom_document = 
-          //Returns NULL if the XML file could not be read.
-          rp_dom_ls_parser->parseURI(p_chFullXMLFilePath);
-    }
-    catch (const XMLException& toCatch) {
-        char* message = XMLString::transcode(toCatch.getMessage());
-        cout << "Exception message is: \n"
-             << message << "\n";
-        XMLString::release(&message);
-        return -1;
-    }
-    catch (const DOMException& toCatch) {
-        char* message = XMLString::transcode(toCatch.msg);
-        cout << "Exception message is: \n"
-             << message << "\n";
-        XMLString::release(&message);
-        return -1;
-    }
-    catch(const DOMLSException & ex)
+    if( mp_dom_implementation )
     {
-        return -1;
+      //DOMLSParser *
+      mp_dom_ls_parser = ( (DOMImplementationLS * )
+        mp_dom_implementation)->createLSParser(
+        DOMImplementationLS::MODE_SYNCHRONOUS, 0 );
+
+      //// optionally you can set some features on this builder
+      //if (rp_dom_ls_parser->getDomConfig()->canSetParameter(XMLUni::fgDOMValidate, true))
+      //    rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMValidate, true);
+      //if (rp_dom_ls_parser->getDomConfig()->canSetParameter(XMLUni::fgDOMNamespaces, true))
+      //    rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMNamespaces, true);
+      //if (rp_dom_ls_parser->getDomConfig()->canSetParameter(XMLUni::fgDOMDatatypeNormalization, true))
+      //    rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMDatatypeNormalization, true);
+
+      //// optionally you can implement your DOMErrorHandler (e.g. MyDOMErrorHandler)
+      //// and set it to the builder
+      //MyDOMErrorHandler* errHandler = new myDOMErrorHandler();
+      //rp_dom_ls_parser->getDomConfig()->setParameter(XMLUni::fgDOMErrorHandler, errHandler);
+
+      //DOMDocument * p_dom_document = 0;
+
+      try
+      {
+          mp_dom_document =
+            //Returns NULL if the XML file could not be read.
+            mp_dom_ls_parser->parseURI( //p_chFullXMLFilePath
+              mpc_chFullXMLFilePath );
+      }
+      catch (const XMLException& toCatch)
+      {
+          char* message = XMLString::transcode(toCatch.getMessage());
+          cout << "Exception message is: \n"
+               << message << "\n";
+          XMLString::release(&message);
+          return FAILURE ;
+      }
+      catch(const DOMLSException & ex)
+      {
+          return FAILURE ;
+      }
+      catch (const DOMException& toCatch)
+      {
+          char* message = XMLString::transcode(toCatch.msg);
+          cout << "Exception message is: \n"
+               << message << "\n";
+          XMLString::release(&message);
+          return FAILURE ;
+      }
+      catch (...) {
+          cout << "Unexpected Exception \n" ;
+          return FAILURE ;
+      }
+    } //    if( mp_dom_implementation )
+    else
+    {
+      LOGN("Xerces: no")
     }
-    catch (...) {
-        cout << "Unexpected Exception \n" ;
-        return -1;
-    }
+
     //delete errHandler;
     return 0;
   }
 
-  short WriteDOM( 
+  short XercesConfigurationHandler::WriteDOM(
     DOMNode * p_dom_node
-    , const char * const cpc_chFilePath 
+//    , const char * const cpc_chFilePath
     //For creating a DOMLSOutput instance via createLSOutput().
-    , DOMImplementation * p_dom_implementation 
+//    , DOMImplementation * p_dom_implementation
     )
   {
-    DOMLSSerializer * p_dom_ls_serializer = ((DOMImplementationLS *) 
-      p_dom_implementation )->createLSSerializer();
-    DOMConfiguration * p_dom_configuration = p_dom_ls_serializer->
-      getDomConfig();
-    if (p_dom_configuration->canSetParameter(
-      XMLUni::fgDOMWRTFormatPrettyPrint, true ) )
-      p_dom_configuration->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, 
-        true );
+    if( mp_dom_implementation )
+    {
+      DOMLSSerializer * p_dom_ls_serializer = ((DOMImplementationLS *)
+        mp_dom_implementation )->createLSSerializer();
+      DOMConfiguration * p_dom_configuration = p_dom_ls_serializer->
+        getDomConfig();
+      if( p_dom_configuration->canSetParameter(
+          XMLUni::fgDOMWRTFormatPrettyPrint, true )
+        )
+        p_dom_configuration->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint,
+          true );
 
-    XMLFormatTarget * myFormTarget = new LocalFileFormatTarget ( cpc_chFilePath );
-    DOMLSOutput * theOutput = ( (DOMImplementationLS *) 
-      p_dom_implementation)->createLSOutput();
-    theOutput->setByteStream(myFormTarget);
-    try {
-        // do the serialization through DOMLSSerializer::write();
-        p_dom_ls_serializer->write(p_dom_node, theOutput);
-    }
-    catch (const XMLException& toCatch) {
-        char* message = XMLString::transcode(toCatch.getMessage());
-        cout << "Exception message is: \n"
-             << message << "\n";
-        XMLString::release(&message);
-        return -1;
-    }
-    catch (const DOMException& toCatch) {
-        char* message = XMLString::transcode(toCatch.msg);
-        cout << "Exception message is: \n"
-             << message << "\n";
-        XMLString::release(&message);
-        return -1;
-    }
-    catch (...) {
-        cout << "Unexpected Exception \n" ;
-        return -1;
-    }
+      XMLFormatTarget * p_xml_format_targetFile = new LocalFileFormatTarget (
+        //cpc_chFilePath
+        mpc_chFullXMLFilePath
+        );
+      DOMLSOutput * p_domls_output = ( (DOMImplementationLS *)
+        mp_dom_implementation)->createLSOutput();
+      p_domls_output->setByteStream(p_xml_format_targetFile);
+      try
+      {
+          // do the serialization through DOMLSSerializer::write();
+          p_dom_ls_serializer->write(p_dom_node, p_domls_output);
+      }
+      catch (const XMLException& toCatch) {
+          char* message = XMLString::transcode(toCatch.getMessage());
+          cout << "Exception message is: \n"
+               << message << "\n";
+          XMLString::release(&message);
+          return -1;
+      }
+      catch (const DOMException& toCatch) {
+          char* message = XMLString::transcode(toCatch.msg);
+          cout << "Exception message is: \n"
+               << message << "\n";
+          XMLString::release(&message);
+          return -1;
+      }
+      catch (...) {
+          cout << "Unexpected Exception \n" ;
+          return -1;
+      }
 
-    theOutput->release();
-    p_dom_ls_serializer->release();
-    //delete myErrorHandler;
-    //delete myFilter;
-    delete myFormTarget;
+      p_domls_output->release();
+      p_dom_ls_serializer->release();
+      //delete myErrorHandler;
+      //delete myFilter;
+      delete p_xml_format_targetFile;
+    }
+    return 1 ;
+  }
+
+  //Put the "test for change" and the "change" code into the same function
+  //because both depends (exactly) on the same attributes.
+  bool XercesConfigurationHandler::TestIfCfgIsChangedOrChangeCfg(
+    //true: do not change, only test if it would be changed.
+    bool bTest
+    )
+  {
+    bool bDOMtreeModified = false ;
+    //mp_dom_document = p_dom_document ;
+    try
+    {
+      DOMXPathNSResolver * p_dom_xpath_ns_resolver =
+        BuildStdmapFreqInMHzInDOMtree2DOMindex(
+          m_stdmapFreqInMHzInDOMtree2DOMindex ) ;
+
+//        bool bCreateMaxVoltageAttribute ;
+
+      //WORD wSize = model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
+//        WORD wFreq ;
+      //for( WORD wIndex = 0 ; wIndex < wSize ; ++ wIndex )
+
+      //if( PossiblyAddDefaultVoltages() )
+      //  bDOMtreeModified = true ;
+      //if( PossiblyAddLowestStableVoltages() )
+      //  bDOMtreeModified = true ;
+      //if( PossiblyAddWantedVoltages() )
+      //  bDOMtreeModified = true ;
+
+      bDOMtreeModified = PossiblyAddVoltages( bTest ) ;
+      if( bDOMtreeModified )
+      {
+        if( ! bTest )
+          WriteDOM(
+            mp_dom_elementRoot
+//            , p_chFullXMLFilePath
+//            , p_dom_implementation
+            ) ;
+      }
+      mp_dom_document->release();
+      mp_domxpathresult->release();
+      //This finally writes to the file.
+      p_dom_xpath_ns_resolver->release ();
+    }
+    catch(const DOMXPathException& e)
+    {
+        //XERCES_STD_QUALIFIER cerr << "An error occurred during processing of the XPath expression. Msg is:"
+        //    << XERCES_STD_QUALIFIER endl
+        //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
+//        retval = 4;
+    }
+    catch(const DOMException& e)
+    {
+        //XERCES_STD_QUALIFIER cerr << "An error occurred during processing of the XPath expression. Msg is:"
+        //    << XERCES_STD_QUALIFIER endl
+        //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
+//        retval = 4;
+    }
+    return bDOMtreeModified ;
+  }
+
+  //Purpose: this should called by all fcts that change the voltage or test for
+  //their changes. This is good if something is changed (e.g. if attributes
+  //are added/ removed)
+  //So it can be done central (do not repeat principle)
+  bool XercesConfigurationHandler::PossiblyAddVoltages(
+    //true: do not change, only test if it would be changed.
+    bool bTest
+    )
+  {
+    bool bDOMtreeModified = false ;
+    //Prevent insertions or deletions while accessing the STL container
+    //for voltages.
+    mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
+
+    if( PossiblyAddVoltages(
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+      , "max_voltage_in_Volt"
+      , bTest )
+      )
+      bDOMtreeModified = true ;
+    if( PossiblyAddVoltages(
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable
+      , "min_voltage_in_Volt"
+      , bTest )
+      )
+      bDOMtreeModified = true ;
+    if( PossiblyAddVoltages(
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+      , "voltage_in_Volt"
+      , bTest )
+      )
+      bDOMtreeModified = true ;
+    mp_model->m_cpucoredata.m_wxcriticalsection.Leave() ;
+    return bDOMtreeModified ;
   }
 
   BYTE XercesConfigurationHandler:://mergeXMLfileDOM( 
     MergeWithExistingConfigFile(
     const char * p_chFullXMLFilePath 
     , Model & model 
-    , std::string & r_strPstateSettingsFileName )
+    , std::string & r_strPstateSettingsFileName
+    )
   {
-    BYTE retval ;
+    //Initialize just to avoid (g++) compiler warning.
+    BYTE retval = 0 ;
+    //setting/ assigning the value is Important: for readXMLfileDOM() and
+    //writeXML(...)
+    mpc_chFullXMLFilePath = p_chFullXMLFilePath ;
     //DOMDocument * p_dom_document ;
-    DOMLSParser * p_dom_ls_parser ;
-    DOMImplementation * p_dom_implementation ;
+//    DOMLSParser * p_dom_ls_parser ;
+//    DOMImplementation * p_dom_implementation ;
 
     readXMLfileDOM( 
-      p_chFullXMLFilePath 
-      , mp_dom_document 
-      , p_dom_ls_parser 
-      , p_dom_implementation ) ;
+//      p_chFullXMLFilePath
+//      , mp_dom_document
+//      , p_dom_ls_parser
+//      , p_dom_implementation
+      ) ;
 
-    //Is NULL if the XML file could not be read.
+    //The XML file could be read.
     if( mp_dom_document )
     {
-      //mp_dom_document = p_dom_document ;
-      try
-      {
-        DOMXPathNSResolver * p_dom_xpath_ns_resolver =
-          BuildStdmapFreqInMHzInDOMtree2DOMindex(
-            m_stdmapFreqInMHzInDOMtree2DOMindex ) ;
-
-        bool bDOMtreeModified = false ;
-        bool bCreateMaxVoltageAttribute ;
-        //Prevent insertions or deletions while accessing the STL container.
-        model.m_cpucoredata.m_wxcriticalsection.Enter() ;
-
-        //WORD wSize = model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
-        WORD wFreq ;
-        //for( WORD wIndex = 0 ; wIndex < wSize ; ++ wIndex )
-
-        //if( PossiblyAddDefaultVoltages() )
-        //  bDOMtreeModified = true ;
-        //if( PossiblyAddLowestStableVoltages() )
-        //  bDOMtreeModified = true ;
-        //if( PossiblyAddWantedVoltages() )
-        //  bDOMtreeModified = true ;
-        if( PossiblyAddVoltages(
-          mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
-          , "max_voltage_in_Volt" 
-          , false ) 
-          )
-          bDOMtreeModified = true ;
-        if( PossiblyAddVoltages(
-          mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable
-          , "min_voltage_in_Volt"
-          , false )
-          )
-          bDOMtreeModified = true ;
-        if( PossiblyAddVoltages(
-          mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-          , "voltage_in_Volt" 
-          , false )
-          )
-          bDOMtreeModified = true ;
-        model.m_cpucoredata.m_wxcriticalsection.Leave() ;
-        if( bDOMtreeModified )
-        {
-          WriteDOM( 
-            mp_dom_elementRoot
-            , p_chFullXMLFilePath 
-            , p_dom_implementation ) ;
-        }
-        mp_dom_document->release();
-        mp_domxpathresult->release();
-        //This finally writes to the file.
-        p_dom_xpath_ns_resolver->release ();
-      }
-      catch(const DOMXPathException& e)
-      {
-          //XERCES_STD_QUALIFIER cerr << "An error occurred during processing of the XPath expression. Msg is:"
-          //    << XERCES_STD_QUALIFIER endl
-          //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
-          retval = 4;
-      }
-      catch(const DOMException& e)
-      {
-          //XERCES_STD_QUALIFIER cerr << "An error occurred during processing of the XPath expression. Msg is:"
-          //    << XERCES_STD_QUALIFIER endl
-          //    << StrX(e.getMessage()) << XERCES_STD_QUALIFIER endl;
-          retval = 4;
-      }
+      TestIfCfgIsChangedOrChangeCfg(false) ;
       //XMLString::release(&p_xmlchXpath);  
     }// if( p_dom_document )
     //Is NULL if the XML file could not be read (=may not exist).
@@ -1321,7 +934,7 @@ extern Logger g_logger ;
       //DOMImplementation * p_dom_implementation =  
       //  DOMImplementationRegistry::getDOMImplementation(X("Core"));
 
-      if (p_dom_implementation != NULL)
+      if ( mp_dom_implementation != NULL)
       {
         try
         {
@@ -1331,7 +944,7 @@ extern Logger g_logger ;
           //  r_strPstateSettingsFileName.c_str() ) ;
           //mp_userinterface->GetTextFromUser(_T("Enter the root XML element name:")) ;
           //DOMDocument * p_dom_document = p_dom_implementation->createDocument(
-          mp_dom_document = p_dom_implementation->createDocument(
+          mp_dom_document = mp_dom_implementation->createDocument(
             0,                    // root element namespace URI.
             // root element name
             //X( str.c_str() ) ,
@@ -1343,36 +956,20 @@ extern Logger g_logger ;
           //AppendDefaultVoltages(p_dom_elementRoot) ;
           //AppendMiniumVoltages(p_dom_elementRoot) ;
           //AppendWantedVoltages(p_dom_elementRoot) ;
-          bool bDOMtreeModified = false ;
+//          bool bDOMtreeModified = false ;
           //if( PossiblyAddDefaultVoltages() )
           //  bDOMtreeModified = true ;
           //if( PossiblyAddLowestStableVoltages() )
           //  bDOMtreeModified = true ;
           //if( PossiblyAddWantedVoltages() )
           //  bDOMtreeModified = true ;
-          if( PossiblyAddVoltages(
-            mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
-            , "max_voltage_in_Volt" 
-            , false ) 
-            )
-            bDOMtreeModified = true ;
-          if( PossiblyAddVoltages(
-            mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable
-            , "min_voltage_in_Volt" 
-            , false ) 
-            )
-            bDOMtreeModified = true ;
-          if( PossiblyAddVoltages(
-            mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-            , "voltage_in_Volt" 
-            , false ) 
-            )
-            bDOMtreeModified = true ;
+          PossiblyAddVoltages(false) ;
+
           //Write the whole XML tree.
           WriteDOM( 
             mp_dom_elementRoot
-            , p_chFullXMLFilePath 
-            , p_dom_implementation 
+//            , p_chFullXMLFilePath
+//            , p_dom_implementation
             ) ;
         }
         catch( const DOMException & e)
@@ -1394,7 +991,11 @@ extern Logger g_logger ;
   XercesConfigurationHandler::XercesConfigurationHandler(
     Model * p_model )
     //E.g. for getting an array of all "freq_and_voltage" XML elements.
-    : mp_domxpathresult(NULL)
+    :
+    mp_domxpathresult(NULL)
+    , mp_dom_document( NULL)
+    , mp_dom_implementation( NULL)
+    , mp_dom_ls_parser (NULL)
   {
     mp_model = p_model ;
   }

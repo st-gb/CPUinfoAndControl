@@ -10,8 +10,8 @@
 #endif
 #include <Windows_compatible_typedefs.h>
 
-#define STARTED 0
-#define ENDED 0
+//#define STARTED 0
+//#define ENDED 0
 
 DWORD 
 #ifdef _MSC_VER

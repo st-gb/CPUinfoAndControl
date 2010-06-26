@@ -1,5 +1,8 @@
 #pragma once //include guard
-#include "../global.h" //for BYTE, WORD
+#include <global.h> //for BYTE, WORD
+#ifdef _WINDOWS
+  #include <windef.h> //for BYTE
+#endif
 //#include "DIDandFID.hpp" //for class DIDandFID
 
 //pre-declare.
