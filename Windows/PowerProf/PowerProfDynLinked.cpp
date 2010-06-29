@@ -117,6 +117,9 @@ bool PowerProfDynLinked::DisableFrequencyScalingByOS()
   }
   if( bDesiredPowerSchemeExists )
   {
+    //TODO (Windows XP): it seems that the DVFS can not always be disabled:
+    // when the service runs at "LocalSystem" then an administrator's power
+    // scheme may override the LocalSystem's scheme.
     mp_i_powerprofdynlinked->DisableDVFSforPowerSchemeToSet() ;
     mp_i_powerprofdynlinked->ActivatePowerSchemeToSet() ;
   }

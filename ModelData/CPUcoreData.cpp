@@ -1,4 +1,7 @@
 #include "CPUcoreData.hpp"
+//Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
+//"undefined reference".
+#include <binary_search.cpp> //GetArrayIndexForClosestLessOrEqual(...)
 
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {
@@ -216,6 +219,48 @@ void CPUcoreData::Init()
 //    m_criticalsectionThreads.Leave() ;
   }
 
+  BYTE CPUcoreData::GetIndexForClosestMultiplier(float fMultiplier)
+  {
+    //TODO
+//    WORD wArrayIndexForClosestLessOrEqual = GetArrayIndexForClosestLessOrEqual(
+//      m_arfAvailableMultipliers,
+//      m_stdset_floatAvailableMultipliers.size(),
+//      fMultiplier
+//      ) ;
+//    WORD wArrayIndexForClosestGreaterOrEqual =
+//      GetArrayIndexForClosestGreaterOrEqual(
+//      m_arfAvailableMultipliers,
+//      m_stdset_floatAvailableMultipliers.size(),
+//      fMultiplier
+//      ) ;
+    WORD wArrayIndexForClosestValue =
+      GetArrayIndexForClosestValue(
+        m_arfAvailableMultipliers,
+        m_stdset_floatAvailableMultipliers.size(),
+        fMultiplier
+        ) ;
+//    if( w )
+    return wArrayIndexForClosestValue ;
+//    float fMultiplierClosestGreaterOrEqual =
+//        m_arfAvailableMultipliers[ArrayIndexForClosestGreaterOrEqual] ;
+//    float fMultiplierClosestLessOrEqual =
+//        m_arfAvailableMultipliers[ArrayIndexForClosestLessOrEqual] ;
+//    return fMultiplier
+  }
+
+  BYTE CPUcoreData::GetIndexForClosestVoltage(float fVoltageInVolt)
+  {
+    //TODO
+    WORD wArrayIndexForClosestValue =
+      GetArrayIndexForClosestValue(
+        m_arfAvailableVoltagesInVolt,
+        m_stdset_floatAvailableVoltagesInVolt.size(),
+        fVoltageInVolt
+        ) ;
+//    if( w )
+    return wArrayIndexForClosestValue ;
+  }
+
 //  void CPUcoreData::ThreadWantsAccess()
 //  {
 //    //Only 1 thread should safely access the var (decrementing a value is
@@ -258,6 +303,7 @@ void CPUcoreData::Init()
       return -1.0 ;
   }
 
+  //inline
   float CPUcoreData::GetMaximumMultiplier()
   {
     std::set<float>::const_reverse_iterator c_rev_iter_stdset_fMultipliers =

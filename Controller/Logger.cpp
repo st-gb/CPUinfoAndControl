@@ -4,9 +4,9 @@
 
 //If MS compiler etc.
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
-    //#include <Windows.h> //for SYSTEMTIME
-    //Use "windows.h" for g++ because the case matters.
-    #include <windows.h> //for SYSTEMTIME
+  //#include <Windows.h> //for SYSTEMTIME
+  //Use "windows.h" for g++ because the case matters.
+  #include <windows.h> //for SYSTEMTIME
 #endif
 #include "Logger.hpp"
 //#include <Controller/tchar_conversion.h> //GetCharPointer()
@@ -62,22 +62,24 @@ void Logger::Log(//ostream & ostr
     )
   {
   #ifdef _WINDOWS
-    SYSTEMTIME systemtime ;
+//    SYSTEMTIME systemtime ;
     //GetSystemTime(&systemtime);              // gets current time
-    ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
+    //gets the same time as the Windows clock.
+//    ::GetLocalTime( & systemtime );
+    ::GetLocalTime( & systemtime );
   #else
 
   #endif
     //m_ofstream << r_stdstr ;
     *mp_ofstream
       #ifdef _WINDOWS
-        << systemtime.wYear << "."
-        << systemtime.wMonth << "."
-        << systemtime.wDay << " "
-        << systemtime.wHour << "h:"
-        << systemtime.wMinute << "min "
-        << systemtime.wSecond << "s "
-        << systemtime.wMilliseconds << "ms:"
+      << systemtime.wYear << "."
+      << systemtime.wMonth << "."
+      << systemtime.wDay << " "
+      << systemtime.wHour << "h:"
+      << systemtime.wMinute << "min "
+      << systemtime.wSecond << "s "
+      << systemtime.wMilliseconds << "ms:"
       #else
       #endif
         << r_stdstr ;

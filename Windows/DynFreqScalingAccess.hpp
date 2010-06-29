@@ -3,8 +3,8 @@
 //Powercfg.exe
 //http://www.heise.de/ct/Energie-Einstellungen-nur-als-Admin--/hotline/131373
 //The settings are stored in the registry:
-//HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\
-//PowerCfg
+//HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder
+// \PowerCfg
 
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <global.h> //for BYTE, DWORD

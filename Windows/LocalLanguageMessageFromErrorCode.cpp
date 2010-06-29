@@ -38,7 +38,7 @@ std::string LocalLanguageMessageAndErrorCodeA(DWORD dwErrorCode)
   std::ostringstream stdostringstream ;
   stdostringstream << dwErrorCode ;
   return LocalLanguageMessageFromErrorCodeA( dwErrorCode) +
-    + " ([Windows] error code: )" + stdostringstream.str() ;
+    + " ([Windows] error code: " + stdostringstream.str() + ")" ;
 }
 
 std::string PossibleSolution(DWORD dwErrorCode)

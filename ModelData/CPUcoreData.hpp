@@ -107,9 +107,13 @@ public:
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
 
-  void ThreadFinishedAccess() ;
+  BYTE GetIndexForClosestMultiplier(float fMultiplier) ;
+  BYTE GetIndexForClosestVoltage(float) ;
   float GetLowerMultiplier( float fMulti ) ;
   BYTE GetNumberOfCPUcores() ;
+  //Can't be inline, else g++ warning
+  // "undefined reference to `CPUcoreData::GetMaximumMultiplier()'"
+  // if called from class MainFrame
   //inline
   float GetMaximumMultiplier() ;
   //inline
@@ -123,4 +127,5 @@ public:
   }
   void SetCPUcoreNumber(BYTE byNumberOfCPUcores) ;
   void SetMaxFreqInMHz(WORD wMaxFreqInMHz) ;
+  void ThreadFinishedAccess() ;
 };

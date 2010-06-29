@@ -5,7 +5,7 @@
  *      Author: Stefan
  */
 #include "CPUcontrolBase.hpp"
-#include <Controller/ReadFileContent.h>
+#include <Controller/ReadFileContent.hpp>
 #include <UserInterface/UserInterface.hpp>
 
   CPUcontrolBase::CPUcontrolBase( )
