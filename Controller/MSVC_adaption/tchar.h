@@ -13,7 +13,9 @@
     #define _T(x) L ## x
   #endif
   typedef wchar_t TCHAR ;
+#ifdef _MSC_VER //MS compiler
   #pragma  message( "using wchar_t for TCHAR" )
+#endif
 #else
   //#include <string.h> //for strrchr
   #ifndef _T

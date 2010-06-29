@@ -1,7 +1,7 @@
 #pragma once //include guard
 
 //#include "PumaStateCtrl.h"
-#include <Controller/AMD/Griffin/AMD_family17.h>
+#include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
 
 #define NOT_SPECIFIED_BY_USER 255
 #include <stdio.h> //for "NULL" constant.

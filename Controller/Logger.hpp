@@ -1,17 +1,23 @@
 #ifndef LOGGER_HPP
-    #define LOGGER_HPP
+  #define LOGGER_HPP
 
-    //#include <fstream> //for class std::ofstream ;
-    //#include <strstream> //for class std::ostrstream
-    #include <string> //for std::wstring
-    //#include <sstream>
+  //#include <fstream> //for class std::ofstream ;
+  //#include <strstream> //for class std::ostrstream
+  #include <string> //for std::wstring
+  //#include <sstream>
   #include <Controller/stdtstr.hpp>
+  #include <set> //for class std::set
 
   //class std::ofstream ;
 
     class Logger
     {
     public:
+      enum log_class
+      {
+        sync = 0
+      };
+      std::set<WORD> m_stdsetLogClass ;
         //std::ofstream m_ofstream ;
         std::ofstream * mp_ofstream ;
         Logger() ;
@@ -26,7 +32,10 @@
         void Log(//ostream & ostr
             std::string & r_stdstr
             ) ;
-
+        void Log(//ostream & ostr
+            std::string & r_stdstr
+            , WORD wType
+            ) ;
         void Log(//ostream & ostr
             char * p_ch
             ) ;

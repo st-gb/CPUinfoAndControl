@@ -16,7 +16,6 @@ class DynFreqScalingThreadBase
   //"protected" to inherit member atts
 protected:
   CPUcoreData * mp_cpucoredata ;
-  //GriffinController * mp_pumastatectrl ;
   I_CPUcontroller * mp_cpucontroller ;
   ICPUcoreUsageGetter * mp_icpu ;
   //bool m_bSuccFullyGotPStateFromMSR ;
@@ -48,7 +47,6 @@ public:
   volatile bool m_vbDVFSthreadStopped ;
   DynFreqScalingThreadBase(  
     ICPUcoreUsageGetter * p_icpu
-    //, GriffinController * p_pumastatectrl
     , I_CPUcontroller * p_cpucontroller
     , CPUcoreData & r_cpucoredata
     ) ;

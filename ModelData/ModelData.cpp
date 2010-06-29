@@ -5,16 +5,16 @@
 #define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
-Model::Model( //GriffinController * p_griffincontroller 
+Model::Model(
              )
     //C++ style inits:
     :
     //Initialize in the same order as textual in the declaration?
     //(to avoid g++ warnings)
-    m_bSyncGUIshowDataWithService ( false ) ,
     m_bCollectPstatesAsDefault(false)
     , m_bEnableOvervoltageProtection(true)
     , m_bSkipCPUtypeCheck(false)
+    , m_bSyncGUIshowDataWithService ( false )
     , m_bTruncateLogFileForEveryStartup(true)
     , m_bUseDefaultFormularForOvervoltageProtection(false)
     , m_bUsePstate0AsMaxFreq (false)
@@ -26,7 +26,6 @@ Model::Model( //GriffinController * p_griffincontroller
 //      const Model * pmodel = this ;
 #endif
     m_dPreviousPERF_CTRvalue = 0.0 ;
-    //m_cpucoredata.SetGriffinController( p_griffincontroller ) ;
   }
 
   void Model::AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue)

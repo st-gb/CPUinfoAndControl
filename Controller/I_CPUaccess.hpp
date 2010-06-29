@@ -16,7 +16,7 @@
 //#include "UserInterface.hpp" //for class "UserInterface"
 
 //Base class for every single CPU access exception type as e.g.
-//MSR read excpetion, CPUID exception etc.
+//MSR read exception, CPUID exception etc.
 class CPUaccessException
 {
 public:
@@ -54,7 +54,7 @@ class Model ;
 
 //This class is the base class/ interface for CPU access implementations
 //like via WinRing0 library or via /dev/msr0 etc.
-//So this dependancy that can also be Operating System specific is decoupled.
+//So this dependency that can also be Operating System specific is decoupled.
 
 class I_CPUcontroller ;
 
@@ -80,7 +80,7 @@ public:
   //e.g. INit(CPUaccess * p_cpuaccess ) {
   //   p_cpuaccess->m_cpucontroller = & g_NehalemCPUcontroller ;
   // }
-  //This would avoid writing export functions.
+  //This would avoid writing export functions within the DLL.
   I_CPUcontroller * mp_cpu_controller ;
   typedef BOOL ReadMSRex_type (
     //const I_CPUaccess * ,
@@ -94,7 +94,8 @@ public:
     PDWORD p_dwECX,
     PDWORD p_dwEDX,
     DWORD_PTR affinityMask
-  ) = 0 ;
+  ) //= 0
+  ;
   virtual BYTE GetNumberOfCPUCores() ;
 
   //It makes sense to implement the get family and model as a
@@ -199,6 +200,9 @@ public:
     , DWORD dwRegAddress
     , PDWORD p_dwValue
     ) = 0 ;
+  //inline
+  virtual BOOL ReadTSC(DWORD & r_dwLow , DWORD & r_dwHigh ) //= 0
+    ;
   void SetUserInterface(UserInterface & r_userinterface) 
   { 
       mp_userinterface = & r_userinterface ;

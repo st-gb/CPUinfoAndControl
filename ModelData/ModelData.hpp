@@ -6,7 +6,6 @@
 #include <vector> //for std::vector
 
 #include "CPUcoreData.hpp"
-#include "PStates.h" // for class PStates
 //because vector needs to know class MSRdata (else: build error)
 #include "RegisterData.hpp" 
 #include "ServiceAttributes.hpp"
@@ -17,8 +16,6 @@
 //class MSRdata ;
 //class ValueTables ;
 
-class PStates ;
-//class GriffinController ;
 class I_CPUcontroller ;
 class CPUcoreData ;
 
@@ -34,9 +31,7 @@ public:
   bool m_bUseDefaultFormularForOvervoltageProtection ;
   bool m_bUsePstate0AsMaxFreq ;
   double m_dPreviousPERF_CTRvalue ;
-  //GriffinController * mp_griffincontroller ;
   I_CPUcontroller * mp_cpucontroller ;
-  PStates m_pstates ;
   std::string m_strProcessorName ;
   std::string m_stdstrLogFilePath ;
   std::tstring m_stdtstrProgramName ;
@@ -62,11 +57,6 @@ public:
   //  std::vector<MSRdata>::reverse_iterator rev_iter_msrdata ,
   //  std::vector<std::string [2]> & stdvecstdstrAttributeNameAndValue) ;
   BYTE GetNumberOfCPUCores() ;
-  //void SetGriffinController ( GriffinController * p_griffincontroller )
-  //{
-  //  mp_griffincontroller = p_griffincontroller ;
-  //  m_cpucoredata.SetGriffinController( p_griffincontroller ) ;
-  //}
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
   {
     mp_cpucontroller = p_cpucontroller ;

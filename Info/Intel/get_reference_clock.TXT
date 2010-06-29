@@ -16,7 +16,7 @@ CPU_CLK_UNHALTED.REF
 30.10.2 Non-Sleep Clockticks
 
 Pentium M: wenn
-EMON_EST_TRANS58HNumber of Enhanced Intel SpeedStep 
+EMON_EST_TRANS 58H Number of Enhanced Intel SpeedStep 
 technology transitions:
 Mask = 00H - All transitions
 Mask = 02H - Only Frequency transitions

@@ -21,6 +21,7 @@ Logger::Logger()
 Logger::Logger( std::string & stdstrFilePath )
 {
     //m_ofstream.open(stdstrFilePath.c_str() );
+  m_stdsetLogClass.insert(Logger::sync) ;
 }
 
 Logger::~Logger()
@@ -56,47 +57,61 @@ void Logger::Log(//ostream & ostr
     std::string & r_stdstr
     )
 {
-    if( //m_ofstream.good() 
-        mp_ofstream && mp_ofstream->good() 
-        )
-    {
+  if( //m_ofstream.good()
+    mp_ofstream && mp_ofstream->good()
+    )
+  {
+  #ifdef _WINDOWS
+    SYSTEMTIME systemtime ;
+    //GetSystemTime(&systemtime);              // gets current time
+    ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
+  #else
+
+  #endif
+    //m_ofstream << r_stdstr ;
+    *mp_ofstream
       #ifdef _WINDOWS
-        SYSTEMTIME systemtime ;
-        //GetSystemTime(&systemtime);              // gets current time
-        ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
+        << systemtime.wYear << "."
+        << systemtime.wMonth << "."
+        << systemtime.wDay << " "
+        << systemtime.wHour << "h:"
+        << systemtime.wMinute << "min "
+        << systemtime.wSecond << "s "
+        << systemtime.wMilliseconds << "ms:"
       #else
-
       #endif
-        //m_ofstream << r_stdstr ;
-        *mp_ofstream
-          #ifdef _WINDOWS
-            << systemtime.wYear << "."
-            << systemtime.wMonth << "."
-            << systemtime.wDay << " " 
-            << systemtime.wHour << "h:"
-            << systemtime.wMinute << "min "
-            << systemtime.wSecond << "s "
-            << systemtime.wMilliseconds << "ms:"
-          #else
-          #endif
-            << r_stdstr ;
-        //m_ofstream.flush() ;
-        mp_ofstream->flush() ;
+        << r_stdstr ;
+    //m_ofstream.flush() ;
+    mp_ofstream->flush() ;
 
-        //TODO write into RAM for having 2 possibilties:
-        //-truncate the log file to zero for every startup
-        //-append to log file at every startup
+    //TODO write into RAM for having 2 possibilties:
+    //-truncate the log file to zero for every startup
+    //-append to log file at every startup
 
-        //->Write into RAM until the config file that determines which of these
-        //2 possibilties to use is completely read.
-        //If the config says: always append: simply delete the RAM buffer.
-        //If the config says: always truncate: 
-        // 1. truncate the log file to zero
-        // 2. write the RAM buffer contents ( that are the same as in 
-        //   log file written from startup till then)
-        // 3. delete the RAM buffer.
-        //buffer.add( ofstream.str() ) ;
-    }
+    //->Write into RAM until the config file that determines which of these
+    //2 possibilities to use is completely read.
+    //If the config says: always append: simply delete the RAM buffer.
+    //If the config says: always truncate:
+    // 1. truncate the log file to zero
+    // 2. write the RAM buffer contents ( that are the same as in
+    //   log file written from startup till then)
+    // 3. delete the RAM buffer.
+    //buffer.add( ofstream.str() ) ;
+  }
+}
+
+void Logger::Log(//ostream & ostr
+    std::string & r_stdstr
+    , WORD wType
+    )
+{
+//  if( mp_model )
+//  {
+//    if( mp_model->
+//        )
+//  }
+  if( m_stdsetLogClass.find(wType) != m_stdsetLogClass.end() )
+    Log(r_stdstr) ;
 }
 
 #ifdef COMPILE_WITH_WSTRING
@@ -108,35 +123,35 @@ void Logger::LogW(//ostream & ostr
       mp_ofstream && mp_ofstream->good() 
       )
   {
-      SYSTEMTIME systemtime ;
-      //GetSystemTime( & systemtime); // gets current time in UTC / GMT? time zome
-      ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
-      //m_ofstream << r_stdstr ;
-      *mp_ofstream 
-          << systemtime.wYear 
-          << "." << systemtime.wMonth 
-          << "." << systemtime.wDay 
-          << " " << systemtime.wHour
-          << "h:" << systemtime.wMinute
-          << "min " << systemtime.wSecond
-          << "s " << systemtime.wMilliseconds
-          << "ms:" << r_stdstr.c_str() ;
-      //m_ofstream.flush() ;
-      mp_ofstream->flush() ;
+    SYSTEMTIME systemtime ;
+    //GetSystemTime( & systemtime); // gets current time in UTC / GMT? time zome
+    ::GetLocalTime( & systemtime ); //gets the same time as the Windows clock.
+    //m_ofstream << r_stdstr ;
+    *mp_ofstream
+        << systemtime.wYear
+        << "." << systemtime.wMonth
+        << "." << systemtime.wDay
+        << " " << systemtime.wHour
+        << "h:" << systemtime.wMinute
+        << "min " << systemtime.wSecond
+        << "s " << systemtime.wMilliseconds
+        << "ms:" << r_stdstr.c_str() ;
+    //m_ofstream.flush() ;
+    mp_ofstream->flush() ;
 
-      //TODO write into RAM for having 2 possibilties:
-      //-truncate the log file to zero for every startup
-      //-append to log file at every startup
+    //TODO write into RAM for having 2 possibilties:
+    //-truncate the log file to zero for every startup
+    //-append to log file at every startup
 
-      //->Write into RAM until the config file that determines which of these
-      //2 possibilties to use is completely read.
-      //If the config says: always append: simply delete the RAM buffer.
-      //If the config says: always truncate: 
-      // 1. truncate the log file to zero
-      // 2. write the RAM buffer contents ( that are the same as in 
-      //   log file written from startup till then)
-      // 3. delete the RAM buffer.
-      //buffer.add( ofstream.str() ) ;
+    //->Write into RAM until the config file that determines which of these
+    //2 possibilties to use is completely read.
+    //If the config says: always append: simply delete the RAM buffer.
+    //If the config says: always truncate:
+    // 1. truncate the log file to zero
+    // 2. write the RAM buffer contents ( that are the same as in
+    //   log file written from startup till then)
+    // 3. delete the RAM buffer.
+    //buffer.add( ofstream.str() ) ;
   }
 }
 #endif //#ifdef COMPILE_WITH_WSTRING

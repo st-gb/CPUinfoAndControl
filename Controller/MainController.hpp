@@ -9,25 +9,32 @@
 #define	_MAINCONTROLLER_HPP
 
 #include <ModelData/ModelData.hpp>
-#include <UserInterface.hpp>
+//#include <UserInterface/UserInterface.hpp>
 #include <Controller/stdtstr.hpp>
 #include <Controller/MSVC_adaption/tchar.h>
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
+class UserInterface ;
 class //ISpecificController ;
   I_CPUaccess ;
 class I_CPUcontroller ;
 
 class MainController 
 {
-  Model * mp_model ;
+private:
+  //ISpecificController
+  I_CPUaccess * mp_cpuaccess ;
   I_CPUcontroller * mp_cpucontroller ;
+  Model * mp_model ;
+  UserInterface * mp_userinterface ;
 public:
   I_CPUcontroller * CreateCPUcontrollerAndUsageGetter(
     ICPUcoreUsageGetter * & r_p_icpucoreusagegetter ) ;
   BYTE CreateCPUcontrollerAndUsageGetter(
-    I_CPUcontroller * & cpu  
+    I_CPUcontroller * & cpu
     , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter) ;
-  MainController();
+  MainController( UserInterface * p_userinterface);
   MainController(const MainController& orig);
   virtual ~MainController();
   BYTE GetPstatesDirPath(std::string & r_strCPUtypeRelativeDirPath ) ;
@@ -41,8 +48,8 @@ public:
       stdtstr = _T("AMD Griffin") ;
       r_stdvectstr.push_back( stdtstr ) ;
     #endif
-    stdtstr = _T("Intel Pentium M") ;
-    r_stdvectstr.push_back( stdtstr ) ;
+//    stdtstr = _T("Intel Pentium M") ;
+//    r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }
   BYTE Init(
@@ -60,10 +67,6 @@ public:
     std::string & strFamilyAndModelFilePath
     , UserInterface * p_userinterface
     ) ;
-private:
-  //ISpecificController 
-  I_CPUaccess * mp_cpuaccessmethod ;
 };
 
 #endif	/* _MAINCONTROLLER_HPP */
-
