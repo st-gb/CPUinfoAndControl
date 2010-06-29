@@ -1,3 +1,4 @@
+//Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany
 #define BITMASK_FOR_LOWMOST_2BIT 3//=11bin
 #define BITMASK_FOR_LOWMOST_3BIT 7//=111bin
 #define BITMASK_FOR_LOWMOST_4BIT 15//=1111bin
