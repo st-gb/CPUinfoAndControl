@@ -241,7 +241,8 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
      NULL // NULL = not overlapped
      );
    DEBUGN( (fSuccess ? "successfully got" : "failed to read")
-      << dwNumBytesRead << " bytes from pipe: " << dwNumberOfBytes )
+      << dwNumBytesRead << " bytes from pipe: " << //dwNumberOfBytes
+      m_dwSizeInByte )
    if( fSuccess
        // do NOT read 0 bytes! this blocks at ReadFile although the server
        // finished to write 0 bytes

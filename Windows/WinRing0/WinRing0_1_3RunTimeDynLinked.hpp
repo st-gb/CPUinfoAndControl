@@ -61,16 +61,7 @@ class WinRing0_1_3RunTimeDynLinked
   //: public wxWidgets::CalculationThread
 {
 private:
-  //HINSTANCE m_hinstanceWinRingDLL ;
   HMODULE m_hModuleWinRing0DLL ;
-  //_ReadPciConfigDwordEx m_pfnreadpciconfigdwordex ;
-  //_WritePciConfigDwordEx m_pfnwritepciconfigdwordex;
-  _CpuidTx m_pfncpuidex ;
-  _RdmsrTx m_pfnrdmsrex ;
-  _RdpmcTx m_pfnrdpmcex ;
-  _ReadPciConfigDwordEx m_pfnreadpciconfigdwordex ;
-  _WritePciConfigDwordEx m_pfnwritepciconfigdwordex ;
-  _WrmsrTx m_pfnwrmsrex ;
   //UserInterface * mp_userinterface ;
 public:
   WinRing0_1_3RunTimeDynLinked(UserInterface * pui) ;

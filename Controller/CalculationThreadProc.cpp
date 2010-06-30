@@ -1,13 +1,17 @@
 //PreCompHeaders -> faster build
 #include <wx/wxprec.h>
+
 //This file needed to have the file extension ".cpp", else there where
 //errors in Visual Studio for the include of <string>.
 #include "CalculationThreadProc.h"
-#include <Controller/ICPUcoreUsageGetter.hpp> //class ICPUcoreUsageGetter
-#include <Controller/I_CPUcontroller.hpp> //class 
+//class ICPUcoreUsageGetter
+#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp> //class
 #include <ModelData/ModelData.hpp> //class Model
-#include "UserInterface.hpp"
+#include <UserInterface/UserInterface.hpp>
+
 #include <stdlib.h> //rand()
+
 //wxWidgets does not provide the needed "set CPU affinity". So I must
 //distinguish.
 #ifdef _WINDOWS
@@ -31,9 +35,7 @@ DWORD
   pcalculationthread->m_vbContinue = true ;
   double d = 5.0 ;
   int i = 1 ;
-  //PumaStateCtrl * p_pumastatectrl = (PumaStateCtrl * ) lpParameter ;
   if( pcalculationthread )
-  //if( p_pumastatectrl )
     while(//1
       pcalculationthread->m_vbContinue)
     {
@@ -58,7 +60,6 @@ DWORD
         //::EnterCriticalSection(
         //  //LPCRITICAL_SECTION lpCriticalSection
         //  &pcalculationthread->m_criticalsection
-        //  //&p_pumastatectrl->m_criticalsectionMSRaccess
         //  );
         //pcalculationthread->m_bCalcError = true ;
         //Better set the voltage hogh from THIS thread because
@@ -66,19 +67,14 @@ DWORD
         //time but it is better to set the voltage high immediately to 
         //prevent a computer freeze.
         //mp_controller->
-        //p_pumastatectrl->IncreaseVoltageForCurrentPstate();
-        //p_pumastatectrl->GetUserInterface()->Confirm(
-        //pcalculationthread->mp_pumastatectrl->IncreaseVoltageForCurrentPstate(
         pcalculationthread->mp_cpucontroller->IncreaseVoltageForCurrentPstate(
           pcalculationthread->m_byCoreID );
-        //pcalculationthread->mp_pumastatectrl->GetUserInterface()->Confirm(
         pcalculationthread->mp_cpucontroller->GetUserInterface()->Confirm(
           "calc. error (surely because of undervolting) occured\n"
           "Set the voltage higher to stabilize the machine");
         DEBUG("Set the voltage higher to stabilize the machine\n");
         //::LeaveCriticalSection(
         //  &pcalculationthread->m_criticalsection
-        //  //&p_pumastatectrl->m_criticalsectionMSRaccess
         //  );
       }
     }
@@ -336,12 +332,10 @@ DWORD
     dwIndex = 0 ;
   DWORD dwNumberCountMinus1 = dwNumbers - 1 ;
   dSum = 0.0 ;
-  //PumaStateCtrl * p_pumastatectrl = (PumaStateCtrl * ) lpParameter ;
 //  long lPreviousPrime95ResultsFileLength = GetPrime95ResultsFileLength() ;
   srand(dwNumberCountMinus1) ;
   BYTE byExpVal = 255 ;
   if( pcalculationthread )
-  //if( p_pumastatectrl )
     while(//1
       pcalculationthread->m_vbContinue)
     {
@@ -405,27 +399,21 @@ DWORD
         //::EnterCriticalSection(
         //  //LPCRITICAL_SECTION lpCriticalSection
         //  &pcalculationthread->m_criticalsection
-        //  //&p_pumastatectrl->m_criticalsectionMSRaccess
         //  );
         //pcalculationthread->m_bCalcError = true ;
-        //Better set the voltage hogh from THIS thread because
+        //Better set the voltage high from THIS thread because
         //on the other thread a user input may be there at the same
         //time but it is better to set the voltage high immediately to 
         //prevent a computer freeze.
         //mp_controller->
-        //p_pumastatectrl->IncreaseVoltageForCurrentPstate();
-        //p_pumastatectrl->GetUserInterface()->Confirm(
-        //pcalculationthread->mp_pumastatectrl->IncreaseVoltageForCurrentPstate(
         pcalculationthread->mp_cpucontroller->IncreaseVoltageForCurrentPstate(
           pcalculationthread->m_byCoreID);
-        //pcalculationthread->mp_pumastatectrl->GetUserInterface()->Confirm(
         pcalculationthread->mp_cpucontroller->GetUserInterface()->Confirm(
           "calc. error (surely because of undervolting) occured\n"
           "Set the voltage higher to stabilize the machine");
         DEBUG("Set the voltage higher to stabilize the machine\n");
         //::LeaveCriticalSection(
         //  &pcalculationthread->m_criticalsection
-        //  //&p_pumastatectrl->m_criticalsectionMSRaccess
         //  );
         //lPreviousPrime95ResultsFileLength = lPrime95ResultsFileLength ;
       }
@@ -467,9 +455,7 @@ HighALUloadThreadProc(LPVOID lpParameter)
     //For stability check: use a number where all bits are set. So every 
     //transistor storing a bit needs voltage.
     (DWORD) -1 ;
-  //PumaStateCtrl * p_pumastatectrl = (PumaStateCtrl * ) lpParameter ;
   if( pcalculationthread )
-  //if( p_pumastatectrl )
     while(//1
       pcalculationthread->m_vbContinue )
     {
@@ -489,27 +475,21 @@ HighALUloadThreadProc(LPVOID lpParameter)
         //::EnterCriticalSection(
         //  //LPCRITICAL_SECTION lpCriticalSection
         //  &pcalculationthread->m_criticalsection
-        //  //&p_pumastatectrl->m_criticalsectionMSRaccess
         //  );
         //pcalculationthread->m_bCalcError = true ;
-        //Better set the voltage hogh from THIS thread because
+        //Better set the voltage high from THIS thread because
         //on the other thread a user input may be there at the same
         //time but it is better to set the voltage high immediately to
         //prevent a computer freeze.
         //mp_controller->
-        //p_pumastatectrl->IncreaseVoltageForCurrentPstate();
-        //p_pumastatectrl->GetUserInterface()->Confirm(
-        //pcalculationthread->mp_pumastatectrl->IncreaseVoltageForCurrentPstate(
         pcalculationthread->mp_cpucontroller->IncreaseVoltageForCurrentPstate(
-          pcalculationthread->m_byCoreID );        
-        //pcalculationthread->mp_pumastatectrl->GetUserInterface()->Confirm(
+          pcalculationthread->m_byCoreID );
         pcalculationthread->mp_cpucontroller->GetUserInterface()->Confirm(
           "calc. error (surely because of undervolting) occured\n"
           "Set the voltage higher to stabilize the machine");
         DEBUG("Set the voltage higher to stabilize the machine\n");
         //::LeaveCriticalSection(
         //  &pcalculationthread->m_criticalsection
-        //  //&p_pumastatectrl->m_criticalsectionMSRaccess
         //  );
       }
       -- dwAllBitsSet ;

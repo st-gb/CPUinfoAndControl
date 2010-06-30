@@ -9,12 +9,10 @@
 #define	_SAX2_DEFAULT_VOLTAGE_FOR_FREQUENCY_HPP
 
 //#ifdef COMPILE_WITH_XERCES
-#include "../ModelData/PStates.h"
-#include "../global.h" //for DEBUG(...) etc.
-#include "../ModelData/ModelData.hpp"
-#include "../UserInterface.hpp"
-#include "Xerces/XercesHelper.hpp"
-#include "ModelData/RegisterData.hpp"
+#include <global.h> //for DEBUG(...) etc.
+#include <ModelData/ModelData.hpp>
+//#include <ModelData/RegisterData.hpp>
+#include <Xerces/XercesHelper.hpp>
 #include <xercesc/sax2/DefaultHandler.hpp>
 #include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
 #include <string> //for std::string
@@ -22,6 +20,8 @@
 //Needed for verzichten auf the exact namspace.
 XERCES_CPP_NAMESPACE_USE
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
 class MSRdata ;
 class UserInterface ;
 class Model ;
@@ -56,6 +56,7 @@ public:
     //    const   XMLCh * const    cpc_xmlchQualifiedName //,
     //    //const   Attributes &    cr_xercesc_attributes
     //  );
+    void fatalError(const SAXParseException& exception) ;
     void handleFreqAndMaxVoltageElement(
       const   //xercesc_2_8::
         Attributes & attrs
@@ -64,7 +65,6 @@ public:
       const   //xercesc_2_8::
         Attributes & attrs
       ) ;
-    void fatalError(const SAXParseException& exception) ;
     void startElement(
         const   XMLCh * const    cpc_xmlchURI ,
         const   XMLCh * const    cpc_xmlchLocalName ,

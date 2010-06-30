@@ -103,6 +103,8 @@ Logger g_logger ;
       //The reference clock is needed for setting the current frequency. So it
       //must be determined prior to any call of this function.
       GetCurrentReferenceClock(12.0, 1000 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
+      DEBUGN("first calculated reference clock in MHz: "
+        << g_fReferenceClockInMHz )
     }
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
@@ -310,7 +312,7 @@ Logger g_logger ;
      byMaxMultiplier = (BYTE) ( dwLowmostBits & 255 ) ;
      BYTE byNumMultis = byMaxMultiplier -
          //min. multi - 1
-         5 ;
+         6 ;
      float * ar_f = new float[byNumMultis] ;
      //If allocating the array on the heap succeeded.
      if( ar_f )
@@ -375,7 +377,7 @@ Logger g_logger ;
      //If allocating the array on the heap succeeded.
      if( ar_f )
      {
-       ar_f[0] = 0.65 ;
+       ar_f[0] = 0.0 ;
        ar_f[1] = 0.9 ;
        *p_wNum = byNumVoltages ;
      }
@@ -436,6 +438,8 @@ Logger g_logger ;
     GetCurrentReferenceClock( 12.0 ,
       1000 , //min. timespan in ms
       10000 ) ;
+    DEBUGN("calculated reference clock in MHz: "
+      << g_fReferenceClockInMHz )
     *p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
 
     return byRet ;

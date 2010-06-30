@@ -9,6 +9,13 @@
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 //#include <Powrprof.h> //for static linking 
 
+ char * PowerProfUntilWin6DynLinked::s_ar_ar_chDynamicThrottle [] = {
+  "PO_THROTTLE_NONE" ,
+  "PO_THROTTLE_CONSTANT" ,
+  "PO_THROTTLE_DEGRADE" ,
+  "PO_THROTTLE_ADAPTIVE"
+  } ;
+
 //struct PwrSchemesEnumProcStruct
 //{
 //  PwrSchemesEnumProcStruct() 
@@ -178,8 +185,8 @@ BOOLEAN CALLBACK PwrSchemesEnumProcSearchPowerSchemeByName (
   LPARAM lParam      // user-defined value
   )
 {
-//  LOGWN_WSPRINTF( L"Power scheme index: %u name:%ls" ,
-//    uiPowerSchemeID , lpwstrPowerSchemeName )
+  LOGWN_WSPRINTF( L"Power scheme index: %u name:%ls" ,
+    uiPowerSchemeID , lpwstrPowerSchemeName )
   PowerProfUntilWin6DynLinked * p_powerprofuntilwin6dynlinked = 
     (PowerProfUntilWin6DynLinked *) lParam ;
   if( p_powerprofuntilwin6dynlinked )
@@ -535,28 +542,27 @@ unsigned char PowerProfUntilWin6DynLinked::CreatePowerSchemeWithWantedName()
 void PowerProfUntilWin6DynLinked::DeactivateCPUscaling(
   PROCESSOR_POWER_POLICY & r_processor_power_policy )
 {
-#ifdef _DEBUG
-  LOGN("DynamicThrottle: " << (WORD) r_processor_power_policy.DynamicThrottle)
-#endif
-  //LOGN("machine_processor_power_policy.ProcessorPolicyAc: " <<
-  //  //Covert to WORD, else output as (non-printable) CHARACTER.
-  //  (WORD) machine_processor_power_policy.ProcessorPolicyAc.DynamicThrottle )
+  BYTE byDVFSalreadyDisabled = 0 ;
+//#ifdef _DEBUG
+  UCHAR uchDynamicThrottle = r_processor_power_policy.DynamicThrottle ;
+  LOGN("DynamicThrottle: " <<
+    //Convert to WORD, else output as (non-printable) CHARACTER.
+    (WORD) uchDynamicThrottle
+    << "(" << s_ar_ar_chDynamicThrottle[ uchDynamicThrottle ] << ")" )
+//#endif
+  //http://msdn.microsoft.com/en-us/library/aa373183%28v=VS.85%29.aspx:
+  //PO_THROTTLE_NONE:
+  //"No processor performance control is applied. This policy always runs the
+  // processor at its highest possible performance level. This policy will not
+  //engage processor clock throttling, except in response to thermal events."
   if( //machine_processor_power_policy.ProcessorPolicyAc.
-    r_processor_power_policy.
-    DynamicThrottle != PO_THROTTLE_NONE 
+    r_processor_power_policy.DynamicThrottle == PO_THROTTLE_NONE
     )
-  {
+    byDVFSalreadyDisabled = 1 ;
+  else
     //machine_processor_power_policy.ProcessorPolicyAc.DynamicThrottle 
     r_processor_power_policy.DynamicThrottle 
       = PO_THROTTLE_NONE ;
-  }
-  //if( machine_processor_power_policy.ProcessorPolicyDc.
-  //  DynamicThrottle != PO_THROTTLE_NONE 
-  //  )
-  //{
-  //  machine_processor_power_policy.ProcessorPolicyDc.DynamicThrottle 
-  //    = PO_THROTTLE_NONE ;
-  //}
   //LOGN("writing setting for index " << uiPowerSchemeIndex <<
   //  "AC:" << 
   //    machine_processor_power_policy.ProcessorPolicyAc.DynamicThrottle 
@@ -566,12 +572,12 @@ void PowerProfUntilWin6DynLinked::DeactivateCPUscaling(
   for( BYTE byPolicyIndex = 0 ; byPolicyIndex < 
     r_processor_power_policy.PolicyCount ; ++ byPolicyIndex )
   {
-#ifdef _DEBUG
+//#ifdef _DEBUG
     LOGN("Policy " << (WORD) byPolicyIndex << " AllowDemotion: "
       << r_processor_power_policy.Policy[byPolicyIndex].AllowDemotion )
     LOGN("Policy " << (WORD) byPolicyIndex << " AllowPromotion: "
       << r_processor_power_policy.Policy[byPolicyIndex].AllowPromotion )
-#endif
+//#endif
     //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/processor_power_policy_info_str.htm:
     //When set, allows the kernel power policy manager to demote from the current state. 
     r_processor_power_policy.Policy[byPolicyIndex].AllowDemotion = 0 ;
@@ -628,6 +634,8 @@ BYTE PowerProfUntilWin6DynLinked::DisableCPUscaling(UINT uiPowerSchemeIndex)
 {
   BYTE byRet = 0 ;
   MACHINE_PROCESSOR_POWER_POLICY machine_processor_power_policy ;
+  LOGN("Disabling CPU scaling / Dynamic Voltage and Frequency Scaling for"
+      " power scheme index \"" << uiPowerSchemeIndex << "\" if needed.")
   if( ReadProcessorPwrScheme(
       //m_uiPowerSchemeIndexWithP0ThrottleNone ,
       uiPowerSchemeIndex ,
@@ -637,11 +645,14 @@ BYTE PowerProfUntilWin6DynLinked::DisableCPUscaling(UINT uiPowerSchemeIndex)
   {
     PROCESSOR_POWER_POLICY * p_processor_power_policy = 
       & machine_processor_power_policy.ProcessorPolicyAc ;
+    LOGN("for Alternate Current :")
     DeactivateCPUscaling(*p_processor_power_policy) ;
     p_processor_power_policy =
       & machine_processor_power_policy.ProcessorPolicyDc ;
+    LOGN("for Direct Current (power from battery):")
     DeactivateCPUscaling(*p_processor_power_policy) ;
-    LOGN("writing setting for index " << uiPowerSchemeIndex )
+
+    LOGN("writing processor power scheme setting for index " << uiPowerSchemeIndex )
     //BOOLEAN 
     if( WriteProcessorPwrScheme(
         uiPowerSchemeIndex ,
@@ -656,7 +667,8 @@ BYTE PowerProfUntilWin6DynLinked::DisableCPUscaling(UINT uiPowerSchemeIndex)
       LOGN("Writing CPU settings failed:" << ::GetLastError() )
   }
   else
-    LOGN("error getting processor info" << uiPowerSchemeIndex << " as active scheme.")
+    LOGN("error reading processor power scheme for index "
+      << uiPowerSchemeIndex << ".")
   return byRet ;
 }
 

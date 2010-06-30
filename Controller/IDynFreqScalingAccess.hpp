@@ -36,6 +36,9 @@ public:
   //-
   virtual unsigned char EnableFrequencyScalingByOS() = 0;
   virtual bool EnablingIsPossible() { return false ; }
+  //to avoid g++ warning "`class Windows_API::DynFreqScalingAccess' has virtual
+  // functions but non-virtual destructor"
+  virtual ~IDynFreqScalingAccess() {}
   virtual string_type GetEnableDescription() {
     //return std::tstring(_T("") ) ;
     return std::wstring(L"" ) ;

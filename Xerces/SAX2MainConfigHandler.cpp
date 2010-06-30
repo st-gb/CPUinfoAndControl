@@ -5,11 +5,13 @@
 
 #ifdef COMPILE_WITH_XERCES
   #include "../stdafx.h"
-  #include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
+  #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
   //If not included: compiler error "C1010".
   #include "SAX2MainConfigHandler.hpp"
   #include "XercesHelper.hpp" //for GetAttributeValue(...)
+  #include <UserInterface/UserInterface.hpp>
+
   //#include "PStates.h"
   #include <xercesc/sax2/Attributes.hpp>
   #include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
@@ -18,7 +20,6 @@
   #include <string>
   #include <sstream> //for istringstream
   #include <iostream>
-  #include "../global.h"
   #include <exception> //for class std::exception
 	#ifndef WIN32
 		#include <stdexcept> //for class "runtime_error"
@@ -151,19 +152,25 @@
 	    }
 	    else
 	    {
-	      std::ostrstream ostrstream ;
-	      ostrstream << "Error getting \"" << 
+//	      std::ostrstream ostrstream ;
+//	      ostrstream
+	      std::ostringstream stdostringstream ;
+	      stdostringstream << "Error getting \"" <<
 	        strAttributeName << "\" attribute for \""
 	        << m_strElementName << "\" element" ;
-	      m_p_userinterface->Confirm(ostrstream) ;
+	      m_p_userinterface->Confirm(//ostrstream
+	        stdostringstream ) ;
 	    }
 	  }
 	  else
 	  {
-	    std::ostrstream ostrstream ;
-	    ostrstream << "Error getting \"" << strAttributeName << "\" for "
+//	    std::ostrstream ostrstream ;
+//	    ostrstream
+	    std::ostringstream stdostringstream ;
+	    stdostringstream << "Error getting \"" << strAttributeName << "\" for "
 	      "\"" << m_strElementName << "\" element" ;
-	    m_p_userinterface->Confirm(ostrstream) ;
+	    m_p_userinterface->Confirm( //ostrstream
+	      stdostringstream ) ;
 	  }
   }
 
@@ -184,19 +191,25 @@
 	    }
 	    else
 	    {
-	      std::ostrstream ostrstream ;
-	      ostrstream << "Error getting \"" << 
+//	      std::ostrstream ostrstream ;
+//	      ostrstream
+	      std::ostringstream stdostringstream ;
+	      stdostringstream << "Error getting \"" <<
 	        strAttributeName << "\" attribute for \""
 	        << m_strElementName << "\" element" ;
-	      m_p_userinterface->Confirm(ostrstream) ;
+	      m_p_userinterface->Confirm(//ostrstream
+	        stdostringstream ) ;
 	    }
 	  }
 	  else
 	  {
-	    std::ostrstream ostrstream ;
-	    ostrstream << "Error getting \"" << strAttributeName << "\" for "
+//	    std::ostrstream ostrstream ;
+//	    ostrstream
+      std::ostringstream stdostringstream ;
+       stdostringstream << "Error getting \"" << strAttributeName << "\" for "
 	      "\"" << m_strElementName << "\" element" ;
-	    m_p_userinterface->Confirm(ostrstream) ;
+	    m_p_userinterface->Confirm(//ostrstream
+	      stdostringstream ) ;
 	  }
 	}
 	
@@ -224,7 +237,7 @@
 	//      //m_p_pstates->SetPStateFID((BYTE)wNumber,byFreqID);
 	//      m_p_model->m_pstates.SetPStateFID(byPstateID,byFreqID);
 	//    }
-	    ////Maximim voltage for current p-state.
+	    ////Maximum voltage for current p-state.
 	    //if(GetAttributeValue(attrs,"max_voltage_in_volt",fMaxVoltage))
 	    //{
 	    //  //bChange = true;
@@ -259,13 +272,13 @@
     bool bConfirm ;
 	  std::string strValue ;
       //std::string stdstrLogFilePath ;
-    if( XercesHelper::GetAttributeValue(
-              attrs,
-              "confirm"
-              ,bConfirm ) 
-        )
+//    if( XercesHelper::GetAttributeValue(
+//              attrs,
+//              "confirm"
+//              ,bConfirm )
+//        )
       //m_p_pstates->m_bConfirm = bConfirm ;
-      m_p_model->m_pstates.m_bConfirm = bConfirm ;
+//      m_p_model->m_pstates.m_bConfirm = bConfirm ;
     if( XercesHelper::GetAttributeValue(
               attrs
               ,"skip_cpu_type_check"
@@ -373,13 +386,11 @@
 	    }
 	    return ;
 	  }
-	  ////if( strcmp(pchXMLelementName, "pstate") == 0 )
 	  //else if( m_strElementName == "pstate" )
 	  //{
 	  //  handlePstateElement(attrs) ;
 	  //  return ;
 	  //}
-	  //if( strcmp(pchXMLelementName, "pumastatectrl") == 0 )
 	  else if( m_strElementName == //"main_config" 
       "CPU_control_main_config" )
 	  {

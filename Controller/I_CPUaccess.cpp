@@ -1,6 +1,8 @@
 //#include "ISpecificController.hpp"
 #include "I_CPUaccess.hpp"
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
+#include <Controller/CPU-related/ReadTimeStampCounter.h>
+
 #include <string.h> //strcat(...)
 #include <windef.h> //for DWORD
 #define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
@@ -79,6 +81,47 @@ ReadMsr(void	*lpInBuffer, //index/offset as 4 byte value.
 	*lpBytesReturned = 8;
     return STATUS_SUCCESS;
 }*/
+
+
+//Implement the CPUID instruction here.
+//It may be overridden for subclasses that allow ring0 access because the
+//"cpuid" instruction may be restricted to ring0 access.
+BOOL I_CPUaccess::CpuidEx(
+  DWORD dwIndex,
+  PDWORD p_dwEAX,
+  PDWORD p_dwEBX,
+  PDWORD p_dwECX,
+  PDWORD p_dwEDX,
+  DWORD_PTR affinityMask
+  )
+{
+  //from http://www.cs.usfca.edu/~cruse/cs686s07/cpuid.cpp:
+//    int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  //TODO creates error code 988 when a release DLL created with this code was loaded
+//#ifdef _DEBUG
+//    asm(" movl %0, %%eax " :: "m" (dwIndex) );
+//    DEBUGN("before executing \"cpuid\" instruction" )
+//    asm(" cpuid ");
+//    asm(" mov %%eax, %0 " : "=m" (*p_dwEAX) );
+//    DEBUGN("after \"cpuid\": eax:" << *p_dwEAX )
+//    asm(" mov %%ebx, %0 " : "=m" (*p_dwEBX) );
+//    asm(" mov %%ecx, %0 " : "=m" (*p_dwECX) );
+//    asm(" mov %%edx, %0 " : "=m" (*p_dwEDX) );
+//    return TRUE ;
+//#else
+  ////When using "*p_dwEAX" etc. directly inside the CPUID instruction
+  //// the stepping was "
+  //from http://www.ibm.com/developerworks/library/l-ia.html:
+  asm ("cpuid"
+        : "=a" (*p_dwEAX),
+          "=b" (*p_dwEBX),
+          "=c" (*p_dwECX),
+          "=d" (*p_dwEDX)
+        : "a" (dwIndex));
+//    *p_dwEAX = reg_eax ;
+  DEBUGN("after \"cpuid\": eax:" << *p_dwEAX << "stepping:" << (*p_dwEAX & 0xF) )
+  return TRUE ;
+}
 
 //Is the same for AMD and Intel.
 bool //ISpecificController
@@ -466,6 +509,17 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
   return byCoreNumber ;
 }
 
+//Implement the rdTSC instruction here.
+//It may be overridden for subclasses that allow ring0 access because the
+//"rdTSC" instruction may be restricted to ring0 access.
+BOOL I_CPUaccess::ReadTSC(
+  DWORD & r_dwLowEAX ,
+  DWORD & r_dwHighEDX
+  )
+{
+  ReadTimeStampCounter(r_dwLowEAX, r_dwHighEDX ) ;
+  return TRUE ;
+}
 //I_CPUaccess::~I_CPUaccess()
 //{
 //

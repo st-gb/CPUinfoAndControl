@@ -5,7 +5,7 @@
 
 #ifdef COMPILE_WITH_XERCES
   #include "../stdafx.h"
-  #include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
+  #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
   //If not included: compiler error "C1010".
   #include "SAX2ServiceConfigHandler.hpp"
@@ -16,15 +16,11 @@
   //#include "global.h" //for DEBUG(...) etc.
   #include <ModelData/ServiceAttributes.hpp>
   #include <ModelData/ModelData.hpp>
+  #include <UserInterface/UserInterface.hpp>
 
   #include <string>
   #include <sstream> //for istringstream
   #include <iostream>
-  #include "../global.h"
-  #include <exception> //for class std::exception
-	#ifndef WIN32
-		#include <stdexcept> //for class "runtime_error"
-	#endif //#ifndef WIN32
 	using namespace std;
 	
 	//#define MB_CUR_MAX 1 
@@ -42,53 +38,12 @@
 	  class Attributes;
 	XERCES_CPP_NAMESPACE_END
 	
-	//#ifdef WIN32
-	class NumberFormatException 
-    : public
-    #if defined(__CYGWIN__) || defined(__MINGW32__)
-    //  ::RuntimeException
-      std::exception
-    #else
-      std::runtime_error
-  #endif
-	{
-	public:
-	   NumberFormatException(const std::string& s)
-      #ifdef __CYGWIN__
-      //  ::RuntimeException
-      //  std::exception()
-      #else
-        #ifdef _MSC_VER
-        :
-        std::runtime_error(s)
-        #endif
-      #endif
-      {}
-	};
-	//#endif
-	
-	template <class T>
-	bool from_string(
-	   T& t, 
-	   const std::string& s
-	   //,std::ios_base& (*f)(std::ios_base&)
-	  )
-	{
-	  //DEBUG("from_string:%s\n",s);
-	  LOG("from_string:" << s << "\n" );
-	  std::istringstream iss(s);
-	  return !(iss //>> f 
-	    >> t
-	    ).fail();
-	}
-	
-	SAX2ServiceConfigHandler::SAX2ServiceConfigHandler(//PStates & pstates
+	SAX2ServiceConfigHandler::SAX2ServiceConfigHandler(
 	  Model & model ,
 	  UserInterface * p_userinterface //,
     //I_CPUcontroller * p_cpucontroller
 	  )
 	{
-	  //m_p_pstates = & pstates ;
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
     //p_cpucontroller = p_cpucontroller ;
@@ -96,14 +51,13 @@
 
   void SAX2ServiceConfigHandler::startElement
     (
-    const   XMLCh * const    uri,
-    const   XMLCh * const    localname,
-    const   XMLCh * const    qname,
-    const   //xercesc_2_8::
-      XERCES_CPP_NAMESPACE::Attributes & attrs
+    const   XMLCh * const    cp_xmlchURI,
+    const   XMLCh * const    cp_xmlchLocalName,
+    const   XMLCh * const    cp_xmlchQualifiedName,
+    const   XERCES_CPP_NAMESPACE::Attributes & attrs
 	  )
 	{
-	  char * pchXMLelementName = XMLString::transcode(localname);
+	  char * pchXMLelementName = XMLString::transcode(cp_xmlchLocalName);
 	  if( pchXMLelementName )
 	  {
       std::wstring stdwstrValue ;

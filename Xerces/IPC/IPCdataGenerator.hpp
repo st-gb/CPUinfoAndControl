@@ -15,13 +15,14 @@ class Model ;
 
 namespace Xerces
 {
+  //This class may be used e.g. from sockets or pipes.
   class IPCdataHandler
     : public I_IPC_DataHandler
   {
   public:
     Model & mr_model ;
     IPCdataHandler( Model & r_model ) ;
-    void GetCurrentCPUcoreAttributeValues() ;
+    BYTE * GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize) ;
     DWORD IPCdataHandler::GetResponse(BYTE byCommand,
       BYTE * & r_arbyResponseData ) ;
   };

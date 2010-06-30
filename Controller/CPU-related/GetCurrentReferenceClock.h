@@ -16,6 +16,7 @@
 #include <windows.h> // GetTickCount()
 #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include "ReadTimeStampCounter.h"
+#include <global.h>
 
 //inline void GetCurrentReferenceClock(float fDivisor) ;
 
@@ -46,6 +47,7 @@ void GetCurrentReferenceClock(float fDivisor //, float & fReferenceClockInMHz
     //Use this macro in order to take a value wrap into account.
     ULONG_VALUE_DIFF( g_dwTickCountInMilliseconds,
     g_dwPreviousTickCountInMilliseconds) ;
+  DEBUGN("tick count diff in ms: " << g_dwTickCountDiffInMilliseconds )
   if( //g_ullTimeStampCounterDiff == _UI64_MAX // ^= "= 0"
       //If at the beginning / for the first time.
 //      g_dwTickCountInMilliseconds == ULONG_MAX
@@ -59,17 +61,18 @@ void GetCurrentReferenceClock(float fDivisor //, float & fReferenceClockInMHz
     //Time diff too large: take a TSC measurement (again).
     g_ullPreviousTimeStampCounter = ReadTimeStampCounter() ;
 
-    //Wait some milliseconds to get a time difference.
-    ::Sleep(//500
-      dwMinimumTimeDiffInMilliseconds ) ;
-
+//    //Wait some milliseconds to get a time difference.
+//    ::Sleep(//500
+//      dwMinimumTimeDiffInMilliseconds ) ;
 //    g_dwTickCountInMilliseconds = ::GetTickCount();
-
-    g_dwTickCountDiffInMilliseconds =
-//      //Use this macro in order to take a value wrap into account.
-//      ULONG_VALUE_DIFF( g_dwTickCountInMilliseconds,
-//      g_dwPreviousTickCountInMilliseconds) ;#
-        dwMinimumTimeDiffInMilliseconds ;
+//    g_dwTickCountDiffInMilliseconds =
+////      //Use this macro in order to take a value wrap into account.
+////      ULONG_VALUE_DIFF( g_dwTickCountInMilliseconds,
+////      g_dwPreviousTickCountInMilliseconds) ;#
+//        dwMinimumTimeDiffInMilliseconds ;
+//    //overflows the same way as for GetTickCount() ;
+//    g_dwTickCountInMilliseconds += dwMinimumTimeDiffInMilliseconds ;
+    g_dwTickCountDiffInMilliseconds = 0 ;
   }
 //  //Use global var., so it does not need to be created on stack for every time.
 //  g_dwTickCountInMilliseconds = ::GetTickCount() ;
@@ -83,8 +86,10 @@ void GetCurrentReferenceClock(float fDivisor //, float & fReferenceClockInMHz
   if( g_dwTickCountDiffInMilliseconds >= //1000
     dwMinimumTimeDiffInMilliseconds )
   {
+    DEBUGN("GetCurrentReferenceClock(...) tick count diff ("
+      << g_dwTickCountDiffInMilliseconds << ") > min time span("
+      << dwMinimumTimeDiffInMilliseconds << ")" )
     g_dwPreviousTickCountInMilliseconds = g_dwTickCountInMilliseconds ;
-
 //      std::stringstream stdstrstream ;
   //  stdstrstream << g_dwTickCountDiffInMilliseconds ;
   //  MessageBox(NULL, stdstrstream.str().c_str() , "info" , MB_OK) ;
@@ -92,6 +97,7 @@ void GetCurrentReferenceClock(float fDivisor //, float & fReferenceClockInMHz
     g_ullCurrentTimeStampCounter = ReadTimeStampCounter() ;
     g_ullTimeStampCounterDiff = ULONGLONG_VALUE_DIFF(
       g_ullCurrentTimeStampCounter , g_ullPreviousTimeStampCounter ) ;
+    DEBUGN("TSC diff: " << g_ullTimeStampCounterDiff )
     g_ullPreviousTimeStampCounter = g_ullCurrentTimeStampCounter ;
   //  stdstrstream << g_ullTimeStampCounterDiff ;
   //  MessageBox(NULL, stdstrstream.str().c_str() , "info" , MB_OK) ;

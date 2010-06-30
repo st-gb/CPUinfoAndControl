@@ -1,5 +1,7 @@
 #include "CPUcoreData.hpp"
-//#include <Controller/AMD/Griffin/AMD_family17.h>
+//Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
+//"undefined reference".
+#include <binary_search.cpp> //GetArrayIndexForClosestLessOrEqual(...)
 
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {
@@ -21,6 +23,62 @@ void CPUcoreData::AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz)
 {
   m_stdsetvoltageandfreqLowestStable.insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
   //mp_setloweststablevoltageforfreq->insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
+}
+
+void CPUcoreData::AvailableMultipliersToArray()
+{
+  if( m_arfAvailableMultipliers )
+  {
+    delete [ ] m_arfAvailableMultipliers ;
+    m_arfAvailableMultipliers = NULL ;
+  }
+  LOGN("AvailableMultipliersToArray--std::set size: "
+    << m_stdset_floatAvailableMultipliers.size() )
+  if( ! m_stdset_floatAvailableMultipliers.empty() )
+  {
+    m_arfAvailableMultipliers = new float [
+      m_stdset_floatAvailableMultipliers.size() ] ;
+    LOGN("AvailableMultipliersToArray--array address:" <<
+      m_arfAvailableMultipliers )
+    //If alloc succeeded.
+    if( m_arfAvailableMultipliers )
+    {
+      WORD wArrayIndex = 0 ;
+      for( std::set<float>::const_iterator c_iter =
+          m_stdset_floatAvailableMultipliers.begin() ;
+          c_iter != m_stdset_floatAvailableMultipliers.end() ;
+          ++ c_iter , ++ wArrayIndex )
+      {
+        m_arfAvailableMultipliers[ wArrayIndex ] = *c_iter ;
+      }
+    }
+  }
+}
+
+void CPUcoreData::AvailableVoltagesToArray()
+{
+  if( m_arfAvailableVoltagesInVolt )
+  {
+    delete [ ] m_arfAvailableVoltagesInVolt ;
+    m_arfAvailableVoltagesInVolt = NULL ;
+  }
+  if( ! m_stdset_floatAvailableVoltagesInVolt.empty() )
+  {
+    m_arfAvailableVoltagesInVolt = new float [
+      m_stdset_floatAvailableVoltagesInVolt.size() ] ;
+    //If alloc succeeded.
+    if( m_arfAvailableVoltagesInVolt )
+    {
+      WORD wArrayIndex = 0 ;
+      for( std::set<float>::const_iterator c_iter =
+          m_stdset_floatAvailableVoltagesInVolt.begin() ;
+          c_iter != m_stdset_floatAvailableVoltagesInVolt.end() ;
+          ++ c_iter , ++ wArrayIndex )
+      {
+        m_arfAvailableVoltagesInVolt[ wArrayIndex ] = *c_iter ;
+      }
+    }
+  }
 }
 
 //Advantage of this method: if the datastructure is accessed at many 
@@ -66,7 +124,8 @@ CPUcoreData::CPUcoreData(
   WORD wMaxFreqInMHz
   )
   //C++ style initializations:
-  : //m_wMaxFreqInMHz(wMaxFreqInMHz)
+  :
+  //m_wMaxFreqInMHz(wMaxFreqInMHz)
   m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
 {
   //LOGN("CPU attributes ctor 2")
@@ -79,15 +138,28 @@ CPUcoreData::CPUcoreData(
 
 CPUcoreData::~CPUcoreData()
 {
-  PossiblyReleaseMem();
+  if( m_arfAvailableMultipliers )
+  {
+    delete [] m_arfAvailableMultipliers ;
+    m_arfAvailableMultipliers = NULL ;
+  }
+  if( m_arfAvailableVoltagesInVolt )
+  {
+    delete [] m_arfAvailableVoltagesInVolt ;
+    m_arfAvailableVoltagesInVolt = NULL ;
+  }
+  PossiblyReleaseMemForCoreNumAffectedData();
 }
 
+//This method should be called by every c'tor.
 void CPUcoreData::Init()
 {
 //  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionctor:
 //  // the mutex should be initially locked
 //  m_mutexCPUdataCanBeSafelyRead.Lock();
 
+  m_arfAvailableMultipliers = NULL ;
+  m_arfAvailableVoltagesInVolt = NULL ;
   m_b1CPUcorePowerPlane = true ;
   m_fCPUcoreLoadThresholdForIncreaseInPercent =
     //expressed as core usage between [0...1]
@@ -104,9 +176,7 @@ void CPUcoreData::Init()
   //(creation of menus per CPU core )
   m_byNumberOfCPUCores = 0 ;
   m_wMaxFreqInMHz = 0 ;
-  m_byMainPLLoperatingFrequencyIDmax = CPU_CORE_DATA_NOT_SET ;
   m_arp_percpucoreattributes = NULL ;
-  //mp_griffincontroller = NULL ;
   mp_cpucontroller = NULL ;
   m_wMilliSecondsWaitBetweenDFVS = 200 ;
   m_byUpdateViewOnDVFS = 0 ;
@@ -118,36 +188,10 @@ void CPUcoreData::Init()
   //mp_stdsetvoltageandfreqDefault = new std::set<VoltageAndFreq> () ;
 }
 
-  BYTE CPUcoreData::GetMainPLLoperatingFrequencyIDmax()
-  {
-//#ifdef _DEBUG
-//    MessageBox( NULL, "CPUcoreData::GetMainPLLoperatingFrequencyIDmax",
-//      TEXT("") , MB_OK ) ;
-//#endif
-    return m_byMainPLLoperatingFrequencyIDmax ;
-  }
-
-  void CPUcoreData::SetMainPLLoperatingFrequencyIDmax(
-    BYTE byMainPLLoperatingFrequencyIDmax)
-  {
-    m_byMainPLLoperatingFrequencyIDmax = byMainPLLoperatingFrequencyIDmax;
-        //AMD BIOS and kernel dev guide for family 11h: "The frequency specified 
-        //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of 
-        //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
-        //"F3xD4[MainPllOpFreqId] is defined as follows: 100 MHz *
-        //(F3xD4[MainPllOpFreqId] + 08h)"
-        //(100 MHz * (CpuFid + 08h)) > 100 MHz * (MainPllOpFreqId] + 08h) | : 100 MHz
-        //(100 MHz * (CpuFid + 08h)) > (100 MHz * (MainPllOpFreqId] + 08h))/2
-        //<=> (100 MHz * (CpuFid + 08h)) > 50 MHz * (MainPllOpFreqId] + 08h) | : 50 MHz
-        //<=> 2 * (CpuFid + 08h)) > MainPllOpFreqId + 08h
-        //<=> 2 * CpuFid + 2 * 08h > MainPllOpFreqId + 08h
-        //<=> 2 * CpuFid + 16 > MainPllOpFreqId + 08 | - 16
-        //<=> 2 * CpuFid > MainPllOpFreqId - 08 | : 2
-        //<=> CpuFid > ( MainPllOpFreqId - 08 ) : 2
-     m_byLowestEffectiveFreqID = ( m_byMainPLLoperatingFrequencyIDmax - 8 ) 
-       / 2 + 1 ;
-     SetMaxFreqInMHz( ( byMainPLLoperatingFrequencyIDmax + 8 ) * 100 ) ;
-  }
+//float CPUcoreData::GetLowerMultiplier( float fMulti )
+//{
+//  m_stdset_floatAvailableMultipliers.f
+//}
 
   void CPUcoreData::ThreadFinishedAccess()
   {
@@ -173,6 +217,48 @@ void CPUcoreData::Init()
 //      m_conditionDVFSthreadMayChangeData.Broadcast() ;
 //    }
 //    m_criticalsectionThreads.Leave() ;
+  }
+
+  BYTE CPUcoreData::GetIndexForClosestMultiplier(float fMultiplier)
+  {
+    //TODO
+//    WORD wArrayIndexForClosestLessOrEqual = GetArrayIndexForClosestLessOrEqual(
+//      m_arfAvailableMultipliers,
+//      m_stdset_floatAvailableMultipliers.size(),
+//      fMultiplier
+//      ) ;
+//    WORD wArrayIndexForClosestGreaterOrEqual =
+//      GetArrayIndexForClosestGreaterOrEqual(
+//      m_arfAvailableMultipliers,
+//      m_stdset_floatAvailableMultipliers.size(),
+//      fMultiplier
+//      ) ;
+    WORD wArrayIndexForClosestValue =
+      GetArrayIndexForClosestValue(
+        m_arfAvailableMultipliers,
+        m_stdset_floatAvailableMultipliers.size(),
+        fMultiplier
+        ) ;
+//    if( w )
+    return wArrayIndexForClosestValue ;
+//    float fMultiplierClosestGreaterOrEqual =
+//        m_arfAvailableMultipliers[ArrayIndexForClosestGreaterOrEqual] ;
+//    float fMultiplierClosestLessOrEqual =
+//        m_arfAvailableMultipliers[ArrayIndexForClosestLessOrEqual] ;
+//    return fMultiplier
+  }
+
+  BYTE CPUcoreData::GetIndexForClosestVoltage(float fVoltageInVolt)
+  {
+    //TODO
+    WORD wArrayIndexForClosestValue =
+      GetArrayIndexForClosestValue(
+        m_arfAvailableVoltagesInVolt,
+        m_stdset_floatAvailableVoltagesInVolt.size(),
+        fVoltageInVolt
+        ) ;
+//    if( w )
+    return wArrayIndexForClosestValue ;
   }
 
 //  void CPUcoreData::ThreadWantsAccess()
@@ -206,7 +292,45 @@ void CPUcoreData::Init()
     return m_byNumberOfCPUCores ;
   }
 
-  void CPUcoreData::PossiblyReleaseMem()
+  float CPUcoreData::GetVoltageInVolt(WORD wVoltageInVoltIndex)
+  {
+    if( m_arfAvailableVoltagesInVolt &&
+      wVoltageInVoltIndex < //m_wNumberOfAvailableVoltagesInVolt
+      m_stdset_floatAvailableVoltagesInVolt.size()
+      )
+      return m_arfAvailableVoltagesInVolt[ wVoltageInVoltIndex ] ;
+    else
+      return -1.0 ;
+  }
+
+  //inline
+  float CPUcoreData::GetMaximumMultiplier()
+  {
+    std::set<float>::const_reverse_iterator c_rev_iter_stdset_fMultipliers =
+      m_stdset_floatAvailableMultipliers.rbegin() ;
+    if( c_rev_iter_stdset_fMultipliers !=
+        m_stdset_floatAvailableMultipliers.rend() )
+    {
+      return *c_rev_iter_stdset_fMultipliers ;
+    }
+    return 0.0 ;
+  }
+
+  //inline
+  float CPUcoreData::GetMinimumVoltage()
+  {
+    std::set<float>::const_iterator c_iter_stdset_fVoltages =
+      m_stdset_floatAvailableVoltagesInVolt.begin() ;
+    if( c_iter_stdset_fVoltages !=
+        m_stdset_floatAvailableVoltagesInVolt.end() )
+    {
+      return *c_iter_stdset_fVoltages ;
+    }
+    return 0.0 ;
+  }
+
+  //Releases memory that has something to do with the number of CPU cores.
+  void CPUcoreData::PossiblyReleaseMemForCoreNumAffectedData()
   {
     if(m_arfCPUcoreLoadInPercent)
     {
@@ -231,10 +355,13 @@ void CPUcoreData::Init()
 
   void CPUcoreData::SetCPUcoreNumber(BYTE byNumberOfCPUcores)
   {
+    DEBUGN("CPUcoreData::SetCPUcoreNumber(" << (WORD) byNumberOfCPUcores
+      << ")" )
     m_byNumberOfCPUCores = byNumberOfCPUcores ;
-    PossiblyReleaseMem() ;
+    PossiblyReleaseMemForCoreNumAffectedData() ;
     //if( m_arfCPUcoreLoadInPercent )
     //  delete [] m_arfCPUcoreLoadInPercent ;
+
     m_arfCPUcoreLoadInPercent = new float[byNumberOfCPUcores];
     m_arwCurrentFreqInMHz = new WORD[byNumberOfCPUcores];
     m_arp_percpucoreattributes = new PerCPUcoreAttributes[ 
@@ -243,7 +370,6 @@ void CPUcoreData::Init()
       for(BYTE byCoreID = 0 ; byCoreID < byNumberOfCPUcores ; ++ byCoreID )
         m_arp_percpucoreattributes[ byCoreID ].Create(
           byCoreID
-          //, mp_griffincontroller 
           , mp_cpucontroller
           , *this
           ) ;

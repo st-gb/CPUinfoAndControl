@@ -16,6 +16,17 @@ public:
   bool operator < (const VoltageAndFreq & _Right) const ;
 };
 
+class VoltageAndMultiAndRefClock
+{
+public:
+  float m_fMultiplier ;
+  float m_fReferenceClock ;
+  float m_fVoltageInVolt ;
+  VoltageAndMultiAndRefClock() ;
+//This operator is needed for inserting into STL sorting container like a std::set.
+  bool operator < (const VoltageAndFreq & _Right) const ;
+};
+
 class MaxVoltageForFreq
 {
 public:

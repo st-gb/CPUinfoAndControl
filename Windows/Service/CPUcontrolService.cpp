@@ -7,6 +7,7 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //for ICPUcoreUsageGetter::Init()
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+#include <Controller/stdtstr.hpp>
 #ifdef COMPILE_WITH_IPC
   #include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #endif //#ifdef COMPILE_WITH_IPC
@@ -19,7 +20,11 @@
   #undef _WIN32_WINNT
   #define _WIN32_WINNT 0x0501
 #endif
-#include <wtsapi32.h>
+//#ifdef _MSC_VER
+  #include <wtsapi32.h>
+//#else //WTSSendMessage is not available in MinGW's <wtsapi32.h>
+  #include <Windows/WTSSendMessageRunTimeDynLinked.hpp>
+//#endif
 //#include <windows.h>
 #include <AccCtrl.h> //SE_SERVICE
 
@@ -578,6 +583,16 @@ DWORD CPUcontrolService::MyServiceInitialization(
     // Better use WTSSendMessage(...) ?!
     //TODO WTSSendMessage is not in MinGW's <wtsapi.h>
 //    DWORD dwResponse ;
+//    DWORD dwTitleBarStringLenInBytes = m_stdtstrProgramName.length() ;
+//    //TODO correct macros used (also for MSVC)?
+//#if defined _UNICODE || defined UNICODE
+//    dwTitleBarStringLenInBytes *= 2 ;
+//#endif
+//    DWORD dwMessageStringLenInBytes =
+//        cpuaccessexception.m_stdstrErrorMessage.length() ;
+//#if defined _UNICODE || defined UNICODE
+//    dwMessageStringLenInBytes *= 2 ;
+//#endif
 //    //Citations from:
 //    //http://msdn.microsoft.com/en-us/library/aa383842%28VS.85%29.aspx:
 //    ::WTSSendMessage(
@@ -586,22 +601,31 @@ DWORD CPUcontrolService::MyServiceInitialization(
 //      WTS_CURRENT_SERVER_HANDLE
 //      //"To indicate the current session, specify WTS_CURRENT_SESSION"
 //      , WTS_CURRENT_SESSION
-//      , m_stdtstrProgramName.c_str()
+//      , //getstdstring( m_stdtstrProgramName.c_str() )
+//      //(TCHAR*) m_stdtstrProgramName.c_str()
+//      "hh"
 //      , //"The length, in bytes, of the title bar string."
-//      m_stdtstrProgramName.length()
+//        //dwTitleBarStringLenInBytes
+//        2
 //      //"A pointer to a null-terminated string that contains the message to
 //      //display."
-//      , cpuaccessexception.m_stdstrErrorMessage.c_str()
+//      , //cpuaccessexception.m_stdstrErrorMessage.c_str()
+//      //(TCHAR*) Getstdtstring( cpuaccessexception.m_stdstrErrorMessage ).c_str()
+//      "jj"
 //      , //"The length, in bytes, of the message string."
-//      cpuaccessexception.m_stdstrErrorMessage.size()
+//      //cpuaccessexception.m_stdstrErrorMessage.size()
+////      dwMessageStringLenInBytes
+//      2
 //      , MB_OK
-//      //"If the Timeout parameter is zero, WTSSendMessage  waits indefinitely
+//      //"The time, in seconds[...]
+//      //If the Timeout parameter is zero, WTSSendMessage  waits indefinitely
 //      //for the user to respond."
-//      , 0
-//      , dwResponse
+//      , 10
+//      , & dwResponse
 //      //"If TRUE, WTSSendMessage does not return until the user responds or the
 //      //time-out interval elapses."
-//      , FALSE
+//      , //FALSE
+//      TRUE
 //      ) ;
     //delete e ;
   }

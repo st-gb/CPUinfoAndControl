@@ -1,0 +1,37 @@
+; This file is the file-list file.
+; It contains a list of the files which are to be converted to HTML.
+;
+; You should add the extension c2h as a new filetype, e.g.:
+; Type: C2HTML Scriptfile
+; Open: With Notepad (or any other editor you like)
+; Execute: C2HTML.exe
+; Icon: I suppose the Icon of .ini-files
+
+
+; Set Switches
+; (For an detailed explanation see cpp.ini)
+@icpp.ini
+@p2
+@t4
+@oCPU_controller_sample.html
+
+; If you want to convert POVray sources to HTML, you should
+; specify  "@ipovray.ini"  instead of  "@icpp.ini".
+
+
+
+; List of the sourcecode files which are to convert to HTML:
+; Note: Paths must be absolute or relative to C2HTML's directory!
+;
+; You may use the DOS-Box's dir-command to create an text file with
+; the filelist, e.g.:
+;     dir *.h *.cpp /s /b >filelist.txt
+
+T:\SourceCodeManagement\X86Info_and_Control\Info\CPU_controller_sample.c
+T:\SourceCodeManagement\X86Info_and_Control\Controller/CPU-related/GetCurrentReferenceClock.h
+T:\SourceCodeManagement\X86Info_and_Control\Controller/CPU-related/Intel/Intel_registers.h
+T:\SourceCodeManagement\X86Info_and_Control\Controller/ExportedExeFunctions.h
+T:\SourceCodeManagement\X86Info_and_Control\Controller/value_difference.h
+T:\SourceCodeManagement\X86Info_and_Control\Windows/AssignPointersToExportedExeFunctions.cpp
+T:\SourceCodeManagement\X86Info_and_Control\Windows/AssignPointersToExportedExeFunctions.h
+T:\SourceCodeManagement\X86Info_and_Control\preprocessor_helper_macros.h
