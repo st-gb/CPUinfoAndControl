@@ -2,17 +2,16 @@
 
 //#include <wx/timer.h>
 //#include "CPUcoreUsageGetterIWbemServices.hpp"
-#include "../Controller/ICPUcoreUsageGetter.hpp"
-//#include "../Controller/PumaStateCtrl.h"
-#include <Controller/AMD/Griffin/GriffinController.hpp>
-#include "../global.h"
+#include "../Controller/CPU-related/ICPUcoreUsageGetter.hpp"
+#include <Controller/CPU-related/AMD/Griffin/GriffinController.hpp>
+#include <global.h>
 #include <math.h> //for log2()
 #include <cmath>
 #include <wx/timer.h>
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
 class UserInterface ;
-#include "UserInterface.hpp" //for UserInterface.m_bConfirmedYet
-
 class wxTimer ;
 
 class wxDynFreqScalingTimer

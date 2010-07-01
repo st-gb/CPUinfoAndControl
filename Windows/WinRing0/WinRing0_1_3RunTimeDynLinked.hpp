@@ -103,7 +103,13 @@ public:
     , PDWORD p_dwValue
     );
   BOOL ReadTSC(DWORD & r_dw , DWORD & r_dw ) ;
+  BOOL ReadTSCinOrder(
+    DWORD & r_dwLowEAX ,
+    DWORD & r_dwHighEDX ,
+    DWORD dwThreadAffinityMask
+    ) ;
   void SetUserInterface(UserInterface * pui) ;
+  BYTE SetThreadAffinityMask(DWORD dwThreadAffinityMask) ;
   void Sleep(WORD wMillis) //{ ::Sleep(wMillis) ; }
     ;
 

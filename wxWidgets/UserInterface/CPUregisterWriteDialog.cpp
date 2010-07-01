@@ -11,10 +11,12 @@
 #include <wx/sizer.h> //wxBoxSizer
 #include <wx/listbox.h> //wxListBox
 
-#include <Controller/I_CPUcontroller.hpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
+#include <Controller/stdstring_format.hpp> //from_stdstring()
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
+//std::string getstdstring(wxString & wxstr) etc.
 #include <wxWidgets/Controller/wxStringHelper.h>
 
 //An enum guarantees a unique number for each element.
@@ -28,7 +30,8 @@ enum
 };
 
 BEGIN_EVENT_TABLE(CPUregisterWriteDialog, wxDialog)
-  EVT_LISTBOX(ID_RegisterListBox,CPUregisterWriteDialog::OnRegisterListBoxSelection)
+  EVT_LISTBOX(ID_RegisterListBox,CPUregisterWriteDialog::
+    OnRegisterListBoxSelection)
   EVT_BUTTON(ID_WriteToMSR,CPUregisterWriteDialog::OnWriteToMSR)
   EVT_BUTTON(ID_ReadFromMSR,CPUregisterWriteDialog::OnReadFromMSR)
   EVT_BUTTON(ID_PreparePMC,CPUregisterWriteDialog::OnPreparePMC)
@@ -38,22 +41,22 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
   wxWindow * parent ,
     //MSRdata & r_regdata ,
     Model & r_modeldata ,
-    //GriffinController * p_pumastatecontrol
     I_CPUcontroller * p_cpucontroller
     //I_CPUaccess * i_cpuaccess
   )
-  : wxDialog(
-      parent,
-      wxID_ANY //
-      //ID_Dialog
-      ,
-      //wxString::Format("MSR register index: %x",
-      //r_regdata.m_dwIndex)
-      wxT("")
-      , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
-      , wxSize(400, 200)
-      , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
-      )
+  :
+  wxDialog(
+    parent,
+    wxID_ANY //
+    //ID_Dialog
+    ,
+    //wxString::Format("MSR register index: %x",
+    //r_regdata.m_dwIndex)
+    wxT("")
+    , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
+    , wxSize(400, 200)
+    , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
+    )
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   , mp_cpucontroller ( p_cpucontroller )
@@ -126,7 +129,8 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
   mp_sizerAttributeNameAndValue->Add( mp_wxgridsizerAttributeNameAndValue ) ;
 
   wxBoxSizer * p_wxsizerButtons = new wxBoxSizer( wxVERTICAL ) ;
-  mp_wxbuttonWriteMSR = new wxButton( this, ID_WriteToMSR , wxT("write to MSR") ) ;
+  mp_wxbuttonWriteMSR = new wxButton( this, ID_WriteToMSR ,
+    wxT("write to MSR") ) ;
   //mp_sizerAttributeNameAndValue->Add( mp_wxbuttonWriteMSR) ;
   p_wxsizerButtons->Add( mp_wxbuttonWriteMSR) ;
   wxButton * p_wxbuttonReadFromMSR = new wxButton( this, ID_ReadFromMSR , 
@@ -145,7 +149,9 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
   //mp_sizerTop->Fit(this);
 }
 
-CPUregisterWriteDialog::CPUregisterWriteDialog(const CPUregisterWriteDialog& orig) {
+CPUregisterWriteDialog::CPUregisterWriteDialog(
+  const CPUregisterWriteDialog& orig)
+{
 }
 
 void CPUregisterWriteDialog::ShowRegisterAttributes( //const
@@ -189,7 +195,8 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
           wxString::Format(
             //Use wxT() to enable to compile with both unicode and ANSI.
             wxT("%u:%u"), r_br.m_byStartBit ,
-          //End bit= start bit + bitlenght - 1: e.g. startbit 0, bitlenght: 8 -> endbit=7
+          //End bit= start bit + bitlenght - 1: e.g. startbit 0, bitlenght: 8
+          //-> endbit=7
           r_br.m_byStartBit + 
           r_br.m_byBitLength - 1 )
           )
@@ -220,39 +227,48 @@ CPUregisterWriteDialog::~CPUregisterWriteDialog() {
 
 void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 {
-    if( m_wNumIgnoreChanges )
+  if( m_wNumIgnoreChanges )
     -- m_wNumIgnoreChanges ;
   else
   {
     std::vector<RegisterData>::iterator iter_registerdata =
       mp_msrdata->m_stdvec_registerdata.begin() ;
     int nMenuEventID = wxevent.GetId() ;
-    WORD wRegisterDataIndexChangedContent = nMenuEventID - ID_LastStaticWindowID ;
+    WORD wRegisterDataIndexChangedContent = nMenuEventID -
+        ID_LastStaticWindowID ;
     RegisterData & r_registerdata = mp_msrdata->m_stdvec_registerdata.at( 
       wRegisterDataIndexChangedContent ) ;
     if( ! r_registerdata.m_stdvec_bitrange.empty() )
     {
-      BitRange & r_bitrangeChangedAttrValue = r_registerdata.m_stdvec_bitrange.front() ;
+      BitRange & r_bitrangeChangedAttrValue = r_registerdata.m_stdvec_bitrange.
+          front() ;
       WORD wCurrentRegisterDataIndex = 0 ;
 
-      wxTextCtrl * p_wxtextctrl = m_stdvec_p_wxtextctrl.at( wRegisterDataIndexChangedContent ) ;
+      wxTextCtrl * p_wxtextctrl = m_stdvec_p_wxtextctrl.at(
+        wRegisterDataIndexChangedContent ) ;
       wxString wxstrChanged = p_wxtextctrl->GetValue() ;
 //      char * p_ch = (char *) wxstrChanged.fn_str() ;
       ULONGLONG ullFromChangedTextCtrl ;
-      if( wxstrChanged.
-        //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
-        // "Returns true on success [...]"
-        ToULongLong( & ullFromChangedTextCtrl ) 
-        )
+//      if( wxstrChanged.
+//        //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
+//        // "Returns true on success [...]"
+      //ToULongLong() always returned false with MinGW (+ unicode)
+//        ToULongLong( & ullFromChangedTextCtrl )
+//        )
+      std::string stdstrFromTextControl = getstdstring(wxstrChanged ) ;
+      from_stdstring<ULONGLONG>( ullFromChangedTextCtrl,
+          stdstrFromTextControl) ;
       {
         BYTE byAffectedAttrValueEndBit ;
         ULONGLONG ullFromTextCtrlToChange ;
         ULONGLONG ullWriteToTextCtrl ;
         ULONGLONG ullClearingBitMask ;
+        std::string stdstrValueToModify ;
         wxString wxstrULL ;
         wxString wxstrValueToModify ;
         //mp_msrdata->
-        std::vector<wxTextCtrl * >::iterator iter_p_wxtextctrl = m_stdvec_p_wxtextctrl.begin() ;
+        std::vector<wxTextCtrl * >::iterator iter_p_wxtextctrl =
+            m_stdvec_p_wxtextctrl.begin() ;
         while( iter_registerdata != mp_msrdata->m_stdvec_registerdata.end() 
           && iter_p_wxtextctrl != m_stdvec_p_wxtextctrl.end() 
           )
@@ -260,7 +276,8 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
           if( wCurrentRegisterDataIndex != wRegisterDataIndexChangedContent &&
             ! iter_registerdata->m_stdvec_bitrange.empty() )
           {
-            BitRange & r_bitrangeAffectedAttrValue = iter_registerdata->m_stdvec_bitrange.front() ;
+            BitRange & r_bitrangeAffectedAttrValue = iter_registerdata->
+                m_stdvec_bitrange.front() ;
             //Wenn Ueberschneidung: 
             //Start des zu vergleichenden VOR Ende des anderen;
             if( r_bitrangeAffectedAttrValue.m_byStartBit < 
@@ -279,11 +296,15 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
               // e.g. for bit "0" the 1 bit is changed. So the MSR attribute value 
               //  for the attribute that covers the whole MSR must also be changed at
               //  bit pos. "0".
-              if( wxstrValueToModify.
-                //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
-                // "Returns true on success [...]"
-                ToULongLong( & ullFromTextCtrlToChange ) 
-                )
+//              if( wxstrValueToModify.
+//                //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
+//                // "Returns true on success [...]"
+//                  //ToULongLong() always returned false with MinGW (+ unicode)
+//                ToULongLong( & ullFromTextCtrlToChange )
+//                )
+              std::string stdstrValueToModify = getstdstring(wxstrValueToModify) ;
+              from_stdstring<ULONGLONG>( ullFromTextCtrlToChange,
+                  stdstrValueToModify) ;
               {
                 //adopt the start bit:
                 //-if the digit for a single bit that started at bit pos 8 was changed and
@@ -309,24 +330,28 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
                     r_bitrangeAffectedAttrValue.m_byBitLength - 1 ;
                   //if( byAffectedAttrValueEndBit 
                   ullWriteToTextCtrl = ullFromChangedTextCtrl 
-                    //Make right bits zero: e.g. if bitmask "0:1" : shift 63 bits to left
+                    //Make right bits zero: e.g. if bitmask "0:1" : shift 63
+                    //bits to left
                     << ( 63 - byAffectedAttrValueEndBit ) ;
                 }
                 ullWriteToTextCtrl = ullWriteToTextCtrl 
-                  //Make left bits zero: e.g. if bitmask "0:1" : shift 63 bits to right
+                  //Make left bits zero: e.g. if bitmask "0:1" : shift 63 bits
+                  //to right
                   >> ( 64 - r_bitrangeAffectedAttrValue.m_byBitLength ) ;
                 if( r_bitrangeChangedAttrValue.m_byBitLength < 64 )
                 {
                   ullClearingBitMask = 1 ;
                   //E.g. for m_byBitLength = 8: 256
-                  ullClearingBitMask <<= r_bitrangeChangedAttrValue.m_byBitLength ;
+                  ullClearingBitMask <<= r_bitrangeChangedAttrValue.
+                    m_byBitLength ;
                   //E.g. for m_byBitLength = 8: 256 -1 = 255 = 1111 1111bin
                   ullClearingBitMask -= 1 ;
                   //shift the msk to the appropriate pos.
-                  ullClearingBitMask <<= r_bitrangeChangedAttrValue.m_byStartBit ;
+                  ullClearingBitMask <<= r_bitrangeChangedAttrValue.
+                    m_byStartBit ;
                   //Invert bitwise : 
-                  // 00000000 00000000 00000000 00000000 00000000 00000000 11111111 00000000 -> 
-                  // 11111111 11111111 11111111 11111111 11111111 11111111 00000000 11111111
+  // 00000000 00000000 00000000 00000000 00000000 00000000 11111111 00000000 ->
+  // 11111111 11111111 11111111 11111111 11111111 11111111 00000000 11111111
                   ullClearingBitMask = ~ullClearingBitMask ;
                 }
                 else
@@ -346,8 +371,10 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
                   wxT("%I64u") ), //ullWriteToTextCtrl
                   ullFromTextCtrlToChange ) ;
                 #endif
-                //calling "SetValue()" causes an immediate jumo into this function (OnChangedText() ).
-                //But because this change is made program internal it should not be processed.
+                //calling "SetValue()" causes an immediate jump into this
+                //function (OnChangedText() ).
+                //But because this change is made program internal it should
+                //not be processed.
                 ++ m_wNumIgnoreChanges ;
                 (*iter_p_wxtextctrl)->SetValue( wxstrULL ) ;                
               }
@@ -366,8 +393,8 @@ void CPUregisterWriteDialog::OnRegisterListBoxSelection(
   wxCommandEvent & evt )
 {
   wxArrayInt wxarrintSelections ;
-  int nNumberOfSelections =
-      p_wxlistbox->GetSelections(wxarrintSelections) ;
+//  int nNumberOfSelections =
+//      p_wxlistbox->GetSelections(wxarrintSelections) ;
   if( wxarrintSelections.GetCount () > 0 )
   {
     int nIndex = wxarrintSelections.Last () ;
@@ -444,8 +471,10 @@ void CPUregisterWriteDialog::OnReadFromMSR(
         #else
         wxstrULL = wxString::Format( wxString( wxT("%I64u") ), ullValue) ;
         #endif
-        //calling "SetValue()" causes an immediate jumo into this function (OnChangedText() ).
-        //But because this change is made program internal it should not be processed.
+        //calling "SetValue()" causes an immediate jump into this function
+        //(OnChangedText() ).
+        //But because this change is made program internal it should not be
+        //processed.
         ++ m_wNumIgnoreChanges ;
         (*c_iter_p_wxtextctrl)->SetValue( wxstrULL ) ;
       }
@@ -461,12 +490,17 @@ void CPUregisterWriteDialog::OnWriteToMSR(
   if( mp_msrdata )
   {
     ULONGLONG ullWriteToMSR = 0ULL ;
-    ULONGLONG ullFromTextCtrl = 0ULL ;
+//    ULONGLONG ullFromTextCtrl = 0ULL ;
+    wxULongLong_t ullFromTextCtrl = 0ULL ;
     ULONGLONG ullMaxValueForBitLength ;
     std::vector<RegisterData>::iterator iter_registerdata =
       mp_msrdata->m_stdvec_registerdata.begin() ;
-    std::vector<wxTextCtrl * >::const_iterator c_iter_p_wxtextctrl = m_stdvec_p_wxtextctrl.begin() ;
+    std::vector<wxTextCtrl * >::const_iterator c_iter_p_wxtextctrl =
+        m_stdvec_p_wxtextctrl.begin() ;
     wxString wxstr ;
+    std::string stdstrFromTextControl ;
+    std::vector<wxString> vec_wxstr ;
+    wxString wxstrAllValues ;
     //std::vector<RegisterData>  ;
     while( iter_registerdata != mp_msrdata->m_stdvec_registerdata.end() 
       && c_iter_p_wxtextctrl != m_stdvec_p_wxtextctrl.end() 
@@ -477,12 +511,17 @@ void CPUregisterWriteDialog::OnWriteToMSR(
         BitRange & br = iter_registerdata->m_stdvec_bitrange.front() ;
         wxstr = (*c_iter_p_wxtextctrl)->GetValue() ;
 //        char * p_ch = (char *) wxstr.fn_str() ;
+//        vec_wxstr.push_back(wxstr) ;
+        wxstrAllValues += wxstr + wxT(" ") ;
+        stdstrFromTextControl = getstdstring(wxstr) ;
         //ullMSR = 
-        if( wxstr.
-          //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
-          // "Returns true on success [...]"
-          ToULongLong(&ullFromTextCtrl) 
-          )
+//        if( wxstr.
+//          //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
+//          // "Returns true on success [...]"
+            //ToULongLong() always returned false with MinGW (+ unicode)
+//          ToULongLong(&ullFromTextCtrl)
+//          )
+        from_stdstring<ULONGLONG>(ullFromTextCtrl, stdstrFromTextControl) ;
         {
           //Prevent bit shift of "1" 64 bits: this would lead to a zero ("0") .
           if( br.m_byBitLength < 64 )
@@ -496,12 +535,18 @@ void CPUregisterWriteDialog::OnWriteToMSR(
                 wxT("Wert zu gross")
                 ) ;
             else
-              ullWriteToMSR |= //( ullFromTextCtrl >> br.m_byBitLength ) << br.m_byStartBit ;
+              ullWriteToMSR |= //( ullFromTextCtrl >> br.m_byBitLength ) <<
+                //br.m_byStartBit ;
                 ullFromTextCtrl << br.m_byStartBit ;
           }
           else
             ullWriteToMSR = ullFromTextCtrl ;
         }
+//        else
+//          wxMessageBox( wxT("converting string \"") + wxstr +
+//            wxString::Format( wxT("\" to ulonglong: %u failed"),
+//              ullFromTextCtrl )
+//            ) ;
       }
       ++ iter_registerdata ;
       ++ c_iter_p_wxtextctrl ;
@@ -511,13 +556,26 @@ void CPUregisterWriteDialog::OnWriteToMSR(
   #endif
     DWORD dwHigh = ullWriteToMSR >> 32 ;
     DWORD dwLow = ullWriteToMSR ;
-    //The CPU controller should be asked to write to the MSR because this is 
-    //the CPU-specific part that knows which MSRs are dangerous to write to.
-    mp_cpucontroller->WrmsrEx( 
-      mp_msrdata->m_dwIndex , 
-      dwLow , 
-      dwHigh ,
-      1 << mp_msrdata->m_byCoreID 
-      ) ;
+    if( wxMessageBox( wxstrAllValues +
+      wxString::Format(
+        wxT("writing low bytes %u and high bytes %u to MSR index %u to core %u")
+        , dwLow,
+        dwHigh ,
+        mp_msrdata->m_dwIndex ,
+        mp_msrdata->m_byCoreID
+        )
+      , wxT("write to MSR now?")
+      , wxYES_NO
+        )
+        == wxYES
+      )
+      //The CPU controller should be asked to write to the MSR because this is
+      //the CPU-specific part that knows which MSRs are dangerous to write to.
+      mp_cpucontroller->WrmsrEx(
+        mp_msrdata->m_dwIndex ,
+        dwLow ,
+        dwHigh ,
+        1 << mp_msrdata->m_byCoreID
+        ) ;
   }
 }

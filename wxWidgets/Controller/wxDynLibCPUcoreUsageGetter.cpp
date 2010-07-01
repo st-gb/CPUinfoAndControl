@@ -76,7 +76,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   if( ! bSuccess )
   {
     DWORD dw = ::GetLastError() ;
-    //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCode( dw) ;
+    //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
     std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
@@ -93,6 +93,11 @@ wxDynLibCPUcoreUsageGetter::~wxDynLibCPUcoreUsageGetter()
   m_wxdynamiclibraryCPUcoreUsage.Unload() ;
   DEBUGN("~wxDynLibCPUcoreUsageGetter()")
   LOGN("Unloaded the CPU core usage getter dynamic library")
+}
+
+WORD wxDynLibCPUcoreUsageGetter::GetNumberOfCPUcores()
+{
+  return GetNumberOfLogicalCPUcores() ;
 }
 
 WORD wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores()
@@ -124,8 +129,8 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
 #ifdef _DEBUG
     {
       float f = (*m_pfngetcpucoreusage)(byCPUcoreNumber) ;
-//      DEBUGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
-//        "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
+      DEBUGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
+        "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
       arf[byCPUcoreNumber] = f ;
     }
 #else

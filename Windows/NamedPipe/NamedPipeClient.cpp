@@ -118,9 +118,12 @@ bool NamedPipeClient::IsConnected()
   }
   else //-> failed when it was not connected
   {
-    DWORD dw = ::GetLastError() ;
+    DWORD dwErrorCode = ::GetLastError() ;
 //    DEBUGN("GetNamedPipeHandleState failed")
-    LOGN("Getting pipe info failed:" << LocalLanguageMessageFromErrorCodeA(dw) )
+    //Error code if not connected--avoid (too many) messages for this error
+    //code.
+    if( dwErrorCode != ERROR_INVALID_HANDLE )
+      LOGN("Getting pipe info failed:" << LocalLanguageMessageAndErrorCodeA(dwErrorCode) )
   }
   return bConnected ;
 }

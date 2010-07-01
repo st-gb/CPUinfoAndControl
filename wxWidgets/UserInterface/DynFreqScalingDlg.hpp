@@ -21,6 +21,6 @@ public:
     , CPUcoreData & r_cpucoredata
     );
   void OnOK_Button(wxCommandEvent & );
-  //Neccessary in order to get scroll events; to avoid compilation errors.
+  //Necessary in order to get scroll events; to avoid compilation errors.
   DECLARE_EVENT_TABLE()
 } ;

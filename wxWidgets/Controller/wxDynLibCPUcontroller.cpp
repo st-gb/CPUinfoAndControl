@@ -396,36 +396,39 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
        , & r_fReferenceClockInMHz
        , wCoreID
        ) ;
-     if( mp_model->m_bCollectPstatesAsDefault )
+     if( r_fReferenceClockInMHz )
      {
-       //Only collect for each multi, because the reference clock may vary,
-       // and so an enormous number could rise.
-       std::pair <std::map<float,VoltageAndFreq>::iterator, bool> pair_ =
-         mp_model->m_cpucoredata.m_stdmap_fMultiplier2voltageandfreq.insert(
-         std::pair<float,VoltageAndFreq>
-           ( r_fMultiplier,
-             VoltageAndFreq( r_fVoltageInVolt,
-               //"(WORD)" to avoid g++ warning "passing `float' for converting 2
-               //of `bool CPUcoreData::AddDefaultVoltageForFreq(float, WORD)' "
-               (WORD) ( r_fReferenceClockInMHz * r_fMultiplier )
-               )
-           )
-         ) ;
-       if( mp_userinterface &&
-         //http://www.cplusplus.com/reference/stl/map/insert/:
-         //"The pair::second element in the pair is set to true if a new
-         //element was inserted [...].
-         pair_.second
-         )
+       if( mp_model->m_bCollectPstatesAsDefault )
        {
-         mp_model->m_cpucoredata.AddDefaultVoltageForFreq( r_fVoltageInVolt,
-           //"(WORD)" to avoid g++ warning "passing `float' for converting 2
-           //of `bool CPUcoreData::AddDefaultVoltageForFreq(float, WORD)' "
-           (WORD) ( r_fReferenceClockInMHz * r_fMultiplier ) ) ;
-         mp_userinterface->RedrawEverything() ;
+         //Only collect for each multi, because the reference clock may vary,
+         // and so an enormous number could rise.
+         std::pair <std::map<float,VoltageAndFreq>::iterator, bool> pair_ =
+           mp_model->m_cpucoredata.m_stdmap_fMultiplier2voltageandfreq.insert(
+           std::pair<float,VoltageAndFreq>
+             ( r_fMultiplier,
+               VoltageAndFreq( r_fVoltageInVolt,
+                 //"(WORD)" to avoid g++ warning "passing `float' for converting 2
+                 //of `bool CPUcoreData::AddDefaultVoltageForFreq(float, WORD)' "
+                 (WORD) ( r_fReferenceClockInMHz * r_fMultiplier )
+                 )
+             )
+           ) ;
+         if( mp_userinterface &&
+           //http://www.cplusplus.com/reference/stl/map/insert/:
+           //"The pair::second element in the pair is set to true if a new
+           //element was inserted [...].
+           pair_.second
+           )
+         {
+           mp_model->m_cpucoredata.AddDefaultVoltageForFreq( r_fVoltageInVolt,
+             //"(WORD)" to avoid g++ warning "passing `float' for converting 2
+             //of `bool CPUcoreData::AddDefaultVoltageForFreq(float, WORD)' "
+             (WORD) ( r_fReferenceClockInMHz * r_fMultiplier ) ) ;
+           mp_userinterface->RedrawEverything() ;
+         }
        }
+       m_fReferenceClockInMHz = r_fReferenceClockInMHz ;
      }
-     m_fReferenceClockInMHz = r_fReferenceClockInMHz ;
 //       DEBUGN("wxDynLibCPUcontroller::GetCurrentPstate(...):"
 //#ifdef GET_VOLTAGE_IN_MILLIVOLT
 //           << " millivolt:" << wMilliVolt

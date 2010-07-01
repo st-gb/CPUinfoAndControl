@@ -10,5 +10,5 @@ class MSRaccess
 private:
   HANDLE m_handleDLL;
 public:
-  BYTE changePstate(BYTE byPstate, BYTE byCoreNumber){};
+  BYTE changePstate(BYTE byPstate, BYTE byCoreNumber){ return 0 ; }
 };

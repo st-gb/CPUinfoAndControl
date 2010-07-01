@@ -23,6 +23,7 @@
 #include "TaskBarIcon.hpp"
 
 #ifdef __WXMSW__
+  #include <Windows/LocalLanguageMessageFromErrorCode.h>
   #include <Windows/PowerProf/PowerProfDynLinked.hpp>
   #include <wxWidgets/App.hpp> //wxGetApp()
   #include <wxWidgets/Controller/wxStringHelper.h>
@@ -172,15 +173,24 @@ void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 //      if ( p_percpucoreattributes->mp_dynfreqscalingthread )
 //        mp_mainframe->EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
 
-      BYTE by = p_powerprofdynlinked->SetActivePowerScheme(c_iter->second) ;
-      LOGN( "res of setting power scheme:" << (WORD) by )
-      if( by == 1 )
+      //BYTE by
+      DWORD dw = p_powerprofdynlinked->SetActivePowerScheme(c_iter->second) ;
+      LOGN( "result of setting power scheme:" << //(WORD) by
+        dw )
+      if( //by == 1
+        dw == 0 )
       {
         LOGN( "setting power scheme succeeded" )
       }
       else
       {
-        LOGN( "setting power scheme failed" )
+        // error message for error number 65535 causes an exception?!
+        if( dw != 65535 )
+        {
+          std::string stdstr = ::LocalLanguageMessageFromErrorCodeA( dw ) ;
+          ::wxMessageBox( wxT("setting power scheme failed: ") + stdstr ) ;
+          LOGN( "setting power scheme failed" )
+        }
       }
     }
   }

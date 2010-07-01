@@ -2,7 +2,7 @@
 
 #include <wx/dynlib.h> //for wxDynamicLibrary
 #include <ModelData/CPUcoreData.hpp>
-#include <Controller/ICPUcoreUsageGetter.hpp>
+#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <string>
 
 //class ICPUcoreUsageGetter ;
@@ -46,6 +46,7 @@ public:
     ) ;
   ~wxDynLibCPUcoreUsageGetter() ;
 
+  WORD GetNumberOfCPUcores() ;
   WORD GetNumberOfLogicalCPUcores() ;
 
   BYTE GetPercentalUsageForAllCores( float arf [] ) ;

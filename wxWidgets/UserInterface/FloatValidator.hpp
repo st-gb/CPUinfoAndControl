@@ -1,5 +1,6 @@
 #pragma once //incl. guard
 
+//from http://wiki.wxwidgets.org/WxValidator
 #include <wx/validate.h>
 #include <limits>
 #ifndef _MSC_VER

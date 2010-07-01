@@ -133,27 +133,7 @@ CPUcontrolService::CPUcontrolService(
 
 CPUcontrolService::~CPUcontrolService()
 {
-  //If pointer is not NULL.
-  if( mp_cpucontroller )
-    delete mp_cpucontroller ;
-  //if( ! mp_dynfreqscalingthread )
-  //    delete mp_dynfreqscalingthread ;
-  if( //mp_winring0dynlinked
-    mp_i_cpuaccess
-    )
-    //delete mp_winring0dynlinked ;
-    delete mp_i_cpuaccess ;
-  //if( mar_tch )
-  //    //delete [] mar_tch ;
-  //    //runtime error here for some reason. I do not understand because
-  //    //the array was allocated via "new".
-  //    delete mar_tch ;
-#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
-  if( mp_voidMappedViewStartingAddress )
-    ::UnmapViewOfFile(mp_voidMappedViewStartingAddress);
-  if( m_handleMapFile != NULL )
-    ::CloseHandle(m_handleMapFile);
-#endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
+  FreeRessources() ;
 }
 
 /**@ return true: already continued*/

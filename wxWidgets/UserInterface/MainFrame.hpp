@@ -1,6 +1,6 @@
 #define _AFXDLL
 
-//return values for start or stopp high load thread.
+//return values for start or stop high load thread.
 #define ENDED 0
 #define STARTED 1
 
@@ -20,8 +20,6 @@
 //    #include "wx/wx.h"
 //#endif
 
-//#include "Controller/PumaStateCtrl.h" //for "class PumaStateCtrl"
-#include <UserInterface.hpp> //for abstract class UserInterface
 //#ifndef WX_PRECOMP
 //    #include "wx/frame.h"
 //#endif
@@ -30,56 +28,51 @@
 #include <wx/thread.h> //for class wxCriticalSection
 #include "wx/power.h" //for power mgmt notification (wxPowerType et.c)
 #include <vector> //for std::vector
-#include <ModelData/ModelData.hpp>
-#include <Xerces/XMLAccess.hpp> //class XercesConfigurationHandler
-#ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
-  //#include "Windows/CPUcoreUsageGetterNtQuerySystemInformation.hpp"
-  //#include "Windows/CPUcoreUsageGetterIWbemServices.hpp"
-//#include "Windows/CPUcoreUsageNTQSI_OO.hpp"
-//#include "Windows/CPUcoreUsageNTQSI_OO2.hpp"
-#endif //#ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
-//#include <Controller/ClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <wx/frame.h>
 #include <wx/dcclient.h> //for class wxPaintDC
 #include <wx/dcbuffer.h> //class wxBufferedPaintDC
-#include <ICalculationThread.hpp> //for "started", "ended"
+
+#include <Controller/ICalculationThread.hpp> //for "started", "ended"
+#include <ModelData/ModelData.hpp>
+#include <UserInterface/UserInterface.hpp> //for abstract class UserInterface
+#include <Xerces/PStateConfig.hpp> //class XercesConfigurationHandler
 //#include "FreqAndVoltageSettingDlg.hpp"
 
 class wxBufferedPaintDC ;
 class CalculationThread ;
-//class GriffinController ;
 //class wxMenuItem ;
 class FreqAndVoltageSettingDlg ;
 class wxFrame ;
 class wxMenuBar ;
-class CPUcoreUsageGetterIWbemServices ;
-class CPUcoreUsageNTQSI ;
 class I_CPUcontrollerAction ;
 class SpecificCPUcoreActionAttributes ;
 class wxX86InfoAndControlApp ;
 class wxDynLibCPUcontroller ;
 class wxDynLibCPUcoreUsageGetter ;
 
+class VoltageAndMulti
+{
+public:
+  float m_fMultiplier ;
+  float m_fVoltageInVolt ;
+};
+
 class MainFrame:
-  public wxFrame, 
-  //Must be public, else MSVC++ error "C4996"
-  public UserInterface
+  public wxFrame //,
+//  //Must be public, else MSVC++ error "C4996"
+//  public UserInterface
   //, public wxTimer 
 {
 public:
-  volatile bool m_vbAnotherWindowIsActive ;
-#ifdef _COMPILE_WITH_CPU_CORE_USAGE_GETTER
-  //CPUcoreUsageGetterNtQuerySystemInformation m_cpucoreusagegetter ;
-#endif
-#ifdef COMPILE_WITH_IWBEMSERVICES 
-  CPUcoreUsageGetterIWbemServices m_cpucoreusagegetteriwbemservices ;
-#endif
   void Notify() ; //overrides wxTimer::Notify()
 private: 
   bool m_bAllowCPUcontrollerAccess ;
+  bool m_bCPUcoreUsageConsumed ;
+  bool m_bDiagramNotDrawn ;
 public:
   bool m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
 private:
+  VoltageAndMulti * mp_ar_voltage_and_multi ;
   bool m_bNotFirstTime ;
   bool m_bRangeBeginningFromMinVoltage ;
   BYTE m_byIndexOf1stCPUcontrollerRelatedMenu ;
@@ -120,8 +113,10 @@ private:
   ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
   ULONGLONG m_ullPreviousTimeStampCounterValue ;
 public:
+  volatile bool m_vbAnotherWindowIsActive ;
   WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
   WORD m_wMaxFreqWidth ;
+  WORD m_wMaximumCPUcoreFrequency ;
   WORD m_wMaxVoltageWidth ;
   WORD m_wMaxFreqInMHzTextWidth ;
   WORD m_wMaxVoltageInVoltTextWidth ;
@@ -147,7 +142,7 @@ private:
   wxMenu * p_wxmenuExtras ;
   wxMenu * mp_wxmenuFile ;
   wxMenu * p_wxmenuService ;
-  wxMenuItem ** m_arp_wxmenuitemPstate ;
+//  wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
   wxMenuItem ** marp_wxmenuItemHighLoadThread ;
@@ -183,7 +178,6 @@ private:
     wxObjectEventFunction
     , SpecificCPUcoreActionAttributes * scaa
     );
-
   //void 
   BYTE AddSetPstateMenuItem(  
       wxMenu * p_wxmenuCore
@@ -200,7 +194,6 @@ public:
     const wxString& title, 
     const wxPoint& pos, 
     const wxSize& size
-    //, GriffinController * p_pstatectrl
     , I_CPUcontroller * p_cpucontroller
     //, CPUcoreData * p_cpucoredata
     , Model * p_model
@@ -222,13 +215,13 @@ public:
     BYTE byPreviousAction = //ENDED
       ICalculationThread::ended ) ;
   bool Confirm(const std::string & str) ;
-  bool Confirm(std::ostrstream & r_ostrstream);
-  void CPUcontrollerAttached(const wxString & wxstrFilePath ) ;
+//  bool Confirm(std::ostrstream & r_ostrstream);
+  void CPUcontrollerDynLibAttached(const wxString & wxstrFilePath ) ;
   void CPUcontrollerDeleted() ;
   void CPUcoreUsageGetterAttached(const wxString & wxstrFilePath ) ;
   void CPUcoreUsageGetterDeleted() ;
 
-  void CreateFileMenu() ;
+  inline void CreateFileMenu() ;
   void CreateServiceMenuItems() ;
   //void 
   BYTE CreateDynamicMenus() ;
@@ -326,6 +319,7 @@ public:
   void OnAttachCPUcoreUsageGetterDLL(wxCommandEvent & event);
   void OnDetachCPUcontrollerDLL(wxCommandEvent & event);
   void OnDetachCPUcoreUsageGetterDLL(wxCommandEvent & event);
+  void OnInitDialog( wxInitDialogEvent & event ) ;
   void PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   void PossiblyAskForOSdynFreqScalingDisabling();
 //  void SetMenuItemLabel(
@@ -345,6 +339,7 @@ public:
     , wxString r_ar_wxstrVoltageInVolt []
   //  , float r_ar_fTempInCelsius []
     , wxString r_ar_wxstrTempInCelsius []
+    , I_CPUcontroller * p_cpucontroller
     ) ;
 #ifdef wxHAS_POWER_EVENTS
   //void OnSuspending(wxPowerEvent& event)
@@ -357,25 +352,19 @@ public:
   //        wxLogMessage(_T("Vetoed suspend."));
   //    }
   //}
-
   //void OnSuspended(wxPowerEvent& WXUNUSED(event))
   //{
   //    wxLogMessage(_T("System is going to suspend."));
   //}
-
   //void OnSuspendCancel(wxPowerEvent& WXUNUSED(event))
   //{
   //    wxLogMessage(_T("System suspend was cancelled."));
   //}
-
   void OnResume(wxPowerEvent& WXUNUSED(event)) ;
 #endif // wxHAS_POWER_EVENTS
   void OnTimerEvent(wxTimerEvent &event);
-
   void UpdatePowerSettings(wxPowerType powerType, wxBatteryState batteryState) ;
-
   wxPowerType m_powerType;
   wxBatteryState m_batteryState;
-
   DECLARE_EVENT_TABLE()
 };

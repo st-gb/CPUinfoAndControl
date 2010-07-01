@@ -82,6 +82,18 @@ ReadMsr(void	*lpInBuffer, //index/offset as 4 byte value.
     return STATUS_SUCCESS;
 }*/
 
+////http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+////This functions can be used to synchronize rdtsc ("read Time Stamp Counter")
+////instruction.
+//void I_CPUaccess::CPUID()
+//{
+//  //TODO no need to save the contents of the EAX etc. regiser values (->faster)
+//  DWORD dwEAX ;
+//  //from http://www.ibm.com/developerworks/library/l-ia.html:
+////  asm ("cpuid"
+////        : "=a" (dwEAX)
+////        : "a" (0));
+//}
 
 //Implement the CPUID instruction here.
 //It may be overridden for subclasses that allow ring0 access because the
@@ -520,6 +532,23 @@ BOOL I_CPUaccess::ReadTSC(
   ReadTimeStampCounter(r_dwLowEAX, r_dwHighEDX ) ;
   return TRUE ;
 }
+
+BOOL I_CPUaccess::ReadTSCinOrder(
+  DWORD & r_dwLowEAX ,
+  DWORD & r_dwHighEDX ,
+  DWORD dwThreadAffinityMask
+  )
+{
+  if( SetThreadAffinityMask(dwThreadAffinityMask) )
+  {
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+//    CPUID(); //"force all previous instructions to complete"
+    ReadTSC(r_dwLowEAX, r_dwHighEDX ) ;
+    return TRUE ;
+  }
+  return FALSE ;
+}
+
 //I_CPUaccess::~I_CPUaccess()
 //{
 //

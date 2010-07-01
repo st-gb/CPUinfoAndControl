@@ -49,7 +49,6 @@ public:
     wxWindow * parent ,
     //MSRdata & r_regdata ,
     Model & r_modeldata ,
-    //GriffinController * p_pumastatecontrol
     I_CPUcontroller * p_cpucontroller
     //I_CPUaccess * i_cpuaccess 
     );
