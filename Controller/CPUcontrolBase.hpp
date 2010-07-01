@@ -51,6 +51,7 @@ public:
   virtual void DeleteCPUcontroller() ;
 
   virtual void EndDVFS() {}
+  virtual void FreeRessources() ;
   //Declare here because e.g. either a service or a GUI may delete a CPU
   //controller.
   //"Possibly" because: if the controller is NULL it is not being deleted.

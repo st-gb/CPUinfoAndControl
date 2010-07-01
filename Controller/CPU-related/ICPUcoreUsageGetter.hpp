@@ -19,7 +19,7 @@ public:
 
   //Must be virtual for the destructor of subclasses to be called?!
   virtual ~ICPUcoreUsageGetter()
-  //Also needs to be defined (else when linking: undefined referenc to it)
+  //Also needs to be defined (else when linking: undefined reference to it)
   {
     DEBUGN("~ICPUcoreUsageGetter()")
   } ;

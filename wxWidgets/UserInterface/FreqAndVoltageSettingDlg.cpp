@@ -13,17 +13,13 @@
 
 #include <global.h> //for BYTE
 #include "FreqAndVoltageSettingDlg.hpp"
-//#include "../AMD_family17.h"
-//#include "../ModelData/PStates.h"
-//#include "../Controller/PumaStateCtrl.h"
-//#include "Controller/GriffinController.hpp"
-#include <Controller/I_CPUcontroller.hpp>
-#include <wx/button.h>
-#include <wx/checkbox.h>
-#include <wx/dialog.h>
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
+#include <wx/button.h> //for class wxButton
+#include <wx/checkbox.h> //for class wxCheckBox
+#include <wx/dialog.h> //for class wxDialog
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
 #include <wx/sizer.h> //for class wxBoxSizer
-#include <wx/slider.h>
+#include <wx/slider.h> //for class wxSlider
 #include <wx/spinbutt.h> //class wxSpinButton 
 //for a line which may be used in a dialog to separate the groups of controls. 
 #include <wx/statline.h> 
@@ -64,9 +60,119 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
 END_EVENT_TABLE()
 
+inline void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
+  wxSizer * p_wxsizerSuperordinate )
+{
+  p_wxboxsizerCPUcoreFrequencyInMHz = new wxBoxSizer(wxHORIZONTAL);
+  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
+    new wxStaticText(this, wxID_ANY,
+    //_T("core frequency in MHz: ")));
+    _T("core\nfrequency"//\nin MHz"
+      ":")
+      )
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    , wxLEFT | wxRIGHT |
+    wxALIGN_TOP
+    , 5 //Determines the border width
+    );
+
+  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
+    mp_wxsliderFreqInMHz
+    , 1
+    //,wxEXPAND | wxALL
+    , wxLEFT | wxRIGHT
+    , 5 );
+
+  mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T("") );
+  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
+    mp_wxstatictextFreqInMHz
+    , 1
+    , wxLEFT | wxRIGHT
+    , 5 );
+  p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
+    p_wxboxsizerCPUcoreFrequencyInMHz ,
+    1 ,
+    wxEXPAND | //wxALL
+      wxBOTTOM
+    ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"Determines the border width, if the flag  parameter is set to
+    //include any border flag."
+    //10
+    2
+    );
+}
+
+inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
+  wxSizer * p_wxsizerSuperordinate )
+{
+  wxButton * p_wxbuttonDecBy1VoltageStep ;
+  wxButton * p_wxbuttonIncBy1VoltageStep ;
+  wxBoxSizer * p_wxboxsizerCPUcoreVoltage = new wxBoxSizer(wxHORIZONTAL);
+  p_wxboxsizerCPUcoreVoltage->Add(
+    new wxStaticText(this, wxID_ANY, _T("voltage" //\nIDentifier
+      ":" ))
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
+    , //wxEXPAND |
+    //wxALL,
+    wxLEFT | wxRIGHT |
+    //wxALIGN_CENTER_VERTICAL
+    //The label and the adjustable value should be at the same vertical
+    //position, so place at the top.
+    wxALIGN_TOP
+    , 3 //Determines the border width
+    );
+  p_wxboxsizerCPUcoreVoltage->Add(//p_wxsliderCPUcoreVoltage
+    mp_wxsliderCPUcoreVoltage,
+    1
+    //,wxEXPAND | wxALL
+    , wxLEFT | wxRIGHT
+    , 5);
+  mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, _T("") );
+  p_wxboxsizerCPUcoreVoltage->Add(
+    mp_wxstatictextVoltageInVolt ,
+    0 //0=the control should not take more space if the sizer is enlarged
+    //,wxEXPAND | wxALL
+    , wxLEFT | wxRIGHT
+    , 5);
+  wxSize wxsizeMinimal(-1,-1) ;
+  p_wxbuttonIncBy1VoltageStep = new wxButton( this
+    , ID_SpinVoltage
+    , wxT("&+")
+    ) ;
+  p_wxboxsizerCPUcoreVoltage->Add( //mp_wxspinbuttonVoltageInVolt
+    p_wxbuttonIncBy1VoltageStep
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    , wxLEFT | wxRIGHT
+    , 0 );
+  p_wxbuttonDecBy1VoltageStep = new wxButton( this
+    , ID_DecreaseVoltage
+    , wxT("&-")
+    , wxDefaultPosition
+    , wxsizeMinimal
+    ) ;
+  p_wxboxsizerCPUcoreVoltage->Add( //mp_wxspinbuttonVoltageInVolt
+    p_wxbuttonDecBy1VoltageStep
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    , wxLEFT | wxRIGHT
+    , 0 );
+  p_wxsizerSuperordinate->Add(
+    p_wxboxsizerCPUcoreVoltage,
+    1 ,
+    wxEXPAND | //wxALL
+        wxBOTTOM
+    ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"Determines the border width, if the flag  parameter is set to
+    //include any border flag."
+    //10
+    2
+    );
+}
+
 FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   wxWindow * parent
-  //, GriffinController * p_pumastatectrl
   , I_CPUcontroller * p_cpucontroller
   , BYTE byCoreID
   )
@@ -75,7 +181,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
       wxID_ANY, 
       wxString::Format( 
       //We need a _T() macro (wide char-> L"", char->"") for EACH 
-      //line to make it compitable between char and wide char.
+      //line to make it compatible between char and wide char.
       _T("settings for core %u") , 
       byCoreID 
     )
@@ -89,7 +195,10 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   , m_byPstateID(0)
   , mp_cpucontroller (p_cpucontroller)
   , mp_mainframe( (MainFrame *) parent )
+  , mp_model ( p_cpucontroller->mp_model )
 {
+  LOGN("voltage and freq dialog begin")
+  //http://wiki.wxwidgets.org/Avoiding_Memory_Leaks#Child_windows:
   //"When a wxWindow is destroyed, it automatically deletes all its children. 
   //These children are all the objects that received the window as the
   //parent-argument in their constructors.
@@ -100,23 +209,22 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   wxBoxSizer * p_wxboxsizerCPUcorePstate = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerCPUcoreDivisor = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerCPUcoreFrequencyMultiplier = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer * p_wxboxsizerCPUcoreVoltage = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer * p_wxboxsizerCPUcoreFrequencyInMHz = new wxBoxSizer(wxHORIZONTAL);
+  //wxBoxSizer *
 //  wxBoxSizer * p_wxboxsizerCPUcoreVoltageInVolt = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer * p_wxboxsizerOK_Cancel = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerSetAsMinVoltage = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer * sizerTop = new wxBoxSizer(wxVERTICAL);
-  wxButton * p_wxbuttonDecBy1VoltageStep ;
-  wxButton * p_wxbuttonIncBy1VoltageStep ;
+//  wxButton * p_wxbuttonDecBy1VoltageStep ;
+//  wxButton * p_wxbuttonIncBy1VoltageStep ;
   wxFlexGridSizer * p_wxflexgridsizerSetAsMinVoltage = new wxFlexGridSizer(
     //number of columns: zero, it will be calculated to form the total 
     //number of children in the sizer
     0 );
-  wxFlexGridSizer * p_wxflexgridsizerCPUcoreVoltageInVolt = new 
-    wxFlexGridSizer(
-    //number of columns: zero, it will be calculated to form the total 
-    //number of children in the sizer
-    0 );
+//  wxFlexGridSizer * p_wxflexgridsizerCPUcoreVoltageInVolt = new
+//    wxFlexGridSizer(
+//    //number of columns: zero, it will be calculated to form the total
+//    //number of children in the sizer
+//    0 );
 
   //mp_wxbuttonApply = new wxButton(this, wxID_APPLY ) ;
   mp_wxbuttonApply = new wxButton(this, wxID_APPLY, _T("&Write p-state") ) ;
@@ -144,43 +252,6 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     this, wxID_ANY, _T("") 
     ) ;
 
-  ////p_wxboxsizerOK_Cancel
-  //p_wxboxsizerCPUcoreVoltageInVolt->Add(
-  //  mp_wxcheckboxCOFVIDcontrol
-  //  , 0 //0=the control should not take more space if the sizer is enlarged
-  //  //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-  //  , wxLEFT | wxRIGHT |
-  //  //wxALIGN_CENTER_VERTICAL
-  //  //The label and the adjustable value should be at the same vertical
-  //  //position, so place at the top.
-  //  wxALIGN_TOP
-  //  , 5 //Determines the border width
-  //  );
-
-//  p_wxboxsizerValidPstate->Add(
-//    mp_wxcheckboxValidPstate
-//    , 0 //0=the control should not take more space if the sizer is enlarged
-//    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-//    , wxLEFT | wxRIGHT |
-//    //wxALIGN_CENTER_VERTICAL
-//    //The label and the adjustable value should be at the same vertical
-//    //position, so place at the top.
-//    wxALIGN_TOP
-//    , 5 //Determines the border width
-//    );
-
-//  p_wxboxsizerValidPstate->Add(
-//    mp_wxstatictextExpectedCurrentDissipation
-//    , 0 //0=the control should not take more space if the sizer is enlarged
-//    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-//    , wxLEFT | wxRIGHT |
-//    //wxALIGN_CENTER_VERTICAL
-//    //The label and the adjustable value should be at the same vertical
-//    //position, so place at the top.
-//    wxALIGN_TOP
-//    , 5 //Determines the border width
-//    );
-
   p_wxboxsizerCPUcorePstate->Add( 
     new wxStaticText(this, wxID_ANY, _T("p-state:"))
     , 0 //0=the control should not take more space if the sizer is enlarged 
@@ -206,24 +277,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //mp_wxsliderCPUcorePstate->SetToolTip("too high");
 
   //m_vecp_wxcontrol.push_back(p_wxsliderCPUcoreFrequencyMultiplier);
-  //p_wxboxsizerCPUcoreDivisor->Add( 
-  //  new wxStaticText(this, wxID_ANY, _T("divisor:"))
-  //  , 0 //0=the control should not take more space if the sizer is enlarged 
-  //  //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-  //  , //wxEXPAND | 
-  //  //wxALL, 
-  //  wxLEFT | wxRIGHT | 
-  //  //wxALIGN_CENTER_VERTICAL
-  //  //The label and the adjustable value should be at the same vertical
-  //  //position, so place at the top.
-  //  wxALIGN_TOP
-  //  , 5 //Determines the border width
-  //  );
-  //p_wxboxsizerCPUcoreDivisor->Add(//p_wxsliderCPUcoreDivisorID
-  //  mp_wxsliderCPUcoreDivisorID , 1
-  //  //, wxEXPAND | wxALL
-  //  , wxLEFT | wxRIGHT
-  //  , 5);
+
   //p_wxboxsizerCPUcoreFrequencyMultiplier->Add( 
   //  new wxStaticText(this, wxID_ANY, _T("multiplier:"))
   //  , 0 //0=the control should not take more space if the sizer is enlarged 
@@ -242,82 +296,21 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //  //, wxEXPAND | wxALL,
   //  , wxLEFT | wxRIGHT
   //  , 5);
-  p_wxboxsizerCPUcoreVoltage->Add( 
-    new wxStaticText(this, wxID_ANY, _T("voltage\nIDentifier:"))
-    , 0 //0=the control should not take more space if the sizer is enlarged 
-    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-    , //wxEXPAND | 
-    //wxALL, 
-    wxLEFT | wxRIGHT | 
-    //wxALIGN_CENTER_VERTICAL
-    //The label and the adjustable value should be at the same vertical
-    //position, so place at the top.
-    wxALIGN_TOP
-    , 5 //Determines the border width
-    );
-  p_wxboxsizerCPUcoreVoltage->Add(//p_wxsliderCPUcoreVoltage
-    mp_wxsliderCPUcoreVoltage, 1
-    //,wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-    , 5);
-
-  p_wxboxsizerCPUcoreFrequencyInMHz->Add( 
-    new wxStaticText(this, wxID_ANY, 
-    //_T("core frequency in MHz: ")));
-    _T("core\nfrequency\nin MHz:"))
-    , 0 //0=the control should not take more space if the sizer is enlarged 
-    , wxLEFT | wxRIGHT | 
-    wxALIGN_TOP
-    , 5 //Determines the border width
-    );
-
-  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
-    mp_wxsliderFreqInMHz, 1
-    //,wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-    , 5 );
-
-//  sizerTop->Add(
-//      p_wxboxsizerValidPstate
-//      //mp_wxcheckboxValidPstate
-//      ,
-//      //"[...] used in wxBoxSizer to indicate if a child of a sizer can
-//      //change its size in the main orientation of the wxBoxSizer - where
-//      //0 stands for not changeable and
-//      //a value of more than zero is interpreted relative to the value of
-//      //other children of the same wxBoxSizer. "
-//      //1
-//      0,
-//      //wxEXPAND | //wxALL
-//        wxBOTTOM
-//      ,
-//      //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-//      //"Determines the border width, if the flag  parameter is set to
-//      //include any border flag."
-//      //10
-//      0
-//      );
-
   sizerTop->Add(
-      p_wxboxsizerCPUcorePstate, 1 , 
-      wxEXPAND | //wxALL 
+      p_wxboxsizerCPUcorePstate, 1 ,
+      wxEXPAND | //wxALL
         wxBOTTOM
-      , 
+      ,
       //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-      //"Determines the border width, if the flag  parameter is set to 
+      //"Determines the border width, if the flag  parameter is set to
       //include any border flag."
-      //10 
+      //10
       2
       );
-  //sizerTop->Add(p_wxboxsizerCPUcoreDivisor, 1 , 
-  //    wxEXPAND | //wxALL
-  //      wxBOTTOM , 
-  //    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-  //    //"Determines the border width, if the flag  parameter is set to 
-  //    //include any border flag."
-  //    //10 
-  //    2
-  //    );
+
+  AddCPUcoreFrequencySizer(sizerTop) ;
+
+  AddCPUcoreVoltageSizer(sizerTop) ;
   //sizerTop->Add(
   //    p_wxboxsizerCPUcoreFrequencyMultiplier, 1 , 
   //    wxEXPAND | //wxALL
@@ -330,30 +323,6 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //    2
   //    );
 
-  sizerTop->Add(//mp_wxsliderFreqInMHz, 
-      p_wxboxsizerCPUcoreFrequencyInMHz ,
-      1 , 
-      wxEXPAND | //wxALL
-        wxBOTTOM
-      , 
-      //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-      //"Determines the border width, if the flag  parameter is set to 
-      //include any border flag."
-      //10 
-      2
-      );
-  sizerTop->Add( 
-    p_wxboxsizerCPUcoreVoltage, 
-    1 , 
-    wxEXPAND | //wxALL
-        wxBOTTOM
-    , 
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"Determines the border width, if the flag  parameter is set to 
-    //include any border flag."
-    //10 
-    2
-    );
   //p_wxboxsizerCPUcoreFrequencyInMHz->Add(new wxStaticText(this, wxID_ANY, 
   //  //_T("core frequency in MHz: ")));
   //  _T("->resulting core frequency in MHz: ")));
@@ -373,25 +342,24 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //sizerTop->Add( mp_wxstatictextPercentageOfDefaultVoltage ) ;
 
   //p_wxboxsizerCPUcoreVoltageInVolt->Add(
-  p_wxflexgridsizerCPUcoreVoltageInVolt->Add(
-    new wxStaticText( this, wxID_ANY,
-      //_T("core voltage in Volt: ") )
-      _T("->resulting core voltage in Volt: ")
-      )
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //[...]can change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable[...]
-    , 1
-    , //wxEXPAND |
-    wxFIXED_MINSIZE | wxALL
-    , 0
-    );
-  mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, _T("") );
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add(
+//    new wxStaticText( this, wxID_ANY,
+//      //_T("core voltage in Volt: ") )
+//      _T("->resulting core voltage in Volt: ")
+//      )
+//    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+//    //[...]can change its size in the main orientation of the wxBoxSizer -
+//    //where 0 stands for not changeable[...]
+//    , 1
+//    , //wxEXPAND |
+//    wxFIXED_MINSIZE | wxALL
+//    , 0
+//    );
   //p_wxboxsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
-  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
-    , 1
-    , wxEXPAND | wxALL
-    , 0 );
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
+//    , 1
+//    , wxEXPAND | wxALL
+//    , 0 );
   //mp_wxspinbuttonVoltageInVolt = new wxSpinButton(this, //wxID_ANY
   //  ID_SpinVoltage ) ;
   //mp_wxspinbuttonVoltageInVolt->SetRange( 
@@ -402,54 +370,41 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //  );
   //mp_wxspinbuttonVoltageInVolt->SetValue(
   //    mp_i_cpucontroller->GetMinimumVoltageInVolt() * 1000 );
-  p_wxbuttonIncBy1VoltageStep = new wxButton( this
-    , ID_SpinVoltage 
-    , wxT("&+") 
-    ) ;
-  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
-    p_wxbuttonIncBy1VoltageStep
-    , 0
-    , //wxEXPAND | 
-    wxALL
-    , 0 );
-  p_wxbuttonDecBy1VoltageStep = new wxButton( this
-    , ID_DecreaseVoltage
-    , wxT("&-") 
-    ) ;
-  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
-    p_wxbuttonDecBy1VoltageStep
-    , 1
-    , wxEXPAND | wxALL
-    , 0 );
-  sizerTop->Add(
-    //p_wxboxsizerCPUcoreVoltageInVolt, 
-    p_wxflexgridsizerCPUcoreVoltageInVolt ,
-    //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"If you would rather have a window item stay the size it started with
-    //then use wxFIXED_MINSIZE. "
-    wxEXPAND |
-    //wxFIXED_MINSIZE |
-    wxALL,
-    //Determines the border width, if the flag  parameter is set to include 
-    //any border flag.
-    2);
-//  sizerTop->Add(
-//    mp_wxcheckboxCOFVIDcontrol ,
-//    //"[...] used in wxBoxSizer to indicate if a child of a sizer can
-//    //change its size in the main orientation of the wxBoxSizer - where
-//    //0 stands for not changeable and
-//    //a value of more than zero is interpreted relative to the value of
-//    //other children of the same wxBoxSizer. "
-//    //1
-//    0 , //0=no additional space between this and neighbour controls
-//    wxEXPAND | //wxALL
-//        wxBOTTOM
-//    ,
-//    2
+
+//  p_wxbuttonIncBy1VoltageStep = new wxButton( this
+//    , ID_SpinVoltage
+//    , wxT("&+")
 //    ) ;
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
+//    p_wxbuttonIncBy1VoltageStep
+//    , 0
+//    , //wxEXPAND |
+//    wxALL
+//    , 0 );
+//  p_wxbuttonDecBy1VoltageStep = new wxButton( this
+//    , ID_DecreaseVoltage
+//    , wxT("&-")
+//    ) ;
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
+//    p_wxbuttonDecBy1VoltageStep
+//    , 1
+//    , wxEXPAND | wxALL
+//    , 0 );
+//  sizerTop->Add(
+//    //p_wxboxsizerCPUcoreVoltageInVolt,
+//    p_wxflexgridsizerCPUcoreVoltageInVolt ,
+//    //proportion parameter: if "0" it takes the least space
+//    0 ,
+//    //1 ,
+//    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+//    //"If you would rather have a window item stay the size it started with
+//    //then use wxFIXED_MINSIZE. "
+//    wxEXPAND |
+//    //wxFIXED_MINSIZE |
+//    wxALL,
+//    //Determines the border width, if the flag  parameter is set to include
+//    //any border flag.
+//    2);
 
   //p_wxboxsizerSetAsMinVoltage->Add(
   p_wxflexgridsizerSetAsMinVoltage->Add(
@@ -485,6 +440,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     , 0
     );
 
+  LOGN("before adding to the outer sizer")
   sizerTop->Add(
     //mp_wxbuttonSetAsMinVoltage, 
     //p_wxboxsizerSetAsMinVoltage ,
@@ -524,6 +480,9 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 //      _T("Set as current p-state after write") ) ;
 //  p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
   p_wxboxsizerOK_Cancel->Add(new wxButton(this, wxID_CANCEL) );
+  mp_wxcheckboxOnlySafeRange = new wxCheckBox(this, wxID_ANY,
+    wxT("only safe range") ) ;
+  p_wxboxsizerOK_Cancel->Add( mp_wxcheckboxOnlySafeRange) ;
   sizerTop->Add(
     p_wxboxsizerOK_Cancel, 
     0 , 
@@ -542,9 +501,11 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //To show the computed freq and voltage at the beginning yet.
   //OutputFreqAndVoltageByControlValues();
   //OutputVoltageByControlValues();
-  VoltageIDchanged(m_wVoltageID) ;
+//  VoltageIDchanged(m_wVoltageID) ;
   //Force the neighbour controls of "voltage in volt" to be resized.
   Layout() ;
+  HandlePstateMayHaveChanged() ;
+  LOGN("end of voltage and freq dialog creation")
 }
 
 FreqAndVoltageSettingDlg::~FreqAndVoltageSettingDlg()
@@ -559,22 +520,10 @@ FreqAndVoltageSettingDlg::~FreqAndVoltageSettingDlg()
 
 void FreqAndVoltageSettingDlg::CreateSliders()
 {
-    BYTE byPstateIDtoShowSettingsFor = 0 ;
-    VoltageAndFreq voltageandfreq ;
-    //DWORD dwLow ;
-    //DWORD dwHigh ;
-    ////PState pstate ;
-    //mp_pumastatectrl->GetPStateFromMSR(
-    //    //0, //BYTE byPStateID, 
-    //    byPstateIDtoShowSettingsFor ,
-    //    dwLow, 
-    //    dwHigh, 
-    //    //pstate, 
-    //    m_pstate ,
-    //    m_byCoreID
-    //    ) ;
-
-    mp_wxsliderCPUcorePstate  = new wxSlider(
+  BYTE byPstateIDtoShowSettingsFor = 0 ;
+  VoltageAndFreq voltageandfreq ;
+  LOGN("voltage and freq dialog creating sliders")
+  mp_wxsliderCPUcorePstate  = new wxSlider(
     this
     //wxID_ANY, 
     , ID_PstateSlider 
@@ -593,28 +542,8 @@ void FreqAndVoltageSettingDlg::CreateSliders()
     , wxSize(-1, -1)
     , wxSL_AUTOTICKS | wxSL_LABELS
     ) ;
-  //wxSlider * p_wxsliderCPUcoreDivisorID = new wxSlider(this, 
-  //mp_wxsliderCPUcoreDivisorID = new wxSlider(this, 
-  //  //wxID_ANY, 
-  //  ID_DivisorSlider ,
-  //  //Initial position for the slider.
-  //  //2 , 
-  //  m_pstate.GetDivisorID() ,
-  //  0, //slider minimum value
-  //  //AMD BIOS and kernel dev guide for family 11h: "The frequency specified 
-  //  //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of 
-  //  //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
-  //  HIGHEST_EFFECTIVE_DIVISOR_ID //slider max value
-  //  //If the default point (-1, -1) is specified then a default point is chosen.
-  //  , wxPoint(-1, -1)
-  //  //If the default size (-1, -1) is specified then a default size is chosen.
-  //  , wxSize(-1, -1)
-  //  , wxSL_AUTOTICKS //	Displays tick marks.
-  //  | wxSL_LABELS //Displays minimum, maximum and value labels.
-  //  ) ;
   //wxSlider * p_wxsliderCPUcoreFrequencyMultiplier = new wxSlider(this, 
-  //m_byPreviousMultiplierValue = //mp_pumastatectrl->mp_model->m_cpucoredata.
-  //    //m_byMainPLLoperatingFrequencyIDmax ;
+  //m_byPreviousMultiplierValue =
   //    m_pstate.m_byFreqID ;
   //mp_wxsliderCPUcoreFrequencyMultiplier = new wxSlider(
   //  this
@@ -624,15 +553,8 @@ void FreqAndVoltageSettingDlg::CreateSliders()
   //  , m_byPreviousMultiplierValue
   //  //Slider minimum value.
   //      //, 0
-  //  //AMD BIOS and kernel dev guide for family 11h: "The frequency specified 
-  //  //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of 
-  //  //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
-  //  , mp_pumastatectrl->mp_model->m_cpucoredata.m_byLowestEffectiveFreqID
   //  //Slider max value.
   //      //, MAX_VALUE_FOR_FID 
-  //  , mp_pumastatectrl->mp_model->m_cpucoredata.
-  //    //m_byMainPLLoperatingFrequencyIDmax
-  //    GetMainPLLoperatingFrequencyIDmax()
   //  //If the default point (-1, -1) is specified then a default point is chosen.
   //  , wxPoint(-1, -1)
   //  //If the default size (-1, -1) is specified then a default size is chosen.
@@ -644,40 +566,35 @@ void FreqAndVoltageSettingDlg::CreateSliders()
   //If the p-state "0" does not exist.
   if( ! byPstateExists )
   {
-    //Disable the write button.
-    mp_wxbuttonApply->Enable( //p_cpucontroller->GetPstateSafefy() == 
-      //SETTING_VOLTAGE_IS_SAFE 
-      false
-      ) ;
+    //TODO reactivate
+//    //Disable the write button.
+//    mp_wxbuttonApply->Enable( //p_cpucontroller->GetPstateSafefy() ==
+//      //SETTING_VOLTAGE_IS_SAFE
+//      false
+//      ) ;
   }
+  WORD wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.
+      size() ;
+  if( wMaxValue )
+    //If just 1 element, min and max should be "0".
+    -- wMaxValue ;
+  LOGN("voltage and freq dialog before creating CPU core frequency slider")
   mp_wxsliderFreqInMHz = new wxSlider(
     this
     //wxID_ANY, 
     , ID_FrequencySlider
     //, 2  //value
     , //Initial position for the slider.
-      //pstate.GetFreqInMHz() //Initial position for the slider.
-      //m_pstate.GetFreqInMHz() //Initial position for the slider.
       //mp_i_cpucontroller->GetMinimumFrequencyInMHz()
-      voltageandfreq.m_wFreqInMHz
+      //voltageandfreq.m_wFreqInMHz
+      0
       //Slider minimum value.
-      //AMD BIOS and kernel dev guide for family 11h: "The frequency specified
-      //by (100 MHz * (CpuFid + 08h)) must always be >50% of and <= 100% of
-      //the frequency specified by F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
     , //lowest adjustable frequency:
-    //PState::GetFreqInMHz(
-    //  //BYTE byFreqID
-    //  mp_pumastatectrl->mp_model->m_cpucoredata.
-    //    //m_byMainPLLoperatingFrequencyIDmax / 2 
-    //    m_byLowestEffectiveFreqID
-    //  , 
-    //  //BYTE byDivisorID
-    //  HIGHEST_EFFECTIVE_DIVISOR_ID
-    //  )
-    mp_cpucontroller->GetMinimumFrequencyInMHz()
+//    mp_cpucontroller->GetMinimumFrequencyInMHz()
+    0
     //Slider max value.
-    //, mp_pumastatectrl->GetMaximumFrequencyInMHz()
-    , mp_cpucontroller->GetMaximumFrequencyInMHz()
+//    , mp_cpucontroller->GetMaximumFrequencyInMHz()
+    , wMaxValue
     //If the default point (-1, -1) is specified then a default point is chosen.
     , wxPoint(-1, -1)
     //If the default size (-1, -1) is specified then a default size is chosen.
@@ -685,66 +602,122 @@ void FreqAndVoltageSettingDlg::CreateSliders()
     , 
     //wxSL_AUTOTICKS //	Displays tick marks.
     //| 
-    wxSL_LABELS //Displays minimum, maximum and value labels.
+//    wxSL_LABELS //Displays minimum, maximum and value labels.
+    wxSL_TICKS
     ) ;
-  m_wPreviousFrequencyInMHz = mp_wxsliderFreqInMHz->GetValue();
+  LOGN("voltage and freq dialog after creating CPU core frequency slider")
+//  m_wPreviousFrequencyInMHz = //mp_wxsliderFreqInMHz->GetValue();
+//      GetCPUcoreFrequencyFromSliderValue() ;
   //HandleMultiplierValueChanged();
   //HandlePstateMayHaveChanged() ;
   //WORD wVoltageID
-  m_wVoltageID = mp_cpucontroller->GetVoltageID( 
-    voltageandfreq.m_fVoltageInVolt ) ;
+
+//  m_wVoltageID = mp_cpucontroller->GetVoltageID(
+//    voltageandfreq.m_fVoltageInVolt ) ;
   //wxSlider * p_wxsliderCPUcoreVoltage = new wxSlider(this, 
+
+  wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.
+      size() ;
+  //Prevent value wrap to 65535
+  if( wMaxValue )
+    //If just 1 element, min and max should be "0".
+    -- wMaxValue ;
+
+  LOGN("voltage and freq dialog before creating voltage slider")
   mp_wxsliderCPUcoreVoltage = new wxSlider(
     this, 
     //wxID_ANY, 
     ID_VoltageSlider 
     , //Initial position for the slider.
-      //60
-      //m_pstate.GetVoltageID()
       //mp_i_cpucontroller->GetMinimumVoltageID()
       //wVoltageID
-      m_wVoltageID
+      //m_wVoltageID
+      0
       //slider minimum value
       //, 0
-      //, mp_pumastatectrl->mp_model->m_cpucoredata.m_byMinVoltageID
-    , mp_cpucontroller->GetMinimumVoltageID()
+//    , mp_cpucontroller->GetMinimumVoltageID()
+    , 0
     //, MAX_VALUE_FOR_VID //slider max value
-    //, mp_pumastatectrl->mp_model->m_cpucoredata.m_byMaxVoltageID
-    , mp_cpucontroller->GetMaximumVoltageID()
+//    , mp_cpucontroller->GetMaximumVoltageID()
+    , wMaxValue
     //If the default point (-1, -1) is specified then a default point is chosen.
     , wxPoint(-1, -1)
     //If the default size (-1, -1) is specified then a default size is chosen.
     , wxSize(-1, -1)
-    , wxSL_AUTOTICKS | wxSL_LABELS
+    , wxSL_AUTOTICKS //| wxSL_LABELS
     ) ;
   ////Possibly force calc of wanted voltage.
   //VoltageIDchanged(wVoltageID) ;
-  //m_pstate.SetDivisorID() ;
+  LOGN("voltage and freq dialog end of creating sliders")
+}
+
+float FreqAndVoltageSettingDlg::GetCPUcoreFrequencyFromSliderValue()
+{
+  float fMultiplier = GetMultiplierFromSliderValue() ;
+  if( fMultiplier > 0.0 )
+  {
+    return fMultiplier * mp_cpucontroller->m_fReferenceClockInMHz ;
+  }
+  return 0.0 ;
+}
+
+float FreqAndVoltageSettingDlg::GetMultiplierFromSliderValue()
+{
+  WORD wMultiplierIndex = mp_wxsliderFreqInMHz->GetValue() ;
+  CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
+  LOGN("freq slider value:" << wMultiplierIndex
+    << " reference clock:" << mp_cpucontroller->m_fReferenceClockInMHz
+    << " number of multis in attribute data:" <<
+    r_cpucoredata.m_stdset_floatAvailableMultipliers.size()
+    << " address of avail. multis array: "
+    << r_cpucoredata.m_arfAvailableMultipliers
+    )
+  if( // m_fReferenceClockInMHz <> 0
+//      mp_cpucontroller->m_fReferenceClockInMHz &&
+      wMultiplierIndex <
+      r_cpucoredata.m_stdset_floatAvailableMultipliers.size()
+      && r_cpucoredata.m_arfAvailableMultipliers
+    )
+  {
+    float fMultiplier = r_cpucoredata.m_arfAvailableMultipliers[ wMultiplierIndex ];
+    LOGN("multiplier corresponding to slider value:" << fMultiplier )
+    return fMultiplier ;
+  }
+  return 0.0 ;
 }
 
 void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
     wxWindow * p_wxwindow )
 {
-  BYTE byIsSafe ;
+  LOGN("HandleCPUcoreFrequencyOrVoltageChanged")
     //mp_wxstatictextPercentageOfDefaultVoltage->SetText( 
-    //    wxString("percent of default voltage") + 
-    //    mp_pumastatectrl-> ) ;
+    //    wxString("percent of default voltage") + ) ;
 
+//  std::set<float>::const_iterator c_iter_stdset_fMultiplier =
+//    mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.find(
+//      mp_wxsliderFreqInMHz->GetValue()
+//      ) ;
+  float fFreq = GetCPUcoreFrequencyFromSliderValue() ;
+  LOGN("CPU core freq from slider :" << fFreq )
+  if( //c_iter_stdset_fMultiplier != mp_model->m_cpucoredata.
+      //m_stdset_floatAvailableMultipliers.end() &&
+      fFreq &&
+      mp_wxcheckboxOnlySafeRange->IsChecked()
+    //false
+      )
+  {
+    BYTE byIsSafe = 0 ;
     //if( m_bPreviousCPUcoreFreqWas
-    if( ( 
-        byIsSafe = //mp_pumastatectrl->GetPstateSafefy(
-          mp_cpucontroller->GetPstateSafefy(
+    if(         (
+        byIsSafe = mp_cpucontroller->GetPstateSafefy(
           ////mp_wxsliderCPUcoreVoltage->GetValue()
-          //m_pstate.m_byVoltageID
           //, //mp_wxsliderCPUcoreFrequencyMultiplier->GetValue()
-          ////m_did_and_fid.m_byFreqID
-          //m_pstate.m_byFreqID
-          //, //mp_wxsliderCPUcoreDivisorID->GetValue()
-          ////m_did_and_fid.m_byDivisorID ;
-          //m_pstate.m_byDivisorID
-          mp_wxsliderFreqInMHz->GetValue()
-          , mp_cpucontroller->GetVoltageInVolt(
-            mp_wxsliderCPUcoreVoltage->GetValue() )
+          (WORD) //( *c_iter_stdset_fMultiplier *
+          //mp_cpucontroller->m_fReferenceClockInMHz )
+            fFreq
+          , //mp_cpucontroller->GetVoltageInVolt(
+            //mp_wxsliderCPUcoreVoltage->GetValue() )
+          GetVoltageInVoltFromSliderValue()
           )
         ) == SETTING_VOLTAGE_IS_SAFE
       )
@@ -757,7 +730,7 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
       //Remove a possibble tooltip.
       mp_wxbuttonApply->SetToolTip( 
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compitable between char and wide char.
+        //line to make it compatible between char and wide char.
         _T("") );
     }
     else
@@ -767,31 +740,34 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
       {
         case VOLTAGE_IS_TOO_HIGH_FOR_FREQUENCY:
           wxstr = //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
+            //line to make it compatible between char and wide char.
             _T("The voltage is too high for the frequency. So ")
             _T("setting the p-state is unsafe.") ;
           break;
         case NO_APPROPRIATE_VOLTAGE_FREQUENCY_PAIR_FOUND:
           wxstr = //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
+            //line to make it compatible between char and wide char.
             _T("no appriate voltage-frequency pair was found from the ")
             _T("configuration file. So setting the p-state is unsafe.") ;
           break;
         case NO_VOLTAGE_FREQUENCY_PAIR_EXISTANT:
           wxstr = //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
+            //line to make it compatible between char and wide char.
             _T("There was NOT any voltage-frequency pair found (in the ")
             _T("configuration file ). So setting the p-state is unsafe.") ;
           break;
         case NO_APPROPRIATE_2_VOLTAGE_FREQUENCY_PAIRS_FOUND:
          {
            WORD wFreqInMHz = //m_pstate.GetFreqInMHz() ;
-             mp_wxsliderFreqInMHz->GetValue() ;
+//             mp_wxsliderFreqInMHz->GetValue() ;
+             //"(WORD)" to avoid g++ compiler warning
+             // "converting to `WORD' from `float'"
+             (WORD) GetCPUcoreFrequencyFromSliderValue() ;
            wxstr = wxString::Format( 
              //Necessary if using ASCII because wxString is wide char.
              wxString(
                 //We need a _T() macro (wide char-> L"", char->"") for EACH 
-                //line to make it compitable between char and wide char.
+                //line to make it compatible between char and wide char.
                 _T("There were no 2 voltage-frequency pairs found (in the ")
                 _T("configuration file )\n")
                 _T("where\n")
@@ -806,7 +782,7 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
           break;
         case NOT_USING_ANY_OVERVOLTING_PROTECTION:
           wxstr = //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
+            //line to make it compatible between char and wide char.
             _T("Warning: The overvoltage protection is disabled. (")
             _T("Look inside the ")
             _T("configuration file ). So setting the p-state is (VERY) risky.\n")
@@ -823,16 +799,22 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
           mp_wxbuttonApply->Disable() ;
           mp_wxbuttonApply->SetToolTip( 
             //We need a _T() macro (wide char-> L"", char->"") for EACH 
-            //line to make it compitable between char and wide char.
+            //line to make it compatible between char and wide char.
             _T("This button has been disabled ")
             _T("because of overvoltage protection")
             ) ;
       }
     }
+  }
+  else //The button may be disabled before. So enable it.
+    mp_wxbuttonApply->Enable() ;
+
     //p_wxwindow->SetFocus();
     mp_mainframe->m_wFreqInMHzOfCurrentActiveCoreSettings = 
-      //m_pstate.GetFreqInMHz() ;
-      mp_wxsliderFreqInMHz->GetValue() ;
+//      mp_wxsliderFreqInMHz->GetValue() ;
+      //"(WORD)" to avoid g++ compiler warning
+      // "converting to `WORD' from `float'"
+      (WORD) GetCPUcoreFrequencyFromSliderValue() ;
     //Only when true the cross is drawn.
     mp_mainframe->m_bDrawFreqAndVoltagePointForCurrCoreSettings = true ;
     //Force redraw of the client area.
@@ -840,74 +822,80 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
       Refresh() ;
 }
 
+float FreqAndVoltageSettingDlg::GetVoltageInVoltFromSliderValue()
+{
+  LOGN("voltage slider value:" << mp_wxsliderCPUcoreVoltage->GetValue() )
+  if( ! mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.empty() )
+    return mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[
+      mp_wxsliderCPUcoreVoltage->GetValue() ] ;
+  return 0.0 ;
+}
+
 void FreqAndVoltageSettingDlg::HandleMultiplierValueChanged()
 {
-  BYTE byCurrentCPUcoreFrequencyMultiplierValue =
-      mp_wxsliderCPUcoreFrequencyMultiplier->GetValue() ;
+//  BYTE byCurrentCPUcoreFrequencyMultiplierValue =
+//      mp_wxsliderCPUcoreFrequencyMultiplier->GetValue() ;
   //Commented for Pentium M
-  //if( byCurrentCPUcoreFrequencyMultiplierValue > //14 
-  //    mp_pumastatectrl->mp_model->m_cpucoredata.
-  //    //m_byMainPLLoperatingFrequencyIDmax 
-  //    GetMainPLLoperatingFrequencyIDmax()
+  //if( byCurrentCPUcoreFrequencyMultiplierValue >
   //  )
   //{
   //  //To reduce flickering.
-  //  if( m_byPreviousMultiplierValue //< 15 
-  //      <= mp_pumastatectrl->mp_model->m_cpucoredata.
-  //        //m_byMainPLLoperatingFrequencyIDmax 
-  //        GetMainPLLoperatingFrequencyIDmax() 
+  //  if( m_byPreviousMultiplierValue
+  //      <=
   //    )
   //      SetAttention(mp_wxsliderCPUcoreFrequencyMultiplier,
   //        _T("The multiplier is above the specification.\r\n"
-  //        "You will surely not get the expected freqeuency.\n"
-  //        "And even AMD power monitor showed wrong frequencies.\n"
+  //        "You will surely not get the expected frequency.\n"
   //        "You can verify this with a benchmark.")
   //        );
   //}
-  //else if( //byCurrentCPUcoreFrequencyMultiplierValue < //14/2
-  //    //mp_pumastatectrl->mp_model->m_cpucoredata.
-  //    //  m_byMainPLLoperatingFrequencyIDmax/2
-  //    //AMD spec says: FID + 8 must be > 50% of max FID + 8 
-  //    byCurrentCPUcoreFrequencyMultiplierValue + 8 <= 
-  //    ( mp_pumastatectrl->mp_model->m_cpucoredata.
-  //      //m_byMainPLLoperatingFrequencyIDmax
-  //      GetMainPLLoperatingFrequencyIDmax() + 8 ) / 2
+  //else if(
+  //    byCurrentCPUcoreFrequencyMultiplierValue <=
+  //    (
   //  )
   //{
   //  //To reduce flickering.
-  //    if( //m_byPreviousMultiplierValue >= //14/2
-  //        //mp_pumastatectrl->mp_model->m_cpucoredata.
-  //        //m_byMainPLLoperatingFrequencyIDmax/2 
+  //    if(
   //        m_byPreviousMultiplierValue + 8 > 
-  //        ( mp_pumastatectrl->mp_model->m_cpucoredata.
-  //          //m_byMainPLLoperatingFrequencyIDmax 
-  //          GetMainPLLoperatingFrequencyIDmax() + 8 ) / 2 
+  //        (
   //      )
   //      SetAttention(mp_wxsliderCPUcoreFrequencyMultiplier,
   //        _T("The multiplier is below the specification."
   //        "You may not get the expected freqeuency."
-  //        "Even AMD power monitor showed wrong frequencies if the multioplier "
-  //        "was too high."
   //        "You can verify this with a benchmark.")
   //        );
   //}
   //else
-  //    if( m_byPreviousMultiplierValue > //14 
-  //        mp_pumastatectrl->mp_model->m_cpucoredata.
-  //          //m_byMainPLLoperatingFrequencyIDmax
-  //          GetMainPLLoperatingFrequencyIDmax()
-  //        || 
-  //        //m_byPreviousMultiplierValue < //14/2
-  //        //mp_pumastatectrl->mp_model->m_cpucoredata.
-  //        //m_byMainPLLoperatingFrequencyIDmax/2 
+  //    if( m_byPreviousMultiplierValue >
+  //        ||
   //        m_byPreviousMultiplierValue + 8 <= 
-  //        ( mp_pumastatectrl->mp_model->m_cpucoredata.
-  //          //m_byMainPLLoperatingFrequencyIDmax 
-  //          GetMainPLLoperatingFrequencyIDmax() + 8 ) / 2
+  //        (
   //      )
   //      RemoveAttention(mp_wxsliderCPUcoreFrequencyMultiplier);
   //HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcoreFrequencyMultiplier);
-  m_byPreviousMultiplierValue = byCurrentCPUcoreFrequencyMultiplierValue ;
+  float fFreq //= //mp_cpucontroller->GetCPUcoreFrequencyInMHz(
+    //wSliderValue ) ;
+    //GetCPUcoreFrequencyFromSliderValue() ;
+    ;
+  float fMultiplier = GetMultiplierFromSliderValue() ;
+  fFreq = fMultiplier * mp_cpucontroller->m_fReferenceClockInMHz ;
+  m_wPreviousFrequencyInMHz =
+    //"(WORD)" to avoid g++ compiler warning
+    // "converting to `WORD' from `float'"
+    (WORD) fFreq ;
+  mp_wxstatictextFreqInMHz->SetLabel(
+    wxString::Format(
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+      wxT("multi:%.3f\n%.3f MHz"), //PState::GetVoltageInVolt(
+      fMultiplier, fFreq
+      )
+    );
+  //The freq label may need more space now, so recalc its size.
+  p_wxboxsizerCPUcoreFrequencyInMHz->RecalcSizes() ;
+  mp_mainframe->m_wFreqInMHzOfCurrentActiveCoreSettings =
+      m_wPreviousFrequencyInMHz ;
+//  m_byPreviousMultiplierValue = byCurrentCPUcoreFrequencyMultiplierValue ;
 }
 
 void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
@@ -918,32 +906,66 @@ void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
     )
   {
     m_wVoltageID = mp_wxsliderCPUcoreVoltage->GetValue() ;
-//      m_pstate = pstate ;
-  //mp_wxcheckboxValidPstate->SetValue(
-  //  //"Bit 63 PstateEn"
-  //  dwHigh >> 31 ) ;
+  //mp_wxcheckboxValidPstate->SetValue() ;
 
   //mp_wxstatictextExpectedCurrentDissipation->SetLabel( 
   //  wxString::Format("expected current dissipation: %f Ampere", 
-  //    PState::GetExpectedPowerDissipation(dwHigh) 
   //    )
   //  ) ;
-    HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcorePstate);
     //mp_wxsliderCPUcoreFrequencyMultiplier->SetValue(m_pstate.m_byFreqID) ;
-    //mp_wxsliderCPUcoreDivisorID->SetValue(m_pstate.m_byDivisorID) ;
-    mp_wxsliderFreqInMHz->SetValue( //m_pstate.GetFreqInMHz() 
-      voltageandfreq.m_wFreqInMHz ) ;
-    mp_wxsliderCPUcoreVoltage->SetValue( //m_pstate.GetVoltageID() 
-      mp_cpucontroller->GetVoltageID(voltageandfreq.m_fVoltageInVolt) ) ;
-    VoltageIDchanged(//nValue
-      m_wVoltageID ) ;
+
+//    //TODO
+    //Avoid div by zero.
+    if( mp_cpucontroller->m_fReferenceClockInMHz )
+    {
+      float fMultiplier = voltageandfreq.m_wFreqInMHz /
+          mp_cpucontroller->m_fReferenceClockInMHz ;
+      BYTE byMultiIndex = mp_model->m_cpucoredata.GetIndexForClosestMultiplier(
+        fMultiplier ) ;
+      float fVoltageInVolt ;
+      WORD wFreqInMHz =
+        (WORD)
+        ( (float) mp_model->m_cpucoredata.m_arfAvailableMultipliers[
+        byMultiIndex ] * mp_cpucontroller->m_fReferenceClockInMHz ) ;
+      //The multiplier for the calculated multiplier can be far away
+      //from the closest available multiplier. E.g. maybe 1.0 V for 1600 MHz
+      //for AMD Griffin where only 1100 and 2200 MHz are possible. So calc.
+      //the voltage for 1100 MHz:
+//      mp_cpucontroller->GetVoltageFromMultiplier(byMultiIndex) ;
+      if( mp_cpucontroller->GetInterpolatedVoltageFromFreq(
+          wFreqInMHz
+          //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+          , fVoltageInVolt
+          , mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+//          , cr_stdsetvoltageandfreqForInterpolation
+          )
+        )
+      {
+        BYTE by = mp_model->m_cpucoredata.GetIndexForClosestVoltage(
+          fVoltageInVolt ) ;
+        mp_wxsliderFreqInMHz->SetValue( //m_pstate.GetFreqInMHz()
+          byMultiIndex ) ;
+        HandleMultiplierValueChanged() ;
+        mp_wxsliderCPUcoreVoltage->SetValue(by) ;
+        VoltageIDchanged( by) ;
+      }
+      HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcorePstate);
+    }
+//    //TODO
+//    mp_wxsliderCPUcoreVoltage->SetValue( //m_pstate.GetVoltageID()
+//      //mp_cpucontroller->GetVoltageID(voltageandfreq.m_fVoltageInVolt)
+//      mp_model->m_cpucoredata.GetIndexForClosestVoltage(
+//        voltageandfreq.m_fVoltageInVolt )
+//      ) ;
+//    VoltageIDchanged(//nValue
+//      m_wVoltageID ) ;
   }
 }
 
 void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 {
 //  float fMinVoltageInVolt = mp_cpucontroller->GetMinimumVoltageInVolt() ;
-  float fVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
+//  float fVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
 //  //Min voltage ID is not always the max voltage: with AMD Griffin this is
 //  //exactly the opposite.
 //  WORD wMinVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMinVoltageInVolt ) ;
@@ -965,18 +987,26 @@ void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 //    //mp_i_cpucontroller->GetVoltageInVolt(m_wVoltageID )
 //    VoltageIDchanged(m_wVoltageID) ;
 //  }
-  WORD wNewVoltageID = m_wVoltageID - 1 ;
+//  WORD wNewVoltageID = m_wVoltageID - 1 ;
   //->lower voltage ID = lower voltage
-  if( mp_cpucontroller->GetVoltageInVolt(wNewVoltageID) < fVoltageInVolt )
+  //TODO
+//  if( mp_cpucontroller->GetVoltageInVolt(wNewVoltageID) < fVoltageInVolt )
+//  {
+//    m_wVoltageID = wNewVoltageID ;
+//    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+//    VoltageIDchanged(m_wVoltageID) ;
+//  }
+//  else //lower voltage ID = higher voltage (AMD Griffin)
+//  {
+//    m_wVoltageID = m_wVoltageID + 1 ;
+//    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+//    VoltageIDchanged(m_wVoltageID) ;
+//  }
+
+  //If the current voltage is NOT the first/ lowest element.
+  if( m_wVoltageID > 0 )
   {
-    m_wVoltageID = wNewVoltageID ;
-    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
-    VoltageIDchanged(m_wVoltageID) ;
-  }
-  else //lower voltage ID = higher voltage (AMD Griffin)
-  {
-    m_wVoltageID = m_wVoltageID + 1 ;
-    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+    -- m_wVoltageID ;
     VoltageIDchanged(m_wVoltageID) ;
   }
 }
@@ -984,7 +1014,7 @@ void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
 {
   //int i ;
-  float fVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
+//  float fVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(m_wVoltageID ) ;
 //  float fMaxVoltageInVolt = mp_cpucontroller->GetMaximumVoltageInVolt() ;
 //  //Max voltage ID is not always the max voltage: with AMD Griffin this is
 //  //exactly the opposite.
@@ -994,7 +1024,7 @@ void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
 //    //mp_i_cpucontroller->GetMaximumVoltageInVolt()
 //    //fMaxVoltageInVolt
 //    //Use a function because: the calculated voltage sometimes varies from
-//    //the real voltage because the computer uses disrecte values.
+//    //the real voltage because the computer uses discrete values.
 //    //E.g. the value read from the config. file is 1.1000000 and the
 //    //calculated value is 1.0999999.
 //    //mp_i_cpucontroller.IsLessVoltageThan(fVoltageInVolt,fMaxVoltageInVolt)
@@ -1007,18 +1037,27 @@ void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
 //  mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
 //  VoltageIDchanged(m_wVoltageID) ;
 //}
-  WORD wNewVoltageID = m_wVoltageID + 1 ;
+//  WORD wNewVoltageID = m_wVoltageID + 1 ;
   //->higher voltage ID = higher voltage
-  if( mp_cpucontroller->GetVoltageInVolt(wNewVoltageID) > fVoltageInVolt )
+  //TODO
+//  if( mp_cpucontroller->GetVoltageInVolt(wNewVoltageID) > fVoltageInVolt )
+//  {
+//    m_wVoltageID = wNewVoltageID ;
+//    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+//    VoltageIDchanged(m_wVoltageID) ;
+//  }
+//  else //higher voltage ID = lower voltage (AMD Griffin)
+//  {
+//    m_wVoltageID = m_wVoltageID - 1 ;
+//    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+//    VoltageIDchanged(m_wVoltageID) ;
+//  }
+  //If the current voltage is NOT the last/ highest element.
+  if( ( m_wVoltageID + 1 ) < (WORD) mp_model->m_cpucoredata.
+      m_stdset_floatAvailableVoltagesInVolt.size()
+    )
   {
-    m_wVoltageID = wNewVoltageID ;
-    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
-    VoltageIDchanged(m_wVoltageID) ;
-  }
-  else //higher voltage ID = lower voltage (AMD Griffin)
-  {
-    m_wVoltageID = m_wVoltageID - 1 ;
-    mp_wxsliderCPUcoreVoltage->SetValue(m_wVoltageID) ;
+    ++ m_wVoltageID ;
     VoltageIDchanged(m_wVoltageID) ;
   }
 }
@@ -1031,62 +1070,44 @@ void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent
   switch(wxscrollevent.GetId())
   {
     case ID_PstateSlider :
-      //DWORD dwLow, dwHigh;
       {
-//      PState pstate ;
-      //mp_pumastatectrl->GetPStateFromMSR(
-        //mp_wxsliderCPUcorePstate->GetValue() , dwLow, dwHigh , m_pstate, m_byCoreID ) ;
-      //mp_pumastatectrl->GetPstate(
       HandlePstateMayHaveChanged() ;
       }
       break;
   //case ID_DivisorSlider:
-  //    //m_did_and_fid.SetDivisorID( mp_wxsliderCPUcoreDivisorID->GetValue() ) ;
-  //    m_pstate.SetDivisorID( mp_wxsliderCPUcoreDivisorID->GetValue() ) ;
-
   //    HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcoreDivisorID);
   //    mp_wxsliderFreqInMHz->SetValue(m_pstate.GetFreqInMHz() ) ;
   //  break;
   //case ID_MultiplierSlider:
-  //    //m_did_and_fid.SetDivisorID( mp_wxsliderCPUcoreDivisorID->GetValue() ) ;
-  //    m_pstate.SetFrequencyID( mp_wxsliderCPUcoreFrequencyMultiplier->GetValue() ) ;
   //    mp_wxsliderFreqInMHz->SetValue(m_pstate.GetFreqInMHz() ) ;
   //    //calls HandleCPUcoreFrequencyOrVoltageChanged(...)
   //    HandleMultiplierValueChanged();
   //    break;
   case ID_FrequencySlider:
-      //mp_wxsliderFreqInMHz->SetLabel(wxString::Format("%u", 
-      //  PState::GetFreqInMHz(
-      //    mp_wxsliderCPUcoreFrequencyMultiplier->GetValue(),
-      //    mp_wxsliderCPUcoreDivisorID->GetValue() 
-      //    )
-      //    )
-      //  );
-      //Just for testing:
-      //mp_wxsliderFreqInMHz->SetValue(1100) ;
       {
-      WORD wSliderValue = mp_wxsliderFreqInMHz->GetValue() ;
-      if( wSliderValue < 
-          m_wPreviousFrequencyInMHz )
-          m_wPreviousFrequencyInMHz = SetNearestLowerPossibleFreqInMHz( 
-            wSliderValue );
-      else if( wSliderValue > m_wPreviousFrequencyInMHz )
-          m_wPreviousFrequencyInMHz = SetNearestHigherPossibleFreqInMHz( 
-            wSliderValue );
-
-      mp_mainframe->m_wFreqInMHzOfCurrentActiveCoreSettings = 
-          m_wPreviousFrequencyInMHz ;
+//      WORD wSliderValue = //mp_wxsliderFreqInMHz->GetValue() ;
+//      if( wSliderValue <
+//          m_wPreviousFrequencyInMHz )
+//          m_wPreviousFrequencyInMHz = SetNearestLowerPossibleFreqInMHz(
+//            wSliderValue );
+//      else if( wSliderValue > m_wPreviousFrequencyInMHz )
+//          m_wPreviousFrequencyInMHz = SetNearestHigherPossibleFreqInMHz(
+//            wSliderValue );
       //else
       //    if( mp_wxsliderFreqInMHz->GetValue() > 
       //    m_wPreviousFrequencyInMHz )
       //    SetNearestHigherPossibleFreqInMHz();
       //m_wPreviousFrequencyInMHz = wSliderValue ;
       }
+      HandleMultiplierValueChanged() ;
+      HandleCPUcoreFrequencyOrVoltageChanged(
+        mp_wxsliderCPUcoreFrequencyMultiplier ) ;
       break ;
   case ID_VoltageSlider:
     m_wVoltageID = mp_wxsliderCPUcoreVoltage->GetValue() ;
+//    WORD wVoltageInVoltIndex = mp_wxsliderCPUcoreVoltage->GetValue() ;
+//    mp_model->m_cpucoredata.GetVoltageInVolt(wVoltageInVoltIndex) ;
     VoltageIDchanged(m_wVoltageID) ;
-      //m_pstate.m_byVoltageID = nValue ;
     break;
   }
   //OutputFreqAndVoltageByControlValues() ;
@@ -1121,52 +1142,140 @@ void FreqAndVoltageSettingDlg::OnSpinVoltageUp( wxSpinEvent & event)
   }
 }
 
-void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton( wxCommandEvent & wxcmd )
+void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton(
+  wxCommandEvent & wxcmd )
 {
-  float fVoltage = mp_cpucontroller->GetVoltageInVolt( 
-    mp_wxsliderCPUcoreVoltage->GetValue() ) ;
-  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
-  mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
-  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.
-    insert( 
-      VoltageAndFreq( fVoltage
-        , wFreq
-        )
-    ) ;
-  if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsEnabled() )
+  //TODO maybe disable the button if the ref. clock is 0
+  // Reference clock <> 0
+  if( mp_cpucontroller->m_fReferenceClockInMHz )
   {
-    mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
-      insert( 
-        VoltageAndFreq( m_fWantedVoltageInVolt 
-          , wFreq 
-          )
-      ) ;
+    CPUcoreData & r_cpucoredata = mp_cpucontroller->mp_model->m_cpucoredata ;
+    WORD wMultiplierIndex = mp_wxsliderFreqInMHz->GetValue() ;
+    WORD wFreq = //Explicit cast to WORD to avoid g++ warning.
+     (WORD) ( r_cpucoredata.m_arfAvailableMultipliers[ wMultiplierIndex ] *
+      mp_cpucontroller->m_fReferenceClockInMHz ) ;
+    WORD wVoltageIndex = mp_wxsliderCPUcoreVoltage->GetValue() ;
+    float fVoltage = //mp_cpucontroller->GetVoltageInVolt(
+      //mp_wxsliderCPUcoreVoltage->GetValue() ) ;
+      r_cpucoredata.m_arfAvailableVoltagesInVolt[ wVoltageIndex ] ;
+    r_cpucoredata.m_wxcriticalsection.Enter() ;
+
+//  float fVoltage = mp_cpucontroller->GetVoltageInVolt(
+//     ) ;
+//  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
+//  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.
+//    insert(
+//      VoltageAndFreq( fVoltage
+//        , wFreq
+//        )
+//    ) ;
+    VoltageAndFreq voltageandfreq( fVoltage , wFreq) ;
+    std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
+        r_cpucoredata.m_stdsetvoltageandfreqLowestStable ;
+    std::set<VoltageAndFreq>::iterator iter =
+        r_stdsetvoltageandfreq.find( voltageandfreq ) ;
+    //VoltageAndFreq exists in set yet.
+    if( iter != r_stdsetvoltageandfreq.end() )
+      r_stdsetvoltageandfreq.erase(iter) ;
+  //    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
+      r_stdsetvoltageandfreq.
+        insert(
+//          VoltageAndFreq( fVoltage
+//            , wFreq
+//            )
+          voltageandfreq
+        ) ;
+    if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsChecked() )
+    {
+  //    mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
+  //      insert(
+  //        VoltageAndFreq( m_fWantedVoltageInVolt
+  //          , wFreq
+  //          )
+  //      ) ;
+      VoltageAndFreq voltageandfreq( fVoltage + 0.07 , wFreq) ;
+      std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
+          r_cpucoredata.m_stdsetvoltageandfreqWanted ;
+      std::set<VoltageAndFreq>::iterator iter =
+          r_stdsetvoltageandfreq.find( voltageandfreq ) ;
+      //VoltageAndFreq exists in set yet.
+      if( iter != r_stdsetvoltageandfreq.end() )
+        r_stdsetvoltageandfreq.erase(iter) ;
+    //    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
+        r_stdsetvoltageandfreq.
+          insert(
+//            VoltageAndFreq( fVoltage
+//              , wFreq
+//              )
+            voltageandfreq
+          ) ;
+    }
+    r_cpucoredata.m_wxcriticalsection.Leave() ;
+    mp_mainframe->RedrawEverything() ;
+    mp_mainframe->Refresh() ;
   }
-  mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Leave() ;
+  else
+    ::wxMessageBox(wxT("the voltage can not be set because the reference "
+      "clock and so the CPU core frequency is is 0 MHz/ unknown"),
+      wxT("error")) ;
 }
 
-void FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton( wxCommandEvent & wxcmd )
+void FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton(
+  wxCommandEvent & wxcmd )
 {
-  float fVoltage = mp_cpucontroller->GetVoltageInVolt( 
-    mp_wxsliderCPUcoreVoltage->GetValue() ) ;
-  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
-  mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
-  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
-    insert( 
-      VoltageAndFreq( fVoltage
-        , wFreq
-        )
-    ) ;
-  mp_cpucontroller->mp_model->m_cpucoredata.m_wxcriticalsection.Leave() ;
+  //TODO maybe disable the button if the ref. clock is 0
+//  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
+  // Reference clock <> 0
+  if( mp_cpucontroller->m_fReferenceClockInMHz )
+  {
+    CPUcoreData & r_cpucoredata = mp_cpucontroller->mp_model->m_cpucoredata ;
+    WORD wMultiplierIndex = mp_wxsliderFreqInMHz->GetValue() ;
+    r_cpucoredata.m_wxcriticalsection.Enter() ;
+
+    WORD wFreq = //Explicit cast to WORD to avoid g++ warning.
+     (WORD) ( r_cpucoredata.m_arfAvailableMultipliers[ wMultiplierIndex ] *
+      mp_cpucontroller->m_fReferenceClockInMHz ) ;
+    WORD wVoltageIndex = mp_wxsliderCPUcoreVoltage->GetValue() ;
+    float fVoltage = //mp_cpucontroller->GetVoltageInVolt(
+      //mp_wxsliderCPUcoreVoltage->GetValue() ) ;
+      r_cpucoredata.m_arfAvailableVoltagesInVolt[ wVoltageIndex ] ;
+
+    VoltageAndFreq voltageandfreq( fVoltage, wFreq) ;
+    std::set<VoltageAndFreq>::iterator iter =
+      r_cpucoredata.m_stdsetvoltageandfreqWanted.find( voltageandfreq ) ;
+    //VoltageAndFreq exists in set yet.
+    if( iter != r_cpucoredata.m_stdsetvoltageandfreqWanted.end() )
+      r_cpucoredata.m_stdsetvoltageandfreqWanted.erase(iter) ;
+  //    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
+      r_cpucoredata.m_stdsetvoltageandfreqWanted.
+        insert(
+          VoltageAndFreq( fVoltage
+            , wFreq
+            )
+        ) ;
+  //    if( //http://www.cplusplus.com/reference/stl/set/insert/:
+  //        //"false if an element with the same value existed."
+  //        ! stdpair.second )
+  //      *stdpair.first = VoltageAndFreq( fVoltage, wFreq ) ;
+    r_cpucoredata.m_wxcriticalsection.Leave() ;
+    mp_mainframe->RedrawEverything() ;
+    mp_mainframe->Refresh() ;
+  }
+  else
+    ::wxMessageBox(wxT("the voltage can not be set because the reference "
+      "clock and so the CPU core frequency is is 0 MHz/ unknown"),
+      wxT("error")) ;
 }
 void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
 {
-  float fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
-  float fMaxVoltage = mp_cpucontroller->GetMaximumVoltageInVolt() ;
-  //Max voltage ID is not always the max voltage: with AMD Griffin this is 
-  //exactly the opposite.
-  WORD wMaxVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMaxVoltage ) ;
-  WORD wMinVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMinVoltage ) ;
+  LOGN("VoltageIDchanged()")
+  mp_wxsliderCPUcoreVoltage->SetValue(nNewValue) ;
+//  float fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
+//  float fMaxVoltage = mp_cpucontroller->GetMaximumVoltageInVolt() ;
+//  //Max voltage ID is not always the max voltage: with AMD Griffin this is
+//  //exactly the opposite.
+//  WORD wMaxVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMaxVoltage ) ;
+//  WORD wMinVoltageAsVoltageID = mp_cpucontroller->GetVoltageID(fMinVoltage ) ;
 
   //TODO the following shows "the voltage is above the specification for
   //Griffin even if it's within the specs.
@@ -1194,14 +1303,15 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
   //else
   //  ;
   mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings =
-    //PState::GetVoltageInVolt(nNewValue) ;
-    mp_cpucontroller->GetVoltageInVolt(nNewValue) ;
-  if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsEnabled() )
+//    mp_cpucontroller->GetVoltageInVolt(nNewValue) ;
+//      mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ nNewValue] ;
+      GetVoltageInVoltFromSliderValue() ;
+  if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsChecked() )
   {
     float fStableVoltageToSet = mp_cpucontroller->GetVoltageInVolt(
         nNewValue ) 
-        //add 0.05 V for stability safety
-        + 0.05 ;
+        //Add 0.07 V for stability safety
+        + 0.07 ;
     WORD wVoltageID = //In order to get the voltage in Volt that corresponds
       //to a voltage ID boundary first convert to the corresponding 
       //(possibly rounded) voltage ID.
@@ -1213,7 +1323,7 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
     mp_wxstatictextWantedVoltageInVolt->SetLabel( 
       wxString::Format(
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compitable between char and wide char.
+        //line to make it compatible between char and wide char.
         _T("%f"), //PState::GetVoltageInVolt(
         m_fWantedVoltageInVolt
         )
@@ -1232,20 +1342,14 @@ void FreqAndVoltageSettingDlg::OutputFreqAndVoltageByControlValues()
 
 void FreqAndVoltageSettingDlg::OutputVoltageByControlValues()
 {
-  //mp_wxstatictextFreqInMHz->SetLabel(wxString::Format("%u", 
-  //  PState::GetFreqInMHz(
-  //    mp_wxsliderCPUcoreFrequencyMultiplier->GetValue(),
-  //    mp_wxsliderCPUcoreDivisorID->GetValue() 
-  //    )
-  //    )
-  //  );
   mp_wxstatictextVoltageInVolt->SetLabel(//_T("0.8")
     wxString::Format(
       //We need a _T() macro (wide char-> L"", char->"") for EACH 
-      //line to make it compitable between char and wide char.
-      _T("%f"), //PState::GetVoltageInVolt(
-      mp_cpucontroller->GetVoltageInVolt(
-      mp_wxsliderCPUcoreVoltage->GetValue() )
+      //line to make it compatible between char and wide char.
+      _T("%.3f V"), //PState::GetVoltageInVolt(
+//      mp_cpucontroller->GetVoltageInVolt(
+//      mp_wxsliderCPUcoreVoltage->GetValue() )
+      GetVoltageInVoltFromSliderValue()
       )
     ) ;
   ////Force the neighbour controls to be resized.
@@ -1257,7 +1361,6 @@ void FreqAndVoltageSettingDlg::OnActivate(wxActivateEvent & r_activateevent )
   if( r_activateevent.GetActive() )
   {
     //mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings = 
-    //  //PState::GetVoltageInVolt(m_pstate.m_byVoltageID) ;
     //  mp_i_cpucontroller->GetVoltageInVolt( 
     //  ) ;
     mp_mainframe->m_wFreqInMHzOfCurrentActiveCoreSettings =
@@ -1274,25 +1377,35 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
 //  int i = 0 ;
   BYTE byPstateNumber = 0 ;
   byPstateNumber = mp_wxsliderCPUcorePstate->GetValue() ;
-  //TODO the confirmation of e.g. wxWidgets seems to happen in 
-  //ANOTHER thread->synchronize here (by e.g. using critical sections)
-  mp_cpucontroller->SetVoltageAndFrequency(
-
-    mp_cpucontroller->GetVoltageInVolt(
-      mp_wxsliderCPUcoreVoltage->GetValue() )
-    , 
-    //m_byCoreID
-    mp_wxsliderFreqInMHz->GetValue()
-    , m_byCoreID
-    ) ;
-//  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
+  float fVoltageInVolt = GetVoltageInVoltFromSliderValue() ;
+  if( fVoltageInVolt > 0.0 )
   {
     mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
-    //mp_i_cpucontroller->SetPstate( byPstateNumber,
-    //  //1 = 1bin
-    //  //1 << m_byCoreID 
-    //  m_byCoreID
-    //  );
+    //TODO the confirmation of e.g. wxWidgets seems to happen in
+    //ANOTHER thread->synchronize here (by e.g. using critical sections)
+    //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
+    mp_cpucontroller->SetVoltageAndFrequency(
+
+  //    mp_cpucontroller->GetVoltageInVolt(
+  //      mp_wxsliderCPUcoreVoltage->GetValue() )
+      fVoltageInVolt
+      ,
+      //m_byCoreID
+//      mp_wxsliderFreqInMHz->GetValue()
+      //"(WORD)" to avoid g++ compiler warning
+      // "converting to `WORD' from `float'"
+      (WORD) GetCPUcoreFrequencyFromSliderValue()
+      , m_byCoreID
+      ) ;
+  //  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
+    {
+//      mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
+      //mp_i_cpucontroller->SetPstate( byPstateNumber,
+      //  //1 = 1bin
+      //  //1 << m_byCoreID
+      //  m_byCoreID
+      //  );
+    }
   }
   //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ; 
 }
@@ -1348,18 +1461,13 @@ WORD FreqAndVoltageSettingDlg::SetNearestHigherPossibleFreqInMHz(
         //.GetFreqInMHz() 
         ;
 
-    //m_pstate.SetDIDandFID(didandfid);
-    //wNewFreqInMhz = didandfid.GetFreqInMHz() ;
-
-    //mp_wxsliderCPUcoreFrequencyMultiplier->SetValue(didandfid.m_byFreqID) ;
-    //mp_wxsliderCPUcoreDivisorID->SetValue(didandfid.m_byDivisorID) ;
     if( wNewFreqInMhz != 0 )
     {
       HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderFreqInMHz);
 
-      mp_wxsliderFreqInMHz->SetValue( //PState::GetFreqInMHz(byFID,byDivisorID) 
-          wNewFreqInMhz
-          ) ;
+//      mp_wxsliderFreqInMHz->SetValue( //PState::GetFreqInMHz(byFID,byDivisorID)
+//          wNewFreqInMhz
+//          ) ;
     }
     return wNewFreqInMhz ;
 }
@@ -1371,24 +1479,16 @@ WORD FreqAndVoltageSettingDlg::SetNearestLowerPossibleFreqInMHz(
 {
     WORD wNewFreqInMhz ;
 
-    //wNewFreqInMhz = PState::GetFreqInMHz(byFID,byDivisorID) ;
-    //DIDandFID didandfid = //mp_pumastatectrl->
-        //GetNearestLowerPossibleFreqInMHzAsDIDnFID(wFreqInMHz) ;
-
     wNewFreqInMhz =
       mp_cpucontroller->GetNearestLowerPossibleFreqInMHz(wFreqInMHz) ;
-    //m_pstate.SetDIDandFID(didandfid);
-    //wNewFreqInMhz = didandfid.GetFreqInMHz() ;
 
-    //mp_wxsliderCPUcoreFrequencyMultiplier->SetValue(didandfid.m_byFreqID) ;
-    //mp_wxsliderCPUcoreDivisorID->SetValue(didandfid.m_byDivisorID) ;
     if( wNewFreqInMhz != 0 )
     {
       HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderFreqInMHz);
 
-      mp_wxsliderFreqInMHz->SetValue( //PState::GetFreqInMHz(byFID,byDivisorID) 
-          wNewFreqInMhz
-          ) ;
+//      mp_wxsliderFreqInMHz->SetValue( //PState::GetFreqInMHz(byFID,byDivisorID)
+//          wNewFreqInMhz
+//          ) ;
     }
     return wNewFreqInMhz ;
 }

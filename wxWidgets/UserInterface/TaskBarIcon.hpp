@@ -46,4 +46,4 @@ public:
     DECLARE_EVENT_TABLE()
 };
 
-#endif _TASKBARICON_HPP
+#endif //_TASKBARICON_HPP

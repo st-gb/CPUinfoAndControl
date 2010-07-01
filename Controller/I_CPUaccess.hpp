@@ -86,6 +86,8 @@ public:
     //const I_CPUaccess * ,
     DWORD, DWORD*, DWORD*, long unsigned int ) ;
 
+  //Program crash/ malfunction (RdmsrEX(): false values) if CPUID() is a member.
+  //virtual void CPUID() {} ;
   //All methods must be "virtual": so they needn't have a definition HERE.
   virtual BOOL CpuidEx(
     DWORD dwIndex,
@@ -203,6 +205,15 @@ public:
   //inline
   virtual BOOL ReadTSC(DWORD & r_dwLow , DWORD & r_dwHigh ) //= 0
     ;
+  virtual
+  BOOL ReadTSCinOrder(
+    DWORD & r_dwLowEAX ,
+    DWORD & r_dwHighEDX ,
+    DWORD dwThreadAffinityMask
+    )
+//  { return FALSE ; }
+  ;
+  virtual BYTE SetThreadAffinityMask(DWORD dwThreadAffinityMask) { return 0 ; }
   void SetUserInterface(UserInterface & r_userinterface) 
   { 
       mp_userinterface = & r_userinterface ;

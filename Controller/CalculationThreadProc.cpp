@@ -9,7 +9,7 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/UserInterface.hpp>
-
+#include <math.h> //for pow(...)
 #include <stdlib.h> //rand()
 
 //wxWidgets does not provide the needed "set CPU affinity". So I must

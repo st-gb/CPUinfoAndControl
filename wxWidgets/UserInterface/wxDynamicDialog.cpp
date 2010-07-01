@@ -5,16 +5,16 @@
 #include <wx/stattext.h> //for wxStaticText
 #include <wx/sizer.h> //wxBoxSizer
 #include <wx/timer.h> //wxTimer 
-#include <vector>
-//#include "ModelData/RegisterData.hpp"
-#include "ModelData/ModelData.hpp"
-//#include "Controller/PumaStateCtrl.h"
-//#include "Controller/GriffinController.hpp"
-#include <Controller/I_CPUcontroller.hpp>
+//#include <wx/wrapsizer.h>
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
+#include "ModelData/ModelData.hpp"
+//#include <ModelData/RegisterData.hpp>
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 //#include <wxWidgets/wxStringHelper.h>
 #include <wxWidgets/Controller/wxStringHelper.h>
+
+#include <vector>
 
 //An enum guarantees a unique number for each element.
 enum
@@ -43,32 +43,32 @@ enum
 BEGIN_EVENT_TABLE(wxDynamicDialog, wxDialog)
 //    EVT_MY_CUSTOM_COMMAND(wxID_ANY, wxDynamicDialog::OnRuntimeCreatedControls)
   EVT_TIMER(ID_Timer,wxDynamicDialog::OnTimerEvent)
+  EVT_SIZE(wxDynamicDialog::OnSize)
+  EVT_BUTTON(ID_ReloadCPUregisterToReadConfig,
+    wxDynamicDialog::OnReloadCPUregisterToReadConfig )
 END_EVENT_TABLE()
 
 wxDynamicDialog::wxDynamicDialog(//RegisterData 
   wxWindow * parent ,
   //MSRdata & r_regdata ,
   //Model & r_modeldata ,
-  //I_CPUcontroller * p_cpucontroller
-  //The CPU access is independant from the CPU controller and usually does 
-  //not change during runtime in contract to the CPU controller that may be
-  //exchanged during runtime.
-  //I_CPUaccess * p_cpuaccess
   //, 
   wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
   : wxDialog( 
-      parent, //wxID_ANY, //
-      ID_Dialog ,
-      //wxString::Format("MSR register index: %x", 
-      //r_regdata.m_dwIndex)
-      wxT("")
-      , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
-      , wxSize(400, 200)
-      , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
-      )
-  //, mp_pumastatecontrol ( p_pumastatecontrol )
+    parent, //wxID_ANY, //
+    ID_Dialog ,
+    //wxString::Format("MSR register index: %x",
+    //r_regdata.m_dwIndex)
+    wxT("")
+    , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
+    , wxSize(400, 200)
+    , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
+    )
   //, mp_i_cpucontroller ( p_cpucontroller )
+  //The CPU access is independent from the CPU controller and usually does
+  //not change during runtime in contract to the CPU controller that may be
+  //exchanged during runtime.
   , mp_cpuaccess ( p_wxx86infoandcontrolapp->GetCPUaccess() )
   , mp_modeldata ( //& r_modeldata
     p_wxx86infoandcontrolapp->GetModel() )
@@ -80,14 +80,14 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
   //mp_msr_data = & r_regdata ;
   BuildGUI() ;
 
-  Connect( 
-    //m_wControlID //++ 
-    ID_ReloadCPUregisterToReadConfig ,
-    //, 
-    wxID_ANY, 
-    wxEVT_COMMAND_BUTTON_CLICKED, 
-    wxCommandEventHandler(wxDynamicDialog::OnRuntimeCreatedControls) 
-    );
+//  Connect(
+//    //m_wControlID //++
+//    ID_ReloadCPUregisterToReadConfig ,
+//    //,
+//    wxID_ANY,
+//    wxEVT_COMMAND_BUTTON_CLICKED,
+//    wxCommandEventHandler(wxDynamicDialog::OnRuntimeCreatedControls)
+//    );
   Connect( 
     ID_IntervalCheckbox ,
     wxEVT_COMMAND_CHECKBOX_CLICKED, 
@@ -95,47 +95,166 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
     );
 }
 
-void wxDynamicDialog::BuildGUI()
+wxDynamicDialog::~wxDynamicDialog()
 {
-  std::vector<MSRdata>::iterator itermsrdata = 
+  //TODO prog crash in wxSizerItem::~wxSizerItem() (a children of a sizer
+  //at "delete m_sizer" m_sizer.m_containingWindow  is 0xfeeefeee
+  LOGN("wxDynamicDialog's d'tor")
+}
+
+inline void wxDynamicDialog::AddStatictext( const wxString & cr_wxstr )
+{
+//  wxStaticText *
+  mp_wxstatictext = new wxStaticText(
+    this
+    , wxID_ANY
+    //(*iter).m_str
+    , wxString(wxT("") )
+    ) ;
+  wxRect wxrect = mp_wxstatictext->GetRect() ;
+#ifdef _DEBUG
+  wxrect = mp_wxstatictext->GetRect() ;
+  wxPoint wxpoint = mp_wxstatictext->GetPosition() ;
+  wxpoint = mp_wxboxsizerOutmost->GetPosition() ;
+  wxSize wxsize = mp_wxboxsizerOutmost->GetSize() ;
+  wxsize = mp_wxboxsizerOutmost->GetMinSize() ;
+  wxpoint = mp_sizerLeftColumn->GetPosition() ;
+  wxsize = mp_sizerLeftColumn->GetSize() ;
+  wxsize = mp_sizerLeftColumn->GetMinSize() ;
+  wxrect = GetClientRect() ;
+//  if( //mp_wxstatictext->GetRect().GetBottom()
+//      mp_sizerLeftColumn->GetMinSize().GetHeight() > GetClientRect().height )
+//    ::wxMessageBox(wxT( "mp_sizerLeftColumn->GetSize().GetHeight() > "
+//      "GetClientRect().height") ) ;
+#endif
+  if( p_wxboxsizerOptions->GetMinSize().GetHeight() +
+      mp_sizerLeftColumn->GetMinSize().GetHeight() + wxrect.height
+      > GetClientRect().height )
+  {
+    mp_sizerLeftColumn = new wxBoxSizer(wxVERTICAL);
+    mp_sizerRightColumn = new wxBoxSizer(wxVERTICAL);
+    mp_sizerTop->Add( mp_sizerLeftColumn );
+    mp_sizerTop->Add( mp_sizerRightColumn );
+  }
+//  if( //mp_sizerLeftColumn->GetSize().GetHeight() > GetClientRect().height
+//      mp_sizerTop->GetSize().GetHeight() > GetClientRect().height )
+//    ::wxMessageBox(wxT( "mp_sizerLeftColumn->GetSize().GetHeight() > "
+//      "GetClientRect().height") ) ;
+  mp_sizerLeftColumn->Add( new wxStaticText(
+    this,
+    wxID_ANY,
+    cr_wxstr
+//#ifdef _DEBUG
+//      + wxString::Format("%x",p_wxstatictext)
+//#endif //#ifdef _DEBUG
+    + wxString(wxT(": ") )
+    )
+    //0=the control should not take more space if the sizer is enlarged
+    , 0
+    //, wxFIXED_MINSIZE,
+    , wxLEFT | wxRIGHT |
+      //wxALIGN_CENTER_VERTICAL
+      //The label and the adjustable value should be at the same vertical
+      //position, so place at the top.
+      wxALIGN_TOP
+      | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
+    //Determines the border width, if the flag parameter is set to include
+    //any border flag.
+    , 2
+    );
+  //m_stdmap_p_wxstatictext
+  m_stdvector_p_wxstatictext.push_back(mp_wxstatictext) ;
+  //p_sizerHorizontal->Add(
+  mp_sizerRightColumn->Add(
+   mp_wxstatictext
+   , 0
+   //, wxFIXED_MINSIZE,
+   , wxLEFT | wxRIGHT |
+     //wxALIGN_CENTER_VERTICAL
+     //The label and the adjustable value should be at the same vertical
+     //position, so place at the top.
+     wxALIGN_TOP
+   //Determines the border width, if the flag  parameter is set to include
+   //any border flag.
+   , 2
+   );
+}
+
+void wxDynamicDialog::BuildCPUregisterControls()
+{
+  std::vector<MSRdata>::iterator itermsrdata =
     mp_modeldata->m_stdvector_msrdata.begin() ;
   std::vector<CPUIDdata>::iterator itercpuiddata =
     mp_modeldata->m_stdvector_cpuiddata.begin() ;
-  //DWORD dwEAX,dwEDX, dwAffMask = 1 ;
-  //ULONGLONG ullMSR ;
+
+  mp_sizerLeftColumn = new wxBoxSizer(wxVERTICAL);
+  mp_sizerRightColumn = new wxBoxSizer(wxVERTICAL);
+  mp_sizerTop->Add( mp_sizerLeftColumn );
+  mp_sizerTop->Add( mp_sizerRightColumn );
+  //  AddTimeStampCounter() ;
+  AddStatictext( wxT("TSC") ) ;
+  AddStatictext( wxT("TSC diff") ) ;
+
+  while( itercpuiddata != mp_modeldata->m_stdvector_cpuiddata.end() )
+  {
+    BuildGUI( *itercpuiddata ) ,
+    ++ itercpuiddata ;
+  }
+  while( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
+  {
+    BuildGUI( *itermsrdata ) ,
+    ++ itermsrdata ;
+  }
+}
+
+void wxDynamicDialog::BuildGUI()
+{
+  mp_wxboxsizerOutmost = new wxBoxSizer( wxVERTICAL ) ;
+//  wxWrapSizer * p_wxwrapsizer = new wxWrapSizer() ;
+  p_wxboxsizerOptions = new wxBoxSizer( wxHORIZONTAL) ;
+//  mp_wxboxsizerOutmost->Add( //p_wxwrapsizer
+//    p_wxboxsizerOptions ) ;
   mp_sizerTop = new wxBoxSizer(//wxVERTICAL
     wxHORIZONTAL );
-  mp_wxcheckboxReloadCPUregisterToReadConfig = new wxCheckBox(
-    this 
+//  mp_wxcheckboxReloadCPUregisterToReadConfig = new wxCheckBox(
+//    this
+//    , ID_ReloadCPUregisterToReadConfig
+//    , _T("reload CPU register to read configuration")
+//    ) ;
+//  p_wxboxsizerOptions->Add( mp_wxcheckboxReloadCPUregisterToReadConfig ) ;
+  wxButton * p_wxbuttonReloadCPUregisterToReadConfig = new wxButton(
+    this
     , ID_ReloadCPUregisterToReadConfig
-    , _T("reload CPU register to read configuration") 
+    , _T("reload CPU register to read configuration")
     ) ;
+  p_wxboxsizerOptions->Add( p_wxbuttonReloadCPUregisterToReadConfig ) ;
   mp_wxcheckboxInterval = new wxCheckBox(
     this 
     , ID_IntervalCheckbox
-    , _T("interval") 
+    , _T("interval in ms:")
     ) ;
   mp_wxtextctrlUpdateIntervalInMs = new wxTextCtrl(
-    this 
+    this
     , wxID_ANY
-    , _T("interval in ms") 
+//    , _T("interval in ms")
+    , wxT("1000")
     ) ;
-  mp_sizerLeftColumn = new wxBoxSizer(wxVERTICAL);
-  mp_sizerRightColumn = new wxBoxSizer(wxVERTICAL);
-  wxButton * p_wxbuttonMSR = new wxButton(
-      this
-      , m_wControlID 
-      , _T("read from MSR register") 
-    ) ;
-  mp_sizerLeftColumn->Add( 
-    mp_wxcheckboxReloadCPUregisterToReadConfig
-    , 0 
-    , wxFIXED_MINSIZE, 
-    //Determines the border width, if the flag  parameter is set to include 
-    //any border flag.
-    2 
-    );
-  mp_sizerLeftColumn->Add( 
+
+//  wxButton * p_wxbuttonMSR = new wxButton(
+//      this
+//      , m_wControlID
+//      , _T("read from MSR register")
+//    ) ;
+//  mp_sizerLeftColumn->Add(
+//    mp_wxcheckboxReloadCPUregisterToReadConfig
+//    , 0
+//    , wxFIXED_MINSIZE,
+//    //Determines the border width, if the flag  parameter is set to include
+//    //any border flag.
+//    2
+//    );
+//  mp_sizerLeftColumn->Add(
+  p_wxboxsizerOptions->Add(
     mp_wxcheckboxInterval
     , 0 
     , wxFIXED_MINSIZE, 
@@ -143,59 +262,58 @@ void wxDynamicDialog::BuildGUI()
     //any border flag.
     2 
     );
-  mp_sizerRightColumn->Add( 
+//  mp_sizerRightColumn->Add(
+  p_wxboxsizerOptions->Add(
     mp_wxtextctrlUpdateIntervalInMs
-    , 0 
-    , wxFIXED_MINSIZE, 
-    //Determines the border width, if the flag  parameter is set to include 
+    , 0
+    , wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
     //any border flag.
-    2 
+    2
     );
-  mp_sizerLeftColumn->Add( 
-    p_wxbuttonMSR
-    , 0 
-    , wxFIXED_MINSIZE, 
-    //Determines the border width, if the flag  parameter is set to include 
+  mp_wxcheckboxRebuildGUIonResize = new wxCheckBox(
+    this
+//    , ID_RebuildGUIonResizeCheckbox
+    , wxID_ANY
+    , _T("RebuildGUIonResize")
+    ) ;
+  p_wxboxsizerOptions->Add(
+    mp_wxcheckboxRebuildGUIonResize
+    , 0
+    , wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
     //any border flag.
-    2 
+    2
     );
-  mp_sizerRightColumn->Add( 
-    //p_wxbuttonMSR
-    //new wxStaticText(
-    //  this, 
-    //  wxID_ANY, 
-    //  "" 
-    //  )
-    new wxButton(
-      this
-      , wxID_ANY 
-      , _T("dummy button") 
-    )
-    , 0 
-    , wxFIXED_MINSIZE, 
-    //Determines the border width, if the flag  parameter is set to include 
-    //any border flag.
-    2 
-    );
+//  mp_sizerLeftColumn->Add(
+//    p_wxbuttonMSR
+//    , 0
+//    , wxFIXED_MINSIZE,
+//    //Determines the border width, if the flag  parameter is set to include
+//    //any border flag.
+//    2
+//    );
+//  mp_sizerRightColumn->Add(
+//    //p_wxbuttonMSR
+//    //new wxStaticText(
+//    //  this,
+//    //  wxID_ANY,
+//    //  ""
+//    //  )
+//    new wxButton(
+//      this
+//      , wxID_ANY
+//      , _T("dummy button")
+//    )
+//    , 0
+//    , wxFIXED_MINSIZE,
+//    //Determines the border width, if the flag  parameter is set to include
+//    //any border flag.
+//    2
+//    );
 
-  mp_sizerTop->Add( mp_sizerLeftColumn ); 
-  mp_sizerTop->Add( mp_sizerRightColumn ); 
-  while( itercpuiddata != mp_modeldata->m_stdvector_cpuiddata.end() )
-  {
-    //ullMSR = dwEDX  ;
-    //ullMSR <<= 32 ;
-    //ullMSR |= dwEAX ;
-    BuildGUI( *itercpuiddata ) ,
-    ++ itercpuiddata ;
-  }
-  while( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
-  {
-    //ullMSR = dwEDX  ;
-    //ullMSR <<= 32 ;
-    //ullMSR |= dwEAX ;
-    BuildGUI( *itermsrdata ) ,
-    ++ itermsrdata ;
-  }
+  BuildCPUregisterControls() ;
+
   //mp_sizerTop->Add( new wxButton(
   //    this
   //    , m_wControlID 
@@ -218,9 +336,14 @@ void wxDynamicDialog::BuildGUI()
   //  //any border flag.
   //  2 
   //  );
-  SetSizer(mp_sizerTop );
-  mp_sizerTop->SetSizeHints(this);
-  mp_sizerTop->Fit(this);
+  mp_wxboxsizerOutmost->Add( //p_wxwrapsizer
+    p_wxboxsizerOptions ) ;
+  mp_wxboxsizerOutmost->Add( mp_sizerTop ) ;
+  SetSizer( //mp_sizerTop
+    mp_wxboxsizerOutmost );
+//  mp_sizerTop->SetSizeHints(this);
+//  mp_sizerTop->Fit(this);
+//  mp_wxboxsizerOutmost->Fit(this);
 }
 
 void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
@@ -234,76 +357,14 @@ void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
     r_msrdata.m_stdvec_registerdata.end() )
   {
     //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
-     wxStaticText * p_wxstatictext = new wxStaticText(
-       this
-       , wxID_ANY
-       //(*iter).m_str  
-       , wxString(wxT("") )
-       ) ;
-    //p_sizerHorizontal->Add( new wxStaticText(
-    mp_sizerLeftColumn->Add( new wxStaticText(
-      this, 
-      wxID_ANY, 
-      getwxString( (*iter_registerdata).m_strDataName )
-//#ifdef _DEBUG
-//      + wxString::Format("%x",p_wxstatictext)
-//#endif //#ifdef _DEBUG
-      + wxString(wxT(": ") )
-      ) 
-      //0=the control should not take more space if the sizer is enlarged
-      , 0 
-      //, wxFIXED_MINSIZE, 
-      , wxLEFT | wxRIGHT | 
-        //wxALIGN_CENTER_VERTICAL
-        //The label and the adjustable value should be at the same vertical
-        //position, so place at the top.
-        wxALIGN_TOP
-        | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
-      //Determines the border width, if the flag parameter is set to include 
-      //any border flag.
-      , 2 
-      );       
-     //m_stdmap_p_wxstatictext
-     m_stdvector_p_wxstatictext.push_back(p_wxstatictext) ;
-    //p_sizerHorizontal->Add( 
-    mp_sizerRightColumn->Add( 
-      p_wxstatictext
-      , 0 
-      //, wxFIXED_MINSIZE, 
-      , wxLEFT | wxRIGHT | 
-        //wxALIGN_CENTER_VERTICAL
-        //The label and the adjustable value should be at the same vertical
-        //position, so place at the top.
-        wxALIGN_TOP
-      //Determines the border width, if the flag  parameter is set to include 
-      //any border flag.
-      , 2 
-      );
-     //mp_sizerTop->Add(
-     //  p_sizerHorizontal
-     // //"[...] used in wxBoxSizer to indicate if a child of a sizer can 
-     // //change its size in the main orientation of the wxBoxSizer - where 
-     // //0 stands for not changeable and 
-     // //a value of more than zero is interpreted relative to the value of 
-     // //other children of the same wxBoxSizer. "
-     // //1 
-     // , 0,
-     // //wxEXPAND | //wxALL
-     //   wxBOTTOM
-     // ,
-     // //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-     // //"Determines the border width, if the flag  parameter is set to
-     // //include any border flag."
-     // //10 
-     // 0
-     // );
+    AddStatictext(getwxString( (*iter_registerdata).m_strDataName )) ;
      ++ iter_registerdata ;
   }
   //std::vector<RegisterDataTable>::iterator iter_registerdatatable =
   //  //mp_msr_data->
   //  r_msrdata.m_stdvector_registerdatatable.begin() ;
 
-  ////Now add controls for values dependand on register values.
+  ////Now add controls for values dependent on register values.
   //while( iter_registerdatatable != //mp_msr_data->
   //  r_msrdata.m_stdvector_registerdatatable.end() )
   //{
@@ -349,53 +410,53 @@ void wxDynamicDialog::BuildGUI(CPUIDdata & r_cpuiddata )
     r_cpuiddata.m_stdvec_registerdata.end() )
   {
     //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
-     wxStaticText * p_wxstatictext = new wxStaticText(
-       this
-       , wxID_ANY
-       //(*iter).m_str  
-       , wxString(wxT("") )
-       ) ;
-    //p_sizerHorizontal->Add( new wxStaticText(
     wxstrDataName = getwxString( (*iter_registerdata).m_strDataName ) ;
-    mp_sizerLeftColumn->Add( new wxStaticText(
-      this, 
-      wxID_ANY, 
-      wxstrDataName
-//#ifdef _DEBUG
-//      + wxString::Format("%x",p_wxstatictext)
-//#endif //#ifdef _DEBUG
-      + wxString(wxT(": ") )
-      ) 
-      //0=the control should not take more space if the sizer is enlarged
-      , 0 
-      //, wxFIXED_MINSIZE, 
-      , wxLEFT | wxRIGHT | 
-        //wxALIGN_CENTER_VERTICAL
-        //The label and the adjustable value should be at the same vertical
-        //position, so place at the top.
-        wxALIGN_TOP
-        | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
-      //Determines the border width, if the flag parameter is set to include 
-      //any border flag.
-      , 2 
-      );       
-     //m_stdmap_p_wxstatictext
-     m_stdvector_p_wxstatictext.push_back(p_wxstatictext) ;
-    //p_sizerHorizontal->Add( 
-    mp_sizerRightColumn->Add( 
-      p_wxstatictext
-      , 0 
-      //, wxFIXED_MINSIZE, 
-      , wxLEFT | wxRIGHT | 
-        //wxALIGN_CENTER_VERTICAL
-        //The label and the adjustable value should be at the same vertical
-        //position, so place at the top.
-        wxALIGN_TOP
-      //Determines the border width, if the flag  parameter is set to include 
-      //any border flag.
-      , 2 
-      );
+    AddStatictext(wxstrDataName ) ;
      ++ iter_registerdata ;
+  }
+}
+
+void wxDynamicDialog::DisplayTSCvalues()
+{
+  if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end()
+    )
+  {
+//    DWORD dwHigh, dwLow ;
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+    //"force all previous instructions to complete"
+//    mp_cpuaccess->CpuidEx( 1, & m_dwEAX, & m_dwEBX, & m_dwECX, & m_dwEDX, 1 ) ;
+//    mp_cpuaccess->ReadTSC(m_dwEAX,m_dwEDX) ;
+    mp_cpuaccess->ReadTSCinOrder(m_dwEAX,m_dwEDX,1) ;
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+    //"force all previous instructions to complete"
+//    mp_cpuaccess->CpuidEx( 1, m_dwEAX, m_dwEBX, m_dwECX, m_dwEDX, 1 ) ;
+    m_ullValue = m_dwEDX ;
+    m_ullValue <<= 32 ;
+    m_ullValue |= m_dwEAX ;
+#ifdef __CYGWIN__
+    m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue) ;
+#else
+    m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue) ;
+#endif
+  #ifdef _DEBUG
+    //wxstrULL = wxString::Format("%x", *m_stdvector_p_wxstatictextiter );
+    //(*m_stdvector_p_wxstatictextiter)->SetLabel() ;
+  #endif
+    (*m_stdvector_p_wxstatictextiter)->SetLabel(m_wxstrULL) ;
+    ++ m_stdvector_p_wxstatictextiter ;
+  }
+  if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end()
+    )
+  {
+    m_ullValue2 = m_ullValue - m_ullPrevTSCvalue ;
+    m_ullPrevTSCvalue = m_ullValue ;
+#ifdef __CYGWIN__
+    m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
+#else
+    m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue2) ;
+#endif
+    (*m_stdvector_p_wxstatictextiter)->SetLabel(m_wxstrULL) ;
+    ++ m_stdvector_p_wxstatictextiter ;
   }
 }
 
@@ -406,6 +467,7 @@ void wxDynamicDialog::DisplayRegisterData()
     mp_modeldata->m_stdvector_msrdata.begin() ;
   std::vector<CPUIDdata>::iterator iter_cpuiddata = 
     mp_modeldata->m_stdvector_cpuiddata.begin() ;
+  DisplayTSCvalues() ;
   while( iter_cpuiddata != mp_modeldata->m_stdvector_cpuiddata.end() )
   {
     DisplayRegisterData(*iter_cpuiddata) ;
@@ -427,29 +489,18 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
   std::vector<wxStaticText *>::iterator iterp_wxstatictext = 
     m_stdvector_p_wxstatictext.begin() ;
 
-  DWORD dwEAX = 0, dwEDX = 0 ;
-//  DWORD dwAffMask = //TODO change to be compatible with more
-//    //than 1 CPU core
-//    1 ;
-  DWORD dwEBX = 0, dwECX = 0 ;
-  ULONGLONG ullMSR ;
   DWORD dwValue ; 
-  //ULONGLONG ullDiff ;
   try
   {
-    //mp_i_cpucontroller->RdmsrEx(
     mp_cpuaccess->CpuidEx(
       r_cpuiddata.m_dwIndex,
-      & dwEAX,
-      & dwEBX,
-      & dwECX,
-      & dwEDX, 
+      & m_dwEAX,
+      & m_dwEBX,
+      & m_dwECX,
+      & m_dwEDX,
       //dwAffMask
 			1 << r_cpuiddata.m_byCoreID
       );
-    ullMSR = dwEDX  ;
-    ullMSR <<= 32 ;
-    ullMSR |= dwEAX ;
     //This vector data is needed to get the replacement value for a table:
     //e.g. a value depends on more than 1 other value:
     //MHz | FID | DID
@@ -457,7 +508,7 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
     //1100|  14 | 1
     //so both FID and DID are needed in order to get the value for "MHz"
     std::vector<std::string> stdvector_stdstringAttributeValue ;
-    wxString wxstrULL ;
+//    wxString wxstrULL ;
     //In this loop: get every single data at first.
     while( 
       iter_registerdata != r_cpuiddata.m_stdvec_registerdata.end() && 
@@ -469,14 +520,14 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         if( br.m_byStartBit < 32 )
         {
           dwValue = //make bits from highmost zero
-            ( dwEAX << ( 32 - br.m_byStartBit - br.m_byBitLength ) ) 
+            ( m_dwEAX << ( 32 - br.m_byStartBit - br.m_byBitLength ) )
             //Bring value to least significant bit
             >> ( 32 - br.m_byBitLength ) ;
         }
         else if( br.m_byStartBit < 64 )
         {
           dwValue = //make bits from highmost zero
-            ( dwEBX << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) ;
+            ( m_dwEBX << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) ;
             //Bring value to least significant bit
           dwValue >>= (
             //Number of bits for DWORD.
@@ -486,7 +537,7 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         else if( br.m_byStartBit < 96 )
         {
           dwValue = //make bits from highmost zero
-            ( dwECX << ( 96 - br.m_byStartBit - br.m_byBitLength ) ) 
+            ( m_dwECX << ( 96 - br.m_byStartBit - br.m_byBitLength ) )
             //Bring value to least significant bit
             >> ( 
             //Number of bits for DWORD.
@@ -496,7 +547,7 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         else if( br.m_byStartBit < 128 )
         {
           dwValue = //make bits from highmost zero
-            ( dwEDX << ( 128 - br.m_byStartBit - br.m_byBitLength ) ) 
+            ( m_dwEDX << ( 128 - br.m_byStartBit - br.m_byBitLength ) )
             //Bring value to least significant bit
             >> ( 
             //Number of bits for DWORD.
@@ -508,28 +559,28 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         //{
         //  dwValue  = dwValue - iter_registerdata->m_ullPreviousValue ;
         //}
-        iter_registerdata->m_ullPreviousValue = ullMSR ;
+//        iter_registerdata->m_ullPreviousValue = ullMSR ;
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
         #ifdef __CYGWIN__
-        wxstrULL = wxString::Format( wxString( wxT("%u") ), dwValue) ;
+        m_wxstrULL = wxString::Format( wxString( wxT("%u") ), dwValue) ;
         #else
-        wxstrULL = wxString::Format( wxString( wxT("%u") ), dwValue) ;
+        m_wxstrULL = wxString::Format( wxString( wxT("%u") ), dwValue) ;
         #endif
         //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", ullValue )
-        //  wxstrULL );
+        //  m_wxstrULL );
         stdvector_stdstringAttributeValue.push_back( 
           //(std::string) //wxString::Format("%64u", ullValue) 
           std::string( //wxstrULL.c_str()
-            getstdstring(wxstrULL) )
+            getstdstring(m_wxstrULL) )
           );
         if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end() 
           )
         {
   #ifdef _DEBUG
-          //wxstrULL = wxString::Format("%x", *m_stdvector_p_wxstatictextiter );
+          //m_wxstrULL = wxString::Format("%x", *m_stdvector_p_wxstatictextiter );
           //(*m_stdvector_p_wxstatictextiter)->SetLabel() ;
   #endif
-          (*m_stdvector_p_wxstatictextiter)->SetLabel(wxstrULL) ;
+          (*m_stdvector_p_wxstatictextiter)->SetLabel(m_wxstrULL) ;
           ++ m_stdvector_p_wxstatictextiter ;
         }
       }
@@ -537,7 +588,7 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
       ++ iterp_wxstatictext ;
     }
   }
-  catch(ReadMSRexception ex)
+  catch(const ReadMSRexception & ex )
   {
 //    //Breakpoint possibility
 //    int i = 0 ;
@@ -550,26 +601,18 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
     r_msrdata.m_stdvec_registerdata.begin() ;
   std::vector<wxStaticText *>::iterator iterp_wxstatictext = 
     m_stdvector_p_wxstatictext.begin() ;
-
-  DWORD dwEAX,dwEDX ;
-//  DWORD dwAffMask = //TODO change to be compatible with more
-//    //than 1 CPU core
-//    1 ;
-  ULONGLONG ullMSR , ullValue ; 
-  //ULONGLONG ullDiff ;
   try
   {
     //mp_i_cpucontroller->RdmsrEx(
     mp_cpuaccess->RdmsrEx(
       r_msrdata.m_dwIndex,
-      & dwEAX,
-      & dwEDX, 
-      //dwAffMask
+      & m_dwEAX,
+      & m_dwEDX,
 			1 << r_msrdata.m_byCoreID
       );
-    ullMSR = dwEDX  ;
-    ullMSR <<= 32 ;
-    ullMSR |= dwEAX ;
+    m_ullValue = m_dwEDX  ;
+    m_ullValue <<= 32 ;
+    m_ullValue |= m_dwEAX ;
     //This vector data is needed to get the replacement value for a table:
     //e.g. a value depends on more than 1 other value:
     //MHz | FID | DID
@@ -577,7 +620,6 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
     //1100|  14 | 1
     //so both FID and DID are needed in order to get the value for "MHz"
     std::vector<std::string> stdvector_stdstringAttributeValue ;
-    wxString wxstrULL ;
     //In this loop: get every single data at first.
     while( 
       iter_registerdata != r_msrdata.m_stdvec_registerdata.end() && 
@@ -586,27 +628,27 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
       if( (*iter_registerdata).m_stdvec_bitrange.size() > 0 )
       {
         BitRange & br = (*iter_registerdata).m_stdvec_bitrange.at(0) ;
-        ullValue = //make bits from highmost zero
-          (ullMSR << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) 
+        m_ullValue2 = //make bits from highmost zero
+          (m_ullValue << ( 64 - br.m_byStartBit - br.m_byBitLength ) )
           //Bring value to least significant bit
           >> ( 64 - br.m_byBitLength ) ;
         if( iter_registerdata->m_bCalculateDiff )
         {
-          ullValue  = ullValue - iter_registerdata->m_ullPreviousValue ;
+          m_ullValue2  = m_ullValue2 - iter_registerdata->m_ullPreviousValue ;
         }
-        iter_registerdata->m_ullPreviousValue = ullMSR ;
+        iter_registerdata->m_ullPreviousValue = m_ullValue ;
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
         #ifdef __CYGWIN__
-        wxstrULL = wxString::Format( wxString( wxT("%llu") ), ullValue) ;
+        m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
         #else
-        wxstrULL = wxString::Format( wxString( wxT("%I64u") ), ullValue) ;
+        m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue2) ;
         #endif
-        //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", ullValue )
+        //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", m_ullValue2 )
         //  wxstrULL );
         stdvector_stdstringAttributeValue.push_back( 
-          //(std::string) //wxString::Format("%64u", ullValue) 
+          //(std::string) //wxString::Format("%64u", m_ullValue2)
           std::string( //wxstrULL.c_str()
-            getstdstring(wxstrULL) )
+            getstdstring( m_wxstrULL ) )
           );
         if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end() 
           )
@@ -615,7 +657,7 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
           //wxstrULL = wxString::Format("%x", *m_stdvector_p_wxstatictextiter );
           //(*m_stdvector_p_wxstatictextiter)->SetLabel() ;
   #endif
-          (*m_stdvector_p_wxstatictextiter)->SetLabel(wxstrULL) ;
+          (*m_stdvector_p_wxstatictextiter)->SetLabel( m_wxstrULL ) ;
           ++ m_stdvector_p_wxstatictextiter ;
         }
       }
@@ -630,66 +672,42 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
   }
 }
 
+void wxDynamicDialog::OnReloadCPUregisterToReadConfig(
+  wxCommandEvent & r_wxcommandevent )
+{
+  ReloadCPUregisterToReadConfig() ;
+}
+
 void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
 {
   int nControlID = wxevent.GetId() ;
   if( nControlID == ID_IntervalCheckbox )
   {
     if( mp_wxcheckboxInterval->GetValue() )
-      m_wxtimer.Start(1000) ;
+    {
+      DWORD dw ;
+      if( mp_wxtextctrlUpdateIntervalInMs->GetValue().ToULong( &dw, 10) )
+      {
+        mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("") ) ;
+        m_wxtimer.Start(dw) ;
+      }
+      else
+      {
+        mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("not a number") ) ;
+        m_wxtimer.Start(1000) ;
+      }
+    }
     else
       m_wxtimer.Stop() ;
   }
   //case 
-  if( mp_wxcheckboxReloadCPUregisterToReadConfig->GetValue() )
-  {
-    m_stdvector_p_wxstatictext.//empty() 
-      clear() ;
-    //m_stdvector_p_wxstatictextiter.empty()  ;
-    mp_modeldata->m_stdvector_msrdata.//empty() ;
-      clear() ;
-    mp_modeldata->m_stdvector_cpuiddata.clear() ;
-    //::wxGetApp().m_maincontroller.Init(*mp_modeldata, & ::wxGetApp()) ;
-    std::string strCPUtypeRelativeDirPath ;
-    if( mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
-        strCPUtypeRelativeDirPath)
-      )
-    {
-//      BYTE byModel ;
-//      BYTE byStepping ;
-      //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
-      std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
-      mp_wxx86infoandcontrolapp->m_maincontroller.ReadRegisterDataConfig(
-        strFamilyAndModelFilePath ,
-        mp_wxx86infoandcontrolapp ) ;
-    }
-    //delete all contained UI controls.
-    //delete mp_sizerTop ;
-    //while( mp_sizerTop->m_children.GetCount() && 
-    //  mp_sizerTop->Detach(//size_t index
-    //  0 )
-    //  )
-    //{
-    //  mp_sizerTop->Remove(
-    //    //size_t index
-    //    0 ) ;
-    //}
-    //undocumented method see wx/sizer.h
-    mp_sizerTop->DeleteWindows() ;
-    mp_sizerTop->Clear( //bool delete_windows = false 
-      true );
-    BuildGUI() ;
-    mp_sizerTop->Layout() ;
-  }
- // if
-//  DWORD dwEAX,dwEDX, dwAffMask = 1 ;
-//	  //DWORD & dwEAX,			// bit  0-31
-//	  //DWORD & dwEDX,			// bit 32-63
-//  mp_pumastatecontrol->RdmsrEx(mp_msr_data->m_dwIndex,dwEAX,dwEDX, dwAffMask);
-//  ULONGLONG ullMSR = dwEDX  ;
-//  ullMSR <<= 32 ;
-//  ullMSR |= dwEAX ;
-//  ULONGLONG ullValue ;
+//  if( mp_wxcheckboxReloadCPUregisterToReadConfig->GetValue()
+////      nControlID == //mp_wxcheckboxReloadCPUregisterToReadConfig->GetId()
+////        ID_ReloadCPUregisterToReadConfig
+//    )
+//  {
+////    ReloadCPUregisterToReadConfig() ;
+//  }
 //  std::string strAttrVal ;
 //  //iter_registerdata = mp_msr_data->m_stdvec_registerdata.begin() ;
 //  std::vector<RegisterDataTable>::iterator iter_registerdatatable = 
@@ -740,10 +758,75 @@ void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
 //    ++ iter_registerdatatable ;
 //    ++ iterp_wxstatictext ;
 //  }
-  DisplayRegisterData() ;
+
+//  DisplayRegisterData() ;
+}
+
+void wxDynamicDialog::OnSize( wxSizeEvent & //WXUNUSED(
+  sizeevent//)
+  )
+{
+  if( mp_wxcheckboxRebuildGUIonResize->IsChecked() )
+    ReBuildGUI() ;
 }
 
 void wxDynamicDialog::OnTimerEvent(wxTimerEvent &event)
 {
   DisplayRegisterData() ;
+}
+
+inline void wxDynamicDialog::ReBuildGUI()
+{
+  //delete all contained UI controls.
+  //delete mp_sizerTop ;
+  //while( mp_sizerTop->m_children.GetCount() &&
+  //  mp_sizerTop->Detach(//size_t index
+  //  0 )
+  //  )
+  //{
+  //  mp_sizerTop->Remove(
+  //    //size_t index
+  //    0 ) ;
+  //}
+  //undocumented method see wx/sizer.h
+  //Delete (all) the windows that the outmost sizer contains.
+  mp_sizerTop->DeleteWindows() ;
+  mp_sizerTop->Clear( //bool delete_windows = false
+    true );
+//  mp_wxboxsizerOutmost->DeleteWindows() ;
+//  mp_wxboxsizerOutmost->Clear( //bool delete_windows = false
+//    true );
+//  BuildGUI() ;
+  BuildCPUregisterControls() ;
+  //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizerlayout:
+  //"Call this to force layout of the children anew, e.g. after having added a
+  //child to or removed a child (window, other sizer or space) from the sizer
+  //while keeping the current dimension."
+//  mp_sizerTop->Layout() ;
+  mp_wxboxsizerOutmost->Layout() ;
+}
+
+inline void wxDynamicDialog::ReloadCPUregisterToReadConfig()
+{
+  m_stdvector_p_wxstatictext.//empty()
+    clear() ;
+  //m_stdvector_p_wxstatictextiter.empty()  ;
+  mp_modeldata->m_stdvector_msrdata.//empty() ;
+    clear() ;
+  mp_modeldata->m_stdvector_cpuiddata.clear() ;
+  //::wxGetApp().m_maincontroller.Init(*mp_modeldata, & ::wxGetApp()) ;
+  std::string strCPUtypeRelativeDirPath ;
+  if( mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
+      strCPUtypeRelativeDirPath)
+    )
+  {
+//      BYTE byModel ;
+//      BYTE byStepping ;
+    //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
+    std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
+    mp_wxx86infoandcontrolapp->m_maincontroller.ReadRegisterDataConfig(
+      strFamilyAndModelFilePath ,
+      mp_wxx86infoandcontrolapp ) ;
+  }
+  ReBuildGUI() ;
 }

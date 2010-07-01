@@ -69,8 +69,8 @@ DynFreqScalingDlg::DynFreqScalingDlg(
 
 void DynFreqScalingDlg::OnOK_Button(wxCommandEvent & r_wxcommandevent)
 {
-  double dThrottleTemp ;
-  unsigned long ulMilliSeconds ;
+//  double dThrottleTemp ;
+//  unsigned long ulMilliSeconds ;
   DEBUGN("DynFreqScalingDlg::OnOK_Button begin")
   //TODO uncomment
 //  if(

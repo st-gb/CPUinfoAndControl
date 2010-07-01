@@ -518,9 +518,41 @@ BOOL WinRing0_1_3RunTimeDynLinked::ReadTSC(
   return Rdtsc( & r_dwLowEAX, & r_dwHighEDX ) ;
 }
 
+//BOOL WinRing0_1_3RunTimeDynLinked::ReadTSC(
+//  DWORD & r_dwLowEAX ,
+//  DWORD & r_dwHighEDX
+//  )
+//{
+//  return Rdtsc( & r_dwLowEAX, & r_dwHighEDX ) ;
+//}
+
+BOOL WinRing0_1_3RunTimeDynLinked::ReadTSCinOrder(
+  DWORD & r_dwLowEAX ,
+  DWORD & r_dwHighEDX ,
+  DWORD dwThreadAffinityMask
+  )
+{
+  DWORD dw,dw2,dw3,dw4 ;
+  //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+  //This ensures all prev ops are executed before. See Intel doc.
+  CpuidEx(0,&dw,&dw2,&dw3,&dw4,dwThreadAffinityMask) ;
+  return RdtscTx( & r_dwLowEAX, & r_dwHighEDX , dwThreadAffinityMask) ;
+}
+
 void WinRing0_1_3RunTimeDynLinked::SetUserInterface(UserInterface * pui)
 {
   mp_userinterface = pui ;
+}
+
+BYTE WinRing0_1_3RunTimeDynLinked::SetThreadAffinityMask(
+  DWORD dwThreadAffinityMask)
+{
+  DWORD_PTR dw_ptr =
+    //http://msdn.microsoft.com/en-us/library/ms686247%28VS.85%29.aspx:
+    //"If the function fails, the return value is zero."
+    ::SetThreadAffinityMask( ::GetCurrentThread(), dwThreadAffinityMask ) ;
+  return dw_ptr ;
+  return 0 ;
 }
 
 void WinRing0_1_3RunTimeDynLinked::Sleep(WORD wMillis)
