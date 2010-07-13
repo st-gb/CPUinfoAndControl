@@ -20,11 +20,14 @@
 #include <windef.h> //BOOL
 #include <global.h>
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
-#if _WIN32_WINNT < 0x0501
-  #undef _WIN32_WINNT
-  #define _WIN32_WINNT 0x0501
-#endif
-#include <wtsapi32.h>
+//some MinGW installation's <wtsapi32.h> do not declare "WTSQueryUserToken"
+#ifdef USE_WTSQueryUserToken
+  #if _WIN32_WINNT < 0x0501
+    #undef _WIN32_WINNT
+    #define _WIN32_WINNT 0x0501
+  #endif
+  #include <wtsapi32.h>
+#endif //#ifdef USE_WTSQueryUserToken
 
 #include <ModelData/ServiceAttributes.hpp>
 #include "CreateProcess.hpp"
@@ -322,6 +325,7 @@ BOOL CreateGUIprocess::CreateProcessAsNeeded(
     );
 }
 
+#ifdef USE_WTSQueryUserToken
 BOOL GetUserTokenForSession( DWORD dwSessionID, HANDLE & r_hToken )
 {
   BOOL bool_ = WTSQueryUserToken(dwSessionID, & r_hToken ) ;
@@ -333,6 +337,7 @@ BOOL GetUserTokenForSession( DWORD dwSessionID, HANDLE & r_hToken )
   else
     LOGN("WTSQueryUserToken failed")
 }
+#endif //#ifdef USE_WTSQueryUserToken
 
 DWORD GetSecurityDescriptorAndAssignToSecurityAttributes(
   SECURITY_ATTRIBUTES & r_security_attributes ,

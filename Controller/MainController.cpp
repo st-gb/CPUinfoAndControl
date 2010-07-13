@@ -23,7 +23,7 @@
 #include <Controller/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
-#include <wxWidgets/Controller/wxStringHelper.h>
+#include <wxWidgets/Controller/wxStringHelper.h> //for getstdstring()
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   //only useful for user interface
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
@@ -168,7 +168,8 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
           getwxString(stdstr ) ;
       wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
       //http://wiki.wxwidgets.org/Converting_everything_to_and_from_wxString#wxString_to_std::string
-      std::string stlstring = std::string(wxstrFilePath.mb_str());
+      std::string stlstring = //std::string(wxstrFilePath.mb_str());
+          getstdstring( wxstrFilePath ) ;
       LOGN("should load/ attach " << //wxstrFilePath
         stlstring << " as CPU controller" )
       try
@@ -206,7 +207,10 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     {
       wxString wxstrFilePath = wxT("CPUcoreUsageGetterDynLibs/") + ( stdstr ) ;
       wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
-      LOGN("should load/ attach " << wxstrFilePath << " as CPU core usage getter" )
+      LOGN("should load/ attach " <<
+          //else g++: "undefined reference to `operator<<(std::ostream&,
+          //wxString const&)'"
+          getstdstring( wxstrFilePath ) << " as CPU core usage getter" )
       try
       {
         //r_p_icpucoreusagegetter = new wxDynLibCPUcoreUsageGetter (

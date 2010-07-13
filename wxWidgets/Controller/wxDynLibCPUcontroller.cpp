@@ -1,6 +1,7 @@
 #include "wxDynLibCPUcontroller.hpp"
 #include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp>
+#include <wxWidgets/Controller/wxStringHelper.h> //for getstdstring()
 #include <Controller/exported_functions.h> //ReadMSR
 #include <ModelData/ModelData.hpp>
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
@@ -32,7 +33,10 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     wxString wxstrFuncName (
       //Use wxT() to enable to compile with both unicode and ANSI.
         wxT("Init" ) ) ;
-    LOGN("Dyn Lib " << r_wxstrFilePath << " successfully loaded")
+    LOGN("Dyn Lib " <<
+        //else g++: "undefined reference to `operator<<(std::ostream&,
+        //wxString const&)'"
+        getstdstring( r_wxstrFilePath ) << " successfully loaded")
     if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) 
       )
     //dll_init_type pfnInit = (dll_init_type)
@@ -40,7 +44,10 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     //FARPROC __stdcall pfn = ::GetProcAddress(hinstanceCPUctlDLL,"nNehalemControllerDLL");
     //if( pfnInit )
     {
-      LOGN("Dyn Lib symbol " << wxstrFuncName << " exists")
+      LOGN("Dyn Lib symbol " <<
+        //else g++: "undefined reference to `operator<<(std::ostream&,
+        //wxString const&)'"
+        getstdstring( wxstrFuncName ) << " exists")
 //#ifdef _DEBUG
 //      wxMessageBox( wxString::Format( "CPU access address: %x "
 //        ", adress of ReadMSR fct:%x"
@@ -50,8 +57,14 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 //        ) ) ;
 //#endif
       wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
-      LOGN("Dyn Lib assigned fct ptr to symbol " << wxstrFuncName )
-      LOGN("Dyn Lib before calling " << wxstrFuncName )
+      LOGN("Dyn Lib assigned fct ptr to symbol " <<
+        //else g++: "undefined reference to `operator<<(std::ostream&,
+        //wxString const&)'"
+        getstdstring( wxstrFuncName) )
+      LOGN("Dyn Lib before calling " <<
+        //else g++: "undefined reference to `operator<<(std::ostream&,
+        //wxString const&)'"
+        getstdstring( wxstrFuncName ) )
       DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
 
 //      //TODO
@@ -72,7 +85,10 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       //This would avoid writing export functions.
 //      p_cpuaccess->mp_cpu = p_cpuaccess
 #endif
-      LOGN("Dyn Lib after calling " << wxstrFuncName )
+      LOGN("Dyn Lib after calling " <<
+          //else g++: "undefined reference to `operator<<(std::ostream&,
+          //wxString const&)'"
+          getstdstring( wxstrFuncName ) )
       m_pfnGetMaximumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type) 
         m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumFrequencyInMHz") 
         ) ;
