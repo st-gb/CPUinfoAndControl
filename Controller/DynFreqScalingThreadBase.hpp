@@ -2,12 +2,14 @@
 
 //#include <windef.h> //WORD
 //#include <Windows.h> //for DWORD, WINAPI etc.
+#include <ModelData/PerCPUcoreAttributes.hpp>
 #include <Windows_compatible_typedefs.h>
 typedef void *ExitCode;
 
-class I_CPUcontroller ;
 class CPUcoreData ;
 class ICPUcoreUsageGetter ;
+class I_CPUcontroller ;
+class PerCPUcoreAttributes ;
 
 //code that both the wxWidgets thread and the WINAPI thread use.
 class DynFreqScalingThreadBase
@@ -56,6 +58,16 @@ public:
   //"virtual" because it may be overwritten.
   virtual bool IsStopped() ; //{} ;
   BYTE GetCPUcoreWithHighestLoad( float & fHighestCPUcoreLoadInPercent) ;
+  void SignalCPUdataCanBeSafelyRead() ;
+  void SetLowerFrequencyFromAvailableMultipliers(
+    BYTE byCoreID ,
+    PerCPUcoreAttributes * arp_percpucoreattributes ,
+    float ar_fCPUcoreLoadInPercent [] ,
+    float fFreqInMHz,
+    WORD wNumCPUcores ,
+    float fLowerMultiplier ,
+    float fNextMultiplierCalculatedFromCurrentLoad
+    ) ;
   //virtual int Run() = 0 ;
   //Return value for the subclass that is also inherited by "wxThread". 
   //So a wxThreadError can be returned to the caller to check for errors.

@@ -5,6 +5,7 @@
  *      Author: Stefan
  */
 #include "CPUcontrolBase.hpp"
+#include <Controller/I_CPUaccess.hpp>
 #include <Controller/ReadFileContent.hpp>
 #include <UserInterface/UserInterface.hpp>
 
@@ -12,6 +13,7 @@
     :
     mp_cpucontroller( NULL)
     , mp_cpucoreusagegetter( NULL)
+    , mp_i_cpuaccess(NULL)
     , mp_userinterface (NULL)
     , mp_wxdynlibcpucontroller (NULL)
     , mp_wxdynlibcpucoreusagegetter ( NULL )
@@ -96,7 +98,7 @@
 //  //        mp_model->m_cpucoredata.AvailableVoltagesToArray() ;
 //
 //          mp_model->m_stdstrCPUcontrollerDynLibPath = //stdstr ;
-//              getstdstring( wxstrFilePath ) ;
+//              GetStdString( wxstrFilePath ) ;
 //          LOGN("CPU controller DynLib " <<
 //            mp_model->m_stdstrCPUcontrollerDynLibPath <<
 //            ": successfully loaded and function pointers to it assigned.")
@@ -120,7 +122,7 @@
 //      {
 //        wxString wxstrFilePath = wxT("CPUcoreUsageGetterDynLibs/") + ( stdstr ) ;
 //        wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
-//        LOGN("should load/ attach " << getstdstring( wxstrFilePath )
+//        LOGN("should load/ attach " << GetStdString( wxstrFilePath )
 //          << " as CPU core usage getter" )
 //        try
 //        {
@@ -132,7 +134,7 @@
 //            * p_cpucoredata
 //            ) ;
 //          mp_model->m_stdstrCPUcoreUsageGetterDynLibPath = //stdstr ;
-//              getstdstring( wxstrFilePath ) ;
+//              GetStdString( wxstrFilePath ) ;
 //          //gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = r_p_icpucoreusagegetter ;
 //          r_p_icpucoreusagegetter = mp_wxdynlibcpucoreusagegetter ;
 //  //        //no CPU controller DLL should be loaded or loading it failed it is

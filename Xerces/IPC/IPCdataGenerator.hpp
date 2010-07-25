@@ -19,9 +19,13 @@ namespace Xerces
   class IPCdataHandler
     : public I_IPC_DataHandler
   {
+    bool m_bXercesSuccessfullyInitialized ;
   public:
+    DWORD m_dwByteSize ;
+    BYTE * m_arbyData ;
     Model & mr_model ;
     IPCdataHandler( Model & r_model ) ;
+    ~IPCdataHandler( ) ;
     BYTE * GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize) ;
     DWORD IPCdataHandler::GetResponse(BYTE byCommand,
       BYTE * & r_arbyResponseData ) ;

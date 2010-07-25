@@ -92,7 +92,6 @@
 //  extern pfnReadIoPortDWordEx g_pfnreadioportdwordex ;
 //#endif //#ifdef LINK_TO_WINRING0_STATICALLY
 
-  //extern HANDLE g_handleEvent ;
 #endif//#ifdef WIN32
 
 ////Declare as "extern": else linker error "LNK2005" with MSVC.
@@ -128,15 +127,6 @@ private:
   ////member directly in order to avoid writes to dangerous MSR registers.
   //I_CPUaccess * mp_controller ;
   UserInterface * mp_userinterface ;
-
-  //Use the method with std::string parameter rather than this 
-  //version with "char * &" where the
-  //memory is allocated inside the function!
-  bool GetProcessorNameByCPUID(
-    //Use a pointer to an array in order to allocate the array within 
-    //this method.
-    char * & parchCPUID ) ;
-  //HANDLE m_handleEvent;
 public :
   BYTE m_byMainPLLoperatingFrequencyIDmax ;
   BYTE m_byPstateForFindingLowVoltage ;
@@ -159,8 +149,6 @@ public :
 
   BYTE ApplyAllPStates() ;
   bool ApplyAllPStates(const PStates & pstates);
-
-  BYTE changePstate(BYTE byNewPstate,DWORD dwCoreBitmask);
 
   bool cmdLineParamsContain(_TCHAR * ptcharOption, std::string & strValue);
   bool cmdLineParamsContain(_TCHAR * ptcharOption, BYTE & rbyOption) ;
@@ -223,9 +211,6 @@ public :
   void InitMemberVars() ;
   void ResumeFromS3orS4() ;
 
-//#ifdef WIN32
-//  void DeInitWinRing0();
-//#endif//#ifdef WIN32
   BYTE GetValuesOfClockPower_TimingControl2Register(
     BYTE & byNbVid, BYTE & byPstateMaxVal, BYTE & byAltVid);
 
@@ -344,8 +329,8 @@ public :
       ) ;
   WORD GetMinimumFrequencyInMHz() ;//{ return 150 ; }
   //TODO the QL has a lower maximum voltage ID (-> higher min. voltage) than ZM.
-  WORD GetMaximumVoltageID() ;// { return 64 ; }
-  WORD GetMinimumVoltageID() ; //{ return 36 ; }
+//  inline WORD GetMaximumVoltageID() ;// { return 64 ; }
+//  inline WORD GetMinimumVoltageID() ; //{ return 36 ; }
   //BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq
   //  ) { return 0 ; }
   //bool GetPstateSafefy(
@@ -357,8 +342,6 @@ public :
 
   BYTE GetPstateSafefy(//PState & r_pstate,
     BYTE byVID,BYTE byFreqID,BYTE byDivID) ;
-
-  WORD GetVoltageID(float fVoltageInVolt ) ;
 
   bool IsTurionUltra() ;
 
@@ -452,15 +435,6 @@ public :
     //BYTE byThreadAffinityBitmask 
     );
 
-  static unsigned long GetMSRregisterForPstate(
-    unsigned char byPstate ) ;
-  void GetMSRregisterValue( 
-      BYTE byVoltageID, 
-      const DIDandFID & didandfid , 
-      DWORD & dwMSRhighmost , 
-      DWORD & dwMSRlowmost 
-      ) ;
-
   UserInterface * GetUserInterface() ;
 
   inline bool // TRUE: success, FALSE: failure
@@ -485,7 +459,7 @@ public :
    
   //void SetPstate(BYTE byPstateID,DWORD dwCoreBitmask)
   //{
-  //  changePstate(byPstateID,dwCoreBitmask);
+  //  SetPstateViaPstateControlRegister(byPstateID,dwCoreBitmask);
   //}
 
   void SetUserInterface(UserInterface * p_userinterface ) ;
@@ -498,20 +472,7 @@ public :
 
   bool GetCPUMiscControlDWORD(DWORD dwRegisterAddress, DWORD & dwValue) ;
 
-//#ifdef WIN32
 #ifdef _WINDOWS
-//  void messageLoop();
-  //ATOM MyRegisterClass();
-
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//  void * GetHandleToDLLFunction(const std::string & strFuncName)
-//  {
-//    void * pfn ;
-//    pfn = (void *) GetProcAddress(m_hinstanceWinRingDLL,strFuncName.c_str() );
-//    return pfn ;
-//  }
-//#endif // #ifndef LINK_TO_WINRING0_STATICALLY
-  
 //  void SetPstateAccCPULoad()
 //  {
 ////In addition to the RDMSR instruction, the PERF_CNT[3:0] registers 
@@ -541,6 +502,17 @@ public :
   BYTE TooHot( ) ;
 
   void WriteToCOFVID(PState & pstate, BYTE byCoreID ) ;
+  //Function has the same name as in the DLL code-> code for both DLL
+  // and I_CPUcontroller derived can be used?
+  //rather no because implicitly a this-pointer is copy as 1st parameter.
+  inline BOOL // TRUE: success, FALSE: failure
+    //WINAPI
+    WriteMSR(
+      DWORD index,    // MSR index
+      DWORD dwLow ,//eax,     // bit  0-31
+      DWORD dwHigh, //edx,      // bit 32-63
+      DWORD affinityMask  // Thread Affinity Mask
+    ) ;
   BOOL // TRUE: success, FALSE: failure
     //WINAPI
     WrmsrEx(
@@ -557,7 +529,3 @@ public:
     );
 public:
 }; //end class
-
-//#ifdef WIN32
-//  LRESULT CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//#endif

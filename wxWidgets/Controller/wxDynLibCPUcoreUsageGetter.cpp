@@ -3,6 +3,7 @@
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/DLLloadError.hpp>
 #include <string>
+#include <global.h>
 
 wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   //std::string & strDLLname 
@@ -43,7 +44,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
       m_pfn_dll_init_type = (dll_usage_getter_init_type)
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
           //Use wxT() macro to enable to compile with both unicode and ANSI.
-          wxT("Init") ) ;
+          wxT(INIT_LITERAL) ) ;
       LOGN("address of CPU access object: " << mp_cpuaccess )
       if( m_pfn_dll_init_type )
         (*m_pfn_dll_init_type) ( //p_cpuaccess 
@@ -64,6 +65,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         mp_cpuaccess
 //#endif
         ) ;
+      LOGN("after calling DLL's " << INIT_LITERAL <<  "function")
       if( m_pfngetcpucoreusage //&& m_pfn_dll_init_type
           )
       {
@@ -85,7 +87,8 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     //It does not make a sense to use this class instance because the 
     //initialisation failed. So throw an exception.
     throw CPUaccessException(stdstrErrMsg) ;
-  }  
+  }
+  LOGN("End of dyn lib CPU core usage getter ")
 }
 
 wxDynLibCPUcoreUsageGetter::~wxDynLibCPUcoreUsageGetter()

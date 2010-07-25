@@ -81,6 +81,11 @@ private :
 };
 #define X(str) XStr(str).unicodeForm()
 
+namespace x86InfoAndControl
+{
+  bool InitializeXerces() ;
+}
+
 class StdStringToDestFormat
 {
 public:

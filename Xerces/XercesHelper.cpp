@@ -30,6 +30,33 @@ XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xe
 //import/export mechanism.
 //#define XERCES_STATIC_LIBRARY
 
+//Code is equal on many code places.
+bool x86InfoAndControl::InitializeXerces()
+{
+  try
+  {
+    LOGN("BEFORE initializing Xerces") ;
+    //http://xerces.apache.org/xerces-c/program-3.html:
+    //"Independent of the API you want to use, DOM, SAX, or SAX2, your
+    //application must initialize the Xerces system before using the API[...]"
+    //Initialize() must be called _before_ any Xerces function call, else SIGSEV
+    // /program crash.
+    XMLPlatformUtils::Initialize();
+    LOGN("Xerces successfully initialized") ;
+  }
+  catch(const XMLException & toCatch)
+  {
+    char *pMsg = XMLString::transcode(toCatch.getMessage());
+    LOGN( "Error during Xerces-c Initialization.\n"
+         << "  Exception message:"
+         << pMsg )
+    XMLString::release(&pMsg);
+  //      return 1;
+    return false ;
+  }
+  return true ;
+}
+
 XercesHelper::XercesHelper() {
 }
 

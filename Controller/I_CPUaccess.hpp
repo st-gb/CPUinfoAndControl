@@ -198,6 +198,12 @@ public:
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   ) = 0 ;
   virtual BOOL ReadPciConfigDwordEx(
+    //From WinRing0 manual:
+    //"bit description
+    //0- 2 Function Number
+    //3- 7 Device Number
+    //8-15 PCI Bus Number
+    //16-31 Reserved "
     DWORD dwPCIaddress
     , DWORD dwRegAddress
     , PDWORD p_dwValue

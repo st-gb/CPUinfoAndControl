@@ -52,6 +52,7 @@
 //#define CPU_CLOCKS_NOT_HALTED 121
 
 #define MSR_TEMPERATURE_TARGET 0x1A2
+#define MSR_TURBO_RATIO_LIMIT 0x1AD
 
 //MPERF/ APERF = CPU load ?
 #define IA32_MPERF //Maximum Qualified Performance Clock Counter (R/Write to clear)
@@ -63,6 +64,9 @@
 #define EMON_EST_TRANS 0x58
 //"Mask = 02H - Only Frequency transitions"
 #define OnlyFrequencytransitionsMask 0x2
+
+//Intel Core:
+#define MSR_FSB_FREQ 0xCD
 
 //Intel Volume 3B System Programming Guide (document number "253669") 
 //appendix A.1, Table A-1:  event number

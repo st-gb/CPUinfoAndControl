@@ -24,31 +24,36 @@
 //    #include "wx/frame.h"
 //#endif
 //#include "wx/wx.h" //for wxMessageBox(...) (,etc.)
+//#include <wx/dcbuffer.h> //class wxBufferedPaintDC
+#include <wx/dcclient.h> //for class wxPaintDC
+#include <wx/frame.h> //for base class wxFrame
+#include "wx/power.h" //for power mgmt notification (wxPowerType etc.)
 #include <wx/timer.h> //for class wxTimer
 #include <wx/thread.h> //for class wxCriticalSection
-#include "wx/power.h" //for power mgmt notification (wxPowerType et.c)
-#include <vector> //for std::vector
-#include <wx/frame.h>
-#include <wx/dcclient.h> //for class wxPaintDC
-#include <wx/dcbuffer.h> //class wxBufferedPaintDC
 
-#include <Controller/ICalculationThread.hpp> //for "started", "ended"
-#include <ModelData/ModelData.hpp>
-#include <UserInterface/UserInterface.hpp> //for abstract class UserInterface
+//#include <Controller/ICalculationThread.hpp> //for "started", "ended"
+//#include <ModelData/ModelData.hpp>
+//#include <UserInterface/UserInterface.hpp> //for abstract class UserInterface
 #include <Xerces/PStateConfig.hpp> //class XercesConfigurationHandler
 //#include "FreqAndVoltageSettingDlg.hpp"
+#include <vector> //for std::vector
 
+//forward declarations (faster than an #include)
 class wxBufferedPaintDC ;
 class CalculationThread ;
+class CPUcoreData ;
 //class wxMenuItem ;
 class FreqAndVoltageSettingDlg ;
-class wxFrame ;
-class wxMenuBar ;
+class Model ;
+class PerCPUcoreAttributes ;
 class I_CPUcontrollerAction ;
+class I_CPUcontroller ;
 class SpecificCPUcoreActionAttributes ;
 class wxX86InfoAndControlApp ;
 class wxDynLibCPUcontroller ;
 class wxDynLibCPUcoreUsageGetter ;
+class wxFrame ;
+class wxMenuBar ;
 
 class VoltageAndMulti
 {
@@ -145,10 +150,12 @@ private:
 //  wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
-  wxMenuItem ** marp_wxmenuItemHighLoadThread ;
+//  wxMenuItem ** marp_wxmenuItemHighLoadThread ;
   wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
+  wxString m_wxstrTitle ;
 public:
   wxTimer m_wxtimer;
+//  wxTimer * m_p_wxtimer;
 private:
   wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
   WORD m_wXcoordOfBeginOfYaxis ;
@@ -164,30 +171,30 @@ private:
   //  //stores copies->copy a pointer is faster than to copy a complete object.
   //  wxMenu *> m_vecp_wxmenuCore ;
 
-  //void 
-  wxMenuItem * AddDynamicallyCreatedMenu(
-    wxMenu * p_wxmenu,
-    WORD & r_wMenuID,
-    const wxString & r_wxstr
-    ) ;
-  wxMenuItem * AddDynamicallyCreatedMenu(
-    wxMenu * p_wxmenu,
-    WORD & r_wMenuID,
-    const wxString & r_wxstr
-    , //void (wxEvtHandler::*wxEventFunction)(wxEvent&)
-    wxObjectEventFunction
-    , SpecificCPUcoreActionAttributes * scaa
-    );
-  //void 
-  BYTE AddSetPstateMenuItem(  
-      wxMenu * p_wxmenuCore
-      , BYTE byCoreID
-      , BYTE byPstateID 
-      //Must be a reference because changes to the variable should be 
-      //maintained OUTside this function.
-      , WORD & r_wMenuID
-    ) ;
-  void CreateAndInitMenuItemPointers() ;
+//  //void
+//  wxMenuItem * AddDynamicallyCreatedMenu(
+//    wxMenu * p_wxmenu,
+//    WORD & r_wMenuID,
+//    const wxString & r_wxstr
+//    ) ;
+//  wxMenuItem * AddDynamicallyCreatedMenu(
+//    wxMenu * p_wxmenu,
+//    WORD & r_wMenuID,
+//    const wxString & r_wxstr
+//    , //void (wxEvtHandler::*wxEventFunction)(wxEvent&)
+//    wxObjectEventFunction
+//    , SpecificCPUcoreActionAttributes * scaa
+//    );
+//  //void
+//  BYTE AddSetPstateMenuItem(
+//      wxMenu * p_wxmenuCore
+//      , BYTE byCoreID
+//      , BYTE byPstateID
+//      //Must be a reference because changes to the variable should be
+//      //maintained OUTside this function.
+//      , WORD & r_wMenuID
+//    ) ;
+//  void CreateAndInitMenuItemPointers() ;
 public:
 
   MainFrame(
@@ -208,12 +215,12 @@ public:
 
   //Implement method declared in "class UserInterface" 
   //(even if with no instructions) for this class not be abstract.
-  void outputAllPstates(unsigned char byCurrentP_state, int & vid){};
+//  void outputAllPstates(unsigned char byCurrentP_state, int & vid){};
 
-  wxString BuildHighLoadThreadMenuText(std::string str,
-    //for displaying "start" the result of the previous action must be "ended"
-    BYTE byPreviousAction = //ENDED
-      ICalculationThread::ended ) ;
+//  wxString BuildHighLoadThreadMenuText(std::string str,
+//    //for displaying "start" the result of the previous action must be "ended"
+//    BYTE byPreviousAction = //ENDED
+//      ICalculationThread::ended ) ;
   bool Confirm(const std::string & str) ;
 //  bool Confirm(std::ostrstream & r_ostrstream);
   void CPUcontrollerDynLibAttached(const wxString & wxstrFilePath ) ;
@@ -319,7 +326,7 @@ public:
   void OnAttachCPUcoreUsageGetterDLL(wxCommandEvent & event);
   void OnDetachCPUcontrollerDLL(wxCommandEvent & event);
   void OnDetachCPUcoreUsageGetterDLL(wxCommandEvent & event);
-  void OnInitDialog( wxInitDialogEvent & event ) ;
+//  void OnInitDialog( wxInitDialogEvent & event ) ;
   void PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   void PossiblyAskForOSdynFreqScalingDisabling();
 //  void SetMenuItemLabel(
@@ -363,8 +370,8 @@ public:
   void OnResume(wxPowerEvent& WXUNUSED(event)) ;
 #endif // wxHAS_POWER_EVENTS
   void OnTimerEvent(wxTimerEvent &event);
-  void UpdatePowerSettings(wxPowerType powerType, wxBatteryState batteryState) ;
-  wxPowerType m_powerType;
-  wxBatteryState m_batteryState;
+//  void UpdatePowerSettings(wxPowerType powerType, wxBatteryState batteryState) ;
+//  wxPowerType m_powerType;
+//  wxBatteryState m_batteryState;
   DECLARE_EVENT_TABLE()
 };

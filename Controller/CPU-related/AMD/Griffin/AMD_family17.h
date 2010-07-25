@@ -1,4 +1,6 @@
-#pragma once
+#pragma once //include guard; http://en.wikipedia.org/wiki/Pragma_once
+#ifndef AMD_FAMILY_17_H_ //see http://en.wikipedia.org/wiki/Include_guard
+#define AMD_FAMILY_17_H_
 
 #define NUMBER_OF_PSTATES 8
 
@@ -27,6 +29,9 @@
 #define BITMASK_FOR_CURRENT_DIVISOR 768 //=1100000000bin <= value from 40:41 (beginning from bit 0) bit
 #define BITMASK_FOR_CURRENT_VALUE 255 //=11111111bin <= value from 32:39 (beginning from bit 0) bit
 #define BITMASK_FOR_PCI_CONFIG_ALTVID 127 //=1111111bin <= AMD: "6:0 AltVid: alternate VID."
+
+#define HARDWARE_CONFIGURATION_REGISTER 0xC001_0015
+
 #define MINIMUM_VID_FOR_ZM82 28
 #define MAXIMUM_VID_FOR_ZM82 64
 
@@ -75,22 +80,12 @@
 #define P_STATE_CURRENT_LIMIT_REGISTER 0xC0010061 //"MSRC001_0061 P-state Current Limit Register"
 #define P_STATE_CONTROL_REGISTER 0xC0010062 //"MSRC001_0062 P-state Control Register"
 #define P_STATE_STATUS_REGISTER 0xC0010063 //"MSRC001_0063 P-state Status Register"
-//2147483648 dez=10000000000000000000000000000000bin
-//#define SET_P_STATE_TO_VALID(highDWORD) ( highDWORD |= 2147483648UL )
-#define SET_P_STATE_TO_VALID(dword) ( dword = ( 1 << 31) )
+//2147483648 dec= 10000000 00000000 00000000 00000000 bin
+//                --8 bit- --8 bit- --8 bit- --8 bit-
+#define SET_P_STATE_TO_VALID(highDWORD) ( highDWORD |= 2147483648UL )
+//#define SET_P_STATE_TO_VALID(dword) ( dword = ( 1 << 31) )
 #define MAX_VALUE_FOR_DID 7//=7 hex//=111 bin; has bits 8:6 = 3 bits
 #define MAX_VALUE_FOR_FID 63//=0x3F hex//=111111 bin; has bits 5:0 = 6 bits
 #define MAX_VALUE_FOR_VID 127//=0x7F hex//=1111111 bin; has bits 15:9 = 7 bits
 
-//typedef BOOL ( //The calling convention "__stdcall" is needed because
-//              //else runtime error: something with CPU register "ESP".
-//         #ifdef WIN32
-//             __stdcall 
-//         #endif
-//             *pfnRdMsrExDef)(DWORD,PDWORD,PDWORD,DWORD_PTR);
-//typedef BOOL ( //The calling convention "__stdcall" is needed because
-//              //else runtime error: something with CPU register "ESP".
-//         #ifdef WIN32
-//             __stdcall 
-//         #endif
-//         		fnWrMsrExDef)(DWORD,DWORD,DWORD,DWORD_PTR);
+#endif //AMD_FAMILY_17_H_

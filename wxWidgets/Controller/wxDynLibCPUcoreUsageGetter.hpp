@@ -8,6 +8,8 @@
 //class ICPUcoreUsageGetter ;
 class I_CPUaccess ;
 
+#define INIT_LITERAL  "Init"
+
 //WINAPI is replaced by __stdcall (a calling convention) that is needed 
 //    because else runtime error may occur: something with CPU register "ESP".
 typedef float (

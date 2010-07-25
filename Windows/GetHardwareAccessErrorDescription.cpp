@@ -11,6 +11,7 @@
 #include <winerror.h> //for ERROR_GEN_FAILURE
 
 //Gets the description for PCconfig , IO , MSR etc. access
+//May be used if different hardware accesses (WinRing0 versions, ...) fail.
 std::string GetHardwareAccessErrorDescription(
   DWORD dwErrorCode,
   const //std::string &

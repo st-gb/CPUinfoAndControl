@@ -11,6 +11,7 @@
 //#endif //#ifdef _WINDOWS
 #include <iostream> //for "cout"
 #include "GriffinController.hpp"
+#include "Griffin.hpp" //GetVoltageID(...)
 #include <preprocessor_helper_macros.h> //for BITMASK_FOR_7BIT
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/CalculationThreadProc.h>//for macros "STARTED" and "ENDED"
@@ -146,60 +147,6 @@ using namespace std;
       mp_model->m_pstates);
   }
 
-  //It seems: setting a p-state for more than 1 core at a time does NOT work.
-  //so call this method "n" times if you want the same p-state for "n" cores.
-  BYTE GriffinController::changePstate(BYTE byNewPstate,DWORD dwCoreBitmask)
-  {
-    BYTE byReturn = FAILURE ;
-
-    //Safety check.
-    if( byNewPstate < NUMBER_OF_PSTATES )
-    {
-      DWORD dwMSRlow = byNewPstate ;
-
-        dwMSRlow = (BYTE) byNewPstate ;
-        //DEBUG("For core bitmask %lu: setting to pstate %u\n", dwCoreBitmask, byNewPstate);
-        LOGN_VERBOSE( "For core bitmask " << dwCoreBitmask 
-          << ": setting to pstate "
-          //Cast BYTE to WORD to output as number. 
-          << (WORD) byNewPstate );
-        //DEBUG("the low 32 bits: %s\n", getBinaryRepresentation(arch,dwMSRlow) );
-	      //printf("  would write:  %s to MSR %lx\n", getBinaryRepresentation(&msrvalue,arch), msr_register_number);
-	      //waitForEnter("um in MSR zu schreiben") ;
-	      //if ((msr_write(msrfile, msr_register_number, &msrvalue)) != OK)
-	      //	printf("MSR write failed\n");
-
-        //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
-#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-        if(
-          //CONTROLLER_PREFIX
-          mp_cpuaccess->
-          WrmsrEx(
-            P_STATE_CONTROL_REGISTER,
-            dwMSRlow,
-            0,
-            dwCoreBitmask
-            )
-          )
-        {
-          LOGN_VERBOSE("Setting p-state succeeded.");
-          byReturn = SUCCESS ;
-          //Wait 1 millisecond (> maximum stabilization time).
-//          SLEEP_1_MILLI_SECOND
-        }
-        else
-        {
-          DEBUG("Setting p-state failed\n");
-        }
-        byReturn = SUCCESS ;
-#endif //_EMULATE_TURION_X2_ULTRA_ZM82
-  //#ifndef LINK_TO_WINRING0_STATICALLY
-  //    }
-  //#endif //#ifdef LINK_TO_WINRING0_STATICALLY
-    }
-    return byReturn ;
-  }
-
   bool GriffinController::cmdLineParamsContain(
     _TCHAR * ptcharOption
     , std::string & strValue
@@ -300,27 +247,6 @@ using namespace std;
     //return true ;
   }//void DisableFrequencyScaling()
 #endif
-
-  WORD GriffinController::GetVoltageID(float fVoltageInVolt ) 
-  { 
-    //E.g. for "1.1" V the float value is 1.0999999 
-    // (because not all numbers are representable with a 8 byte value) 
-    // so the voltage ID as float value gets "36.000004".
-    float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f ;
-    WORD wVoltageID =
-      //without explicit cast: compiler warning
-      //Avoid g++ warning "warning: converting to `WORD' from `float'"
-      (WORD)
-      //ceil( (fVoltageInVolt - 1.55f) * -1.0f / 0.0125f ) ;
-      //ceil( //(fVoltageInVolt - 1.55f) / -0.0125f 
-        fVoltageID //) 
-      ;
-    //Check to which integer voltage ID the float value is nearer.
-    //E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36"
-    if( fVoltageID - (float) wVoltageID >= 0.5 ) 
-      ++ wVoltageID ;
-    return wVoltageID ;
-  }
 
   BYTE GriffinController::GetVoltageIDFromVoltageInVolt(float fVoltageInVolt)
   {
@@ -850,7 +776,6 @@ void GriffinController::FillAvailableCPUcoreFrequenciesList()
   }
 
 BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
-  //,PumaStateCtrl & pstatectrl
   )
 {
   BYTE byReturn = FAILURE ;
@@ -1092,14 +1017,14 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 #endif //#ifdef PUBLIC_RELEASE
         {
           BYTE byCurrentMacPstate ;
-          //pstatectrl.changePstate(byP_State,0);
+          //pstatectrl.SetPstateViaPstateControlRegister(byP_State,0);
           if(GetMaxPState(byCurrentMacPstate) && byCurrentMacPstate < byP_State )
             SetMaxPState(byP_State) ;
-          if( (byReturn = changePstate(byP_State,1)) )
+          if( (byReturn = SetPstateViaPstateControlRegister(byP_State,1)) )
           {
             //fgetc(stdin);
-            //pstatectrl.changePstate(byP_State,1);
-            if( (byReturn = changePstate(byP_State,2)) )
+            //pstatectrl.SetPstateViaPstateControlRegister(byP_State,1);
+            if( (byReturn = SetPstateViaPstateControlRegister(byP_State,2)) )
               //Only the p-state was changed, so exit and show no dialog.
               byReturn = EXIT ;
             //byReturn = SUCCESS ;
@@ -1111,7 +1036,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   return byReturn ;
 }
 
-//#ifdef COMPILE_WITH_WINRING0
   bool GriffinController::handleNBVIDOption()
   {
     std::string str ;
@@ -1134,56 +1058,38 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     }
     return true;
   }
-//#endif //#ifdef COMPILE_WITH_WINRING0
-//#ifdef WIN32
 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//#ifdef COMPILE_WITH_WINRING0
   BYTE GriffinController::GetValuesOfClockPower_TimingControl2Register(
     BYTE & byNbVid, BYTE & byPstateMaxVal, BYTE & byAltVid)
   {
     BYTE byRet = FAILURE; 
     DEBUG("GetValuesOfClockPower_TimingControl2Register\n");
-//    std::string strFuncName = "ReadPciConfigDwordEx";
-//    if(!m_pfnreadpciconfigdwordex)
-//      m_pfnreadpciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnreadpciconfigdwordex)
-    {
-      //char arch[33];
-      DWORD dwValue ;
-      //info is at "F3xDC" (Function "3", address "DC");
-      DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
-      //bits 3- 7 Device Number 
-      dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
+    //char arch[33];
+    DWORD dwValue ;
+    //info is at "F3xDC" (Function "3", address "DC");
+    DWORD dwPCIAddress = 3;//bits 0- 2 Function Number
+    //bits 3- 7 Device Number
+    dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
+    //dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-      DEBUG("PCI address:" << getBinaryRepresentation(dwPCIAddress).c_str() 
-        << "\n");
+    DEBUG("PCI address:" << getBinaryRepresentation(dwPCIAddress).c_str()
+      << "\n");
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xDC,&dwValue)
-      if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xDC,&dwValue)
-        )
-      {
+    if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xDC,&dwValue)
+      )
+    {
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-        byRet = SUCCESS ;
-        byAltVid = (BYTE) ( dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID );
-        byPstateMaxVal = (BYTE) ( (dwValue>>8)&7);//bits 10:8 PstateMaxVal
-        byNbVid = (BYTE) ((dwValue>>12) & //BITMASK_FOR_7BIT
-          BITMASK_FOR_LOWMOST_7BIT );//18:12  NbVid
+      byRet = SUCCESS ;
+      byAltVid = (BYTE) ( dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID );
+      byPstateMaxVal = (BYTE) ( (dwValue>>8)&7);//bits 10:8 PstateMaxVal
+      byNbVid = (BYTE) ((dwValue>>12) & //BITMASK_FOR_7BIT
+        BITMASK_FOR_LOWMOST_7BIT );//18:12  NbVid
 //        DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
-        DEBUG("value read: " << getBinaryRepresentation(dwValue).c_str() 
-          << "\n" );
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-      }
-//      else
-//        DEBUG("Calling %s failed\n", strFuncName.c_str());
+      DEBUG("value read: " << getBinaryRepresentation(dwValue).c_str()
+        << "\n" );
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
     }
-//    else
-//    {
-//      DEBUG("error getting function pointer to %s(...)\n", strFuncName.c_str());
-//    }
-     return byRet;
+    return byRet;
   }
 
 #ifdef COMPILE_WITH_WINRING0
@@ -1194,67 +1100,49 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   {
     BYTE byRet = FAILURE;
     BYTE byGanged, byPstateID ;
-//    std::string strFuncName = "ReadPciConfigDwordEx";
     std::ostringstream ostringstrm ;
-//    if(!m_pfnreadpciconfigdwordex)
-//      m_pfnreadpciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnreadpciconfigdwordex)
-    {
 //      char arch[33];
-      DWORD dwValue ;
-      //info is at "F3xDC" (Function "3", address "DC");
-      DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
-      //bits 3- 7 Device Number 
-      dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
+    DWORD dwValue ;
+    //info is at "F3xDC" (Function "3", address "DC");
+    DWORD dwPCIAddress = 3;//bits 0- 2 Function Number
+    //bits 3- 7 Device Number
+    dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
+    //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-      DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
+    DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xA0,&dwValue)
-      if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xA0,&dwValue)
-        )
-      {
-        BYTE bPSI_LbitVIDenable ;
+    if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xA0,&dwValue)
+      )
+    {
+      BYTE bPSI_LbitVIDenable ;
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-        byRet = SUCCESS ;
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-        //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
-        //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12 ? NbVid
-        DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
-        //DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
-        byGanged = (BYTE) ( dwValue>>30&1 ) ;
-        byPstateID = (BYTE) ( (dwValue>>16)&BIMASK_FOR_12BITS );
-        DEBUG("VddCpuGanged:%u->%s PstateId:%lu(%lxhex) PsiVidEn: %s PsiVid:%u\n",
-          byGanged, 
-          byGanged?"dual plane":"triple plane",
-          byPstateID,
-          byPstateID,
-          dwValue&128?"yes":"no",
-          dwValue&127);
-        bPSI_LbitVIDenable = (BYTE)( dwValue >> 7 ) & 1 ;
-        ostringstrm << "PSI_L bit VID enable: " << (WORD)bPSI_LbitVIDenable ;
-        if( bPSI_LbitVIDenable )
-          ostringstrm << "Control over the PSI_L bit is as specified by the PsiVid field of this register." ;
-        else
-          ostringstrm << "The PSI_L bit is always high" ;
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-        ostringstrm <<"PSI_L bit VID threshold: "<< 
-          (dwValue & //BITMASK_FOR_7BIT
-          BITMASK_FOR_LOWMOST_7BIT ) ;
-        r_str = ostringstrm.str() ;
-      }
-//      else
-//      {
-//        DEBUG("Calling %s failed\n", strFuncName.c_str());
-//        ostringstrm << "Calling " << strFuncName << " failed\n" ;
-//        r_str = ostringstrm.str() ;
-//      }
+      byRet = SUCCESS ;
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
+      //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
+      //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12 ? NbVid
+      DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
+      //DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
+      byGanged = (BYTE) ( dwValue>>30&1 ) ;
+      byPstateID = (BYTE) ( (dwValue>>16)&BIMASK_FOR_12BITS );
+      DEBUG("VddCpuGanged:%u->%s PstateId:%lu(%lxhex) PsiVidEn: %s PsiVid:%u\n",
+        byGanged,
+        byGanged?"dual plane":"triple plane",
+        byPstateID,
+        byPstateID,
+        dwValue&128?"yes":"no",
+        dwValue&127);
+      bPSI_LbitVIDenable = (BYTE)( dwValue >> 7 ) & 1 ;
+      ostringstrm << "PSI_L bit VID enable: " << (WORD)bPSI_LbitVIDenable ;
+      if( bPSI_LbitVIDenable )
+        ostringstrm << "Control over the PSI_L bit is as specified by the PsiVid field of this register." ;
+      else
+        ostringstrm << "The PSI_L bit is always high" ;
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
+      ostringstrm <<"PSI_L bit VID threshold: "<<
+        (dwValue & //BITMASK_FOR_7BIT
+        BITMASK_FOR_LOWMOST_7BIT ) ;
+      r_str = ostringstrm.str() ;
     }
-//    else
-//    {
-//      DEBUG("error getting function pointer to %s(...)\n", strFuncName.c_str());
-//    }
     return byRet;
   }
 
@@ -1263,318 +1151,205 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     )
   {
     BYTE byRet = FAILURE;
-//    std::string strFuncName = "ReadPciConfigDwordEx";
-//    if(!m_pfnreadpciconfigdwordex)
-//      m_pfnreadpciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnreadpciconfigdwordex)
-    {
-      //char arch[33];
-      DWORD dwValue ;
-      //info is at "F3xDC" (Function "3", address "DC");
-      DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
-      //bits 3- 7 Device Number 
-      dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
+    //char arch[33];
+    DWORD dwValue ;
+    //info is at "F3xDC" (Function "3", address "DC");
+    DWORD dwPCIAddress = 3;//bits 0- 2 Function Number
+    //bits 3- 7 Device Number
+    dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
+    //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-      DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
+    DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,0xA4,&dwValue)
-      if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xA4,&dwValue)
-        )
-      {
-        DWORD dwCurrentTemperature = dwValue>>21 ;
+    if( mp_cpuaccess->ReadPciConfigDwordEx(dwPCIAddress,0xA4,&dwValue)
+      )
+    {
+      DWORD dwCurrentTemperature = dwValue>>21 ;
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-        byRet = SUCCESS ;
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-        //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
-        //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12 ? NbVid
+      byRet = SUCCESS ;
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
+      //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
+      //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12 ? NbVid
 //        DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
-        DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
-        DEBUG("CurTmp:%u %f\n",
-          dwCurrentTemperature,
-          (float)dwCurrentTemperature/8.0f);
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-      }
-//      else
-//        DEBUG("Calling %s failed\n", strFuncName.c_str());
+      DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
+      DEBUG("CurTmp:%u %f\n",
+        dwCurrentTemperature,
+        (float)dwCurrentTemperature/8.0f);
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
     }
-//    else
-//    {
-//      DEBUG("error getting function pointer to %s(...)\n", strFuncName.c_str());
-//    }
-     return byRet;
+    return byRet;
   }
 
   BYTE GriffinController::GetValuesOfSBIAddressRegister()
   {
     BYTE byRet = FAILURE;
-//    std::string strFuncName = "ReadPciConfigDwordEx";
-//    if(!m_pfnreadpciconfigdwordex)
-//      m_pfnreadpciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnreadpciconfigdwordex)
-    {
-      //char arch[33];
-      DWORD dwValue ;
-      //info is at "F3xDC" (Function "3", address "DC");
-      DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
-      //bits 3- 7 Device Number 
-      dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
-      //DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
+    //char arch[33];
+    DWORD dwValue ;
+    //info is at "F3xDC" (Function "3", address "DC");
+    DWORD dwPCIAddress = 3;//bits 0- 2 Function Number
+    //bits 3- 7 Device Number
+    dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
+    //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
+    //DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,
-      if(  mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
-        //AMD: "F3x1E8 SBI Address Register"
-        0x1E8,&dwValue) 
-        )
-      {
-        DWORD dwCurrentTemperature = dwValue>>21 ;
+    if(  mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
+      //AMD: "F3x1E8 SBI Address Register"
+      0x1E8,&dwValue)
+      )
+    {
+      DWORD dwCurrentTemperature = dwValue>>21 ;
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-        byRet = SUCCESS ;
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-        //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
-        //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12  NbVid
+      byRet = SUCCESS ;
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
+      //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
+      //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12  NbVid
 //        DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
-        DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
-        DEBUG("SBI SMBus register address: %u\n", dwValue&0xFF);
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-      }
-//      else
-//        DEBUG("Calling %s failed\n", strFuncName.c_str());
+      DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
+      DEBUG("SBI SMBus register address: %u\n", dwValue&0xFF);
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
     }
-//    else
-//    {
-//      DEBUG("error getting function pointer to %s(...)\n", strFuncName.c_str());
-//    }
      return byRet;
   }
 
   BYTE GriffinController::GetValuesOfSBIControlRegister()
   {
     BYTE byRet = FAILURE;
-//    std::string strFuncName = "ReadPciConfigDwordEx";
-//    if(!m_pfnreadpciconfigdwordex)
-//      m_pfnreadpciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnreadpciconfigdwordex)
-    {
 //      char arch[33];
-      DWORD dwValue ;
-      //info is at "F3xDC" (Function "3", address "DC");
-      DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
-      //bits 3- 7 Device Number 
-      dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
+    DWORD dwValue ;
+    //info is at "F3xDC" (Function "3", address "DC");
+    DWORD dwPCIAddress = 3;//bits 0- 2 Function Number
+    //bits 3- 7 Device Number
+    dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
+    //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-      DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
+    DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,
-      if( mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
-        //AMD: "F3x1E4 SBI Control Register"
-        0x1E4,&dwValue) 
-        )
-      {
-        DWORD dwCurrentTemperature = dwValue>>21 ;
+    if( mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
+      //AMD: "F3x1E4 SBI Control Register"
+      0x1E4,&dwValue)
+      )
+    {
+      DWORD dwCurrentTemperature = dwValue>>21 ;
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-        byRet = SUCCESS ;
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-        //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
-        //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12  NbVid
+      byRet = SUCCESS ;
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
+      //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
+      //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12  NbVid
 //        DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
-        DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
-        DEBUG("SMBus-based sideband interface address: %u\n", 
-          (dwValue>>4)&BITMASK_FOR_LOWMOST_3BIT);
-        DEBUG("The processor %s SMBus-based SBI thermal sensor protocol.\n",
-          dwValue&1?"does not support":"supports");
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-      }
-//      else
-//        DEBUG("Calling %s failed\n", strFuncName.c_str());
+      DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
+      DEBUG("SMBus-based sideband interface address: %u\n",
+        (dwValue>>4)&BITMASK_FOR_LOWMOST_3BIT);
+      DEBUG("The processor %s SMBus-based SBI thermal sensor protocol.\n",
+        dwValue&1?"does not support":"supports");
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
     }
-//    else
-//    {
-//      DEBUG("error getting function pointer to %s(...)\n", strFuncName.c_str());
-//    }
-     return byRet;
+    return byRet;
   }
   
   BYTE GriffinController::GetValuesOfSBIDataRegister()
   {
     BYTE byRet = FAILURE;
-//    std::string strFuncName = "ReadPciConfigDwordEx";
-//    if(!m_pfnreadpciconfigdwordex)
-//      m_pfnreadpciconfigdwordex = (pfnReadPciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnreadpciconfigdwordex)
-    {
 //      char arch[33];
-      DWORD dwValue ;
-      //info is at "F3xDC" (Function "3", address "DC");
-      DWORD dwPCIAddress = 3;//bits 0- 2 Function Number 
-      //bits 3- 7 Device Number 
-      dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
-      //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
-      DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(//arch,
-        dwPCIAddress).c_str() );
+    DWORD dwValue ;
+    //info is at "F3xDC" (Function "3", address "DC");
+    DWORD dwPCIAddress = 3;//bits 0- 2 Function Number
+    //bits 3- 7 Device Number
+    dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
+    //dwPCIAddress = PciBusDevFunc(0, 18, 3) ;
+    DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(//arch,
+      dwPCIAddress).c_str() );
 //      if((*m_pfnreadpciconfigdwordex)(dwPCIAddress,
-      if( mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
-        //AMD: "F3x1EC SBI Data Register"
-        0x1EC,&dwValue) 
-        )
-      {
-        DWORD dwCurrentTemperature = dwValue>>21 ;
+    if( mp_cpuaccess->ReadPciConfigDwordEx( dwPCIAddress ,
+      //AMD: "F3x1EC SBI Data Register"
+      0x1EC,&dwValue)
+      )
+    {
+      DWORD dwCurrentTemperature = dwValue>>21 ;
 //        DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-        byRet = SUCCESS ;
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-        //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
-        //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12  NbVid
+      byRet = SUCCESS ;
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
+      //byPstateMaxVal = (dwValue>>8)&7;//bits 10:8 PstateMaxVal
+      //byNbVid = (dwValue>>12)&BITMASK_FOR_7BIT;//18:12  NbVid
 //        DEBUG("value read: %s\n", this->getBinaryRepresentation(arch,dwValue));
-        DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
-        DEBUG("SBI SMBus register data.: %u\n", dwValue&0xFF);
-        //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
-      }
-//      else
-//        DEBUG("Calling %s failed\n", strFuncName.c_str());
+      DEBUG("value read: %s\n", getBinaryRepresentation(dwValue).c_str());
+      DEBUG("SBI SMBus register data.: %u\n", dwValue&0xFF);
+      //byAltVid = dwValue&BITMASK_FOR_PCI_CONFIG_ALTVID;
     }
-//    else
-//    {
-//      DEBUG("error getting function pointer to %s(...)\n", strFuncName.c_str());
-//    }
-     return byRet;
+    return byRet;
   }
 #endif //#ifndef LINK_TO_WINRING0_STATICALLY
-
-//  void PumaStateCtrl::messageLoop()
-//  {
-//	  MSG msg;
-//	  HANDLE hWnd = CreateWindow(_T("Stand By Detector window"),
-//      NULL, WS_OVERLAPPEDWINDOW,
-//			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-//      NULL, NULL, this->m_hinstanceThisModule, NULL);
-//    // Main message loop:
-//    DEBUG("just before while (GetMessage(&msg, NULL, 0, 0)) \n");
-//	  while (GetMessage(&msg, NULL, 0, 0))
-//	  {
-//		  //if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-//		  //{
-//			 // TranslateMessage(&msg);
-//			 // DispatchMessage(&msg);
-//		  //}
-//      DEBUG("while (GetMessage(&msg, NULL, 0, 0)) \n");
-//	  }
-//    while(true)
-//    {
-//      //wait for power state change event notification
-//      //::WaitForSingleEvent(m_event., INFINITE);
-//      //::WaitForSingleObject(m_handleEvent, INFINITE);
-//      ::WaitForSingleObject(g_handleEvent, INFINITE);
-//    }
-//  }
 
 #ifdef COMPILE_WITH_WINRING0
   BYTE GriffinController::SetSBIAddressRegister(BYTE bySBISMBusRegisterData)
   {
     BYTE byReturnValue = FAILURE ;
-//    std::string strFuncName = "WritePciConfigDwordEx";
     //DEBUG("SetSBIAddressRegister(%u)\n",bySBISMBusRegisterData);
     LOG("Set SBI Address Register: " << (WORD) bySBISMBusRegisterData << " \n" );
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//    if(!m_pfnwritepciconfigdwordex)
-//      m_pfnwritepciconfigdwordex = (pfnWritePciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnwritepciconfigdwordex)
-//    {
-//#endif
-      //char arch[33];
-      //int nDummy;
-      DWORD dwValue = bySBISMBusRegisterData ;
-      DWORD dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
+    //char arch[33];
+    //int nDummy;
+    DWORD dwValue = bySBISMBusRegisterData ;
+    DWORD dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
 
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-      //DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
-      LOG( "PCI Address: " << getBinaryRepresentation(dwPCIAddress).c_str() 
-          << "\n" );
+    //DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
+    LOG( "PCI Address: " << getBinaryRepresentation(dwPCIAddress).c_str()
+        << "\n" );
 //      DEBUG("dwValue:    %s\n", this->getBinaryRepresentation(arch,dwValue));
-      //DEBUG("dwValue:    %s\n", getBinaryRepresentation(dwValue).c_str());
-      LOG(" Value:    " << getBinaryRepresentation(dwValue).c_str() << "\n" );
-      //std::cin >> nDummy ;
-      //std::cin.p
-      //std::cin.sync() ; //to flush (sonst wurde dieser Teil bersprungen nach dem 1ten Aufruf)
+    //DEBUG("dwValue:    %s\n", getBinaryRepresentation(dwValue).c_str());
+    LOG(" Value:    " << getBinaryRepresentation(dwValue).c_str() << "\n" );
+    //std::cin >> nDummy ;
+    //std::cin.p
+    //std::cin.sync() ; //to flush (sonst wurde dieser Teil bersprungen nach dem 1ten Aufruf)
 //#ifdef __cplusplus
 //      DEBUG("to write: input at least 1 char and press ENTER\n");
 //      //"_getche" (note the underline prefix ) is the C++ version of getche()
 //      _getche();
 //#endif
-      DEBUG("to write: input at A NUMBER and press ENTER\n");
-      int nDummyInput ;
-      std::cin >> nDummyInput ;
-      if(
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//        (*m_pfnwritepciconfigdwordex)
-//#else
-//        WritePciConfigDwordEx
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-        mp_cpuaccess->WritePciConfigDwordEx
-        (dwPCIAddress,
-        //AMD: "F3x1E8 SBI Add6ress Register"
-        0x1E8,dwValue) 
-        )
-      {
-        DEBUG("successfully written to PCI config\n");
-        byReturnValue = SUCCESS;
-      }
-      else
-        DEBUG("failed to write to PCI config\n");
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//    }
-//#endif
+    DEBUG("to write: input at A NUMBER and press ENTER\n");
+    int nDummyInput ;
+    std::cin >> nDummyInput ;
+    if( mp_cpuaccess->WritePciConfigDwordEx
+      (dwPCIAddress,
+      //AMD: "F3x1E8 SBI Add6ress Register"
+      0x1E8,dwValue)
+      )
+    {
+      DEBUG("successfully written to PCI config\n");
+      byReturnValue = SUCCESS;
+    }
+    else
+      DEBUG("failed to write to PCI config\n");
     return byReturnValue ;
   }
 #endif //#ifdef COMPILE_WITH_WINRING0
 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//#ifdef COMPILE_WITH_WINRING0
   void GriffinController::SetValuesOfClockPower_TimingControl2Register(
     BYTE byNbVid, BYTE byPstateMaxVal, BYTE byAltVid)
   {
-//    std::string strFuncName = "WritePciConfigDwordEx";
     DEBUG("SetValuesOfClockPower_TimingControl2Register\n");
-//    if(!m_pfnwritepciconfigdwordex)
-//      m_pfnwritepciconfigdwordex = (pfnWritePciConfigDwordEx)GetProcAddress(
-//        m_hinstanceWinRingDLL,strFuncName.c_str() );
-//
-//    if(m_pfnwritepciconfigdwordex)
-    {
 //      char arch[33];
-      int nDummy;
-      DWORD dwValue = 0 | (byNbVid<<12) | (byPstateMaxVal<<8) |
-        byAltVid ;
-      DWORD dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
+    int nDummy;
+    DWORD dwValue = 0 | (byNbVid<<12) | (byPstateMaxVal<<8) |
+      byAltVid ;
+    DWORD dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
 
 //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-      DEBUG("dwPCIAddress: " << getBinaryRepresentation(dwPCIAddress).c_str() 
-        << "\n" );
+    DEBUG("dwPCIAddress: " << getBinaryRepresentation(dwPCIAddress).c_str()
+      << "\n" );
 //      DEBUG("dwValue:    %s\n", this->getBinaryRepresentation(arch,dwValue));
-      DEBUG("dwValue:    " << getBinaryRepresentation(dwValue).c_str() 
-        << "\n" );
-      DEBUG("to write: input at least 1 char and press ENTER\n");
-      std::cin >> nDummy ;
+    DEBUG("dwValue:    " << getBinaryRepresentation(dwValue).c_str()
+      << "\n" );
+    DEBUG("to write: input at least 1 char and press ENTER\n");
+    std::cin >> nDummy ;
 //      if((*m_pfnwritepciconfigdwordex)(dwPCIAddress,0xDC,dwValue)
-      if( mp_cpuaccess->WritePciConfigDwordEx( dwPCIAddress,0xDC,dwValue)
-        )
-      {
-        DEBUG("successfully written to PCI config\n");
-      }
-      else
-        DEBUG("failed to write to PCI config\n");
+    if( mp_cpuaccess->WritePciConfigDwordEx( dwPCIAddress,0xDC,dwValue)
+      )
+    {
+      DEBUG("successfully written to PCI config\n");
     }
+    else
+      DEBUG("failed to write to PCI config\n");
   }
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-//#endif //#ifdef COMPILE_WITH_WINRING0
 
   void GriffinController::FindLowestOperatingVoltage(BYTE byPstate, BYTE byCoreID)
   {
@@ -1698,6 +1473,26 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     }
   }
 
+  float * //The reference clock might change, also during runtime.
+    //This is why it is a good idea to get the possible multipliers.
+    GriffinController::GetAvailableMultipliers(
+      WORD wCoreID
+      , WORD * p_wNumberOfArrayElements
+      )
+  {
+    return GetAvailableMultipliers() ;
+  }
+
+  float * //The reference clock might change, also during runtime.
+    //This is why it is a good idea to get the possible multipliers.
+    GriffinController::GetAvailableMVoltages(
+      WORD wCoreID
+      , WORD * p_wNumberOfArrayElements
+      )
+  {
+    return GetAvailableMVoltages() ;
+  }
+
   bool GriffinController::GetCPUID(
     //last/rightmost/least significant 2 digits of function bumber 
     DWORD dwFunctionIndex,
@@ -1709,28 +1504,12 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   {
     bool bSuccess = false ;
     //mp_userinterface->Confirm("PumaStateCtrl::IsSupportedCPUModel()");
-//    std::string strFuncName = "CpuidEx" ;
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//    _CpuidEx pfnCPU_ID;
-//    pfnCPU_ID = (_CpuidEx)GetProcAddress(m_hinstanceWinRingDLL,
-//      strFuncName.c_str() );
-//    if(pfnCPU_ID)
-//    {
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
-//      DEBUG("PumaStateCtrl::GetCPUID--Got function for CPUID\n");
       //"If the function succeeds, the return value is TRUE."
       if( 
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//        (*pfnCPU_ID)
-//#else
-//        CpuidEx
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
         mp_cpuaccess->CpuidEx
         (dwFunctionIndex,&dwEAX,&dwEBX,&dwECX,&dwEDX,1) 
         )
       {
-        //DEBUG("PumaStateCtrl::GetCPUID--Calling CPUID succeeded:dwEDX:%lu\n",
-        //  dwEDX);
         LOG( "Calling CPUID succeeded: value:" << dwEDX << "\n" );
         bSuccess = true;
       }
@@ -1738,13 +1517,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       else
         DEBUG("Get CPUID--Calling CPUID failed\n");
 #endif
-//#ifndef LINK_TO_WINRING0_STATICALLY
-//    }
-//  #ifdef COMPILE_WITH_DEBUG
-//    else
-//      DEBUG("PumaStateCtrl::GetCPUID--Did not get function for CPUID\n");
-//  #endif
-//#endif //#ifndef LINK_TO_WINRING0_STATICALLY
     return bSuccess ;
   }
 
@@ -2443,64 +2215,9 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     return GetVoltageInVolt(mp_model->m_cpucoredata.m_byMaxVoltageID) ;
   }
 
-  WORD GriffinController::GetMaximumVoltageID()
-  {
-//    return 64 ;
-    DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
-    mp_cpuaccess->RdmsrEx(COFVID_STATUS_REGISTER,
-        & dwEAXlowMostBits, & dwEDXhighMostBits, 1 ) ;
-    BYTE byHighestVID = ( dwEDXhighMostBits >>
-        ( COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID - 32 )
-        ) & BITMASK_FOR_LOWMOST_7BIT;
-    DEBUGN("highest VID:" << (WORD)byHighestVID)
-    return byHighestVID ;
-  }
-  WORD GriffinController::GetMinimumVoltageID()
-  {
-//    return 36 ;
-    DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
-    mp_cpuaccess->RdmsrEx(COFVID_STATUS_REGISTER,
-        & dwEAXlowMostBits, & dwEDXhighMostBits, 1 ) ;
-    BYTE byLowestVID = ( dwEDXhighMostBits >>
-        ( COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID - 32 )
-        ) & BITMASK_FOR_LOWMOST_7BIT;
-    DEBUGN("lowest VID:" << (WORD)byLowestVID)
-    return byLowestVID ;
-  }
-
   UserInterface * GriffinController::GetUserInterface()
   {
     return mp_userinterface;
-  }
-
-  unsigned long GriffinController::GetMSRregisterForPstate(
-    unsigned char byPstate )
-  {
-	  //unsigned long index ;
-	  return //"AMD: MSR C001_0064 specifies P-state 0"
-		  0xC0010064 + byPstate ;
-  }
-  void GriffinController::GetMSRregisterValue( 
-    BYTE byVoltageID, 
-    const DIDandFID & didandfid , 
-    DWORD & dwHighmostMSRvalue , 
-    DWORD & dwLowmostMSRvalue 
-    )
-  {
-    //GetFIDandDID( wFreqInMHz, byFrequencyID, byDivisorID ) ;
-    //didandfid
-    dwHighmostMSRvalue = 0 ;
-    SET_P_STATE_TO_VALID(dwHighmostMSRvalue) ;
-
-    //See AMD Family 11h Processor BKDG (document # 41256), 
-    // "MSRC001_00[6B:64] P-state [7:0] Registers"
-    //5:0 CpuFid
-    dwLowmostMSRvalue = ( didandfid.m_byFreqID & 63) ;
-    //CpuDid: core divisor ID.
-    dwLowmostMSRvalue |= ( ( (WORD) didandfid.m_byDivisorID ) << 
-      START_BIT_FOR_CPU_CORE_DIVISOR_ID ) ;
-    //15:9 CpuVid: core VID.
-    dwLowmostMSRvalue |= ( ( (WORD) byVoltageID ) << 9) ; //<=>bits 9-15 shifted
   }
 
   bool GriffinController::isVIDOptionSpecified(BYTE & rbyVID)
@@ -2792,79 +2509,14 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
   {
     bool bSuccess ;
     char * archCPUID ;
-    bSuccess = GetProcessorNameByCPUID(archCPUID) ;
+    bSuccess = mp_cupaccess->GetProcessorNameByCPUID(archCPUID) ;
     r_stdstr = std::string( archCPUID ) ;
     //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
     delete archCPUID ;
     return bSuccess ;
   }
 
-  //Use the method with std::string parameter rather than this 
-  //version with "char * &" where the
-  //memory is allocated inside the function!
-  bool GriffinController::GetProcessorNameByCPUID(
-    //Use a pointer to an array in order to allocate the array within 
-    //this method.
-    char * & archCPUID )
-  {
-    bool bSuccess = true ;
-    BYTE byCPUID_Address = 0, byCharIndex = 0;
-    //char archCPUID[//4*4
-    //  CPUID_PROCESSOR_NAME_CHAR_NUMBER
-    //  //For string terminating "\0" .
-    //  + 1 ] ;
-    archCPUID = new char [//4*4
-      CPUID_PROCESSOR_NAME_CHAR_NUMBER
-      //For string terminating "\0" .
-      + 1 ] ;
-    archCPUID[//4*4
-      CPUID_PROCESSOR_NAME_CHAR_NUMBER ] = '\0';
-    for( ; byCPUID_Address < 3 ; ++ byCPUID_Address )
-    {
-      if( GetCPUID(
-        //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
-        0x80000002+byCPUID_Address,
-        //dwEAX,
-        //*((DWORD *)archCPUID),
-        *((DWORD *)(archCPUID + byCharIndex) ),
-        //dwEBX,
-        //*((DWORD *)(archCPUID+4)),
-        *((DWORD *)(archCPUID + byCharIndex + 4 )),
-        //dwECX,
-        //*((DWORD *)(archCPUID+8)),
-        *((DWORD *)(archCPUID + byCharIndex + 8 )),
-        //dwEDX
-        //*((DWORD *)(archCPUID+12))
-        *((DWORD *)(archCPUID + byCharIndex + 12 ))
-        ) )
-      {
-        byCharIndex += 16 ;
-        //DEBUG("CPUID address:%lu "
-        //  //"EAX:%lu,EBX:%lu ECX:%lu,EDX:%lu "
-        //  //"%s\n"
-        //  "\n"
-        //  ,
-        //  (0x80000002+byCPUID_Address)//, 
-        //  //dwEAX, dwEBX, dwECX, dwEDX,
-        //  //archCPUID
-        //  );
-        //LOG("CPUID address:" << ( 0x80000002 + byCPUID_Address ) << " \n" );
-        //archProcessorName[
-      }
-      else
-      {
-        DEBUG("Error getting processor name of this CPU\n");
-        bSuccess = false ;
-        break ;
-      }
-    }//end for-loop
-    if( bSuccess )
-      //DEBUG("processor name of this CPU is: %s\n", archCPUID );
-      LOG("Processor name of this CPU is: " << archCPUID << "\n" );
-    return bSuccess ;
-  }
-
-  //For beeing very safe: check also if this is a Turio ULTRA.
+  //For being very safe: check also if this is a Turion ULTRA.
   //There are CPUs put there with the same family and model number 
   //as the Turion Ultra, but they are only Turions (e.g. the RM-70).
   bool GriffinController::IsTurionUltra()
@@ -3611,7 +3263,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     {
 //      BYTE byPstateNumber = 2 ;
       //DWORD dwMSRHigh, dwMSRLow ;
-      //mp_pumastatectrl->
       //setVidAndFrequencyForPState_Puma(
       //  //mp_pumastatectrl->
       //  GetMSRregisterForPstate(
@@ -3691,7 +3342,6 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       DWORD dwPCIAddress = 0 ;
       std::ostrstream ostrstream ;
       std::string str ;
-//      std::string strFuncName = "WritePciConfigDwordEx" ;
       //dwValue |= byMaxPstate ;
       //dwValue <<= 8 ; 
       //Bits 8-10: "PstateMaxVal" -> offset=8, bit length= 3
@@ -3710,23 +3360,19 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
       ////bits 3- 7 Device Number 
       //dwPCIAddress |= (24<<3) ;//24 = AMD CPU Misc. Control.
 
+  //    char arch[33];
+      //dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
+//      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
+      //DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
+      LOG("PCI address: " << getBinaryRepresentation(dwPCIAddress).c_str()
+          << "\n" );
+      if( mp_cpuaccess->WritePciConfigDwordEx(dwPCIAddress,//0xDC
+        F3xDC_CLOCK_POWER_TIMING_CONTROL_2_REGISTER_ADDRESS,dwValue)
+        )
       {
-    //    char arch[33];
-        //dwPCIAddress = PciBusDevFunc(0, 0x18, 3) ;
-  //      DEBUG("dwPCIAddress: %s\n", this->getBinaryRepresentation(arch,dwPCIAddress));
-        //DEBUG("dwPCIAddress: %s\n", getBinaryRepresentation(dwPCIAddress).c_str());
-        LOG("PCI address: " << getBinaryRepresentation(dwPCIAddress).c_str() 
-            << "\n" );
-        if( mp_cpuaccess->WritePciConfigDwordEx(dwPCIAddress,//0xDC
-          F3xDC_CLOCK_POWER_TIMING_CONTROL_2_REGISTER_ADDRESS,dwValue)
-          )
-        {
 //          DEBUG("Calling %s succeeded\n", strFuncName.c_str());
-          //byRet = SUCCESS ;
-          bSuccess = true ;
-//  #ifndef LINK_TO_WINRING0_STATICALLY
-        }
-//  #endif // #ifndef LINK_TO_WINRING0_STATICALLY
+        //byRet = SUCCESS ;
+        bSuccess = true ;
       }
     }
     return bSuccess;
@@ -3743,14 +3389,11 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     DWORD dwPCIAddress ;
 
     dwPCIAddress =  PciBusDevFunc(0,24,3) ;
-//#ifdef LINK_TO_WINRING0_STATICALLY
-//    if( WritePciConfigDwordEx (dwPCIAddress,//0xDC
     if( mp_cpuaccess->WritePciConfigDwordEx ( dwPCIAddress ,
       dwRegisterAddress, dwValue) )
     {
       bSuccess = true ;
     }
-//#endif //#ifdef LINK_TO_WINRING0_STATICALLY
     return bSuccess;
   }
 #endif //#ifdef COMPILE_WITH_WINRING0
@@ -3759,7 +3402,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
 //#endif //ifdef WIN32
 
    inline bool // TRUE: success, FALSE: failure
-   GriffinController::RdmsrEx(
+   GriffinController::ReadMSR(
 	  DWORD dwIndex,		// MSR index
 	  DWORD & dwLowmostBits,			// bit  0-31 (register "EAX")
 	  DWORD & dwHighmostBits,			// bit 32-63 (register "EDX")
@@ -4204,7 +3847,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //At my laptop the current limit was set to "0" on AC power, "1" on DC power.
     //If 100% CPU load and above freq calculated by the current p-state limit,
     //the previous freq persists. To avoid this, retrieve the current limit.
-    mp_cpuaccess->RdmsrEx(
+//    mp_cpuaccess->RdmsrEx(
+    ReadMSR(
         P_STATE_CURRENT_LIMIT_REGISTER,
         & dwMSRlowmost,
         & dwMSRhighmost,
@@ -4249,8 +3893,8 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
     //  byCoreID
     //  ) ;
     DEBUGN("GriffinController::SetVoltageAndFrequency(...)"
-      "before WrmsrEx" )
-    if( WrmsrEx(
+      "before WriteMSR" )
+    if( WriteMSR(
       dwMSRregisterIndex
       , dwMSRlowmost
       , dwMSRhighmost
@@ -4678,7 +4322,7 @@ BYTE GriffinController::handleCmdLineArgs(//int argc// _TCHAR* argv[]
         if( //byPstateID >= 0 &&
             byPstateID < NUMBER_OF_PSTATES )
         {
-          changePstate(byPstateID, (1 << byCoreID) );
+          SetPstateViaPstateControlRegister(byPstateID, (1 << byCoreID) );
         }
       }
       else
@@ -4783,6 +4427,23 @@ BYTE GriffinController::UseMaxVoltageForFreqForOvervoltageProtection(
       byReturn = NO_APPROPRIATE_VOLTAGE_FREQUENCY_PAIR_FOUND ;
   }
   return byReturn ;
+}
+
+//This class knows best which MSR write can cause troubles.
+// So it this WrMSRex function  is supposed to be called for every MSR write.
+BOOL GriffinController::WriteMSR(
+  DWORD dwIndex,    // MSR index
+  DWORD dwLow ,//eax,     // bit  0-31
+  DWORD dwHigh, //edx,      // bit 32-63
+  DWORD dwAffinityMask  // Thread Affinity Mask
+  )
+{
+  return WrmsrEx(
+    dwIndex,    // MSR index
+    dwLow ,//eax,     // bit  0-31
+    dwHigh, //edx,      // bit 32-63
+    dwAffinityMask  // Thread Affinity Mask
+    ) ;
 }
 
 //This class knows best which MSRn write can cause troubles.

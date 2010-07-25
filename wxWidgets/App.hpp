@@ -70,6 +70,7 @@ class wxX86InfoAndControlApp
   , public CPUcontrolBase
 {
 private:
+  bool m_bXercesSuccessfullyInitialized ;
   TCHAR ** m_arartchCmdLineArgument ;
 //  wxThread m_wxthreadIPC ;
   void * m_systemtray_icon_notification_window ;
@@ -151,11 +152,9 @@ public:
   wxX86InfoAndControlApp() ;
   //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
   //"You should delete all wxWidgets object that you created by 
-    //the time OnExit finishes. 
-    //In particular, do not destroy them from application class' destructor!"
-  ~wxX86InfoAndControlApp()
-  {
-  }
+  //the time OnExit finishes.
+  //In particular, do not destroy them from application class' destructor!"
+  ~wxX86InfoAndControlApp() ;
   bool Confirm(const std::string & str) ;
   bool Confirm(const std::wstring & str) ;
 //  bool Confirm(std::ostrstream & r_ostrstream ) ;

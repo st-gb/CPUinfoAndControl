@@ -8,6 +8,8 @@
 #ifndef READTIMESTAMPCOUNTER_H_
 #define READTIMESTAMPCOUNTER_H_
 
+#include <windows.h> //SetThreadAffinityMask
+
 //TODO use affinity mask for reading the TSC
 //http://en.wikipedia.org/wiki/Time_Stamp_Counter:
 //"[...]whether all cores (processors) have identical values in their
@@ -61,5 +63,41 @@
     return ((unsigned long long)a) | (((unsigned long long)d) << 32) ;
   }
 #endif
+
+inline void ReadTSCinOrder(
+  DWORD & r_dwLowEAX ,
+  DWORD & r_dwHighEDX ,
+  DWORD dwThreadAffinityMask
+  )
+{
+//  if( ::SetThreadAffinityMask(::GetCurrentThread() , dwThreadAffinityMask) )
+  {
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+//    CPUID(); //"force all previous instructions to complete"
+    //from http://en.wikipedia.org/wiki/CPUID#Accessing_the_id_from_other_languages:
+    asm ( "mov 1, %%eax; " // a into eax
+           "cpuid" ) ;
+    ReadTimeStampCounter(r_dwLowEAX, r_dwHighEDX ) ;
+//    return TRUE ;
+  }
+}
+
+inline ULONGLONG ReadTSCinOrder( DWORD dwThreadAffinityMask )
+{
+//  if( ::SetThreadAffinityMask(::GetCurrentThread() , dwThreadAffinityMask) )
+  {
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+//    CPUID(); //"force all previous instructions to complete"
+    //from http://en.wikipedia.org/wiki/CPUID#Accessing_the_id_from_other_languages:
+//    asm ( "mov 1, %%eax; " // a into eax
+//           "cpuid" ) ;
+    //from http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#s3
+    //  see table "Intel Code             |      AT&T Code"
+    //call CPUID function 1:
+    asm ( "mov $1, %eax") ; // write 1 into register "eax"
+    asm ( "cpuid" ) ;
+    return ReadTimeStampCounter() ;
+  }
+}
 
 #endif /* READTIMESTAMPCOUNTER_H_ */

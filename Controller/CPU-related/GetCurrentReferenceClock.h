@@ -23,7 +23,8 @@
 //Declare and use global variables to be faster (using local variables creates
 //them on stack each time).
 float g_fReferenceClockInHertz ;
-float g_fReferenceClockInMHz ;
+//float g_fReferenceClockInMHz ;
+extern float g_fReferenceClockInMHz ;
 unsigned long long int g_ullPreviousTimeStampCounter ;
 unsigned long long int g_ullCurrentTimeStampCounter ;
 unsigned long long int g_ullTimeStampCounterDiff = _UI64_MAX ;
@@ -59,8 +60,9 @@ void GetCurrentReferenceClock(float fDivisor //, float & fReferenceClockInMHz
   {
     g_dwPreviousTickCountInMilliseconds = g_dwTickCountInMilliseconds ;
     //Time diff too large: take a TSC measurement (again).
-    g_ullPreviousTimeStampCounter = ReadTimeStampCounter() ;
-
+    g_ullPreviousTimeStampCounter = //ReadTimeStampCounter() ;
+      //TODO pass thread affinity mask
+      ReadTSCinOrder(1) ;
 //    //Wait some milliseconds to get a time difference.
 //    ::Sleep(//500
 //      dwMinimumTimeDiffInMilliseconds ) ;
@@ -94,7 +96,9 @@ void GetCurrentReferenceClock(float fDivisor //, float & fReferenceClockInMHz
   //  stdstrstream << g_dwTickCountDiffInMilliseconds ;
   //  MessageBox(NULL, stdstrstream.str().c_str() , "info" , MB_OK) ;
 
-    g_ullCurrentTimeStampCounter = ReadTimeStampCounter() ;
+    g_ullCurrentTimeStampCounter = //ReadTimeStampCounter() ;
+      //TODO pass thread affinity mask
+      ReadTSCinOrder(1) ;
     g_ullTimeStampCounterDiff = ULONGLONG_VALUE_DIFF(
       g_ullCurrentTimeStampCounter , g_ullPreviousTimeStampCounter ) ;
     DEBUGN("TSC diff: " << g_ullTimeStampCounterDiff )

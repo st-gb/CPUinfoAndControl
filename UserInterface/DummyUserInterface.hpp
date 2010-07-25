@@ -12,7 +12,8 @@ public:
   bool Confirm(const std::string & str) 
   {
       //DEBUG("message: %s\n",str.c_str());
-      LOG( "message: " << str.c_str() << "\n" );
+      LOG( "message: " << str.c_str() //<< "\n"
+        );
       return true; 
   }
   bool Confirm(const std::wstring & cr_stdwstr )
@@ -30,7 +31,8 @@ public:
 //      r_ostrstream.put('\0'); //the same as "ends()" does.
 //      char *pch = r_ostrstream.str() ;
 //      //DEBUG("message: %s\n",pch);
-//      LOG( "message: " << pch << "\n" );
+//      LOG( "message: " << pch //
+//        << "\n" );
 //      return true;
 //  }
   bool Confirm( std::ostringstream & r_stdostringstream )

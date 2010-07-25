@@ -18,6 +18,7 @@
 #include <wx/dcbuffer.h> //for class wxBufferedPaintDC
 #include <wx/dynlib.h> 
 #include "wx/window.h"
+#include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 #include "wx/frame.h" //for class wxFrame
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
 #include <wx/numdlg.h> //for ::wxGetNumberFromUser(...)
@@ -41,6 +42,7 @@
 #include <Controller/MainController.hpp>
 #include <Controller/stdtstr.hpp> //Getstdtstring(...)
 #include <BuildTimeString.h>
+#include <ModelData/ModelData.hpp> //class CPUcoreData
 #include <ModelData/RegisterData.hpp>
 //#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
@@ -65,7 +67,7 @@
 #include "CPUregisterWriteDialog.hpp"
 #include <map> //std::map
 #include <set>
-#include <xercesc/framework/MemBufInputSource.hpp>
+//#include <xercesc/framework/MemBufInputSource.hpp>
 
 #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
   #include "SystemTrayAccess.hpp"
@@ -95,7 +97,7 @@ enum
   //-WRITE to performance state MSR registers by programs like RMclock
   , ID_DisableOtherVoltageOrFrequencyAccess
   , ID_EnableOtherVoltageOrFrequencyAccess
-  , ID_EnableOrDisableOtherDVFS //,
+  , ID_EnableOrDisableOwnDVFS //,
 
   , ID_ContinueService
   , ID_PauseService
@@ -150,7 +152,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnDisableOtherVoltageOrFrequencyAccess ) 
   EVT_MENU( ID_EnableOtherVoltageOrFrequencyAccess ,
     MainFrame::OnEnableOtherVoltageOrFrequencyAccess ) 
-  EVT_MENU( ID_EnableOrDisableOtherDVFS ,
+  EVT_MENU( ID_EnableOrDisableOwnDVFS ,
     MainFrame::OnOwnDynFreqScaling )
   EVT_MENU( ID_UpdateViewInterval ,
     MainFrame::OnUpdateViewInterval )
@@ -192,11 +194,11 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_POWER_RESUME(MainFrame::OnResume)
 #endif // wxHAS_POWER_EVENTS
 
-  //For stopping the DynVoltAndFreqScal thread that accessess the wxApp.
+  //For stopping the DynVoltAndFreqScal thread that accesses the wxApp.
   //So stop the DVFS thread before destroying the wxApp object to avoid
   //crashes.
   EVT_CLOSE( MainFrame::OnClose ) 
-  EVT_INIT_DIALOG(MainFrame::OnInitDialog)
+//  EVT_INIT_DIALOG(MainFrame::OnInitDialog)
   //If no EVT_PAINT macro and Connect(wxEVT_PAINT, 
   //  wxPaintEventHandler(MyFrame::OnPaint));
   // : 100% CPU load.
@@ -242,7 +244,7 @@ inline void MainFrame::CreateFileMenu()
   //elevated one can't even close it!
   if( mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) )
   {
-    mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
+//    mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
     mp_wxmenuFile->Append( ID_MinimizeToSystemTray,
       _T("minimize this window to the system tray") );
   }
@@ -254,11 +256,12 @@ inline void MainFrame::CreateFileMenu()
   //p_wxmenuBar->Append( mp_wxmenuFile, _T("&File") );
   //m_wxmenubar.Append( mp_wxmenuFile, _T("&File") );
   mp_wxmenubar->Append( mp_wxmenuFile, _T("&File") );
-  LOG("after file menu creation\n")
+  LOG("after file menu creation"//\n"
+    )
 }
 
 MainFrame::MainFrame(
-  const wxString& title, 
+  const wxString & cr_wxstrTitle,
   const wxPoint& pos, 
   const wxSize& size
   , I_CPUcontroller * p_cpucontroller
@@ -266,7 +269,7 @@ MainFrame::MainFrame(
   , Model * p_model
   , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
-  : wxFrame((wxFrame *)NULL, -1, title, pos, size
+  : wxFrame((wxFrame *)NULL, -1, cr_wxstrTitle, pos, size
     //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
     //"Use this style to force a complete redraw of the window whenever it is
     //resized instead of redrawing just the part of the window affected by
@@ -305,24 +308,30 @@ MainFrame::MainFrame(
   , m_ullPreviousCPUusage(0)
   , m_ullPreviousPerformanceEventCounter2(0)
   , m_vbAnotherWindowIsActive(false)
-  //, m_wxbufferedpaintdcStatic( this ) 
+  , m_wMaxFreqInMHzTextWidth ( 0 )
+  , m_wMaxVoltageInVoltTextWidth ( 0 )
+  , m_wMaxTemperatureTextWidth ( 0 )
+  //, m_wxbufferedpaintdcStatic( this )
   //Necessary for the timer to run:
   , mp_wxbitmap(NULL)
   , mp_wxbitmapStatic (NULL)
-  , mp_wxbufferedpaintdcStatic( NULL) 
+  , mp_wxbufferedpaintdcStatic( NULL)
   //, mp_wxdynlibcpucontroller ( NULL )
   //, mp_wxdynlibcpucoreusagegetter ( NULL )
+  , m_wxstrTitle(cr_wxstrTitle)
   , m_wxtimer(this)
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
   , m_xercesconfigurationhandler( p_model )
 {
-  LOG("begin of main frame creation\n")
-
+  LOG("begin of main frame creation"//\n"
+    )
+  LOGN("# CPU cores: " << (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores)
+//  m_p_wxtimer = new wxTimer( this ) ;
   mp_ar_voltage_and_multi = new VoltageAndMulti[
     mp_model->m_cpucoredata.m_byNumberOfCPUCores ] ;
 
   //http://www.informit.com/articles/article.aspx?p=405047:
-  //[...]call SetBackgroundStyle with wxBG_STYLE_CUSTOM to hint to some 
+  //[...]call SetBackgroundStyle with wxBG_STYLE_CUSTOM to hint to some
   //systems not to clear the background automatically
   SetBackgroundStyle(wxBG_STYLE_CUSTOM );
 //  m_bConfirmedYet = true ;
@@ -334,16 +343,16 @@ MainFrame::MainFrame(
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   CreateServiceMenuItems() ;
 #endif
-  CreateAndInitMenuItemPointers() ;
+//  CreateAndInitMenuItemPointers() ;
 
-  //p_wxmenuCore0->Append( ID_FindLowestOperatingVoltage, 
+  //p_wxmenuCore0->Append( ID_FindLowestOperatingVoltage,
   //  _T("find lowest operating voltage") );
 
   //p_wxmenuAllCores->Append( ID_FindLowestOperatingVoltage,
   //_T("find lowest operating voltage") );
 
 //#ifdef PRIVATE_RELEASE //hide the other possibilities
-//  p_wxmenuCore0->Append( ID_IncreaseVoltageForCurrentPstate, 
+//  p_wxmenuCore0->Append( ID_IncreaseVoltageForCurrentPstate,
 //    _T("increase voltage for current p-state (stabilize machine)") );
 //#endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
 
@@ -352,30 +361,33 @@ MainFrame::MainFrame(
   p_wxmenuExtras = NULL ;
 //#ifdef COMPILE_WITH_SERVICE_CONTROL
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  if( ! p_wxmenuExtras ) 
+  if( ! p_wxmenuExtras )
     p_wxmenuExtras = new wxMenu;
   mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
     //ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq
     ID_DisableOtherVoltageOrFrequencyAccess
-    //_T("&CPU % min and max.") 
+    //_T("&CPU % min and max.")
     //_T("enable or disable OS's dynamic frequency scaling")
     , _T("disable OS's dynamic frequency scaling")
     );
+  LOGN("after appending menu item \"disable OS's dynamic frequency scaling\"")
   //If one can not change the power scheme (Windows) etc.
   if( ! //mp_i_cpucontroller->mp_dynfreqscalingaccess->
     p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
-      ChangeOtherDVFSaccessPossible() 
+      ChangeOtherDVFSaccessPossible()
     )
   {
     mp_wxmenuitemOtherDVFS->Enable(false);
     mp_wxmenuitemOtherDVFS->SetHelp (
       wxT("Start e.g. as administrator to gain access") ) ;
     //mp_wxmenuitemOtherDVFS->SetItemLabel (wxT("dd") ) ;
+    LOGN("changing other DVFS not possible")
   }
-  if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible() 
-    p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->EnablingIsPossible() 
+  if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible()
+    p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->EnablingIsPossible()
     )
   {
+    LOGN("enabling other DVFS is possible")
 //    std::tstring stdtstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
 //        GetEnableDescription() ;
     std::wstring stdwstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
@@ -384,61 +396,77 @@ MainFrame::MainFrame(
       ID_EnableOtherVoltageOrFrequencyAccess
       //_T("enable OS's dynamic frequency scaling")
       //GetDisableDescrpition() under Windows may return "activate 'performance' power scheme ".
-      //Use GetwxString(...) because GetEnableDescription() may return 
+      //Use GetwxString(...) because GetEnableDescription() may return
       // -std::wstring although wxString uses char strings.
       // -std::string although wxString uses wchar_t strings.
-      , getwxString( 
+      , getwxString(
         //mp_i_cpucontroller->mp_dynfreqscalingaccess->GetEnableDescription()
 //        stdtstr
         stdwstr
          )
       );
+    LOGN("after appending menu item \"" << GetStdString(stdwstr) << "\"")
   }
 #endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
-  LOG("after extras menu creation\n")
-
-  if( ! p_wxmenuExtras ) 
+  LOG("after extras menu creation"//\n"
+    )
+  if( ! p_wxmenuExtras )
     p_wxmenuExtras = new wxMenu;
 
+  std::string stdstr = "set update view interval" ;
+  LOGN("before appending menu item " << stdstr )
   p_wxmenuExtras->Append(
-    ID_UpdateViewInterval, 
-    //_T("&CPU % min and max.") 
-    _T("set update view interval")
+    ID_UpdateViewInterval,
+    //_T("&CPU % min and max.")
+    getwxString( stdstr )
     );
+  stdstr = "collect p-states as default voltage p-states" ;
+  LOGN("before appending menu item " << stdstr )
   mp_wxmenuitemCollectAsDefaultVoltagePerfStates = p_wxmenuExtras->AppendCheckItem(
-    ID_Collect_As_Default_Voltage_PerfStates, 
-    //_T("&CPU % min and max.") 
-    _T("collect p-states as default voltage p-states")
+    ID_Collect_As_Default_Voltage_PerfStates,
+    //_T("&CPU % min and max.")
+    getwxString( stdstr )
     );
 #ifdef _WINDOWS
   //wxMenu * p_wxmenuExtras = new wxMenu;
 //#endif
   //if( ! p_cpucontroller->mp_model->m_cpucoredata.
-  //  m_stdsetvoltageandfreqDefault.empty() 
+  //  m_stdsetvoltageandfreqDefault.empty()
   //  )
   {
-    if( ! p_wxmenuExtras ) 
+    if( ! p_wxmenuExtras )
       p_wxmenuExtras = new wxMenu;
+    stdstr = "enable own Dynamic Voltage and Frequency Scaling" ;
+    LOGN("before appending menu item " << stdstr )
     mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
-      ID_EnableOrDisableOtherDVFS
-      , _T("enable own Dynamic Voltage and Frequency Scaling")
+      ID_EnableOrDisableOwnDVFS
+      , getwxString( stdstr )
       );
     if( //p_cpucontroller->mp_model->m_cpucoredata.
       mp_model->m_cpucoredata.
-      m_stdsetvoltageandfreqWanted.empty() 
+      m_stdsetvoltageandfreqWanted.empty()
       )
-      mp_wxmenuitemOwnDVFS->Enable(false) ;
+    {
+      //Does not work.
+//      mp_wxmenuitemOwnDVFS->Enable(false) ;
+//      p_wxmenuExtras->Enable(ID_EnableOrDisableOwnDVFS , false ) ;
+      //      mp_wxmenuitemOwnDVFS->Enable(false) ;
+      mp_wxmenuitemOwnDVFS->SetHelp( wxT("no desired voltages for frequencies"
+        " available->no DVFS possible") ) ;
+    }
   }
 #endif
 #ifdef COMPILE_WITH_MSR_EXAMINATION
-  if( ! p_wxmenuExtras ) 
+  if( ! p_wxmenuExtras )
     p_wxmenuExtras = new wxMenu;
   p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
   p_wxmenuExtras->Append(ID_WriteToMSRdialog, _T("write to MSR dialog") );
 #endif
   if( p_wxmenuExtras )
+  {
+    LOGN("before adding menu Extras")
     mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
-
+  }
   if( mp_i_cpucontroller != NULL )
   {
     CreateDynamicMenus();
@@ -454,10 +482,16 @@ MainFrame::MainFrame(
 //  mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
 //#endif
   //mp_wxmenubar->Append( p_wxmenuNorthBridge, _T("&NorthBridge") );
+  //TODO program crash here for unicode versions (for working versions
+  // an OnSize() event was intermediate)
+  LOGN("before setting menu bar " << mp_wxmenubar)
+  //Just for testing.
+//  wxSleep(5) ;
   //SetMenuBar( p_wxmenuBar );
   //SetMenuBar( & m_wxmenubar );
   SetMenuBar( mp_wxmenubar );
 
+  LOGN("before creating status bar")
   CreateStatusBar();
 //  const char bits [] = {
 //      0,0,0,0,
@@ -467,16 +501,18 @@ MainFrame::MainFrame(
 //    } ;
 //  wxIcon wxicon(bits,4,4) ;
 //  SetIcon(wxicon);
-  Connect(wxEVT_PAINT, wxPaintEventHandler(MainFrame::OnPaint));
+//  Connect(wxEVT_PAINT, wxPaintEventHandler(MainFrame::OnPaint));
   //SetStatusText( _T("Welcome to wxWidgets!") );
+  LOGN("before starting the update view timer")
   //m_wxtimer.Start(1000);
   m_wxtimer.Start(m_dwTimerIntervalInMilliseconds);
+//  m_p_wxtimer->Start(m_dwTimerIntervalInMilliseconds);
   //http://docs.wxwidgets.org/stable/wx_wxtimer.html#wxtimersetowner:
-  //"Associates the timer with the given owner object. When the timer is 
-  //running, the owner will receive timer events with id equal to id 
+  //"Associates the timer with the given owner object. When the timer is
+  //running, the owner will receive timer events with id equal to id
   //specified here."
   m_wxtimer.SetOwner(this, TIMER_ID) ;
-  Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnSize));
+//  Connect(wxEVT_SIZE, wxSizeEventHandler(MainFrame::OnSize));
 
   if( mp_wxx86infoandcontrolapp->mp_wxdynlibcpucontroller )
   {
@@ -503,7 +539,8 @@ MainFrame::MainFrame(
     CPUcoreUsageGetterAttached(wxstrCPUcoreUsageGetterDynLibPath) ;
   }
 //  mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
-  LOG("end of main frame creation\n")
+  LOG("end of main frame creation"//\n"
+    )
 //  RedrawEverything() ;
 //  Refresh() ;
 //  InitDialog() ;
@@ -522,7 +559,7 @@ MainFrame::~MainFrame()
 
   //Release memory for array of pointers.
 //  delete [] m_arp_wxmenuitemPstate ;
-  delete [] marp_wxmenuItemHighLoadThread ;
+//  delete [] marp_wxmenuItemHighLoadThread ;
 	#ifdef COMPILE_WITH_CALC_THREAD
   if( mp_calculationthread )
     delete mp_calculationthread ;
@@ -541,47 +578,47 @@ MainFrame::~MainFrame()
 //	
 //}
 
-wxString MainFrame::BuildHighLoadThreadMenuText(
-  std::string str,
-  BYTE byPreviousAction)
-{
-  wxString wxstr = byPreviousAction == //ENDED ?
-    ICalculationThread::ended ?
-    //We need a _T() macro (wide char-> L"", char->"") for EACH 
-    //line to make it compatible between char and wide char.
-    _T("Start") : 
-    //We need a _T() macro (wide char-> L"", char->"") for EACH 
-    //line to make it compatible between char and wide char.
-    _T("End") ;
-  ////Invert the menu item's checked state.
-  //marp_wxmenuItemHighLoadThread[byCoreID]->Check(
-  //    ! marp_wxmenuItemHighLoadThread[byCoreID]->IsChecked () ) ;
-//  marp_wxmenuItemHighLoadThread[byCoreID]->SetText(
-//      wxstr +
-//      str
-//      );
-    return wxstr + wxString( 
-      //TODO this conversion may not work
-      (const wxChar*) str.c_str() ) ;
-}
-
-bool MainFrame::Confirm(const std::string & str)
-{
-  //::AfxMessageBox(str.c_str());
-
-  //To not show too many dialogs that the timer would bring up.
-//  if( m_bConfirmedYet )
-//  {
-//    m_bConfirmedYet = false ;
-//    ::wxMessageBox(wxString(
+//wxString MainFrame::BuildHighLoadThreadMenuText(
+//  std::string str,
+//  BYTE byPreviousAction)
+//{
+//  wxString wxstr = byPreviousAction == //ENDED ?
+//    ICalculationThread::ended ?
+//    //We need a _T() macro (wide char-> L"", char->"") for EACH
+//    //line to make it compatible between char and wide char.
+//    _T("Start") :
+//    //We need a _T() macro (wide char-> L"", char->"") for EACH
+//    //line to make it compatible between char and wide char.
+//    _T("End") ;
+//  ////Invert the menu item's checked state.
+//  //marp_wxmenuItemHighLoadThread[byCoreID]->Check(
+//  //    ! marp_wxmenuItemHighLoadThread[byCoreID]->IsChecked () ) ;
+////  marp_wxmenuItemHighLoadThread[byCoreID]->SetText(
+////      wxstr +
+////      str
+////      );
+//    return wxstr + wxString(
 //      //TODO this conversion may not work
-//      (const wxChar * ) str.c_str() )
-//      );
-//    m_bConfirmedYet = true ;
-//  }
-  //m_bConfirmedYet = true ;
-  return true;
-}
+//      (const wxChar*) str.c_str() ) ;
+//}
+
+//bool MainFrame::Confirm(const std::string & str)
+//{
+//  //::AfxMessageBox(str.c_str());
+//
+//  //To not show too many dialogs that the timer would bring up.
+////  if( m_bConfirmedYet )
+////  {
+////    m_bConfirmedYet = false ;
+////    ::wxMessageBox(wxString(
+////      //TODO this conversion may not work
+////      (const wxChar * ) str.c_str() )
+////      );
+////    m_bConfirmedYet = true ;
+////  }
+//  //m_bConfirmedYet = true ;
+//  return true;
+//}
 
 //bool MainFrame::Confirm(std::ostrstream & r_ostrstream
 //  //std::ostream & r_ostream
@@ -634,49 +671,49 @@ void MainFrame::CreateServiceMenuItems()
 //  p_wxmenuService->Append( ID_StopService , _T("Sto&p") );
     
   mp_wxmenubar->Append( p_wxmenuService, _T("&Service") ) ;
+  LOGN("end of CreateServiceMenuItems")
 }
 
-//void 
-wxMenuItem * MainFrame::AddDynamicallyCreatedMenu(
-  wxMenu * p_wxmenu,
-  WORD & r_wMenuID,
-  const wxString & r_wxstr
-  )
-{
-  wxMenuItem * p_wxmenuitemAppended = p_wxmenu->Append(r_wMenuID, r_wxstr );
-  Connect( r_wMenuID ++ , //wxID_ANY,
-    wxEVT_COMMAND_MENU_SELECTED ,
-    wxCommandEventHandler(MainFrame::OnDynamicallyCreatedUIcontrol)
-    );
-  return p_wxmenuitemAppended ;
-}
+////void
+//wxMenuItem * MainFrame::AddDynamicallyCreatedMenu(
+//  wxMenu * p_wxmenu,
+//  WORD & r_wMenuID,
+//  const wxString & r_wxstr
+//  )
+//{
+//  wxMenuItem * p_wxmenuitemAppended = p_wxmenu->Append(r_wMenuID, r_wxstr );
+//  Connect( r_wMenuID ++ , //wxID_ANY,
+//    wxEVT_COMMAND_MENU_SELECTED ,
+//    wxCommandEventHandler(MainFrame::OnDynamicallyCreatedUIcontrol)
+//    );
+//  return p_wxmenuitemAppended ;
+//}
 
-wxMenuItem * MainFrame::AddDynamicallyCreatedMenu(
-  wxMenu * p_wxmenu,
-  WORD & r_wMenuID,
-  const wxString & r_wxstr
-  , //void (wxEvtHandler::*wxEventFunction)(wxEvent&)
-  wxObjectEventFunction wxeee
-  , SpecificCPUcoreActionAttributes * p_scaa
-  )
-{
-  m_stdmapwxuicontroldata.insert(
-    std::make_pair(
-      r_wMenuID ,
-      //TODO release memory
-      p_scaa
-      )
-    ) ;
-  wxMenuItem * p_wxmenuitemAppended = p_wxmenu->Append(r_wMenuID, r_wxstr );
-  Connect( r_wMenuID ++ , //wxID_ANY,
-    wxEVT_COMMAND_MENU_SELECTED ,
-    //wxCommandEventHandler(
-    //wxEventFunction //)
-    wxeee
-    );
-  return p_wxmenuitemAppended ;
-}
-
+//wxMenuItem * MainFrame::AddDynamicallyCreatedMenu(
+//  wxMenu * p_wxmenu,
+//  WORD & r_wMenuID,
+//  const wxString & r_wxstr
+//  , //void (wxEvtHandler::*wxEventFunction)(wxEvent&)
+//  wxObjectEventFunction wxeee
+//  , SpecificCPUcoreActionAttributes * p_scaa
+//  )
+//{
+//  m_stdmapwxuicontroldata.insert(
+//    std::make_pair(
+//      r_wMenuID ,
+//      //TODO release memory
+//      p_scaa
+//      )
+//    ) ;
+//  wxMenuItem * p_wxmenuitemAppended = p_wxmenu->Append(r_wMenuID, r_wxstr );
+//  Connect( r_wMenuID ++ , //wxID_ANY,
+//    wxEVT_COMMAND_MENU_SELECTED ,
+//    //wxCommandEventHandler(
+//    //wxEventFunction //)
+//    wxeee
+//    );
+//  return p_wxmenuitemAppended ;
+//}
 
 //wxMenuItem * MainFrame::AddDynamicallyCreatedMenu(
 //  wxMenu * p_wxmenu,
@@ -704,29 +741,29 @@ wxMenuItem * MainFrame::AddDynamicallyCreatedMenu(
 //  return p_wxmenuitemAppended ;
 //}
 
-void MainFrame::CreateAndInitMenuItemPointers()
-{
-  marp_wxmenuItemHighLoadThread = new wxMenuItem * [
-      mp_cpucoredata->m_byNumberOfCPUCores ] ;
-  for( BYTE byIndex = 0 ; byIndex < mp_cpucoredata->m_byNumberOfCPUCores ;
-      ++ byIndex )
-      marp_wxmenuItemHighLoadThread[ byIndex ] = NULL ;
-}
-
-//void 
-//Return: TRUE: success.
-BYTE MainFrame::AddSetPstateMenuItem(
-  wxMenu * p_wxmenuCore
-  , BYTE byCoreID
-  , BYTE byPstateID 
-  //Must be a reference because changes to the variable should be 
-  //maintained OUTside this function.
-  , WORD & r_wMenuID
-  )
-{
-    BYTE byReturnValue = FALSE ;
-    return byReturnValue ;
-}
+//void MainFrame::CreateAndInitMenuItemPointers()
+//{
+//  marp_wxmenuItemHighLoadThread = new wxMenuItem * [
+//      mp_cpucoredata->m_byNumberOfCPUCores ] ;
+//  for( BYTE byIndex = 0 ; byIndex < mp_cpucoredata->m_byNumberOfCPUCores ;
+//      ++ byIndex )
+//      marp_wxmenuItemHighLoadThread[ byIndex ] = NULL ;
+//}
+//
+////void
+////Return: TRUE: success.
+//BYTE MainFrame::AddSetPstateMenuItem(
+//  wxMenu * p_wxmenuCore
+//  , BYTE byCoreID
+//  , BYTE byPstateID
+//  //Must be a reference because changes to the variable should be
+//  //maintained OUTside this function.
+//  , WORD & r_wMenuID
+//  )
+//{
+//    BYTE byReturnValue = FALSE ;
+//    return byReturnValue ;
+//}
 
 //void 
 //Return value: 
@@ -744,167 +781,169 @@ BYTE MainFrame::CreateDynamicMenus()
   m_arp_freqandvoltagesettingdlg = new FreqAndVoltageSettingDlg * [
     mp_cpucoredata->m_byNumberOfCPUCores];
   if(m_arp_freqandvoltagesettingdlg)
+  {
+    BYTE byPointerSize = sizeof( m_arp_freqandvoltagesettingdlg[0] ) ;
     //important: init pointers with NULL
     memset(
       m_arp_freqandvoltagesettingdlg
       , //NULL
         0
-      , sizeof(m_arp_freqandvoltagesettingdlg[0]) *
-        mp_cpucoredata->m_byNumberOfCPUCores );
+      , byPointerSize * mp_cpucoredata->m_byNumberOfCPUCores );
   //TRACE("sizeof: %u\n", sizeof(m_arp_freqandvoltagesettingdlg));
 #ifdef _DEBUG
 //  int i = sizeof(m_arp_freqandvoltagesettingdlg) ;
 #endif
-  for( BYTE byCoreID = 0 ; byCoreID < //m_byCoreNumber
-    mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCoreID )
-  {
-    p_wxmenuCore = new wxMenu;
-    //Memorize dynamically created menus in order to delete them of a 
-    // CPU controller DLL is attached more than once (else the wxWindows
-    // are deleted automatically when the superordinate window is closed).
-    m_vecp_wxmenuCore.push_back(p_wxmenuCore);
-    p_wxmenuCore->Append(wMenuID, _T("set frequency and voltage ") );
-    //for(BYTE byDivisorID = 0 ; byDivisorID < FIRST_RESERVED_DIVISOR_ID ; 
-    //  ++ byDivisorID )
-    //{
-    //  Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, 
-    //    wxCommandEventHandler(MyFrame::OnRuntimeCreatedMenu)//, & m_vecwxstring.back() 
-    //    );
-    //}
-    if( byCoreID == 0 ) 
-      m_nLowestIDForSetVIDnFIDnDID = wMenuID ;
-//    wxCPUcoreID wxcpucoreid(byCoreID)  ;
-//    m_stdvectorwxuicontroldata.push_back( //wxCPUcoreID(byCoreID)
-//      wxcpucoreid
-//      //wxObject()
-//      ) ;
-    m_stdmapwxuicontroldata.insert( 
-      std::make_pair( 
-        wMenuID ,
-        //TODO release memory
-        //new wxCPUcoreID(byCoreID) 
-        new SpecificCPUcoreActionAttributes(byCoreID)
-        //wxcpucoreid 
-        //wxObject() 
-        )
-      ) ;
-#ifdef _DEBUG
-//    wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
-      //& 
-      m_stdmapwxuicontroldata.find( wMenuID )->second ;
-    //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
-    //  m_stdmapwxuicontroldata.find( wMenuID )->second ;
-#endif
-    Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, 
-      wxCommandEventHandler(
-        //MainFrame::OnDynamicallyCreatedUIcontrol
-        MainFrame::OnPstateDialog )//, & m_vecwxstring.back()
-      //new wx
-      //, & m_stdvectorwxuicontroldata.back()
-      );
-    p_wxmenuCore->Append(wMenuID, _T("find different p-states") );
-    Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED, 
-      wxCommandEventHandler(
-      MainFrame::OnFindDifferentPstates )
-      );
-    #ifdef COMPILE_WITH_CALC_THREAD
-    marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
-      p_wxmenuCore,
-      wMenuID, //_T("high load thread (for stability check)")
-      BuildHighLoadThreadMenuText(
-       "high FPU load thread (for stability check)"
-        )
-      //Connect the action, that is a class derived from class xx directly
-      //with the menu item so that it is ensured to be the correct action
-      //(calling the action in an event function is more error-prone)
-      //TODO release memory
-      //, new CalculationThread(byCoreID, FPUcalculationThreadProc)
-      , wxCommandEventHandler( MainFrame::OnHighLoadThread )
-      , new CalculationThread(
-        byCoreID
-        , FPUcalculationThreadProc
-        , & ::wxGetApp() 
-        , ::wxGetApp().GetCPUcontroller() 
-        )
-      ) ;
-    //#endif //#ifdef COMPILE_WITH_CALC_THREAD
-    marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
-      p_wxmenuCore,wMenuID, //_T("high load thread (for stability check)")
-      BuildHighLoadThreadMenuText(
-      std::string( "high ALU load thread (for stability check)" )
-        )
-      //Connect the action, that is a class derived from class xx directly
-      //with the menu item so that it is ensured to be the correct action
-      //(calling the action in an event function is more error-prone)
-      //TODO release memory
-      //, new CalculationThread(byCoreID, HighALUloadThreadProc)
-      , wxCommandEventHandler( MainFrame::OnHighLoadThread )
-      , new CalculationThread(
-        byCoreID
-        , HighALUloadThreadProc 
-        , & ::wxGetApp()
-        , ::wxGetApp().GetCPUcontroller()
-        )
-      ) ;
-    #endif //    #ifdef COMPILE_WITH_CALC_THREAD
-
-    //marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
-    //  p_wxmenuCore,
-    //  wMenuID, //_T("high load thread (for stability check)")
-    //   _T("own DVFS")
-    //  //Connect the action, that is a class derived from class xx directly
-    //  //with the menu item so that it is ensured to be the correct action
-    //  //(calling the action in an event function is more error-prone)
-    //  //TODO release memory
-    //  //, new CalculationThread(byCoreID, HighALUloadThreadProc)
-    //  , wxCommandEventHandler( MainFrame::OnOwnDynFreqScaling )
-    //  , new SpecificCPUcoreActionAttributes(byCoreID)
-    //  ) ;
-    //OnOwnDynFreqScaling
-
-    //m_arp_wxmenuitemPstate[byCoreID * NUMBER_OF_PSTATES + 1] = 
-    //    AddDynamicallyCreatedMenu(p_wxmenuCore,wMenuID, _T("Set p-state &1")) ;
-    m_byNumberOfSettablePstatesPerCore = //NUMBER_OF_PSTATES ;
-      0 ;
-    if( byCoreID == 0 ) 
-      m_byMenuIndexOf1stPstate = wMenuID - m_nLowestIDForSetVIDnFIDnDID ;
-    //if( typeid (mp_i_cpucontroller ) == typeid(GriffinController) )
-    //{
-    //  for( byPstateID = 0 ; byPstateID < //3
-    //    m_byNumberOfSettablePstatesPerCore ; ++ byPstateID &&
-    //      //if == TRUE
-    //      byReturnValue
-    //     )
-    //    byReturnValue = AddSetPstateMenuItem(
-    //      p_wxmenuCore, byCoreID, byPstateID, wMenuID ) ;
-    //}
-    if( byReturnValue )
+    for( BYTE byCoreID = 0 ; byCoreID < //m_byCoreNumber
+      mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCoreID )
     {
+      p_wxmenuCore = new wxMenu;
+      //Memorize dynamically created menus in order to delete them of a
+      // CPU controller DLL is attached more than once (else the wxWindows
+      // are deleted automatically when the superordinate window is closed).
+      m_vecp_wxmenuCore.push_back(p_wxmenuCore);
+      p_wxmenuCore->Append(wMenuID, _T("set frequency and voltage ") );
+      //for(BYTE byDivisorID = 0 ; byDivisorID < FIRST_RESERVED_DIVISOR_ID ;
+      //  ++ byDivisorID )
+      //{
+      //  Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
+      //    wxCommandEventHandler(MyFrame::OnRuntimeCreatedMenu)//, & m_vecwxstring.back()
+      //    );
+      //}
       if( byCoreID == 0 )
+        m_nLowestIDForSetVIDnFIDnDID = wMenuID ;
+  //    wxCPUcoreID wxcpucoreid(byCoreID)  ;
+  //    m_stdvectorwxuicontroldata.push_back( //wxCPUcoreID(byCoreID)
+  //      wxcpucoreid
+  //      //wxObject()
+  //      ) ;
+      m_stdmapwxuicontroldata.insert(
+        std::make_pair(
+          wMenuID ,
+          //TODO release memory
+          //new wxCPUcoreID(byCoreID)
+          new SpecificCPUcoreActionAttributes(byCoreID)
+          //wxcpucoreid
+          //wxObject()
+          )
+        ) ;
+  #ifdef _DEBUG
+  //    wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
+        //&
+        m_stdmapwxuicontroldata.find( wMenuID )->second ;
+      //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
+      //  m_stdmapwxuicontroldata.find( wMenuID )->second ;
+  #endif
+      Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(
+          //MainFrame::OnDynamicallyCreatedUIcontrol
+          MainFrame::OnPstateDialog )//, & m_vecwxstring.back()
+        //new wx
+        //, & m_stdvectorwxuicontroldata.back()
+        );
+      p_wxmenuCore->Append(wMenuID, _T("find different p-states") );
+      Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(
+        MainFrame::OnFindDifferentPstates )
+        );
+      #ifdef COMPILE_WITH_CALC_THREAD
+      marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
+        p_wxmenuCore,
+        wMenuID, //_T("high load thread (for stability check)")
+        BuildHighLoadThreadMenuText(
+         "high FPU load thread (for stability check)"
+          )
+        //Connect the action, that is a class derived from class xx directly
+        //with the menu item so that it is ensured to be the correct action
+        //(calling the action in an event function is more error-prone)
+        //TODO release memory
+        //, new CalculationThread(byCoreID, FPUcalculationThreadProc)
+        , wxCommandEventHandler( MainFrame::OnHighLoadThread )
+        , new CalculationThread(
+          byCoreID
+          , FPUcalculationThreadProc
+          , & ::wxGetApp()
+          , ::wxGetApp().GetCPUcontroller()
+          )
+        ) ;
+      //#endif //#ifdef COMPILE_WITH_CALC_THREAD
+      marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
+        p_wxmenuCore,wMenuID, //_T("high load thread (for stability check)")
+        BuildHighLoadThreadMenuText(
+        std::string( "high ALU load thread (for stability check)" )
+          )
+        //Connect the action, that is a class derived from class xx directly
+        //with the menu item so that it is ensured to be the correct action
+        //(calling the action in an event function is more error-prone)
+        //TODO release memory
+        //, new CalculationThread(byCoreID, HighALUloadThreadProc)
+        , wxCommandEventHandler( MainFrame::OnHighLoadThread )
+        , new CalculationThread(
+          byCoreID
+          , HighALUloadThreadProc
+          , & ::wxGetApp()
+          , ::wxGetApp().GetCPUcontroller()
+          )
+        ) ;
+      #endif //    #ifdef COMPILE_WITH_CALC_THREAD
+
+      //marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
+      //  p_wxmenuCore,
+      //  wMenuID, //_T("high load thread (for stability check)")
+      //   _T("own DVFS")
+      //  //Connect the action, that is a class derived from class xx directly
+      //  //with the menu item so that it is ensured to be the correct action
+      //  //(calling the action in an event function is more error-prone)
+      //  //TODO release memory
+      //  //, new CalculationThread(byCoreID, HighALUloadThreadProc)
+      //  , wxCommandEventHandler( MainFrame::OnOwnDynFreqScaling )
+      //  , new SpecificCPUcoreActionAttributes(byCoreID)
+      //  ) ;
+      //OnOwnDynFreqScaling
+
+      //m_arp_wxmenuitemPstate[byCoreID * NUMBER_OF_PSTATES + 1] =
+      //    AddDynamicallyCreatedMenu(p_wxmenuCore,wMenuID, _T("Set p-state &1")) ;
+      m_byNumberOfSettablePstatesPerCore = //NUMBER_OF_PSTATES ;
+        0 ;
+      if( byCoreID == 0 )
+        m_byMenuIndexOf1stPstate = wMenuID - m_nLowestIDForSetVIDnFIDnDID ;
+      //if( typeid (mp_i_cpucontroller ) == typeid(GriffinController) )
+      //{
+      //  for( byPstateID = 0 ; byPstateID < //3
+      //    m_byNumberOfSettablePstatesPerCore ; ++ byPstateID &&
+      //      //if == TRUE
+      //      byReturnValue
+      //     )
+      //    byReturnValue = AddSetPstateMenuItem(
+      //      p_wxmenuCore, byCoreID, byPstateID, wMenuID ) ;
+      //}
+      if( byReturnValue )
       {
-        m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticID ;
-        //For removing per-core menus after unloading a CPU controller.
-        m_byIndexOf1stCPUcontrollerRelatedMenu = mp_wxmenubar->GetMenuCount()
-          ;
+        if( byCoreID == 0 )
+        {
+          m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticID ;
+          //For removing per-core menus after unloading a CPU controller.
+          m_byIndexOf1stCPUcontrollerRelatedMenu = mp_wxmenubar->GetMenuCount()
+            ;
+        }
+          //marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
+          //    p_wxmenuCore,wMenuID, _T("high load thread (for stability check)")) ;
+          //m_wxmenubar.Append(p_wxmenuCore, _T("for core &")+ byCoreID);
+          mp_wxmenubar->Append(
+            p_wxmenuCore,
+            wxString::Format(
+            //We need a _T() macro (wide char-> L"", char->"") for EACH
+            //line to make it compatible between char and wide char.
+            _T("%s%u")
+            //, _T("for core &")
+            , _T("core &")
+            , //_T('0'+byCoreID)
+              byCoreID )
+            );
+          //marp_wxmenuItemHighLoadThread[byCoreID]->Check(true) ;
+          //marp_wxmenuItemHighLoadThread[byCoreID]->Enable(false);
       }
-        //marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
-        //    p_wxmenuCore,wMenuID, _T("high load thread (for stability check)")) ;
-        //m_wxmenubar.Append(p_wxmenuCore, _T("for core &")+ byCoreID);
-        mp_wxmenubar->Append(
-          p_wxmenuCore,
-          wxString::Format(
-          //We need a _T() macro (wide char-> L"", char->"") for EACH 
-          //line to make it compatible between char and wide char.
-          _T("%s%u")
-          //, _T("for core &") 
-          , _T("core &") 
-          , //_T('0'+byCoreID)
-            byCoreID )
-          );
-        //marp_wxmenuItemHighLoadThread[byCoreID]->Check(true) ;
-        //marp_wxmenuItemHighLoadThread[byCoreID]->Enable(false);
-    }
-  } //for-loop
+    } //for-loop
+  }
   //SetMenuBar(&m_wxmenubar);
   return byReturnValue ;
 }
@@ -947,6 +986,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
   //Stop the timer (indirectly calls OnPaint()-> so another IPC thread could
   //be spawned).
   m_wxtimer.Stop() ;
+//  m_p_wxtimer->Stop() ;
   //TODO the IPC get CPU core data thread should have finished before any
   //other Xerces function is executed (else program crash AFAIR: error at;
   //"14 _fu71___ZN11xercesc_3_116XMLPlatformUtils15fgMemoryManagerE()
@@ -971,7 +1011,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"you must Wait() for a joinable thread or the system resources used by it
   //will never be freed,
-  mp_wxx86infoandcontrolapp->m_x86iandc_threadIPC.Wait() ;
+  mp_wxx86infoandcontrolapp->m_x86iandc_threadIPC.WaitForTermination() ;
   LOGN("after waiting for the end of the IPC thread")
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"and you also must delete the corresponding wxThread
@@ -1006,6 +1046,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
     std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/" +
       strPstateSettingsFileName ;
     LOGN("before checking for a changed p-states config ")
+    //TODO uncomment
     if( m_xercesconfigurationhandler.IsConfigurationChanged(//strPstateSettingsFileName
       stdstrCPUtypeRelativeFilePath ) )
     {
@@ -1075,6 +1116,7 @@ void MainFrame::OnConnectToOrDisconnectFromService(
 
 void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
 {
+  LOGN("OnContinueService")
   //ServiceBase::ContinueService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
@@ -1094,12 +1136,14 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
-void MainFrame::OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) )
+void MainFrame::OnDisableOtherVoltageOrFrequencyAccess(
+  wxCommandEvent & WXUNUSED(event) )
 {
   ::wxGetApp().mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
 }
 
-void MainFrame::OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) )
+void MainFrame::OnEnableOtherVoltageOrFrequencyAccess(
+  wxCommandEvent & WXUNUSED(event) )
 {
   ::wxGetApp().mp_dynfreqscalingaccess->EnableFrequencyScalingByOS() ;
 }
@@ -1227,6 +1271,7 @@ void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
+  LOGN("OnPauseService")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   bool bTryViaSCM = false ;
   //The connection may have broken after it was established, so check it here.
@@ -1238,7 +1283,7 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
   }
   if( ::wxGetApp().m_ipcclient.IsConnected() )
   {
-    LOGN("connected to the service")
+    LOGN("OnPauseService--connected to the service")
     //TODO possibly make IPC communication into a seperate thread because it
     // may freeze the whole GUI.
     ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(pause_service) ;
@@ -1264,7 +1309,7 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
             "control manager")) ;
       else
       {
-        wxString wxstr = wxT("no connected to the service\n"
+        wxString wxstr = wxT("not connected to the service\n"
           "->tried to pause via service control manager\n"
           "Error pausing the service via the service control manager:\n")
           + getwxString( stdstrMsg) ;
@@ -1489,7 +1534,7 @@ void MainFrame::CPUcontrollerDynLibAttached(const wxString & wxstrFilePath )
 
   //If both CPU controller and the CPU usage getter exist, DVFS is possible.
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
-    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+    p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
       , //const bool enable
       true ) ;
 }
@@ -1501,7 +1546,7 @@ void MainFrame::CPUcontrollerDeleted()
   mp_wxmenuFile->Enable( ID_Detach_CPU_controller_DLL
     , //const bool enable
     false ) ;
-  p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+  p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
     , //const bool enable
     false ) ;
 }
@@ -1518,7 +1563,7 @@ void MainFrame::CPUcoreUsageGetterAttached(const wxString & wxstrFilePath)
       "unload "
       " core usage getter ") + wxstrFilePath ) ;
   if( mp_wxx86infoandcontrolapp->GetCPUcontroller() )
-    p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+    p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
       , //const bool enable
       true ) ;
 
@@ -1535,7 +1580,7 @@ void MainFrame::CPUcoreUsageGetterDeleted()
   mp_wxmenuFile->Enable( ID_Detach_CPU_usage_getter_DLL
     , //const bool enable
     false ) ;
-  p_wxmenuExtras->Enable( ID_EnableOrDisableOtherDVFS
+  p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
     , //const bool enable
     false ) ;
 }
@@ -1567,6 +1612,24 @@ void MainFrame::OnHighLoadThread( wxCommandEvent & //WXUNUSED(wxevent)
 void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent) 
   wxevent )
 {
+  if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.empty() )
+  {
+    ::wxMessageBox(wxT("No wanted voltages for frequencies available->"
+      "Dynamic Voltage And Frequency Scaling not possible"
+      "\nYou may use the frequency and voltage settings dialog set at "
+      "least 2 voltages for 2 different CPU core multipliers/ frequencies")
+    ) ;
+    return ;
+  }
+  if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.size() == 1 )
+  {
+    ::wxMessageBox(wxT("Only 1 wanted voltage for a frequency available->"
+      "Dynamic Voltage And Frequency Scaling not possible"
+      "\nYou may use the frequency and voltage settings dialog set at "
+      "least 2 voltages for 2 different CPU core multipliers/ frequencies")
+      ) ;
+    return ;
+  }
   //May be NULL at startup.
   if( mp_i_cpucontroller &&     
     //May be NULL at startup.
@@ -1659,6 +1722,7 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
 void MainFrame::OnPstateDialog( wxCommandEvent & //WXUNUSED(event)
   wxevent )
 {
+  LOGN("OnPstateDialog")
   //May be NULL at startup.
   if( mp_i_cpucontroller )
   {
@@ -1965,7 +2029,7 @@ void MainFrame::DrawDiagramScale(
         stdmapYcoord2RightEndOfFreqString.insert(
           std::pair<WORD,WORD> ( wYcoordinate , wLeftEndOfCurrFreqText + wxcoordWidth ) ) ;
       }
-      LOGN("DrawDiagramScale drawing " << getstdstring( wxstrFreq )
+      LOGN("DrawDiagramScale drawing " << GetStdString( wxstrFreq )
         << " at " << wLeftEndOfCurrFreqText << ","
         << wYcoordinate )
       wxdc.DrawText(
@@ -2262,6 +2326,7 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
   , I_CPUcontroller * p_cpucontroller
   )
 {
+//  LOGN("StoreCurrentVoltageAndFreqInArray")
   if( //mp_i_cpucontroller
       p_cpucontroller )
   {
@@ -2306,6 +2371,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
             fMultiplier , fReferenceClockInMHz , fMultiplier *
             fReferenceClockInMHz
             ) ;
+//        LOGN("r_ar_wxstrFreqInMHz[ wCPUcoreID ]:" << GetStdString(
+//          r_ar_wxstrFreqInMHz[ wCPUcoreID ]) )
 //        wxstr = wxString::Format( wxT("%u"), wFreqInMHz ) ;
         wxsize = r_wxdc.GetTextExtent(//wxstr
           r_ar_wxstrFreqInMHz[ wCPUcoreID ] ) ;
@@ -2346,10 +2413,10 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
         r_ar_wxstrTempInCelsius[ wCPUcoreID ] =
 #if wxUSE_UNICODE == 1
         //"converting to execution character set: Illegal byte sequence"
-        //for wxT("? °C ")
+        //for wxT("? ï¿½C ")
       wxT("? deg C ") ;
 #else
-      wxT("? °C ") ;
+      wxT("? ï¿½C ") ;
 #endif
       else
         //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
@@ -2361,13 +2428,15 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
           //Use wxT() to enable to compile with both unicode and ANSI.
 #if wxUSE_UNICODE == 1
         //"converting to execution character set: Illegal byte sequence"
-        //for wxT("%.3g °C ")
+        //for wxT("%.3g ï¿½C ")
           wxT("%.3g deg C ")
 #else
-          wxT("%.3g °C ")
+          wxT("%.3g ï¿½C ")
 #endif
           ,
           fTempInCelsius ) ;
+//      LOGN("r_ar_wxstrTempInCelsius[ wCPUcoreID ]:" << GetStdString(
+//        r_ar_wxstrTempInCelsius[ wCPUcoreID ]) )
       wxsize = r_wxdc.GetTextExtent(//wxstr
         r_ar_wxstrTempInCelsius[ wCPUcoreID ] ) ;
       nWidth = wxsize.GetWidth() ;
@@ -2381,6 +2450,7 @@ void MainFrame::DrawCurrentPstateInfo(
   wxDC & r_wxdc
   )
 {
+  LOGN("DrawCurrentCPUcoreData begin")
 //  BYTE byCPUcoreID = 0 ;
    //DWORD dwEDX ;
    //DWORD dwLowmostBitsCurrentLimitRegister, dwLowmostBits ;
@@ -2396,19 +2466,27 @@ void MainFrame::DrawCurrentPstateInfo(
   ICPUcoreUsageGetter * p_cpucoreusagegetter =
       mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter ;
   I_CPUcontroller * p_cpucontroller = mp_i_cpucontroller ;
-  if( //::wxGetApp().m_ipcclient.IsConnected()
-    false
+#ifdef _DEBUG
+  bool bIsGettingCPUcoreData = mp_wxx86infoandcontrolapp->m_ipcclient.
+    m_vbIsGettingCPUcoreData ;
+#endif
+//  LOGN("DrawCurrentPstateInfo")
+  if( ::wxGetApp().m_ipcclient.IsConnected()
+    //This flag should be (set to) "true" as long as writing and reading data
+    //to the service is successful.
+//      mp_wxx86infoandcontrolapp->m_ipcclient.m_vbIsGettingCPUcoreData
+//    false
     )
   {
-    DEBUGN("DrawCurrentPstateInfo: connected to the service")
+    LOGN("DrawCurrentPstateInfo: connected to the service")
     //TODO possibly make IPC communication into a separate thread because it
     // may freeze the whole GUI.
 //    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(get_current_CPU_data) ;
 //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
 
-    DEBUGN("MainFrame::DrawCurrentPstateInfo "
-      "m_bCPUcoreUsageConsumed: " << m_bCPUcoreUsageConsumed
-      << "mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData:" <<
+    LOGN("MainFrame::DrawCurrentPstateInfo "
+      "m_bCPUcoreUsageConsumed: " << m_bCPUcoreUsageConsumed )
+    LOGN("mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData:" <<
       mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData )
     //Do not run it more than once concurrently.
     if( m_bCPUcoreUsageConsumed
@@ -2433,7 +2511,7 @@ void MainFrame::DrawCurrentPstateInfo(
 ////        dwSizeInBytes ,
 //        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ,
 //        L"IPC_buffer" ) ;
-//      readXMLConfig(
+//      ReadXMLdocumentInitAndTermXerces(
 ////        membufinputsource,
 //        r_ipcclient.m_arbyIPCdata ,
 //        r_ipcclient.m_dwSizeInByte ,
@@ -2446,14 +2524,18 @@ void MainFrame::DrawCurrentPstateInfo(
           m_sax2_ipc_current_cpu_data_handler ;
       p_cpucoreusagegetter = & mp_wxx86infoandcontrolapp->
           m_sax2_ipc_current_cpu_data_handler ;
+      LOGN("DrawCurrentCPUcoreData before GetNumberOfLogicalCPUcores" )
       //The number of CPU cores is known if the IPC data were got at first.
       WORD wNumCPUcores = p_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
       if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
         mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
+      SetTitle( m_wxstrTitle + wxT("--values from service") ) ;
     }
   }
   else
   {
+    SetTitle( m_wxstrTitle //+ wxT("--values from CPU controller")
+      ) ;
     p_cpucoreusagegetter = mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter ;
   }
 //  DEBUGN("DrawCurrentPstateInfo CPU controller address:" << mp_i_cpucontroller )
@@ -2472,7 +2554,7 @@ void MainFrame::DrawCurrentPstateInfo(
     //could be too short-> So only try to get usage here if no DVFS thread.
     if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
     {
-//      DEBUGN("DrawCurrentPstateInfo before GetPercentalUsageForAllCores" )
+      LOGN("DrawCurrentCPUcoreData before GetPercentalUsageForAllCores" )
 //      mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter->
       p_cpucoreusagegetter->
         GetPercentalUsageForAllCores(
@@ -2558,6 +2640,7 @@ void MainFrame::DrawCurrentPstateInfo(
        ) ;
      WORD wTextHeight = wxcoordHeight + wxcoordDescent ;
      wxcoordX = 45 ;
+     LOGN("DrawCurrentCPUcoreData before drawing the CPU core numbers")
      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
        ++ wCoreID )
      {
@@ -2619,6 +2702,7 @@ void MainFrame::DrawCurrentPstateInfo(
      if( //mp_i_cpucontroller
          p_cpucontroller )
      {
+       LOGN("DrawCurrentCPUcoreData before drawing the CPU core data")
       for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
         ++ wCoreID )
       {
@@ -2696,7 +2780,7 @@ void MainFrame::DrawCurrentPstateInfo(
       }
       //   } //for-loop
   }
-//  DEBUGN("MainFrame::DrawCurrentPstateInfo end")
+  LOGN("DrawCurrentCPUcoreData end")
 }
 
 void MainFrame::DrawCurrentVoltageSettingsCurve(
@@ -2810,6 +2894,7 @@ void MainFrame::DrawVoltageFreqCross(
   , const wxColor * cp_wxcolor 
   )
 {
+  LOGN("DrawVoltageFreqCross begin")
   WORD wXcoordinate = 
     //Explicit cast to avoid (g++) warning.
     (WORD)
@@ -2870,6 +2955,7 @@ void MainFrame::OnEraseBackground(wxEraseEvent& event)
 
 void MainFrame::OnPaint(wxPaintEvent & event)
 {
+  LOGN("OnPaint begin")
 //  DEBUGN("OnPaint CPU controller address:" << mp_i_cpucontroller <<
 //    "usage getter addr.:" << mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
 //    << "mp_wxbitmap:" << mp_wxbitmap )
@@ -3034,7 +3120,7 @@ void MainFrame::OnPaint(wxPaintEvent & event)
     wxpaintdc.Clear();
     wxpaintdc.DrawText( wxT("no CPU controller available->e.g. attach a DLL") , 0 , 0 ) ;
   }
-//  DEBUGN("OnPaint ende")
+  LOGN("OnPaint end")
 }
 
 //order of submenus/ menu items of "core x" menus.
@@ -3064,6 +3150,7 @@ void MainFrame::EndDynVoltAndFreqScalingThread(
 
 void MainFrame::Notify() //overrides wxTimer::Notify()
 {
+  LOGN("Notify")
   m_bDrawFreqAndVoltagePointForCurrCoreSettings =
 	! m_bDrawFreqAndVoltagePointForCurrCoreSettings ;
     Refresh() ;
@@ -3172,6 +3259,7 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
 
 void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
+  LOGN("on dyn created control")
   int nMenuEventID = wxevent.GetId() ;
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  if( nMenuEventID == ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq )
@@ -3241,15 +3329,31 @@ void MainFrame::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
     {
       case //0:
         Settings :
-        if( m_arp_freqandvoltagesettingdlg[byCoreID] )
-          m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
-        else
+        if( mp_cpucoredata->m_arfAvailableMultipliers &&
+            mp_cpucoredata->m_arfAvailableVoltagesInVolt )
         {
-          //If created as local variable on stack the dialog would disappear
-          //immediately.
           if( m_arp_freqandvoltagesettingdlg[byCoreID] )
             m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
         }
+        else
+        {
+          //TODO the dialog may be shown, but writing the p-state must be
+          //prevented if there are no voltages and/ or multipliers because
+          //_usually_ (voltage not for Nehalem/ i7 720 qm ) both are needed.
+          if( ! mp_cpucoredata->m_arfAvailableMultipliers )
+            wxMessageBox(
+              wxT("no multipliers available->no setting possible") ) ;
+          if( ! mp_cpucoredata->m_arfAvailableVoltagesInVolt )
+            wxMessageBox(
+              wxT("no multipliers available->no setting possible") ) ;
+        }
+//        else
+//        {
+//          //If created as local variable on stack the dialog would disappear
+//          //immediately.
+//          if( m_arp_freqandvoltagesettingdlg[byCoreID] )
+//            m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
+//        }
       break;
 //      case setp_state2:
 //        PossiblyAskForOSdynFreqScalingDisabling();
@@ -3375,13 +3479,13 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
   }
 #endif // wxHAS_POWER_EVENTS
 
-void MainFrame::OnInitDialog(wxInitDialogEvent& event )
-{
-  LOGN("OnInitDialog")
-//  RedrawEverything() ;
-//  Update() ;
-//  Refresh() ;
-}
+//void MainFrame::OnInitDialog(wxInitDialogEvent& event )
+//{
+//  LOGN("OnInitDialog")
+////  RedrawEverything() ;
+////  Update() ;
+////  Refresh() ;
+//}
 
 void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
 {
@@ -3393,10 +3497,16 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
     strPstateSettingsFileName )
     )
   {
+    //If the program is executed (->current working dir is elsewhere)
+    //in another path than where it is stored then THIS (current working dir)
+    //path should be used for storing files.
+    wxString wxstrCurrentWorkingDir = ::wxGetCwd() ;
+    LOGN( "current working dir path:" << GetStdString( wxstrCurrentWorkingDir ) )
     LOGN( "for file dialog: relative dir path=" << strCPUtypeRelativeDirPath )
     wxString wxstrFilePath = ::wxFileSelector( 
       wxT("Select file path") 
-      , Getstdtstring( strCPUtypeRelativeDirPath ).c_str()
+      , wxstrCurrentWorkingDir + wxFileName::GetPathSeparator() +
+        Getstdtstring( strCPUtypeRelativeDirPath ).c_str()
       , Getstdtstring( strPstateSettingsFileName ) .c_str()
       , wxT("xml")
       , wxT("*.*")
@@ -3413,7 +3523,8 @@ void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
       //The check whether the DOM tree differs from program data should be
       //redone because in the meantime between asking "save changes" other
       //file modifications could have been done.
-      m_xercesconfigurationhandler.MergeWithExistingConfigFile( 
+      //TODO uncomment
+      m_xercesconfigurationhandler.MergeWithExistingConfigFile(
         GetStdString( std::tstring( wxstrFilePath.c_str() ) ).c_str()
         , * mp_model ,
         strPstateSettingsFileName ) ;
@@ -3432,7 +3543,9 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
 
 void MainFrame::OnTimerEvent(wxTimerEvent &event)
 {
+  LOGN("OnTimerEvent begin")
 //  DEBUGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
+//  LOGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
   //May be NULL at startup.
   I_CPUcontroller * p_cpucontroller ;
 //  ICPUcoreUsageGetter * p_cpucoreusagegetter ;
@@ -3442,7 +3555,7 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
         mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler ;
 //    p_cpucoreusagegetter = &
 //        mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler ;
-    if( !mp_wxbitmap )
+    if( ! mp_wxbitmap )
       RecreateDisplayBuffers() ;
   }
   else
@@ -3499,7 +3612,8 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
 //      else
 
       if( m_bDiagramNotDrawn //&& mp_i_cpucontroller
-          && mp_i_cpucontroller->m_fReferenceClockInMHz
+          && //mp_i_cpucontroller->m_fReferenceClockInMHz
+          p_cpucontroller->m_fReferenceClockInMHz
           )
       {
         LOGN("diagram not already drawn and reference clock <> 0 ")
@@ -3526,6 +3640,7 @@ void MainFrame::OnTimerEvent(wxTimerEvent &event)
       //Also refresh if just a core usage getter (for showing the usage per core)
       Refresh() ;
   }
+  LOGN("OnTimerEvent end")
 }
 
 void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
@@ -3550,6 +3665,8 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
         m_dwTimerIntervalInMilliseconds = ulMs ;
         m_wxtimer.Stop() ;
         m_wxtimer.Start(ulMs) ;
+//        m_p_wxtimer->Stop() ;
+//        m_p_wxtimer->Start(ulMs) ;
       }
     }
     else
@@ -3580,6 +3697,7 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::RecreateDisplayBuffers()
 {
+  LOGN("RecreateDisplayBuffers")
   if( mp_wxbitmap )
     delete mp_wxbitmap ;
   wxRect rect = GetClientRect();
@@ -3657,6 +3775,19 @@ void MainFrame::RedrawEverything()
   LOGN("RedrawEverything mp_i_cpucontroller:" << mp_i_cpucontroller)
   //May be NULL at startup.
   if( mp_i_cpucontroller )
+//  I_CPUcontroller * p_cpucontroller ;
+//  if( ::wxGetApp().m_ipcclient.IsConnected() )
+//  {
+//    p_cpucontroller = &
+//        mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler ;
+//    if( !mp_wxbitmap )
+//      RecreateDisplayBuffers() ;
+//  }
+//  else
+//  {
+//    p_cpucontroller = mp_i_cpucontroller ;
+//  }
+//  if( p_cpucontroller )
   {
     DetermineMaxVoltageAndMaxFreqDrawWidth(m_wxmemorydcStatic) ;
     //Control access to m_bAllowCPUcontrollerAccess between threads.
@@ -3742,7 +3873,8 @@ void MainFrame::RedrawEverything()
   } // if( mp_i_cpucontroller )
   else
   {
-    if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
+    if( ::wxGetApp().m_ipcclient.IsConnected() ||
+      mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
       //Necessary for OnPaint() ;
       RecreateDisplayBuffers() ;
   }
@@ -3751,60 +3883,62 @@ void MainFrame::RedrawEverything()
 //Also called when CPU controller was changed.
 void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
 {
+  LOGN("SetCPUcontroller")
   mp_i_cpucontroller = p_cpucontroller ;
   m_wMaxFreqInMHzTextWidth = 0 ;
   m_wMaxVoltageInVoltTextWidth = 0 ;
   m_wMaxTemperatureTextWidth = 0 ;
 }
 
-void MainFrame::UpdatePowerSettings(
-  wxPowerType powerType,
-  wxBatteryState batteryState
-  )
-{
-    wxString powerStr;
-    switch ( m_powerType = powerType )
-    {
-        case wxPOWER_SOCKET:
-            powerStr = _T("wall");
-            break;
-        case wxPOWER_BATTERY:
-            powerStr = _T("battery");
-            break;
-        default:
-            wxFAIL_MSG(_T("unknown wxPowerType value"));
-            // fall through
-        case wxPOWER_UNKNOWN:
-            powerStr = _T("psychic");
-            break;
-    }
-
-    wxString batteryStr;
-    switch ( m_batteryState = batteryState )
-    {
-        case wxBATTERY_NORMAL_STATE:
-            batteryStr = _T("charged");
-            break;
-        case wxBATTERY_LOW_STATE:
-            batteryStr = _T("low");
-            break;
-        case wxBATTERY_CRITICAL_STATE:
-            batteryStr = _T("critical");
-            break;
-        case wxBATTERY_SHUTDOWN_STATE:
-            batteryStr = _T("empty");
-            break;
-        default:
-            wxFAIL_MSG(_T("unknown wxBatteryState value"));
-            // fall through
-        case wxBATTERY_UNKNOWN_STATE:
-            batteryStr = _T("unknown");
-            break;
-    }
-    SetStatusText( wxString::Format (
-      _T("System is on %s power, battery state is %s"),
-      powerStr.c_str(),
-      batteryStr.c_str()
-        )
-      );
-}
+//void MainFrame::UpdatePowerSettings(
+//  wxPowerType powerType,
+//  wxBatteryState batteryState
+//  )
+//{
+//  LOGN("UpdatePowerSettings")
+//    wxString powerStr;
+//    switch ( m_powerType = powerType )
+//    {
+//        case wxPOWER_SOCKET:
+//            powerStr = _T("wall");
+//            break;
+//        case wxPOWER_BATTERY:
+//            powerStr = _T("battery");
+//            break;
+//        default:
+//            wxFAIL_MSG(_T("unknown wxPowerType value"));
+//            // fall through
+//        case wxPOWER_UNKNOWN:
+//            powerStr = _T("psychic");
+//            break;
+//    }
+//
+//    wxString batteryStr;
+//    switch ( m_batteryState = batteryState )
+//    {
+//        case wxBATTERY_NORMAL_STATE:
+//            batteryStr = _T("charged");
+//            break;
+//        case wxBATTERY_LOW_STATE:
+//            batteryStr = _T("low");
+//            break;
+//        case wxBATTERY_CRITICAL_STATE:
+//            batteryStr = _T("critical");
+//            break;
+//        case wxBATTERY_SHUTDOWN_STATE:
+//            batteryStr = _T("empty");
+//            break;
+//        default:
+//            wxFAIL_MSG(_T("unknown wxBatteryState value"));
+//            // fall through
+//        case wxBATTERY_UNKNOWN_STATE:
+//            batteryStr = _T("unknown");
+//            break;
+//    }
+//    SetStatusText( wxString::Format (
+//      _T("System is on %s power, battery state is %s"),
+//      powerStr.c_str(),
+//      batteryStr.c_str()
+//        )
+//      );
+//}

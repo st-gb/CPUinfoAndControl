@@ -1,8 +1,9 @@
 #include "NamedPipeClient.hpp"
-#include "global.h" //LOGN
+#include <global.h> //LOGN
 #include <windows.h>
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
-
+//including specstrings.h lead to error messages for std::string include files?!
+//#include <specstrings.h> //for __out
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/named_pipe_client.htm
 
 #define BUFSIZE 512
@@ -37,7 +38,8 @@ BYTE NamedPipeClient::Init()
       if ( m_handleClientPipe != INVALID_HANDLE_VALUE )
       {
         m_bConnected = true ;
-        LOGN("got handle to the service's pipe--connected to it")
+        LOGN("got handle to the service's pipe at address " <<
+          m_handleClientPipe << "--connected to it")
         // Break if the pipe handle is valid. 
         break;
       }
@@ -81,50 +83,75 @@ BYTE NamedPipeClient::Init()
 
 bool NamedPipeClient::IsConnected()
 {
+  LOGN("IsConnected begin")
   bool bConnected = false ;
   DWORD dwState , dwCurInstances ;
   DWORD nMaxUserNameSize = 0 ;
-  BOOL bool_ = ::GetNamedPipeHandleState(
-    m_handleClientPipe , //__in       HANDLE hNamedPipe,
-    & dwState , //__out_opt  LPDWORD lpState,
-    //http://msdn.microsoft.com/en-us/library/aa365443%28VS.85%29.aspx:
-    //"A pointer to a variable that receives the number of current pipe
-    //instances."
-    & dwCurInstances ,//__out_opt  LPDWORD lpCurInstances,
-    //http://msdn.microsoft.com/en-us/library/aa365443%28v=VS.85%29.aspx:
-    //"This parameter must be NULL if the specified pipe handle is to the
-    //server end of a named pipe or if client and server processes are on the
-    //same computer. This parameter can be NULL if this information is not
-    //required."
-    NULL , //__out_opt  LPDWORD lpMaxCollectionCount,
-    //http://msdn.microsoft.com/en-us/library/aa365443%28v=VS.85%29.aspx:
-    //"This parameter must be NULL if the specified pipe handle is to the
-    //server end of a named pipe or if client and server processes are on the
-    //same computer. This parameter can be NULL if this information is not
-    //required."
-    NULL ,//__out_opt  LPDWORD lpCollectDataTimeout,
-    //"This parameter must be NULL if the specified pipe handle is to the
-    //client end of a named pipe."
-    NULL ,//__out_opt  LPTSTR lpUserName,
-    nMaxUserNameSize //__in       DWORD nMaxUserNameSize
-  );
-  if( bool_ )
+//  LOGN("IsConnected before GetNamedPipeHandleState")
+  m_criticalsection_typeIOandIsconnected.Enter() ;
+  if( m_vbIsReadingOrWriting )
   {
-    DEBUGN("pipe state:" << dwState << "# of current instances:"
-      << dwCurInstances )
-//    DEBUGN("already connected to the service's pipe")
-    if( dwCurInstances > 0 )
-      bConnected = true ;
+    //Assume it is connected because the probability is high that we were not
+    //in the timespan where an unconnected pipe was between begin of
+    //::ReadFile(...) and return of ::ReadFile(...).
+    bConnected = true ;
+    m_criticalsection_typeIOandIsconnected.Leave() ;
   }
-  else //-> failed when it was not connected
+  else
   {
-    DWORD dwErrorCode = ::GetLastError() ;
-//    DEBUGN("GetNamedPipeHandleState failed")
-    //Error code if not connected--avoid (too many) messages for this error
-    //code.
-    if( dwErrorCode != ERROR_INVALID_HANDLE )
-      LOGN("Getting pipe info failed:" << LocalLanguageMessageAndErrorCodeA(dwErrorCode) )
+    BOOL bool_ =
+//    m_bool =
+      //If this method is called by thread A while thread B is waiting for data
+      //via ::ReadFile(...) it waits as long until ::ReadFile(...) returns.
+      ::GetNamedPipeHandleState(
+      m_handleClientPipe , //__in       HANDLE hNamedPipe,
+      & dwState , //__out_opt  LPDWORD lpState,
+      //http://msdn.microsoft.com/en-us/library/aa365443%28VS.85%29.aspx:
+      //"A pointer to a variable that receives the number of current pipe
+      //instances."
+      & dwCurInstances ,//__out_opt  LPDWORD lpCurInstances,
+      //http://msdn.microsoft.com/en-us/library/aa365443%28v=VS.85%29.aspx:
+      //"This parameter must be NULL if the specified pipe handle is to the
+      //server end of a named pipe or if client and server processes are on the
+      //same computer. This parameter can be NULL if this information is not
+      //required."
+      NULL , //__out_opt  LPDWORD lpMaxCollectionCount,
+      //http://msdn.microsoft.com/en-us/library/aa365443%28v=VS.85%29.aspx:
+      //"This parameter must be NULL if the specified pipe handle is to the
+      //server end of a named pipe or if client and server processes are on the
+      //same computer. This parameter can be NULL if this information is not
+      //required."
+      NULL ,//__out_opt  LPDWORD lpCollectDataTimeout,
+      //"This parameter must be NULL if the specified pipe handle is to the
+      //client end of a named pipe."
+      NULL ,//__out_opt  LPTSTR lpUserName,
+      nMaxUserNameSize //__in       DWORD nMaxUserNameSize
+    );
+    //Leave the critical section after calling GetNamedPipeHandleState
+    //because else may happen: m_vbIsReadingOrWriting is false, next instruction
+    //in other thread is "ReadFile() -> blocks the execution of
+    //GetNamedPipeHandleState
+    m_criticalsection_typeIOandIsconnected.Leave() ;
+//    LOGN("IsConnected after GetNamedPipeHandleState")
+    if( bool_ )
+    {
+      DEBUGN("pipe state:" << dwState << "# of current instances:"
+        << dwCurInstances )
+  //    DEBUGN("already connected to the service's pipe")
+      if( dwCurInstances > 0 )
+        bConnected = true ;
+    }
+    else //-> failed when it was not connected
+    {
+      DWORD dwErrorCode = ::GetLastError() ;
+  //    DEBUGN("GetNamedPipeHandleState failed")
+      //Error code if not connected--avoid (too many) messages for this error
+      //code.
+      if( dwErrorCode != ERROR_INVALID_HANDLE )
+        LOGN("Getting pipe info failed:" << LocalLanguageMessageAndErrorCodeA(dwErrorCode) )
+    }
   }
+  LOGN("IsConnected end")
   return bConnected ;
 }
 
@@ -134,8 +161,44 @@ bool NamedPipeClient::IsConnected()
 //  m_pfnCallback = pfnCallback ;
 //}
 
+BOOL NamedPipeClient::Read(
+  //__out
+  LPVOID lpBuffer,
+  //__in
+  DWORD nNumberOfBytesToRead,
+  //__out_opt
+  LPDWORD lpNumberOfBytesRead,
+  //__inout_opt
+  LPOVERLAPPED lpOverlapped
+  )
+{
+  //If another thread calls "IsConnected"
+  m_criticalsection_typeIOandIsconnected.Enter() ;
+  m_vbIsReadingOrWriting = true ;
+  m_criticalsection_typeIOandIsconnected.Leave() ;
+  m_bool =
+  ::ReadFile(
+    m_handleClientPipe ,
+    lpBuffer,
+    nNumberOfBytesToRead,
+    lpNumberOfBytesRead,
+    lpOverlapped
+    ) ;
+  m_vbIsReadingOrWriting = false ;
+  if( m_bool )
+  {
+    m_bConnected = true ;
+  }
+  else
+    m_bConnected = false ;
+  return m_bool ;
+}
+
+//As seen in a log file: while a thread called ::ReadFile() on the pipe handle
+// another thread can NOT write concurrently to the same pipe.
 BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
 {
+  LOGN("SendCommandAndGetResponse begin")
 //  BYTE byValue ;
   DWORD dwNumberOfBytesWritten ;
 //  DWORD dwError ;
@@ -146,19 +209,26 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
 //  wchar_t wch ;
   //clear before every pipe write.
   m_stdwstrMessage = L"" ;
-  DEBUGN("before write to pipe ")
+  LOGN("before write message to pipe "
+#ifdef _DEBUG //because the own logger can only filter strings that matcb
+    //full log messages
+    << m_handleClientPipe
+#endif
+    )
   // Send a message to the pipe server. 
-  BOOL fSuccess = ::WriteFile( 
-    m_handleClientPipe        // pipe handle 
+  BOOL fSuccess = //::WriteFile(
+//    m_handleClientPipe        // pipe handle
+    Write(
     //lpvMessage,             // message 
     //stop_service
-    , & byMessage
+    & byMessage
     // (lstrlen(lpvMessage)+1)*sizeof(TCHAR), // message length 
     , 1
     , & dwNumberOfBytesWritten   // bytes written 
     , NULL );                  // not overlapped 
    if ( ! fSuccess )
    {
+     m_vbIsGettingCPUcoreData = false ;
      DWORD dwLastError = ::GetLastError() ;
      //http://msdn.microsoft.com/en-us/library/aa365747%28VS.85%29.aspx:
      //"To get extended error information, call the GetLastError function."
@@ -232,9 +302,15 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
 //   } while ( //!fSuccess
 //       dwNumBytesRead > 0 );  // repeat loop if ERROR_MORE_DATA
 
-   DEBUGN("before read from pipe ")
-   fSuccess = ::ReadFile(
-     m_handleClientPipe ,    // pipe handle
+   LOGN("before read message size from pipe "
+#ifdef _DEBUG //because the own logger can only filter strings that matcb
+     //full log messages
+     << m_handleClientPipe
+#endif
+     )
+   fSuccess = //::ReadFile(
+     //m_handleClientPipe ,    // pipe handle
+     Read(
      // buffer to receive reply
 //     & dwNumberOfBytes , //chBuf,
      & m_dwSizeInByte ,
@@ -243,9 +319,14 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
      & dwNumBytesRead,  // number of bytes read
      NULL // NULL = not overlapped
      );
-   DEBUGN( (fSuccess ? "successfully got" : "failed to read")
-      << dwNumBytesRead << " bytes from pipe: " << //dwNumberOfBytes
-      m_dwSizeInByte )
+   LOGN( (fSuccess ? "successfully got" : "failed to read")
+#ifdef _DEBUG //because the own logger can only filter strings that matcb
+     //full log messages
+      << dwNumBytesRead
+#endif
+      << " bytes from pipe " //<< //dwNumberOfBytes
+      //m_dwSizeInByte
+      )
    if( fSuccess
        // do NOT read 0 bytes! this blocks at ReadFile although the server
        // finished to write 0 bytes
@@ -253,13 +334,21 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
        m_dwSizeInByte
      )
    {
+//     m_vbIsGettingCPUcoreData = true ;
      if( m_arbyIPCdata )
        delete [] m_arbyIPCdata ;
 //     BYTE * arby = new BYTE[dwValue + 2 ] ;
      m_arbyIPCdata = new BYTE[ m_dwSizeInByte ] ;
-     DEBUGN("before read " << m_dwSizeInByte << " bytes from pipe ")
-     ::ReadFile(
-      m_handleClientPipe ,    // pipe handle
+     LOGN("before read "
+#ifdef _DEBUG //because the own logger can only filter strings that matcb
+    //full log messages
+       << m_dwSizeInByte
+#endif
+       << " bytes from pipe ")
+     fSuccess =
+//     ::ReadFile(
+//      m_handleClientPipe ,    // pipe handle
+       Read(
 //      arby , //chBuf,    // buffer to receive reply
       m_arbyIPCdata ,
       // size of buffer
@@ -268,10 +357,15 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
       & dwNumBytesRead,  // number of bytes read
       NULL // NULL = not overlapped
       );
-     DEBUGN( (fSuccess ? "successfully got" : "failed to read")
-        << dwNumBytesRead << " bytes from pipe")
+     LOGN( (fSuccess ? "successfully got" : "failed to read")
+#ifdef _DEBUG //because the own logger can only filter strings that matcb
+    //full log messages
+        << dwNumBytesRead
+#endif
+      << " bytes from pipe")
      if( fSuccess )
      {
+       m_vbIsGettingCPUcoreData = true ;
 //       //Term. NULL char
 //       arby [dwNumberOfBytes ] = 0 ;
 //       arby [dwNumberOfBytes + 1 ] = 0 ;
@@ -284,9 +378,46 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
          ) ;
        DEBUGWN_WSPRINTF(L"got message from pipe:%ls", m_stdwstrMessage.c_str() )
      }
+     else
+       m_vbIsGettingCPUcoreData = false ;
 //     delete [] arby ;
    }
+   else
+     m_vbIsGettingCPUcoreData = false ;
+   LOGN("SendCommandAndGetResponse end")
    return 1 ;
+}
+
+BOOL NamedPipeClient::Write(
+  LPCVOID lpBuffer,
+  //__in
+  DWORD nNumberOfBytesToWrite,
+  //__out_opt
+    LPDWORD lpNumberOfBytesWritten,
+  //__inout_opt
+    LPOVERLAPPED lpOverlapped
+  )
+{
+  //If another thread calls "IsConnected"
+  m_criticalsection_typeIOandIsconnected.Enter() ;
+  m_vbIsReadingOrWriting = true ;
+  m_criticalsection_typeIOandIsconnected.Leave() ;
+  m_bool =
+  ::WriteFile(
+    m_handleClientPipe ,
+    lpBuffer,
+    nNumberOfBytesToWrite,
+    lpNumberOfBytesWritten,
+    lpOverlapped
+    ) ;
+  m_vbIsReadingOrWriting = false ;
+  if( m_bool )
+  {
+    m_bConnected = true ;
+  }
+  else
+    m_bConnected = false ;
+  return m_bool ;
 }
 
 //BYTE NamedPipeClient::SendCommandAndGetResponse(

@@ -3,6 +3,8 @@ no Makefile found
 
 C:\msys\1.0\bin\make.exe: *** couldn't commit memory for cygwin heap, Win32 error 0
 
+-> einzelne MinGW und MSYS-Pakete manuell herunterladen hat funktioniert auf einer Testinstallation
+
 ->
 http://www.avrfreaks.net/index.php?name=PNphpBB2&file=printview&t=51843&start=0:
 "have just experienced the same problem with the ARM tools. Turning off Norman anti virus fixed the problem, re-launching it immediately re-created the problem. "
