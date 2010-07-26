@@ -14,13 +14,16 @@
 #endif
 #include <Windows/PowerProf/PowerProfDynLinked.hpp>
 //#include <Windows/DynFreqScalingAccess.hpp>
+#include <Windows/multithread/Thread.hpp>
 #ifdef COMPILE_WITH_IPC
   #include <Windows/NamedPipe/NamedPipeServer.hpp>
 #endif //#ifdef COMPILE_WITH_IPC
 #include <Windows/Service/ServiceBase.hpp>
 //#include <Windows/WinRing0dynLinked.hpp>
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
-#include <Xerces/IPC.hpp> //class Xerces::IPCdataHandler
+#include <wxWidgets/multithread/wxConditionBasedI_Condition.hpp>
+#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+#include <Xerces/IPC/IPCdataGenerator.hpp> //class Xerces::IPCdataHandler
 
 #include <fstream> //for class ofstream
 #include <vector>
@@ -35,6 +38,10 @@
 class WinRing0DynLinked ;
 class I_DynFreqScalingAccess ;
 class DynFreqScalingThreadBase ;
+//namespace Xerces
+//{
+//  class IPCdataHandler ;
+//}
 
 class CPUcontrolService
   :
@@ -58,7 +65,9 @@ private :
   HANDLE m_handleMapFile;
 #endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   //LPSTR m_archServiceName ;
+public:
   Xerces::IPCdataHandler m_ipc_datahandler ;
+private:
   std::string m_stdstrServiceName ;
   std::string m_stdstrSharedMemoryName ;//= "CPUcontrolService" ;
 //  std::wstring m_stdwstrProgramName ;
@@ -120,6 +129,13 @@ public:
     std::vector<std::string> m_vecstdstrCommandLineArgs ;
     ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
     DynFreqScalingThreadBase * mp_dynfreqscalingthreadbase ;
+    wxConditionBasedI_Condition
+      m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree ;
+    wxConditionBasedI_Condition
+      m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished ;
+//    x86IandC::thread_type m_x86iandc_threadGetCurrentCPUcoreData ;
+    Windows_API::Thread m_x86iandc_threadGetCurrentCPUcoreData ;
+    volatile bool m_vbAlterCPUcoreDataForIPC ;
 public :
     CPUcontrolService(//const char* szServiceName
       std::wstring & r_stdwstrProgramName
@@ -144,6 +160,7 @@ public :
       std::string stdstrInput ,
       std::vector<std::string> & vecstdstrParams 
       ) ;
+    void EndAlterCurrentCPUcoreIPCdata() ;
     static void FillCmdLineOptionsList() ;
     std::string GetLogFilePath() ;
     std::string GetValueIfHasPrefix( 

@@ -7,11 +7,12 @@
 #include <stdio.h> //for sprintf(...)
 #include <fstream> //for class ofstream
 #include <Controller/stdtstr.hpp> //std::tstring
+#include <Controller/Logger/log4cplus_Logger.hpp>
 #include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
-#include <Xerces/IPC.hpp>
+//#include <Xerces/IPC/IPCdataGenerator.hpp>
 #include <string>
 #include <conio.h> //for getche()
 
@@ -101,6 +102,88 @@ void OuputCredits()
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
 }
 
+void HandleErrorPlace(BYTE by, const std::string & cr_stdstr )
+{
+}
+
+void DeleteService(const TCHAR * cp_tchServiceName
+  , std::string & stdtstrProgramName )
+{
+  DWORD dwErrorCodeFor1stError ;
+  BYTE by = ServiceBase::DeleteService(//"GriffinStateService"
+    cp_tchServiceName
+    , dwErrorCodeFor1stError
+    ) ;
+  if( by )
+  {
+//    HandleErrorPlace(by, "for deleting the service:") ;
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+//      ServiceBase::GetPossibleSolution(dwErrorCodeFor1stError)
+//      ) ;
+    std::string stdstr = "for deleting the service:" ;
+    switch(by)
+    {
+    case ServiceBase::OpenSCManagerFailed:
+    {
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution(
+        dwErrorCodeFor1stError ,
+        cp_tchServiceName
+        , stdstrPossibleSolution
+        ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        stdstr
+        << "opening the service control manager failed"
+        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
+        << stdstrPossibleSolution
+        ) ;
+    }
+      break ;
+    case ServiceBase::OpenServiceFailed:
+    {
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution(
+        dwErrorCodeFor1stError ,
+        cp_tchServiceName
+        , stdstrPossibleSolution
+        ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        stdstr
+        << "Opening the service for service name \"" <<
+          cp_tchServiceName << "\" failed."
+        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
+        << stdstrPossibleSolution
+        )
+    }
+        break ;
+    case ServiceBase::DeleteServiceFailed:
+    {
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution(
+        dwErrorCodeFor1stError ,
+        cp_tchServiceName
+        , stdstrPossibleSolution
+        ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "Deleting service failed."
+        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
+        << stdstrPossibleSolution
+        )
+    }
+    break ;
+    }
+  }
+  else
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
+      << cp_tchServiceName
+      << "\"succeeded." )
+  std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
+  PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
+    stdwstr ) ;
+  powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+  powerprofdynlinked.OutputAllPowerSchemes() ;
+}
+
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
 int main( int argc, char *  argv[] )
@@ -114,13 +197,15 @@ int main( int argc, char *  argv[] )
   std::string stdstrLogFileName = std::string(argv[0]) + std::tstring("_log.txt") ;
   try
   {
-    DEBUG("Begin of main program entry point\n");
     SetExePathAsCurrentDir() ;
+#ifdef USE_LOG4CPLUS
+    init_log4cplus() ;
+#endif
+    g_logger.OpenFile( //std::string("GriffinControl_log.txt")
+      stdstrLogFileName ) ;
+    DEBUG("Begin of main program entry point\n");
     //Must set the exe path as current dir before (else the file is located in
     //: C:\WINDOWS\System32) !
-    g_logger.OpenFile( //std::string("GriffinControl_log.txt") 
-      stdstrLogFileName ) ;
-
     //PossiblyOutputUsage() ;
     OuputCredits() ;
     if( argc == 1 )
@@ -154,16 +239,7 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-          DWORD dwErrorCodeFor1stError ;
-          ServiceBase::DeleteService(//"GriffinStateService"
-             vecstdstrParams.at(1).c_str()
-             , dwErrorCodeFor1stError
-             ) ;
-          std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
-          PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
-            stdwstr ) ;
-          powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
-          powerprofdynlinked.OutputAllPowerSchemes() ;
+          DeleteService( vecstdstrParams.at(1).c_str(), stdtstrProgramName ) ;
         }
         bStartService = false ;
       }
@@ -229,8 +305,8 @@ int main( int argc, char *  argv[] )
       << PossibleSolution(r_connect_to_scm_error.m_dwErrorCode) )
   }
   std::cout << //"Waiting for input in order for the output to be readable."
-     " Hit any key to exit this program\n" ;
-   getche() ;
-   DEBUG("end of main program entry point\n");
-   return 0 ;
+    " Hit any key to exit this program\n" ;
+  getche() ;
+  DEBUG("end of main program entry point\n");
+  return 0 ;
 }

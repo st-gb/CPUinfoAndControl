@@ -1,0 +1,1 @@
+g++ -O -DDO_MOT_COMPILE_INLINE -I.. -I. -I%COMMON_SOURCECODE_ROOT_PATH% performance_test.cpp -o performance_test.exe

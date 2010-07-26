@@ -78,7 +78,8 @@ DWORD
         //  );
       }
     }
-    LOG("Ended high load thread\n");
+    LOG("Ended high load thread"//\n"
+      )
     return 0;
 }
 

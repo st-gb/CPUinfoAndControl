@@ -55,7 +55,8 @@ wxDynFreqScalingTimer::wxDynFreqScalingTimer(
       BYTE byDivisorID, byFrequencyID ;
       //mp_icpu->GetPercentalUsageForBothCores(m_arf);
       //DEBUG("core 0 usage: %lf, core 1 usage: %lf\n",m_arf[0], m_arf[1]);
-      LOG("core 0 usage: " << m_arf[0] << ", core 1 usage: " << m_arf[1] << "\n" );
+      LOG("core 0 usage: " << m_arf[0] << ", core 1 usage: " << m_arf[1] //<< "\n"
+        )
     //  if(m_arf[0] == 100.0f )
     //  {
     //    //mp_pumastatectrl->GetMaximumFrequencyInMHz()
@@ -240,7 +241,8 @@ wxDynFreqScalingTimer::wxDynFreqScalingTimer(
         //    * 0.15f 
         //  ) ;
         //DEBUG("timer--new voltage: %f\n",m_fVoltage);
-        LOG("timer--new voltage: " << m_fVoltage << "\n" );
+        LOG("timer--new voltage: " << m_fVoltage //<< "\n"
+          )
         //PState pstate(PState::GetVoltageID(m_fVoltage),byDID,byFID);
         PState pstate(PState::GetVoltageID(m_fVoltage),byDivisorID,byFrequencyID,2);
         //PState pstate2(pstate) ;

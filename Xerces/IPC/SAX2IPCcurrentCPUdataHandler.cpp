@@ -155,6 +155,7 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
           , L"reference_clock_in_MHz" )
           )
         {
+          LOGN("SAX2IPCcurrentCPUdataHandler reference_clock_in_MHz attribute")
 //          m_stdmap_wCoreNumber2fReferenceClock.insert( std::pair<WORD,float> (
 //              wValue, fValue ) ) ;
           voltageandmultiandrefclock.m_fReferenceClock = fValue ;
@@ -165,6 +166,7 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
           , L"voltage_in_Volt" )
           )
         {
+          LOGN("SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute")
 //          m_stdmap_wCoreNumber2fVoltageInVolt.insert( std::pair<WORD,float> (
 //              wValue, fValue ) ) ;
           voltageandmultiandrefclock.m_fVoltageInVolt = fValue ;

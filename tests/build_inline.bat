@@ -1,0 +1,1 @@
+g++ -O -I.. -I. -I%COMMON_SOURCECODE_ROOT_PATH% performance_test.cpp -o inline_performance_test.exe

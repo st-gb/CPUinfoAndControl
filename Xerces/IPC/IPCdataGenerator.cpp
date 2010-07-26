@@ -20,9 +20,24 @@
 namespace Xerces
 {
 IPCdataHandler::IPCdataHandler(Model & r_model )
-  : mr_model (r_model )
+  :
+    m_arbyData ( NULL ) ,
+    mr_model (r_model )
 {
+  //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"
+  //: program crash if more than 1 thread entered
+  //"GetCurrentCPUcoreAttributeValues" and so more than 1 time Initalize() was
+  // called.
+  m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
+}
 
+IPCdataHandler::~IPCdataHandler()
+{
+  if( m_arbyData )
+    delete [] m_arbyData ;
+  LOGN("BEFORE terminating Xerces") ;
+  XMLPlatformUtils::Terminate();
+  LOGN("after terminating Xerces") ;
 }
 
 DWORD IPCdataHandler::GetResponse(BYTE byCommand, BYTE * & r_arbyResponseData )
@@ -40,27 +55,11 @@ DWORD IPCdataHandler::GetResponse(BYTE byCommand, BYTE * & r_arbyResponseData )
 BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
 {
   BYTE * arby = NULL ;
+  if( m_arbyData )
+    delete [] m_arbyData ;
   //from Xerces' CreateDOMDocument sample:
   // Initialize the XML4C2 system.
-  try
-  {
-    //http://xerces.apache.org/xerces-c/program-3.html:
-    //"Independent of the API you want to use, DOM, SAX, or SAX2, your
-    //application must initialize the Xerces system before using the API[...]"
-    //Initialize() must be called _before_ any Xerces function call, else SIGSEV
-    // /program crash.
-    XMLPlatformUtils::Initialize();
-  }
-  catch(const XMLException & toCatch)
-  {
-    char *pMsg = XMLString::transcode(toCatch.getMessage());
-    LOGN( "GetCurrentCPUcoreAttributeValues--Error during Xerces-c Initialization.\n"
-         << "  Exception message:"
-         << pMsg )
-    XMLString::release(&pMsg);
-//      return 1;
-    return NULL ;
-  }
+//  x86InfoAndControl::InitializeXerces()
  {
    //  Nest entire test in an inner block.
    //  The tree we create below is the same that the XercesDOMParser would
@@ -72,11 +71,14 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
    //     <developedBy>Apache Software Foundation</developedBy>
    // </company>
 
+   //TODO the attribute values only need to be modified, creating the
+    // DOM tree every time is not necessary
    DOMImplementation * p_dom_implementation =
        DOMImplementationRegistry::getDOMImplementation( X("Core") );
-
+   LOGN("After getting DOM implementation") ;
    if ( p_dom_implementation )
    {
+     CPUcoreData & r_cpucoredata = mr_model.m_cpucoredata ;
      try
      {
        std::string stdstr ;
@@ -85,20 +87,20 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
 //                   X("CPU_core_data"),         // root element name
          L"CPU_core_data" ,
          0); // document type object (DTD).
-
+       LOGN("After creating XML document") ;
        DOMElement * p_dom_elementRoot = p_dom_document->getDocumentElement();
 
-       //LOGN_TYPE
-       LOGN( "XML_IPC GetCurrentCPUcoreAttributeValues before lock"
-         //, Logger::sync
-         )
-       //This method atomically releases the lock on the mutex associated with
-       //this condition (this is why it must be locked prior to calling Wait)
-       mr_model.m_cpucoredata.m_mutexCPUdataCanBeSafelyRead.Lock() ;
-       //LOGN_TYPE
-       LOGN( "XML_IPC GetCurrentCPUcoreAttributeValues after Lock()"
-         //,Logger::sync
-         )
+//       //LOGN_TYPE
+//       LOGN( "XML_IPC GetCurrentCPUcoreAttributeValues before lock"
+//         //, Logger::sync
+//         )
+//       //This method atomically releases the lock on the mutex associated with
+//       //this condition (this is why it must be locked prior to calling Wait)
+//       mr_model.m_cpucoredata.m_mutexCPUdataCanBeSafelyRead.Lock() ;
+//       //LOGN_TYPE
+//       LOGN( "XML_IPC GetCurrentCPUcoreAttributeValues after Lock()"
+//         //,Logger::sync
+//         )
 
        //Wait for a possible change of the current CPU data to finish (these
        //data may be modified if the DVFS thread is running)
@@ -116,7 +118,14 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
        //this condition (this is why it must be locked prior to calling Wait)
        //and puts the thread to sleep until Signal  or Broadcast  is called.
        //It then locks the mutex again and returns."
-       mr_model.m_cpucoredata.m_conditionCPUdataCanBeSafelyRead.Wait() ;
+//       mr_model.m_cpucoredata.m_conditionCPUdataCanBeSafelyRead.Wait() ;
+       r_cpucoredata.m_win32eventCPUdataCanBeSafelyRead.Wait() ;
+//       DEBUGN("mutex is locked?"
+//         << mr_model.m_cpucoredata.m_mutexCPUdataCanBeSafelyRead. )
+//       //http://docs.wxwidgets.org/stable/wx_wxcondition.html:
+//       //"It then locks the mutex again and returns."
+//       //So unlock it for other clients.
+//       mr_model.m_cpucoredata.m_mutexCPUdataCanBeSafelyRead.Unlock() ;
        //LOGN_TYPE
        LOGN( "XML_IPC GetCurrentCPUcoreAttributeValues after Wait()"
          //,Logger::sync
@@ -129,32 +138,38 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
        WORD wNumCPUcores = mr_model.m_cpucoredata.m_byNumberOfCPUCores ;
        PerCPUcoreAttributes * arp_percpucoreattributes =
            mr_model.m_cpucoredata.m_arp_percpucoreattributes ;
+       DOMElement * p_dom_elementCore ;
        for( WORD wCPUcoreIndex = 0 ; wCPUcoreIndex < wNumCPUcores ;
          ++ wCPUcoreIndex )
        {
-         DOMElement * p_dom_elementCore = p_dom_document->createElement(
-           X("core") );
+         p_dom_elementCore = p_dom_document->createElement(
+           L"core" );
          p_dom_elementRoot->appendChild(p_dom_elementCore);
 
          stdstr = to_stdstring<WORD>( wCPUcoreIndex ) ;
-         p_dom_elementCore->setAttribute(X("number"), X(stdstr.c_str() ));
+         p_dom_elementCore->setAttribute( L"number" , X(stdstr.c_str() ));
 
          stdstr = to_stdstring<float>(
            mr_model.m_cpucoredata.m_arfCPUcoreLoadInPercent[wCPUcoreIndex] ) ;
-         p_dom_elementCore->setAttribute(X("load"), X(stdstr.c_str() ));
+         p_dom_elementCore->setAttribute( L"load" , X(stdstr.c_str() ));
+
+         stdstr = to_stdstring<float>(
+             arp_percpucoreattributes[wCPUcoreIndex].m_fVoltageInVolt ) ;
+         p_dom_elementCore->setAttribute( L"voltage_in_Volt" ,
+           X(stdstr.c_str() ));
 
          stdstr = to_stdstring<float>(
              arp_percpucoreattributes[wCPUcoreIndex].m_fMultiplier ) ;
-         p_dom_elementCore->setAttribute(X("multiplier"), X(stdstr.c_str() ));
+         p_dom_elementCore->setAttribute( L"multiplier" , X(stdstr.c_str() ));
 
          stdstr = to_stdstring<float>(
              arp_percpucoreattributes[wCPUcoreIndex].m_fReferenceClockInMhz ) ;
-         p_dom_elementCore->setAttribute(X("reference_clock_in_MHz"),
+         p_dom_elementCore->setAttribute( L"reference_clock_in_MHz" ,
            X(stdstr.c_str() ));
 
          stdstr = to_stdstring<float>(
              arp_percpucoreattributes[wCPUcoreIndex].m_fTempInDegCelsius) ;
-         p_dom_elementCore->setAttribute(X("temp_in_deg_Celsius"),
+         p_dom_elementCore->setAttribute( L"temp_in_deg_Celsius" ,
            X(stdstr.c_str() ));
 
          p_dom_elementRoot->appendChild(p_dom_elementCore);
@@ -176,6 +191,12 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
 //         DOMText*    devByDataVal = p_dom_document->createTextNode(
 //           X("Apache Software Foundation"));
 //         devByElem->appendChild(devByDataVal);
+       }
+       if( mr_model.m_cpucoredata.m_bTooHot )
+       {
+         p_dom_elementCore = p_dom_document->createElement(
+           L"core" );
+         p_dom_elementRoot->appendChild( p_dom_elementCore ) ;
        }
        //LOGN_TYPE
        LOGN( "XML_IPC GetCurrentCPUcoreAttributeValues before ThreadFinishedAccess()"
@@ -219,6 +240,7 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
        {
          memcpy( arby, cp_xmlbyteBuffer, xmlsize_tBufferLength ) ;
          r_dwByteSize = xmlsize_tBufferLength ;
+         m_dwByteSize = xmlsize_tBufferLength ;
        }
 #ifdef TEST_VERSION
        std::ofstream stdofstreamData ;
@@ -235,12 +257,13 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
        std::string stdstrAllXMLdata( //const char * s
          (char*) cp_xmlbyteBuffer , //size_t n
          xmlsize_tBufferLength );
-       LOGN( "XML data: " << //stdstrAllXMLdata
+//       LOGN(
+       DEBUGN(
+         "XML data: " << //stdstrAllXMLdata
          //should be NULL-terminated
          cp_xmlbyteBuffer )
        theOutputDesc->release();
        theSerializer->release();
-
        p_dom_document->release();
      }
      catch (const OutOfMemoryException&)
@@ -265,7 +288,10 @@ BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
 //       errorCode = 4;
    }
   }
-  XMLPlatformUtils::Terminate();
+//  LOGN("BEFORE terminating Xerces") ;
+//  XMLPlatformUtils::Terminate();
+//  LOGN("after terminating Xerces") ;
+  m_arbyData = arby ;
   return arby ;
 } //GetCurrentCPUcoreAttributeValues()
 }//namespace Xerces

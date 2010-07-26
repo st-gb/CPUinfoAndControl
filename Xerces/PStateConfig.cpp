@@ -277,7 +277,8 @@
       catch (const XMLException& toCatch)
       {
         char* message = XMLString::transcode(toCatch.getMessage());
-        LOG( "Error during Xerces initialization! :\n" << message << "\n" );
+        LOG( "Error during Xerces initialization! :\n" << message //<< "\n"
+          )
         XMLString::release(&message);
       }
       LOGN("configuration between " << mpc_chFullXMLFilePath <<
@@ -1077,7 +1078,8 @@
       catch (const XMLException& toCatch)
       {
           char* message = XMLString::transcode(toCatch.getMessage());
-          LOG( "Error during initialization! :\n" << message << "\n" );
+          LOG( "Error during initialization! :\n" << message //<< "\n"
+            )
           XMLString::release(&message);
           return 1;
       }
@@ -1111,6 +1113,7 @@
       //Initialize() must be called _before_ any Xerces function call, else SIGSEV
       // /program crash.
       XMLPlatformUtils::Initialize();
+      LOGN("Xerces successfully initialized")
       m_bXercesSuccessfullyInitialzed = true ;
       mp_model = p_model ;
     }
@@ -1145,4 +1148,5 @@
     //When Terminate() was called in another block (even if in a function that
     //is called in the same block) than program crash.
     XMLPlatformUtils::Terminate();
+    LOGN("Xerces terminated")
   }

@@ -1,0 +1,445 @@
+/*
+ * Griffin.hpp (".hpp" because of C++'s "inline" keyword)
+ *
+ *  Created on: Jul 11, 2010
+ *      Author: Stefan
+ *
+ * functions that are used by I_CPUcontroller-derived class and by DLL
+ */
+
+#ifndef GRIFFIN_H_
+#define GRIFFIN_H_
+
+#include <preprocessor_helper_macros.h> //BITMASK_FOR_LOWMOST_3BIT
+//#include <math.h> //log2(...), pow()
+
+//for ReadMSR(), WriteMSR(); should be the file for
+// I_CPUcontroller-derived class (that calls I_CPUcontroller-derived::ReadMSR()
+//or for the DLL (that calls the exe's exported function)
+// 1 include path must match the path where the header file is in.
+#include <inline_register_access_functions.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
+
+//extern //inline
+//  BYTE ReadMSR(
+//  DWORD dwRegisterIndex,   // MSR index
+//  PDWORD p_dwEAX,     // bit  0-31
+//  PDWORD p_dwEDX,     // bit 32-63
+//       //1bin =core 0; 10bin=2dec= core 1
+// DWORD_PTR affinityMask  // Thread Affinity Mask
+//  ) ;
+////extern
+//  inline
+//  BYTE WriteMSR(
+//  DWORD dwRegisterIndex,   // MSR index
+//  DWORD dwEAX,     // bit  0-31
+//  DWORD dwEDX,     // bit 32-63
+//       //1bin =core 0; 10bin=2dec= core 1
+//  DWORD_PTR affinityMask  // Thread Affinity Mask
+//  ) ;
+
+extern BYTE g_byFreqID,g_byDivisorID ;
+extern BYTE g_byValue1 , g_byValue2, g_byValue3 ;
+extern BYTE g_byDivisor ;
+extern DWORD g_dwMSRhighmost, g_dwMSRlowmost ;
+//MSRC001_0071 COFVID Status Register
+//54:49 MainPllOpFreqIdMax: main PLL operating frequency ID maximum.
+extern float g_fMainPllOpFreqIdMax ;
+extern float g_fMainPllOpFreqId ;
+extern float g_fMainPllOpFreqIdMaxDiv2 ;
+extern float g_fMaxMultiDiv2 ;
+extern float g_fValue1 ;
+
+WORD GetMaximumVoltageID() ;
+WORD GetMinimumVoltageID() ;
+void GetMinAndMaxVoltageID(BYTE &,BYTE &) ;
+
+inline float * GetAvailableVoltages(WORD & r_wNum )
+{
+//  g_byValue1 = GetMaximumVoltageID() ;
+//  g_byValue2 = GetMinimumVoltageID() ;
+  GetMinAndMaxVoltageID(g_byValue1,g_byValue2) ;
+  r_wNum = ( g_byValue1 - g_byValue2 + 1 ) ;
+  DEBUGN("# VIDs:" << (WORD) r_wNum )
+  float * ar_f = new float[ r_wNum ] ;
+  DEBUGN("ar_f:" << ar_f )
+  if( ar_f )
+  {
+    WORD wIndex = 0 ;
+    for( BYTE wCurrentVoltageID =
+      //for AMD Griffin: max. VID = min voltage
+        g_byValue1 ;
+      wCurrentVoltageID >= g_byValue2 ; -- wCurrentVoltageID )
+    {
+      g_fValue1 =
+        //VID 28 = 1.2 = 1.55 - 28 * 0.0125 ;
+        //VID 64 = 0.75 = 1.55 - 64 * 0.0125
+        1.55f - wCurrentVoltageID * 0.0125f ;
+      DEBUGN("adding voltage " << g_fValue1 )
+      ar_f[ wIndex ++ ] = g_fValue1 ;
+    }
+  }
+  return ar_f ;
+}
+
+//inline
+//void GetMainPllOpFreqIdMax() ;
+//Gets the max. multiplier.
+inline void GetMainPllOpFreqIdMax()
+{
+  DEBUGN("GetMainPllOpFreqIdMax")
+  ReadMSR(
+    COFVID_STATUS_REGISTER ,
+    & g_dwMSRlowmost ,
+    & g_dwMSRhighmost ,
+    1 ) ;
+  //"54:49 MainPllOpFreqIdMax"
+  g_fMainPllOpFreqIdMax = (g_dwMSRhighmost >> (49-32) &
+    BITMASK_FOR_LOWMOST_6BIT );
+}
+
+inline void GetMinAndMaxVoltageID(BYTE & byMaxVID,BYTE & byMinVID)
+{
+  ReadMSR(
+    COFVID_STATUS_REGISTER,
+    & g_dwMSRlowmost,
+    & g_dwMSRhighmost,
+    1 ) ;
+  byMaxVID = ( g_dwMSRhighmost >>
+    //"48:42 [...]: minimum voltage. Read-only. Specifies the VID code
+    //corresponding to the minimum voltage (highest VID code) that the processor
+    //drives. 00h indicates that no minimum VID code is specified.
+    //See section 2.4.1 [Processor Power Planes And Voltage Control]."
+    ( COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID - 32 )
+    ) & BITMASK_FOR_LOWMOST_7BIT;
+  DEBUGN("highest VID:" << (WORD) byMaxVID )
+  byMinVID = ( g_dwMSRhighmost >>
+  //"41:35 [...]: maximum voltage. Read-only. Specifies the VID code
+  //corresponding to the maximum voltage (lowest VID code) that the processor
+  //drives. 00h indicates that no maximum VID code is specified.
+  //See section 2.4.1 [Processor Power Planes And Voltage Control].
+    ( COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID - 32 )
+    ) & BITMASK_FOR_LOWMOST_7BIT;
+  DEBUGN("lowest VID:" << (WORD) byMinVID )
+}
+
+inline WORD GetMaximumVoltageID()
+{
+//    return 64 ;
+  DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
+  ReadMSR(
+    COFVID_STATUS_REGISTER,
+    & dwEAXlowMostBits,
+    & dwEDXhighMostBits,
+    1 ) ;
+  BYTE byHighestVID = ( dwEDXhighMostBits >>
+      ( COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID - 32 )
+      ) & BITMASK_FOR_LOWMOST_7BIT;
+  DEBUGN("highest VID:" << (WORD)byHighestVID)
+  return byHighestVID ;
+}
+
+inline WORD GetMinimumVoltageID()
+{
+//    return 36 ;
+  DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
+  ReadMSR(
+    COFVID_STATUS_REGISTER,
+    & dwEAXlowMostBits,
+    & dwEDXhighMostBits,
+    1
+    ) ;
+  BYTE byLowestVID = ( dwEDXhighMostBits >>
+      ( COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID - 32 )
+      ) & BITMASK_FOR_LOWMOST_7BIT;
+  DEBUGN("lowest VID:" << (WORD)byLowestVID)
+  return byLowestVID ;
+}
+
+//inline void GetMSRregisterValue(
+//    BYTE byVoltageID,
+//    //const DIDandFID & didandfid ,
+//    BYTE FID ,
+//    BYTE DID ,
+//    DWORD & dwMSRhighmost ,
+//    DWORD & dwMSRlowmost
+//    ) ;
+//inline WORD GetVoltageID(float fVoltageInVolt ) ;
+inline void GetMSRregisterValue(
+  BYTE byVoltageID,
+//  const DIDandFID & didandfid ,
+  BYTE byFrequencyID ,
+  BYTE byDivisorID ,
+  DWORD & dwHighmostMSRvalue ,
+  DWORD & dwLowmostMSRvalue
+  )
+{
+  //GetFIDandDID( wFreqInMHz, byFrequencyID, byDivisorID ) ;
+  //didandfid
+  dwHighmostMSRvalue = 0 ;
+  SET_P_STATE_TO_VALID(dwHighmostMSRvalue) ;
+
+  //See AMD Family 11h Processor BKDG (document # 41256),
+  // "MSRC001_00[6B:64] P-state [7:0] Registers"
+  //5:0 CpuFid
+  dwLowmostMSRvalue = ( byFrequencyID & 63) ;
+  //CpuDid: core divisor ID.
+  dwLowmostMSRvalue |= ( ( (WORD) byDivisorID ) <<
+    START_BIT_FOR_CPU_CORE_DIVISOR_ID ) ;
+  //15:9 CpuVid: core VID.
+  dwLowmostMSRvalue |= ( ( (WORD) byVoltageID ) << 9) ; //<=>bits 9-15 shifted
+}
+
+inline WORD GetVoltageID(float fVoltageInVolt )
+{
+  //E.g. for "1.1" V the float value is 1.0999999
+  // (because not all numbers are representable with a 8 byte value)
+  // so the voltage ID as float value gets "36.000004".
+  float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f ;
+  WORD wVoltageID =
+    //without explicit cast: compiler warning
+    //Avoid g++ warning "warning: converting to `WORD' from `float'"
+    (WORD)
+    //ceil( (fVoltageInVolt - 1.55f) * -1.0f / 0.0125f ) ;
+    //ceil( //(fVoltageInVolt - 1.55f) / -0.0125f
+      fVoltageID //)
+    ;
+  //Check to which integer voltage ID the float value is nearer.
+  //E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36"
+  if( fVoltageID - (float) wVoltageID >= 0.5 )
+    ++ wVoltageID ;
+  return wVoltageID ;
+}
+
+//inline unsigned long GetMSRregisterForPstate(
+//  unsigned char byPstate ) ;
+inline unsigned long GetMSRregisterForPstate(
+  unsigned char byPstate )
+{
+  //unsigned long index ;
+  return //"AMD: MSR C001_0064 specifies P-state 0"
+    0xC0010064 + byPstate ;
+}
+
+inline void GetFreqIDandDivisorIDfromMulti(
+  float fMultiplier,
+  BYTE & r_byFreqID,
+  BYTE & r_byDivisorID
+  )
+{
+  DEBUGN("GetFreqIDandDivisorIDfromMulti("
+    << fMultiplier )
+//  float fDivisor = g_fMainPllOpFreqIdMax / fMultiplier ;
+//  g_byDivisor =
+//    //Must be stored as integer: if e.g.
+//    //max. multi: 22.0
+//    //22.0 / 3.75 = 5.8666666666666666666666666666667 -> rounded down to "5"
+//    //-> freqID-> 3.75*5=
+//    (BYTE) g_fMainPllOpFreqIdMax / fMultiplier ;
+
+//  g_byDivisor = 0 ;
+  r_byDivisorID = 0 ;
+//  g_fMainPllOpFreqIdMaxDiv2 = g_fMainPllOpFreqIdMax / 2.0 ;
+  g_fMaxMultiDiv2 = ( g_fMainPllOpFreqIdMax + 8 ) / 2.0 ;
+  while( fMultiplier <= //g_fMainPllOpFreqIdMaxDiv2
+    g_fMaxMultiDiv2 )
+  {
+    fMultiplier *= 2.0 ;
+//    ++ g_byDivisor ;
+    ++ r_byDivisorID ;
+  }
+  r_byFreqID =
+    //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
+    //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))."
+    (BYTE) fMultiplier - 8 ;
+  DEBUGN("GetFreqIDandDivisorIDfromMulti(...)"
+    << "FID:" << (WORD) r_byFreqID
+    << "DID:" << (WORD) r_byDivisorID
+    //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
+    //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))"
+    << "test: multi=FID+8/divisor=" << (r_byFreqID + 8) << "/"
+    << pow(2.0,r_byDivisorID)
+    << "=" << (r_byFreqID + 8)/pow(2.0,r_byDivisorID)
+    )
+  //multi = FID / 2^DID  divisor=2^DID   multi = FID / divisor | * divisor
+  // FID=multi* divisor
+  //lowest multi: minFID/8 (e.g. 12/8)
+
+  //TODO
+  //"•The frequency specified by (100 MHz * (CpuFid + 08h)) must always be >50%
+  //of and <= 100% of the frequency specified by
+  //F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
+  //ReadPCIconfig(F3xD4) ;
+//  r_byFreqID = fMultiplier * g_byDivisor ;
+//  "CpuDid: core divisor ID. Read-write. Specifies the CPU frequency divisor;
+  //see CpuFid.
+//  0h=Divisor of 1     3h=Divisor of 8
+//  1h=Divisor of 2     4h - 7h=Reserved
+//  2h=Divisor of 4"
+//  r_byDivisorID = log2(g_byDivisor) ;
+}
+//inline void SetVoltageAndMultiplier(
+//  float fVoltageInVolt,
+//  float fMultiplier ,
+//  BYTE byCoreID ) ;
+
+//inline BYTE SetPstateViaPstateControlRegister(
+//  BYTE byNewPstate,DWORD dwCoreBitmask);
+//It seems: setting a p-state for more than 1 core at a time does NOT work.
+//so call this method "n" times if you want the same p-state for "n" cores.
+inline BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitmask)
+{
+  BYTE byReturn = FAILURE ;
+
+  //Safety check.
+  if( byNewPstate < NUMBER_OF_PSTATES )
+  {
+    DWORD dwMSRlow = byNewPstate ;
+
+      dwMSRlow = (BYTE) byNewPstate ;
+      //DEBUG("For core bitmask %lu: setting to pstate %u\n", dwCoreBitmask, byNewPstate);
+      LOGN_VERBOSE( "For core bitmask " << dwCoreBitmask
+        << ": setting to pstate "
+        //Cast BYTE to WORD to output as number.
+        << (WORD) byNewPstate );
+      //DEBUG("the low 32 bits: %s\n", getBinaryRepresentation(arch,dwMSRlow) );
+      //printf("  would write:  %s to MSR %lx\n", getBinaryRepresentation(&msrvalue,arch), msr_register_number);
+      //waitForEnter("um in MSR zu schreiben") ;
+      //if ((msr_write(msrfile, msr_register_number, &msrvalue)) != OK)
+      //  printf("MSR write failed\n");
+
+      //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
+#ifndef _EMULATE_TURION_X2_ULTRA_ZM82
+      if(
+        //CONTROLLER_PREFIX
+//          mp_cpuaccess->WrmsrEx(
+        WriteMSR(
+          P_STATE_CONTROL_REGISTER,
+          dwMSRlow,
+          0,
+          dwCoreBitmask
+          )
+//          1
+        )
+      {
+        LOGN_VERBOSE("Setting p-state succeeded.");
+        byReturn = SUCCESS ;
+        //Wait 1 millisecond (> maximum stabilization time).
+//          SLEEP_1_MILLI_SECOND
+      }
+      else
+      {
+        DEBUG("Setting p-state failed\n");
+      }
+      byReturn = SUCCESS ;
+#endif //_EMULATE_TURION_X2_ULTRA_ZM82
+//#ifndef LINK_TO_WINRING0_STATICALLY
+//    }
+//#endif //#ifdef LINK_TO_WINRING0_STATICALLY
+  }
+  return byReturn ;
+}
+
+//http://www.parashift.com/c++-faq-lite/inline-functions.html:
+//"Note: It's imperative that the function's definition (the part between the
+//{...}) be placed in a header file, unless the function is used only in a
+//single .cpp file. In particular, if you put the inline function's definition
+//into a .cpp file and you call it from some other .cpp file, you'll get an
+//"unresolved external" error from the linker. "
+//inline
+inline void SetVoltageAndMultiplier(
+  float fVoltageInVolt,
+  float fMultiplier ,
+  BYTE byCoreID )
+{
+//  BYTE byRet = false ;
+  //BYTE byFrequencyID , byDivisorID ;
+  //DWORD dwIndex ;
+  DEBUGN("SetVoltageAndMultiplier("
+    << fVoltageInVolt
+    << "," << fMultiplier
+    << "," << (WORD) byCoreID )
+  //GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
+
+  BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
+  //At my laptop the current limit was set to "0" on AC power, "1" on DC power.
+  //If 100% CPU load and above freq calculated by the current p-state limit,
+  //the previous freq persists. To avoid this, retrieve the current limit.
+  ReadMSR(
+    P_STATE_CURRENT_LIMIT_REGISTER,
+    & g_dwMSRlowmost,
+    & g_dwMSRhighmost,
+    1 << byCoreID ) ;
+  //TODO to use this variable we would have to get the "desired voltages"
+//  BYTE byCurPstateLimit = g_dwMSRlowmost & BITMASK_FOR_LOWMOST_3BIT ;
+  //TODO to use this variable we would have to get the "desired voltages"
+  // for the performance state (from the executable) the limit applies to
+//  float fMaxMultiplierAccordingCurrentLimit =
+//    //g_fMaxMultiplier
+//    ( g_fMainPllOpFreqIdMax + 8 ) / ( 1 << byCurPstateLimit ) ;
+  DEBUGN("p-state current limit:" << //dwMSRlowmost
+    (WORD) byCurPstateLimit
+    << " -> current max. Frequency ID:" << fMaxMultiplierAccordingCurrentLimit )
+//  if( fMultiplier > fMaxMultiplierAccordingCurrentLimit )
+//  {
+//    fMultiplier = fMaxMultiplierAccordingCurrentLimit ;
+//    //TODO because the voltage changed (is too high):
+//    //get voltage for new multiplier.
+//
+////    //This indirectly calls _this_ function.
+////      SetFreqAndVoltageFromFreq
+////      ( wMaxFreqAccordingCurrentLimit, byCoreID) ;
+//  }
+//  else
+  {
+    GetFreqIDandDivisorIDfromMulti(fMultiplier,g_byFreqID,g_byDivisorID) ;
+    GetMSRregisterValue(
+      byVoltageID, //didandfid
+      g_byFreqID ,
+      g_byDivisorID
+      , g_dwMSRhighmost ,
+      g_dwMSRlowmost ) ;
+
+    DWORD dwMSRregisterIndex = GetMSRregisterForPstate( //didandfid.m_byDivisorID
+      g_byDivisorID
+      ) ;
+    //bool_ = WriteToPstateOrCOFVIDcontrolRegister (
+     // dwIndex ,
+    // // unsigned char byVID, //unsigned short wFreqInMHz
+     // //unsigned char byFreqID,
+    // // unsigned char byDivID,
+    //  //const PState & rpstateFromMSR,
+
+    //  //Used to check against overvolting.
+    //  pstateMergedFromUserAndMSR,
+    //  //Used to write to MSR.
+    //  pstateFromUser,
+    //  //PState & r_pstateMergedFromUserAndMSR,
+    //  dwMSRhighmost,
+    //  dwMSRlowmost,
+    //  //DWORD_PTR w64ulAffinityMask
+    //  //DWORD dwCoreID
+    //  //CPU core number, beginning from number "0"
+    //  byCoreID
+    //  ) ;
+    DEBUGN("SetVoltageAndMultiplier(...)"
+      "before WriteMSR" )
+    if( WriteMSR(
+      dwMSRregisterIndex
+      , g_dwMSRlowmost
+      , g_dwMSRhighmost
+      , 1 << byCoreID
+      )
+      )
+    {
+//      if(
+        SetPstateViaPstateControlRegister( //didandfid.m_byDivisorID
+          g_byDivisorID ,
+          1 << byCoreID ) ;
+//        )
+//        byRet = true ;
+    }
+  }
+}
+
+#endif /* GRIFFIN_H_ */

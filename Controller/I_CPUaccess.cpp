@@ -5,7 +5,12 @@
 
 #include <string.h> //strcat(...)
 #include <windef.h> //for DWORD
-#define CPUID_PROCESSOR_NAME_CHAR_NUMBER 4*4*3
+//http://en.wikipedia.org/wiki/CPUID
+// #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
+//"48-byte null-terminated ASCII processor brand string."
+// 4 byte per CPUID register * 4 CPUID registers (EAX,EBX,ECX,EDX) * 3 CPUID
+//  functions/ addresses = 4*4*3=16*3=48 byte
+#define CPUID_PROCESSOR_NAME_CHAR_NUMBER 48
 
 /*//ULONG ulECX ;
 NTSTATUS
@@ -153,13 +158,16 @@ bool I_CPUaccess::GetProcessorNoLeadingSpaces( std::string & r_stdstr )
   bool bSuccess ;
   char * archCPUID ;
   bSuccess = GetProcessorNameByCPUID(archCPUID) ;
-  r_stdstr = std::string( archCPUID ) ;
-  //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
-  delete archCPUID ;
-  while( r_stdstr.size() > 0 && r_stdstr.at(0) == ' '  )
-    r_stdstr.erase ( 0 , 
-    //delete 1 char.
-    1 );
+  if( bSuccess )
+  {
+    r_stdstr = std::string( archCPUID ) ;
+    //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
+    delete archCPUID ;
+    while( r_stdstr.size() > 0 && r_stdstr.at(0) == ' '  )
+      r_stdstr.erase ( 0 ,
+      //delete 1 char.
+      1 );
+  }
   return bSuccess ;
 }
 
@@ -174,9 +182,11 @@ bool //ISpecificController
   char * & archCPUID 
   )
 {
-  bool bSuccess = true ;
+  bool bSuccess = false ;
   DWORD dwEAX ;
   DWORD dw ;
+  //Intel CPUID (doc # 241618) August 2009: for brand string:
+  //"1. Execute the CPUID instruction with EAX=80000000h"
   if( CpuidEx( 
       0x80000000 
       , & dwEAX
@@ -187,36 +197,31 @@ bool //ISpecificController
       )
     )
   {
+    //Intel CPUID (doc # 241618) August 2009: for brand string:
+    //"3. The processor brand string feature is supported if EAX >= 80000004h"
     if( dwEAX >= 0x80000004 )
     {
       BYTE byCPUID_Address = 0, byCharIndex = 0;
+      bSuccess = true ;
       //char archCPUID[//4*4
       //  CPUID_PROCESSOR_NAME_CHAR_NUMBER
       //  //For string terminating "\0" .
       //  + 1 ] ;
-      archCPUID = new char [//4*4
-        //CPUID_PROCESSOR_NAME_CHAR_NUMBER
-        4*4*3
+      archCPUID = new char [ CPUID_PROCESSOR_NAME_CHAR_NUMBER
         //For string terminating "\0" .
         + 1 ] ;
-      archCPUID[//4*4
-        CPUID_PROCESSOR_NAME_CHAR_NUMBER ] = '\0';
+      archCPUID[ CPUID_PROCESSOR_NAME_CHAR_NUMBER ] = '\0';
       for( ; byCPUID_Address < 3 ; ++ byCPUID_Address )
       {
         if( CpuidEx(
+          //http://en.wikipedia.org/wiki/CPUID
+          // #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
+          // "EAX=80000002h,80000003h,80000004h: Processor Brand String"
           //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
           0x80000002 + byCPUID_Address,
-          //dwEAX,
-          //*((DWORD *)archCPUID),
           ((DWORD *)(archCPUID + byCharIndex) ),
-          //dwEBX,
-          //*((DWORD *)(archCPUID+4)),
           ((DWORD *)(archCPUID + byCharIndex + 4 )),
-          //dwECX,
-          //*((DWORD *)(archCPUID+8)),
           ((DWORD *)(archCPUID + byCharIndex + 8 )),
-          //dwEDX
-          //*((DWORD *)(archCPUID+12))
           ((DWORD *)(archCPUID + byCharIndex + 12 ))
           , 1
           ) 

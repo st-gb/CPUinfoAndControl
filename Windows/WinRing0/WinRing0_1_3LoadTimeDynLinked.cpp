@@ -62,7 +62,8 @@ WinRing0_1_3LoadTimeDynLinked::WinRing0_1_3LoadTimeDynLinked(UserInterface * p_u
   {
     dwValue = GetDllStatus() ;
     //DEBUG("result of InitializeOls:%lu\n", dwValue);
-    LOG("result of InitializeOls:" << dwValue << "\n" );
+    LOG("result of InitializeOls:" << dwValue //<< "\n"
+      )
     if( dwValue == OLS_DLL_NO_ERROR )
     {
        LOG("WinRing0 successfully initialized\n") ;

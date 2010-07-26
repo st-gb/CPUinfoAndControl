@@ -571,7 +571,7 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         stdvector_stdstringAttributeValue.push_back( 
           //(std::string) //wxString::Format("%64u", ullValue) 
           std::string( //wxstrULL.c_str()
-            getstdstring(m_wxstrULL) )
+            GetStdString(m_wxstrULL) )
           );
         if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end() 
           )
@@ -648,7 +648,7 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
         stdvector_stdstringAttributeValue.push_back( 
           //(std::string) //wxString::Format("%64u", m_ullValue2)
           std::string( //wxstrULL.c_str()
-            getstdstring( m_wxstrULL ) )
+            GetStdString( m_wxstrULL ) )
           );
         if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end() 
           )

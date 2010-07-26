@@ -7,6 +7,7 @@
 
 #ifndef PERCPUCOREATTRIBUTES_HPP_
 #define PERCPUCOREATTRIBUTES_HPP_
+#include <windef.h> //for BYTE etc.
 
 //pre-declarations (faster than to include a file)
 class CPUcoreData ;

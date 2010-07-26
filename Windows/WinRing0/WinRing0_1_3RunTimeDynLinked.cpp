@@ -9,7 +9,7 @@
 #endif
 #include <global.h> //for DEBUG()
 #include <preprocessor_helper_macros.h>
-//#include <Controller/stdstring_format.hpp>
+#include <Controller/stdstring_format.hpp> //to_stdstring()
 #include <Controller/tchar_conversion.h> //GetCharPointer(...)
 #include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
@@ -90,7 +90,8 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
     dwValue = GetDllStatus() ;
     if( dwValue == OLS_DLL_NO_ERROR )
     {
-       LOG("WinRing0 successfully initialized\n") ;
+       LOG("WinRing0 successfully initialized"//\n"
+         )
        //UIconfirm("WinRing0 successfully initialized") ;
     }
     else
@@ -500,7 +501,20 @@ BOOL WinRing0_1_3RunTimeDynLinked::ReadPciConfigDwordEx(
     ;
   }
   else
-    UIconfirm("Accessing the CPU failed. possible causes:\n"
+    //bit description
+//    16-31 Reserved
+    UIconfirm("Accessing the PCI config space at\nPCI bus "
+      + to_stdstring<WORD>(
+      //WinRing0: "8-15 PCI Bus Number"
+      (dwPCIaddress >> 8 ) & BITMASK_FOR_LOWMOST_8BIT )
+      + "\n, device " + to_stdstring<WORD>(
+      //WinRing0: "3- 7 Device Number"
+      (dwPCIaddress >> 3 ) & BITMASK_FOR_LOWMOST_5BIT ) +
+      + "\n, function " + to_stdstring<WORD>(
+      //WinRing0: "0- 2 Function Number"
+      dwPCIaddress & BITMASK_FOR_LOWMOST_3BIT )
+      + "\n, register address " + to_stdstring<WORD>( dwRegAddress )
+      + "\nfailed. possible causes:\n"
       "This program needs elevated privileges for ring 0 "
       "access. So run it as administrator.\n"
       "This program uses "

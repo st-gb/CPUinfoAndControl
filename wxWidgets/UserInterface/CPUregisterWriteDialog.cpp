@@ -16,7 +16,7 @@
 #include <Controller/stdstring_format.hpp> //from_stdstring()
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
-//std::string getstdstring(wxString & wxstr) etc.
+//std::string GetStdString(wxString & wxstr) etc.
 #include <wxWidgets/Controller/wxStringHelper.h>
 
 //An enum guarantees a unique number for each element.
@@ -255,7 +255,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
       //ToULongLong() always returned false with MinGW (+ unicode)
 //        ToULongLong( & ullFromChangedTextCtrl )
 //        )
-      std::string stdstrFromTextControl = getstdstring(wxstrChanged ) ;
+      std::string stdstrFromTextControl = GetStdString(wxstrChanged ) ;
       from_stdstring<ULONGLONG>( ullFromChangedTextCtrl,
           stdstrFromTextControl) ;
       {
@@ -302,7 +302,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 //                  //ToULongLong() always returned false with MinGW (+ unicode)
 //                ToULongLong( & ullFromTextCtrlToChange )
 //                )
-              std::string stdstrValueToModify = getstdstring(wxstrValueToModify) ;
+              std::string stdstrValueToModify = GetStdString(wxstrValueToModify) ;
               from_stdstring<ULONGLONG>( ullFromTextCtrlToChange,
                   stdstrValueToModify) ;
               {
@@ -513,7 +513,7 @@ void CPUregisterWriteDialog::OnWriteToMSR(
 //        char * p_ch = (char *) wxstr.fn_str() ;
 //        vec_wxstr.push_back(wxstr) ;
         wxstrAllValues += wxstr + wxT(" ") ;
-        stdstrFromTextControl = getstdstring(wxstr) ;
+        stdstrFromTextControl = GetStdString(wxstr) ;
         //ullMSR = 
 //        if( wxstr.
 //          //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:
@@ -558,7 +558,8 @@ void CPUregisterWriteDialog::OnWriteToMSR(
     DWORD dwLow = ullWriteToMSR ;
     if( wxMessageBox( wxstrAllValues +
       wxString::Format(
-        wxT("writing low bytes %u and high bytes %u to MSR index %u to core %u")
+        wxT("writing low bytes %lu and high bytes %u to MSR index %lu to "
+          "core %u")
         , dwLow,
         dwHigh ,
         mp_msrdata->m_dwIndex ,

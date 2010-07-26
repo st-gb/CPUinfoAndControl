@@ -10,7 +10,7 @@
 #include <Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
-  #include "Xerces/XMLAccess.hpp" //for "readXMLConfig(...)"
+  #include "Xerces/XMLAccess.hpp" //for "ReadXMLdocumentInitAndTermXerces(...)"
   #include <Xerces/SAX2MainConfigHandler.hpp>
 #endif
 
@@ -162,6 +162,11 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
   , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
   )
 {
+//  LOGN("GetInterpolatedVoltageFromFreq("
+//#ifdef _DEBUG
+//    << wFreqInMHzToGetVoltageFrom
+//#endif
+//    << ", ..." )
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
     r_stdsetvoltageandfreq.begin() ;
   std::set<VoltageAndFreq>::const_iterator 
@@ -182,11 +187,18 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
     }
     ++ ci_stdsetvoltageandfreq ;
   }
+//  LOGN("GetInterpolatedVoltageFromFreq(...) after loop")
   if( ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
     && ci_stdsetvoltageandfreqNearestHigherEqual != 
       r_stdsetvoltageandfreq.end()
     )
   {
+//    LOGN("GetInterpolatedVoltageFromFreq(" << wFreqInMHzToGetVoltageFrom
+//      << ", ...)--lower freq:"
+//      << ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
+//      << ", ...)--higher freq:"
+//      << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+//      )
     if( //This is the case if wFreqInMHzToGetVoltageFrom has the 
       //same freq as one of the p-states.
       //This case must be catched, else wrong values by the 
@@ -235,7 +247,7 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
       WORD wFreqInMHzFromNearFreqsWantedFreqDiff =
         wFreqInMHzFromNearFreqAboveWantedFreq -
        wFreqInMHzFromNearFreqBelowWantedFreq ;
-      float fIncrease = 
+      float fVoltagePerMHz = 
         fVoltageFromFreqAboveAndBelowDiff /
           wFreqInMHzFromNearFreqsWantedFreqDiff ;
       WORD wWantedFreqMinusFreqBelow = 
@@ -283,8 +295,21 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
         //    fVoltageInVoltFromNearFreqBelowWantedFreq
         //  )
         fVoltageInVoltFromNearFreqBelowWantedFreq +
-        fIncrease * (float) wWantedFreqMinusFreqBelow
+        fVoltagePerMHz * (float) wWantedFreqMinusFreqBelow
         ;
+//      LOGN("GetInterpolatedVoltageFromFreq("
+//        << "\nnearest freq from std::set below:"
+//        << wFreqInMHzFromNearFreqBelowWantedFreq
+//        << "\nnearest freq from std::set above:"
+//        << wFreqInMHzFromNearFreqAboveWantedFreq
+//        << "\nabove - below freq=" << wFreqInMHzFromNearFreqsWantedFreqDiff
+//        << "\nabove - below voltage=" << fVoltageFromFreqAboveAndBelowDiff
+//        << "\nvoltage/MHz(voltage above-below/freq above-below)="
+//        << std::ios::fixed << fVoltagePerMHz
+//        << "\nwanted freq - freq below=" << wWantedFreqMinusFreqBelow
+//        << "\ninterpolated voltage (voltage below+voltage/MHz*"
+//            "\"wanted freq - freq below\"=" << r_fVoltageInVolt
+//        )
       return true ;
     }
   }
@@ -653,8 +678,12 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
   , BYTE byCoreID)
 {
   BYTE byRet ;
-  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(" << wFreqInMHz << ","
-    << (WORD) byCoreID << ")")
+  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+#ifdef _DEBUG
+    << wFreqInMHz << ","
+    << (WORD) byCoreID << ")"
+#endif
+    )
   byRet = SetFreqAndVoltageFromFreq(
     wFreqInMHz 
     , mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
@@ -679,15 +708,16 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
   float fVoltageInVolt ;
 //  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
 //      "address of model: " << mp_model )
-  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
+  const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault ;
     //mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted ;
 
     //The set should have been filled by the CPU controller as it should
-    //have the knowledge/ Zuständigkeit wich multipliers can be set.
+    //have the knowledge/ Zustï¿½ndigkeit wich multipliers can be set.
     //for instance for AMD Griffin freqs are: "max. , 1/2 max,..."
     //for Pnetium M multipliers 6,8,...
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqAvailableFreq ;
+//    mp_model->m_cpucoredata.m_stdsetvoltageandfreqAvailableFreq ;
+    cr_stdsetvoltageandfreqForInterpolation ;
     //* mp_model->m_cpucoredata.mp_stdsetvoltageandfreqAvailableFreq ;
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
     r_stdsetvoltageandfreq.begin() ;
@@ -709,14 +739,16 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
     }
     ++ ci_stdsetvoltageandfreq ;
   }
+  //
   if( ci_stdsetvoltageandfreqNearestHigherEqual != 
     r_stdsetvoltageandfreq.end() 
     )
   {
-//    DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
+//    LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
 //      " higher element found: "
-//      << ci_stdsetvoltageandfreqNearestHigherEqual->m_fVoltageInVolt
-//      << "," << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz )
+////      << ci_stdsetvoltageandfreqNearestHigherEqual->m_fVoltageInVolt
+////      << "," << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+//      )
 #ifdef _DEBUG
     if( ci_stdsetvoltageandfreqNearestLowerEqual !=
       r_stdsetvoltageandfreq.end()
@@ -743,69 +775,130 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
 ////        , byCoreID
 ////        ) ;
 //    }
-      //Get the freq from the found element in the set (by default: of the
-      //available frequencies)
+//      //Get the freq from the found element in the set (by default: of the
+//      //available frequencies)
+//      wFreqInMHz = ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
+    if( ci_stdsetvoltageandfreqNearestLowerEqual ==
+        r_stdsetvoltageandfreq.end()
+      )
+    {
       wFreqInMHz = ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
-      //As we have the Freq now: calc the voltage from it.
-      //The freq should, but needn't be in the set (2 different sets:
-      //set of available freqs, set of voltages to set).
-      if( GetInterpolatedVoltageFromFreq(
-          wFreqInMHz
-          //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
-          , fVoltageInVolt
-          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-          , cr_stdsetvoltageandfreqForInterpolation
+      fVoltageInVolt = ci_stdsetvoltageandfreqNearestHigherEqual->
+        m_fVoltageInVolt ;
+//      LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
+//        " no lower element -> setting" << wFreqInMHz << "MHz,"
+//        << fVoltageInVolt << "V=" << (WORD) (fVoltageInVolt * 1000) << "mV")
+      byRet = SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
+    }
+    else
+    {
+      if( ci_stdsetvoltageandfreqNearestLowerEqual ==
+          ci_stdsetvoltageandfreqNearestHigherEqual
           )
-        )
       {
-        DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
-          << "wFreqInMHz:" << wFreqInMHz
-          << ",stdset:" << & cr_stdsetvoltageandfreqForInterpolation
-          << ",byCoreID:" << (WORD) byCoreID
-          << ") before "
-          << "SetVoltageAndFrequency("
-          << fVoltageInVolt << ","
-          << wFreqInMHz << ","
-          << (WORD) byCoreID << ")" )
-        byRet = SetVoltageAndFrequency(//wFreqInMHz
-          fVoltageInVolt
-          //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
-          , wFreqInMHz
-          , byCoreID
-          ) ;
-        DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
-          << "wFreqInMHz:" << wFreqInMHz
-          << ",stdset:" << & cr_stdsetvoltageandfreqForInterpolation
-          << ",byCoreID:" << (WORD) byCoreID
-          << ") after "
-          << "SetVoltageAndFrequency("
-          << fVoltageInVolt << ","
-          << wFreqInMHz << ","
-          << (WORD) byCoreID << ")"
-          "ret val: " << (WORD) byRet )
+        wFreqInMHz = ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
+        fVoltageInVolt = ci_stdsetvoltageandfreqNearestHigherEqual->
+          m_fVoltageInVolt ;
+//        LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
+//          " lower element ==higher ele-> setting" << wFreqInMHz << ","
+//          << fVoltageInVolt << "V=" << (WORD) (fVoltageInVolt * 1000) << "mV" )
+        byRet = SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
       }
+      else
+      {
+        //The voltage _should_ be calculated from the closest of the available
+        //multipliers.
+        if( m_fReferenceClockInMHz && mp_model->m_cpucoredata.
+            m_arfAvailableMultipliers )
+        {
+    //      GetNearestMultiplier() ;
+          float fCalculatedMultiplier = wFreqInMHz /
+            m_fReferenceClockInMHz ;
+          WORD wMultiplierArrayIndex = mp_model->m_cpucoredata.
+            GetIndexForClosestMultiplier( fCalculatedMultiplier) ;
+          if( wMultiplierArrayIndex != MAXWORD )
+          {
+            float fMultiplier = mp_model->m_cpucoredata.
+              m_arfAvailableMultipliers[wMultiplierArrayIndex] ;
+//            LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
+//              " lower and higher element -> calc. multi:"
+//              << fCalculatedMultiplier
+//              << "multi array index:" << wMultiplierArrayIndex
+//              << "closest avail. multi:" << fMultiplier )
+            wFreqInMHz = (WORD) ( m_fReferenceClockInMHz * fMultiplier ) ;
+            //As we have the Freq now: calc the voltage from it.
+            //The freq should, but needn't be in the set (2 different sets:
+            //set of available freqs, set of voltages to set).
+            if( GetInterpolatedVoltageFromFreq(
+                wFreqInMHz
+                //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+                , fVoltageInVolt
+                //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+                , cr_stdsetvoltageandfreqForInterpolation
+                )
+              )
+            {
+//              LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+//                << "wFreqInMHz:" << wFreqInMHz
+//                << ",stdset:" << & cr_stdsetvoltageandfreqForInterpolation
+//                << ",byCoreID:" << (WORD) byCoreID
+//                << ") before "
+//                << "SetVoltageAndFrequency("
+//                << fVoltageInVolt << ","
+//                << wFreqInMHz << ","
+//                << (WORD) byCoreID << ")" )
+      //        byRet = SetVoltageAndFrequency(//wFreqInMHz
+      //          fVoltageInVolt
+      //          //, ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
+      //          , wFreqInMHz
+      //          , byCoreID
+      //          ) ;
+              SetCurrentVoltageAndMultiplier(fVoltageInVolt,fMultiplier,
+                byCoreID ) ;
+              DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+                << "wFreqInMHz:" << wFreqInMHz
+                << ",stdset:" << & cr_stdsetvoltageandfreqForInterpolation
+                << ",byCoreID:" << (WORD) byCoreID
+                << ") after "
+                << "SetVoltageAndFrequency("
+                << fVoltageInVolt << ","
+                << wFreqInMHz << ","
+                << (WORD) byCoreID << ")"
+                "ret val: " << (WORD) byRet )
+            }
+          }
+        }
+      }
+    }
   }
+  //No freq in the container that is higher than the freq to set.
   else //if e.g. the wanted freq is higher than the max. freq.
   {
-    DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
-      "NO element found" )
+//    LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+//      "NO higher freq element found" )
     if( ci_stdsetvoltageandfreqNearestLowerEqual  != 
       r_stdsetvoltageandfreq.end() 
       )
     {
       wFreqInMHz = ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz ;
-      if( GetInterpolatedVoltageFromFreq(
-          //wFreqInMHz
-          //The freq that is nearest below.
-          ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
-          , fVoltageInVolt 
-          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
-          , cr_stdsetvoltageandfreqForInterpolation
-          ) 
-        )
-      {
-        byRet = SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
-      }
+      fVoltageInVolt = ci_stdsetvoltageandfreqNearestLowerEqual->
+        m_fVoltageInVolt ;
+//      if( GetInterpolatedVoltageFromFreq(
+//          //wFreqInMHz
+//          //The freq that is nearest below.
+//          ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
+//          , fVoltageInVolt
+//          //, mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted
+//          , cr_stdsetvoltageandfreqForInterpolation
+//          )
+//        )
+//      {
+//      }
+//      LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE"
+//        "lower freq element found->setting"
+//        << wFreqInMHz << "," << fVoltageInVolt
+//        << "V=" << (WORD) ( fVoltageInVolt * 1000) << "mV")
+      byRet = SetVoltageAndFrequency( fVoltageInVolt, wFreqInMHz, byCoreID ) ;
     }
     //if( ( wFreqInMHz - ci_stdsetvoltageandfreqNearestLowerEqual->
     //    m_wFreqInMHz )        
@@ -914,7 +1007,7 @@ void I_CPUcontroller::SetOtherDVFSaccess(
 //      //this
 //      );
 //    if(
-//      readXMLConfig(//"config.xml"
+//      ReadXMLdocumentInitAndTermXerces(//"config.xml"
 //
 //      //mp_configurationHandler->LoadConfiguration(
 //

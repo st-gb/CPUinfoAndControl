@@ -444,12 +444,12 @@ DWORD ServiceBase::CreateService(
 //return: 0 = success
 //DWORD
 BYTE ServiceBase::DeleteService(
-     //SC_HANDLE & r_schSCManager
-     //, 
-     const TCHAR * tchServiceName
-     //Use number because that enables language-independent messaged
-     , DWORD  & dwErrorCodeFor1stError
-     )
+   //SC_HANDLE & r_schSCManager
+   //,
+   const TCHAR * tchServiceName
+   //Use number because that enables language-independent messages
+   , DWORD  & dwErrorCodeFor1stError
+   )
 { 
   SC_HANDLE schSCManager = OpenSCManager( 
     NULL,                    // local machine 
@@ -482,31 +482,19 @@ BYTE ServiceBase::DeleteService(
     if ( schService == NULL)
     {
       dwErrorCodeFor1stError = ::GetLastError() ;
-      std::cout << "Opening the service for service name \"" <<
-          tchServiceName << "\" failed. Error code: " <<
-          dwErrorCodeFor1stError << "\n" << "=>Message: " <<
-          LocalLanguageMessageFromErrorCodeA(dwErrorCodeFor1stError) << "\n" ;
 //            return FALSE;
       return OpenServiceFailed ;
     }
 
     if ( ::DeleteService(schService) )
-       std::cout << "Deleting service succeeded.\n" ;
+//       std::cout << "Deleting service succeeded.\n" ;
+      ;
     else
     {
-      std::string stdstrPossibleSolution ;
       dwErrorCodeFor1stError = ::GetLastError() ;
-        std::cout << "Deleting service failed. Error code:  " <<
-            dwErrorCodeFor1stError << "\n" << "=>Message: " <<
-            LocalLanguageMessageFromErrorCodeA(dwErrorCodeFor1stError) << "\n" ;
-        GetPossibleSolution(
-          dwErrorCodeFor1stError ,
-          tchServiceName
-          , stdstrPossibleSolution
-          ) ;
-        return DeleteServiceFailed ;
+      return DeleteServiceFailed ;
     }
-    CloseServiceHandle(schService);
+    ::CloseServiceHandle(schService);
   }
     //return TRUE;
   return 0 ;

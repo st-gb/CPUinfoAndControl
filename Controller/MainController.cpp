@@ -200,7 +200,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   //        mp_model->m_cpucoredata.AvailableVoltagesToArray() ;
 
           mp_model->m_stdstrCPUcontrollerDynLibPath = //stdstr ;
-              getstdstring( wxstrFilePath ) ;
+              GetStdString( wxstrFilePath ) ;
           LOGN("CPU controller DynLib " <<
             mp_model->m_stdstrCPUcontrollerDynLibPath <<
             ": successfully loaded and function pointers to it assigned.")
@@ -224,7 +224,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
       {
         wxString wxstrFilePath = wxT("CPUcoreUsageGetterDynLibs/") + ( stdstr ) ;
         wxstrFilePath += wxDynamicLibrary::GetDllExt() ;
-        LOGN("should load/ attach " << getstdstring( wxstrFilePath )
+        LOGN("should load/ attach " << GetStdString( wxstrFilePath )
           << " as CPU core usage getter" )
         try
         {
@@ -239,8 +239,9 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
             //,
             * p_cpucoredata
             ) ;
+          LOGN("after allocating dyn lib CPU core usage getter")
           mp_model->m_stdstrCPUcoreUsageGetterDynLibPath = //stdstr ;
-              getstdstring( wxstrFilePath ) ;
+              GetStdString( wxstrFilePath ) ;
           //gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = r_p_icpucoreusagegetter ;
           r_p_icpucoreusagegetter = gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter ;
   //        //no CPU controller DLL should be loaded or loading it failed it is
@@ -297,6 +298,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
       r_p_icpucoreusagegetter->SetAttributeData( mp_model ) ;
     }
   }
+  LOGN("end of creating/ allocating CPU controller and usage getter objects")
   if( r_p_cpucontroller //&& r_p_icpucoreusagegetter
     )
   {
@@ -392,6 +394,22 @@ BYTE MainController::Init(
   BYTE byRet = 0 ;
   mp_model = & model ;
   std::string strCPUtypeRelativeDirPath ;
+  std::string stdstrMainConfigFileName = GetStdString( model.
+    m_stdtstrProgramName ) + "_config.xml" ;
+  //The main cfg also contains the exclusion log message filter--load it in any
+  //case.
+  SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
+    ReadXMLdocumentInitAndTermXerces(
+      //const char* xmlFile
+      stdstrMainConfigFileName.c_str()
+      , model
+      , p_userinterface
+      //Base class of implementing Xerces XML handlers.
+      //This is useful because there may be more than one XML file to read.
+      //So one calls this functions with different handlers passed.
+      //DefaultHandler & r_defaulthandler
+      , sax2mainconfighandler
+      ) ;
   if( GetPstatesDirPath(strCPUtypeRelativeDirPath) )
   {
     BYTE byModel ;
@@ -425,27 +443,13 @@ BYTE MainController::Init(
       strCPUtypeRelativeDirPath
         + "/" + strProcessorName + ".xml"
       ;
-    std::string stdstrMainConfigFileName = GetStdString( model.
-      m_stdtstrProgramName ) + "_config.xml" ;
-    SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
-      readXMLConfig(
-        //const char* xmlFile
-        stdstrMainConfigFileName.c_str()
-        , model
-        , p_userinterface
-        //Base class of implementing Xerces XML handlers.
-        //This is useful because there may be more than one XML file to read.
-        //So one calls this functions with different handlers passed.
-        //DefaultHandler & r_defaulthandler
-        , sax2mainconfighandler
-        ) ;
     SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency( 
       *p_userinterface, model );
     //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
 		#ifdef COMPILE_WITH_MSR_EXAMINATION
     ReadRegisterDataConfig( strFamilyAndModelFilePath, p_userinterface ) ;
     #endif //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
-    if( readXMLConfig(
+    if( ReadXMLdocumentInitAndTermXerces(
         //const char* xmlFile
         strProcessorFilePath.c_str()
 	      , model
@@ -488,7 +492,7 @@ void MainController::ReadRegisterDataConfig(
 {
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   SAX2_CPUspecificHandler sax2handler( * p_userinterface, * mp_model );
-   if( readXMLConfig(
+   if( ReadXMLdocumentInitAndTermXerces(
       //const char* xmlFile
       strFamilyAndModelFilePath.c_str()
       , * mp_model

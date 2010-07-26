@@ -55,6 +55,12 @@ public:
     , float & Volt
     , BYTE byCoreID 
     ) ;
+  //inline
+  BYTE GetClosestMultplierAndSetVoltageAndMultiplier(
+    float fVoltageInVolt
+    , float fMultiplier
+    , WORD byCoreID
+    ) ;
   BYTE GetCurrentVoltageAndFrequency(
     float & r_fVoltageInVolt
     , float & fMultiplier
@@ -73,6 +79,14 @@ public:
      DWORD dwAffinityBitMask
      , BYTE byPerformanceEventSelectRegisterNumber
      ) ;
+  //inline for call from SetVoltageAndFrequency(...)
+  //inline
+  BYTE SetCurrentVoltageAndMultiplier(
+    float fVoltageInVolt
+    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+    , float fMultiplier
+    , WORD wCoreID
+    ) ;
   BYTE 
     //Let voltage be the first element from name because the same in
     //"Dyn Voltage And Freq. Scaling"

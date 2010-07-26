@@ -75,7 +75,8 @@
 	  )
 	{
 	  //DEBUG("from_string:%s\n",s);
-	  LOG("from_string:" << s << "\n" );
+//	  LOG("from_string:" << s //<< "\n"
+//	    )
 	  std::istringstream iss(s);
 	  return !(iss //>> f 
 	    >> t
@@ -131,6 +132,14 @@
     {
       m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor = fValue ;
       LOGN("using increase factor " <<
+        m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
+    }
+    strAttributeName = "factor" ;
+    if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue)
+      )
+    {
+      m_p_model->m_cpucoredata.m_fCPUcoreFreqFactor = fValue ;
+      LOGN("using factor " <<
         m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
   }
@@ -246,7 +255,8 @@
       WORD wValue ;
 	    if( XercesHelper::GetAttributeValue(attrs,"FreqInMHz",wValue) )
 	    {
-        LOG( "XML attribute name: \"FreqInMHz\"; value: " << wValue << "\n" );
+        LOG( "XML attribute name: \"FreqInMHz\"; value: " << wValue //<< "\n"
+          )
         //Gets the nearest possoble freq and stores it into the data model.
         //mp_i_cpucontroller->SetNearestFreqInMHz( wValue ) ;
 	    }
@@ -321,14 +331,13 @@
 
   void SAX2MainConfigHandler::startElement
     (
-    const   XMLCh * const    uri,
-    const   XMLCh * const    localname,
-    const   XMLCh * const    qname,
-    const   //xercesc_2_8::
-      Attributes & attrs
+    const   XMLCh * const cpc_xmchURI,
+    const   XMLCh * const cpc_xmchLocalName,
+    const   XMLCh * const cpc_xmchQualifiedName,
+    const   XERCES_CPP_NAMESPACE::Attributes & attrs
 	  )
 	{
-	  char * pchXMLelementName = XMLString::transcode(localname);
+	  char * pchXMLelementName = XMLString::transcode(cpc_xmchLocalName);
 	  std::string strValue ;
 	  LOG( "XML element: " << pchXMLelementName << endl );
 	  m_strElementName = std::string(pchXMLelementName) ;
@@ -354,6 +363,17 @@
 	    }
 	    else
 	      m_p_userinterface->Confirm("Error getting \"processor_name\" for \"CPU\" element") ;
+	  }
+	  else if( m_strElementName == "log_file_filter" )
+	  {
+	    if( XercesHelper::GetAttributeValue(
+	      attrs ,
+	      "exclude" ,
+	      strValue )
+        )
+	    {
+	      g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+	    }
 	  }
     else if( m_strElementName == "freq_and_lowest_stable_voltage" )
     {

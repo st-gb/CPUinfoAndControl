@@ -28,22 +28,22 @@ wxString getwxString(const std::string & str )
 //#endif
 //}
 
-wxString getwxString(const std::wstring & stdwstr )
+wxString getwxString(const std::wstring & cr_stdwstr )
 {
 //#ifdef wxUSE_WCHAR_T
 //see wx/chartype.h:wxUSE_UNICODE_WCHAR->"typedef wchar_t wxStringCharType;"
 //#ifdef wxUSE_UNICODE_WCHAR
 #if wxUSE_UNICODE == 1
   //std::wstring wstr(str.begin(), str.end() ) ;
-  wxString wxstr( stdwstr.c_str() ) ;
+  wxString wxstr( cr_stdwstr.c_str() ) ;
 #else
-  std::string stdstr(stdwstr.begin(), stdwstr.end() ) ;
+  std::string stdstr(cr_stdwstr.begin(), cr_stdwstr.end() ) ;
   wxString wxstr(( const unsigned char * ) stdstr.c_str() ) ;
 #endif
  return  wxstr ;
 }
 
-std::string getstdstring(wxString & wxstr)
+std::string GetStdString(wxString & wxstr)
 {
 ////#ifdef wxUSE_WCHAR_T
 ////see wx/chartype.h:wxUSE_UNICODE_WCHAR->"typedef wchar_t wxStringCharType;"
