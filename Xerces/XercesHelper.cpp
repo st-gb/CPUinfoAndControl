@@ -5,16 +5,16 @@
  * Created on 24. August 2009, 22:11
  */
 #include "../stdafx.h"
-#include "../global.h" //for if FAILURE etc.
-#include <tchar.h>
+#include <global.h> //for if FAILURE etc.
 #include <limits.h>
-
-#include "XercesHelper.hpp"
+#include <locale>
+#include <sstream>
+#include <tchar.h>
 #include <xercesc/sax2/Attributes.hpp>
 #include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
-#include "UserInterface.hpp" //for XMLString::transcode(...)
-#include <sstream>
-#include <locale>
+
+#include "XercesHelper.hpp"
+#include <UserInterface/UserInterface.hpp> //for XMLString::transcode(...)
 
 
 XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xerces::"

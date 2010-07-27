@@ -77,6 +77,13 @@ public:
   //for use in ::PwrSchemesEnumProcSearchPowerSchemeByID(...)
   std::wstring m_stdwstrPowerSchemeNameOfIDtoSearch ;
   UINT m_uiPowerSchemeIndexToSearch ;
+  static char * s_ar_ar_chDynamicThrottle [] ;
+//    = {
+//    "PO_THROTTLE_NONE" ,
+//    "PO_THROTTLE_CONSTANT" ,
+//    "PO_THROTTLE_DEGRADE" ,
+//    "PO_THROTTLE_ADAPTIVE"
+//    } ;
   std::string m_strWantedPowerScheme ;
   std::wstring m_stdwstrWantedPowerScheme ;
 
@@ -136,8 +143,10 @@ public:
       r_stdset_stdwstrPowerSchemeName ) ;
   BYTE PowerSchemeToSetExists() ;
   BOOLEAN WINAPI ReadPwrScheme (
-    __in   UINT uiID,
-    __out  PPOWER_POLICY pPowerPolicy
+    //__in
+    UINT uiID,
+    //__out
+    PPOWER_POLICY pPowerPolicy
   );
   bool OtherDVFSisEnabled() ;
 
@@ -146,17 +155,20 @@ public:
 //    std::tstring & r_stdtstrPowerSchemeName
     ) ;
   BOOLEAN WINAPI ReadProcessorPwrScheme(
-    __in   UINT uiPowerSchemeID,
-    __out  PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
+    //__in
+    UINT uiPowerSchemeID,
+    //__out
+    PMACHINE_PROCESSOR_POWER_POLICY pMachineProcessorPowerPolicy
     );
   BOOLEAN SetActivePwrScheme(
     UINT uiID,
     PGLOBAL_POWER_POLICY lpGlobalPowerPolicy,
     PPOWER_POLICY lpPowerPolicy
     ) ;
-  BOOLEAN SetActivePowerScheme(
+//  BOOLEAN
+  DWORD SetActivePowerScheme(
     //LPTSTR strPowerSchemeName     // name of the power scheme
-    const std::wstring & r_stdwstrPowerSchemeName     // name of the power scheme
+    const std::wstring & r_stdwstrPowerSchemeName  // name of the power scheme
     ) ;
   void SetFunctionPointersToNULL() ;
   BOOLEAN WINAPI WriteProcessorPwrScheme(

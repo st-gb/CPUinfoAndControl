@@ -3,7 +3,7 @@
 #ifdef USE_VISUAL_LEAK_DETECTOR
   //Visual Leak Detector--detects memory leaks.
   //Laufzeitfehler bei vld.dll!03207452()
-  //("03207452" ist  wahrscheilich die Adresse der fehlgeschlagenen Funktion)
+  //("03207452" ist  wahrscheinlich die Adresse der fehlgeschlagenen Funktion)
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
@@ -13,15 +13,10 @@
 #include "wx/wx.h" //for wxMessageBox(...) (,etc.)
 #include "App.hpp"
 
-#include "wxDynFreqScalingTimer.hpp"
-//#include "Controller/CPUcoreUsageGetterIWbemServices.hpp"
-//#include "../Windows/CPUcoreUsageGetterIWbemServices.hpp"
-//#include <Windows/CPUcoreUsageGetterNTQSI_WintopVxd.hpp>
+//#include "wxDynFreqScalingTimer.hpp"
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
-//#include <Windows/GetWindowsVersion.h>
-//#include <Windows/PowerProf/PowerProfUntilWin6DynLinked.hpp>
-//#include <Windows/LocalLanguageMessageFromErrorCode.h>
-#include <Controller/I_CPUcontroller.hpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
+#include <Controller/IPC/I_IPC.hpp> //for "get_current_CPU_data"
 #include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/stdstring_format.hpp> //to_stdstring()
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
@@ -32,9 +27,14 @@
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
 #endif
 //#include <wxWidgets/wxStringHelper.h>
+#include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 
 #include "DynFreqScalingThread.hpp"
 #ifdef _WINDOWS
+  //#include <Windows/DynFreqScalingThread.hpp>
+  #include <Windows/GetNumberOfLogicalCPUs.h>
+//#include <Windows/GetWindowsVersion.h>
+//#include <Windows/LocalLanguageMessageFromErrorCodeA.h>
   #include <Windows/PowerProf/PowerProfDynLinked.hpp>
   //#include <Windows/WinRing0dynlinked.hpp>
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
@@ -42,11 +42,10 @@
 #else
   #include <Linux/MSRdeviceFile.h>
 #endif
-#include <strstream> //ostrstream
+//#include <strstream> //ostrstream
 #include <string> //
-//#include "../Windows/DynFreqScalingThread.hpp"
-//#include "CpuUsage.h"
-//#include "Controller/RunAsService.h" //for MyServiceStart etc.
+
+//#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
 FILE * fileDebug ; //for debug logging.
 //This global (important for using preprocessor macros) object is used for 
@@ -67,29 +66,28 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //    ,
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   mp_taskbaricon( NULL)
+//  , m_wxthreadIPC( )
   ,
 #endif //#ifdef COMPILE_WITH_TASKBAR
   mp_dynfreqscalingaccess(NULL)
+  , m_maincontroller( this )
+  , m_vbRetrieveCPUcoreData( true)
+  , m_vbGotCPUcoreData (true)
+  //Must explicitely init m_wxmutexIPCthread and m_wxconditionIPCthread
+  // in this order here (condition need mutex in c'tor, so init mutex before)?!
+  , m_wxmutexIPCthread(wxMUTEX_DEFAULT)
+  , m_wxconditionIPCthread( m_wxmutexIPCthread )
+  , m_x86iandc_threadIPC(I_Thread::joinable)
 {
 #ifdef COMPILE_WITH_DEBUG
-//fileDebug = fopen("PumaStateCtrl_debug.txt","w");
-//if( ! fileDebug )
-//  ::wxMessageBox("Error opening debug output file for writing.\n"
-//    "Modifying access rights to file / dir containing it could help ");
-
 //For g++ the std::string object passed to Logger::OpenFile(std::string & )
 //has to be declared before. the call
 //    ( error if  "logger.OpenFile( std::string("bla");"  )
-//std::string stdstr("GriffinControl_log.txt") ;
-//g_logger.OpenFile( stdstr ) ;
 #endif
-  //m_cpucoreusagegetteriwbemservices.Init() ;
 }
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
 {
-  //::AfxMessageBox(str.c_str());
-
   //To not show too many dialogs that the timer would bring up.
   if( m_bConfirmedYet )
   {
@@ -122,28 +120,92 @@ bool wxX86InfoAndControlApp::Confirm(const std::string & str)
   return true;
 }
 
-bool wxX86InfoAndControlApp::Confirm(std::ostrstream & r_ostrstream
-  //std::ostream & r_ostream
+bool wxX86InfoAndControlApp::Confirm(const std::wstring & cr_stdwstr)
+{
+  //::AfxMessageBox(str.c_str());
+
+  //To not show too many dialogs that the timer would bring up.
+  if( m_bConfirmedYet )
+  {
+    m_bConfirmedYet = false ;
+    #ifdef wxUSE_WCHAR_T
+      wxString wxstr( cr_stdwstr.c_str() ) ;
+    #else
+      std::string stdstr( cr_stdwstr.begin(), cr_stdwstr.end() ) ;
+      wxString wxstr(  ) :
+    #endif
+    ::wxMessageBox(
+      #ifdef _DEBUG_
+      wxT("gg"), wxT("bla"),wxOK
+      #else
+      wxstr
+      #endif
+      , m_stdtstrProgramName
+      );
+//      #ifdef _DEBUG
+//    ::wxMessageBox( wxT("This is the message."), wxT("This is the title"),
+//      wxOK|wxICON_INFORMATION);
+//      #endif
+//    wxMessageDialog * pdlg = new wxMessageDialog(wxGetApp().mp_frame,
+//      wxT("hh"),wxT("ca")
+//      );
+//    pdlg->ShowModal() ;
+    m_bConfirmedYet = true ;
+  }
+  //m_bConfirmedYet = true ;
+  return true;
+}
+
+//bool wxX86InfoAndControlApp::Confirm(
+//  //http://fara.cs.uni-potsdam.de/~kaufmann/?page=GenCppFaqs&faq=IntToString#Answ:
+//  //"schnell" , "deprecated",
+//  //"Ein fehlendes ends führt dazu, dass der Puffer nicht nullterminiert wird."
+//  std::ostrstream & r_ostrstream
+//  //std::ostream & r_ostream
+//  )
+//{
+//  bool bReturn = true ;
+//  DEBUG("App::Confirm--begin\n");
+//  //Must set this, else text may follow after the string we want.
+//  //I had program crashes with the following method:
+//  //pch[r_ostrstream.pcount()] = '\0' ;
+//  //r_ostrstream.ends();
+//  r_ostrstream.put('\0'); //the same as "ends()" does.
+//  char * pch = r_ostrstream.str() ;
+//    //#ifdef wxUSE_WCHAR_T
+//    //  std::string str(pch) ;
+//    //  std::wstring wstr(str.begin(),str.end() ) ;
+//    //  wxString wxstr( wstr) ;
+//    //#else
+//    //  wxString wxstr(( const unsigned char * ) pch ) :
+//    //#endif
+//  std::string stdstr(pch) ;
+//  wxString wxstr( getwxString( stdstr ) ) ;
+//  //r_ostrstream.flush();
+//  //To not show too many dialogs that the timer would bring up.
+//  if( m_bConfirmedYet )
+//  {
+//    m_bConfirmedYet = false ;
+//    int nReturn = ::wxMessageBox(//pch
+//      wxstr
+//      //, _T("Message")
+//      , m_stdtstrProgramName
+//      , wxCANCEL | wxOK );
+//    if( nReturn == wxCANCEL )
+//      bReturn = false ;
+//    m_bConfirmedYet = true ;
+//  }
+//  //return true;
+//  DEBUG("App::Confirm--end\n");
+//  return bReturn ;
+//}
+
+bool wxX86InfoAndControlApp::Confirm(
+  std::ostringstream & r_stdostringstream
   )
 {
   bool bReturn = true ;
-  DEBUG("App::Confirm--begin\n");
-  //Must set this, else text may follow after the string we want.
-  //I had program crashes with the following method:
-  //pch[r_ostrstream.pcount()] = '\0' ;
-  //r_ostrstream.ends();
-  r_ostrstream.put('\0'); //the same as "ends()" does.
-  char * pch = r_ostrstream.str() ;
-    //#ifdef wxUSE_WCHAR_T
-    //  std::string str(pch) ;
-    //  std::wstring wstr(str.begin(),str.end() ) ;
-    //  wxString wxstr( wstr) ;
-    //#else
-    //  wxString wxstr(( const unsigned char * ) pch ) :
-    //#endif
-  std::string stdstr(pch) ;
-  wxString wxstr( getwxString( stdstr ) ) ;
-  //r_ostrstream.flush();
+  wxString wxstr( getwxString( r_stdostringstream.str() ) ) ;
   //To not show too many dialogs that the timer would bring up.
   if( m_bConfirmedYet )
   {
@@ -238,7 +300,7 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 
 void wxX86InfoAndControlApp::EndDVFS()
 {
-  DEBUGN("wxX86InfoAndControlApp::EndDVFS() begin")
+  LOGN("wxX86InfoAndControlApp::EndDVFS() begin")
   PerCPUcoreAttributes * p_percpucoreattributes = & //mp_cpucoredata->
     mp_modelData->m_cpucoredata.
     m_arp_percpucoreattributes[ //p_atts->m_byCoreID
@@ -249,7 +311,7 @@ void wxX86InfoAndControlApp::EndDVFS()
   if ( p_percpucoreattributes->mp_dynfreqscalingthread )
     mp_frame->
     EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
-  DEBUGN("wxX86InfoAndControlApp::EndDVFS() end")
+  LOGN("wxX86InfoAndControlApp::EndDVFS() end")
 }
 
 //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
@@ -283,17 +345,17 @@ int wxX86InfoAndControlApp::OnExit()
   //#ifdef _WINDOWS
   //delete mp_winring0dynlinked ;
   //#endif
-  if( mp_i_cpuaccess )
-    delete mp_i_cpuaccess ;
+//  if( mp_i_cpuaccess )
+//    delete mp_i_cpuaccess ;
   delete [] m_arartchCmdLineArgument ;
   //delete mp_frame ;
-  //delete mp_pstatectrl ;
-  if( mp_cpucontroller )
-    delete mp_cpucontroller ;
+//  if( mp_cpucontroller )
+//    delete mp_cpucontroller ;
+  FreeRessources() ;
   if( mp_dynfreqscalingaccess )
     delete mp_dynfreqscalingaccess ;
-  if( mp_modelData )
-    delete mp_modelData ;
+//  if( mp_modelData )
+//    delete mp_modelData ;
 
 #ifdef COMPILE_WITH_SHARED_MEMORY
   if( mp_voidMappedViewStartingAddress )
@@ -303,6 +365,154 @@ int wxX86InfoAndControlApp::OnExit()
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
   LOGN("OnExit() before return 0")
   return 0;
+}
+
+//TODO make this function a member of wxX86InfoAndControlApp
+void //wxX86InfoAndControlApp::
+  FetchCPUcoreDataFromIPC(wxX86InfoAndControlApp * p_wxx86infoandcontrolapp)
+{
+  NamedPipeClient & r_namedpipeclient = p_wxx86infoandcontrolapp->
+      m_ipcclient ;
+  r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) ;
+  //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
+  if( r_namedpipeclient.m_arbyIPCdata )
+  {
+//      mp_wxx86infoandcontrolapp->m_ipc_current_cpu_data_handler
+//      mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler.
+//        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ) ;
+//      XERCES_CPP_NAMESPACE::MemBufInputSource membufinputsource(
+////        arby,
+////        dwSizeInBytes ,
+//        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ,
+//        L"IPC_buffer" ) ;
+    {
+//      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
+//        m_wxcriticalsection ) ;
+      readXMLConfig(
+  //        membufinputsource,
+        r_namedpipeclient.m_arbyIPCdata ,
+        r_namedpipeclient.m_dwSizeInByte ,
+        L"IPC_buffer" ,
+        p_wxx86infoandcontrolapp->m_model ,
+        p_wxx86infoandcontrolapp ,
+        p_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler
+        ) ;
+    }
+//      p_cpucontroller = & p_wxx86infoandcontrolapp->
+//          m_sax2_ipc_current_cpu_data_handler ;
+//      p_cpucoreusagegetter = & p_wxx86infoandcontrolapp->
+//          m_sax2_ipc_current_cpu_data_handler ;
+//      //The number of CPU cores is known if the IPC data were got at first.
+//      WORD wNumCPUcores = p_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
+//      if( wNumCPUcores < mp_cpucoredata->m_byNumberOfCPUCores )
+//        mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
+  }
+  p_wxx86infoandcontrolapp->m_vbGotCPUcoreData = true ;
+}
+
+//This function should be executed in a separate thread.
+DWORD GetCurrentCPUcoreDataViaIPCthreadFunc(void * p_v )
+{
+  wxX86InfoAndControlApp * p_wxx86infoandcontrolapp =
+    ( wxX86InfoAndControlApp * ) p_v ;
+  if( p_wxx86infoandcontrolapp )
+  {
+    FetchCPUcoreDataFromIPC( p_wxx86infoandcontrolapp ) ;
+    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+  }
+  return 0 ;
+}
+
+//This function should be executed in a separate thread.
+DWORD GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
+{
+  DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc begin")
+  wxX86InfoAndControlApp * p_wxx86infoandcontrolapp =
+    ( wxX86InfoAndControlApp * ) p_v ;
+  if( p_wxx86infoandcontrolapp )
+  {
+    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
+    //Wait until another function calls Leave().
+//    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
+//    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
+//    //Let the other thread continue at its "Enter()"
+//    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+
+//    //MainFrame::Onclose() locks the mutex
+//    if( p_wxx86infoandcontrolapp->m_wxmutexIPCthread.TryLock() ==
+//        //http://docs.wxwidgets.org/2.6/wx_wxmutex.html#wxmutextrylock:
+//        //"The mutex is already locked by another thread."
+//        wxMUTEX_BUSY )
+//      return 0 ;
+    //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
+    //"it must be locked prior to calling Wait"
+    p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
+//    Sleep(4000) ;
+    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Lock()")
+    p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
+    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc retrieve CPU core data?"
+      << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
+    while( p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
+    {
+      FetchCPUcoreDataFromIPC( p_wxx86infoandcontrolapp ) ;
+      p_wxx86infoandcontrolapp->m_vbGotCPUcoreData = true ;
+//      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
+//      //Wait until another function calls Leave().
+//      p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
+//      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
+//      //Let the other thread continue at its "Enter()"
+//      p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+//    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+//      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before TryLock")
+//      //MainFrame::Onclose() locks the mutex
+//      if( p_wxx86infoandcontrolapp->m_wxmutexIPCthread.TryLock() ==
+//          //http://docs.wxwidgets.org/2.6/wx_wxmutex.html#wxmutextrylock:
+//          //"The mutex is already locked by another thread."
+//          wxMUTEX_BUSY )
+//        return 0 ;
+
+//      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
+      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
+      //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
+      //"it must be locked prior to calling Wait"
+      p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
+      if( ! p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
+        break ;
+//      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
+      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
+      p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
+    }
+    LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
+  }
+  else
+    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc app pointer == NULL")
+  return 0 ;
+}
+
+//Getting the CPU core data (->depends on the implementation) can take many
+//milliseconds, especially via IPC. So start a thread for this.
+void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread()
+{
+  m_wxcriticalsectionIPCthread.Enter() ;
+  x86IandC::thread_type x86iandc_threadIPC(I_Thread::detached) ;
+  x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCthreadFunc , this ) ;
+//  x86IandC::thread_type::start( GetCurrentCPUcoreDataViaIPCthreadFunc , this ) ;
+}
+
+//Getting the CPU core data (->depends on the implementation) can take many
+//milliseconds, especially via IPC. So start a thread for this.
+void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
+{
+  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking before Leave")
+//  //Let the IPC thread waiting on "Enter()" continue.
+//  m_wxcriticalsectionIPCthread.Leave() ;
+//  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking before Enter")
+//  //Enter the crit section for the next call to Leave().
+//  m_wxcriticalsectionIPCthread.Enter() ;
+
+//  wxMutexLocker lock(m_wxmutexIPCthread);
+  m_wxconditionIPCthread.Broadcast(); // same as Signal() here -- one waiter only
+  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking after Enter")
 }
 
 void wxX86InfoAndControlApp::InitSharedMemory()
@@ -319,7 +529,7 @@ void wxX86InfoAndControlApp::InitSharedMemory()
   {
     DWORD dwError = ::GetLastError() ;
     LOG("unable to open shared memory: \""
-      << ::LocalLanguageMessageFromErrorCode(
+      << ::LocalLanguageMessageFromErrorCodeA(
         dwError
         )
       << "\" (error code: " << dwError << ")"
@@ -341,7 +551,7 @@ void wxX86InfoAndControlApp::InitSharedMemory()
     {
       DWORD dwError = ::GetLastError() ;
       LOG("Could not map view of file : \"" <<
-        ::LocalLanguageMessageFromErrorCode(
+        ::LocalLanguageMessageFromErrorCodeA(
           dwError
           )
         << "\" (error code: " << dwError << ")"
@@ -359,6 +569,12 @@ void wxX86InfoAndControlApp::InitSharedMemory()
 //  if( ! bSharedMemOk )
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
 }
+
+//wxX86InfoAndControlApp::CreateAndStartIPCthread()
+//{
+//  m_wxthreadIPC.Create() ;
+//  m_wxthreadIPC.Run() ;
+//}
 
 bool wxX86InfoAndControlApp::OnInit()
 {
@@ -379,8 +595,8 @@ bool wxX86InfoAndControlApp::OnInit()
   m_stdtstrProgramName = _T("X86_info_and_control") ;
 
   m_arartchCmdLineArgument = new TCHAR * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
-  mp_modelData = new Model() ;
-
+//  mp_modelData = new Model() ;
+  mp_modelData = & m_model ;
   //If allocation succeeded.
   if( m_arartchCmdLineArgument && mp_modelData )
   {
@@ -414,8 +630,6 @@ bool wxX86InfoAndControlApp::OnInit()
     //Intitialise to be valid.
     m_arartchCmdLineArgument[ 0 ] = _T("") ;
     m_arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] = 
-      //"-config=config.xml" ;
-      //_T("-config=GriffinControl_config.xml") ;
       (TCHAR * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).c_str() ;
 
     mp_userinterface = //p_frame ;
@@ -424,11 +638,23 @@ bool wxX86InfoAndControlApp::OnInit()
     InitSharedMemory() ;
 #endif //COMPILE_WITH_SHARED_MEMORY
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+    //CreateAndStartIPCthread() ;
+//    m_wxthreadIPC.Create() ;
+    //Let the looped IPC thread function wait at its
+    //  "m_wxcriticalsectionIPCthread.Enter()"
+    m_wxcriticalsectionIPCthread.Enter() ;
+//    m_wxmutexIPCthread.Lock() ;
+//    DEBUGN("before creating IPC thread")
+    DEBUGN("before starting IPC thread")
+//    m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
+    DEBUGN("after starting IPC thread")
   	if( m_ipcclient.Init() )
   	  LOGN("initializing IPC (for connection to the service) succeeded")
 #endif
     //if( mp_modelData )
     {
+  	  //TODO program malfunction when the IPC thread is started.
+//      m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
       try //catch CPUaccessexception
       {
     #ifdef _WINDOWS
@@ -440,7 +666,8 @@ bool wxX86InfoAndControlApp::OnInit()
 #ifdef _MSC_VER_ //possible because the import library is for MSVC
       mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
         this ) ;
-#else //Because no import library is available for MinGW.
+#else //Use runtime dynamic linking because no import library is available for
+      //MinGW.
       mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
         this ) ;
 #endif
@@ -452,20 +679,29 @@ bool wxX86InfoAndControlApp::OnInit()
       mp_i_cpuaccess = new MSRdeviceFile(this) ;
       //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
     #endif
-			//the main controller needs CPUID (I_CPUaccess class ) access in order to
-			//retrieve the CPU by model, family etc.
+      //the main controller needs CPUID (I_CPUaccess class ) access in order to
+      //retrieve the CPU by model, family etc.
       m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
       mp_i_cpuaccess->mp_model = mp_modelData ;
       m_maincontroller.Init( //m_modelData
         * mp_modelData, this );
+      }
+      catch(//ReadMSRexception
+          CPUaccessException & r_cpuaccessexception )
+      {
+        DEBUGN("caught a CPUaccessException")
+        //We may continue to use this program: e.g. for testing usage getter
+        //DLLs or for showing the usage etc. via IPC.
+        mp_i_cpuaccess = NULL ;
+      }
       m_maincontroller.SetAttributeData( mp_modelData ) ;
       //m_winring0dynlinked.SetUserInterface(p_frame);
-      //MyServiceStart ( NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS, argv) ;
      
       #ifdef _WINDOWS
       std::wstring stdwstrProgramName = GetStdWstring(m_stdtstrProgramName ) ;
       mp_dynfreqscalingaccess = new PowerProfDynLinked( //m_stdtstrProgramName
         stdwstrProgramName ) ;
+      DEBUGN("after creating Windows power prof access")
       #else
       mp_dynfreqscalingaccess = NULL ;
       #endif
@@ -479,11 +715,27 @@ bool wxX86InfoAndControlApp::OnInit()
           ) 
         )
       {
-        //Now we have created the CPU controller. It knows how many cores it has.
-        //The core count is an important information e.g. for the Linux MSR device
-        //file access.
-        mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
-          GetNumberOfCPUcores() ) ;
+//        //If neither a built-in or dynamically linked CPU controller or usage getter
+//        //returned a core number > 0
+//        if( mp_modelData->m_cpucoredata.m_byNumberOfCPUCores == 0 )
+//        {
+//          LOGN("number of CPU cores not set neither by CPU controller nor by "
+//              "usage getter -> getting it from Windows")
+//#ifdef _WINDOWS
+//          mp_modelData->m_cpucoredata.m_byNumberOfCPUCores = GetNumLogicalCPUs() ;
+//          LOGN("number of CPU core reported by Windows:"
+//            << mp_modelData->m_cpucoredata.m_byNumberOfCPUCores )
+//#endif
+//        }
+//        else
+//          LOGN("number of CPU cores:"
+//            << mp_modelData->m_cpucoredata.m_byNumberOfCPUCores )
+        if( mp_i_cpuaccess )
+          //Now we have created the CPU controller. It knows how many cores it has.
+          //The core count is an important information e.g. for the Linux MSR device
+          //file access.
+          mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
+            GetNumberOfCPUcores() ) ;
         mp_cpucontroller->SetCmdLineArgs(
           NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
           m_arartchCmdLineArgument ) ;
@@ -494,10 +746,9 @@ bool wxX86InfoAndControlApp::OnInit()
         //mp_dynfreqscalingaccess = NULL ;
         //mp_i_cpucontroller->SetOtherDVFSaccess( NULL ) ;
         //#endif
-
         CPUcontrollerChanged() ;
       }
-
+      DEBUGN("before creating the main frame")
       ////The user interface must be created before the controller because
       ////it should show error messages because of e.g. missing privileges.
       //p_frame = new MyFrame( 
@@ -508,7 +759,6 @@ bool wxX86InfoAndControlApp::OnInit()
         , 
         wxPoint(50,50), 
         wxSize(450,340)
-        //,mp_pstatectrl
         , mp_cpucontroller
         //, & m_modelData.m_cpucoredata
         //, & mp_modelData->m_cpucoredata
@@ -527,16 +777,17 @@ bool wxX86InfoAndControlApp::OnInit()
     //  m_calculationthread.SetCPUcontroller(mp_i_cpucontroller);
     //#endif
       mp_frame->SetCPUcontroller(mp_cpucontroller) ;
-      
+//#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+//    if( m_ipcclient.Init() )
+//      LOGN("initializing IPC (for connection to the service) succeeded")
+//#endif
+
       if( mp_cpucontroller )
       {
         //char * archCPUID ;
         std::string strCPUID ;
-        
 //        DEBUG("initialization of dialog--after get processor name\n");
-
-        //if( //! mp_pstatectrl->m_model.m_bSkipCPUtypeCheck && 
-        //  ! m_modelData.m_bSkipCPUtypeCheck && 
+        //if( ! m_modelData.m_bSkipCPUtypeCheck &&
         //  ! mp_pstatectrl->IsSupportedCPUModel() )
         //{
         //  mp_userinterface->Confirm("This CPU model is not supported by this program."
@@ -552,8 +803,7 @@ bool wxX86InfoAndControlApp::OnInit()
           NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS ,
           m_arartchCmdLineArgument
           ) ;
-//        BYTE byReturn = //mp_pstatectrl->handleCmdLineArgs() ;
-//          mp_cpucontroller->HandleCmdLineArgs( ) ;
+//        BYTE byReturn = mp_cpucontroller->HandleCmdLineArgs( ) ;
 
 //        DEBUG("initialization of dialog--after handling cmd line args\n");
 //        //DEBUG("return value of handleCmdLineArgs(): %u\n",(WORD)byReturn);
@@ -571,7 +821,6 @@ bool wxX86InfoAndControlApp::OnInit()
 //            break;
 ////          default:
 //  //          DEBUG("Before starting timer\n");
-//            //mp_wxdynfreqscalingtimer->mp_pumastatectrl = mp_pstatectrl ;
 ////            DWORD dwValue = 0 ;
 //            //TODO read values from CPU at first because the other values should not
 //            //be affected.
@@ -579,22 +828,25 @@ bool wxX86InfoAndControlApp::OnInit()
       } //if( mp_i_cpucontroller )
       //else //CreateCPUcontrollerAndUsageGetter(...) failed
       //  mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
-      }
-      catch(//ReadMSRexception 
-          CPUaccessException e)
-      {
-          //this->Confirm("Reading from MSR failed kjj");
-          //mp_frame->Confirm("CPU access error.\n(insuff rights?)");
-          return FALSE ;
-      }
-      catch( VoltageSafetyException e )
-      {
-        Confirm( //GetCharPointer( ( e.m_stdtstrMessage + _T("\n->Exiting") ).
-          //c_str() ) 
-          GetStdString( e.m_stdtstrMessage + _T("\n->Exiting") )
-          ) ;
-        return FALSE ;
-      }
+//      }
+//      catch(//ReadMSRexception
+//          CPUaccessException & r_cpuaccessexception )
+//      {
+//          //this->Confirm("Reading from MSR failed kjj");
+//          //mp_frame->Confirm("CPU access error.\n(insuff rights?)");
+//          return FALSE ;
+//      }
+//      catch( VoltageSafetyException e )
+//      {
+//        Confirm( //GetCharPointer( ( e.m_stdtstrMessage + _T("\n->Exiting") ).
+//          //c_str() )
+//          GetStdString( e.m_stdtstrMessage + _T("\n->Exiting") )
+//          ) ;
+//        return FALSE ;
+//      }
+    //TODO program hangs when message that DLL function is missung
+//    m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc ,
+//      this ) ;
     }// if (mp_modelData)
   }
   else
@@ -602,7 +854,8 @@ bool wxX86InfoAndControlApp::OnInit()
   return TRUE;
 } 
 
-void wxX86InfoAndControlApp::outputAllPstates(unsigned char byCurrentP_state, int & vid)
+void wxX86InfoAndControlApp::outputAllPstates(
+  unsigned char byCurrentP_state, int & vid)
 {
 
 }
@@ -612,19 +865,19 @@ void wxX86InfoAndControlApp::PossiblyAskForOSdynFreqScalingDisabling()
   if( mp_dynfreqscalingaccess->OtherDVFSisEnabled()
     )
     if( ::wxMessageBox(
-        //We need a _T() macro (wide char-> L"", char->"") for EACH
-        //line to make it compatible between char and wide char.
-        _T("The OS's dynamic frequency scaling must be disabled ")
-        _T("in order that the p-state isn' changed by the OS afterwards.")
-        _T("If the OS's dynamic frequency isn't disabled, should it be done now?")
-        ,
-        //We need a _T() macro (wide char-> L"", char->"") for EACH
-        //line to make it compitable between char and wide char.
-        _T("Question")
-        , wxYES_NO | wxICON_QUESTION )
-        == wxYES
-       )
-      mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+      _T("The OS's dynamic frequency scaling must be disabled ")
+      _T("in order that the p-state isn' changed by the OS afterwards.")
+      _T("If the OS's dynamic frequency isn't disabled, should it be done now?")
+      ,
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+      _T("Question")
+      , wxYES_NO | wxICON_QUESTION )
+      == wxYES
+     )
+    mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
 }
 
 void wxX86InfoAndControlApp::RedrawEverything()
@@ -665,7 +918,7 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
   }
 }
 
-void wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
+bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
 {
 //      m_systemtray_icon_notification_window = mp_frame->GetHandle() ;
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
@@ -687,14 +940,15 @@ void wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
       wxT("x86IandC.ico") ,
       wxBITMAP_TYPE_ICO
       ) ;
-    if( !
-        mp_taskbaricon->SetIcon( //wxICON(sample),
-        //m_taskbaricon.SetIcon(
-          wxicon ,
-          mp_modelData->m_stdtstrProgramName
-          )
-      )
-      ::wxMessageBox(wxT("Could not set icon."));
+      if( mp_taskbaricon->SetIcon( //wxICON(sample),
+          //m_taskbaricon.SetIcon(
+            wxicon ,
+            mp_modelData->m_stdtstrProgramName
+            )
+        )
+        return true ;
+      else
+        ::wxMessageBox(wxT("Could not set task bar icon."));
     }
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
@@ -721,6 +975,7 @@ void wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
       m_systemtrayaccess.ShowIconInSystemTray(hicon,"x86Info&Control") ;
   #endif //  #ifdef USE_WINDOWA_API_SYSTEM_TRAY_ICON
 #endif
+  return false ;
 }
 
 void wxX86InfoAndControlApp::DeleteCPUcontroller( )
@@ -729,7 +984,7 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
       mp_cpucontroller )
   //if( p_cpucontroller )
   //{
-    //Avoid porgram crash because of the mainframe tries to get the current
+    //Avoid program crash because of the mainframe tries to get the current
     //performance state.
     mp_frame->DenyCPUcontrollerAccess() ;
     if( mp_cpucontroller )
@@ -758,11 +1013,3 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
   //}
   DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
 }
-
-//int main(int argc, char **argv)
-//{
-//  wxPumaStateCtrlApp myapp;
-//  ::wxMessageBox("jjj");
-//
-//  //myapp.OnInit();
-//}

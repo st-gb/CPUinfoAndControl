@@ -12,7 +12,6 @@
 #include "../ModelData/PStates.h"
 #include "../global.h" //for DEBUG(...) etc.
 #include "../ModelData/ModelData.hpp"
-#include "../UserInterface.hpp"
 #include "Xerces/XercesHelper.hpp"
 #include "ModelData/RegisterData.hpp"
 #include <xercesc/sax2/DefaultHandler.hpp>
@@ -22,9 +21,11 @@
 //Needed for verzichten auf the exact namspace.
 XERCES_CPP_NAMESPACE_USE
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
+class Model ;
 class MSRdata ;
 class UserInterface ;
-class Model ;
 class XercesHelper ;
 
 //http://xerces.apache.org/xerces-c/build-3.html:

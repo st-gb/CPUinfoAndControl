@@ -12,6 +12,12 @@ MSRdata::MSRdata(//DWORD
 {
 }
 
+MSRdata & MSRdata::operator = (const MSRdata & cr_msrdata )
+{
+//    m_stdvec_bitrange = cr_registerdataToCopyFrom.m_stdvec_bitrange.
+  return *this;  // Return a reference to myself.
+}
+
 //std::string 
 bool //GetTableContainingDataName
   MSRdata::GetTableAttributeValue(
@@ -31,9 +37,8 @@ bool //GetTableContainingDataName
   //        1100  14   2 -> hash '14\n2' " )
   //would be faster.
   for( //WORD 
-    unsigned short wRowIndex = 1 ; wRowIndex < iter_registerdatatable->m_wRows ;
-    ++ wRowIndex )
-
+    unsigned short wRowIndex = 1 ; wRowIndex <
+    iter_registerdatatable->m_wRows ; ++ wRowIndex )
     for( //WORD 
       unsigned short wRegisterDataIndex = 0 ; wRegisterDataIndex < 
         stdvector_stdstringAttributeValue.size() ;
@@ -45,21 +50,21 @@ bool //GetTableContainingDataName
       stdstrRegisterDataName = m_stdvec_registerdata.at(//wRowIndex-1
         wRegisterDataIndex).m_strDataName ;
       for( //WORD 
-        unsigned short wColIndex = 1 ; wColIndex < iter_registerdatatable->m_wCols ;
-        ++ wColIndex )
+        unsigned short wColIndex = 1 ; wColIndex < iter_registerdatatable->
+        m_wCols ; ++ wColIndex )
       {
         stdstrCurrentRegisterDataTableAttributeValue = 
           iter_registerdatatable->m_ararstdstr//[wColIndex][wRowIndex] 
           [wRowIndex * iter_registerdatatable->m_wCols + wColIndex ] ;
-        stdstrRegisterDataTableAttributeName = iter_registerdatatable->m_ararstdstr 
-          [ wColIndex ] ;
+        stdstrRegisterDataTableAttributeName =
+          iter_registerdatatable->m_ararstdstr [ wColIndex ] ;
 
         //If the attribute NAME of the table matches the register name.
         if( //iter_registerdatatable->m_ararstdstr [ wColIndex ] 
           stdstrRegisterDataTableAttributeName
           == //m_stdvec_registerdata.at(wRowIndex-1).m_strDataName 
             stdstrRegisterDataName 
-            )
+          )
         {
           //At least 1 attribute name is identical.
           if( //m_ararstdstr
@@ -168,7 +173,8 @@ bool MSRdata::GetTableAttributeValue(
 //            13            1         2100
 //            14            2         1100
 void MSRdata::setTable(
-  //A string gives high independance instead of e.g. an integer (->no floats possible)
+  //A string gives high independance instead of e.g. an integer (->no floats
+  //possible)
   std::string //[][] 
   * 
   ararstdstr

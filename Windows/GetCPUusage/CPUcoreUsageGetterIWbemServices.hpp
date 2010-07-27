@@ -1,19 +1,31 @@
+//Including <Wbemidl.h and other INDIRECTLY included files makes problems on
+//cygwin.
 //#ifndef COMPILE_WITHOUT_IWBEMSERVICES
 #ifdef COMPILE_WITH_IWBEMSERVICES
 
 #pragma once //incl. guard
 
+//Prevent indirect inclusion of BaseTsd.h
+#define _BASETSD_H_
 #include "../Controller/ICPUcoreUsageGetter.hpp"
 #include <math.h> //fabs()
 #define _WIN32_DCOM
 #include <iostream>
 using namespace std;
 #include <comdef.h>
-#include <Wbemidl.h>
+#include <objbase.h> //CoInitializeEx()
+#include <Wbemidl.h> //for IWbemServices, IWbemLocator, ...
+//for "VC/inlcude/excpt.h" etc.
+#define __in
+#define __inout
+//end of: the following includes must be here above, else compiler errors
+
 #include "global.h" //for DEBUG(...)
 #include "UserInterface.hpp"
 
 # pragma comment(lib, "wbemuuid.lib")
+//for CoInitializeEx
+# pragma comment(lib, "ole32.lib")
 
 enum
 {

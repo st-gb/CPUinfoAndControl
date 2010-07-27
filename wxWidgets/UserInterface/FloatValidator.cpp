@@ -14,6 +14,7 @@
 class wxTextCtrl ;
 class wxMessageDialog ;
 
+//from http://wiki.wxwidgets.org/WxValidator:
 CfloatValidator::CfloatValidator(float *pval, float lBound, float hBound)
  {
      val.s = pval;

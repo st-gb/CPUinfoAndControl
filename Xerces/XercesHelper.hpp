@@ -7,14 +7,13 @@
 #ifndef _XERCESHELPER_HPP
 #define	_XERCESHELPER_HPP
 
-#include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
-#include <xercesc/util/XMLString.hpp>
-
-#include <errno.h> //for "ERANGE"
 #include <Windows_compatible_typedefs.h> //__int64
 
-#include <stdlib.h> //atoi()
+#include <errno.h> //for "ERANGE"
 #include <limits.h> //ULONG_MAX
+#include <stdlib.h> //atoi()
+#include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
+#include <xercesc/util/XMLString.hpp>
 
 //// need to properly scope any forward declarations
 //XERCES_CPP_NAMESPACE_BEGIN
@@ -38,6 +37,8 @@ XERCES_CPP_NAMESPACE_USE
 #define XERCES_ATTRIBUTE_VALUE_DOES_NOT_EXIST 5
 #define XERCES_ERROR_CONVERTING_ATTRIBUTE_NAME_TO_XERCES_STRING 6
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
 //class Attributes ;
 class UserInterface ;
 
@@ -178,11 +179,6 @@ public:
     void * pv_AttributeValue
     ) ;
 
-  BYTE ToDWORD(
-    std::string & strAttributeValue ,
-    void * pv_AttributeValue 
-    ) ;
-
   //Decrease code redundancy:
   //This function has the code to get the Xerces attribute value
   //that should be identical for all data types and calls the 
@@ -235,6 +231,10 @@ public:
     const Attributes & attrs,
     const char * lpctstrAttrName,
     std::wstring & r_stdwstrValue
+    ) ;
+  BYTE ToDWORD(
+    std::string & strAttributeValue ,
+    void * pv_AttributeValue
     ) ;
   static std::string ToStdString(
     const XMLCh * p_xmlch

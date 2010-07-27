@@ -61,6 +61,36 @@ DWORD ServiceBase::ContinueService(
   return FALSE;
 }
 
+void ServiceBase::GetErrorDescriptionFromStartServiceCtrlDispatcherErrCode(
+  DWORD dwLastError ,
+  std::string & r_stdstrErrorDescription
+  )
+{
+  switch(dwLastError)
+  {
+  case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
+    r_stdstrErrorDescription =
+      "Typically, this error indicates that the program is being run as a "
+      "console application rather than as a service. "
+      "If the program will be run as a console application for debugging "
+      "purposes, structure it such that service-specific code is not called "
+      "when this error is returned." ;
+    break;
+  case ERROR_INVALID_DATA:
+    r_stdstrErrorDescription =
+      "The specified dispatch table contains entries that are not in the "
+      "proper format." ;
+    break;
+  case ERROR_SERVICE_ALREADY_RUNNING:
+    r_stdstrErrorDescription =
+      "The process has already called StartServiceCtrlDispatcher. "
+      "Each process can call StartServiceCtrlDispatcher only one time." ;
+    break;
+//  default:
+//    DEBUG("error code was not set by the service control manager directly\n");
+  }
+}
+
 void ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
   DWORD dwLastError ,
   std::string & r_stdstrErrorDescription
@@ -102,7 +132,7 @@ void ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
       break;
     default:
       r_stdstrErrorDescription =
-          LocalLanguageMessageFromErrorCode( dwLastError ) ;
+          LocalLanguageMessageFromErrorCodeA( dwLastError ) ;
   }
 }
 
@@ -124,7 +154,7 @@ void ServiceBase::GetErrorDescriptionFromOpenServiceErrCode(
       break;
     default:
       r_stdstrErrorDescription =
-          LocalLanguageMessageFromErrorCode( dwLastError ) ;
+          LocalLanguageMessageFromErrorCodeA( dwLastError ) ;
   }
 }
 
@@ -208,7 +238,8 @@ void ServiceBase::GetPossibleSolution(
         std::stringstream strstream ;
         strstream <<
         "possible solution:\n"
-        "-close the service control manager in order to let the service be deleted\n"
+        "-close the service control manager in order to let the service be "
+            "deleted\n"
         "-if you want to install a service and a service with the same name "
           "is still running->stop the service with the same name first\n"
         "\n-Stop the execution of the service: \""
@@ -250,7 +281,7 @@ DWORD ServiceBase::CreateService(
     ////    "Manager failed: error code: %d", dwLastError);
     //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Opening Service Control "
     //    "Manager failed: error message: " << //dwLastError 
-    //    LocalLanguageMessageFromErrorCode(dwLastError)) ;
+    //    LocalLanguageMessageFromErrorCodeA(dwLastError)) ;
     //switch(dwLastError)
     //{
     //case ERROR_ACCESS_DENIED:
@@ -284,14 +315,15 @@ DWORD ServiceBase::CreateService(
       if (schService == NULL) 
       {
           DWORD dwLastError = GetLastError() ;
-          //DEBUG("Creating the service failed: error number:%d\n", dwLastError); 
+          //DEBUG("Creating the service failed: error number:%d\n",
+          // dwLastError);
           //LOG("Creating the service failed: error number:" << dwLastError 
           //    << "\n" );
           //std::cout 
           WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
             "Creating the service failed: error number:" <<
             dwLastError << "\nError: " << //"\n"
-            LocalLanguageMessageFromErrorCode( dwLastError )
+            LocalLanguageMessageFromErrorCodeA( dwLastError )
             )
             ;
           switch(dwLastError)
@@ -312,7 +344,8 @@ DWORD ServiceBase::CreateService(
               break;
           case ERROR_SERVICE_EXISTS:
               DEBUG("The specified service already exists in this database.\n");
-              std::cout << "The specified service already exists in this database.\n" ;
+              std::cout << "The specified service already exists in this "
+                  "database.\n" ;
               //DeleteService(schSCManager, tchServiceName);
               //CreateService(schService,tchServiceName,tchPathcToServiceExe);
               break;
@@ -337,7 +370,7 @@ DWORD ServiceBase::CreateService(
           //LOG(
           WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
               "Getting file name for THIS executable file failed: " <<
-              LocalLanguageMessageFromErrorCode( ::GetLastError() ) << ")" //<< \n"
+              LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
               );
           //return FALSE;
       }
@@ -369,8 +402,10 @@ DWORD ServiceBase::CreateService(
     //Service that runs in its own process.
     SERVICE_WIN32_OWN_PROCESS, // service type 
     //SERVICE_DEMAND_START,      // start type 
-    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/createservice.htm: 
-    //"A service started automatically by the service control manager during system startup."
+    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/
+    // createservice.htm:
+    //"A service started automatically by the service control manager during
+    // system startup."
     SERVICE_AUTO_START,
     SERVICE_ERROR_NORMAL,      // error control type 
     // path to service's binary 
@@ -450,7 +485,7 @@ BYTE ServiceBase::DeleteService(
       std::cout << "Opening the service for service name \"" <<
           tchServiceName << "\" failed. Error code: " <<
           dwErrorCodeFor1stError << "\n" << "=>Message: " <<
-          LocalLanguageMessageFromErrorCode(dwErrorCodeFor1stError) << "\n" ;
+          LocalLanguageMessageFromErrorCodeA(dwErrorCodeFor1stError) << "\n" ;
 //            return FALSE;
       return OpenServiceFailed ;
     }
@@ -463,7 +498,7 @@ BYTE ServiceBase::DeleteService(
       dwErrorCodeFor1stError = ::GetLastError() ;
         std::cout << "Deleting service failed. Error code:  " <<
             dwErrorCodeFor1stError << "\n" << "=>Message: " <<
-            LocalLanguageMessageFromErrorCode(dwErrorCodeFor1stError) << "\n" ;
+            LocalLanguageMessageFromErrorCodeA(dwErrorCodeFor1stError) << "\n" ;
         GetPossibleSolution(
           dwErrorCodeFor1stError ,
           tchServiceName

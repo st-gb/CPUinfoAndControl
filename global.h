@@ -136,6 +136,15 @@
 //    #endif
     //#ifdef COMPILE_WITH_LOG
     //Allows easy transition from "printf"
+    #define LOG_TYPE(to_ostream, type) { std::stringstream strstream ; \
+      strstream << to_ostream; \
+      /*/for g++ compiler:
+      //Because I want to call Log( std::string & ) I have to create an object at
+      //first*/ \
+      std::string stdstr = strstream.str() ;\
+      /*g_logger->Log(to_ostream) ; */ \
+      g_logger.Log( stdstr , type) ; \
+      }
     #define LOG_SPRINTF(...) { char arch_buffer[1000] ; \
       sprintf( arch_buffer, __VA_ARGS__ ) ; \
       std::string stdstr(arch_buffer) ; \
@@ -143,6 +152,7 @@
       g_logger.Log( stdstr ) ; \
       }
     #define LOGN(to_ostream) LOG (to_ostream << "\n" )
+    #define LOGN_TYPE(to_ostream, type) LOG_TYPE (to_ostream << "\n" , type)
 
     //Necessary for MinGW that does not know "std::wstringstream"
     #define LOGWN_WSPRINTF(...) { wchar_t arwch_buffer[1000] ; \

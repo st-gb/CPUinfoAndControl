@@ -30,6 +30,15 @@ bool VoltageAndFreq::operator < (const VoltageAndFreq & _Right) const
       m_wFreqInMHz < _Right.m_wFreqInMHz );
 }
 
+VoltageAndMultiAndRefClock::VoltageAndMultiAndRefClock()
+  :
+  m_fMultiplier(0.0)
+  , m_fReferenceClock (0.0)
+  , m_fVoltageInVolt(0.0)
+{
+
+}
+
 MaxVoltageForFreq::MaxVoltageForFreq()
 	//eclipse / g++ hatte gemeckert bei dieser C++ style initialization.
 //    : m_wFreqInMHz(0)

@@ -33,7 +33,6 @@ typedef TCHAR * ( WINAPI * _GetWinRing0DriverPath) () ;
 //         #endif
 //             *_RdmsrEx)(DWORD,PDWORD,PDWORD,DWORD_PTR);
 
-#include <UserInterface.hpp> //for class "UserInterface"
 //#include "../ISpecificController.hpp"
 #include <Controller/I_CPUaccess.hpp>
 //#include <Winbase.h> //for ::Sleep(...)
@@ -50,6 +49,10 @@ public:
   }
 };
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
+class UserInterface ;
+
 //This class calls the winring0 functions by function pointers.
 class WinRing0_1_3RunTimeDynLinked
   //: public ControllerBase
@@ -58,16 +61,7 @@ class WinRing0_1_3RunTimeDynLinked
   //: public wxWidgets::CalculationThread
 {
 private:
-  //HINSTANCE m_hinstanceWinRingDLL ;
   HMODULE m_hModuleWinRing0DLL ;
-  //_ReadPciConfigDwordEx m_pfnreadpciconfigdwordex ;
-  //_WritePciConfigDwordEx m_pfnwritepciconfigdwordex;
-  _CpuidTx m_pfncpuidex ;
-  _RdmsrTx m_pfnrdmsrex ;
-  _RdpmcTx m_pfnrdpmcex ;
-  _ReadPciConfigDwordEx m_pfnreadpciconfigdwordex ;
-  _WritePciConfigDwordEx m_pfnwritepciconfigdwordex ;
-  _WrmsrTx m_pfnwrmsrex ;
   //UserInterface * mp_userinterface ;
 public:
   WinRing0_1_3RunTimeDynLinked(UserInterface * pui) ;
@@ -83,15 +77,8 @@ public:
     DWORD_PTR affinityMask
   );
   BYTE GetNumberOfCPUCores() ;
-  inline BOOL 
-    //In g++ virtual methods can't be declared as stdcall
-    //WINAPI 
-    RdpmcEx(
-    DWORD dwIndex,		// MSR index
-    PDWORD p_dweax,			// bit  0-31
-    PDWORD p_dwedx,			// bit 32-63
-    DWORD_PTR affinityMask	// Thread Affinity Mask
-    ) ;
+  void Init(UserInterface * pui) ;
+
   BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI 
@@ -101,13 +88,28 @@ public:
 	  PDWORD edx,			// bit 32-63
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   );
-  void Init(UserInterface * pui) ;
+  inline BOOL
+    //In g++ virtual methods can't be declared as stdcall
+    //WINAPI
+    RdpmcEx(
+    DWORD dwIndex,    // MSR index
+    PDWORD p_dweax,     // bit  0-31
+    PDWORD p_dwedx,     // bit 32-63
+    DWORD_PTR affinityMask  // Thread Affinity Mask
+    ) ;
   BOOL ReadPciConfigDwordEx(
     DWORD dwPCIaddress
     , DWORD dwRegAddress
     , PDWORD p_dwValue
     );
+  BOOL ReadTSC(DWORD & r_dw , DWORD & r_dw ) ;
+  BOOL ReadTSCinOrder(
+    DWORD & r_dwLowEAX ,
+    DWORD & r_dwHighEDX ,
+    DWORD dwThreadAffinityMask
+    ) ;
   void SetUserInterface(UserInterface * pui) ;
+  BYTE SetThreadAffinityMask(DWORD dwThreadAffinityMask) ;
   void Sleep(WORD wMillis) //{ ::Sleep(wMillis) ; }
     ;
 

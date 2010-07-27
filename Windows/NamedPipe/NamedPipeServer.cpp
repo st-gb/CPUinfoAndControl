@@ -7,7 +7,8 @@
 #else
   #include <tchar.h> //for _T(...)
 #endif
-//ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/multithreaded_pipe_server.htm
+//ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/
+// multithreaded_pipe_server.htm
 
 //struct PipeClientThreadStruct
 //{
@@ -78,7 +79,7 @@ VOID PipeClientThread(LPVOID lpvParam)
         {
           DWORD dw = ::GetLastError() ;
           LOGN("reading from pipe failed: " <<
-            LocalLanguageMessageFromErrorCode(dw))
+            LocalLanguageMessageFromErrorCodeA(dw))
           break;
         }
         //switch( byCommand )
@@ -119,7 +120,7 @@ VOID PipeClientThread(LPVOID lpvParam)
         {
           DWORD dw = ::GetLastError() ;
           LOGN("error writing to pipe:"
-            << LocalLanguageMessageFromErrorCode(dw) )
+            << LocalLanguageMessageFromErrorCodeA(dw) )
           delete [] arbyPipeDataToSend ;
           break;
         }
@@ -143,7 +144,7 @@ VOID PipeClientThread(LPVOID lpvParam)
           {
             DWORD dw = ::GetLastError() ;
             LOGN("error writing to pipe:"
-              << LocalLanguageMessageFromErrorCode(dw) )
+              << LocalLanguageMessageFromErrorCodeA(dw) )
             delete [] arbyPipeDataToSend ;
             break;
           }
@@ -175,8 +176,9 @@ NamedPipeServer::NamedPipeServer(
   I_ServerProcess * p_serverprocess
 // , I_IPC_DataHandler & r_ipc_datahandler
   )
-  : mp_security_descriptor (NULL)
-  , mp_ipc_datahandler( NULL)
+  :
+  mp_ipc_datahandler( NULL)
+  , mp_security_descriptor (NULL)
   , m_lpszPipename ( _T("\\\\.\\pipe\\CPUcontrollerService") )
 //  , mr_ipc_datahandler (r_ipc_datahandler)
 {
@@ -234,7 +236,8 @@ void NamedPipeServer::CreateDownPrivilegedPipe()
       //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
       //"If lpSecurityAttributes is NULL, the named pipe gets a default
       //security descriptor and the handle cannot be inherited."
-      //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/security_descriptor.htm
+      //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/
+      //  security/security_descriptor.htm
       //"The ACLs in the default security descriptor for a named pipe grant
       //full control to the LocalSystem account, administrators, and the
       //creator owner. They also grant read access to members of the
@@ -322,7 +325,8 @@ BYTE NamedPipeServer::Init(
       do
       {
         CreateDownPrivilegedPipe() ;
-        //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/security/impersonatenamedpipeclient.htm:
+        //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/
+        //  security/impersonatenamedpipeclient.htm:
         //ImpersonateNamedPipeClient
 
         //DWORD GetSecurityInfo(
@@ -369,10 +373,12 @@ BYTE NamedPipeServer::Init(
             {
               DWORD dwThreadId ;
               LOGN("pipe server: A client connected") ;
-              //Every pipe client thread must use its own/ a different pipe (handle)
+              //Every pipe client thread must use its own/ a different pipe
+              // (handle)
               //Must create on heap because else it would get invalid after
               // leaving this block.
-              PipeClientThreadAttributes * pcta = new PipeClientThreadAttributes(
+              PipeClientThreadAttributes * pcta = new
+                PipeClientThreadAttributes(
                 m_handlePipe
                 , this) ;
             // Create a thread for this client.
@@ -393,14 +399,17 @@ BYTE NamedPipeServer::Init(
                }
                else
                {
-                 //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
-                 //"When a thread terminates, its thread object is not freed until all open
-                 //handles to the thread are closed."
-                 //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
-                 //"Closing a thread handle does not terminate the associated thread or remove
-                 //the thread object."
-                 //Close the thread handle here (waiting for the end of the thread via
-                 // WaitForSingleObject() would need another thread->not so good.)
+                 //http://msdn.microsoft.com/en-us/library/
+                 // ms686724%28v=VS.85%29.aspx:
+                 //"When a thread terminates, its thread object is not freed
+                 //until all open handles to the thread are closed."
+                 //http://msdn.microsoft.com/en-us/library/
+                 // ms724211%28v=VS.85%29.aspx:
+                 //"Closing a thread handle does not terminate the associated
+                 //thread or remove the thread object."
+                 //Close the thread handle here (waiting for the end of the
+                 //thread via WaitForSingleObject() would need another
+                 //thread->not so good.)
                  ::CloseHandle(hThread);
                  LOGN("spawned thread for pipe client with thread ID "
                    << dwThreadId ) ;
@@ -410,7 +419,7 @@ BYTE NamedPipeServer::Init(
             {
               DWORD dw = ::GetLastError() ;
               LOGN("connecting named pipe failed:" <<
-                LocalLanguageMessageFromErrorCode(dw) )
+                LocalLanguageMessageFromErrorCodeA(dw) )
               // The client could not connect, so close the pipe.
               ::CloseHandle(m_handlePipe);
               break;
@@ -427,4 +436,3 @@ BYTE NamedPipeServer::Init(
 //{
 //
 //}
-

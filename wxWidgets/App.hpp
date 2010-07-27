@@ -6,17 +6,21 @@
   #define _COMPILE_WITH_CALC_THREAD
 #endif
 
-//#include "../Windows/DynFreqScalingAccess.hpp"
-//#include <Windows/PowerProfDynLinked.hpp>
-#include <Controller/CPUcontrolBase.hpp>
-#include <Controller/ICPUcoreUsageGetter.hpp>
-#include <Controller/IDynFreqScalingAccess.hpp>
-#include <Controller/stdtstr.hpp> //std::tstring
-#include <Controller/MainController.hpp>
-#include <Windows/NamedPipe/NamedPipeClient.hpp>
+#include <Controller/CPUcontrolBase.hpp> //base class CPUcontrolBase
+//#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+//#include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
-#include <UserInterface.hpp>
-#include <ModelData/ModelData.hpp>
+#include <Controller/stdtstr.hpp> //std::tstring
+#include <Controller/MainController.hpp> //class MainController
+#include <ModelData/ModelData.hpp> //class Model
+#include <UserInterface/UserInterface.hpp>//base class UserInterface
+//#include <Windows/DynFreqScalingAccess.hpp>
+//#include <Windows/PowerProfDynLinked.hpp>
+#include <Windows/NamedPipe/NamedPipeClient.hpp> //class NamedPipeClient
+//class SAX2IPCcurrentCPUdataHandler
+#include <Xerces/IPC/SAX2IPCcurrentCPUdataHandler.hpp>
+//for x86IandC::thread_type
+#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
 //TODO program Did not exit when a taskbar icon is included.
 #define COMPILE_WITH_SYSTEM_TRAY_ICON
@@ -39,8 +43,10 @@
 #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 //#include <Windows/NamedPipeClient.hpp>
 
+//Forward declaration (because _this_ header file may be included very often /
+//more than once) is faster than to #include the while declaration file.
 //class Windows_API::DynFreqScalingAccess ;
-class Model ;
+//class Model ;
 class MainFrame ;
 class MyTaskBarIcon ;
 class UserInterface ;
@@ -65,6 +71,7 @@ class wxX86InfoAndControlApp
 {
 private:
   TCHAR ** m_arartchCmdLineArgument ;
+//  wxThread m_wxthreadIPC ;
   void * m_systemtray_icon_notification_window ;
 #ifdef _WINDOWS
 //  SystemTrayAccess m_systemtrayaccess ;
@@ -83,7 +90,7 @@ private:
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
   ////This member needs to be created on runtime because it may throw
-  ////an exception (that should be catched, else runtime error) when it is created.
+  ////an exception (that should be caught, else runtime error) when it is created.
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
 #ifdef COMPILE_WITH_SHARED_MEMORY
@@ -105,12 +112,13 @@ private:
   virtual int OnExit();
   virtual bool OnInit();
   void outputAllPstates(unsigned char byCurrentP_state, int & vid) ;
-  //GriffinController * mp_pstatectrl ;
   #ifdef _COMPILE_WITH_CALC_THREAD
   //Windows_API::
     CalculationThread m_calculationthread ;
   #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 public:
+  Model m_model ;
+  SAX2IPCcurrentCPUdataHandler m_sax2_ipc_current_cpu_data_handler ;
   //Must be created on heap, else left mouse clicks were not processed?
   MyTaskBarIcon * mp_taskbaricon ;
 //  MyTaskBarIcon m_taskbaricon ;
@@ -120,7 +128,14 @@ public:
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
 //  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
+  //"volatile" because it is accessed from more than 1 thread.
+  volatile bool m_vbRetrieveCPUcoreData ;
+  volatile bool m_vbGotCPUcoreData ;
   std::tstring m_stdtstrProgramName ;
+  wxCriticalSection m_wxcriticalsectionIPCthread ;
+  wxMutex m_wxmutexIPCthread ;
+  wxCondition m_wxconditionIPCthread ;
+  x86IandC::thread_type m_x86iandc_threadIPC ;
 #ifdef COMPILE_WITH_CPU_SCALING
   //wxDynFreqScalingTimer * mp_wxdynfreqscalingtimer ;
   //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
@@ -130,12 +145,8 @@ public:
   //"Because the detached threads delete themselves, they can only be
   //allocated on the heap."
   DynFreqScalingThread * mp_dynfreqscalingthread ;
- #ifdef COMPILE_WITH_IWBEMSERVICES
-  //CPUcoreUsageGetterIWbemServices m_cpucoreusagegetteriwbemservices ;
   //Windows_API::DynFreqScalingThread m_dynfreqscalingthread ;
   //DynFreqScalingThread m_dynfreqscalingthread ;
- #endif //#ifndef COMPILE_WITHOUT_IWBEMSERVICES
-
 #endif //#ifdef COMPILE_WITH_CPU_SCALING
   wxX86InfoAndControlApp() ;
   //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
@@ -146,7 +157,9 @@ public:
   {
   }
   bool Confirm(const std::string & str) ;
-  bool Confirm(std::ostrstream & r_ostrstream ) ;
+  bool Confirm(const std::wstring & str) ;
+//  bool Confirm(std::ostrstream & r_ostrstream ) ;
+  bool Confirm( std::ostringstream & r_stdostringstream ) ;
   void CPUcontrollerChanged() ;
   void CPUcontrollerDeleted() ;
   void CPUcoreUsageGetterDeleted() ;
@@ -161,6 +174,8 @@ public:
   {
     return mp_i_cpuaccess ;
   }
+  void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
+  void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;
   Model * GetModel()
   {
     return mp_modelData ;
@@ -168,7 +183,7 @@ public:
   void PossiblyAskForOSdynFreqScalingDisabling() ;
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
-  void ShowTaskBarIcon(MainFrame * p_mf) ;
+  bool ShowTaskBarIcon(MainFrame * p_mf) ;
 };
 
 DECLARE_APP(wxX86InfoAndControlApp)

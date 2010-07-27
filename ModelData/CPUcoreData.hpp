@@ -1,9 +1,7 @@
 #pragma once //include guard
 
-#include "../global.h" //for BYTE, WORD
+#include <global.h> //for BYTE, WORD
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
-#include <set>
-#include <string> //std::string
 //#ifdef __WXMSW__
 ////because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208:
 ////   'void': Keine Elemente definiert, die diesen Typ verwenden
@@ -20,14 +18,17 @@
 #include <Controller/multithread/mutex_type.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp>
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on mp_dynfreqscalingaccess for dyn libs.
+  //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #endif
+#include <map>
+#include <set>
+#include <string> //std::string
+
 //#endif
 
 #define CPU_CORE_DATA_NOT_SET 255
 //#include <Controller/ClocksNotHaltedCPUcoreUsageGetter.hpp>
-//#include <Controller/GriffinController.hpp>
 //#include <wxWidgets/DynFreqScalingThread.hpp>
 
 //using namespace wxWidgets ;
@@ -40,25 +41,26 @@ class MaxVoltageForFreq ;
 class CPUcoreData
 {
 private:
-  //this Frequency IDentifier determines the max frequency (at Divisor ID 0)
-  BYTE m_byMainPLLoperatingFrequencyIDmax ; 
 public:
   bool m_b1CPUcorePowerPlane ;
   bool m_bEnableDVFS ;
   BYTE m_byUpdateViewOnDVFS ;
-  BYTE m_byLowestEffectiveFreqID ;
   BYTE m_byNumberOfCPUCores ;
   BYTE m_byMaxVoltageID ; //=lowest voltage
   BYTE m_byMinVoltageID ;
   BYTE m_byModel ;
   BYTE m_byStepping ;
+  float * m_arfAvailableMultipliers ;
+  float * m_arfAvailableVoltagesInVolt ;
   float * m_arfCPUcoreLoadInPercent ;
   float m_fCPUcoreLoadThresholdForIncreaseInPercent;
   float m_fCPUcoreFreqIncreaseFactor ;
   float m_fVoltageForMaxCPUcoreFreq ;
   float m_fThrottleTempInDegCelsius ;
-  //GriffinController * mp_griffincontroller ;
   I_CPUcontroller * mp_cpucontroller ;
+  std::map<float,VoltageAndFreq> m_stdmap_fMultiplier2voltageandfreq ;
+  std::set<float> m_stdset_floatAvailableMultipliers ;
+  std::set<float> m_stdset_floatAvailableVoltagesInVolt ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqAvailableFreq ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqWanted ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqLowestStable ;
@@ -98,28 +100,32 @@ public:
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   //void AddFreqAndLowestStableVoltage(float fValue,WORD wFreqInMHz) ;
   void AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz) ;
+  void AvailableMultipliersToArray() ;
+  void AvailableVoltagesToArray() ;
   void ClearCPUcontrollerSpecificAtts() ;
   CPUcoreData() ;
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
 
-  void ThreadFinishedAccess() ;
+  BYTE GetIndexForClosestMultiplier(float fMultiplier) ;
+  BYTE GetIndexForClosestVoltage(float) ;
+  float GetLowerMultiplier( float fMulti ) ;
   BYTE GetNumberOfCPUcores() ;
-  void PossiblyReleaseMem() ;
-  BYTE GetMainPLLoperatingFrequencyIDmax(
-    ) ;
+  //Can't be inline, else g++ warning
+  // "undefined reference to `CPUcoreData::GetMaximumMultiplier()'"
+  // if called from class MainFrame
+  //inline
+  float GetMaximumMultiplier() ;
+  //inline
+  float GetMinimumVoltage() ;
+  float GetVoltageInVolt(WORD wVoltageInVoltIndex) ;
+  void PossiblyReleaseMemForCoreNumAffectedData() ;
   void Init() ;
-  //void SetGriffinController(
-  //  GriffinController * p_griffincontroller )
-  //{
-  //  mp_griffincontroller = p_griffincontroller ;
-  //}
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
   {
     mp_cpucontroller = p_cpucontroller ;
   }
-  void SetMainPLLoperatingFrequencyIDmax(
-    BYTE byMainPLLoperatingFrequencyIDmax) ;
   void SetCPUcoreNumber(BYTE byNumberOfCPUcores) ;
   void SetMaxFreqInMHz(WORD wMaxFreqInMHz) ;
+  void ThreadFinishedAccess() ;
 };

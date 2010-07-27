@@ -14,13 +14,13 @@ typedef wxMutex mutex_type ;
 
 #else
 
-class I_CriticalSection
+class I_Mutex
 {
   public:
-  void Enter() {}
-  void Leave() {}
+  void Lock() {}
+  void Unlock() {}
 } ;
 
-typedef I_CriticalSection criticalsection_type ;
+typedef I_Mutex mutex_type ;
 
 #endif //ifdef __WXMSW__

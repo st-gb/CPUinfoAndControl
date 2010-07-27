@@ -39,10 +39,14 @@ private :
   CPUcoreData * mp_cpucoredata ;
 public:
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
+  //Keep away the dependence on this class for dyn libs.
   wxWidgets::DynFreqScalingThread * mp_dynfreqscalingthread ;
 #endif
   float m_fPreviousCPUusage ;
+  float m_fMultiplier ;
+  float m_fReferenceClockInMhz ;
+  float m_fTempInDegCelsius ;
+  float m_fVoltageInVolt ;
   float m_fVoltageInVoltCalculatedFromCPUload ;
 private:
   I_CPUcontroller * mp_cpucontroller ;
@@ -52,7 +56,7 @@ public:
   WORD m_wFreqInMHzCalculatedFromCPUload ;
 
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
+  //Keep away the dependence on this class for dyn libs.
   void CreateDynFreqScalingThread(
     ICPUcoreUsageGetter * p_icpucoreusagegetter
     ) ;
@@ -66,10 +70,11 @@ public:
   void Create(
     BYTE byCoreID
     //ICPUcoreUsageGetter * p_icpucoreusagegetter
-    //, GriffinController * p_griffincontroller
     , I_CPUcontroller * p_cpucontroller
     , CPUcoreData & r_cpucoredata
     ) ;
+  //inline
+  float GetFreqInMHz() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
   {
     mp_cpucontroller = p_cpucontroller ;

@@ -1,9 +1,9 @@
 #pragma once
 
 //#include "StdAfx.h" //for DWORD, ...
-#include "../global.h" //for DWORD, ...
-#include <vector>
+#include <global.h> //for DWORD, ...
 #include <string>
+#include <vector>
 //#include <windows.h> //ULONGLONG
 #include <Windows_compatible_typedefs.h> //for ULONGLONG
 
@@ -36,6 +36,13 @@ public:
   {
       m_stdvec_bitrange.push_back(BitRange(byStartBit, byBitLength)) ;
   }
+  //Adapted from
+  //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
+//  RegisterData & operator = (const RegisterData & cr_registerdataToCopyFrom )
+//  {
+////    m_stdvec_bitrange = cr_registerdataToCopyFrom.m_stdvec_bitrange.
+//    return *this;  // Return a reference to myself.
+//  }
   //void setTable() {};
 };
 
@@ -83,11 +90,11 @@ public:
     unsigned long dwIndex
     //Name for the corresponding CPUID code. 
     //E.g. CPUID code 0 is the code for getting the CPU manufacturer.
-    // so registername could be "manufacturer".
+    // so register name could be "manufacturer".
     , std::string & stdstrRegisterName 
     ////Name for the general purpose register whose contents are wanted.
     ////The general purpose register can be either EAX, EBX, ECX or EDX.
-    ////This is the general register the bitrange applies to.
+    ////This is the general register the bit range applies to.
     //, std::string & stdstrGenPurposeRegName 
     )
     : m_byCoreID(0)
@@ -95,6 +102,32 @@ public:
     m_dwIndex = dwIndex ;
     m_stdstrRegisterName = stdstrRegisterName ;
     //m_stdstrGenPurposeRegName = stdstrGenPurposeRegName ;
+  }
+  //The following assignment operator solves the g++ warnings (that appears
+  // because class RegisterData also contains a vector?:
+  //see http://cboard.cprogramming.com/cplusplus-programming/
+  //  101030-warnings-when-using-vector-vector.html
+  // "C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../
+  // include/c++/3.4.5/bits/stl_vector.h:
+  //  In member function `std::vector<_Tp,
+  //   _Alloc>& std::vector<_Tp, _Alloc>::operator=(
+  //    const std::vector<_Tp, _Alloc>&) [with _Tp = RegisterData,
+  //    _Alloc = std::allocator<RegisterData>]':
+  //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+  // stl_vector.h:715:
+  //  warning: '__result' might be used uninitialized in this function
+  //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+  //  stl_uninitialized.h:82: warning:
+  // '__cur' might be used uninitialized in this function
+  //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+  // stl_uninitialized.h:82:
+  // warning: '__cur' might be used uninitialized in this function
+  //Adapted from
+  //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
+  CPUIDdata & operator = (const CPUIDdata & cr_cpuiddata )
+  {
+//    m_stdvec_bitrange = cr_registerdataToCopyFrom.m_stdvec_bitrange.
+    return *this;  // Return a reference to myself.
   }
 } ;
 
@@ -116,6 +149,28 @@ class MSRdata
   MSRdata(//DWORD
     unsigned long dwIndex
     , std::string & stdstrRegisterName ) ;
+  //The following assignment operator solves the g++ warnings (that appears
+  // because class RegisterData also contains a vector?:
+  //see http://cboard.cprogramming.com/cplusplus-programming/
+  //  101030-warnings-when-using-vector-vector.html
+  // "C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../
+  // include/c++/3.4.5/bits/stl_vector.h:
+  //  In member function `std::vector<_Tp,
+  //   _Alloc>& std::vector<_Tp, _Alloc>::operator=(
+  //    const std::vector<_Tp, _Alloc>&) [with _Tp = RegisterData,
+  //    _Alloc = std::allocator<RegisterData>]':
+  //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+  // stl_vector.h:715:
+  //  warning: '__result' might be used uninitialized in this function
+  //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+  //  stl_uninitialized.h:82: warning:
+  // '__cur' might be used uninitialized in this function
+  //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
+  // stl_uninitialized.h:82:
+  // warning: '__cur' might be used uninitialized in this function
+  //Adapted from
+  //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
+  MSRdata & operator = (const MSRdata & cr_msrdata ) ;
 
   void add(RegisterData & regdata)
   {
@@ -137,7 +192,8 @@ class MSRdata
     std::string & strAttrVal ) ;
 
   void setTable(
-    //A string gives high independance instead of e.g. an integer (->no floats possible)
+    //A string gives high independence instead of e.g. an integer (->no floats
+    //possible)
     std::string //[][] 
     * 
     ararstdstr

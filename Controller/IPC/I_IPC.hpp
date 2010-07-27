@@ -33,7 +33,7 @@ public:
   virtual BYTE Init() = 0 ;
   ////connects e.g. to the shared memory
   //ConnectToProvider() ;
-  //SendMessage() ;
+  //SendCommandAndGetResponse() ;
   void OnDisconnect() ;
   bool IsConnected() ;
 };

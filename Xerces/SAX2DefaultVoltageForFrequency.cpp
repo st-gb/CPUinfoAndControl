@@ -5,12 +5,13 @@
 
 #ifdef COMPILE_WITH_XERCES
 #include "../stdafx.h"
-#include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
+#include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
 	//If not included: compiler error "C1010".
 	#include "SAX2DefaultVoltageForFrequency.hpp"
   #include "XercesHelper.hpp" //for GetAttributeValue(...)
-	//#include "PStates.h"
+  #include <UserInterface/UserInterface.hpp>
+
 	#include <xercesc/sax2/Attributes.hpp>
 	#include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
 	//#include "global.h" //for DEBUG(...) etc.
@@ -18,7 +19,6 @@
 	#include <string>
 	#include <sstream> //for istringstream
 	#include <iostream>
-	#include "../global.h"
   #include <exception> //for class std::exception
 	#ifndef WIN32
 		#include <stdexcept> //for class "runtime_error"
@@ -26,7 +26,6 @@
 	using namespace std;
 	
 	//#define MB_CUR_MAX 1 
-	
 	
 	//With Xerces < Version 2.8:
 	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces statically (else many "LNK2001" and "LNK2019" and linker errors).
@@ -41,52 +40,11 @@
 	  class Attributes;
 	XERCES_CPP_NAMESPACE_END
 	
-	//#ifdef WIN32
-	class NumberFormatException 
-    : public
-    #if defined (__CYGWIN__) || defined(__MINGW32__) // == 1
-    //  ::RuntimeException
-      std::exception
-    #else
-      std::runtime_error
-  #endif
-	{
-	public:
-	   NumberFormatException(const std::string& s)
-      #if defined (__CYGWIN__) || defined(__MINGW32__)
-      //  ::RuntimeException
-      //  std::exception()
-      #else
-        :
-        std::runtime_error(s)
-      #endif
-      {}
-	};
-	//#endif
-	
-	template <class T>
-	bool from_string(
-	   T& t, 
-	   const std::string& s
-	   //,std::ios_base& (*f)(std::ios_base&)
-	  )
-	{
-	  //DEBUG("from_string:%s\n",s);
-	  LOG("from_string:" << s << "\n" );
-	  std::istringstream iss(s);
-	  return !(iss //>> f 
-	    >> t
-	    ).fail();
-	}
-	
-	
 	SAX2DefaultVoltageForFrequency::SAX2DefaultVoltageForFrequency(
-    //PStates & pstates
 	  UserInterface & p_userinterface 
 	  , Model & model
 	  )
 	{
-	  //m_p_pstates = & pstates ;
 	  m_p_model = & model ;
 	  m_p_userinterface = & p_userinterface ;
 	}
@@ -111,19 +69,25 @@
 	    }
 	    else
 	    {
-	      std::ostrstream ostrstream ;
-	      ostrstream << "Error getting \"" << 
+//	      std::ostrstream ostrstream ;
+//	      ostrstream
+	      std::ostringstream stdostringstream ;
+	      stdostringstream << "Error getting \"" <<
 	        strAttributeName << "\" attribute for \""
 	        << m_strElementName << "\" element" ;
-	      m_p_userinterface->Confirm(ostrstream) ;
+	      m_p_userinterface->Confirm(//ostrstream
+	        stdostringstream ) ;
 	    }
 	  }
 	  else
 	  {
-	    std::ostrstream ostrstream ;
-	    ostrstream << "Error getting \"" << strAttributeName << "\" for "
+//	    std::ostrstream ostrstream ;
+//	    ostrstream
+      std::ostringstream stdostringstream ;
+      stdostringstream << "Error getting \"" << strAttributeName << "\" for "
 	      "\"" << m_strElementName << "\" element" ;
-	    m_p_userinterface->Confirm(ostrstream) ;
+	    m_p_userinterface->Confirm(//ostrstream
+	      stdostringstream ) ;
 	  }
 	}
 
@@ -192,10 +156,13 @@
 	  }
 	  else
 	  {
-	    std::ostrstream ostrstream ;
-	    ostrstream << "Error getting \"" << strAttributeName << "\" for "
+//	    std::ostrstream ostrstream ;
+//	    ostrstream
+      std::ostringstream stdostringstream ;
+      stdostringstream << "Error getting \"" << strAttributeName << "\" for "
 	      "\"" << m_strElementName << "\" element" ;
-	    m_p_userinterface->Confirm(ostrstream) ;
+	    m_p_userinterface->Confirm(//ostrstream
+	      stdostringstream ) ;
 	  }    
   }
 	

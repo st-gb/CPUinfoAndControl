@@ -2,6 +2,7 @@
 #include "wxDynFreqScalingTimer.hpp"
 
 #include <ModelData/ModelData.hpp>
+#include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
 #include <wx/timer.h>
 
 wxDynFreqScalingTimer::wxDynFreqScalingTimer(

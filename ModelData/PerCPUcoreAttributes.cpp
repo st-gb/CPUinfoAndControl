@@ -9,7 +9,8 @@
   //Keep away the dependency on this class for dyn libs.
   #include <wxWidgets/DynFreqScalingThread.hpp>
 #endif
-#include <Controller/ICPUcoreUsageGetter.hpp>
+#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+#include "PerCPUcoreAttributes.hpp"
 
 #ifdef COMPILE_WITH_LOG
 extern Logger g_logger ;
@@ -21,7 +22,7 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
   //(to avoid g++ warnings)
 
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
+  //Keep away the dependence on this class for dyn libs.
     mp_dynfreqscalingthread(NULL)
   ,
 #endif
@@ -29,15 +30,11 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
   , mp_icpucoreusagegetter(NULL)
   , m_wCurrentFreqInMHz (0)
   {
-    //mp_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
-    //  m_byCoreID
-    //  ,
-    //  ) ;
   }
   PerCPUcoreAttributes::~PerCPUcoreAttributes()
   {
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
+  //Keep away the dependence on this class for dyn libs.
     if( mp_dynfreqscalingthread )
       delete mp_dynfreqscalingthread ;
 #endif
@@ -46,7 +43,7 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
   }
 
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependance on this class for dyn libs.
+  //Keep away the dependence on this class for dyn libs.
   void PerCPUcoreAttributes::CreateDynFreqScalingThread(
     ICPUcoreUsageGetter * p_icpucoreusagegetter
     )
@@ -63,7 +60,6 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
       mp_dynfreqscalingthread = new //DynFreqScalingThread(
         wxWidgets::DynFreqScalingThread(
         mp_icpucoreusagegetter
-        //, mp_griffincontroller
         , mp_cpucontroller
         , *mp_cpucoredata
         );
@@ -89,18 +85,17 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
   void PerCPUcoreAttributes::Create(
     BYTE byCoreID
     //ICPUcoreUsageGetter * p_icpucoreusagegetter
-    //, GriffinController * p_griffincontroller
     , I_CPUcontroller * p_cpucontroller
     , CPUcoreData & r_cpucoredata
     )
   {
     m_byCoreID = byCoreID ;
-    //mp_griffincontroller = p_griffincontroller ;
     mp_cpucontroller = p_cpucontroller ;
     //mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
     mp_cpucoredata = & r_cpucoredata ;
-    //mp_icpucoreusagegetter = new ClocksNotHaltedCPUcoreUsageGetter(
-    //  m_byCoreID
-    //  , mp_griffincontroller
-    //  ) ;
+  }
+
+  float PerCPUcoreAttributes::GetFreqInMHz()
+  {
+    return m_fMultiplier * m_fReferenceClockInMhz ;
   }

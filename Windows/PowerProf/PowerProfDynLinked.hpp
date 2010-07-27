@@ -43,6 +43,7 @@ public:
   bool OtherDVFSisEnabled() ;
   void OutputAllPowerSchemes() ;
   virtual unsigned char PowerSchemeToSetExists() { return 0 ; }
-  BYTE SetActivePowerScheme(
+  //BYTE
+  DWORD SetActivePowerScheme(
     const std::wstring & r_stdwstrPowerSchemeName ) ;
 };

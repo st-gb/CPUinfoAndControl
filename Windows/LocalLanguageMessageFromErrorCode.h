@@ -3,6 +3,7 @@
 #include <string>
 #include "global.h" //for DWORD 
 
-std::string LocalLanguageMessageFromErrorCode(DWORD dwErrorCode) ;
+std::string LocalLanguageMessageFromErrorCodeA(DWORD dwErrorCode) ;
+std::string LocalLanguageMessageAndErrorCodeA(DWORD dwErrorCode) ;
 
 std::string PossibleSolution(DWORD dwErrorCode) ;

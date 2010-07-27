@@ -1514,7 +1514,8 @@ DWORD PowerProfFromWin6DynLinked::PowerWriteFriendlyName(
 //0: power scheme does not exist
 //1: power scheme exists
 //2: error (enumerating) power scheme(s)
-BYTE PowerProfFromWin6DynLinked:: SetActivePowerScheme(
+//BYTE
+DWORD PowerProfFromWin6DynLinked:: SetActivePowerScheme(
   const std::wstring & r_stdwstrPowerSchemeName )
 {
   ULONG ulIndex = 0 ;
@@ -1548,11 +1549,15 @@ BYTE PowerProfFromWin6DynLinked:: SetActivePowerScheme(
           GetStdString( stdwstr) )
       if( stdwstr == r_stdwstrPowerSchemeName )
       {
-        DWORD dwRet = PowerSetActiveScheme( NULL, & GUIDscheme ) ;
-        if( dwRet == ERROR_SUCCESS )
-          return 1 ;
-        else
-          return 2 ;
+        DWORD dwRet =
+          //"Returns ERROR_SUCCESS (zero) if the call was successful, and a
+          //non-zero value if the call failed."
+          PowerSetActiveScheme( NULL, & GUIDscheme ) ;
+//        if( dwRet == ERROR_SUCCESS )
+//          return 1 ;
+//        else
+//          return 2 ;
+        return dwRet ;
       }
       #ifdef _DEBUG
         #if !defined(__MINGW32__) //MinGW does not know "wcout"

@@ -10,7 +10,8 @@
 #include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
 #include "XercesHelper.hpp"
 #include "ModelData/RegisterData.hpp"
-#include "ModelData/ValueTables.hpp"
+//#include "ModelData/ValueTables.hpp"
+#include <UserInterface/UserInterface.hpp>
 
 //#include "PStates.h"
 #include <xercesc/sax2/Attributes.hpp>
