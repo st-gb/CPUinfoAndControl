@@ -16,7 +16,7 @@ wxString getwxString(const std::string & str ) ;
 //wxString getwxString(std::tstring & tstr ) ;
 wxString getwxString(const std::wstring & stdwstr ) ;
 
-std::string getstdstring(wxString & wxstr) ;
+std::string GetStdString(wxString & wxstr) ;
 
 #endif	/* _WXSTRINGHELPER_H */
 

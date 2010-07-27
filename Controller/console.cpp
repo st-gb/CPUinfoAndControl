@@ -426,8 +426,9 @@ int main( int argc, char *  argv[] )
 
         DEBUG("initialization of dialog--after handling cmd line args\n");
         //DEBUG("return value of handleCmdLineArgs(): %u\n",(WORD)byReturn);
-        LOG("return value of handling command line args: " << (WORD) byReturn << "\n" );
-
+        LOG("return value of handling command line args: " << (WORD) byReturn
+          //<< "\n"
+          );
         switch(byReturn)
         {
           case FAILURE:

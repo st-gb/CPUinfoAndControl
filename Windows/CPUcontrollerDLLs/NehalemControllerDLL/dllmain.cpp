@@ -1,4 +1,4 @@
-  // dllmain.cpp : Definiert den Einstiegspunkt für die DLL-Anwendung.
+  // dllmain.cpp : Definiert den Einstiegspunkt fï¿½r die DLL-Anwendung.
   //Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany
   #ifdef _MSC_VER //MS compiler
   #include "stdafx.h"
@@ -16,7 +16,8 @@
 
 //#define _DEBUG
 
-  #include <Windows/AssignPointersToExportedExeFunctions.h>
+  #include <Windows/AssignPointersToExportedExeFunctions/\
+AssignPointersToExportedExeFunctions.h>
 #ifdef _DEBUG
   #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
@@ -36,6 +37,10 @@ Logger g_logger ;
   extern ReadMSR_func_type g_pfnreadmsr ;
   extern WriteMSR_func_type g_pfn_write_msr ;
   extern float g_fReferenceClockInMHz ;
+
+  //Use global vars instead of allocating them for each function call (->faster)
+  BYTE g_byValue1 , g_byValue2 ;
+  DWORD g_dwValue1 , g_dwValue2 ;
 
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
   //#include <Controller\Intel\Nehalem\NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
@@ -304,7 +309,7 @@ Logger g_logger ;
 //  #endif
      //g_pi_cpuaccess->RdmsrEx(
     (*g_pfnreadmsr) (
-       0x1AD , // name="MSR_TURBO_RATIO_LIMIT"
+      MSR_TURBO_RATIO_LIMIT ,
       & dwLowmostBits,// bit  0-31 (register "EAX")
       & dwHighmostBits,
       1 << wCoreID //m_dwAffinityMask
@@ -416,22 +421,19 @@ Logger g_logger ;
     //dll_GetCurrentPstate_type
     //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
   {
-    DWORD dwLowmostBits , dwHighmostBits ;
   //  //Intel: 198H 408 IA32_PERF_STATUS
-    BYTE byRet =
+    g_byValue1 =
   //    g_pi_cpuaccess->RdmsrEx(
       (*g_pfnreadmsr) (
       IA32_PERF_STATUS,
-      & dwLowmostBits,// bit  0-31 (register "EAX")
-      & dwHighmostBits,
+      & g_dwValue1,// lowmost bit 0-31 (register "EAX")
+      & g_dwValue2, //highmost bit 32-63
       1 << wCoreID //m_dwAffinityMask
       ) ;
-
     * p_fVoltageInVolt = 0 ;
     //Intel: "15:0 Current performance State Value"
     //   "63:16 Reserved"
-    * p_fMultiplier = ( dwLowmostBits & 255 ) ;
-
+    * p_fMultiplier = ( g_dwValue1 & 255 ) ;
     //This call sets g_fReferenceClockInMHz to the current reference clock.
     //This update of the value would be senseful for setting the CPU core
     //via "frequency" as parameter value the next time.
@@ -442,7 +444,7 @@ Logger g_logger ;
       << g_fReferenceClockInMHz )
     *p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
 
-    return byRet ;
+    return g_byValue1 ;
   }
 
 //  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
@@ -514,35 +516,42 @@ Logger g_logger ;
     GetTemperatureInCelsius ( WORD wCoreID
     )
   {
-    BYTE byDigitalReadout ;
-    BYTE byTempInDegCelsius ;
-    BYTE byTempTarget;
-    BYTE byResolutionInDegreesCelsius ;
-    DWORD dwLowmostBits ;
-    DWORD dwHighmostBits ;
+//    BYTE byDigitalReadout ;
+//    BYTE byTempInDegCelsius ;
+//    BYTE byTempTarget;
+//    BYTE byResolutionInDegreesCelsius ;
+////    DWORD dwLowmostBits ;
+////    DWORD dwHighmostBits ;
+//    (*g_pfnreadmsr) (
+//       MSR_TEMPERATURE_TARGET , //Intel "B-12Vol. 3"
+//       & g_dwValue1, // bits 0-31 (register "EAX")
+//       & g_dwValue2, // bits 32-63 (register "EDX")
+//       //m_dwAffinityMask
+//       1 << wCoreID
+//       ) ;
+//    //Intel B-76Vol. 3 : "23:16 Temperature Target. (R)"
+//    // "The minimum temperature at which PROCHOT# will be asserted.
+//    //  The value is degree C."
+//    byTempTarget = ( g_dwValue1 >> 16 ) & 255 ;
+
     (*g_pfnreadmsr) (
-       MSR_TEMPERATURE_TARGET ,
-       & dwLowmostBits,// bit  0-31 (register "EAX")
-       & dwHighmostBits,
-       //m_dwAffinityMask
-       1 << wCoreID
-       ) ;
-    //TemperatureTarget startbit="16" bitlength="8"/
-    byTempTarget = ( dwLowmostBits >> 16 ) & 255 ;
-    (*g_pfnreadmsr) (
-       IA32_THERM_STATUS ,
-       & dwLowmostBits,// bit  0-31 (register "EAX")
-       & dwHighmostBits,
+       IA32_THERM_STATUS , //Address: 1A2H
+       & g_dwValue1, // bits 0-31 (register "EAX")
+       & g_dwValue2,
        //m_dwAffinityMask
        1 << wCoreID
        ) ;
     //Intel: "22:16 Digital Readout (RO)"
-    byDigitalReadout = ( dwLowmostBits >> 16 ) & 127 ;
-    //Intel: "30:27 Resolution in Degrees Celsius (RO)"
-    byResolutionInDegreesCelsius = ( dwLowmostBits >> 27 ) &
-        BITMASK_FOR_LOWMOST_5BIT ;
-    byTempInDegCelsius = byTempTarget - byDigitalReadout ;
-    return (float) byTempInDegCelsius ;
+    g_byValue1 = ( g_dwValue1 >> 16 ) & BITMASK_FOR_LOWMOST_7BIT ;
+
+//    //Intel: "30:27 Resolution in Degrees Celsius (RO)"
+//    byResolutionInDegreesCelsius = ( g_dwValue1 >> 27 ) &
+//      BITMASK_FOR_LOWMOST_5BIT ;
+
+    // TemperatureTarget - "Digital Readout"
+//    byTempInDegCelsius = byTempTarget - g_byValue1 ;
+    g_byValue2 = 100 - g_byValue1 ;
+    return (float) g_byValue2 ;
   }
 
   void PerformanceEventSelectRegisterWrite(
@@ -756,32 +765,31 @@ Logger g_logger ;
     //dll_GetCurrentPstate_type
     //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
   {
-    DWORD dwLowmostBits , dwHighmostBits = 0 ;
     //Intel: "199H 409 IA32_PERF_CTL  (R/W)"
     // "15:0  Target performance State Value"
     //  "31:16  Reserved"
-    //  "32  IDA Engage. (R/W)   When set to 1: disengages IDA   since: 06_0FH (Mobile)
+    //  "32  IDA Engage. (R/W) When set to 1: disengages IDA since: 06_0FH (Mobile)
     //  "63:33 Reserved"
-    dwLowmostBits =
+    g_dwValue1 =
       //Freq / "FSB in MHz" = multiplier
       (BYTE) fMultiplier ;
 //    std::stringstream ss ;
 //    ss << "multiplier to set: " << fMultiplier << "lowmost bits:"
-//        << dwLowmostBits ;
+//        << g_dwValue1 ;
 //    MessageBox(NULL,ss.str().c_str(), "info" , MB_OK ) ;
     DEBUGN("before calling Exe's WriteMSR function")
-    BYTE byRet =
+    g_byValue1 =
       //g_pi_cpuaccess->WrmsrEx(
       (*g_pfn_write_msr) (
       IA32_PERF_CTL,
-      dwLowmostBits,// bit  0-31 (register "EAX")
-      dwHighmostBits,
+      g_dwValue1, // bits 0-31 (register "EAX")
+      g_dwValue2, //bits 0-31 (register "EDX")
       //m_dwAffinityMask
       1 << wCoreID
       ) ;
     DEBUGN("after calling Exe's WriteMSR function. return value: "
-      << (WORD) byRet )
-    return byRet ;
+      << (WORD) g_byValue1 )
+    return g_byValue1 ;
   }
 
 //  //_declspec(dllexport)

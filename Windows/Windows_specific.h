@@ -15,3 +15,11 @@
   ////#define WINAPI      __stdcall
   //#include <OlsApi.h>
 #endif
+
+//helper function
+//  void * GetHandleToDLLFunction(const std::string & strFuncName)
+//  {
+//    void * pfn ;
+//    pfn = (void *) GetProcAddress(m_hinstanceWinRingDLL,strFuncName.c_str() );
+//    return pfn ;
+//  }

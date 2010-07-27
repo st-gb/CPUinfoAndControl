@@ -214,7 +214,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       mp_model->m_cpucoredata.AvailableMultipliersToArray() ;
 
 //      LOGN("after DLL::GetAvailableMultipliers")
-      LOGN("Available multpliers:")
+      LOGN("Available multipliers:")
       for( WORD wIndex = 0 ; wIndex < mp_model->m_cpucoredata.
         m_stdset_floatAvailableMultipliers.size() ; ++ wIndex )
       {
@@ -286,11 +286,13 @@ void wxDynLibCPUcontroller::GetAvailableMultipliers(
       {
         r_stdset_float.insert(arf[wIndex]) ;
       }
-      LOGN("Before deleting the array that should have been allocated by the DLL")
+      LOGN("Before deleting the array that should have been allocated by the "
+        "dynamic library")
       //Was dyn. allocated by the DLL.
       delete [] arf ;
+      LOGN("After deleting the array that should have been allocated by the "
+        "dynamic library")
     }
-    LOGN("After deleting the array that should have been allocated by the DLL")
   }
 }
 
@@ -323,6 +325,84 @@ void wxDynLibCPUcontroller::GetAvailableVoltagesInVolt(
     }
     LOGN("After deleting the array that should have been allocated by the DLL")
   }
+}
+
+//Get closest multiplier because if a client wants an unsupported multiplier
+// then this multi is not used.
+//TODO also set closest voltage?!
+inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier(
+  float fVoltageInVolt ,
+  float fMultiplier ,
+  WORD byCoreID
+  )
+{
+  BYTE by = 0 ;
+  CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
+  float * p_fAvailableMultipliers = r_cpucoredata.m_arfAvailableMultipliers ;
+  if( m_pfnSetCurrentVoltageAndMultiplier
+      && //! r_cpucoredata.m_stdset_floatAvailableMultipliers.empty()
+      //! r_stdset_fAvailableMultipliers.empty()
+      p_fAvailableMultipliers
+      )
+  {
+    std::set<float> & r_stdset_fAvailableMultipliers =
+        r_cpucoredata.m_stdset_floatAvailableMultipliers ;
+    WORD wArraySize = r_stdset_fAvailableMultipliers.size() ;
+    float fMultiplierLessOrEqual = GetClosestLessOrEqual(
+      p_fAvailableMultipliers ,
+      wArraySize,
+      fMultiplier ) ;
+    DEBUGN("dyn lib CPU controller-- < or = multiplier closest to calculated "
+      "multiplier: " << fMultiplierLessOrEqual )
+    float fMultiplierGreaterOrEqual = GetClosestGreaterOrEqual(
+      p_fAvailableMultipliers ,
+      wArraySize,
+      fMultiplier) ;
+    DEBUGN("dyn lib CPU controller-- > or = multiplier closest to calculated "
+       "multiplier: " << fMultiplierGreaterOrEqual )
+    float fGreaterOrEqualDiff = fMultiplierGreaterOrEqual -
+      fMultiplier ;
+    float fLessOrEqualDiff = fMultiplier - fMultiplierLessOrEqual ;
+    fMultiplier = fGreaterOrEqualDiff < fLessOrEqualDiff ?
+      fMultiplierGreaterOrEqual : fMultiplierLessOrEqual ;
+    DEBUGN(" <= to calculated multiplier diff:" << fLessOrEqualDiff
+      << " >= to calculated multiplier diff:" << fGreaterOrEqualDiff
+      << "-> using multiplier " << fMultiplier )
+    //    byHigherMultiplier = byLowerMultiplier + 1 ;
+    //    fLowerFreq = byLowerMultiplier * m_fReferenceClockInMHz ;
+    //    fHigherFreq = byHigherMultiplier * m_fReferenceClockInMHz ;
+    //    fLowerFreqDiff = wFreqInMHz - fLowerFreq ;
+    //    fHigherFreqDiff = fHigherFreq - wFreqInMHz ;
+    //    byMultiplierToUse = fLowerFreqDiff < fHigherFreqDiff ?
+    //      byLowerMultiplier : byHigherMultiplier ;
+
+    //    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) "
+    //      "before calling fct. at address " << m_pfnsetcurrentpstate <<
+    //      " with args (" << wFreqInMHz << "," << wMilliVolt << ","
+    //      << (WORD) byCoreID << ")")
+    DEBUGN("before calling DLL's function SetCurrentVoltageAndMultiplier( "
+      << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
+      fMultiplier
+      << ","
+      << (WORD) byCoreID << ")" )
+     by = //(*m_pfnsetcurrentpstate)(
+    //      wFreqInMHz
+    //      , wMilliVolt
+    //      , byCoreID
+    //      ) ;
+       (*m_pfnSetCurrentVoltageAndMultiplier)(
+          fVoltageInVolt
+         //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+         , //byMultiplierToUse
+         fMultiplier
+         , byCoreID ) ;
+    DEBUGN("return value of DLL's function SetCurrentVoltageAndMultiplier( "
+      << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
+      fMultiplier
+      << ","
+      << (WORD) byCoreID << ") : " << (WORD) by )
+  }
+  return by ;
 }
 
 BYTE wxDynLibCPUcontroller::GetCurrentPstate(
@@ -561,6 +641,28 @@ void wxDynLibCPUcontroller::PrepareForNextPerformanceCounting(
   }
 }
 
+BYTE wxDynLibCPUcontroller::SetCurrentVoltageAndMultiplier(
+  float fVoltageInVolt
+  //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+  , float fMultiplier
+  , WORD wCoreID
+  )
+{
+//  LOGN("SetCurrentVoltageAndMultiplier")
+//  if( m_pfnSetCurrentVoltageAndMultiplier
+////      && //! r_cpucoredata.m_stdset_floatAvailableMultipliers.empty()
+////      //! r_stdset_fAvailableMultipliers.empty()
+////      p_fAvailableMultipliers
+//    )
+//  {
+  return GetClosestMultplierAndSetVoltageAndMultiplier(
+      fVoltageInVolt ,
+      fMultiplier ,
+      wCoreID
+      ) ;
+//  }
+}
+
 BYTE wxDynLibCPUcontroller::
     //Let voltage be the first element from name because the same in
     //"Dyn Voltage And Freq. Scaling"
@@ -570,30 +672,23 @@ BYTE wxDynLibCPUcontroller::
       , BYTE byCoreID 
       ) //{return 0 ; }
 {
+  BYTE by = 0 ;
   DEBUGN("dyn lib CPU controller--address of DLL's set multi fct:"
     << m_pfnSetCurrentVoltageAndMultiplier
     << " reference clock:" << m_fReferenceClockInMHz )
 //  DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...)")
 //  if( m_pfnsetcurrentpstate )
-  CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
-  std::set<float> & r_stdset_fAvailableMultipliers =
-      r_cpucoredata.m_stdset_floatAvailableMultipliers ;
-  float * p_fAvailableMultipliers = r_cpucoredata.m_arfAvailableMultipliers ;
-  if( m_pfnSetCurrentVoltageAndMultiplier && m_fReferenceClockInMHz
-      && //! r_cpucoredata.m_stdset_floatAvailableMultipliers.empty()
-      //! r_stdset_fAvailableMultipliers.empty()
-      p_fAvailableMultipliers
-      )
+  if( //m_pfnSetCurrentVoltageAndMultiplier &&
+      m_fReferenceClockInMHz
+//      && //! r_cpucoredata.m_stdset_floatAvailableMultipliers.empty()
+//      //! r_stdset_fAvailableMultipliers.empty()
+//      p_fAvailableMultipliers
+    )
   {
 //    WORD wMilliVolt = (WORD) (fVolt * 1000.0) ;
 //    BYTE byLowerMultiplier ; //, byHigherMultiplier , byMultiplierToUse ;
 //    DWORD dwLowmostBits , dwHighmostBits = 0 ;
 //    float fHigherFreq , fLowerFreq , fLowerFreqDiff, fHigherFreqDiff ;
-    //Intel: "199H 409 IA32_PERF_CTL  (R/W)"
-    // "15:0  Target performance State Value"
-    //  "31:16  Reserved"
-    //  "32  IDA Engage. (R/W)   When set to 1: disengages IDA   since: 06_0FH (Mobile)
-    //  "63:33 Reserved"
 
     //Get the multiplier for the frequency that is closest to the wanted
     // frequency.
@@ -614,60 +709,12 @@ BYTE wxDynLibCPUcontroller::
 //    std::set<float>::const_iterator c_iterGreaterOrEqual =
 //        r_stdset_fAvailableMultipliers.lower_bound( fMultiplier ) ;
 //    if( c_iterGreaterOrEqual != r_stdset_fAvailableMultipliers.end() )
-    WORD wArraySize = r_stdset_fAvailableMultipliers.size() ;
-    float fMultiplierLessOrEqual = GetClosestLessOrEqual(
-      p_fAvailableMultipliers ,
-      wArraySize,
-      fCalculatedMultiplier ) ;
-    DEBUGN("dyn lib CPU controller-- < or = multiplier closest to calculated "
-      "multiplier: " << fMultiplierLessOrEqual )
-    float fMultiplierGreaterOrEqual = GetClosestGreaterOrEqual(
-      p_fAvailableMultipliers ,
-      wArraySize,
-      fCalculatedMultiplier) ;
-    DEBUGN("dyn lib CPU controller-- > or = multiplier closest to calculated "
-       "multiplier: " << fMultiplierGreaterOrEqual )
-    float fGreaterOrEqualDiff = fMultiplierGreaterOrEqual -
-      fCalculatedMultiplier ;
-    float fLessOrEqualDiff = fCalculatedMultiplier - fMultiplierLessOrEqual ;
-    fCalculatedMultiplier = fGreaterOrEqualDiff < fLessOrEqualDiff ?
-      fMultiplierGreaterOrEqual : fMultiplierLessOrEqual ;
-    DEBUGN(" <= to calculated multiplier diff:" << fLessOrEqualDiff
-      << " >= to calculated multiplier diff:" << fGreaterOrEqualDiff
-      << "-> using multiplier " << fCalculatedMultiplier )
-//    byHigherMultiplier = byLowerMultiplier + 1 ;
-//    fLowerFreq = byLowerMultiplier * m_fReferenceClockInMHz ;
-//    fHigherFreq = byHigherMultiplier * m_fReferenceClockInMHz ;
-//    fLowerFreqDiff = wFreqInMHz - fLowerFreq ;
-//    fHigherFreqDiff = fHigherFreq - wFreqInMHz ;
-//    byMultiplierToUse = fLowerFreqDiff < fHigherFreqDiff ?
-//      byLowerMultiplier : byHigherMultiplier ;
 
-//    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) "
-//      "before calling fct. at address " << m_pfnsetcurrentpstate <<
-//      " with args (" << wFreqInMHz << "," << wMilliVolt << ","
-//      << (WORD) byCoreID << ")")
-    DEBUGN("before calling DLL's function SetCurrentVoltageAndMultiplier( "
-      << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
-      fCalculatedMultiplier
-      << ","
-      << (WORD) byCoreID << ")" )
-     BYTE by = //(*m_pfnsetcurrentpstate)(
-//      wFreqInMHz
-//      , wMilliVolt
-//      , byCoreID
-//      ) ;
-       (*m_pfnSetCurrentVoltageAndMultiplier)(
-          fVoltageInVolt
-         //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-         , //byMultiplierToUse
-         fCalculatedMultiplier
-         , byCoreID ) ;
-    DEBUGN("return value of DLL's function SetCurrentVoltageAndMultiplier( "
-      << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
-      fCalculatedMultiplier
-      << ","
-      << (WORD) byCoreID << ") : " << (WORD) by )
+    GetClosestMultplierAndSetVoltageAndMultiplier(
+      fVoltageInVolt ,
+      fCalculatedMultiplier ,
+      byCoreID
+      ) ;
 //    DEBUGN("wxDynLibCPUcontroller::SetVoltageAndFrequency(...) res.:"
 //     << (WORD) by )
     return by ;

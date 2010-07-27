@@ -219,7 +219,7 @@ void CPUcoreData::Init()
 //    m_criticalsectionThreads.Leave() ;
   }
 
-  BYTE CPUcoreData::GetIndexForClosestMultiplier(float fMultiplier)
+  WORD CPUcoreData::GetIndexForClosestMultiplier(float fMultiplier)
   {
     //TODO
 //    WORD wArrayIndexForClosestLessOrEqual = GetArrayIndexForClosestLessOrEqual(

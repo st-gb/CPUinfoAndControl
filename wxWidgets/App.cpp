@@ -28,6 +28,7 @@
 #endif
 //#include <wxWidgets/wxStringHelper.h>
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
+#include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
 
 #include "DynFreqScalingThread.hpp"
 #ifdef _WINDOWS
@@ -52,6 +53,8 @@ FILE * fileDebug ; //for debug logging.
 //easy logging.
 Logger g_logger ;
 CPUcontrolBase * gp_cpucontrolbase ;
+//Needed for the exported functions.
+I_CPUaccess * g_p_cpuaccess ;
 
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
@@ -84,6 +87,20 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //has to be declared before. the call
 //    ( error if  "logger.OpenFile( std::string("bla");"  )
 #endif
+  m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
+}
+
+wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
+{
+  if( m_bXercesSuccessfullyInitialized )
+    //http://xerces.apache.org/xerces-c/program-3.html:
+    //"Independent of the API you want to use, DOM, SAX, or SAX2, your
+    //application must [...] and terminate it after you are done.
+    //When Terminate() was called in another block (even if in a function that
+    //is called in the same block) than program crash.
+    XMLPlatformUtils::Terminate();
+    LOG( "Xerces access terminated"//"\n"
+      ) ;
 }
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
@@ -134,7 +151,9 @@ bool wxX86InfoAndControlApp::Confirm(const std::wstring & cr_stdwstr)
       std::string stdstr( cr_stdwstr.begin(), cr_stdwstr.end() ) ;
       wxString wxstr(  ) :
     #endif
+//    wxMessageDialog
     ::wxMessageBox(
+//    wxmsgdlg( NULL ,
       #ifdef _DEBUG_
       wxT("gg"), wxT("bla"),wxOK
       #else
@@ -142,6 +161,7 @@ bool wxX86InfoAndControlApp::Confirm(const std::wstring & cr_stdwstr)
       #endif
       , m_stdtstrProgramName
       );
+//    wxmsgdlg.Show(true) ;
 //      #ifdef _DEBUG
 //    ::wxMessageBox( wxT("This is the message."), wxT("This is the title"),
 //      wxOK|wxICON_INFORMATION);
@@ -159,7 +179,7 @@ bool wxX86InfoAndControlApp::Confirm(const std::wstring & cr_stdwstr)
 //bool wxX86InfoAndControlApp::Confirm(
 //  //http://fara.cs.uni-potsdam.de/~kaufmann/?page=GenCppFaqs&faq=IntToString#Answ:
 //  //"schnell" , "deprecated",
-//  //"Ein fehlendes ends führt dazu, dass der Puffer nicht nullterminiert wird."
+//  //"Ein fehlendes ends fï¿½hrt dazu, dass der Puffer nicht nullterminiert wird."
 //  std::ostrstream & r_ostrstream
 //  //std::ostream & r_ostream
 //  )
@@ -256,7 +276,7 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
       mp_i_cpucontroller->SetCalculationThread(NULL) ;
       #endif
     #endif
-    LOGN("after SetCalculationThread")
+//    LOGN("after SetCalculationThread")
     
     mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) ;
 
@@ -267,7 +287,7 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
   //m_modelData.SetCPUcontroller( mp_i_cpucontroller);
   mp_modelData->SetCPUcontroller( mp_cpucontroller);
   #ifdef _WINDOWS
-    m_calculationthread.SetCPUcontroller(mp_cpucontroller);
+//    m_calculationthread.SetCPUcontroller(mp_cpucontroller);
   #endif
   //At the 1st call of this function mp_frame is NULL.
   if( mp_frame )
@@ -332,8 +352,8 @@ int wxX86InfoAndControlApp::OnExit()
     LOGN("after removing the system tray icon")
     //Also deleted in the tbtest sample (not automatically deleted?!).
     delete mp_taskbaricon;
+    LOGN("OnExit() after deleting the system tray icon")
   }
-  LOGN("OnExit() after deleting the system tray icon")
 #endif //#ifdef COMPILE_WITH_TASKBAR
 
   //Release heap mem.
@@ -371,11 +391,15 @@ int wxX86InfoAndControlApp::OnExit()
 void //wxX86InfoAndControlApp::
   FetchCPUcoreDataFromIPC(wxX86InfoAndControlApp * p_wxx86infoandcontrolapp)
 {
+  LOGN("FetchCPUcoreDataFromIPC begin")
   NamedPipeClient & r_namedpipeclient = p_wxx86infoandcontrolapp->
       m_ipcclient ;
   r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) ;
   //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
-  if( r_namedpipeclient.m_arbyIPCdata )
+  if( r_namedpipeclient.m_arbyIPCdata &&
+    // > 0 bytes
+    r_namedpipeclient.m_dwSizeInByte
+    )
   {
 //      mp_wxx86infoandcontrolapp->m_ipc_current_cpu_data_handler
 //      mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler.
@@ -388,7 +412,8 @@ void //wxX86InfoAndControlApp::
     {
 //      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
 //        m_wxcriticalsection ) ;
-      readXMLConfig(
+//      ReadXMLdocumentInitAndTermXerces(
+      ReadXMLdocumentWithoutInitAndTermXerces(
   //        membufinputsource,
         r_namedpipeclient.m_arbyIPCdata ,
         r_namedpipeclient.m_dwSizeInByte ,
@@ -411,7 +436,7 @@ void //wxX86InfoAndControlApp::
 }
 
 //This function should be executed in a separate thread.
-DWORD GetCurrentCPUcoreDataViaIPCthreadFunc(void * p_v )
+DWORD WINAPI GetCurrentCPUcoreDataViaIPCthreadFunc(void * p_v )
 {
   wxX86InfoAndControlApp * p_wxx86infoandcontrolapp =
     ( wxX86InfoAndControlApp * ) p_v ;
@@ -424,14 +449,14 @@ DWORD GetCurrentCPUcoreDataViaIPCthreadFunc(void * p_v )
 }
 
 //This function should be executed in a separate thread.
-DWORD GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
+DWORD WINAPI GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
 {
-  DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc begin")
+  LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc begin")
   wxX86InfoAndControlApp * p_wxx86infoandcontrolapp =
     ( wxX86InfoAndControlApp * ) p_v ;
   if( p_wxx86infoandcontrolapp )
   {
-    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
+    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
     //Wait until another function calls Leave().
 //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
 //    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
@@ -448,12 +473,13 @@ DWORD GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
     //"it must be locked prior to calling Wait"
     p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
 //    Sleep(4000) ;
-    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Lock()")
+    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Lock()")
     p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
     LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc retrieve CPU core data?"
       << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
     while( p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
     {
+      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Wait()")
       FetchCPUcoreDataFromIPC( p_wxx86infoandcontrolapp ) ;
       p_wxx86infoandcontrolapp->m_vbGotCPUcoreData = true ;
 //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
@@ -503,7 +529,8 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread(
 //milliseconds, especially via IPC. So start a thread for this.
 void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
 {
-  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking before Leave")
+  LOGN("GetCurrentCPUcoreDataViaIPCNonBlocking before possibly waking up the "
+    "\"get current CPU core data\" thread" )
 //  //Let the IPC thread waiting on "Enter()" continue.
 //  m_wxcriticalsectionIPCthread.Leave() ;
 //  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking before Enter")
@@ -511,8 +538,10 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
 //  m_wxcriticalsectionIPCthread.Enter() ;
 
 //  wxMutexLocker lock(m_wxmutexIPCthread);
-  m_wxconditionIPCthread.Broadcast(); // same as Signal() here -- one waiter only
-  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking after Enter")
+  //Wake up the thread
+  m_wxconditionIPCthread.Signal();
+  LOGN("GetCurrentCPUcoreDataViaIPCNonBlocking after possibly waking up the "
+    "\"get current CPU core data\" thread" )
 }
 
 void wxX86InfoAndControlApp::InitSharedMemory()
@@ -619,7 +648,6 @@ bool wxX86InfoAndControlApp::OnInit()
     //Because more than 1 GUI is possible at a time: append a process ID.
     //So the log files are not overwritten by the GUI instances.
     DWORD dwProcID = wxGetProcessId() ;
-    LOGN("process ID of this process: ")
     stdtstrLogFilePath += Getstdtstring( to_stdstring<DWORD>(dwProcID) ) ;
     stdtstrLogFilePath += _T("_log.txt") ;
 
@@ -627,6 +655,8 @@ bool wxX86InfoAndControlApp::OnInit()
     //from THIS executable's file name: e.g. so different log files for the 
     //x86I&C service and the x86I&C GUI are possible.
     g_logger.OpenFile( stdtstrLogFilePath ) ;
+    LOGN("process ID of this process: ")
+
     //Intitialise to be valid.
     m_arartchCmdLineArgument[ 0 ] = _T("") ;
     m_arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] = 
@@ -671,6 +701,7 @@ bool wxX86InfoAndControlApp::OnInit()
       mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
         this ) ;
 #endif
+      g_p_cpuaccess = mp_i_cpuaccess ;
       //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
       //  mp_i_cpuaccess ) ;
     #else
@@ -683,13 +714,12 @@ bool wxX86InfoAndControlApp::OnInit()
       //retrieve the CPU by model, family etc.
       m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
       mp_i_cpuaccess->mp_model = mp_modelData ;
-      m_maincontroller.Init( //m_modelData
-        * mp_modelData, this );
       }
       catch(//ReadMSRexception
           CPUaccessException & r_cpuaccessexception )
       {
-        DEBUGN("caught a CPUaccessException")
+        LOGN("caught a CPUaccessException:"
+          << r_cpuaccessexception.m_stdstrErrorMessage )
         //We may continue to use this program: e.g. for testing usage getter
         //DLLs or for showing the usage etc. via IPC.
         mp_i_cpuaccess = NULL ;
@@ -706,6 +736,7 @@ bool wxX86InfoAndControlApp::OnInit()
       mp_dynfreqscalingaccess = NULL ;
       #endif
       //mp_i_cpucontroller = //CPUcontrollerFactory::
+      mp_cpucontroller = NULL ;
       if(
         m_maincontroller.
         //Creates e.g. an AMD Griffin oder Intel Pentium M controller
@@ -748,16 +779,21 @@ bool wxX86InfoAndControlApp::OnInit()
         //#endif
         CPUcontrollerChanged() ;
       }
+      m_maincontroller.Init( //m_modelData
+        * mp_modelData, this );
       DEBUGN("before creating the main frame")
+      wxString wxstrMainFrameTitle = //wxT("GUI") ;
+          wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI") ;
       ////The user interface must be created before the controller because
       ////it should show error messages because of e.g. missing privileges.
-      //p_frame = new MyFrame( 
+      //p_frame = new MyFrame(
       mp_frame = new MainFrame(
         //_T(PROGRAM_NAME)
         //m_stdtstrProgramName
-        mp_modelData->m_stdtstrProgramName +_T(" GUI")
-        , 
-        wxPoint(50,50), 
+//        mp_modelData->m_stdtstrProgramName +_T(" GUI")
+        wxstrMainFrameTitle
+        ,
+        wxPoint(50,50),
         wxSize(450,340)
         , mp_cpucontroller
         //, & m_modelData.m_cpucoredata
@@ -765,18 +801,24 @@ bool wxX86InfoAndControlApp::OnInit()
         , mp_modelData
         , this
         );
-      LOGN("after main frame creation")
-      //p_frame->Show(TRUE);
-      //SetTopWindow(p_frame);
-      mp_frame->Show(TRUE);
-//      ShowTaskBarIcon() ;
-      //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
-      //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
-      SetTopWindow(mp_frame);
+      if( mp_frame )
+      {
+        LOGN("after main frame creation")
+        //p_frame->Show(TRUE);
+        //SetTopWindow(p_frame);
+        mp_frame->Show(true);
+  //      p_wxframe->Show( true ) ;
+        LOGN("after showing the main frame")
+  //      ShowTaskBarIcon() ;
+        //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
+        //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
+        SetTopWindow(mp_frame);
+      }
+      LOGN("after setting the main frame as top level window")
     //#ifdef _WINDOWS
     //  m_calculationthread.SetCPUcontroller(mp_i_cpucontroller);
     //#endif
-      mp_frame->SetCPUcontroller(mp_cpucontroller) ;
+//      mp_frame->SetCPUcontroller(mp_cpucontroller) ;
 //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //    if( m_ipcclient.Init() )
 //      LOGN("initializing IPC (for connection to the service) succeeded")
@@ -807,7 +849,9 @@ bool wxX86InfoAndControlApp::OnInit()
 
 //        DEBUG("initialization of dialog--after handling cmd line args\n");
 //        //DEBUG("return value of handleCmdLineArgs(): %u\n",(WORD)byReturn);
-//        LOG("return value of handling command line args: " << (WORD) byReturn << "\n" );
+//        LOG("return value of handling command line args: " << (WORD) byReturn
+            //<< "\n"
+//            )
 
 //        switch(byReturn)
 //        {
@@ -844,9 +888,9 @@ bool wxX86InfoAndControlApp::OnInit()
 //          ) ;
 //        return FALSE ;
 //      }
-    //TODO program hangs when message that DLL function is missung
-//    m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc ,
-//      this ) ;
+    //TODO program hangs when message that DLL function is missing
+    m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc ,
+      this ) ;
     }// if (mp_modelData)
   }
   else
@@ -942,11 +986,14 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
       ) ;
       if( mp_taskbaricon->SetIcon( //wxICON(sample),
           //m_taskbaricon.SetIcon(
-            wxicon ,
-            mp_modelData->m_stdtstrProgramName
-            )
+          wxicon ,
+          mp_modelData->m_stdtstrProgramName
+          )
         )
+      {
+        LOGN("set system tray icon")
         return true ;
+      }
       else
         ::wxMessageBox(wxT("Could not set task bar icon."));
     }
@@ -957,8 +1004,8 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
   #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
       HICON hicon = (HICON) ::LoadImage(
            //http://msdn.microsoft.com/en-us/library/ms648045%28v=VS.85%29.aspx:
-           //"To load a stand-alone resource (icon, cursor, or bitmap file)—for
-      //     example, c:\myimage.bmp—set this parameter to NULL."
+           //"To load a stand-alone resource (icon, cursor, or bitmap file)ï¿½for
+      //     example, c:\myimage.bmpï¿½set this parameter to NULL."
            NULL ,//__in  HINSTANCE hinst,
       //     __in  LPCTSTR lpszName,
            "x86IandC.ico" ,

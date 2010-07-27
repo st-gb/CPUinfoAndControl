@@ -13,10 +13,13 @@
 #include <Controller/stdtstr.hpp> //GetStdString(...)
 #include <fstream> //for class std::ofstream
 
-Logger::Logger()
-    //C++ style initialisation.
-    : mp_ofstream(NULL) 
-    {}
+Logger::Logger(
+//  const std::set<std::string> & cr_stdsetstdstrExcludeFromLogging
+  )
+  //C++ style initialisation.
+  : mp_ofstream(NULL)
+//  , m_p_stdsetstdstrExcludeFromLogging( gp_cpucontrolbase)
+  {}
 
 Logger::Logger( std::string & stdstrFilePath )
 {
@@ -31,7 +34,8 @@ Logger::~Logger()
 
 bool Logger::IsOpen()
 {
-    return mp_ofstream != NULL && mp_ofstream->is_open() ;
+  return mp_ofstream //!= NULL
+    && mp_ofstream->is_open() ;
 }
 
 //void Logger::Log(//ostream & ostr
@@ -57,7 +61,13 @@ void Logger::Log(//ostream & ostr
     std::string & r_stdstr
     )
 {
-  if( //m_ofstream.good()
+//  if(r_stdstr.end().)
+  if( //If NOT in the container.
+      m_stdsetstdstrExcludeFromLogging.find(r_stdstr) ==
+      m_stdsetstdstrExcludeFromLogging.end()
+  //  )
+  //if( //m_ofstream.good()
+    &&
     mp_ofstream && mp_ofstream->good()
     )
   {
@@ -79,10 +89,14 @@ void Logger::Log(//ostream & ostr
       << systemtime.wHour << "h:"
       << systemtime.wMinute << "min "
       << systemtime.wSecond << "s "
-      << systemtime.wMilliseconds << "ms:"
+      << systemtime.wMilliseconds << "ms"
+      << " thread ID:" << ::GetCurrentThreadId()
+      << ":"
       #else
       #endif
-        << r_stdstr ;
+      << r_stdstr
+      << "\n"
+      ;
     //m_ofstream.flush() ;
     mp_ofstream->flush() ;
 

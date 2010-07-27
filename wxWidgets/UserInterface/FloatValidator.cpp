@@ -66,7 +66,7 @@ bool CfloatValidator::TransferFromWindow()
 //      r = sscanf( //GetCharPointer( wxstr.GetData()
 //        //wxstr.GetData().AsChar() ," %f", fpt_union_.s );
 //        wxstr.GetData()," %f", fpt_union_.s );
-      std::string stdstr = getstdstring(wxstr) ;
+      std::string stdstr = GetStdString(wxstr) ;
       from_stdstring<float>(*fpt_union_.s, stdstr ) ;
     }
     else
@@ -79,7 +79,7 @@ bool CfloatValidator::TransferFromWindow()
 //        // (same format as datatype avoids g++ compiler warnings)
 //        " %lf"
 //        , fpt_union_.d );
-      std::string stdstr = getstdstring(wxstr) ;
+      std::string stdstr = GetStdString(wxstr) ;
       from_stdstring<double>(*fpt_union_.d, stdstr ) ;
     }
     r = 1 ;
@@ -120,7 +120,7 @@ bool CfloatValidator::Validate(wxWindow* parent)
 //          //wxstr.GetData().AsChar() ," %f", t.s);
 //          wxstr.GetData()," %f", t.s);
 //      ret = ( (r==1) && ( * t.s > m_lBound ) && ( *t.s < m_hBound ) );
-      std::string stdstr = getstdstring(wxstr) ;
+      std::string stdstr = GetStdString(wxstr) ;
         from_stdstring<float>(*t.s, stdstr ) ;
         ret = true ;
     }
@@ -135,7 +135,7 @@ bool CfloatValidator::Validate(wxWindow* parent)
 //          " %lf"
 //          , t.d );
 //        ret = ( (r==1) && ( * t.d > m_lBound ) && ( *t.d < m_hBound ) );
-      std::string stdstr = getstdstring(wxstr) ;
+      std::string stdstr = GetStdString(wxstr) ;
       from_stdstring<double>(*t.d, stdstr ) ;
       ret = true ;
     }

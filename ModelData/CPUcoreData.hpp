@@ -17,6 +17,7 @@
 #include <Controller/multithread/criticalsection_type.hpp>
 #include <Controller/multithread/mutex_type.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp>
+#include <Windows/multithread/Win32EventBasedCondition.hpp>
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
 #include <wxWidgets/DynFreqScalingThread.hpp>
@@ -44,6 +45,7 @@ private:
 public:
   bool m_b1CPUcorePowerPlane ;
   bool m_bEnableDVFS ;
+  bool m_bTooHot ;
   BYTE m_byUpdateViewOnDVFS ;
   BYTE m_byNumberOfCPUCores ;
   BYTE m_byMaxVoltageID ; //=lowest voltage
@@ -54,6 +56,7 @@ public:
   float * m_arfAvailableVoltagesInVolt ;
   float * m_arfCPUcoreLoadInPercent ;
   float m_fCPUcoreLoadThresholdForIncreaseInPercent;
+  float m_fCPUcoreFreqFactor ;
   float m_fCPUcoreFreqIncreaseFactor ;
   float m_fVoltageForMaxCPUcoreFreq ;
   float m_fThrottleTempInDegCelsius ;
@@ -88,6 +91,7 @@ public:
   condition_type m_conditionCPUdataCanBeSafelyRead ;
   mutex_type m_mutexCPUdataCanBeSafelyRead ;
   mutex_type m_mutexDVFSthreadMayChangeData ;
+  Win32EventBasedCondition m_win32eventCPUdataCanBeSafelyRead ;
 //  condition_type * mp_condition ;
 
   //Intension: allocate this as an array at runtime. So releasing memory 
@@ -107,7 +111,7 @@ public:
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
 
-  BYTE GetIndexForClosestMultiplier(float fMultiplier) ;
+  WORD GetIndexForClosestMultiplier(float fMultiplier) ;
   BYTE GetIndexForClosestVoltage(float) ;
   float GetLowerMultiplier( float fMulti ) ;
   BYTE GetNumberOfCPUcores() ;

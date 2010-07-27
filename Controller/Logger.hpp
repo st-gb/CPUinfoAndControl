@@ -26,9 +26,11 @@
       sync = 0
     };
     std::set<WORD> m_stdsetLogClass ;
+    std::set<std::string> m_stdsetstdstrExcludeFromLogging ;
     //std::ofstream m_ofstream ;
     std::ofstream * mp_ofstream ;
-    Logger() ;
+    Logger( //const std::set<std::string> & cr_stdsetstdstrExcludeFromLogging
+      ) ;
     ~Logger() ;
     Logger( std::string & stdstrFilePath ) ;
 

@@ -33,7 +33,7 @@ public:
   void Delete() ;
   //static
     BYTE start( pfnThreadFunc, void * p_v ) ;
-  void * Wait() ;
+  void * WaitForTermination() ;
 };
 
 namespace x86IandC

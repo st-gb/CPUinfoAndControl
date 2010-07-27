@@ -8,13 +8,6 @@
 #include <windows.h> //BOOL
 //#include <specstrings.h> // "__in" etc.
 
-enum errorCodes
-{
-  OpenSCManagerFailed = 1,
-  OpenServiceFailed,
-  DeleteServiceFailed
-};
-
 class ConnectToSCMerror
 {
 public:
@@ -24,9 +17,16 @@ public:
 
 class ServiceBase
 {
+
 protected:
   SERVICE_STATUS_HANDLE m_service_status_handle ;
 public:
+  enum errorCodes
+  {
+    OpenSCManagerFailed = 1,
+    OpenServiceFailed,
+    DeleteServiceFailed
+  };
   static DWORD ContinueService(
    const TCHAR * tchServiceName
    ) ;

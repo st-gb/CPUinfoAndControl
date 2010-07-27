@@ -22,8 +22,8 @@ using namespace xercesc;
 
 extern Logger g_logger ;
 
-char readXMLConfig(
-  const char * cp_chXMLfilePath, //PStates & pstates
+char ReadXMLdocumentInitAndTermXerces(
+  const char * cp_chXMLfilePath,
   Model & model,
   UserInterface * p_userinterface ,
  //Base class of implementing Xerces XML handlers.
@@ -32,7 +32,7 @@ char readXMLConfig(
   XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
   )
 {
-  LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"\n" );
+  LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
   bool bXercesSuccessfullyInitialized = false ;
   //from http://xerces.apache.org/xerces-c/program-sax2-3.html:
   try
@@ -43,7 +43,8 @@ char readXMLConfig(
     //Initialize() must be called _before_ any Xerces function call, else SIGSEV
     // /program crash.
     XMLPlatformUtils::Initialize();
-    LOG( "XML access successfully initialized\n" );
+    LOG( "Xerces access successfully initialized"//"\n"
+      )
     bXercesSuccessfullyInitialized = true ;
   }
   catch (const XMLException & toCatch )
@@ -82,11 +83,13 @@ char readXMLConfig(
     //When Terminate() was called in another block (even if in a function that
     //is called in the same block) than program crash.
     XMLPlatformUtils::Terminate();
+    LOG( "Xerces access terminated"//"\n"
+      )
   }
   return SUCCESS ;
 }
 
-char readXMLConfig(
+char ReadXMLdocumentInitAndTermXerces(
   BYTE arbyXMLdata [] ,
   DWORD dwSizeInByte ,
   const LPWSTR lpwstrBufferIdentifier ,
@@ -99,6 +102,7 @@ char readXMLConfig(
   )
 {
   bool bXercesSuccessfullyInitialized = false ;
+  LOGN("readXMLConfig begin")
 //  LOG( "read XML document \"" << lpwstrBufferIdentifier << "\"\n" );
   //from http://xerces.apache.org/xerces-c/program-sax2-3.html:
   //Use this try block for no other _Xerces_ function that may throw an
@@ -113,7 +117,8 @@ char readXMLConfig(
     // /program crash.
     XMLPlatformUtils::Initialize();
     bXercesSuccessfullyInitialized = true ;
-    LOG( "XML access successfully initialized\n" );
+    LOG( "Xerces access successfully initialized"//\n"
+      )
   }
   catch (const XMLException & toCatch )
   {
@@ -130,14 +135,15 @@ char readXMLConfig(
   }
   if( bXercesSuccessfullyInitialized )
   {
-    XERCES_CPP_NAMESPACE::MemBufInputSource membufinputsource(
-      arbyXMLdata,
+    ReadXMLdocumentWithoutInitAndTermXerces(
+      arbyXMLdata ,
       dwSizeInByte ,
-      L"IPC_buffer" ) ;
-    readXMLConfig(
-      membufinputsource ,
+      lpwstrBufferIdentifier ,
       model,
       p_userinterface ,
+     //Base class of implementing Xerces XML handlers.
+     //This is useful because there may be more than one XML file to read.
+     //So one calls this functions with different handlers passed.
       r_defaulthandler
       ) ;
     DEBUGN( "terminating XML usage" );
@@ -147,6 +153,8 @@ char readXMLConfig(
     //When Terminate() was called in another block (even if in a function that
     //is called in the same block) than program crash.
     XMLPlatformUtils::Terminate();
+    LOG( "Xerces access terminated"//\n"
+      )
   }
   return SUCCESS ;
 }
@@ -162,7 +170,7 @@ char readXMLConfig(
     )
 	{
     BYTE byReturn = FAILURE ;
-      //DEBUG("readXMLConfig begin--filename:%s\n",xmlFile);
+      //DEBUG("ReadXMLdocumentInitAndTermXerces begin--filename:%s\n",xmlFile);
     //Initialize to NULL just to avoid (g++) compiler warning.
 	  XERCES_CPP_NAMESPACE::SAX2XMLReader * p_sax2xmlreader = NULL ;
 	  p_sax2xmlreader = XMLReaderFactory::createXMLReader();
@@ -180,15 +188,21 @@ char readXMLConfig(
         & defaultHandler );
       try
       {
-//        LOGN( "before parsing XML document" );
-        p_sax2xmlreader->parse(//xmlFile
+        LOGN( "before parsing XML document" );
+        p_sax2xmlreader->
+        //from SAX2XMLReader::parse(const   InputSource&    source):
+//        * @exception SAXException Any SAX exception, possibly
+//        *            wrapping another exception.
+//        * @exception XMLException An exception from the parser or client
+//        *            handler code.
+        parse(//xmlFile
           r_inputsource );
-        DEBUG("-----------End of loading from config file\n") ;
+        DEBUG("-----------End of loading from XML document/ input source\n") ;
 //          if( model.m_bTruncateLogFileForEveryStartup )
 //              g_logger.TruncateFileToZeroAndRewrite() ;
          byReturn = SUCCESS;
       }
-      catch (const XMLException & toCatch)
+      catch ( const XMLException & cr_xmlexception )
       {
         LOGN( "XMLException" );
         //Use wide string because maybe chinese file names.
@@ -196,7 +210,7 @@ char readXMLConfig(
           std::wstring( L"XML exception in document \"" )
           + std::wstring( r_inputsource.getSystemId() ) +
           L"\" :" + //message
-          toCatch.getMessage() ;
+          cr_xmlexception.getMessage() ;
 //        char * message = XMLString::transcode(toCatch.getMessage());
         p_userinterface->Confirm( //std::string( "XML exception in file" ) +
           //xmlFile +
@@ -205,12 +219,44 @@ char readXMLConfig(
 //        XMLString::release(&message);
 //	        return FAILURE;
       }
-      catch ( const SAXParseException & r_saxparseexception
-         //const SAXException & r_saxexception
+      catch ( const SAXParseException & cr_saxparseexception
          )
       {
         LOGN( "SAXParseException" );
-//        LOGN( "SAXException" );
+        XMLFileLoc xmlfilelocColumnNumber = cr_saxparseexception.
+            getColumnNumber() ;
+        XMLFileLoc xmlfilelocLineNumber = cr_saxparseexception.
+            getLineNumber() ;
+        std::wstring stdwstrMessage = L"XML exception in document \""
+          + std::wstring( r_inputsource.getSystemId() ) +
+          L"\"\n"
+//          + "\", line " + to_stdstring( cr_saxparseexception.getLineNumber() )
+//          + ", column " + to_stdstring( cr_saxparseexception.getColumnNumber() )
+          + L"in line " + GetStdWstring( to_stdstring(
+            xmlfilelocLineNumber ) )
+          + L", column " + GetStdWstring( to_stdstring(
+            xmlfilelocColumnNumber ) )
+//          + "\", line " + to_stdstring( cr_saxexception.getLineNumber() )
+//          + ", column " + to_stdstring( cr_saxexception.getColumnNumber() )
+          + L":\n\"" + cr_saxparseexception.getMessage() ;
+        if( ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
+        {
+          stdwstrMessage += L"\n\nThis probably means that this document/ file does"
+            "not exist" ;
+        }
+        stdwstrMessage +=
+//          + cr_saxexception.getMessage()
+          + L"\n\nSorry, no further information.\n"
+            "In order to solve this problem you may look into the XML "
+          "specifications for element names etc" ;
+//        p_userinterface->Confirm(//pchMessage
+//          //strMessage
+//          stdwstrMessage );
+        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+      }
+      catch( const SAXException & cr_saxexception )
+      {
+        LOGN( "SAXException" );
 //        char * pchMessage = XMLString::transcode(
 //            r_saxparseexception.getMessage()
 //            r_saxexception.getMessage()
@@ -223,20 +269,22 @@ char readXMLConfig(
           L"\" :"
 //          + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
 //          + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
-          + L"\", line " + GetStdWstring( to_stdstring(
-              r_saxparseexception.getLineNumber() ) )
-          + L", column " + GetStdWstring( to_stdstring(
-            r_saxparseexception.getColumnNumber() ) )
+//          + L"\", line " + GetStdWstring( to_stdstring(
+//              r_saxparseexception.getLineNumber() ) )
+//          + L", column " + GetStdWstring( to_stdstring(
+//            r_saxparseexception.getColumnNumber() ) )
 //          + "\", line " + to_stdstring( r_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( r_saxexception.getColumnNumber() )
-          + L": " + r_saxparseexception.getMessage()
+//          + L": " + r_saxparseexception.getMessage()
+          + cr_saxexception.getMessage()
           + L"\nIn order to solve this problem you may look into the XML "
           "specifications for element names etc" ;
         p_userinterface->Confirm(//pchMessage
           //strMessage
           stdwstrMessage );
+        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
 //        XMLString::release( & pchMessage );
-//	        return FAILURE;
+//          return FAILURE;
       }
       catch (...)
       {

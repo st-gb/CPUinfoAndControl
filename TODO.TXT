@@ -1,0 +1,100 @@
+
+Seide soll Den x86I&C-Sourcecode auf dem Stick loeschen, da unverschlüsselt
+
+-ein Dialog für mehrere Kerne einstellen:
+ moegliche Probleme:
+ Referenztakt koennte unterschiedlich zwischen den Kernen sein, also 
+ nur multiplikator anzeigen?
+- "collect p-states as default p-states" geht nicht, wenn kein CPU-controller da
+- I&C stürzte ab mit "before adding the outer sizer" als 
+
+- DLL-Grundgeruest vom restlichen quellcode (->separate Datei) trennen?
+ -> übersichtlicher?
+ -> verwirrend?!
+ -> kann auch in einer I_CPUcontroller-Klasse verwendet werden
+-prime95-typ kontaktieren? oder erstmal selbst weiter probieren ( kann viel Zeit kosten)
+ -es geht darum, den Teil, der eine zu niedrige Spannung erkennen kann, zu extrahieren.
+ bzw. fragen: wie man eine zu niedrige Spannung erkennen kann
+ -> strategisch vorgehen?!
+  -als Firma outen? (->dann kann er sich denken: kommerziell)
+  -
+- dll- quellcode fuer griffin, intel core veroeffentlichen?
+ -damit veroeffentlichen wir Know How
+ -Vorteil: wenn sich andere den Quellcode anschauen, koennen Fehler/ 
+   Verbesserungen gefunden werden
+  -phenom ist z.B. ähnlich wie Griffin
+  -Code2HTML
+  -wenn das Programm bei einigen Leuten nicht funkt., koennen die selbst nach Fehlern suchen
+  -koennte dadurch auch fuer Konkurrenzprodukte verwendet werden, wenn sie sich nicht 
+  um unsere Lizenz- / Copyrightbestimmungen scheren)
+ -mind. 1 vollst. Beispiel braucht man aber, damit es verstaendlich ist?!
+ -auch 1 nacktes DLL-Grundgeruest
+ -Griffin -> phenom ist aehnlich
+- mehr Bilder/ Screenshots in die Website
+- mehr CPUs angeben, mit denen es funkt.-> so kommen mehr Besucher von google
+- ich habe kein Existenzgruenderseminar besucht . Hat er? 
+  bringt es jetzt noch etwas, oder wahrscheinlich reicht Literatur wie "Gruenderzeiten" aus.
+- Webseite durchgehen (bewerten was gut, was schlecht ist)
+-loading CPU controller DLL when WinRing0 failed/ no CPU access-> crash
+-while read from pipe and second command-> crash
+-DVFS: 
+ -ein %ualer Zuschlag zur Taktfreq damit nicht die CPU-Last nicht am Anschlag (100%) liegt, zum Zweck, 
+  dass z.B. beim DVB-T-Fernsehen das Bild nicht stehenbleibt, da zu wenig Rechenzeit:
+  neue Taktfreq = Taktfreq * % Last * Zuschlag (z.B. 1.3)
+ -Angabe, ob die Taktfrequenz interpoliert werden soll in der config-Datei (benutzerfreundlicher)
+ -bei Überhitzung: festlegen koenen, wie schnell heruntergetaktet werden soll (damit man 
+   z.B. Rigs of Rods auf dem Griffin spielen kann)
+-solange service pausiert, friert GUI ein
+-weniger Downloads anbieten, da man sonst den Besucher verwirrt?!
+
+-Verzeichnisorganisation: 
+ -wie Quellcode und IDE-Projektdateien organisieren?
+  -alles in 1 Ordner: man vergisst seltener das Eintragen in git
+    -geht nicht (nachtraeglich) mit ecplise-Projekt-Dateien, dass diese zusammen im 
+     Ordner wie die benutzten Quelldateien liegen
+    -geht mit NetBeans-Projekt-Dateien
+    -geht mit MSVC-Projekt-Dateien
+  -IDE-projekt-dateien und einige Dllmain.cpps sind z. Z. in anderen Verzechnissen
+  -wenn nicht alles in 1 Ordner, sondern Projekt-Dateien getrennt von Quelldateien:
+   -wenn Quellcode-Ordner kopiert wird, werden nicht alle Projekt- und Objekt-Dateien mitkopiert
+   -in NetBeans z.B. konnte ich nicht die Ausgabe-Dateien in ein anderes Verzeichnis legen
+-Pipes: 
+ -Rechte für Client nicht ganz einfach -> sockets müssen per se klappen 
+  (wahrscheinlich keine REchteprobleme)
+-DLL:
+ -der Pentium M hat in seinen Register Standard-Spannungen :
+  / AMD Griffin muesste aus dem Model lesen, um bei Begrenzunf der Freq bei Akku 
+    die "wanted-Spannungen" zu kriegen 
+   diese koennte man ins Model schreiben
+  -> wie ins Model schreiben? 
+   -über die Adresse des Model
+    ->Sync-Prob: 
+    kann dann schreiben während die Exe in einem anderen Thread ins Model schreibt
+    -oder z.B. Empfehlung herausgeben: nur beim Init der DLL hineinschreiben
+   -über eine exportierte Funktion der Exe -> 
+  -bestimmte Methode in DLL "writeDefaultVoltages()"
+  -wenn C++ kann man aufs Model zugreifen: Adresse des Models/ CPUcoreData uebergeben
+ -wie auf 
+
+
+-wie das regeln, dass bestimmte Sachen nur auf bestimmte Kerne zutreffen?
+  -> z.B. Temp für alle Kerne eines Griffins gleich
+  -> für virtuelle Kerne kann weder Freq noch Spannung gesteuert werden
+  -> bitmaske?
+-welches Logging verwenden?
+ -eigenes Logging:
+  -Process-ID für Logdatei-Dateinamen
+ -Log4cplus: 
+  -kann auch in andere Logs wie Windows-Event-Log schreiben
+  -steuerbar über properties-Datei  
+  -kann Logs über Stringvergleiche ein- oder ausschliessen
+  -geht nicht, wenn wxWidgets mit UNICODE-Macro kompiliert wird?!
+  
+
+erledigt:
+Xerces-Fehlermeldungen wie "Zeile 0, Spalte 0" für nicht-existierende XML-Datei -> 
+ordentliche Fehlermeldung: daraus kann man nicht schliessen, dass die Datei existiert
+- xerces lib ist eine Debug-Version? (weil sehr groß, ja: debug-info mit drin)
+- save performance states settings schreibt nichts
+- bei "begin main frame creation": anstatt als Zeichen als Zahl ausgeben
+- wieviel Platz hat er auf Server "genug" (-> Dateien loeschen?!)

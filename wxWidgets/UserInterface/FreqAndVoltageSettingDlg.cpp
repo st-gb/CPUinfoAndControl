@@ -14,6 +14,8 @@
 #include <global.h> //for BYTE
 #include "FreqAndVoltageSettingDlg.hpp"
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
+#include <ModelData/CPUcoreData.hpp>
+#include <ModelData/ModelData.hpp>
 #include <wx/button.h> //for class wxButton
 #include <wx/checkbox.h> //for class wxCheckBox
 #include <wx/dialog.h> //for class wxDialog
@@ -228,6 +230,28 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 
   //mp_wxbuttonApply = new wxButton(this, wxID_APPLY ) ;
   mp_wxbuttonApply = new wxButton(this, wxID_APPLY, _T("&Write p-state") ) ;
+
+  wxString wxstrToolTip = wxT("mustn't write because ");
+  bool bSetToolTip = false ;
+  if( ! mp_model->m_cpucoredata.m_arfAvailableMultipliers )
+  {
+    wxstrToolTip += wxT("no multipliers are available") ;
+    bSetToolTip = true ;
+  }
+  if( ! mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt )
+  {
+    bSetToolTip = true ;
+    if( //! wxstrToolTip.Empty()
+        bSetToolTip )
+      wxstrToolTip += wxT(" and ") ;
+    wxstrToolTip += wxT("no voltages are available") ;
+  }
+  if( bSetToolTip )
+  {
+    mp_wxbuttonApply->Enable(false) ;
+    //TODO tooltip is not permanent
+    mp_wxbuttonApply->SetToolTip( wxstrToolTip ) ;
+  }
   mp_wxbuttonSetAsWantedVoltage = new wxButton( this, 
     ID_SetAsWantedVoltage, wxT("set as wanted voltage") ) ;
   mp_wxbuttonSetAsMinVoltage = new wxButton( this, 
@@ -439,8 +463,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     wxFIXED_MINSIZE | wxALL
     , 0
     );
-
-  LOGN("before adding to the outer sizer")
+  LOGN("before adding the set as min voltage sizer")
   sizerTop->Add(
     //mp_wxbuttonSetAsMinVoltage, 
     //p_wxboxsizerSetAsMinVoltage ,
@@ -479,10 +502,11 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 //      //_T("Set as current after apply") ) ;
 //      _T("Set as current p-state after write") ) ;
 //  p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
-  p_wxboxsizerOK_Cancel->Add(new wxButton(this, wxID_CANCEL) );
+  p_wxboxsizerOK_Cancel->Add( new wxButton(this, wxID_CANCEL) );
   mp_wxcheckboxOnlySafeRange = new wxCheckBox(this, wxID_ANY,
     wxT("only safe range") ) ;
   p_wxboxsizerOK_Cancel->Add( mp_wxcheckboxOnlySafeRange) ;
+  LOGN("before adding the OK etc. sizer")
   sizerTop->Add(
     p_wxboxsizerOK_Cancel, 
     0 , 
@@ -492,6 +516,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     2 
     );
 
+  LOGN("before adding to the outer sizer")
   SetSizer(sizerTop);
 
   sizerTop->SetSizeHints(this);
@@ -916,7 +941,11 @@ void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
 
 //    //TODO
     //Avoid div by zero.
-    if( mp_cpucontroller->m_fReferenceClockInMHz )
+    if( mp_cpucontroller->m_fReferenceClockInMHz
+        //Array may be NULL.
+        && mp_model->m_cpucoredata.m_arfAvailableMultipliers
+        && mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt
+      )
     {
       float fMultiplier = voltageandfreq.m_wFreqInMHz /
           mp_cpucontroller->m_fReferenceClockInMHz ;
@@ -1384,19 +1413,24 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
     //TODO the confirmation of e.g. wxWidgets seems to happen in
     //ANOTHER thread->synchronize here (by e.g. using critical sections)
     //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
-    mp_cpucontroller->SetVoltageAndFrequency(
+    mp_cpucontroller->//SetVoltageAndFrequency(
+//  //    mp_cpucontroller->GetVoltageInVolt(
+//  //      mp_wxsliderCPUcoreVoltage->GetValue() )
+//      fVoltageInVolt
+//      ,
+//      //m_byCoreID
+////      mp_wxsliderFreqInMHz->GetValue()
+//      //"(WORD)" to avoid g++ compiler warning
+//      // "converting to `WORD' from `float'"
+//      (WORD) GetCPUcoreFrequencyFromSliderValue()
+//      , m_byCoreID
+//      ) ;
+      SetCurrentVoltageAndMultiplier(
+        fVoltageInVolt ,
+        GetMultiplierFromSliderValue() ,
+        m_byCoreID
+        ) ;
 
-  //    mp_cpucontroller->GetVoltageInVolt(
-  //      mp_wxsliderCPUcoreVoltage->GetValue() )
-      fVoltageInVolt
-      ,
-      //m_byCoreID
-//      mp_wxsliderFreqInMHz->GetValue()
-      //"(WORD)" to avoid g++ compiler warning
-      // "converting to `WORD' from `float'"
-      (WORD) GetCPUcoreFrequencyFromSliderValue()
-      , m_byCoreID
-      ) ;
   //  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
     {
 //      mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;

@@ -64,7 +64,9 @@ VOID PipeClientThread(LPVOID lpvParam)
      DEBUGN("pipe handle: " << hPipe )
      while (1) 
      { 
-        LOGN("waiting blocked for reading from pipe client")
+        LOGN("waiting blocked for reading from pipe client"
+          //" with handle " << hPipe
+          )
        // Read client requests from the pipe. 
         fSuccess = ::ReadFile(
            hPipe        // handle to pipe 
@@ -82,12 +84,14 @@ VOID PipeClientThread(LPVOID lpvParam)
             LocalLanguageMessageFromErrorCodeA(dw))
           break;
         }
+        LOGN("read message from pipe " //<< hPipe
+          )
         //switch( byCommand )
         //{
         //  case stop_service:
         //}
         //}
-        LOGN("received client command: " << (WORD) byCommand )
+//        LOGN("received client command: " << (WORD) byCommand )
         dwByteSize =
         p_namedpipeserver->mp_serverprocess->IPC_Message(
           byCommand ,
@@ -100,7 +104,9 @@ VOID PipeClientThread(LPVOID lpvParam)
 //          ) ;
         //GetAnswerToRequest(chRequest, chReply, &cbReplyBytes); 
    
-        DEBUGN("before write 4 bytes to pipe")
+//        DEBUGN("before write 4 bytes to pipe")
+        LOGN("before write the size(4 bytes) to pipe "// << hPipe
+          )
      // Write the reply to the pipe.
         fSuccess = ::WriteFile(
                    hPipe,        // handle to pipe
@@ -110,23 +116,26 @@ VOID PipeClientThread(LPVOID lpvParam)
                    NULL // not overlapped I/O
                    );
         ::FlushFileBuffers(hPipe);
-        DEBUGN( dwNumBytesWritten << " bytes written to pipe")
+//        DEBUGN( dwNumBytesWritten << " bytes written to pipe " << hPipe )
+        LOGN( dwNumBytesWritten << " bytes written to pipe " //<< hPipe
+          )
         if( fSuccess )
           DEBUGN( " successfully written to pipe")
         else
           DEBUGN( "error writing to pipe")
-
         if (! fSuccess )
         {
           DWORD dw = ::GetLastError() ;
           LOGN("error writing to pipe:"
             << LocalLanguageMessageFromErrorCodeA(dw) )
-          delete [] arbyPipeDataToSend ;
+//          delete [] arbyPipeDataToSend ;
           break;
         }
         if( fSuccess  )
         {
-          DEBUGN("before write " << dwByteSize << " bytes to pipe")
+//          DEBUGN("before write " << dwByteSize << " bytes to pipe")
+          LOGN("before writing the actual data to the pipe " //<< hPipe
+            )
           fSuccess = ::WriteFile(
              hPipe,        // handle to pipe
              arbyPipeDataToSend , //chReply,      // buffer to write from
@@ -135,21 +144,26 @@ VOID PipeClientThread(LPVOID lpvParam)
              NULL // not overlapped I/O
              );
           ::FlushFileBuffers(hPipe);
-          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
+//          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
+          LOGN( //dwNumBytesWritten <<
+            " bytes written to pipe " //<< hPipe
+            )
           if( fSuccess )
-            DEBUGN( " successfully written to pipe")
+            //DEBUGN( " successfully written to pipe")
+            LOGN( "successfully written data to pipe")
           else
-            DEBUGN( "error writing to pipe")
+//            DEBUGN( "error writing to pipe")
+            LOGN( "error writing to pipe")
           if (! fSuccess || dwByteSize != dwNumBytesWritten )
           {
             DWORD dw = ::GetLastError() ;
             LOGN("error writing to pipe:"
               << LocalLanguageMessageFromErrorCodeA(dw) )
-            delete [] arbyPipeDataToSend ;
+//            delete [] arbyPipeDataToSend ;
             break;
           }
         }
-        delete [] arbyPipeDataToSend ;
+//        delete [] arbyPipeDataToSend ;
 //        //Writing 0 bytes signals the end of the data
 //        ::WriteFile(
 //           hPipe,        // handle to pipe
@@ -170,6 +184,9 @@ VOID PipeClientThread(LPVOID lpvParam)
      ::CloseHandle(hPipe); 
    }
    LOGN("end of pipe client thread with thread ID:" << ::GetCurrentThreadId() )
+//   criticalsection_locker_type csl(
+//     m_criticalsection_typeNumberOfConnectedClients ) ;
+//   ++ m_wNumberOfConnectedClients ;
 }
 
 NamedPipeServer::NamedPipeServer(
@@ -224,7 +241,8 @@ void NamedPipeServer::CreateDownPrivilegedPipe()
       , PIPE_ACCESS_DUPLEX //DWORD dwOpenMode,
         //"The caller will have write access to the named pipe's
         //discretionary access control list (ACL)."
-        | WRITE_DAC //necessary for changing the sec desc after creation?!
+        //necessary for changing the security descriptor after creation?!
+        | WRITE_DAC
       , PIPE_TYPE_BYTE //DWORD dwPipeMode,
         | PIPE_WAIT        // blocking mode
       , PIPE_UNLIMITED_INSTANCES //DWORD nMaxInstances,

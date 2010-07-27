@@ -4,11 +4,11 @@
 
 //#ifdef COMPILE_WITH_XERCES
 
-  //#include "../ModelData/ModelData.hpp"
-  //#include "../UserInterface.hpp"
-  #include <xercesc/sax2/DefaultHandler.hpp>
-  //#include <xercesc/dom/DOMElement.hpp>
+//#include "../UserInterface.hpp"
 #include <ModelData/ModelData.hpp> //class Model
+//#include <xercesc/dom/DOMElement.hpp>
+#include <xercesc/framework/MemBufInputSource.hpp>
+#include <xercesc/sax2/DefaultHandler.hpp>
 
  // //to NOT need to prefix the xerces classes with the "xerces::"
 	//XERCES_CPP_NAMESPACE_USE 
@@ -24,7 +24,7 @@
   class Model ;
   class UserInterface ;
 
-  char readXMLConfig(
+  char ReadXMLdocumentInitAndTermXerces(
     const char* xmlFile,//PStates & pstates
     Model & model,
     UserInterface * p_userinterface ,
@@ -33,7 +33,7 @@
    //So one calls this functions with different handlers passed.
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     );
-  char readXMLConfig(
+  char ReadXMLdocumentInitAndTermXerces(
     BYTE arbyXMLdata [] ,
     DWORD dwByteSize ,
     const LPWSTR lpwstrBufferIdentifier ,
@@ -53,5 +53,33 @@
    //So one calls this functions with different handlers passed.
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     ) ;
+  //warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been
+  //called before calling this function.
+  inline char ReadXMLdocumentWithoutInitAndTermXerces(
+    BYTE arbyXMLdata [] ,
+    DWORD dwDataSizeInByte ,
+    const LPWSTR lpwstrBufferIdentifier ,
+    Model & model,
+    UserInterface * p_userinterface ,
+    //Base class of implementing Xerces XML handlers.
+    //This is useful because there may be more than one XML file to read.
+    //So one calls this functions with different handlers passed.
+    XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
+    )
+  {
+    XERCES_CPP_NAMESPACE::MemBufInputSource membufinputsource(
+      arbyXMLdata,
+      dwDataSizeInByte ,
+//      L"IPC_buffer"
+      lpwstrBufferIdentifier
+      ) ;
+    LOGN("before readXMLConfig (InputSource)")
+    return readXMLConfig(
+      membufinputsource ,
+      model,
+      p_userinterface ,
+      r_defaulthandler
+      ) ;
+  }
 //#endif //#ifdef COMPILE_WITH_XERCES
 #endif //#ifndef _XMLACCESS_HPP
