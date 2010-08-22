@@ -6,6 +6,7 @@
  */
 #include "../stdafx.h"
 #include <global.h> //for if FAILURE etc.
+//#include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
 #include <limits.h>
 #include <locale>
 #include <sstream>

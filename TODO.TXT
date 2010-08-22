@@ -1,6 +1,47 @@
 
 Seide soll Den x86I&C-Sourcecode auf dem Stick loeschen, da unverschlüsselt
 
+- GUI caused the service to crash after connect
+- GUI crashed when the service was stopped
+- GUI CRASHED when exited
+- appropriate error message when the service can not read the voltage cfg. file.
+
+- SAXParseException IPC from service, SIGSEV (seen in debugger)
+   "ZTIN11xercesc_3_120OutOfMemoryException""
+  (was because of array deleted, afterwards accessed by another thread?!=)
+- "Press ENTER/ Return to finish.
+
+Deleting service failed.The specified service has been marked for deletion.
+ ([Windows] error code: 1072)possible solution:
+-close the service control manager in order to let the service be deleted
+-if you want to install a service and a service with the same name is still runn
+ing->stop the service with the same name first
+
+-Stop the execution of the service: "X86_info_and_control"
+ -inside the service control manager
+ -via the task manager
+ -by another program/ etc.
+ and try again.
+Creating the service failed: error number:1072
+Error: The specified service has been marked for deletion."
+ -> "close the SCM/ "Services" windows "
+
+- GUI verhindert das Beenden von Windows (nach Standby, wenn Daten vom Dienst)
+- Dienst arbeitete nicht mehr mit AMD Griffin
+- GUI aktualisiert keine Daten mehr vom Dienst (nach Aufwachen aus Standby?)
+ - nachdem eine weitere GUI gestartet wurde, wird die Anzeige der 
+   CPU-Daten wieder aktualisiert
+- DLL-Dateien beinhalren anscheinend mehr Code als noetig:
+ für Nehalem: InitializeCriticalSection etc.
+ - aber nicht für Griffin-DLL
+- different reference clock per CPU core possible?
+- the GUI crashed when the service was stopped
+-main frame shows a very high (4.31271e+032) reference clock of -> very high freq in MHz in between when getting values from the service
+-main frame shows reference clock of "0" -> 0 MHz in betwen when NOT getting values from the service
+-main frame only shows values for COre 0 when started via startup 
+ _and_ no hardware/ CPU/ WinRing0 access
+ -afterwards (after some minutes) values for other cores were displayed (but not updated)
+ -ok.: ref. clock is not updated
 -ein Dialog für mehrere Kerne einstellen:
  moegliche Probleme:
  Referenztakt koennte unterschiedlich zwischen den Kernen sein, also 

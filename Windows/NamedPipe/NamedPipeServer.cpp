@@ -1,5 +1,8 @@
 #include "NamedPipeServer.hpp"
-#include <aclapi.h>
+//#include <aclapi.h>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUGN(...)
+//for format_output_data(...)
+#include <Controller/character_string/format_as_string.hpp>
 #include <Windows/access_rights/DiscretionaryAccessControlList.h>
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #ifdef __CYGWIN__
@@ -105,7 +108,11 @@ VOID PipeClientThread(LPVOID lpvParam)
         //GetAnswerToRequest(chRequest, chReply, &cbReplyBytes); 
    
 //        DEBUGN("before write 4 bytes to pipe")
-        LOGN("before write the size(4 bytes) to pipe "// << hPipe
+        LOGN("before write the size(4 bytes) "
+#ifdef _DEBUG
+          << dwByteSize <<
+#endif
+          "to pipe "// << hPipe
           )
      // Write the reply to the pipe.
         fSuccess = ::WriteFile(
@@ -133,34 +140,47 @@ VOID PipeClientThread(LPVOID lpvParam)
         }
         if( fSuccess  )
         {
-//          DEBUGN("before write " << dwByteSize << " bytes to pipe")
-          LOGN("before writing the actual data to the pipe " //<< hPipe
-            )
-          fSuccess = ::WriteFile(
-             hPipe,        // handle to pipe
-             arbyPipeDataToSend , //chReply,      // buffer to write from
-             dwByteSize ,//cbReplyBytes, // number of bytes to write
-             & dwNumBytesWritten,   // number of bytes written
-             NULL // not overlapped I/O
-             );
-          ::FlushFileBuffers(hPipe);
-//          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
-          LOGN( //dwNumBytesWritten <<
-            " bytes written to pipe " //<< hPipe
-            )
-          if( fSuccess )
-            //DEBUGN( " successfully written to pipe")
-            LOGN( "successfully written data to pipe")
-          else
-//            DEBUGN( "error writing to pipe")
-            LOGN( "error writing to pipe")
-          if (! fSuccess || dwByteSize != dwNumBytesWritten )
+          if( //> 0 bytes, array <> NULL
+            dwByteSize && arbyPipeDataToSend )
           {
-            DWORD dw = ::GetLastError() ;
-            LOGN("error writing to pipe:"
-              << LocalLanguageMessageFromErrorCodeA(dw) )
-//            delete [] arbyPipeDataToSend ;
-            break;
+  //          DEBUGN("before write " << dwByteSize << " bytes to pipe")
+            LOGN("before writing the actual data to the pipe " //<< hPipe
+#ifdef _DEBUG
+              "( " << dwByteSize << "byte) "
+#endif
+              )
+            std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
+              = format_output_data( arbyPipeDataToSend, dwByteSize, 100) ;
+            DEBUGN("send data to pipe:" << stdstrBytes ) ;
+            fSuccess = ::WriteFile(
+               hPipe,        // handle to pipe
+               arbyPipeDataToSend , //chReply,      // buffer to write from
+               dwByteSize ,//cbReplyBytes, // number of bytes to write
+               & dwNumBytesWritten,   // number of bytes written
+               NULL // not overlapped I/O
+               );
+            ::FlushFileBuffers(hPipe);
+            //The array is copied for every pipe client--delete it after sending
+            //now.
+            delete [] arbyPipeDataToSend ;
+//          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
+            LOGN( //dwNumBytesWritten <<
+              " bytes written to pipe " //<< hPipe
+              )
+            if( fSuccess )
+              //DEBUGN( " successfully written to pipe")
+              LOGN( "successfully written data to pipe")
+            else
+  //            DEBUGN( "error writing to pipe")
+              LOGN( "error writing to pipe")
+            if (! fSuccess || dwByteSize != dwNumBytesWritten )
+            {
+              DWORD dw = ::GetLastError() ;
+              LOGN("error writing to pipe:"
+                << LocalLanguageMessageFromErrorCodeA(dw) )
+  //            delete [] arbyPipeDataToSend ;
+              break;
+            }
           }
         }
 //        delete [] arbyPipeDataToSend ;
@@ -232,17 +252,25 @@ void NamedPipeServer::CreateDownPrivilegedPipe()
   m_handlePipe =
     //If the function succeeds, the return value is a handle to the
     //server end of a named pipe instance.
-    //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
+    //cites from:
+    //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx
     ::CreateNamedPipe(
       //The string must have the following form: \\.\pipe\pipename
       //"\\\\.\\pipe\\CPUcontrollerService" //LPCTSTR lpName,
 //      lpszPipename
       m_lpszPipename
+      //"The pipe is bi-directional; both server and client processes can
+      // read from and write to the pipe."
       , PIPE_ACCESS_DUPLEX //DWORD dwOpenMode,
         //"The caller will have write access to the named pipe's
         //discretionary access control list (ACL)."
         //necessary for changing the security descriptor after creation?!
         | WRITE_DAC
+        //error message " A required privilege is not held by the client."
+        //when ACCESS_SYSTEM_SECURITY was specified.
+//        //"The caller will have write access to the named pipe's SACL."
+//        | ACCESS_SYSTEM_SECURITY
+
       , PIPE_TYPE_BYTE //DWORD dwPipeMode,
         | PIPE_WAIT        // blocking mode
       , PIPE_UNLIMITED_INSTANCES //DWORD nMaxInstances,
@@ -359,7 +387,10 @@ BYTE NamedPipeServer::Init(
         //);
         if ( m_handlePipe == INVALID_HANDLE_VALUE)
         {
-            LOGN("CreatePipe failed");
+          LOGN("CreatePipe failed: " <<
+            //http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx:
+            //"To get extended error information, call GetLastError."
+            ::LocalLanguageMessageAndErrorCodeA( ::GetLastError() ) );
         }
         else
         {

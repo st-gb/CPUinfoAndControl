@@ -3,11 +3,11 @@
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
-#include <Controller/stdtstr.hpp> //get...
+#include <Controller/character_string/stdtstr.hpp> //get...
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
 #include <UserInterface/UserInterface.hpp>
-#include <Windows_compatible_typedefs.h>
+#include <preprocessor_macros/Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
   #include "Xerces/XMLAccess.hpp" //for "ReadXMLdocumentInitAndTermXerces(...)"

@@ -35,7 +35,7 @@
   //  typedef unsigned long DWORD;
   //  typedef DWORD * PDWORD;
     #ifndef _WINDOWS
-      #include <Windows_compatible_typedefs.h>
+      #include <preprocessor_macros/Windows_compatible_typedefs.h>
     #endif
     //typedef _W64 unsigned long ULONG_PTR;
   //  typedef ULONG_PTR DWORD_PTR;

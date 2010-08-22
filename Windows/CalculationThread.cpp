@@ -71,6 +71,7 @@ CalculationThread::~CalculationThread()
     //If the handle was successfully assigned.
     if( m_hThread )
       ::CloseHandle(m_hThread);
+  LOGN("~CalculationThread")
 }
 
 void CalculationThread::Init()

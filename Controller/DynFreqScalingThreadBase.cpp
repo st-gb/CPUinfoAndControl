@@ -49,10 +49,14 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
   , float fLoad 
   )
 {
-  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad(core ID:"
+  LOGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad"
+#ifdef _DEBUG
+    "(core ID:"
     << (WORD) byCoreID << ",load:"
     << fLoad
-    << ")")
+    << ")"
+#endif
+    )
   PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
     m_arp_percpucoreattributes[byCoreID] ;
 //  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad "
@@ -478,7 +482,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
     float fNextMultiplierCalculatedFromCurrentLoad ;
     while( m_vbRun )
     {
-      //LOGN("DVFS thread running ")
+      LOGN("DVFS thread running")
       //DEBUG("begin of scaling thread loop\n");
       if( ! m_bCalledInit )
       {
@@ -491,7 +495,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
         //&& m_bSuccFullyGotPStateFromMSR
         )
       {
-  //      LOGN("DynFreqScalingThreadBase::Entry: confirmed yet")
+        LOGN("DynFreqScalingThreadBase::Entry: confirmed yet")
 
   //      //Wait until all threads reading from the CPU core data have finished.
   ////      mp_cpucoredata->m_conditionDVFSthreadMayChangeData.Wait() ;
@@ -512,6 +516,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
   //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Wait()")
         //float fTempInDegCelsius ;
 
+        LOGN("before GetPercentalUsageForAllCores")
         //TODO exit thread when getting CPU core load fails?
         if( mp_icpu->//GetPercentalUsageForBothCores
             GetPercentalUsageForAllCores( //mp_cpucoredata->
@@ -520,6 +525,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
             )
           )
         {
+          LOGN("after GetPercentalUsageForAllCores")
           //Get the current voltage etc. for ALL cores for sending the data for
           // all cores via IPC, even if not needed for
           //DVFS (if single power plane / all cores always at the same p-state
@@ -528,7 +534,16 @@ ExitCode DynFreqScalingThreadBase::Entry()
           for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
           {
             mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+//            float fVoltageInVolt ;
+//            float fMultiplier ;
+//            float fReferenceClockInMhz ;
+//            mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//              fVoltageInVolt,
+//              fMultiplier,
+//              fReferenceClockInMhz ,
+//              byCoreID ) ;
           }
+          LOGN("after GetCurrentVoltageAndFrequency")
           //check if a temp. could be received:
           //Pentium M CPUs have no temperature register
           if(
@@ -567,7 +582,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
           }//too hot
           else
           {
-//            LOGN("too hot:no")
+            LOGN("too hot:no")
     //        if( mp_icpu->//GetPercentalUsageForBothCores
     //            GetPercentalUsageForAllCores(mp_cpucoredata->
     //            m_arfCPUcoreLoadInPercent)
@@ -611,8 +626,12 @@ ExitCode DynFreqScalingThreadBase::Entry()
       //LOGN("End of scaling thread loop");
       Sleep(//m_wMilliSecondsToWait
         mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
-      DEBUGN("DynFreqScalingThreadBase::Entry(): after "
-          "Sleep(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")")
+      LOGN("DynFreqScalingThreadBase::Entry(): after "
+          "Sleep"
+#ifdef _DEBUG
+          "(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")"
+#endif
+          )
     }//loop
   }
   //Release clients waiting on the condition.

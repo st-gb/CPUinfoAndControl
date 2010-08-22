@@ -11,7 +11,7 @@
 #include "ServiceAttributes.hpp"
 #include "ValueTables.hpp"
 #include "VoltageAndFreq.hpp"
-#include <Controller/stdtstr.hpp>
+#include <Controller/character_string/stdtstr.hpp>
 
 //class MSRdata ;
 //class ValueTables ;

@@ -7,11 +7,14 @@
 #ifndef _XERCESHELPER_HPP
 #define	_XERCESHELPER_HPP
 
-#include <Windows_compatible_typedefs.h> //__int64
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //__int64
 
+//from C standard library
 #include <errno.h> //for "ERANGE"
 #include <limits.h> //ULONG_MAX
 #include <stdlib.h> //atoi()
+
+//from Apache Xerces header directory
 #include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
 #include <xercesc/util/XMLString.hpp>
 
@@ -20,8 +23,8 @@
 //  class Attributes;
 //XERCES_CPP_NAMESPACE_END
 
-//Needed for verzichten auf the exact namspace.
-XERCES_CPP_NAMESPACE_USE
+//Needed for avoiding the exact namespace.
+//XERCES_CPP_NAMESPACE_USE
 
 //http://xerces.apache.org/xerces-c/build-3.html:
 //If you are linking your application to the static Xerces-C++ library,
@@ -47,21 +50,21 @@ class UserInterface ;
 //  This is a simple class that lets us do easy (though not terribly efficient)
 //  trancoding of char* data to XMLCh data.
 // ---------------------------------------------------------------------------
-class XStr
+class XercesString
 {
 public :
     // -----------------------------------------------------------------------
     //  Constructors and Destructor
     // -----------------------------------------------------------------------
-    XStr(const char* const toTranscode)
+    XercesString(const char* const toTranscode)
     {
         // Call the private transcoding method
-        fUnicodeForm = XMLString::transcode(toTranscode);
+        fUnicodeForm = XERCES_CPP_NAMESPACE::XMLString::transcode(toTranscode);
     }
 
-    ~XStr()
+    ~XercesString()
     {
-        XMLString::release(&fUnicodeForm);
+      XERCES_CPP_NAMESPACE::XMLString::release(&fUnicodeForm);
     }
     // -----------------------------------------------------------------------
     //  Getter methods
@@ -79,7 +82,7 @@ private :
     // -----------------------------------------------------------------------
     XMLCh*   fUnicodeForm;
 };
-#define X(str) XStr(str).unicodeForm()
+#define XERCES_STRING_FROM_ANSI_STRING(str) XercesString(str).unicodeForm()
 
 namespace x86InfoAndControl
 {
@@ -152,7 +155,7 @@ public:
 //private:
 
   static BYTE GetAttributeValue(
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * pc_chAttributeName,
     bool & rbValue
     ) ;
@@ -160,20 +163,20 @@ public:
   static inline BYTE //SAX2MainConfigHandler::
       GetAttributeValue
     (
-    const Attributes & xercesc_attributes,
+    const XERCES_CPP_NAMESPACE::Attributes & xercesc_attributes,
     const std::string & cr_stdstrAttributeName,
     std::string & r_strValue
     ) ;
 
   static BYTE GetAttributeValue(
-      const Attributes & attrs,
+      const XERCES_CPP_NAMESPACE::Attributes & attrs,
       char * lpctstrAttrName,
       BYTE & rbyValue
     ) ;
 
   BYTE //SAX2MainConfigHandler::
       GetAttributeValue(
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     //DWORD & r_dwValue
     //StdStringToDestFormat & r_stdstringtodestformat ,
@@ -193,7 +196,7 @@ public:
   //the userinterface member variable.
   BYTE //SAX2MainConfigHandler::
     GetAttributeValue(
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     //DWORD & r_dwValue
     //StdStringToDestFormat & r_stdstringtodestformat ,
@@ -207,7 +210,7 @@ public:
     ) ;
 
     static BYTE GetAttributeValue(
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     WORD & rwValue
     ) ;
@@ -215,25 +218,25 @@ public:
     //static 
     BYTE //SAX2MainConfigHandler::
         GetAttributeValue(
-      const Attributes & attrs,
+      const XERCES_CPP_NAMESPACE::Attributes & attrs,
       const char * lpctstrAttrName,
       DWORD & r_dwValue) ;
 
     static BYTE GetAttributeValue(
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     float & rfValue
     ) ;
 
   static BYTE GetAttributeValue(
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     char * lpctstrAttrName,
 //    std::string & r_stdstrAttributeName ,
     std::string & r_strValue
     ) ;
   static BYTE GetAttributeValue
     (
-    const Attributes & attrs,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     std::wstring & r_stdwstrValue
     ) ;

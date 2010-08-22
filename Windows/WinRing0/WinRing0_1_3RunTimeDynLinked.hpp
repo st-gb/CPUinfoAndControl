@@ -13,31 +13,24 @@
 #include <Windows.h> //for WINAPI, ::Sleep(...)
 //#include <OlsApiInitDef.h> //for _IsMsr etc.
 //#include <OlsDef.h> //for InitializeOls return codes: OLS_DLL_NO_ERROR, ...
+
+//Inside the header file:
+//The calling convention "__stdcall" is needed because
+//else runtime error: something with CPU register "ESP".
 #include <WinRing0_1_3_1b/source/dll/OlsApiInitExt.h>
 
 //#include <OlsApiInitDef.h> //for "_WrmsrEx" etc.
-//typedef DWORD (WINAPI *_RdmsrEx) (DWORD index, PDWORD eax, PDWORD edx, DWORD_PTR affinityMask);
-//typedef DWORD (WINAPI *_WrmsrEx) (DWORD index, DWORD eax, DWORD edx, DWORD_PTR affinityMask);
-//typedef DWORD (WINAPI *_InitializeOls) ();
-//typedef VOID (WINAPI *_DeinitializeOls) ();
-typedef BYTE ( WINAPI * _GetDetailedWinRing0Error) (PDWORD p_dwWinErrorCode, PBYTE
-    p_byErrorLocation) ;
+
+//Additional function definitions for a modified version of the DLL:
+typedef BYTE ( WINAPI * _GetDetailedWinRing0Error) (
+    PDWORD p_dwWinErrorCode, PBYTE p_byErrorLocation) ;
 typedef TCHAR * ( WINAPI * _GetWinRing0DriverPath) () ;
-//
-//typedef BOOL 
-////__stdcall
-//( //The calling convention "__stdcall" is needed because
-//              //else runtime error: something with CPU register "ESP".
-//         #ifdef _WINDOWS
-//             __stdcall 
-//         #endif
-//             *_RdmsrEx)(DWORD,PDWORD,PDWORD,DWORD_PTR);
 
 //#include "../ISpecificController.hpp"
-#include <Controller/I_CPUaccess.hpp>
+#include <Controller/I_CPUaccess.hpp> //needed because it's the base class.
 //#include <Winbase.h> //for ::Sleep(...)
 
-//Exception class. If catched: don't continue (with assigning function 
+//Exception class. If caught: don't continue (with assigning function
 //pointers to DLL functions etc.).
 class DLLnotLoadedException:
     public CPUaccessException

@@ -4,11 +4,11 @@
 
 #include "XMLAccess.hpp"
 #include <global.h> //for SUCCESS, FAILURE
-#include <Controller/Logger.hpp>
-#include <Controller/stdstring_format.hpp> //for to_strstring()
+#include <Controller/Logger/Logger.hpp>
+#include <Controller/character_string/stdstring_format.hpp> //for to_strstring()
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/UserInterface.hpp>
-#include <Xerces/XercesHelper.hpp> // for "X()"
+#include <Xerces/XercesHelper.hpp> // for "XERCES_STRING_FROM_ANSI_STRING()"
 
 #include <iostream>
 #include <xercesc/framework/LocalFileInputSource.hpp>
@@ -63,7 +63,7 @@ char ReadXMLdocumentInitAndTermXerces(
   if( bXercesSuccessfullyInitialized )
   {
     //  XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
-    //    X(cp_chXMLfilePath) ) ;
+    //    XERCES_STRING_FROM_ANSI_STRING(cp_chXMLfilePath) ) ;
     XMLCh * p_xmlchXMLfilePath = XMLString::transcode(cp_chXMLfilePath);
     if( p_xmlchXMLfilePath )
     {
@@ -239,6 +239,7 @@ char ReadXMLdocumentInitAndTermXerces(
 //          + "\", line " + to_stdstring( cr_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxexception.getColumnNumber() )
           + L":\n\"" + cr_saxparseexception.getMessage() ;
+//        stdwstrMessage += L"whole document:" + r_inputsource.makeStream()
         if( ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
         {
           stdwstrMessage += L"\n\nThis probably means that this document/ file does"

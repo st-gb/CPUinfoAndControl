@@ -7,10 +7,13 @@
 #else
   #include <tchar.h> //for _T(...)
 #endif
-#include <global.h> //for DEBUG()
-#include <preprocessor_helper_macros.h>
-#include <Controller/stdstring_format.hpp> //to_stdstring()
-#include <Controller/tchar_conversion.h> //GetCharPointer(...)
+//#include <global.h> //for DEBUG()
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+//for BITMASK_FOR_LOWMOST_7BIT
+#include <preprocessor_macros/bitmasks.h>
+#include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
+#include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
+#include <Controller/character_string/tchar_conversion.h> //GetCharPointer(...)
 #include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/GetHardwareAccessErrorDescription.hpp>
@@ -109,7 +112,9 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
       if( //pfnGetDetailedWinRing0Error
           pfnGetWinRing0DriverPath )
       {
+#ifdef COMPILE_WITH_LOG
         TCHAR * p_tch = (*pfnGetWinRing0DriverPath) () ;
+#endif //#ifdef COMPILE_WITH_LOG
         LOGN("driver path expected  by WinRing0:" << p_tch )
       }
       else

@@ -13,11 +13,11 @@
 
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
-#include <Controller/stdstring_format.hpp> //from_stdstring()
+#include <Controller/character_string/stdstring_format.hpp> //from_stdstring()
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
 //std::string GetStdString(wxString & wxstr) etc.
-#include <wxWidgets/Controller/wxStringHelper.h>
+#include <wxWidgets/Controller/wxStringHelper.hpp>
 
 //An enum guarantees a unique number for each element.
 enum

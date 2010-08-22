@@ -6,7 +6,9 @@
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {
   bool bInserted = false ;
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   m_wxcriticalsection.Enter() ;
+#endif
   std::pair <std::set<VoltageAndFreq>::iterator, bool> 
     stdpairstdsetvoltageandfreq = m_stdsetvoltageandfreqDefault.insert( 
     VoltageAndFreq(fValue,wFreqInMHz) ) ;
@@ -15,7 +17,9 @@ bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
   //I_CPUcontroller::GetMinimumFrequencyInMHz()
   m_stdsetvoltageandfreqAvailableFreq.insert(
     VoltageAndFreq(fValue,wFreqInMHz) ) ;
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   m_wxcriticalsection.Leave() ;
+#endif
   return bInserted ;
 }
 
@@ -109,7 +113,8 @@ CPUcoreData::CPUcoreData()
   //, m_byMaxVoltageID(MAX_VALUE_FOR_VID)
   //, m_byMinVoltageID(0)
   //, m_byMainPLLoperatingFrequencyIDmax(CPU_CORE_DATA_NOT_SET)
-  , m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
+
+//  , m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
 //  , m_conditionDVFSthreadMayChangeData( m_mutexDVFSthreadMayChangeData )
   {
     //LOGN("CPU attributes ctor")
@@ -123,10 +128,11 @@ CPUcoreData::CPUcoreData(
   BYTE byNumberOfCPUcores,
   WORD wMaxFreqInMHz
   )
-  //C++ style initializations:
-  :
+//  //C++ style initializations:
+//  :
   //m_wMaxFreqInMHz(wMaxFreqInMHz)
-  m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
+
+//  m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
 {
   //LOGN("CPU attributes ctor 2")
   //Call default constructor.
@@ -355,7 +361,10 @@ void CPUcoreData::Init()
 
   void CPUcoreData::SetCPUcoreNumber(BYTE byNumberOfCPUcores)
   {
-    DEBUGN("CPUcoreData::SetCPUcoreNumber(" << (WORD) byNumberOfCPUcores
+    LOGN("CPUcoreData::SetCPUcoreNumber("
+#ifdef _DEBUG
+      << (WORD) byNumberOfCPUcores
+#endif
       << ")" )
     m_byNumberOfCPUCores = byNumberOfCPUcores ;
     PossiblyReleaseMemForCoreNumAffectedData() ;

@@ -6,12 +6,13 @@
 // sein
 #include <stdio.h> //for sprintf(...)
 #include <fstream> //for class ofstream
-#include <Controller/stdtstr.hpp> //std::tstring
+#include <Controller/character_string/stdtstr.hpp> //std::tstring
+#include <Controller/Logger/Logger.hpp>
 #include <Controller/Logger/log4cplus_Logger.hpp>
-#include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
+#include <Windows/SetExePathAsCurrentDir.h> // for SetExePathAsCurrentDir()
 //#include <Xerces/IPC/IPCdataGenerator.hpp>
 #include <string>
 #include <conio.h> //for getche()
@@ -197,7 +198,11 @@ int main( int argc, char *  argv[] )
   std::string stdstrLogFileName = std::string(argv[0]) + std::tstring("_log.txt") ;
   try
   {
-    SetExePathAsCurrentDir() ;
+    if( ! SetExePathAsCurrentDir() )
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+          "Getting file path for THIS executable file failed: " <<
+          LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+          );
 #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
 #endif

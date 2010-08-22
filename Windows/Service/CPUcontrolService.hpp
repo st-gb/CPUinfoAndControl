@@ -4,7 +4,7 @@
 #include <Controller/MainController.hpp>
 #include <Controller/I_ServerProcess.hpp>
 #include <Controller/IPC/I_IPC_DataHandler.hpp>
-#include <Controller/stdtstr.hpp> //std::tstring
+#include <Controller/character_string/stdtstr.hpp> //std::tstring
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/DummyUserInterface.hpp>
 //#include "wxWidgets/DynFreqScalingThread.hpp"
@@ -12,7 +12,7 @@
 #ifdef COMPILE_WITH_CALC_THREAD
   #include <Windows/CalculationThread.hpp>
 #endif
-#include <Windows/PowerProf/PowerProfDynLinked.hpp>
+#include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
 //#include <Windows/DynFreqScalingAccess.hpp>
 #include <Windows/multithread/Thread.hpp>
 #ifdef COMPILE_WITH_IPC
@@ -162,6 +162,7 @@ public :
       ) ;
     void EndAlterCurrentCPUcoreIPCdata() ;
     static void FillCmdLineOptionsList() ;
+    inline BYTE * GetIPCdataThreadSafe(DWORD & r_dwByteSize) ;
     std::string GetLogFilePath() ;
     std::string GetValueIfHasPrefix( 
         const std::string & r_stdstrPrefix ) ;
@@ -223,4 +224,5 @@ public :
     void Stop() ;
     static void WINAPI ServiceMain(DWORD argc, LPTSTR *argv) ;
     void StartService() ;
+    inline void WakeUpCreateIPCdataThread() ;
 };

@@ -20,8 +20,11 @@ public:
   volatile bool m_vbIsGettingCPUcoreData ;
   BYTE * m_arbyIPCdata ;
   DWORD m_dwSizeInByte ;
+  DWORD m_dwState , m_dwCurInstances ;
+  DWORD m_dwMaxUserNameSize ;
   std::wstring m_stdwstrMessage ;
   //NamedPipeClient( LPTSTR lpszPipename ) ;
+  inline bool GetConnectionStateViaGetNamedPipeHandleState() ;
   void OnDisconnect() ;
   BYTE Init() ;
   bool IsConnected() ; //{ return m_bConnected ; }
@@ -45,17 +48,6 @@ public:
     //__inout_opt
     LPOVERLAPPED lpOverlapped
     ) ;
-  NamedPipeClient()
-    :
-      m_vbIsReadingOrWriting (false) ,
-      m_vbIsGettingCPUcoreData(false) ,
-//      m_vbIsGettingCPUcoreData(true) ,
-      m_arbyIPCdata (NULL)
-  {
-
-  }
-  ~NamedPipeClient( )
-  {
-    ::CloseHandle(m_handleClientPipe); 
-  }
+  NamedPipeClient() ;
+  ~NamedPipeClient() ;
 };

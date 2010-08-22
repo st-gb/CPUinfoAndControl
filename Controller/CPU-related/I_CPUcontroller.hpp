@@ -20,7 +20,8 @@
 #if defined(_MSC_VER) || (__MINGW32__==1)
   #include <basetsd.h> //for DWORD_PTR
 #endif
-#include <Windows_compatible_typedefs.h> //for BOOL,BYTE,DWORD_PTR,...
+//for BOOL,BYTE,DWORD_PTR,...
+#include <preprocessor_macros/Windows_compatible_typedefs.h>
 #include <set> //for std::set
 #include <string> // std::string
 #ifdef _MSC_VER

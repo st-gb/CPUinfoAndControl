@@ -24,9 +24,9 @@
 
 #ifdef __WXMSW__
   #include <Windows/LocalLanguageMessageFromErrorCode.h>
-  #include <Windows/PowerProf/PowerProfDynLinked.hpp>
+  #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
   #include <wxWidgets/App.hpp> //wxGetApp()
-  #include <wxWidgets/Controller/wxStringHelper.h>
+  #include <wxWidgets/Controller/wxStringHelper.hpp>
 #endif
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 
