@@ -16,12 +16,14 @@
 //#include "wxDynFreqScalingTimer.hpp"
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
+//#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
+#include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
 #include <Controller/IPC/I_IPC.hpp> //for "get_current_CPU_data"
-#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
-#include <Controller/stdstring_format.hpp> //to_stdstring()
+#include <Controller/Logger/Logger.hpp> //class Logger
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
+#include <Controller/multithread/I_Thread.hpp> //class I_Thread
 #include <ModelData/ModelData.hpp>
-#include <wxWidgets/Controller/wxStringHelper.h> //getwxString(...)
+#include <wxWidgets/Controller/wxStringHelper.hpp> //getwxString(...)
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
@@ -36,7 +38,7 @@
   #include <Windows/GetNumberOfLogicalCPUs.h>
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/LocalLanguageMessageFromErrorCodeA.h>
-  #include <Windows/PowerProf/PowerProfDynLinked.hpp>
+  #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
   //#include <Windows/WinRing0dynlinked.hpp>
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
@@ -79,7 +81,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   //Must explicitely init m_wxmutexIPCthread and m_wxconditionIPCthread
   // in this order here (condition need mutex in c'tor, so init mutex before)?!
   , m_wxmutexIPCthread(wxMUTEX_DEFAULT)
-  , m_wxconditionIPCthread( m_wxmutexIPCthread )
+//  , m_wxconditionIPCthread( m_wxmutexIPCthread )
   , m_x86iandc_threadIPC(I_Thread::joinable)
 {
 #ifdef COMPILE_WITH_DEBUG
@@ -92,15 +94,19 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 
 wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
 {
+  LOGN("begin of app's destructor")
   if( m_bXercesSuccessfullyInitialized )
     //http://xerces.apache.org/xerces-c/program-3.html:
     //"Independent of the API you want to use, DOM, SAX, or SAX2, your
     //application must [...] and terminate it after you are done.
     //When Terminate() was called in another block (even if in a function that
     //is called in the same block) than program crash.
-    XMLPlatformUtils::Terminate();
+    XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate();
     LOG( "Xerces access terminated"//"\n"
       ) ;
+  LOGN("app's destructor: before leaving IPC2InProgramData crit sec ")
+  m_model.m_cpucoredata.wxconditionIPC2InProgramData.Leave() ;
+  LOGN("end of app's destructor")
 }
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
@@ -266,9 +272,11 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
        mp_modelData ) ;
     LOGN("before GetMaximumFrequencyInMHz. number of CPU cores: " <<
         (WORD) mp_modelData->m_cpucoredata.GetNumberOfCPUcores() )
+#ifdef COMPILE_WITH_LOG
     //Needed for drawing the voltage-frequency curves.
-    WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
-    LOGN("after GetMaximumFrequencyInMHz: " << w )
+    WORD wMaxFreqInMHz = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
+#endif //#ifdef COMPILE_WITH_LOG
+    LOGN("after GetMaximumFrequencyInMHz: " << wMaxFreqInMHz )
     #if defined(COMPILE_WITH_CALC_THREAD)
       #if defined(_WINDOWS)
       mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
@@ -291,7 +299,13 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
   #endif
   //At the 1st call of this function mp_frame is NULL.
   if( mp_frame )
+  {
+    //The CPU controller (dyn lib) (especially for Pentium M or Intel Core where
+    // default voltages for multipliers are in PERF_STATUS MSR register ) may
+    //have inserted default voltages: so display everything.
+    mp_frame->RedrawEverything() ;
     mp_frame->SetCPUcontroller(mp_cpucontroller) ;
+  }
 }
 
 void wxX86InfoAndControlApp::CPUcontrollerDeleted()
@@ -394,9 +408,11 @@ void //wxX86InfoAndControlApp::
   LOGN("FetchCPUcoreDataFromIPC begin")
   NamedPipeClient & r_namedpipeclient = p_wxx86infoandcontrolapp->
       m_ipcclient ;
-  r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) ;
+  if( //sending command succeeded
+    r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) &&
   //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
-  if( r_namedpipeclient.m_arbyIPCdata &&
+//  if(
+    r_namedpipeclient.m_arbyIPCdata &&
     // > 0 bytes
     r_namedpipeclient.m_dwSizeInByte
     )
@@ -413,7 +429,7 @@ void //wxX86InfoAndControlApp::
 //      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
 //        m_wxcriticalsection ) ;
 //      ReadXMLdocumentInitAndTermXerces(
-      ReadXMLdocumentWithoutInitAndTermXerces(
+      if( ReadXMLdocumentWithoutInitAndTermXerces(
   //        membufinputsource,
         r_namedpipeclient.m_arbyIPCdata ,
         r_namedpipeclient.m_dwSizeInByte ,
@@ -421,7 +437,16 @@ void //wxX86InfoAndControlApp::
         p_wxx86infoandcontrolapp->m_model ,
         p_wxx86infoandcontrolapp ,
         p_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler
-        ) ;
+        ) == FAILURE
+        )
+      {
+        //exception-> leave crit sec (endDocument(), where Leave() is
+        // called is not reached)
+        LOGN("wxconditionIPC2InProgramData.Leave")
+        p_wxx86infoandcontrolapp->m_model.m_cpucoredata.
+          wxconditionIPC2InProgramData.Leave() ;
+        LOGN("after wxconditionIPC2InProgramData.Leave")
+      }
     }
 //      p_cpucontroller = & p_wxx86infoandcontrolapp->
 //          m_sax2_ipc_current_cpu_data_handler ;
@@ -456,7 +481,6 @@ DWORD WINAPI GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
     ( wxX86InfoAndControlApp * ) p_v ;
   if( p_wxx86infoandcontrolapp )
   {
-    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
     //Wait until another function calls Leave().
 //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
 //    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
@@ -469,12 +493,23 @@ DWORD WINAPI GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
 //        //"The mutex is already locked by another thread."
 //        wxMUTEX_BUSY )
 //      return 0 ;
-    //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
-    //"it must be locked prior to calling Wait"
-    p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
+
+//    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
+//    //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
+//    //"it must be locked prior to calling Wait"
+//    p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
+
 //    Sleep(4000) ;
     LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Lock()")
-    p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
+
+    //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
+    //"This method atomically releases the lock on the mutex associated with
+    //this condition"
+//    p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
+    p_wxx86infoandcontrolapp->m_native_api_eventIPCthread.Wait() ;
+    //After waking up from Wait() the mutex is locked by this thread:
+    //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
+    //"It then locks the mutex again and returns."
     LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc retrieve CPU core data?"
       << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
     while( p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
@@ -498,21 +533,81 @@ DWORD WINAPI GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
 //        return 0 ;
 
 //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
-      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
-      //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
-      //"it must be locked prior to calling Wait"
-      p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
+
+//      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
+//      //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
+//      //"it must be locked prior to calling Wait"
+//      p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
+
       if( ! p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
         break ;
 //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
       LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
-      p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
+      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
+      //"This method atomically releases the lock on the mutex associated with
+      //this condition (this is why it must be locked prior to calling Wait)
+      //and puts the thread to sleep until Signal or Broadcast is called."
+//      p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
+      p_wxx86infoandcontrolapp->m_native_api_eventIPCthread.Wait() ;
+      p_wxx86infoandcontrolapp->m_native_api_eventIPCthread.ResetEvent() ;
     }
     LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
   }
   else
     LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc app pointer == NULL")
-  return 0 ;
+  return 2 ;
+}
+
+void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
+{
+  //TODO the IPC get CPU core data thread should have finished before any
+  //other Xerces function is executed (else program crash AFAIR: error at;
+  //"14 _fu71___ZN11xercesc_3_116XMLPlatformUtils15fgMemoryManagerE()
+  //T:\SourceCodeManagement\X86Info_and_Control\Xerces\PStateConfig.cpp:522
+  //0x0044152a  "
+  //).
+  //  wxCriticalSectionLocker wxcriticalsectionlocker( mp_wxx86infoandcontrolapp->
+  //    m_wxcriticalsectionIPCthread ) ;
+
+  {
+//    LOGN("before locking the mutex for the \"get CPU core data via IPC\" "
+//      "condition ")
+//    //  //The IPC thread checks if the mutex is locked. If yes: it returns.
+//    //Gets the lock when the IPC calls m_wxconditionIPCthread.Wait()
+//    //Lock the mutex so that it is ensured that the "Broadcast()" called by
+//    //this function really ends the thread.
+//    wxMutexLocker wxmutexlocker( m_wxmutexIPCthread);
+//    LOGN("after locking the mutex for the \"get CPU core data via IPC\" "
+//      "condition ")
+    //-> do not get CPU core data via IPC in the thread/ ->exit loop in thread
+    m_vbRetrieveCPUcoreData = false ;
+    //  //Let the IPC thread waiting via "Enter()" continue.
+    //  mp_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+  //This destroys the wxMutexLocker object and so unlocks the mutex.
+  //(MUST be unlocked because Wait() locks the mutex after woken up after
+  //Wait() ).
+  }
+
+  //Wake up the IPC thread.
+  LOGN("before waking up the get CPU core data via IPC thread")
+  //The IPC thread may not Wait() for the condition currently.
+//  m_wxconditionIPCthread.Broadcast();
+  m_native_api_eventIPCthread.Broadcast() ;
+
+  LOGN("waiting for the end of the IPC thread")
+  //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
+  //"you must Wait() for a joinable thread or the system resources used by it
+  //will never be freed,
+#ifdef COMPILE_WITH_LOG
+  DWORD dwThreadReturnCode = (WORD) m_x86iandc_threadIPC.WaitForTermination() ;
+#endif
+  LOGN("after waiting for the end of the IPC thread. return code: " <<
+    dwThreadReturnCode )
+  //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
+  //"and you also must delete the corresponding wxThread
+  //object yourself"
+  m_x86iandc_threadIPC.Delete() ;
+  LOGN("After possibly freeing \"get CPU core data via IPC\" thread ressources")
 }
 
 //Getting the CPU core data (->depends on the implementation) can take many
@@ -538,8 +633,14 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
 //  m_wxcriticalsectionIPCthread.Enter() ;
 
 //  wxMutexLocker lock(m_wxmutexIPCthread);
+
+  //This happened especially after a resume from standby (seen in log file):
+  // when the thread that should be woken up had not called "Lock()" and
+  // "Wait()" for a wxCriticalSection and Signal() was called then the program
+  // crashed.
   //Wake up the thread
-  m_wxconditionIPCthread.Signal();
+//  m_wxconditionIPCthread.Signal();
+  m_native_api_eventIPCthread.Broadcast() ;
   LOGN("GetCurrentCPUcoreDataViaIPCNonBlocking after possibly waking up the "
     "\"get current CPU core data\" thread" )
 }
@@ -611,9 +712,11 @@ bool wxX86InfoAndControlApp::OnInit()
   mp_frame = NULL ;
   gp_cpucontrolbase = this ;
 
+#ifndef _DEBUG
   //from Florian Doersch:
   //Hide the MinGW console window (was not necessary if compiled with MSVC)
   ShowWindow(GetConsoleWindow(), SW_HIDE);
+#endif
 
 #ifdef COMPILE_WITH_SHARED_MEMORY
   mp_voidMappedViewStartingAddress = NULL ;
@@ -626,6 +729,8 @@ bool wxX86InfoAndControlApp::OnInit()
   m_arartchCmdLineArgument = new TCHAR * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
 //  mp_modelData = new Model() ;
   mp_modelData = & m_model ;
+  m_sax2_ipc_current_cpu_data_handler.m_cpc_cpucoredata =
+    & mp_modelData->m_cpucoredata ;
   //If allocation succeeded.
   if( m_arartchCmdLineArgument && mp_modelData )
   {

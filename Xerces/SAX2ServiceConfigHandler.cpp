@@ -44,6 +44,7 @@
     //I_CPUcontroller * p_cpucontroller
 	  )
 	{
+	  LOGN("SAX2ServiceConfigHandler c'tor--address of model:" << & model )
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
     //p_cpucontroller = p_cpucontroller ;
@@ -68,6 +69,8 @@
       {
   //      char archAttributeName [] = "current_dir_for_GUI" ;
         std::string stdstrAttributeName = "current_dir_for_GUI" ;
+        LOGN("trying to get XML attribute value for \"" <<
+          stdstrAttributeName << "\"")
   //	    xercesc_3_1:: Get
         if( XercesHelper::GetAttributeValue
             (
@@ -78,6 +81,24 @@
             )
           )
         {
+          LOGN("XML attribute \"" << stdstrAttributeName << "\" exists")
+          LOGWN_WSPRINTF(L"Before setting current dir for GUI to %ls" ,
+            stdwstrValue.c_str()
+            )
+          LOGN("SAX2ServiceConfigHandler--address of model:" << m_p_model)
+          LOGN("SAX2ServiceConfigHandler--address of service attributes:"
+            << & m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo )
+          LOGN("SAX2ServiceConfigHandler--address of GUI current dir:"
+            << & m_p_model->m_serviceattributes.
+            m_stdwstrGUICurrentDirFullPathTo )
+          LOGN("SAX2ServiceConfigHandler--address of GUI current dir char ptr:"
+            << m_p_model->m_serviceattributes.
+            m_stdwstrGUICurrentDirFullPathTo.c_str() )
+//          LOGN("SAX2ServiceConfigHandler--model->m_strProcessorName :"
+//            << m_p_model->m_strProcessorName )
+//          LOGN("m_p_model->m_serviceattributes.m_stdstrPathToGUIexe:"
+//            << m_p_model->m_serviceattributes.m_stdstrPathToGUIexe )
+          //TODO program crash here
           m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo =
             stdwstrValue ;
           LOGWN_WSPRINTF(L"set current dir for GUI to %ls" ,
@@ -87,6 +108,8 @@
             )
         }
         stdstrAttributeName = "path_to_GUI_exe" ;
+        LOGN("trying to get XML attribute value for \"" <<
+          stdstrAttributeName << "\"")
         if( XercesHelper::GetAttributeValue
             (
                 attrs,//"processor_name"
@@ -113,7 +136,10 @@
 	
 	void SAX2ServiceConfigHandler::fatalError(const SAXParseException& exception)
 	{
+//Prevent reporting of unused variable by compiler if no logging.
+#ifdef COMPILE_WITH_LOG
 	    char* message = XMLString::transcode(exception.getMessage());
+#endif //#ifdef COMPILE_WITH_LOG
       //DEBUG_COUT( << "SAX2 handler: Fatal Error: " << message
 	     //    << " at line: " << exception.getLineNumber()
 	     //    << endl ) ;

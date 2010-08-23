@@ -10,8 +10,8 @@
 #include <Controller/CPUcontrolBase.hpp>
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/ReadFileContent.hpp>
-#include <Controller/stdtstr.hpp>
-#include <Controller/stdstring_format.hpp>
+#include <Controller/character_string/stdtstr.hpp>
+#include <Controller/character_string/stdstring_format.hpp>
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #ifdef COMPILE_WITH_AMD_GRIFFIN
 //#include <Controller/CPU-related/AMD/Griffin/GriffinController.hpp>
@@ -26,7 +26,7 @@
 #endif
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
-#include <wxWidgets/Controller/wxStringHelper.h>
+#include <wxWidgets/Controller/wxStringHelper.hpp> //for getstdstring()
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   //only useful for user interface
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
@@ -82,6 +82,7 @@ MainController::MainController(const MainController& orig) {
 }
 
 MainController::~MainController() {
+  LOGN("~MainController")
 }
 
 //May be called from GUI object or console's main() funciton.

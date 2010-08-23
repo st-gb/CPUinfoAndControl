@@ -10,6 +10,7 @@
   //If not included: compiler error "C1010".
   #include "SAX2MainConfigHandler.hpp"
   #include "XercesHelper.hpp" //for GetAttributeValue(...)
+  #include <Controller/Logger/Logger.hpp>
   #include <UserInterface/UserInterface.hpp>
 
   //#include "PStates.h"
@@ -27,7 +28,8 @@
 	using namespace std;
 	
 	//#define MB_CUR_MAX 1 
-	
+//	class Logger ;
+  extern Logger g_logger ;
 	
 	//With Xerces < Version 2.8:
 	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces statically (else many "LNK2001" and "LNK2019" and linker errors).
@@ -372,7 +374,9 @@
 	      strValue )
         )
 	    {
-	      g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+	      LOGN("string to exclude from logging:" << strValue )
+//	      g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+	      g_logger.AddExcludeFromLogging(strValue) ;
 	    }
 	  }
     else if( m_strElementName == "freq_and_lowest_stable_voltage" )
@@ -424,11 +428,14 @@
 	
 	void SAX2MainConfigHandler::fatalError(const SAXParseException& exception)
 	{
-	    char* message = XMLString::transcode(exception.getMessage());
+//Prevent compiler warning if no logging
+#ifdef COMPILE_WITH_LOG
+	  char * p_chMessage = XMLString::transcode(exception.getMessage());
+#endif //#ifdef COMPILE_WITH_LOG
       //DEBUG_COUT( << "SAX2 handler: Fatal Error: " << message
 	     //    << " at line: " << exception.getLineNumber()
 	     //    << endl ) ;
-      LOG( "SAX2 handler: Fatal Error: " << message
+      LOG( "SAX2 handler: Fatal Error: " << p_chMessage
          << " at line: " << exception.getLineNumber()
          << endl ) ;
 	}

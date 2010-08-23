@@ -13,19 +13,14 @@
 class ServiceAttributes
 {
 public:
-  //wstring because if charset > 1 byte
+//  std::string m_stdstrPathToGUIexe ;
+  //Use std::wstring because there may be cases where the character set > 1 byte
   std::wstring m_stdwstrPathToGUIexe ;
-  //With different current dirs the GUI(s) can be executed with different
-  //configurations.
+  //Intension for this attribute: with different "current directories" the
+  //GUI(s) can be executed with different configurations.
   std::wstring m_stdwstrGUICurrentDirFullPathTo ;
-  ServiceAttributes()
-//    :
-//      m_stdwstrPathToGUIexe( L"C:\\Users\\Stefan\\x86InfoAndControl\\"
-//      "x86InfoAndControl_GUI_MinGW32bit.exe")
-//    , m_stdwstrGUICurrentDirFullPathTo(
-//      L"C:\\Users\\Stefan\\x86InfoAndControl\\")
-    {}
-//  virtual
+  ServiceAttributes() ;
+ //  virtual
 //  ~ServiceAttributes();
 };
 

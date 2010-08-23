@@ -14,7 +14,7 @@ extern "C" {
 
 //#include <windef.h> //BOOL
 //typedef int BOOL ;
-#include <Windows_compatible_typedefs.h> //DWORD etc.
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //DWORD etc.
 #include <basetsd.h> //DWORD_PTR
 
 //from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:

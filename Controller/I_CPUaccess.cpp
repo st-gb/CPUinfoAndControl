@@ -1,6 +1,7 @@
 //#include "ISpecificController.hpp"
 #include "I_CPUaccess.hpp"
-#include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
+//for BITMASK_FOR_LOWMOST_7BIT
+#include <preprocessor_macros/bitmasks.h>
 #include <Controller/CPU-related/ReadTimeStampCounter.h>
 
 #include <string.h> //strcat(...)

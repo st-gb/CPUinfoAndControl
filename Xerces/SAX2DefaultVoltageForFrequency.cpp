@@ -242,9 +242,11 @@
     }
 	}
 	
-	void SAX2DefaultVoltageForFrequency::fatalError(const SAXParseException& exception)
+	void SAX2DefaultVoltageForFrequency::fatalError(const SAXParseException & exception)
 	{
-	    char* message = XMLString::transcode(exception.getMessage());
+#ifdef COMPILE_WITH_LOG
+	    char * message = XMLString::transcode(exception.getMessage());
+#endif //#ifdef COMPILE_WITH_LOG
       //DEBUG_COUT( << "SAX2 handler: Fatal Error: " << message
 	     //    << " at line: " << exception.getLineNumber()
 	     //    << endl ) ;

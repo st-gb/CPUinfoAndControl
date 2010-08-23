@@ -1,5 +1,7 @@
 #pragma once //incl. guard
-#include <global.h>
+//#include <global.h>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
+#include <windef.h> //for BYTE, WORD
 //#include "I_CPUcontroller.hpp"
 
 class I_CPUcontroller ;

@@ -2,31 +2,23 @@
 
 #include <global.h> //for BYTE, WORD
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
-//#ifdef __WXMSW__
-////because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208:
-////   'void': Keine Elemente definiert, die diesen Typ verwenden
-////http://trac.wxwidgets.org/ticket/11482:
-////if you include <windows.h> you must include <wx/msw/winundef.h> after it.
-//#ifdef _MSC_VER //Microsoft compiler
-//#include <wx/msw/winundef.h>
-//#endif
-//#include <wx/thread.h> //for class wxCriticalSection
-//typedef wxCriticalSection criticalsection_type ;
-//#else
-#include <Controller/multithread/condition_type.hpp>
-#include <Controller/multithread/criticalsection_type.hpp>
-#include <Controller/multithread/mutex_type.hpp>
-#include <ModelData/PerCPUcoreAttributes.hpp>
-#include <Windows/multithread/Win32EventBasedCondition.hpp>
+//CPU controller (dyn libs) do not need thread synchronisation yet.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
-#include <wxWidgets/DynFreqScalingThread.hpp>
+  #include <Controller/multithread/condition_type.hpp>
+  #include <Controller/multithread/criticalsection_type.hpp>
+  #include <Controller/multithread/mutex_type.hpp>
+#endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+#include <ModelData/PerCPUcoreAttributes.hpp>
+//CPU controller (dyn libs) do not need thread synchronisation yet.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #include <Windows/multithread/Win32EventBasedCondition.hpp>
+    //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
+  #include <wxWidgets/DynFreqScalingThread.hpp>
+  #include <wx/thread.h> //for wxCondition
 #endif
 #include <map>
 #include <set>
 #include <string> //std::string
-
-//#endif
 
 #define CPU_CORE_DATA_NOT_SET 255
 //#include <Controller/ClocksNotHaltedCPUcoreUsageGetter.hpp>
@@ -82,6 +74,8 @@ public:
   //DFVS = dyn. volt. and freq. scaling
   WORD m_wMilliSecondsWaitBetweenDFVS ;
   WORD m_wFamily ;
+//CPU controller (dyn libs) do not need thread synchronisation yet.
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   //wxCriticalSection m_wxcriticalsection ;
   //Purpose: for multiple threads accessing the data:
   //  prevent accessing the data while they are being changed by a thread (->the
@@ -91,7 +85,11 @@ public:
   condition_type m_conditionCPUdataCanBeSafelyRead ;
   mutex_type m_mutexCPUdataCanBeSafelyRead ;
   mutex_type m_mutexDVFSthreadMayChangeData ;
+
+  wxCriticalSection m_wxcriticalsectionIPCdata ;
+  wxCriticalSection wxconditionIPC2InProgramData ;
   Win32EventBasedCondition m_win32eventCPUdataCanBeSafelyRead ;
+#endif
 //  condition_type * mp_condition ;
 
   //Intension: allocate this as an array at runtime. So releasing memory 

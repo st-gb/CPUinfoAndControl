@@ -21,7 +21,7 @@
   #include <Linux/CalculationThread.hpp>
   #endif
 #endif
-#include <Windows_compatible_typedefs.h>
+#include <preprocessor_macros/Windows_compatible_typedefs.h>
 
 DWORD 
 #ifdef _MSC_VER

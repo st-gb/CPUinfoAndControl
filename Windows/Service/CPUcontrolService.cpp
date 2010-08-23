@@ -1,16 +1,18 @@
 #include "CPUcontrolService.hpp"
 #include <conio.h> //for getche()
-
+#include <iostream> //for std::cout, std::cin
 #include <windows.h> //for SERVICE_TABLE_ENTRY, SERVICE_STATUS_HANDLE, ...
 
 #include <Controller/DynFreqScalingThreadBase.hpp> //
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //for ICPUcoreUsageGetter::Init()
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
-#include <Controller/stdtstr.hpp>
+#include <Controller/character_string/stdtstr.hpp>
 #ifdef COMPILE_WITH_IPC
   #include <Controller/IPC/I_IPC.hpp> //for enum ctrlcodes
 #endif //#ifdef COMPILE_WITH_IPC
+//DEBUG(...), DEBUGN(...)
+#include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include <Xerces/SAX2ServiceConfigHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //readXMLconfig()
@@ -86,6 +88,12 @@ DWORD WINAPI GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v )
       Lock() ;
 //    Sleep(4000) ;
     LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after Lock()")
+    //http://docs.wxwidgets.org/stable/wx_wxcondition.html:
+    // "Waits until the condition is signalled.
+    // This method atomically releases the lock on the mutex associated with
+    // this condition (this is why it must be locked prior to calling Wait)
+    // and puts the thread to sleep until Signal or Broadcast is called.
+    // It then locks the mutex again and returns."
     p_cpucontrolservice->m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.
       Wait() ;
     //ok, at least 1 client thread wants to get CPU core data.
@@ -128,6 +136,7 @@ DWORD WINAPI GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v )
         break ;
 //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
       LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before Wait()")
+
       p_cpucontrolservice->
         m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Wait() ;
     }
@@ -248,6 +257,10 @@ bool CPUcontrolService::Continue()
 void CPUcontrolService::EndAlterCurrentCPUcoreIPCdata()
 {
   m_vbAlterCPUcoreDataForIPC = false ;
+  //Lock the mutex so that the thread that called Wait() on the condition
+  // receives the wakeup by Signal() (else Signal may be called while the
+  // other thread is not Wait() ing and so does not wake up.
+  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock() ;
   m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Signal() ;
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"you must Wait() for a joinable thread or the system resources used by it
@@ -297,13 +310,39 @@ void CPUcontrolService::HandlePowerEvent(DWORD dwEventType )
       dwEventType )
   {
     //case PBT_APMPOWERSTATUSCHANGE:
+    //http://msdn.microsoft.com/en-us/library/aa372720%28v=VS.85%29.aspx:
+    //"Notifies applications that the system has resumed operation after being
+    //suspended."
+    //"An application can receive this event only if it received the
+    //PBT_APMSUSPEND event before the computer was suspended. Otherwise, the
+    //application will receive a PBT_APMRESUMECRITICAL event."
+    // "If the system wakes due to user activity (such as pressing the power
+    // button) or if the system detects the presence of a user after waking
+    // unattended, the system will first broadcast the PBT_APMRESUMEAUTOMATIC
+    // event followed by a PBT_APMRESUMESUSPEND event.
+    //since Windows 2000
   case PBT_APMRESUMESUSPEND:
-     //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/power/base/pbt_apmresumesuspend.htm:
-     //"An application can receive this event only if it received the PBT_APMSUSPEND event before the computer was suspended. Otherwise, the application will receive a PBT_APMRESUMECRITICAL event."
+    LOGN("system has resumed operation after being suspended")
+    break ;
+  case PBT_APMRESUMEAUTOMATIC:
+    LOGN("the computer has woken up automatically")
+    break ;
+   //"An application can receive this event only if it received the
+   //PBT_APMSUSPEND event before the computer was suspended. Otherwise, the
+   //application will receive a PBT_APMRESUMECRITICAL event."
+
+  //http://msdn.microsoft.com/en-us/library/aa372719%28VS.85%29.aspx:
+  //for Win 2000-Win Server 2003
+  //"Notifies applications that the system has resumed operation. This event
+  //can indicate that some or all applications did not receive a PBT_APMSUSPEND
+  //event. For example, this event can be broadcast after a critical suspension
+  //caused by a failing battery.
   case PBT_APMRESUMECRITICAL:
+    LOGN("The system has resumed operation")
        // handle event
     //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/handlerex.htm:
-    //"If your service handles SERVICE_CONTROL_POWEREVENT, return NO_ERROR to grant the request and an error code to deny the request."
+    //"If your service handles SERVICE_CONTROL_POWEREVENT, return NO_ERROR to
+    //grant the request and an error code to deny the request."
       //for(unsigned char by = 0 ; by < 255 ; by ++ )
       //{
       //  ::MessageBeep(15000);
@@ -456,7 +495,6 @@ DWORD CPUcontrolService::MyServiceInitialization(
       //argv[1] = new char [ strlen(artchDefaultArg) + 1 ] ;
       //mar_tch[1] = new char [ strlen(artchDefaultArg) + 1 ] ;
       //mar_tch[1] = "-config=CPUcontrol_config.xml" ;
-      //mar_tch[1] = "-config=GriffinControl_config.xml" ;
       mar_tch[1] = (LPTSTR) m_stdtstrProgramArg.c_str() ;
       //strcpy(argv[1],artchDefaultArg);
       //strcpy(mar_tch[1],artchDefaultArg);
@@ -466,7 +504,7 @@ DWORD CPUcontrolService::MyServiceInitialization(
   else
       ppartch = & argv ;
   //Intension for this try-block is: 
-  //The program should not continue if initializing the CPU acces failed.
+  //The program should not continue if initializing the CPU access failed.
   try 
   {
     //LOG here because: 
@@ -517,7 +555,8 @@ DWORD CPUcontrolService::MyServiceInitialization(
         , & msp_cpucontrolservice->m_dummyuserinterface );
       std::string stdstrServiceCfgFile = "service.xml" ;
       SAX2ServiceConfigHandler sax2serviceconfighandler(
-        * mp_modelData ,
+//        * mp_modelData ,
+        m_modelData ,
         & msp_cpucontrolservice->m_dummyuserinterface );
       if( ReadXMLdocumentInitAndTermXerces(
           stdstrServiceCfgFile.c_str()
@@ -725,6 +764,53 @@ void CPUcontrolService::FillCmdLineOptionsList()
   }
 }
 
+//Use inline->faster
+inline BYTE * CPUcontrolService::GetIPCdataThreadSafe(DWORD & r_dwByteSize )
+{
+  //    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished.Lock() ;
+  //    LOGN("after locking the mutex for \"IPC data thread finished\" condition")
+  //    //Wait for XML thread to finish altering CPU core data.
+  //    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished.Wait() ;
+  //    LOGN("after waking up from \"IPC data thread finished\" condition")
+  //    //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
+  //    //"It then locks the mutex again and returns." -> unlock for other client
+  //    //thread's Wait()
+  //    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished.m_wxmutex.
+  //      Unlock( ) ;
+
+  //Protect
+  LOGN("get IPC data: before entering critical section for concurrent "
+    "modification by in-program data to IPC data thread")
+  //Assign the array pointer and array byte size _inside_ the critical section.
+  mp_modelData->m_cpucoredata.m_wxcriticalsectionIPCdata.Enter() ;
+
+  LOGN("get IPC data: after entering critical section for concurrent "
+    "modification by in-program data to IPC data thread")
+  BYTE * r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
+//  DWORD dwByteSize = m_ipc_datahandler.m_dwByteSize ;
+  r_dwByteSize = m_ipc_datahandler.m_dwByteSize ;
+  if( //if NULL if memory was released ( e.g. in order to reallocate)
+      r_arbyPipeDataToSend && //dwByteSize
+      r_dwByteSize )
+  {
+    //Copy the data before leaving the critical section: so it is ensured
+    // that the data is valid independently of m_ipc_datahandler.m_arbyData.
+    r_arbyPipeDataToSend = new BYTE[ //dwByteSize
+      r_dwByteSize ] ;
+    memcpy( r_arbyPipeDataToSend, m_ipc_datahandler.m_arbyData, //dwByteSize
+      r_dwByteSize ) ;
+  }
+  else
+    r_arbyPipeDataToSend = NULL ;
+  LOGN("get IPC data: before leaving critical section for concurrent "
+    "modification by in-program data to IPC data thread")
+
+  mp_modelData->m_cpucoredata.m_wxcriticalsectionIPCdata.Leave() ;
+  LOGN("get IPC data: after leaving critical section for concurrent "
+    "modification by in-program data to IPC data thread")
+  return r_arbyPipeDataToSend ;
+}
+
 #ifdef COMPILE_WITH_IPC
 DWORD CPUcontrolService::IPC_Message(
   BYTE byCommand
@@ -757,36 +843,9 @@ DWORD CPUcontrolService::IPC_Message(
 //      dwByteSize ) ;
 //    m_condition_typeGetCurrentCPUcoreData.
 
-    //Send message to thread to alter XML DOM tree for CPU core data.
-//    LOGN("DynFreqScalingThreadBase::Entry(): before "
-//        "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
-//    //Let all threads waiting (that called condition.Wait() ) on the
-//    // condition continue.
-//    //"Wait() atomically unlocks the mutex
-//    // which allows the thread to continue and starts waiting"
-//    //blocks here when using wxCondition::Broadcast() (wxWidgets bug?)
-////      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast();
-//
-////    mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.Broadcast() ;
-////    mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.ResetEvent() ;
-//    LOGN("DynFreqScalingThreadBase::Entry(): after "
-//        "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
-    LOGN("before waking up the CPU core data to IPC data thread")
-    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Signal() ;
-    LOGN("after waking up the CPU core data to IPC data thread")
-
-    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished.Lock() ;
-    LOGN("after locking the mutex for \"IPC data thread finished\" condition")
-    //Wait for XML thread to finish altering CPU core data.
-    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished.Wait() ;
-    LOGN("after waking up from \"IPC data thread finished\" condition")
-    //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
-    //"It then locks the mutex again and returns." -> unlock for other client
-    //thread's Wait()
-    m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished.m_wxmutex.
-      Unlock( ) ;
-    r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
-    dwByteSize = m_ipc_datahandler.m_dwByteSize ;
+      WakeUpCreateIPCdataThread() ;
+      r_arbyPipeDataToSend = GetIPCdataThreadSafe(dwByteSize) ;
+//      dwByteSize = m_ipc_datahandler.m_dwByteSize ;
     }
     break ;
   case stop_service:
@@ -1770,8 +1829,15 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
               r_sa.m_stdwstrPathToGUIexe.c_str() )
             if ( ! r_sa.m_stdwstrPathToGUIexe.empty() )
             {
-              CreateGUIprocess create_gui_process(
-                r_sa ) ;
+              CreateProcessAsUserAttributesW createprocessasuserattributesw ;
+              createprocessasuserattributesw.m_stdwstrCommandLine =
+                r_sa.m_stdwstrPathToGUIexe ;
+              createprocessasuserattributesw.m_stdwstrCurrentDirectory =
+                r_sa.m_stdwstrGUICurrentDirFullPathTo ;
+              Windows_API::CreateProcess create_gui_process(
+                //r_sa
+                createprocessasuserattributesw
+                ) ;
               create_gui_process.StartProcess(
                 pwtssession_notification->dwSessionId) ;
             }
@@ -1846,4 +1912,62 @@ VOID CPUcontrolService::SvcDebugOut(LPSTR String, DWORD Status)
       //m_ofstream << std::string(Buffer) ;
       //m_ofstream.flush() ;
    } 
+}
+
+inline void CPUcontrolService::WakeUpCreateIPCdataThread()
+{
+  //Send message to thread to alter XML DOM tree for CPU core data.
+  //    LOGN("DynFreqScalingThreadBase::Entry(): before "
+  //        "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
+  //    //Let all threads waiting (that called condition.Wait() ) on the
+  //    // condition continue.
+  //    //"Wait() atomically unlocks the mutex
+  //    // which allows the thread to continue and starts waiting"
+  //    //blocks here when using wxCondition::Broadcast() (wxWidgets bug?)
+  ////      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast();
+  //
+  ////    mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.Broadcast() ;
+  ////    mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.ResetEvent() ;
+  //    LOGN("DynFreqScalingThreadBase::Entry(): after "
+  //        "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
+  LOGN("before waking up the CPU core data to IPC data thread")
+
+  //This would happen if the pipe client thread would Lock() the mutex
+  //  before calling "Signal(...)":
+  //-the pipe client thread would block its execution until creating the IPC
+  // data has finished (this also depends on the variable wait time in the
+  //  "dyn volt 'n freq scaling" thread)
+  //-the CPU data->IPC data thread would probably would receive the wakeup, but
+  //-other pipe clients would continue to wait until the mutex is locked.
+  //
+  // IPC=InterProcessCommunication
+
+  // | create_IPC_data_thread   pipe_client_thread1    pipe_client_thread2
+  // |     |                      mutex.Lock()                 |
+  // |     |                        |                      mutex.Lock()
+  // +-condition::Wait()            |                          |
+  //    for: create Inter           |
+  //    Process Communication       |
+  //    data                        |
+  //   releases mutex lock ---> gets mutex' lock
+  //                                |
+  //                                v
+  // +--wakes up<---------------condition::Signal()            |
+  //       |
+  //       v
+  // +-creates IPC data         condition::Wait() on:
+  //       |                      creating IPC data
+  //       v                      finished
+  // +-condition::
+  //    Broadcast():
+  //    IPC data ready     ->   wakes up
+  // |
+  // v
+  //time
+
+  //The other thread may not wake up by "Signal(...)" because the mutex is not
+  // locked before calling "Signal(...)".
+  // In this case use the previously generated IPC data.
+  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Signal() ;
+  LOGN("after waking up the CPU core data to IPC data thread")
 }

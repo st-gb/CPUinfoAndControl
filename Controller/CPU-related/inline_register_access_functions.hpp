@@ -8,14 +8,14 @@
 #ifndef INLINE_REGISTER_ACCESS_FUNCTIONS_H_
 #define INLINE_REGISTER_ACCESS_FUNCTIONS_H_
 
-//#include <>
-#include <Controller/ExportedExeFunctions.h> //ReadMSR_func_type etc.
-//::getBinaryRepresentation(...)
-#include <Controller/character_string/format_as_string.hpp>
+//#include <Controller/ExportedExeFunctions.h> //ReadMSR_func_type etc.
+#include <Controller/CPUindependentHelper.h> //::getBinaryRepresentation(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUGN(...)
 
-extern ReadMSR_func_type g_pfnreadmsr ;
-extern WriteMSR_func_type g_pfn_write_msr ;
+//extern ReadMSR_func_type g_pfnreadmsr ;
+//extern WriteMSR_func_type g_pfn_write_msr ;
+
+I_CPUaccess * gp_cpuaccess ;
 
 inline BYTE CPUID(
   DWORD dwIndex,
@@ -27,21 +27,16 @@ inline BYTE CPUID(
   )
 {
   DEBUGN("before executing the CPUID instruction")
-  //TODO return error if calling CPUID fails
-  //from http://www.ibm.com/developerworks/library/l-ia.html:
-  asm ("cpuid"
-        : "=a" (*p_dwEAX),
-          "=b" (*p_dwEBX),
-          "=c" (*p_dwECX),
-          "=d" (*p_dwEDX)
-        : "a" (dwIndex));
-  DEBUGN("after executing the CPUID instruction: "
-    << "EAX: " << * p_dwEAX
-    << "EBX: " << * p_dwEBX
-    << "ECX: " << * p_dwECX
-    << "EDX: " << * p_dwEDX
-    )
-  return 1 ;
+  return mp_cpuaccess->CpuidEx(
+    //http://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits:
+    //"EAX=1: Processor Info and Feature Bits"
+    0x00000001
+    , & dwEAX
+    , & dwEBX
+    , & dwECX
+    , & dwEDX
+    , 1
+    ) ;
 }
 
   //Inline-> replaced instead function call
@@ -55,7 +50,7 @@ inline BYTE CPUID(
     )
   {
     DEBUGN("inline ReadMSR")
-    return (*g_pfnreadmsr)(
+    return gp_cpuaccess->RdmsrEx(
       dwRegisterIndex ,
       p_dwEAX ,
       p_dwEDX ,
@@ -89,13 +84,12 @@ inline BYTE CPUID(
 //        //"5:0 CpuFid: core frequency ID"
 //        ( dwEAX & BITMASK_FOR_LOWMOST_6BIT )
       )
-    return (*g_pfn_write_msr)(
+    return gp_cpuaccess->WrmsrEx(
       dwRegisterIndex ,
       dwEAX ,
       dwEDX ,
       affinityMask
       ) ;
-      return 1 ;
   }
 
 #endif /* INLINE_REGISTER_ACCESS_FUNCTIONS_H_ */

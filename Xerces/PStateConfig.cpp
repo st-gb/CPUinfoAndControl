@@ -18,9 +18,9 @@
   #include <xercesc/util/PlatformUtils.hpp>
   #include <xercesc/framework/LocalFileFormatTarget.hpp>
 
-  #include <Controller/stdstring_format.hpp> //for to_strstring()
+  #include <Controller/character_string/stdstring_format.hpp> //for to_strstring()
   #include <ModelData/ModelData.hpp>
-  #include "XercesHelper.hpp" //X()
+  #include "XercesHelper.hpp" //for XERCES_STRING_FROM_ANSI_STRING()
   #include <global.h> //for LOGN()
 
   //To NOT need to prefix the xerces classes with the "xerces::"
@@ -47,7 +47,7 @@
     try
     {
       mp_dom_elementFreqnVolt = mp_dom_document->
-        createElement( //X(FREQ_AND_VOLTAGE_LITERAL)
+        createElement( //XERCES_STRING_FROM_ANSI_STRING(FREQ_AND_VOLTAGE_LITERAL)
           FREQ_AND_VOLTAGE_WCHAR_LITERAL );
       //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMNode.html:
       //"Adds the node newChild to the end of the list of children of this
@@ -56,10 +56,10 @@
 
       LOGN("appended " << FREQ_AND_VOLTAGE_LITERAL << "to the XML DOM tree" )
       mp_dom_elementFreqnVolt->setAttribute(
-        //X("frequency_in_MHz")
+        //XERCES_STRING_FROM_ANSI_STRING("frequency_in_MHz")
         FREQUENCY_IN_MHZ_WCHAR_LITERAL
         , //attribute name
-        X( to_stdstring<WORD>(wFreq).c_str() ) //attribute value
+        XERCES_STRING_FROM_ANSI_STRING( to_stdstring<WORD>(wFreq).c_str() ) //attribute value
         );
       LOGN("Successfully set attribute value " << wFreq << " for "
         FREQUENCY_IN_MHZ_LITERAL )
@@ -303,15 +303,15 @@
   //    wFreq = c_iterator->m_wFreqInMHz ;
   //    fVoltage = c_iterator->m_fVoltageInVolt ;
   //    DOMElement * p_dom_elementFreqnVolt = p_dom_document->createElement(
-  //      X("freq_and_voltage") );
+  //      XERCES_STRING_FROM_ANSI_STRING("freq_and_voltage") );
   //    mp_dom_elementRoot->appendChild(p_dom_elementFreqnVolt);
   //    p_dom_elementFreqnVolt->setAttribute(
-  //      X("frequency_in_MHz") , //attribute name
-  //      X( to_stdstring<WORD>(wFreq).c_str() ) //attribute value
+  //      XERCES_STRING_FROM_ANSI_STRING("frequency_in_MHz") , //attribute name
+  //      XERCES_STRING_FROM_ANSI_STRING( to_stdstring<WORD>(wFreq).c_str() ) //attribute value
   //      );
   //    p_dom_elementFreqnVolt->setAttribute(
-  //      X("max_voltage_in_Volt") , //attribute name
-  //      X( to_stdstring<float>(fVoltage).c_str() ) //attribute value
+  //      XERCES_STRING_FROM_ANSI_STRING("max_voltage_in_Volt") , //attribute name
+  //      XERCES_STRING_FROM_ANSI_STRING( to_stdstring<float>(fVoltage).c_str() ) //attribute value
   //      );
   //    //if( stdsetFrequenciesStoredInFile.find(wFreq ) !=
   //    //  stdsetFrequenciesStoredInFile.end()
@@ -564,10 +564,11 @@
             if( p_dom_namednodemap )
             {
 //              DOMNode * p_domnodeAttribute ;
-              cp_xmlchAttrName = X(cpc_XMLAttrName) ;
+              cp_xmlchAttrName = XERCES_STRING_FROM_ANSI_STRING(
+                cpc_XMLAttrName) ;
               p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
                 //cp_xmlchAttrName
-                X(cpc_XMLAttrName) ) ;
+                XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ) ;
               ////Attribute exists.
               if ( p_domnodeAttribute //&& c_iterator->m_fVoltageInVolt !=
                 )
@@ -632,9 +633,9 @@
 //          {
 //            p_dom_elementFreqnVolt->setAttribute(
 //              //cp_xmlchAttrName , //attribute name
-//              X(cpc_XMLAttrName) ,
+//              XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ,
 //              //attribute value
-//              X( to_stdstring<float>(
+//              XERCES_STRING_FROM_ANSI_STRING( to_stdstring<float>(
 //                citer_stdset_voltageandfreq->m_fVoltageInVolt ).c_str() )
 //              );
 //          }
@@ -748,9 +749,8 @@
     if( ! m_bOnlySimulate )
     {
       LOGN("before setting attribute value " <<
-        fVoltageFromModelData
-        << "for attribute name "
-        << cpc_XMLAttrName
+       fVoltageFromModelData
+        << "for attribute name "        << cpc_XMLAttrName
         << " for freq "
         << XercesHelper::ToStdString( mp_dom_elementFreqnVolt->getAttribute(
           FREQUENCY_IN_MHZ_WCHAR_LITERAL ) )
@@ -759,9 +759,10 @@
       {
         mp_dom_elementFreqnVolt->setAttribute(
           //cp_xmlchAttrName , //attribute name
-          X(cpc_XMLAttrName) ,
+          XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ,
           //attribute value
-          X( to_stdstring<float>( fVoltageFromModelData ).c_str() )
+          XERCES_STRING_FROM_ANSI_STRING( to_stdstring<float>(
+            fVoltageFromModelData ).c_str() )
           );
         LOGN("setting attribute value "
           << fVoltageFromModelData
@@ -906,9 +907,10 @@
     }
     catch(const DOMXPathException& e)
     {
-      LOGN( "An error occurred during processing of the XPath expression. Msg is:"
+      LOGN( "An error occurred during processing of the XPath expression. "
+        "Msg is:"
 //          << XERCES_STD_QUALIFIER endl
-//          << X(e.getMessage()) << XERCES_STD_QUALIFIER
+//          << XERCES_STRING_FROM_ANSI_STRING(e.getMessage()) << XERCES_STD_QUALIFIER
           )
 //        retval = 4;
     }
@@ -1016,23 +1018,23 @@
           m_stdmapFreqInMHzInDOMtree2DOMindex.clear() ;
           LOGN( "file" << mpc_chFullXMLFilePath << "could not be read")
           //DOMImplementation * p_dom_implementation =
-          //  DOMImplementationRegistry::getDOMImplementation(X("Core"));
+          //  DOMImplementationRegistry::getDOMImplementation(
+          //  XERCES_STRING_FROM_ANSI_STRING("Core") );
           if ( //!= NULL
               mp_dom_implementation )
           {
             try
             {
               //http://www.w3.org/TR/1998/REC-xml-19980210#NT-Nmtoken:
-              //remove invalid tokens like "("
-              //std::string str = RemoveInvalidTokens(
+              //remove invalid tokens like "("              //std::string str = RemoveInvalidTokens(
               //  r_strPstateSettingsFileName.c_str() ) ;
               //mp_userinterface->GetTextFromUser(_T("Enter the root XML element name:")) ;
               //DOMDocument * p_dom_document = p_dom_implementation->createDocument(
               mp_dom_document = mp_dom_implementation->createDocument(
                 0,                    // root element namespace URI.
                 // root element name
-                //X( str.c_str() ) ,
-                X("CPU") ,
+                //XERCES_STRING_FROM_ANSI_STRING( str.c_str() ) ,
+                XERCES_STRING_FROM_ANSI_STRING("CPU") ,
                 0);                   // document type object (DTD).
               if( mp_dom_document )
               {

@@ -3,7 +3,7 @@
 //#include <windef.h> //WORD
 //#include <Windows.h> //for DWORD, WINAPI etc.
 #include <ModelData/PerCPUcoreAttributes.hpp>
-#include <Windows_compatible_typedefs.h>
+#include <preprocessor_macros/Windows_compatible_typedefs.h>
 typedef void *ExitCode;
 
 class CPUcoreData ;

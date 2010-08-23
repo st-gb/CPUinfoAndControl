@@ -5,7 +5,7 @@
 #define STARTED 1
 
 //#include "StdAfx.h" //for ULONGLONG
-#include <Windows_compatible_typedefs.h> //for ULONGLONG
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //for ULONGLONG
 
 //// For compilers that support precompilation, includes "wx/wx.h".
 //#include "wx/wxprec.h"
@@ -349,7 +349,7 @@ public:
     , I_CPUcontroller * p_cpucontroller
     ) ;
 #ifdef wxHAS_POWER_EVENTS
-  //void OnSuspending(wxPowerEvent& event)
+  void OnSuspending(wxPowerEvent& event) ;
   //{
   //    wxLogMessage(_T("System suspend starting..."));
   //    if ( wxMessageBox(_T("Veto suspend?"), _T("Please answer"),
@@ -359,11 +359,11 @@ public:
   //        wxLogMessage(_T("Vetoed suspend."));
   //    }
   //}
-  //void OnSuspended(wxPowerEvent& WXUNUSED(event))
+  void OnSuspended(wxPowerEvent& WXUNUSED(event)) ;
   //{
   //    wxLogMessage(_T("System is going to suspend."));
   //}
-  //void OnSuspendCancel(wxPowerEvent& WXUNUSED(event))
+  void OnSuspendCancel(wxPowerEvent& WXUNUSED(event)) ;
   //{
   //    wxLogMessage(_T("System suspend was cancelled."));
   //}

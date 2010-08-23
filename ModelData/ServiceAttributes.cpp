@@ -7,11 +7,9 @@
 
 #include "ServiceAttributes.hpp"
 
-//ServiceAttributes::ServiceAttributes()
-//{
-//  // TODO Auto-generated constructor stub
-//
-//}
+ServiceAttributes::ServiceAttributes()
+{
+}
 
 //ServiceAttributes::~ServiceAttributes()
 //{

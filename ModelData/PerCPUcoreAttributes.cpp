@@ -5,11 +5,12 @@
  *      Author: Stefan
  */
 
+#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   //Keep away the dependency on this class for dyn libs.
   #include <wxWidgets/DynFreqScalingThread.hpp>
 #endif
-#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include "PerCPUcoreAttributes.hpp"
 
 #ifdef COMPILE_WITH_LOG
@@ -49,7 +50,7 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     )
   {
     DEBUGN("PerCPUcoreAttributes::CreateDynFreqScalingThread" <<
-        "mp_dynfreqscalingthread:" << mp_dynfreqscalingthread )
+      "mp_dynfreqscalingthread:" << mp_dynfreqscalingthread )
     mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
     if ( ! mp_dynfreqscalingthread )
     {
@@ -68,7 +69,11 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
       {
         LOGN("Dynamic Voltage and Frequency Scaling thread successfully "
           "created")
+//Prevent unused variable error for "wxthreaderror" if not compiled
+//with logging.
+#ifdef COMPILE_WITH_LOG
         wxThreadError wxthreaderror = mp_dynfreqscalingthread->Run() ;
+#endif //#ifdef COMPILE_WITH_LOG
         LOGN("after starting Dynamic Voltage and Frequency Scaling thread"
           "--result: " << wxthreaderror )
       }

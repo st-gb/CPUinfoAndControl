@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Controller/stdtstr.hpp>
+#include <Controller/character_string/stdtstr.hpp>
 
 class VoltageSafetyException
 {

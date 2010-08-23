@@ -40,13 +40,19 @@
 #include <Controller/I_CPUcontrollerAction.hpp>
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
 #include <Controller/MainController.hpp>
-#include <Controller/stdtstr.hpp> //Getstdtstring(...)
-#include <BuildTimeString.h>
+#include <Controller/character_string/stdtstr.hpp> //Getstdtstring(...)
 #include <ModelData/ModelData.hpp> //class CPUcoreData
 #include <ModelData/RegisterData.hpp>
 //#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
-
+#include <preprocessor_macros/BuildTimeString.h>
+#ifdef _WINDOWS
+  //#include <Windows/CalculationThread.hpp>
+  #include <Windows/DLLloadError.hpp>
+  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
+  #include <Windows/LocalLanguageMessageFromErrorCode.h>
+  #include <Windows/Service/ServiceBase.hpp>
+#endif
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
@@ -54,15 +60,8 @@
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
 //#include <wxWidgets/wxStringHelper.h> //getwxString()
-#include <wxWidgets/Controller/wxStringHelper.h> //getwxString()
+#include <wxWidgets/Controller/wxStringHelper.hpp> //getwxString()
 #include <Xerces/XMLAccess.hpp>
-#ifdef _WINDOWS
-//#include <Windows/CalculationThread.hpp>
-#include <Windows/DLLloadError.hpp>
-#include <Windows/ErrorCodeFromGetLastErrorToString.h>
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
-#include <Windows/Service/ServiceBase.hpp>
-#endif
 #include "wxDynamicDialog.hpp"
 #include "CPUregisterWriteDialog.hpp"
 #include <map> //std::map
@@ -188,10 +187,10 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_IncreaseVoltageForCurrentPstate, MainFrame::OnIncreaseVoltageForCurrentPstate)
 #endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
 #ifdef wxHAS_POWER_EVENTS
-  //EVT_POWER_SUSPENDING(MyFrame::OnSuspending)
-  //EVT_POWER_SUSPENDED(MyFrame::OnSuspended)
-  //EVT_POWER_SUSPEND_CANCEL(MyFrame::OnSuspendCancel)
   EVT_POWER_RESUME(MainFrame::OnResume)
+  EVT_POWER_SUSPENDING(MainFrame::OnSuspending)
+  EVT_POWER_SUSPENDED(MainFrame::OnSuspended)
+  EVT_POWER_SUSPEND_CANCEL(MainFrame::OnSuspendCancel)
 #endif // wxHAS_POWER_EVENTS
 
   //For stopping the DynVoltAndFreqScal thread that accesses the wxApp.
@@ -987,36 +986,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
   //be spawned).
   m_wxtimer.Stop() ;
 //  m_p_wxtimer->Stop() ;
-  //TODO the IPC get CPU core data thread should have finished before any
-  //other Xerces function is executed (else program crash AFAIR: error at;
-  //"14 _fu71___ZN11xercesc_3_116XMLPlatformUtils15fgMemoryManagerE()
-  //T:\SourceCodeManagement\X86Info_and_Control\Xerces\PStateConfig.cpp:522
-  //0x0044152a  "
-  //).
-//  wxCriticalSectionLocker wxcriticalsectionlocker( mp_wxx86infoandcontrolapp->
-//    m_wxcriticalsectionIPCthread ) ;
-  //-> do not get CPU core data via IPC in the thread.
-  mp_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData = false ;
-//  //Let the IPC thread waiting via "Enter()" continue.
-//  mp_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
-
-//  LOGN("MainFrame::OnClose before locking")
-//  //The IPC thread checks if the mutex is locked. If yes: it returns.
-//  wxMutexLocker lock(mp_wxx86infoandcontrolapp->m_wxmutexIPCthread);
-  //Wake up the IPC thread.
-  LOGN("MainFrame::OnClose before Broadcast")
-  //The IPC thread may not Wait() for the condition currently.
-  mp_wxx86infoandcontrolapp->m_wxconditionIPCthread.Broadcast();
-  LOGN("waiting for the end of the IPC thread")
-  //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
-  //"you must Wait() for a joinable thread or the system resources used by it
-  //will never be freed,
-  mp_wxx86infoandcontrolapp->m_x86iandc_threadIPC.WaitForTermination() ;
-  LOGN("after waiting for the end of the IPC thread")
-  //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
-  //"and you also must delete the corresponding wxThread
-  //object yourself"
-  mp_wxx86infoandcontrolapp->m_x86iandc_threadIPC.Delete() ;
+  mp_wxx86infoandcontrolapp->EndGetCPUcoreDataViaIPCthread() ;
   //May be NULL at startup.
   if( mp_cpucoredata->m_arp_percpucoreattributes
     // CPU cores > 0
@@ -2485,11 +2455,16 @@ void MainFrame::DrawCurrentPstateInfo(
 //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
 
     LOGN("MainFrame::DrawCurrentPstateInfo "
-      "m_bCPUcoreUsageConsumed: " << m_bCPUcoreUsageConsumed )
+      "m_bCPUcoreUsageConsumed"
+#ifdef _DEBUG
+      ": " << m_bCPUcoreUsageConsumed
+#endif
+      )
     LOGN("mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData:" <<
       mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData )
     //Do not run it more than once concurrently.
-    if( m_bCPUcoreUsageConsumed
+    if( //m_bCPUcoreUsageConsumed
+        true
 //    if(
 //      //Do not call/ wait on the IPC thread if it is running right now.
 //      && mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData
@@ -2502,32 +2477,26 @@ void MainFrame::DrawCurrentPstateInfo(
     }
 //    if( ::wxGetApp().m_ipcclient.m_arbyIPCdata )
     {
-//      NamedPipeClient & r_ipcclient = ::wxGetApp().m_ipcclient ;
-//      mp_wxx86infoandcontrolapp->m_ipc_current_cpu_data_handler
-//      mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler.
-//        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ) ;
-//      XERCES_CPP_NAMESPACE::MemBufInputSource membufinputsource(
-////        arby,
-////        dwSizeInBytes ,
-//        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ,
-//        L"IPC_buffer" ) ;
-//      ReadXMLdocumentInitAndTermXerces(
-////        membufinputsource,
-//        r_ipcclient.m_arbyIPCdata ,
-//        r_ipcclient.m_dwSizeInByte ,
-//        L"IPC_buffer" ,
-//        *mp_model ,
-//        mp_wxx86infoandcontrolapp ,
-//        mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler
-//        ) ;
       p_cpucontroller = & mp_wxx86infoandcontrolapp->
           m_sax2_ipc_current_cpu_data_handler ;
       p_cpucoreusagegetter = & mp_wxx86infoandcontrolapp->
           m_sax2_ipc_current_cpu_data_handler ;
-      LOGN("DrawCurrentCPUcoreData before GetNumberOfLogicalCPUcores" )
+      //Prevent the modification of in-program data of either the the CPU core usage
+      // or CPU controller data
+      // else this may happen:
+      //  for some cores data may be from the previous retrieval.
+      //  or even the CPU usage may be from previous and so not match the CPU
+      //   controller data
+      LOGN("DrawCurrent CPU core info: entering IPC 2 in-program data crit sec")
+      //Prevent the concurrent modification of the # of log. cores in the
+      //IPC data 2 in-program data thread.
+      mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
+
+      LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
       //The number of CPU cores is known if the IPC data were got at first.
       WORD wNumCPUcores = p_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
-      if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
+      LOGN("DrawCurrentCPUcoreData after GetNumberOfLogicalCPUcores" )
+//      if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
         mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
       SetTitle( m_wxstrTitle + wxT("--values from service") ) ;
     }
@@ -2537,6 +2506,15 @@ void MainFrame::DrawCurrentPstateInfo(
     SetTitle( m_wxstrTitle //+ wxT("--values from CPU controller")
       ) ;
     p_cpucoreusagegetter = mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter ;
+    //Prevent the modification of in-program data of either the the CPU core usage
+    // or CPU controller data
+    // else this may happen:
+    //  for some cores data may be from the previous retrieval.
+    //  or even the CPU usage may be from previous and so not match the CPU
+    //   controller data
+    LOGN("DrawCurrent CPU core info: entering IPC 2 in-program data crit sec")
+    mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
+    LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
   }
 //  DEBUGN("DrawCurrentPstateInfo CPU controller address:" << mp_i_cpucontroller )
    //::wxGetApp().mp_cpucoreusagegetter->
@@ -2586,6 +2564,7 @@ void MainFrame::DrawCurrentPstateInfo(
     {
 //      VoltageAndFreq ar_voltageandfreq[mp_cpucoredata->m_byNumberOfCPUCores] ;
 //      float ar_fTempInDegCelsius [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+      LOGN("DrawCurrentCPUcoreData before StoreCurrentVoltageAndFreqInArray" )
       StoreCurrentVoltageAndFreqInArray(
 //        ar_voltageandfreq,
 //        ar_fTempInDegCelsius
@@ -2595,6 +2574,7 @@ void MainFrame::DrawCurrentPstateInfo(
         , ar_wxstrTemperature
         , p_cpucontroller
         ) ;
+      LOGN("DrawCurrentCPUcoreData after StoreCurrentVoltageAndFreqInArray" )
     }
     else
     {
@@ -2606,6 +2586,10 @@ void MainFrame::DrawCurrentPstateInfo(
         ar_wxstrFreqInMHz [ wCoreID ] = wxT("?");
       }
     }
+    LOGN("DrawCurrentCPUcoreData leaving IPC 2 in-program data crit sec")
+    mp_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
+    LOGN("DrawCurrentCPUcoreData after leaving IPC 2 in-program data crit sec")
+
 //     if( wFreqInMHz == 0 )
 //       wxstrFreqInMHz = wxT("? MHz") ;
 //     else
@@ -2702,7 +2686,7 @@ void MainFrame::DrawCurrentPstateInfo(
      if( //mp_i_cpucontroller
          p_cpucontroller )
      {
-       LOGN("DrawCurrentCPUcoreData before drawing the CPU core data")
+       LOGN("DrawCurrentCPUcoreData before drawing the CPU core voltage")
       for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
         ++ wCoreID )
       {
@@ -2718,9 +2702,13 @@ void MainFrame::DrawCurrentPstateInfo(
           ) ;
       }
       wxcoordX += m_wMaxVoltageInVoltTextWidth ;
+      LOGN("DrawCurrentCPUcoreData before drawing the CPU core frequency")
       for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
         ++ wCoreID )
       {
+#ifdef _DEBUG
+        wxString & r_wxstr = ar_wxstrFreqInMHz[ wCoreID ] ;
+#endif
         r_wxdc.DrawText(
 //          wxString::Format( wxT("%s MHz ") ,
 //            ar_wxstrCPUcoreVoltage[ wCoreID ]
@@ -2779,6 +2767,12 @@ void MainFrame::DrawCurrentPstateInfo(
         }
       }
       //   } //for-loop
+  }
+  else
+  {
+    LOGN("DrawCurrentCPUcoreData before leaving IPC 2 in-program data crit sec")
+    mp_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
+    LOGN("DrawCurrentCPUcoreData After leaving IPC 2 in-program data crit sec")
   }
   LOGN("DrawCurrentCPUcoreData end")
 }
@@ -3463,8 +3457,9 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
 #endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
 
 #ifdef wxHAS_POWER_EVENTS
-  void MainFrame::OnResume(wxPowerEvent& WXUNUSED(event))
+  void MainFrame::OnResume(wxPowerEvent & WXUNUSED(event) )
   {
+    LOGN("resumed from standby/ hibernate")
     //May be NULL at startup.
     if( mp_i_cpucontroller )
     {
@@ -3541,7 +3536,24 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
   RedrawEverything() ;
 }
 
-void MainFrame::OnTimerEvent(wxTimerEvent &event)
+#ifdef wxHAS_POWER_EVENTS
+void MainFrame::OnSuspending(wxPowerEvent & WXUNUSED(event))
+{
+  LOGN("suspending power event")
+}
+
+void MainFrame::OnSuspended(wxPowerEvent & WXUNUSED(event))
+{
+  LOGN("suspended power event")
+}
+
+void MainFrame::OnSuspendCancel(wxPowerEvent & WXUNUSED(event))
+{
+  LOGN("cancelled suspend power event")
+}
+#endif //#ifdef wxHAS_POWER_EVENTS
+
+void MainFrame::OnTimerEvent(wxTimerEvent & event)
 {
   LOGN("OnTimerEvent begin")
 //  DEBUGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )

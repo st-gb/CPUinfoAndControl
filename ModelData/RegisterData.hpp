@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 //#include <windows.h> //ULONGLONG
-#include <Windows_compatible_typedefs.h> //for ULONGLONG
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //for ULONGLONG
 
 class BitRange
 {

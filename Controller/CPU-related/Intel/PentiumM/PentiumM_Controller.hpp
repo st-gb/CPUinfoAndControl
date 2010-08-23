@@ -102,7 +102,6 @@ public:
     mp_cpuaccess = p_cpuaccess ;
   }
 #endif
-  void ReferenceClockAccordingToStepping() ;
   BYTE SetVoltageAndFrequency( 
     float fVolt , 
     WORD wFreqInMHz ,

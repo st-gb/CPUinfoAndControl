@@ -6,7 +6,7 @@
   #include <basetsd.h> //DWORD_PTR
   //#include <WINDOWS.h> //for BOOL et.c
 #else
-  #include <Windows_compatible_typedefs.h>
+  #include <preprocessor_macros/Windows_compatible_typedefs.h>
 #endif
 //#include <Windows_compatible_typedefs.h>
 #ifndef WINAPI 

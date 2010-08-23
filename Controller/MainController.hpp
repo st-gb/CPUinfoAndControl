@@ -10,7 +10,7 @@
 
 #include <ModelData/ModelData.hpp>
 //#include <UserInterface/UserInterface.hpp>
-#include <Controller/stdtstr.hpp>
+#include <Controller/character_string/stdtstr.hpp>
 #include <Controller/MSVC_adaption/tchar.h>
 
 //Forward declaration (because _this_ header file may be included very often /

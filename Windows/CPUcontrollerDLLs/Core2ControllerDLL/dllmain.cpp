@@ -11,7 +11,7 @@
 #include "stdafx.h"
 #endif
 
-#include <Controller/CPU-related/GetCurrentReferenceClock.h>
+//#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 //  #include <Controller/CPU-related/Intel/Intel_registers.h>
 #include <Controller/CPU-related/Intel/Core/Core.hpp>
 //  #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
@@ -31,9 +31,9 @@ AssignPointersToExportedExeFunctions.h>
 //  extern ReadMSR_func_type g_pfnreadmsr ;
 //  extern WriteMSR_func_type g_pfn_write_msr ;
 //  extern float g_fReferenceClockInMHz ;
-float g_fReferenceClockInMHz ;
+//float g_fReferenceClockInMHz ;
 
-BYTE g_byValue1 ;
+//BYTE g_byValue1 ;
 
 #ifdef _DEBUG
 Logger g_logger ;
@@ -152,8 +152,9 @@ float *
   //"Indicates maximum bus ratio configured for
   // the processor."
 
-  * p_wNumberOfArrayElements = 0 ;
-  return NULL ;
+//  * p_wNumberOfArrayElements = 0 ;
+//  return NULL ;
+  return GetAvailableMultipliersIntelCore( * p_wNumberOfArrayElements ) ;
 }
 
 //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
@@ -175,8 +176,10 @@ float *
   //For platforms based on Mobile Intel® 4 Series Express Chipset Family
   //March 2009",
   //chapter "3.10Processor DC Specification"
-  * p_wNum = 0 ;
-  return NULL ;
+
+//  * p_wNum = 0 ;
+//  return NULL ;
+  return GetAvailableVoltagesInVoltIntelCore( * p_wNum ) ;
 }
 
 //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
