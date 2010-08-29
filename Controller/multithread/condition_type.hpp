@@ -1,6 +1,10 @@
 #pragma once
 
-#define CONDITION_TYPE_WXWIDGETS
+#ifdef WIN32 //built-in define for MinGW/ eclipse CDT on Windows
+  #define CONDITION_TYPE_WIN32
+#else
+  #define CONDITION_TYPE_WXWIDGETS
+#endif
 #ifdef _WINDOWS
 //  #define CONDITION_TYPE_WIN32
 #endif

@@ -506,7 +506,7 @@ DWORD WINAPI GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
     //"This method atomically releases the lock on the mutex associated with
     //this condition"
 //    p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
-    p_wxx86infoandcontrolapp->m_native_api_eventIPCthread.Wait() ;
+    p_wxx86infoandcontrolapp->m_condition_type_eventIPCthread.Wait() ;
     //After waking up from Wait() the mutex is locked by this thread:
     //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
     //"It then locks the mutex again and returns."
@@ -548,8 +548,8 @@ DWORD WINAPI GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
       //this condition (this is why it must be locked prior to calling Wait)
       //and puts the thread to sleep until Signal or Broadcast is called."
 //      p_wxx86infoandcontrolapp->m_wxconditionIPCthread.Wait() ;
-      p_wxx86infoandcontrolapp->m_native_api_eventIPCthread.Wait() ;
-      p_wxx86infoandcontrolapp->m_native_api_eventIPCthread.ResetEvent() ;
+      p_wxx86infoandcontrolapp->m_condition_type_eventIPCthread.Wait() ;
+//      p_wxx86infoandcontrolapp->m_condition_type_eventIPCthread.ResetEvent() ;
     }
     LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
   }
@@ -592,14 +592,14 @@ void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
   LOGN("before waking up the get CPU core data via IPC thread")
   //The IPC thread may not Wait() for the condition currently.
 //  m_wxconditionIPCthread.Broadcast();
-  m_native_api_eventIPCthread.Broadcast() ;
+  m_condition_type_eventIPCthread.Broadcast() ;
 
   LOGN("waiting for the end of the IPC thread")
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"you must Wait() for a joinable thread or the system resources used by it
   //will never be freed,
 #ifdef COMPILE_WITH_LOG
-  DWORD dwThreadReturnCode = (WORD) m_x86iandc_threadIPC.WaitForTermination() ;
+  DWORD dwThreadReturnCode = (DWORD) m_x86iandc_threadIPC.WaitForTermination() ;
 #endif
   LOGN("after waiting for the end of the IPC thread. return code: " <<
     dwThreadReturnCode )
@@ -640,7 +640,7 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
   // crashed.
   //Wake up the thread
 //  m_wxconditionIPCthread.Signal();
-  m_native_api_eventIPCthread.Broadcast() ;
+  m_condition_type_eventIPCthread.Broadcast() ;
   LOGN("GetCurrentCPUcoreDataViaIPCNonBlocking after possibly waking up the "
     "\"get current CPU core data\" thread" )
 }

@@ -11,7 +11,9 @@
 //#include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
-#include <Controller/multithread/native_API_event_type.hpp> //class MainController
+//#include <Controller/multithread/native_API_event_type.hpp>
+#include <Controller/multithread/condition_type.hpp>
+#include <Controller/multithread/thread_type.hpp>
 #include <Controller/MainController.hpp> //class MainController
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/UserInterface.hpp>//base class UserInterface
@@ -22,7 +24,6 @@
 #include <Xerces/IPC/SAX2IPCcurrentCPUdataHandler.hpp>
 //for x86IandC::thread_type
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
-#include <Controller/multithread/thread_type.hpp>
 
 //TODO program Did not exit when a taskbar icon is included.
 #define COMPILE_WITH_SYSTEM_TRAY_ICON
@@ -138,7 +139,8 @@ public:
   wxCriticalSection m_wxcriticalsectionIPCthread ;
   wxMutex m_wxmutexIPCthread ;
 //  wxCondition m_wxconditionIPCthread ;
-  x86IandC::native_API_event_type m_native_api_eventIPCthread ;
+//  x86IandC::native_API_event_type
+  condition_type m_condition_type_eventIPCthread ;
   x86IandC::thread_type m_x86iandc_threadIPC ;
 #ifdef COMPILE_WITH_CPU_SCALING
   //wxDynFreqScalingTimer * mp_wxdynfreqscalingtimer ;

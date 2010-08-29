@@ -1,6 +1,7 @@
 #pragma once //include guard
 
 #include <global.h> //for BYTE, WORD
+//#include <windef.h> //for BYTE
 #include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
 //CPU controller (dyn libs) do not need thread synchronisation yet.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
@@ -88,7 +89,8 @@ public:
 
   wxCriticalSection m_wxcriticalsectionIPCdata ;
   wxCriticalSection wxconditionIPC2InProgramData ;
-  Win32EventBasedCondition m_win32eventCPUdataCanBeSafelyRead ;
+//  Win32EventBasedCondition m_win32eventCPUdataCanBeSafelyRead ;
+  condition_type m_condition_typeCPUdataCanBeSafelyRead ;
 #endif
 //  condition_type * mp_condition ;
 

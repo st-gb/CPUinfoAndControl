@@ -107,6 +107,51 @@ void HandleErrorPlace(BYTE by, const std::string & cr_stdstr )
 {
 }
 
+void CreateService( const TCHAR * const cpc_tchServiceName)
+{
+  try
+  {
+    BYTE by ;
+    DWORD dwLastError = ServiceBase::CreateService( cpc_tchServiceName , by  ) ;
+    if( dwLastError )
+    {
+      //DEBUG("Creating the service failed: error number:%d\n",
+      // dwLastError);
+      //LOG("Creating the service failed: error number:" << dwLastError
+      //    << "\n" );
+      //std::cout
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "Creating the service failed: error number:" <<
+        dwLastError << "\nError: " << //"\n"
+        LocalLanguageMessageFromErrorCodeA( dwLastError )
+        )
+        ;
+      switch( by )
+      {
+      case ServiceBase::GetModuleFileNameFailed:
+        //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
+        //LOG(
+        WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+          "Getting file name for THIS executable file failed: " <<
+          LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+          );
+        break ;
+      }
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution( dwLastError , cpc_tchServiceName ,
+        stdstrPossibleSolution ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(stdstrPossibleSolution)
+    }
+    else
+      //printf("Creating service succeeded\n");
+      std::cout << "Creating the service succeeded.\n" ;
+  }
+  catch( ConnectToSCMerror & ctscme )
+  {
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
+  }
+}
+
 void DeleteService(const TCHAR * cp_tchServiceName
   , std::string & stdtstrProgramName )
 {
@@ -177,7 +222,7 @@ void DeleteService(const TCHAR * cp_tchServiceName
   else
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
       << cp_tchServiceName
-      << "\"succeeded." )
+      << "\" succeeded." )
   std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
   PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
     stdwstr ) ;
@@ -252,14 +297,7 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-          try
-          {
-            ServiceBase::CreateService( vecstdstrParams.at(1).c_str() ) ;
-          }
-          catch(ConnectToSCMerror & ctscme )
-          {
-            WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
-          }
+          CreateService( vecstdstrParams.at(1).c_str() ) ;
         }
         bStartService = false ;
       }
@@ -290,11 +328,13 @@ int main( int argc, char *  argv[] )
               ) ;
         }
         if( ShouldCreateService(argc, argv) && argc > 2 )
+        {
+          BYTE by ;
         //    CreateService(
         //if( //::AfxMessageBox("Should the undervolting service be installed now?",
         //    //IDYES | IDNO ) == IDYES  )
-           ServiceBase::CreateService(//"GriffinControlService"
-                argv[2]) ;
+          ServiceBase::CreateService( argv[2], by ) ;
+        }
         else
             std::cout << "\nNOT installing the service\n" ;
     }
