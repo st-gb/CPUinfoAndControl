@@ -428,7 +428,7 @@ namespace Xerces
     // and puts the thread to sleep until Signal  or Broadcast  is called.
     // It then locks the mutex again and returns."
 //       mr_model.m_cpucoredata.m_conditionCPUdataCanBeSafelyRead.Wait() ;
-    cr_cpucoredata.m_win32eventCPUdataCanBeSafelyRead.Wait() ;
+    cr_cpucoredata.m_condition_typeCPUdataCanBeSafelyRead.Wait() ;
 //       DEBUGN("mutex is locked?"
 //         << mr_model.m_cpucoredata.m_mutexCPUdataCanBeSafelyRead. )
 //       //http://docs.wxwidgets.org/stable/wx_wxcondition.html:

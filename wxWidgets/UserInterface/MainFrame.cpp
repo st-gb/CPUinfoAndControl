@@ -63,7 +63,9 @@
 #include <wxWidgets/Controller/wxStringHelper.hpp> //getwxString()
 #include <Xerces/XMLAccess.hpp>
 #include "wxDynamicDialog.hpp"
-#include "CPUregisterWriteDialog.hpp"
+#ifdef COMPILE_WITH_MSR_EXAMINATION
+  #include "CPUregisterWriteDialog.hpp"
+#endif //COMPILE_WITH_MSR_EXAMINATION
 #include <map> //std::map
 #include <set>
 //#include <xercesc/framework/MemBufInputSource.hpp>
@@ -764,19 +766,11 @@ void MainFrame::CreateServiceMenuItems()
 //    return byReturnValue ;
 //}
 
-//void 
-//Return value: 
-BYTE MainFrame::CreateDynamicMenus()
+void MainFrame::CreateDialogAndMenuForEveryCore()
 {
-//  BYTE byPstateID = 0 ;
-  BYTE byReturnValue = 
-      //Needs to be TRUE for the 1st loop condition evaluation.
-      TRUE ;
+//  BYTE byReturnValue ;
   WORD wMenuID = ID_LastStaticID;
-  //m_vecwxstring.push_back(wxString)
   wxMenu * p_wxmenuCore ;
-  LOGN("CPU core menu creation--number of CPU cores: " <<
-    (WORD) mp_cpucoredata->m_byNumberOfCPUCores )
   m_arp_freqandvoltagesettingdlg = new FreqAndVoltageSettingDlg * [
     mp_cpucoredata->m_byNumberOfCPUCores];
   if(m_arp_freqandvoltagesettingdlg)
@@ -789,9 +783,9 @@ BYTE MainFrame::CreateDynamicMenus()
         0
       , byPointerSize * mp_cpucoredata->m_byNumberOfCPUCores );
   //TRACE("sizeof: %u\n", sizeof(m_arp_freqandvoltagesettingdlg));
-#ifdef _DEBUG
-//  int i = sizeof(m_arp_freqandvoltagesettingdlg) ;
-#endif
+  #ifdef _DEBUG
+  //  int i = sizeof(m_arp_freqandvoltagesettingdlg) ;
+  #endif
     for( BYTE byCoreID = 0 ; byCoreID < //m_byCoreNumber
       mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCoreID )
     {
@@ -915,7 +909,7 @@ BYTE MainFrame::CreateDynamicMenus()
       //    byReturnValue = AddSetPstateMenuItem(
       //      p_wxmenuCore, byCoreID, byPstateID, wMenuID ) ;
       //}
-      if( byReturnValue )
+//      if( byReturnValue )
       {
         if( byCoreID == 0 )
         {
@@ -943,6 +937,25 @@ BYTE MainFrame::CreateDynamicMenus()
       }
     } //for-loop
   }
+}
+
+//void
+//Return value:
+BYTE MainFrame::CreateDynamicMenus()
+{
+//  BYTE byPstateID = 0 ;
+  BYTE byReturnValue =
+      //Needs to be TRUE for the 1st loop condition evaluation.
+      TRUE ;
+//  WORD wMenuID = ID_LastStaticID;
+  //m_vecwxstring.push_back(wxString)
+//  wxMenu * p_wxmenuCore ;
+  LOGN("CPU core menu creation--number of CPU cores: " <<
+    (WORD) mp_cpucoredata->m_byNumberOfCPUCores )
+//  byReturnValue =
+      CreateDialogAndMenuForEveryCore() ;
+//  Create1DialogAndMenuForAllCores() ;
+
   //SetMenuBar(&m_wxmenubar);
   return byReturnValue ;
 }
@@ -3693,6 +3706,7 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
     //May be NULL at startup.
     if( mp_i_cpucontroller )
     {
+#ifdef COMPILE_WITH_MSR_EXAMINATION
      CPUregisterWriteDialog * p_wxdlg = new CPUregisterWriteDialog(
        this ,
        //msrdata
@@ -3704,6 +3718,7 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
        );
      //p_wxdlg->ShowModal() ;
      p_wxdlg->Show(true) ;
+#endif //#ifdef COMPILE_WITH_MSR_EXAMINATION
     }   //if( mp_i_cpucontroller )
   }
 

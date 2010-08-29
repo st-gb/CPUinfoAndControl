@@ -800,8 +800,8 @@ inline void DynFreqScalingThreadBase::SignalCPUdataCanBeSafelyRead()
   // which allows the thread to continue and starts waiting"
   //blocks here when using wxCondition::Broadcast() (wxWidgets bug?)
 //      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast();
-  mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.Broadcast() ;
-  mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.ResetEvent() ;
+  mp_cpucoredata->m_condition_typeCPUdataCanBeSafelyRead.Broadcast() ;
+//  mp_cpucoredata->m_condition_typeCPUdataCanBeSafelyRead.ResetEvent() ;
   LOGN("DynFreqScalingThreadBase::Entry(): after "
       "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
 }

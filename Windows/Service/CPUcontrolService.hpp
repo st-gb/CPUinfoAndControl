@@ -21,6 +21,8 @@
 #include <Windows/Service/ServiceBase.hpp>
 //#include <Windows/WinRing0dynLinked.hpp>
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
+////Also include the cpp file, else "used but never defined warning"
+//#include <wxWidgets/multithread/wxConditionBasedI_Condition.cpp>
 #include <wxWidgets/multithread/wxConditionBasedI_Condition.hpp>
 #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 #include <Xerces/IPC/IPCdataGenerator.hpp> //class Xerces::IPCdataHandler

@@ -584,7 +584,12 @@ BYTE //SAX2MainConfigHandler::
     //If the attribute exists.
     if(pxmlch)
     {
-      r_stdwstrValue = std::wstring(pxmlch);
+      r_stdwstrValue = std::wstring(
+        //Avoid g++ error "no matching function for call to
+        //‘std::basic_string<wchar_t, std::char_traits<wchar_t>,
+        //std::allocator<wchar_t> >::basic_string(const XMLCh*&)’ "
+        (wchar_t *)
+        pxmlch);
       byReturn = SUCCESS;
     }
     //Release memory of dyn. alloc. buffer (else memory leaks).

@@ -111,6 +111,7 @@ private:
   std::vector<//classes derived from wxObject
     wxObject> m_stdvectorwxuicontroldata ;
   std::vector<wxMenu *> m_vecp_wxmenuCore ;
+  //TODO delete unused variables:
   ULONGLONG m_ullHighestDiff ;
   ULONGLONG m_ullHighestPerformanceEventCounter2Diff ;
   ULONGLONG m_ullPreviousCPUusage ;
@@ -209,6 +210,7 @@ public:
   ~MainFrame() ;
 
   void AllowCPUcontrollerAccess() ;
+  void CreateDialogAndMenuForEveryCore() ;
   void DenyCPUcontrollerAccess() ;
   void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * 
     p_percpucoreattributes ) ;
