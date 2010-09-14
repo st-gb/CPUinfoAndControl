@@ -2,22 +2,57 @@
 
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
-#include <ModelData/CPUcoreData.hpp>
+#include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
+#include <ModelData/CPUcoreData.hpp> //class CPUcoreData
+//LOGN(...), DEBUGN(...)
+#include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
 #include <binary_search.cpp> //GetClosesLess()
-#include <global.h> //LOGN
-#include "Sleep.h"
+//#include <global.h> //LOGN
+#include "Sleep.h" //for OperatingSystem::Sleep(...)
+
+//DynFreqScalingThreadBase::DynFreqScalingThreadBase(
+//  ICPUcoreUsageGetter * p_icpu
+//  , I_CPUcontroller * p_cpucontroller
+//  , CPUcoreData & r_cpucoredata
+//  )
+//  : //m_bSuccFullyGotPStateFromMSR(false)
+//  //Initialize in the same order as textual in the declaration?
+//  //(to avoid g++ warnings)
+//  mp_cpucoredata(&r_cpucoredata)
+//  , mp_cpucontroller ( p_cpucontroller )
+//  , m_bCalledInit(false)
+//  , m_wMilliSecondsToWait(100)
+//  , m_vbRun(true)
+//  , m_vbDVFSthreadStopped(true)
+//{
+////  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+////  // the mutex should be initially locked
+////  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
+//
+//  DEBUG("constructor of freq scaling thread base--begin\n");
+//  mp_icpu = p_icpu ;
+//  LOGN("core usage address: " << p_icpu )
+//  //mp_icpu->Init();
+////  m_wMaxFreqInMHz = //2200
+////    r_cpucoredata.m_wMaxFreqInMHz ;
+//  //wxTimer();
+//  m_fPercentileIncrease = 1.5f ;
+//  mp_cpucontroller = p_cpucontroller ;
+//  DEBUG("constructor of freq scaling thread base--end\n");
+//}
 
 DynFreqScalingThreadBase::DynFreqScalingThreadBase(
-  ICPUcoreUsageGetter * p_icpu
-  , I_CPUcontroller * p_cpucontroller
+  CPUcontrolBase & r_cpucontrolbase
   , CPUcoreData & r_cpucoredata
   )
   : //m_bSuccFullyGotPStateFromMSR(false)
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   mp_cpucoredata(&r_cpucoredata)
-  , mp_cpucontroller ( p_cpucontroller )
+  , mr_cpucontrolbase (r_cpucontrolbase)
+  , mp_cpucontroller ( r_cpucontrolbase.mp_cpucontroller )
+  , mp_icpu ( r_cpucontrolbase.mp_cpucoreusagegetter)
   , m_bCalledInit(false)
   , m_wMilliSecondsToWait(100)
   , m_vbRun(true)
@@ -26,22 +61,20 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
 //  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
 //  // the mutex should be initially locked
 //  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
+  LOGN("dyn freq scaling thread base--"
+    << "CPU control base: " << & r_cpucontrolbase
+    << "CPU controller:" << r_cpucontrolbase.mp_cpucontroller
+    << "CPU usage getter: " << r_cpucontrolbase.mp_cpucoreusagegetter )
 
-    DEBUG("constructor of freq scaling thread base--begin\n");
-    mp_icpu = p_icpu ;
-    LOGN("core usage address: " << p_icpu )
-    //mp_icpu->Init();
-    m_wMaxFreqInMHz = //2200
-      r_cpucoredata.m_wMaxFreqInMHz ;
-    //wxTimer();
-    m_wCurrentFreqInMHz = //550
-      m_wMaxFreqInMHz / 4;
-    m_fPercentileIncrease = 1.5f ;
-    m_wAHalfOfMaxFreq = m_wMaxFreqInMHz / 2 ;
-    m_wAQuarterOfMaxFreq = m_wMaxFreqInMHz / 4 ;
-    //mp_pumastatectrl = p_pumastatectrl ;
-    mp_cpucontroller = p_cpucontroller ;
-    DEBUG("constructor of freq scaling thread base--end\n");
+  DEBUG("constructor of freq scaling thread base--begin\n");
+//  mp_icpu = p_icpu ;
+//  LOGN("dyn freq scaling thread base constructor--core usage address: "
+//    << mp_icpu )
+  //mp_icpu->Init();
+  //wxTimer();
+  m_fPercentileIncrease = 1.5f ;
+//  mp_cpucontroller = p_cpucontroller ;
+  DEBUG("constructor of freq scaling thread base--end\n");
 }
 
 void DynFreqScalingThreadBase::ChangeOperatingPointByLoad( 
@@ -79,7 +112,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
       //p_percpucoreattributes->m_wCurrentFreqInMHz / 
       //  mp_cpucoredata->m_wMaxFreqInMHz 
       //  //This is important for increasing the frequency: if NOT multiplied
-      //  //this condition ">" is not fullfilled. 
+      //  //this condition ">" is not fulfilled.
       //  * 0.75
       )
     {
@@ -468,7 +501,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
         SignalCPUdataCanBeSafelyRead() ;
       }
       //LOGN("End of scaling thread loop");
-      Sleep(//m_wMilliSecondsToWait
+      OperatingSystem::Sleep(//m_wMilliSecondsToWait
         mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
       DEBUGN("DynFreqScalingThreadBase::Entry(): after "
           "Sleep(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")")
@@ -516,33 +549,10 @@ ExitCode DynFreqScalingThreadBase::Entry()
   //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Wait()")
         //float fTempInDegCelsius ;
 
-        LOGN("before GetPercentalUsageForAllCores")
-        //TODO exit thread when getting CPU core load fails?
-        if( mp_icpu->//GetPercentalUsageForBothCores
-            GetPercentalUsageForAllCores( //mp_cpucoredata->
-            //m_arfCPUcoreLoadInPercent
-            ar_fCPUcoreLoadInPercent
-            )
-          )
+        if( mr_cpucontrolbase.
+          GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
+            ar_fCPUcoreLoadInPercent, wNumCPUcores) )
         {
-          LOGN("after GetPercentalUsageForAllCores")
-          //Get the current voltage etc. for ALL cores for sending the data for
-          // all cores via IPC, even if not needed for
-          //DVFS (if single power plane / all cores always at the same p-state
-          // then only the frequency for the core with the highest load is
-          //needed).
-          for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
-          {
-            mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
-//            float fVoltageInVolt ;
-//            float fMultiplier ;
-//            float fReferenceClockInMhz ;
-//            mp_cpucontroller->GetCurrentVoltageAndFrequency(
-//              fVoltageInVolt,
-//              fMultiplier,
-//              fReferenceClockInMhz ,
-//              byCoreID ) ;
-          }
           LOGN("after GetCurrentVoltageAndFrequency")
           //check if a temp. could be received:
           //Pentium M CPUs have no temperature register

@@ -13,6 +13,7 @@
 #endif
 #include "PerCPUcoreAttributes.hpp"
 
+extern CPUcontrolBase * gp_cpucontrolbase ;
 #ifdef COMPILE_WITH_LOG
 extern Logger g_logger ;
 #endif //#ifdef COMPILE_WITH_LOG
@@ -60,8 +61,9 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     //upon termination.[...]"
       mp_dynfreqscalingthread = new //DynFreqScalingThread(
         wxWidgets::DynFreqScalingThread(
-        mp_icpucoreusagegetter
-        , mp_cpucontroller
+//        mp_icpucoreusagegetter
+//        , mp_cpucontroller
+        * gp_cpucontrolbase
         , *mp_cpucoredata
         );
       //mp_dynfreqscalingthread->

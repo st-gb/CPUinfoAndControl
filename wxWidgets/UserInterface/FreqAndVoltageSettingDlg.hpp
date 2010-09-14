@@ -55,6 +55,8 @@ private:
 //  wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
   wxCheckBox * mp_wxcheckboxbuttonAlsoSetWantedVoltage ;
   wxCheckBox * mp_wxcheckboxOnlySafeRange ;
+  //Array of pointers to checkbox.
+  wxCheckBox ** m_ar_p_wxcheckbox ;
   wxSlider * mp_wxsliderCPUcoreDivisorID ;
   wxSlider * mp_wxsliderCPUcorePstate ;
   wxSlider * mp_wxsliderFreqInMHz ;
@@ -68,10 +70,14 @@ private:
   wxStaticText * mp_wxstatictextPercentageOfDefaultVoltage ;
 //  wxSpinCtrlDouble * mp_wxspinctrldoubleMultiplier ;
 private:
+  inline void AddCPUcoreCheckBoxSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreFrequencySizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
   inline void AddCPUcoreVoltageSizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
+  inline void AddPerformanceStateSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
 public:
   FreqAndVoltageSettingDlg(
     wxWindow * parent

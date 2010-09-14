@@ -8,7 +8,17 @@
 #ifndef INLINE_REGISTER_ACCESS_FUNCTIONS_H_
 #define INLINE_REGISTER_ACCESS_FUNCTIONS_H_
 
-//#include <>
+//The functions within this file are inline because:
+// -they are used by the CPU controller sourcecode:
+//  ..."ReadMSR"...
+//  -if the code should be compiled as a dynamic library, then _this_ file
+//   should be included
+//  -if the code should be compiled as a _built-in_ CPU controller then
+//   another header file that defines the same functions as here should be
+//   used/ included
+//  -> this allows the "Don't Repeat Yourself" (DRY) principle ("don't write the same
+//   code twice or more") _without_ a function overhead/ with the maximum speed.
+
 #include <Controller/ExportedExeFunctions.h> //ReadMSR_func_type etc.
 //::getBinaryRepresentation(...)
 #include <Controller/character_string/format_as_string.hpp>
@@ -79,15 +89,6 @@ inline BYTE CPUID(
       << "high:" << getBinaryRepresentation(dwEDX)
       << affinityMask
       << ")"
-//      << "VID:" <<
-//        //"15:9 CpuVid: core VID"
-//        ( ( dwEAX >> 9 ) & BITMASK_FOR_LOWMOST_7BIT )
-//      << "DID:" <<
-//        //"8:6 CpuDid: core divisor ID."
-//        ( ( dwEAX >> 6 ) & BITMASK_FOR_LOWMOST_3BIT )
-//      << "FID:" <<
-//        //"5:0 CpuFid: core frequency ID"
-//        ( dwEAX & BITMASK_FOR_LOWMOST_6BIT )
       )
     return (*g_pfn_write_msr)(
       dwRegisterIndex ,

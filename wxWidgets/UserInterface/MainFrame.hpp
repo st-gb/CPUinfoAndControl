@@ -5,7 +5,8 @@
 #define STARTED 1
 
 //#include "StdAfx.h" //for ULONGLONG
-#include <preprocessor_macros/Windows_compatible_typedefs.h> //for ULONGLONG
+//#include <preprocessor_macros/Windows_compatible_typedefs.h> //for ULONGLONG
+#include <winnt.h> //for ULONGLONG
 
 //// For compilers that support precompilation, includes "wx/wx.h".
 //#include "wx/wxprec.h"
@@ -62,6 +63,11 @@ public:
   float m_fVoltageInVolt ;
 };
 
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32
+  #define COMPILE_WITH_SERVICE_PROCESS_CONTROL
+#endif
+
 class MainFrame:
   public wxFrame //,
 //  //Must be public, else MSVC++ error "C4996"
@@ -94,11 +100,12 @@ private:
   float m_fMaxMinusMinVoltage ;
   float m_fMaxVoltage ;
   float m_fMinVoltage ;
-  float m_fPreviousCPUusage ;
+//  float m_fPreviousCPUusage ;
 public:
   float m_fVoltageInVoltOfCurrentActiveCoreSettings ;
 private:
-  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
+//  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
+  //Array of pointers to dialogs
   FreqAndVoltageSettingDlg ** m_arp_freqandvoltagesettingdlg ;
   I_CPUcontroller * mp_i_cpucontroller ;
   int m_nLowestIDForSetVIDnFIDnDID ;
@@ -110,14 +117,8 @@ private:
     SpecificCPUcoreActionAttributes *> m_stdmapwxuicontroldata ;
   std::vector<//classes derived from wxObject
     wxObject> m_stdvectorwxuicontroldata ;
+  std::vector<FreqAndVoltageSettingDlg * > m_stdvec_p_freqandvoltagesettingdlg ;
   std::vector<wxMenu *> m_vecp_wxmenuCore ;
-  //TODO delete unused variables:
-  ULONGLONG m_ullHighestDiff ;
-  ULONGLONG m_ullHighestPerformanceEventCounter2Diff ;
-  ULONGLONG m_ullPreviousCPUusage ;
-  ULONGLONG m_ullPreviousPerformanceEventCounter2 ;
-  ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
-  ULONGLONG m_ullPreviousTimeStampCounterValue ;
 public:
   volatile bool m_vbAnotherWindowIsActive ;
   WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
@@ -197,11 +198,10 @@ private:
 //    ) ;
 //  void CreateAndInitMenuItemPointers() ;
 public:
-
   MainFrame(
     const wxString& title, 
-    const wxPoint& pos, 
-    const wxSize& size
+    const wxPoint & pos,
+    const wxSize & size
     , I_CPUcontroller * p_cpucontroller
     //, CPUcoreData * p_cpucoredata
     , Model * p_model
@@ -210,6 +210,7 @@ public:
   ~MainFrame() ;
 
   void AllowCPUcontrollerAccess() ;
+  void Create1DialogAndMenuForAllCores() ;
   void CreateDialogAndMenuForEveryCore() ;
   void DenyCPUcontrollerAccess() ;
   void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * 
@@ -231,7 +232,9 @@ public:
   void CPUcoreUsageGetterDeleted() ;
 
   inline void CreateFileMenu() ;
+#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   void CreateServiceMenuItems() ;
+#endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   //void 
   BYTE CreateDynamicMenus() ;
   void DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc) ;
@@ -337,7 +340,6 @@ public:
 //      , //const
 //        PState & pstate
 //      ) ;
-  //void SetPumaStateController(GriffinController * p_pumastatectrl) ;
   void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );

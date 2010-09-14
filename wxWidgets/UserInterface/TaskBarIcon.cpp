@@ -22,6 +22,7 @@
 #include "wx/taskbar.h"
 #include "TaskBarIcon.hpp"
 
+#include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
 #ifdef __WXMSW__
   #include <Windows/LocalLanguageMessageFromErrorCode.h>
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
@@ -115,6 +116,7 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
 
 void MyTaskBarIcon::CreatePowerSchemesMenu()
 {
+#ifdef _WIN32 //Defined for MinGW, MSVC (even for 64 bit).
   WORD wEventID = LAST_ID ;
   wxMenu * wxmenuPowerSchemes = new wxMenu;
   std::set<std::wstring> set_wstr ;
@@ -146,10 +148,12 @@ void MyTaskBarIcon::CreatePowerSchemesMenu()
   p_wxmenu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
     wxmenuPowerSchemes);
 //  wxmenuPowerSchemes->Check( LAST_ID , true ) ;
+#endif //#ifdef _WIN32
 }
 
 void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
+#ifdef _WIN32 //Defined for MinGW, MSVC (even for 64 bit).
   int nEventID = wxevent.GetId() ;
   LOGN( "taskbar icon event proc " )
   PowerProfDynLinked * p_powerprofdynlinked =
@@ -194,6 +198,7 @@ void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
       }
     }
   }
+#endif //#ifdef _WIN32
 }
 
 void MyTaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)

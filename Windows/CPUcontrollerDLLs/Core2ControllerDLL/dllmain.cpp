@@ -4,10 +4,10 @@
 //SE GmbH, Berlin, Germany.
 //It may be used for educational / academic purposes for free.
 //It may be used for personal use for free.
-//If you want to publish (parts) this sourcecode or generated binaries for other
+//If you want to publish (parts) this source code or generated binaries for other
 // purposes than for a DLL for x86Info&Control you have to ask Trilobyte.
-//If you use (parts) of this sourcecode then this license text must be contained.
-#ifdef _MSC_VER //MS compiler
+//If you use (parts) of this source code then this license text must be contained.
+#ifdef _MSC_VER //MicroSoft compiler
 #include "stdafx.h"
 #endif
 
@@ -16,15 +16,18 @@
 #include <Controller/CPU-related/Intel/Core/Core.hpp>
 //  #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 //  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
-#include <Windows/AssignPointersToExportedExeFunctions/\
-AssignPointersToExportedExeFunctions.h>
+#include <Controller/AssignPointersToExportedExeFunctions/\
+AssignPointersToExportedExeMSRfunctions.h>
 #ifdef _DEBUG
-#include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+  #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 //#include <Windows/GetNumberOfLogicalCPUs.h>
 //  #include <preprocessor_helper_macros.h>  //for BITMASK_FOR_LOWMOST_5BIT
-#include <windows.h> //for LOGFONTA etc. for winuser.h
-#include <winuser.h> //::MessageBox(...)
+#ifdef _WIN32
+  #include <windows.h> //for LOGFONTA etc. for winuser.h
+#endif
+//#include <winuser.h> //::MessageBox(...)
+#include <windef.h> //for BYTE; WORD
 //  #include <sstream> //std::stringstream
 //  #include <tchar.h> //_T()
 
@@ -46,9 +49,88 @@ Logger g_logger ;
 //declared as extern "C" in C++ code, to prevent them from using C++ naming
 //conventions."
 //For exporting this function with the same name as here in the source file.
+#ifdef _WIN32
+  #define EXPORT extern "C" __declspec(dllexport)
+#else
+  //http://www.linuxquestions.org/questions/programming-9/
+  // how-to-export-function-symbols-750534/:
+  //"__attribute__ ((visibility("default")))  // (similar to __declspec(dllexport))"
+  #define EXPORT extern "C" //__attribute__ ((visibility("default")))
+#endif
+
+#ifndef APIENTRY
+  #define APIENTRY
+#endif
+
+#ifdef _DEBUG
+void OpenLogFile()
+{
+  std::string strExeFileNameWithoutDirs = //GetExeFileNameWithoutDirs() ;
+    "Intel_Core_controller_log.txt" ;
+  std::string stdstrFilename = strExeFileNameWithoutDirs +
+      ("Core2ControllerDLL_log.txt") ;
+  g_logger.OpenFile2( stdstrFilename ) ;
+  DEBUGN("this Log file is open")
+//  LPSTR lpstrModuleName ;
+//  CHAR ar_strModuleName[100] ;
+//  DWORD dwChars =
+//     GetModuleFileName(
+//     //HINSTANCE
+//     //NULL
+//     GetModuleHandle(NULL)
+////     ,NULL //LPSTR
+//     , ar_strModuleName
+//     ,99 //DWORD
+//     ) ;
+  DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
+      << strExeFileNameWithoutDirs )
+//  LPSTR = new STR[dwChars] ;
+//  DEBUGN()
+}
+#endif
+
+bool Init()
+{
+  #ifdef _DEBUG
+  OpenLogFile() ;
+  #endif
+  DEBUGN("after GetMainPllOpFreqIdMax")
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr ,
+    g_pfn_write_msr
+    ) ;
+  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
+  {
+#ifdef _WIN32
+    ::MessageBox(
+      NULL ,
+      "Pointers could not be assigned to the executables export functions\n"
+      "Does the executable that loads this DLL have ReadMSR and WriteMSR"
+      "export functions at all?(analyze this with a tool)"
+      //Title
+      ,"error"
+      , MB_OK) ;
+#endif
+    return FALSE ;
+  }
+  GetReferenceClockFromMSR_FSB_FREQ() ;
+  //      //Force the cond. "< min. time diff" to become true.
+  //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
+  //      g_dwPreviousTickCountInMilliseconds
+  //        //->time diff gets > max. time diff, so it calcs a ref clock.
+  //        -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
+
+  //      //The reference clock is needed for setting the current frequency. So it
+  //      //must be determined prior to any call of this function.
+  //      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
+  return true ;
+}
+
+#ifdef _WIN32
+//For exporting this function with the same name as here in the source file.
 //Especially for MinGW this line is needed in order to be called automatically
 //for DLL attach / detach etc. actions.
-extern "C" __declspec(dllexport)
+EXPORT
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -57,55 +139,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
   switch (ul_reason_for_call)
   {
   case DLL_PROCESS_ATTACH:
-#ifdef _DEBUG
-    {
-    std::string strExeFileNameWithoutDirs = GetExeFileNameWithoutDirs() ;
-    std::string stdstrFilename = strExeFileNameWithoutDirs +
-        ("Core2ControllerDLL_log.txt") ;
-    g_logger.OpenFile2( stdstrFilename ) ;
-    DEBUGN("this Log file is open")
-  //  LPSTR lpstrModuleName ;
-  //  CHAR ar_strModuleName[100] ;
-  //  DWORD dwChars =
-  //     GetModuleFileName(
-  //     //HINSTANCE
-  //     //NULL
-  //     GetModuleHandle(NULL)
-  ////     ,NULL //LPSTR
-  //     , ar_strModuleName
-  //     ,99 //DWORD
-  //     ) ;
-    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
-        << strExeFileNameWithoutDirs )
-  //  LPSTR = new STR[dwChars] ;
-  //  DEBUGN()
-    }
-#endif
-    DEBUGN("after GetMainPllOpFreqIdMax")
-    AssignPointersToExportedExeFunctions() ;
-    if( ! g_pfnreadmsr || ! g_pfn_write_msr )
-    {
-      ::MessageBox(
-        NULL ,
-        "Pointers could not be assigned to the executables export functions\n"
-        "Does the executable that loads this DLL have ReadMSR and WriteMSR"
-        "export functions at all?(analyze this with a tool)"
-        //Title
-        ,"error"
-        , MB_OK) ;
-      return FALSE ;
-    }
-    GetReferenceClockFromMSR_FSB_FREQ() ;
-//      //Force the cond. "< min. time diff" to become true.
-//      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
-//      g_dwPreviousTickCountInMilliseconds
-//        //->time diff gets > max. time diff, so it calcs a ref clock.
-//        -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
-
-//      //The reference clock is needed for setting the current frequency. So it
-//      //must be determined prior to any call of this function.
-//      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-
+    return Init() ;
   case DLL_THREAD_ATTACH:
   case DLL_THREAD_DETACH:
   case DLL_PROCESS_DETACH:
@@ -113,16 +147,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
   }
   return TRUE;
 }
+#endif //#ifdef _WIN32
 
 //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
 #define NEHALEM_DLL_CALLING_CONVENTION
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-//For exporting this function with the same name as here in the source file.
-extern "C" __declspec(dllexport)
+EXPORT
 //The array pointed to by the return value must be freed by the caller (i.e.
 //x86I&C GUI or service) of this function.
 float *
@@ -157,11 +187,7 @@ float *
   return GetAvailableMultipliersIntelCore( * p_wNumberOfArrayElements ) ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
 //The array pointed to by the return value must be freed by the caller (i.e.
 //x86I&C GUI or service) of this function.
 float *
@@ -182,12 +208,7 @@ float *
   return GetAvailableVoltagesInVoltIntelCore( * p_wNum ) ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-//For exporting this function with the same name as here in the source file.
-extern "C" __declspec(dllexport)
+EXPORT
   BYTE
   NEHALEM_DLL_CALLING_CONVENTION
   GetCurrentVoltageAndFrequency(
@@ -208,12 +229,7 @@ extern "C" __declspec(dllexport)
 //    return byRet ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-//For exporting this function with the same name as here in the source file.
-extern "C" __declspec(dllexport)
+EXPORT
 float
   NEHALEM_DLL_CALLING_CONVENTION
   GetTemperatureInCelsius ( WORD wCoreID
@@ -223,12 +239,21 @@ float
     GetTemperatureInDegCelsiusIntel( wCoreID ) ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-//For exporting this function with the same name as here in the source file.
-extern "C" __declspec(dllexport)
+EXPORT
+void
+  NEHALEM_DLL_CALLING_CONVENTION
+  Init( //I_CPUcontroller * pi_cpu
+  //CPUaccess object inside the exe.
+//  I_CPUaccess * pi_cpuaccess
+  void * p_v
+//  , ReadMSR_func_type pfnreadmsr
+  //BYTE by
+  )
+{
+  Init() ;
+}
+
+EXPORT
   BYTE
   NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
   SetCurrentVoltageAndMultiplier(

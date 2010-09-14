@@ -13,9 +13,9 @@
     #include <tchar.h> ////for _T(), TCHAR
 #endif
 #include <Controller/CPU-related/UsageGetterAndControllerBase.hpp>
-#if __GNUC__ == 4 //cygwin 1.7 has w32api/basetsd.h
-  #include <w32api/basetsd.h> //for DWORD_PTR
-#endif
+//#if __GNUC__ == 4 //cygwin 1.7 has w32api/basetsd.h
+//  #include <w32api/basetsd.h> //for DWORD_PTR
+//#endif
 //Microft and MinGW have basetsd.h
 #if defined(_MSC_VER) || (__MINGW32__==1)
   #include <basetsd.h> //for DWORD_PTR

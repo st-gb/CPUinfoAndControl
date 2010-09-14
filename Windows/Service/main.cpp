@@ -312,7 +312,7 @@ int main( int argc, char *  argv[] )
 //            , xerces_ipc_data_handler
             ) ;
 //          Xerces::IPCdataHandler xerces_ipc_data_handler(
-//            cpucontrolservice.m_modelData ) ;
+//            cpucontrolservice.m_model ) ;
           gp_cpucontrolbase = & cpucontrolservice ;
           cpucontrolservice.StartService();
       }

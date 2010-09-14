@@ -12,7 +12,7 @@
   #include "XercesHelper.hpp" //for GetAttributeValue(...)
 
   #include <xercesc/sax2/Attributes.hpp>
-  #include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
+  #include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
   //#include "global.h" //for DEBUG(...) etc.
   #include <ModelData/ServiceAttributes.hpp>
   #include <ModelData/ModelData.hpp>

@@ -6,21 +6,17 @@
  */
 #include "ExportedExeFunctionsCPUaccess.hpp"
 //#include <Controller/CPU-related/ReadTimeStampCounter.h>
-#include <global.h>
+//#include <Controller/CPU-related/AssignPointersToExportedExeMSRfunctions.hpp>
+#include <Controller/AssignPointersToExportedExeFunctions/\
+AssignPointersToExportedExeMSRfunctions.h>
+//#include <global.h>
 
   ExportedExeFunctionsCPUaccess::ExportedExeFunctionsCPUaccess() {}
   ExportedExeFunctionsCPUaccess::~ExportedExeFunctionsCPUaccess() {}
 
   bool ExportedExeFunctionsCPUaccess::AssignPointersToExportedExeFunctions()
   {
-    //from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-    //("Calling an Exported Function in an EXE from Within a DLL"):
-    m_pfn_read_msr = (ReadMSR_func_type)::GetProcAddress(
-      ::GetModuleHandle(NULL),
-      "ReadMSR");
-    m_pfn_write_msr = (WriteMSR_func_type)::GetProcAddress(
-      ::GetModuleHandle(NULL),
-      "WriteMSR");
+    AssignPointersToExportedExeMSRfunctions(m_pfn_read_msr,m_pfn_write_msr) ;
     return m_pfn_read_msr && m_pfn_write_msr ;
   }
 

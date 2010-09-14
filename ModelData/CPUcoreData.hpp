@@ -12,7 +12,7 @@
 #include <ModelData/PerCPUcoreAttributes.hpp>
 //CPU controller (dyn libs) do not need thread synchronisation yet.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  #include <Windows/multithread/Win32EventBasedCondition.hpp>
+//  #include <Windows/multithread/Win32EventBasedCondition.hpp>
     //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
   #include <wxWidgets/DynFreqScalingThread.hpp>
   #include <wx/thread.h> //for wxCondition

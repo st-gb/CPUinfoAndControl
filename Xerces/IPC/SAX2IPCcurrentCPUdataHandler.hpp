@@ -16,8 +16,13 @@
 #include <map>
 //#include <set>
 
-//forwars decl.
-class XERCES_CPP_NAMESPACE::Attributes ;
+//#include <windef.h> //for BYTE
+
+//Forward declarations.
+namespace XERCES_CPP_NAMESPACE
+{
+  class Attributes ;
+}
 class CPUcoreData ;
 
 class SAX2IPCcurrentCPUdataHandler

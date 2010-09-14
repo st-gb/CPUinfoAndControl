@@ -41,7 +41,8 @@ namespace Xerces
       // #f5e93a6b757adb2544b3f6dffb4b461a:
       // throws DOMException
       p_dom_elementCore = p_dom_document->createElement(
-        L"core" );
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"core" );
       //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMNode.html
       // #504731160f9bfff5bb9cc64afabf0e2f:
       // Exceptions: DOMException
@@ -51,33 +52,45 @@ namespace Xerces
       //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMElement.html
       // #1a607d8c619c4aa4a59bc1a7bc5d4692:
       // exception DOMException
-      p_dom_elementCore->setAttribute( L"number" ,
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"number" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
   //             GetStdWstring( stdstr ).c_str() );
 
       stdstr = to_stdstring<float>(
         mr_model.m_cpucoredata.m_arfCPUcoreLoadInPercent[wCPUcoreIndex] ) ;
-      p_dom_elementCore->setAttribute( L"load" ,
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"load" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       stdstr = to_stdstring<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fVoltageInVolt ) ;
-      p_dom_elementCore->setAttribute( L"voltage_in_Volt" ,
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"voltage_in_Volt" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       stdstr = to_stdstring<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fMultiplier ) ;
-      p_dom_elementCore->setAttribute( L"multiplier" ,
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"multiplier" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       stdstr = to_stdstring<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fReferenceClockInMhz ) ;
-      p_dom_elementCore->setAttribute( L"reference_clock_in_MHz" ,
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"reference_clock_in_MHz" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       stdstr = to_stdstring<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fTempInDegCelsius) ;
-      p_dom_elementCore->setAttribute( L"temp_in_deg_Celsius" ,
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"temp_in_deg_Celsius" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       p_dom_elementRoot->appendChild(p_dom_elementCore);
@@ -88,16 +101,18 @@ namespace Xerces
       // #f5e93a6b757adb2544b3f6dffb4b461a:
       // throws DOMException
       p_dom_elementCore = p_dom_document->createElement(
-        L"core" );
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"core" );
       p_dom_elementRoot->appendChild( p_dom_elementCore ) ;
     }
   }
 
   IPCdataHandler::IPCdataHandler(Model & r_model )
     :
-      m_dwByteSize(0) ,
-      m_arbyData ( NULL ) ,
-      mr_model (r_model )
+//    m_bThreadSafe ( true) ,
+    m_dwByteSize(0) ,
+    m_arbyData ( NULL ) ,
+    mr_model (r_model )
   {
     //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"
     //: program crash if more than 1 thread entered
@@ -133,13 +148,14 @@ namespace Xerces
     switch ( byCommand )
     {
     case get_current_CPU_data:
-      GetCurrentCPUcoreAttributeValues(wByteSizeOfData) ;
+      GetCurrentCPUcoreAttributeValues(wByteSizeOfData, true ) ;
       break ;
     }
     return wByteSizeOfData ;
   }
 
-  BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize)
+  BYTE * IPCdataHandler::GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize,
+    bool bThreadSafe)
   {
 //    BYTE * arby = NULL ;
     //Adapted from Xerces' "CreateDOMDocument" sample:
@@ -154,7 +170,9 @@ namespace Xerces
        // "An implementation that has the desired features, or null if this
        //  source has none."
        XERCES_CPP_NAMESPACE::
-       DOMImplementationRegistry::getDOMImplementation( L"Core" );
+       DOMImplementationRegistry::getDOMImplementation(
+         //Cast to "const XMLCh *" to avoid Linux g++ warning.
+         (const XMLCh *) L"Core" );
      LOGN("After getting DOM implementation") ;
      if ( p_dom_implementation )
      {
@@ -172,7 +190,8 @@ namespace Xerces
            // root element name
   //       XERCES_STRING_FROM_ANSI_STRING("CPU_core_data"),
            //"The qualified name of the document element to be created."
-           L"CPU_core_data" ,
+           //Cast to "const XMLCh *" to avoid Linux g++ warning.
+           (const XMLCh *) L"CPU_core_data" ,
            //"The type of document to be created or null."
            0);
          LOGN("After creating XML document") ;
@@ -189,7 +208,8 @@ namespace Xerces
   //         //,Logger::sync
   //         )
 
-         WaitForThreadSafeReadOfCPUdataAndLog(r_cpucoredata) ;
+         if( bThreadSafe )
+           WaitForThreadSafeReadOfCPUdataAndLog(r_cpucoredata) ;
 
   //       m_conditionAccess.Wait();
   //       mr_model.m_cpucoredata.m_wNumThreadsAccessingThisObject

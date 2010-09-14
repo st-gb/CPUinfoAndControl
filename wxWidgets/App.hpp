@@ -19,7 +19,9 @@
 #include <UserInterface/UserInterface.hpp>//base class UserInterface
 //#include <Windows/DynFreqScalingAccess.hpp>
 //#include <Windows/PowerProfDynLinked.hpp>
-#include <Windows/NamedPipe/NamedPipeClient.hpp> //class NamedPipeClient
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  #include <Windows/NamedPipe/NamedPipeClient.hpp> //class NamedPipeClient
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //class SAX2IPCcurrentCPUdataHandler
 #include <Xerces/IPC/SAX2IPCcurrentCPUdataHandler.hpp>
 //for x86IandC::thread_type
@@ -73,7 +75,6 @@ class wxX86InfoAndControlApp
   , public CPUcontrolBase
 {
 private:
-  bool m_bXercesSuccessfullyInitialized ;
   TCHAR ** m_arartchCmdLineArgument ;
 //  wxThread m_wxthreadIPC ;
   void * m_systemtray_icon_notification_window ;
@@ -121,7 +122,7 @@ private:
     CalculationThread m_calculationthread ;
   #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 public:
-  Model m_model ;
+//  Model m_model ;
   SAX2IPCcurrentCPUdataHandler m_sax2_ipc_current_cpu_data_handler ;
   //Must be created on heap, else left mouse clicks were not processed?
   MyTaskBarIcon * mp_taskbaricon ;
@@ -129,7 +130,9 @@ public:
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     NamedPipeClient m_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
+#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
   //"volatile" because it is accessed from more than 1 thread.
@@ -179,6 +182,7 @@ public:
   {
     return mp_i_cpuaccess ;
   }
+  BYTE GetConfigDataViaInterProcessCommunication() ;
   void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
   void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;
   Model * GetModel()

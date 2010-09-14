@@ -154,7 +154,7 @@ bool //ISpecificController
   return bSuccess ;
 }
 
-bool I_CPUaccess::GetProcessorNoLeadingSpaces( std::string & r_stdstr ) 
+bool I_CPUaccess::GetProcessorNameWithoutLeadingSpaces( std::string & r_stdstr ) 
 {
   bool bSuccess ;
   char * archCPUID ;

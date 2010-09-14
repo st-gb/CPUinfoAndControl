@@ -15,13 +15,13 @@ extern "C" {
 //#include <windef.h> //BOOL
 //typedef int BOOL ;
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //DWORD etc.
-#include <basetsd.h> //DWORD_PTR
+//#include <basetsd.h> //DWORD_PTR
 
 //from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
 #ifdef _WIN32
-#define AM_LIB_EXPORT __declspec(dllexport)
+  #define AM_LIB_EXPORT __declspec(dllexport)
 #else
-#define AM_LIB_EXPORT
+  #define AM_LIB_EXPORT //__attribute__ ((visibility("default")))
 #endif // _WIN32
 
 //EXPORT
@@ -30,7 +30,7 @@ AM_LIB_EXPORT BOOL ReadMSR(
   PDWORD p_dweax,			// bit  0-31
   PDWORD p_dwedx,			// bit 32-63
   DWORD_PTR affinityMask	// Thread Affinity Mask
-) ;
+) __attribute__ ((visibility("default"))) ;
 
 
 #ifdef	__cplusplus

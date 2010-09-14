@@ -153,7 +153,9 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
     )
   {
     if( //If strings equal.
-      ! wcscmp( cp_xmlchLocalName, L"core" )
+      ! wcscmp(
+      //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+      (wchar_t *) cp_xmlchLocalName, L"core" )
       )
     {
       float fValue ;
@@ -161,7 +163,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
       if( ConvertXercesAttributesValue<WORD>(
           cr_xerces_attributes
           , wValue
-          , L"number" )
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"number" )
         )
       {
         //While modifying the map prevent the concurrent reading of the map.
@@ -180,7 +183,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         if( ConvertXercesAttributesValue<float>(
           cr_xerces_attributes
           , fValue
-          , L"load" )
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"load" )
           )
         {
   //        m_stdset_fUsage.insert( fValue ) ;
@@ -190,7 +194,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         if( ConvertXercesAttributesValue<float>(
           cr_xerces_attributes
           , fValue
-          , L"temp_in_deg_Celsius" )
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"temp_in_deg_Celsius" )
           )
         {
           m_stdmap_wCoreNumber2fTempInDegCelsius.insert( std::pair<WORD,float> (
@@ -200,7 +205,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         if( ConvertXercesAttributesValue<float>(
           cr_xerces_attributes
           , fValue
-          , L"multiplier" )
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"multiplier" )
           )
         {
 //          m_stdmap_wCoreNumber2fMultiplier.insert( std::pair<WORD,float> (
@@ -210,7 +216,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         if( ConvertXercesAttributesValue<float>(
           cr_xerces_attributes
           , fValue
-          , L"reference_clock_in_MHz" )
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"reference_clock_in_MHz" )
           )
         {
           LOGN("SAX2IPCcurrentCPUdataHandler reference_clock_in_MHz attribute"
@@ -225,7 +232,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         if( ConvertXercesAttributesValue<float>(
           cr_xerces_attributes
           , fValue
-          , L"voltage_in_Volt" )
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"voltage_in_Volt" )
           )
         {
           LOGN("SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute")

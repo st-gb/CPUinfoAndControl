@@ -8,25 +8,31 @@
 #ifndef _SLEEP_H
 #define	_SLEEP_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+//#ifdef	__cplusplus
+//extern "C" {
+//#endif
+namespace OperatingSystem
+{
 
-#ifdef _WINDOWS
-  #define SLEEP_1_MILLI_SECOND ::Sleep(1) ;
+#ifdef _WIN32 //also for 64 bit
+//  #define SLEEP_1_MILLI_SECOND ::Sleep(1) ;
   #include <windows.h> //for Sleep(...);
-  //#define ::Sleep() ;
+  inline void Sleep(unsigned long dwMilliSeconds )
+  {
+    ::Sleep(dwMilliSeconds) ;
+  }
 #else
   #include <unistd.h>
-  void Sleep(unsigned long dwMilliSeconds )
+  inline void Sleep(unsigned long dwMilliSeconds )
   {
     usleep( 1000 * dwMilliSeconds );
   }
 #endif
-  
-#ifdef	__cplusplus
 }
-#endif
+
+//#ifdef	__cplusplus
+//}
+//#endif
 
 #endif	/* _SLEEP_H */
 

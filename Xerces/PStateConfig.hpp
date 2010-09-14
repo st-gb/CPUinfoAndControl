@@ -8,14 +8,16 @@
 #ifndef PSTATECONFIG_HPP_
 #define PSTATECONFIG_HPP_
 
-#include <xercesc/util/XercesDefs.hpp>
-#include <xercesc/util/XercesVersion.hpp>
+#include <xercesc/util/XercesDefs.hpp> //XERCES_CPP_NAMESPACE_BEGIN
+#include <xercesc/util/XercesVersion.hpp> //XERCES_CPP_NAMESPACE
 #include <map> //class std::map
 #include <set> //class std::set
+#include <string> //std::string
 #include <windef.h> //BYTE, WORD
 
 //  XERCES_CPP_NAMESPACE_USE
 
+  //Forward declarations (faster than #include)
   XERCES_CPP_NAMESPACE_BEGIN
   class //XERCES_CPP_NAMESPACE::
     DOMDocument ;
@@ -31,9 +33,8 @@
     DOMXPathNSResolver ;
   class //XERCES_CPP_NAMESPACE::
     DOMXPathResult ;
+  class XMLFormatTarget ;
   XERCES_CPP_NAMESPACE_END
-
-  //forward decl. (faster than #include)
   class Model ;
   class VoltageAndFreq ;
 
@@ -66,6 +67,7 @@
       BuildStdmapFreqInMHzInDOMtree2DOMindex(
 //      std::map<WORD,WORD> & r_stdmapFreqInMHzInDOMtree2DOMindex
       ) ;
+    BYTE CreateDOMtree() ;
     void GetDOM_XPathResultForFrequencies() ;
     void GetFreqnVoltDOMelement( WORD wFreqInMHz
       , XERCES_CPP_NAMESPACE::DOMElement * & mp_dom_element ) ;
@@ -81,9 +83,9 @@
       , bool bOnlySimulate
       ) ;
     bool PossiblyAddVoltages(
-        //true: do not change, only test if it would be changed.
-        bool bTest
-        ) ;
+      //true: do not change, only test if it would be changed.
+      bool bTest
+      ) ;
     inline void PossiblyReleaseDOM_XPathResult() ;
 //    bool PossiblyAddWantedVoltages() ;
     inline void SetVoltageFromIandCModelData(
@@ -96,7 +98,10 @@
 //        , const char * const cpc_chFilePath
         //For creating a DOMLSOutput instance via createLSOutput().
 //        , DOMImplementation * p_dom_implementation
-        ) ;
+      //XMLFormatTarget may be LocalFileFormatTarget->write to a file,
+      //MembufTarget etc.
+      , XERCES_CPP_NAMESPACE::XMLFormatTarget & r_xmlformattarget
+      ) ;
   public:
     bool IsConfigurationChanged(std::string & r_strPstateSettingsFileName ) ;
     XercesConfigurationHandler(Model * p_model ) ;
@@ -113,10 +118,11 @@
 //      , XERCES_CPP_NAMESPACE::DOMLSParser * & parser
 //      , XERCES_CPP_NAMESPACE::DOMImplementation * & p_dom_implementation
       ) ;
+    BYTE * SerializeConfigToMemoryBuffer( DWORD & r_dwByteSize ) ;
     bool TestIfCfgIsChangedOrChangeCfg(
-        //true: do not change, only test if it would be changed.
-        bool bTest
-        ) ;
+      //true: do not change, only test if it would be changed.
+      bool bTest
+      ) ;
   } ;
 
 #endif /* PSTATECONFIG_HPP_ */

@@ -14,6 +14,7 @@
 #endif
 
 #include <wx/dialog.h>
+//#include <windef.h> //for DWORD
 #include <vector>
 
 //pre-declarations instead of include's(=faster)

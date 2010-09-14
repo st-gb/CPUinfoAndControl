@@ -8,7 +8,6 @@
 #ifndef NEHALEM_HPP_
 #define NEHALEM_HPP_
 
-
   inline void PerformanceEventSelectRegisterWrite(
     DWORD dwAffMask ,
     //Pentium M has 1 or 2 "Performance Event Select Register" from

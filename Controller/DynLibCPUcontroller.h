@@ -1,14 +1,14 @@
-#pragma once
+#pragma once //Include guard.
 
-#include <Controller/I_CPUaccess.hpp>
-#include <Controller/exported_functions.h>
+//#include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+//#include <Controller/exported_functions.h>
 //#include <windef.h> //BYTE et.c
 
 typedef unsigned char BYTE ;
-typedef unsigned short      WORD;
-//typedef WORD near           *PWORD;
-typedef WORD  *PWORD;
-typedef unsigned long       DWORD;
+typedef unsigned short WORD;
+//typedef WORD near * PWORD;
+typedef WORD * PWORD;
+typedef unsigned long DWORD;
 
 //these typedefs can be used by
 //-the code that e.g. uses wxDynLib or only the Windows API
@@ -16,7 +16,11 @@ typedef unsigned long       DWORD;
 //-and also by the CPU controller DLL source code.
 
 //( * dll_GetCurrentPstate_type)
-#define CALLING_CONVENTION _cdecl
+#ifdef _WIN32 //defined under MSVC and (eclipse) MinGW (also 64 bit Windows)
+  #define CALLING_CONVENTION _cdecl
+#else
+  #define CALLING_CONVENTION /* ->empty */
+#endif
 //#define CALLING_CONVENTION __stdcall
 
 //name_or_func_ptr may be 
@@ -32,6 +36,9 @@ typedef unsigned long       DWORD;
     , WORD wCoreID  \
   ) ##suffix
 
+//Forward declarations
+class I_CPUaccess ;
+
 typedef BOOL ReadMSRex_type (
   const I_CPUaccess * ,DWORD, DWORD*, DWORD*, long unsigned int ) ;
 
@@ -40,7 +47,7 @@ typedef void (
   //function signature that calls this function?!
   //WINAPI
     CALLING_CONVENTION
-  *dll_init_type)(
+  * dll_init_type)(
       I_CPUaccess *
       //BYTE
 //      , //I_CPUaccess::RdmsrEx

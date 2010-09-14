@@ -14,8 +14,10 @@
 #include <limits.h> //ULONG_MAX
 #include <stdlib.h> //atoi()
 
+#include <winnt.h> //for __int64
+
 //from Apache Xerces header directory
-#include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
+#include <xercesc/sax2/Attributes.hpp> //for "XERCES_CPP_NAMESPACE::Attributes"
 #include <xercesc/util/XMLString.hpp>
 
 //// need to properly scope any forward declarations
@@ -99,24 +101,29 @@ public:
 };
 
 class StdStringToDWORD
-  :public StdStringToDestFormat
+  : public StdStringToDestFormat
 {
 public:
   static BYTE Convert(
     std::string & strAttributeValue ,
     void * pv_AttributeValue 
-  )
+    )
   {
     BYTE byReturn = FAILURE ;
     //DWORD dwRes ;
     //dwRes = atol(strAttributeValue.c_str() ;
     //Use atoi64 because atol return a long value 2^31 to -2^31 but a 
     //DWORD can go to 2^32
-    __int64 i64 = 
+//#ifdef WIN32 //if Windows (MinGW etc.)
+    __int64 i64 =
+//#else
+//    int64 i64 =
+//#endif
       #ifdef _MSC_VER //if MS-compiler
       _atoi64
       #else
       atoi 
+//      strtoul
       #endif
       (strAttributeValue.c_str() ) ;
     if ( //The return value is 0 for _atoi64 if the input cannot be 
@@ -150,7 +157,7 @@ class XercesHelper
 public:
   XercesHelper();
   XercesHelper(UserInterface & r_userinterface );
-  XercesHelper(const XercesHelper& orig);
+  XercesHelper(const XercesHelper & orig);
   virtual ~XercesHelper();
 //private:
 
@@ -160,8 +167,7 @@ public:
     bool & rbValue
     ) ;
 
-  static inline BYTE //SAX2MainConfigHandler::
-      GetAttributeValue
+  static inline BYTE GetAttributeValue
     (
     const XERCES_CPP_NAMESPACE::Attributes & xercesc_attributes,
     const std::string & cr_stdstrAttributeName,
@@ -174,8 +180,7 @@ public:
       BYTE & rbyValue
     ) ;
 
-  BYTE //SAX2MainConfigHandler::
-      GetAttributeValue(
+  BYTE GetAttributeValue(
     const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     //DWORD & r_dwValue
@@ -190,12 +195,11 @@ public:
   //Decrease code redundancy:
   //This function has the code to get the Xerces attribute value
   //that should be identical for all data types and calls the 
-  //coverter functions (member functions of this class).
+  //converter functions (member functions of this class).
   //For possibility to interact with the user interface in case of convert errors
   //the converter functions are member functions and so they have
-  //the userinterface member variable.
-  BYTE //SAX2MainConfigHandler::
-    GetAttributeValue(
+  //the user interface member variable.
+  BYTE GetAttributeValue(
     const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     //DWORD & r_dwValue
@@ -209,20 +213,19 @@ public:
     void * pv_AttributeValue
     ) ;
 
-    static BYTE GetAttributeValue(
+  static BYTE GetAttributeValue(
     const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     WORD & rwValue
     ) ;
 
-    //static 
-    BYTE //SAX2MainConfigHandler::
-        GetAttributeValue(
-      const XERCES_CPP_NAMESPACE::Attributes & attrs,
-      const char * lpctstrAttrName,
-      DWORD & r_dwValue) ;
+  //static
+  BYTE GetAttributeValue(
+    const XERCES_CPP_NAMESPACE::Attributes & attrs,
+    const char * lpctstrAttrName,
+    DWORD & r_dwValue) ;
 
-    static BYTE GetAttributeValue(
+  static BYTE GetAttributeValue(
     const XERCES_CPP_NAMESPACE::Attributes & attrs,
     const char * lpctstrAttrName,
     float & rfValue

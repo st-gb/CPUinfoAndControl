@@ -1,8 +1,12 @@
 #pragma once
 
-//#include "StdAfx.h" //for DWORD, ...
-#include <global.h> //for DWORD, ...
 #include <string>
+//#include "StdAfx.h"
+//#include <global.h> //for DWORD, ...
+//"c:/mingw/bin/../lib/gcc/mingw32/3.4.5/../../../../include/winnt.h:107:
+// error: `CONST' does not name a type"
+#include <windef.h> //for CONST for winnt.h
+#include <winnt.h> //for ULONGLONG
 #include <vector>
 //#include <windows.h> //ULONGLONG
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //for ULONGLONG
