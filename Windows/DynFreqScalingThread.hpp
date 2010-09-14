@@ -1,8 +1,10 @@
 #pragma once //include guard
+#ifndef DYNFREQSCALINGTHREAD_HPP
+#define DYNFREQSCALINGTHREAD_HPP
 
 //#include "../Controller/ICPUcoreUsageGetter.hpp"
-#include <Controller/DynFreqScalingThreadBase.hpp>
-#include <global.h> //for WORD
+#include <Controller/DynFreqScalingThreadBase.hpp> //Base class for this class.
+#include <windef.h> //for DWORD
 
 class ICPUcoreUsageGetter ;
 
@@ -16,25 +18,28 @@ namespace Windows_API
     //WORD m_wCurrentFreqInMHz ;
     //ICPUcoreUsageGetter * mp_icpucoreusagegetter;
     //DynFreqScalingThread( WORD wMaxFreqInMHz )
-    //  : m_wMaxFreqInMHz(//2200
-    //    wMaxFreqInMHz )
+    //  : m_wMaxFreqInMHz( wMaxFreqInMHz )
     //  , m_fPercentileIncrease(1.5f)
     //  , m_bSuccFullyGotPStateFromMSR(true)
     //{
     //}
+//    DynFreqScalingThread(
+//      ICPUcoreUsageGetter * p_icpu
+//      , I_CPUcontroller * p_cpucontroller
+//      , CPUcoreData & r_cpucoredata
+//      ) ;
     DynFreqScalingThread(
-      ICPUcoreUsageGetter * p_icpu
-      , I_CPUcontroller * p_cpucontroller
+      CPUcontrolBase & r_cpucontrolbase
       , CPUcoreData & r_cpucoredata
       ) ;
-    //void Start() ;
     //int Run() ;
     DWORD Run() ;
+    //void Start() ;
     //BYTE Start() ;
     DWORD Start() ;
     //void SetMembers(
     //  ICPUcoreUsageGetter * p_icpucoreusagegetter,
-    //  GriffinController * p_pumastatectrl
     //  ) ;
   };
 };
+#endif //#ifndef DYNFREQSCALINGTHREAD_HPP

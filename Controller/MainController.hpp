@@ -29,8 +29,7 @@ private:
   Model * mp_model ;
   UserInterface * mp_userinterface ;
 public:
-  I_CPUcontroller * CreateCPUcontrollerAndUsageGetter(
-    ICPUcoreUsageGetter * & r_p_icpucoreusagegetter ) ;
+  inline void CreateBuiltInCPUcontrollerAndUsageGetter() ;
   BYTE CreateCPUcontrollerAndUsageGetter(
     I_CPUcontroller * & cpu
     , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter) ;
@@ -52,9 +51,14 @@ public:
 //    r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }
-  BYTE Init(
+  BYTE ReadMainAndPstateConfig(
     Model & model 
     , UserInterface * p_userinterface 
+    ) ;
+  void ReadMainConfig(Model & model, UserInterface * p_userinterface ) ;
+  BYTE ReadPstateConfig(
+    Model & model
+    , UserInterface * p_userinterface
     ) ;
   void SetAttributeData( Model * p_model )
   {

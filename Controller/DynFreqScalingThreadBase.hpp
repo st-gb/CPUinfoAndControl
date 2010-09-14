@@ -1,11 +1,12 @@
-#pragma once
+#pragma once //Include guard.
 
-//#include <windef.h> //WORD
-//#include <Windows.h> //for DWORD, WINAPI etc.
+//#include <windef.h> //for WORD
 #include <ModelData/PerCPUcoreAttributes.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h>
 typedef void *ExitCode;
 
+//Forward declarations (faster than #include)
+class CPUcontrolBase ;
 class CPUcoreData ;
 class ICPUcoreUsageGetter ;
 class I_CPUcontroller ;
@@ -15,21 +16,16 @@ class PerCPUcoreAttributes ;
 class DynFreqScalingThreadBase
 {
 //private:
-  //"protected" to inherit member atts
+  //"protected" to inherit member attributes
 protected:
   CPUcoreData * mp_cpucoredata ;
+  CPUcontrolBase & mr_cpucontrolbase ;
   I_CPUcontroller * mp_cpucontroller ;
   ICPUcoreUsageGetter * mp_icpu ;
-  //bool m_bSuccFullyGotPStateFromMSR ;
   bool m_bCalledInit ;
   //DWORD m_dwMSRLow,m_dwMSRHigh ;
-  float m_arf[2] ;
   float m_fVoltage ;
   float m_fPercentileIncrease ;
-  WORD m_wCurrentFreqInMHz ;
-  WORD m_wAHalfOfMaxFreq ;
-  WORD m_wAQuarterOfMaxFreq ;
-  WORD m_wMaxFreqInMHz ;
   WORD m_wMilliSecondsToWait ;
   void ChangeOperatingPointByLoad( 
     BYTE byCoreID 
@@ -47,9 +43,13 @@ public:
   //volatile is important because more than 1 thread may access this variable
   volatile bool m_vbRun ;
   volatile bool m_vbDVFSthreadStopped ;
-  DynFreqScalingThreadBase(  
-    ICPUcoreUsageGetter * p_icpu
-    , I_CPUcontroller * p_cpucontroller
+//  DynFreqScalingThreadBase(
+//    ICPUcoreUsageGetter * p_icpu
+//    , I_CPUcontroller * p_cpucontroller
+//    , CPUcoreData & r_cpucoredata
+//    ) ;
+  DynFreqScalingThreadBase::DynFreqScalingThreadBase(
+    CPUcontrolBase & r_cpucontrolbase
     , CPUcoreData & r_cpucoredata
     ) ;
   ExitCode Entry() ;

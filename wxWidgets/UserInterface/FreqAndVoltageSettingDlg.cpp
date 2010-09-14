@@ -62,6 +62,50 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
 END_EVENT_TABLE()
 
+inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
+  wxSizer * p_wxsizerSuperordinate )
+{
+  wxSizer * p_wxboxsizerCPUcoreCheckBox = new wxBoxSizer(wxHORIZONTAL);
+  p_wxboxsizerCPUcoreCheckBox->Add(
+    new wxStaticText(this, wxID_ANY,
+    //_T("core frequency in MHz: ")));
+    _T("affected\ncores"//\nin MHz"
+      ":")
+      )
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    , wxLEFT | wxRIGHT |
+    wxALIGN_TOP
+    , 5 //Determines the border width
+    );
+  WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
+  m_ar_p_wxcheckbox = new wxCheckBox * [ wNumCPUcores ] ;
+  if( m_ar_p_wxcheckbox ) //Allocating the array succeeded.
+    for( WORD wCoreID = 0 ; wCoreID < wNumCPUcores ; ++ wCoreID )
+    {
+      m_ar_p_wxcheckbox[ wCoreID ] = new wxCheckBox(this,wxID_ANY,
+        wxString::Format(wxT("%u"), wCoreID) ) ;
+      p_wxboxsizerCPUcoreCheckBox->Add(
+        m_ar_p_wxcheckbox[ wCoreID ]
+        , 1
+        //,wxEXPAND | wxALL
+        , wxLEFT | wxRIGHT
+        , 5 );
+    }
+  p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
+    p_wxboxsizerCPUcoreCheckBox ,
+//    1 ,
+    0 ,//0=the control should not take more space if the sizer is enlarged
+    wxEXPAND | //wxALL
+      wxBOTTOM
+    ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"Determines the border width, if the flag  parameter is set to
+    //include any border flag."
+    //10
+    2
+    );
+}
+
 inline void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
   wxSizer * p_wxsizerSuperordinate )
 {
@@ -173,6 +217,40 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
     );
 }
 
+inline void FreqAndVoltageSettingDlg::AddPerformanceStateSizer(
+  wxSizer * p_wxsizerSuperordinate )
+{
+  wxBoxSizer * p_wxboxsizerCPUcorePstate = new wxBoxSizer(wxHORIZONTAL);
+  p_wxboxsizerCPUcorePstate->Add(
+    new wxStaticText(this, wxID_ANY, _T("p-state:"))
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
+    , wxLEFT | wxRIGHT |
+    //wxALIGN_CENTER_VERTICAL
+    //The label and the adjustable value should be at the same vertical
+    //position, so place at the top.
+    wxALIGN_TOP
+    , 5 //Determines the border width
+    );
+  p_wxboxsizerCPUcorePstate->Add(//p_wxsliderCPUcoreDivisorID
+    mp_wxsliderCPUcorePstate
+    , 1
+    //, wxEXPAND | wxALL
+    , wxLEFT | wxRIGHT
+    , 5);
+  p_wxsizerSuperordinate->Add(
+      p_wxboxsizerCPUcorePstate, 1 ,
+      wxEXPAND | //wxALL
+        wxBOTTOM
+      ,
+      //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+      //"Determines the border width, if the flag  parameter is set to
+      //include any border flag."
+      //10
+      2
+      );
+}
+
 FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   wxWindow * parent
   , I_CPUcontroller * p_cpucontroller
@@ -181,12 +259,16 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   : wxDialog( 
       parent, 
       wxID_ANY, 
+#ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
       wxString::Format( 
-      //We need a _T() macro (wide char-> L"", char->"") for EACH 
+      //We need a wxT() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
-      _T("settings for core %u") , 
+      wxT("settings for core %u") ,
       byCoreID 
     )
+#else //#ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
+    wxT("voltage and frequency settings")
+#endif //#ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
     , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
     , wxSize(400, 400)
     , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
@@ -208,7 +290,6 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //windows, you should use a pointer to the child windows instead of the
   //objects themself as members of the main window."
 //  wxBoxSizer * p_wxboxsizerValidPstate = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer * p_wxboxsizerCPUcorePstate = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerCPUcoreDivisor = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerCPUcoreFrequencyMultiplier = new wxBoxSizer(wxHORIZONTAL);
   //wxBoxSizer *
@@ -276,24 +357,6 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     this, wxID_ANY, _T("") 
     ) ;
 
-  p_wxboxsizerCPUcorePstate->Add( 
-    new wxStaticText(this, wxID_ANY, _T("p-state:"))
-    , 0 //0=the control should not take more space if the sizer is enlarged 
-    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-    , wxLEFT | wxRIGHT | 
-    //wxALIGN_CENTER_VERTICAL
-    //The label and the adjustable value should be at the same vertical
-    //position, so place at the top.
-    wxALIGN_TOP
-    , 5 //Determines the border width
-    );
-  p_wxboxsizerCPUcorePstate->Add(//p_wxsliderCPUcoreDivisorID
-    mp_wxsliderCPUcorePstate 
-    , 1
-    //, wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-    , 5);
-
   //mp_wxsliderCPUcorePstate->SetBackgroundStyle(wxBG_STYLE_COLOUR);
   //mp_wxsliderCPUcorePstate->SetForegroundColour(*wxRED);
   //mp_wxsliderCPUcorePstate->SetOwnBackgroundColour(*wxRED);
@@ -320,17 +383,13 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //  //, wxEXPAND | wxALL,
   //  , wxLEFT | wxRIGHT
   //  , 5);
-  sizerTop->Add(
-      p_wxboxsizerCPUcorePstate, 1 ,
-      wxEXPAND | //wxALL
-        wxBOTTOM
-      ,
-      //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-      //"Determines the border width, if the flag  parameter is set to
-      //include any border flag."
-      //10
-      2
-      );
+
+  //Only display the checkbox options if more than 1 logical CPU core exists.
+  //(else if 1 CPU core then it is clear that the 1st and only core should be
+  // used)
+  if( mp_model->m_cpucoredata.GetNumberOfCPUcores() > 1 )
+    AddCPUcoreCheckBoxSizer(sizerTop) ;
+  AddPerformanceStateSizer(sizerTop) ;
 
   AddCPUcoreFrequencySizer(sizerTop) ;
 
@@ -541,6 +600,15 @@ FreqAndVoltageSettingDlg::~FreqAndVoltageSettingDlg()
   //  //Release memory from the heap.
   //  delete m_vecp_wxcontrol.at(byControlIndex) ;
   //}
+  if( m_ar_p_wxcheckbox )
+  {
+//    WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
+//    if( m_ar_p_wxcheckbox )
+//      for( WORD wCoreID = 0 ; wCoreID < wNumCPUcores ; ++ wCoreID )
+//        delete m_ar_p_wxcheckbox [ wCoreID] ;
+//    for( )
+    delete [] m_ar_p_wxcheckbox ;
+  }
 }
 
 void FreqAndVoltageSettingDlg::CreateSliders()
@@ -1410,27 +1478,27 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
   if( fVoltageInVolt > 0.0 )
   {
     mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
-    //TODO the confirmation of e.g. wxWidgets seems to happen in
-    //ANOTHER thread->synchronize here (by e.g. using critical sections)
-    //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
-    mp_cpucontroller->//SetVoltageAndFrequency(
-//  //    mp_cpucontroller->GetVoltageInVolt(
-//  //      mp_wxsliderCPUcoreVoltage->GetValue() )
-//      fVoltageInVolt
-//      ,
-//      //m_byCoreID
-////      mp_wxsliderFreqInMHz->GetValue()
-//      //"(WORD)" to avoid g++ compiler warning
-//      // "converting to `WORD' from `float'"
-//      (WORD) GetCPUcoreFrequencyFromSliderValue()
-//      , m_byCoreID
-//      ) ;
-      SetCurrentVoltageAndMultiplier(
+    WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
+    if( wNumCPUcores > 1 )
+    {
+      for( WORD wCPUcore = 0 ; wCPUcore < wNumCPUcores ; ++ wCPUcore )
+        if( m_ar_p_wxcheckbox[wCPUcore]->IsChecked() )
+          //TODO the confirmation of e.g. wxWidgets seems to happen in
+          //ANOTHER thread->synchronize here (by e.g. using critical sections)
+          //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
+          mp_cpucontroller->SetCurrentVoltageAndMultiplier(
+            fVoltageInVolt ,
+            GetMultiplierFromSliderValue() ,
+            wCPUcore
+            ) ;
+    }
+    else
+      mp_cpucontroller->SetCurrentVoltageAndMultiplier(
         fVoltageInVolt ,
         GetMultiplierFromSliderValue() ,
-        m_byCoreID
+        //Only 1 logical CPU core-> use CPU core ID "0"
+        0
         ) ;
-
   //  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
     {
 //      mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;

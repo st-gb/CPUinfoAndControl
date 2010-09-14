@@ -30,6 +30,7 @@ namespace Xerces
   {
     bool m_bXercesSuccessfullyInitialized ;
   public:
+//    bool m_bThreadSafe ;
     DWORD m_dwByteSize ;
     BYTE * m_arbyData ;
     Model & mr_model ;
@@ -39,7 +40,8 @@ namespace Xerces
     inline void EnterReadByIPCthreadCriticalSection() ;
     IPCdataHandler( Model & r_model ) ;
     ~IPCdataHandler( ) ;
-    BYTE * GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize) ;
+    BYTE * GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize,
+      bool bThreadSafe) ;
     DWORD GetResponse(BYTE byCommand,
       BYTE * & r_arbyResponseData ) ;
     void LeaveReadByIPCthreadCriticalSection() ;

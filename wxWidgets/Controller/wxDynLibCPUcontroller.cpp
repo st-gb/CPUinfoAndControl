@@ -4,8 +4,11 @@
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/UserInterface.hpp>
-#include <Windows/ErrorCodeFromGetLastErrorToString.h>
-#include <Windows/DLLloadError.hpp>
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32
+  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
+  #include <Windows/DLLloadError.hpp>
+#endif //#ifdef _WIN32
 #include <wxWidgets/Controller/wxStringHelper.hpp> //for GetStdString()
 
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
@@ -29,7 +32,8 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   mp_model = p_cpuaccess->mp_model ;
   //m_wxdynamiclibraryCPUctl ;
 
-  //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html#wxdynamiclibraryload:
+  //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html
+  // #wxdynamiclibraryload :
   //"Returns true if the library was successfully loaded, false otherwise."
   if( m_wxdynamiclibraryCPUctl.Load(r_wxstrFilePath) 
     )
@@ -42,7 +46,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName )
       )
     {
-      LOGN("Dyn Lib symbol " << wxstrFuncName << " exists")
+      LOGN("Dyn Lib symbol " <<
+        //wxString may be wide char -> to ANSI string.
+        GetStdString( wxstrFuncName ) << " exists")
 //#ifdef _DEBUG
 //      wxMessageBox( wxString::Format( "CPU access address: %x "
 //        ", adress of ReadMSR fct:%x"
@@ -195,19 +201,6 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         m_b1CPUcorePowerPlane = false ;
       LOGN("Dyn Lib after moreThan1CPUcorePowerPlane")
 
-      //dll_getMulti_type pfnGetMultiplier = (dll_getMulti_type)
-      //  ::GetProcAddress(hinstanceCPUctlDLL,"GetMultiplier") ;
-      //if( pfnGetMultiplier)
-      //{
-      //  DWORD dwM = (*pfnGetMultiplier) (0) ;
-      //  dwM = dwM ;
-      //}
-      //DWORD dwMulti = (*pfnGetMultiplier)(0) ;
-      //dwMulti = dwMulti ;
-      //dll_Init
-//    }
-//    else
-//    {
 //      DWORD dw = ::GetLastError() ;
 //      std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
 //      stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
@@ -217,8 +210,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 //          wxstrFuncName) + wxString(stdstrErrMsg) ,
 //        wxT("Error ")
 //        ) ;*/
-//      throw CPUaccessException(stdstrErrMsg) ;
-//    }
+
       //Because this may not be the 1st time a controller is attached, clear
       // previous multipliers, else the result is the intersection of the
       //current and the next multipliers.
@@ -255,12 +247,20 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   }
   else
   {
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32
     DWORD dw = ::GetLastError() ;
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
     std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
     LOGN("loading CPU controller dynamic library failed:" <<
         stdstrErrMsg )
+#else //#ifdef _WIN32
+    std::string stdstrErrMsg = //EnglishMessageFromLastErrorCode() ;
+      "loading the dynamic library\"" + GetStdString( r_wxstrFilePath )
+      + "\" failed:"
+      + GetErrorMessageFromLastErrorCodeA() ;
+#endif //#ifdef _WIN32
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
     throw CPUaccessException(stdstrErrMsg) ;
   }

@@ -4,6 +4,7 @@
 
 #include "XMLAccess.hpp"
 #include <global.h> //for SUCCESS, FAILURE
+//#include <winnt.h> //for LPWSTR
 #include <Controller/Logger/Logger.hpp>
 #include <Controller/character_string/stdstring_format.hpp> //for to_strstring()
 #include <ModelData/ModelData.hpp>
@@ -22,7 +23,7 @@ using namespace xercesc;
 
 extern Logger g_logger ;
 
-char ReadXMLdocumentInitAndTermXerces(
+char ReadXMLfileInitAndTermXerces(
   const char * cp_chXMLfilePath,
   Model & model,
   UserInterface * p_userinterface ,
@@ -69,7 +70,7 @@ char ReadXMLdocumentInitAndTermXerces(
     {
       XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
         p_xmlchXMLfilePath ) ;
-      readXMLConfig(
+      ReadXMLdocument(
         xerces_localfileinputsource ,
         model,
         p_userinterface ,
@@ -159,7 +160,7 @@ char ReadXMLdocumentInitAndTermXerces(
   return SUCCESS ;
 }
 
-  char readXMLConfig(
+  char ReadXMLdocument(
     XERCES_CPP_NAMESPACE::InputSource & r_inputsource, //PStates & pstates
 	  Model & model, 
 	  UserInterface * p_userinterface ,
@@ -170,7 +171,7 @@ char ReadXMLdocumentInitAndTermXerces(
     )
 	{
     BYTE byReturn = FAILURE ;
-      //DEBUG("ReadXMLdocumentInitAndTermXerces begin--filename:%s\n",xmlFile);
+      //DEBUG("ReadXMLfileInitAndTermXerces begin--filename:%s\n",xmlFile);
     //Initialize to NULL just to avoid (g++) compiler warning.
 	  XERCES_CPP_NAMESPACE::SAX2XMLReader * p_sax2xmlreader = NULL ;
 	  p_sax2xmlreader = XMLReaderFactory::createXMLReader();
@@ -200,7 +201,7 @@ char ReadXMLdocumentInitAndTermXerces(
         DEBUG("-----------End of loading from XML document/ input source\n") ;
 //          if( model.m_bTruncateLogFileForEveryStartup )
 //              g_logger.TruncateFileToZeroAndRewrite() ;
-         byReturn = SUCCESS;
+        byReturn = SUCCESS;
       }
       catch ( const XMLException & cr_xmlexception )
       {
@@ -208,9 +209,12 @@ char ReadXMLdocumentInitAndTermXerces(
         //Use wide string because maybe chinese file names.
         std::wstring stdwstrMessage =
           std::wstring( L"XML exception in document \"" )
-          + std::wstring( r_inputsource.getSystemId() ) +
+          + std::wstring(
+            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+            (wchar_t *) r_inputsource.getSystemId() ) +
           L"\" :" + //message
-          cr_xmlexception.getMessage() ;
+          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+          (wchar_t *) cr_xmlexception.getMessage() ;
 //        char * message = XMLString::transcode(toCatch.getMessage());
         p_userinterface->Confirm( //std::string( "XML exception in file" ) +
           //xmlFile +
@@ -228,7 +232,9 @@ char ReadXMLdocumentInitAndTermXerces(
         XMLFileLoc xmlfilelocLineNumber = cr_saxparseexception.
             getLineNumber() ;
         std::wstring stdwstrMessage = L"XML exception in document \""
-          + std::wstring( r_inputsource.getSystemId() ) +
+          + std::wstring(
+            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+            (wchar_t *) r_inputsource.getSystemId() ) +
           L"\"\n"
 //          + "\", line " + to_stdstring( cr_saxparseexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxparseexception.getColumnNumber() )
@@ -238,7 +244,9 @@ char ReadXMLdocumentInitAndTermXerces(
             xmlfilelocColumnNumber ) )
 //          + "\", line " + to_stdstring( cr_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxexception.getColumnNumber() )
-          + L":\n\"" + cr_saxparseexception.getMessage() ;
+          + L":\n\"" +
+          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+          (wchar_t *) cr_saxparseexception.getMessage() ;
 //        stdwstrMessage += L"whole document:" + r_inputsource.makeStream()
         if( ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
         {
@@ -266,7 +274,9 @@ char ReadXMLdocumentInitAndTermXerces(
 //          std::string(xmlFile)
         //Use wide string because maybe chinese file names.
         std::wstring stdwstrMessage = L"XML exception in document \""
-          + std::wstring( r_inputsource.getSystemId() ) +
+          + std::wstring(
+            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+            (wchar_t *) r_inputsource.getSystemId() ) +
           L"\" :"
 //          + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
 //          + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
@@ -277,7 +287,9 @@ char ReadXMLdocumentInitAndTermXerces(
 //          + "\", line " + to_stdstring( r_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( r_saxexception.getColumnNumber() )
 //          + L": " + r_saxparseexception.getMessage()
-          + cr_saxexception.getMessage()
+          +
+          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+          (wchar_t *) cr_saxexception.getMessage()
           + L"\nIn order to solve this problem you may look into the XML "
           "specifications for element names etc" ;
         p_userinterface->Confirm(//pchMessage

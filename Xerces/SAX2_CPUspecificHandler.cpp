@@ -15,7 +15,7 @@
 
 //#include "PStates.h"
 #include <xercesc/sax2/Attributes.hpp>
-#include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
+#include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
 #include <ostream>
 //#include <bits/stringfwd.h> //for "endl"
 
@@ -105,6 +105,9 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
   if( XercesHelper::GetAttributeValue
       (
       r_xercesc_attributes,//"processor_name"
+      //By casting explicitely: avoid Linux g++ warning
+      // "deprecated conversion from string constant to ‘char*’"
+      (char *)
       "name" ,
       //strValue
       strXMLattributeName
@@ -116,6 +119,9 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
   if( XercesHelper::GetAttributeValue
       (
       r_xercesc_attributes,//"processor_name"
+      //By casting explicitely: avoid Linux g++ warning
+      // "deprecated conversion from string constant to ‘char*’"
+      (char *)
       "startbit" ,
       //strValue
       byStartBit

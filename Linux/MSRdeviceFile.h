@@ -8,12 +8,12 @@
 #ifndef _MSRDEVICEFILE_H
 #define	_MSRDEVICEFILE_H
 
-#include "../UserInterface.hpp" //for class "UserInterface"
-#include <Controller/I_CPUaccess.hpp>
-#include <Windows_compatible_typedefs.h>
+#include <Controller/I_CPUaccess.hpp> //Base class I_CPUaccess
+//#include <Windows_compatible_typedefs.h>
+
 #include <fstream>
 
-//Exception class. If catched: don't continue (with assigning function
+//Exception class. If caught: don't continue (with assigning function
 //pointers to DLL functions etc.).
 class DLLnotLoadedException:
     public CPUaccessException
@@ -32,6 +32,9 @@ public:
 //private:
 //};
 
+//Forward declarations (faster than #include)
+class UserInterface ;
+
 //This class calls the winring0 functions by function pointers.
 class MSRdeviceFile
   //: public ControllerBase
@@ -41,14 +44,29 @@ class MSRdeviceFile
 {
 private:
   //UserInterface * mp_userinterface ;
+  //Using std::fstream seems to be impossible with device files
+  //(there were program crashs?!)
 //  std::fstream * m_arfstreamMSR ;
+  BYTE m_byNumberOfLogicalCPUcores ;
   int * m_arnFileHandle ;
+  //Declare as member variables (and use within the methods)
+  //to not create a variable on stack each time (faster).
+  BYTE m_byCoreID ;
+  ssize_t m_ssize_t ;
+  unsigned long long m_ullMSRvalue;
 public:
   MSRdeviceFile(UserInterface * pui) ;
+  MSRdeviceFile(
+    UserInterface * pui ,
+    BYTE byNumberOfLogicalCPUcores
+    ) ;
   MSRdeviceFile() ;
   ~MSRdeviceFile() ;
   //const char *
   std::string getMSRFile(DWORD_PTR
+    //Only 1 bit should be set in this value
+    dwAffinityMask) ;
+  static std::string getMSRdeviceFilePath(DWORD_PTR
     //Only 1 bit should be set in this value
     dwAffinityMask) ;
 

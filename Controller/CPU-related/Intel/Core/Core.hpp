@@ -8,18 +8,22 @@
 #ifndef CORE_H_
 #define CORE_H_
 
-#include <preprocessor_helper_macros.h> //BITMASK_FOR_LOWMOST_3BIT
+#include <preprocessor_macros/bitmasks.h> //BITMASK_FOR_LOWMOST_3BIT
 //for ReadMSR(), WriteMSR(); should be the file for
 // I_CPUcontroller-derived class (that calls I_CPUcontroller-derived::ReadMSR()
 //or for the DLL (that calls the exe's exported function)
 //1 include path must match the path where the header file is in
-#include <inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
+#include <Controller/AssignPointersToExportedExeFunctions/\
+inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
 //for IA32_PERF_STATUS etc.
 #include <Controller/CPU-related/Intel/Intel_registers.h>
 #include <float.h> //FLT_MIN
-#include <winuser.h> //MessageBox(...)
-
+#include <windef.h> //BYTE, DWORD
+#ifdef _WIN32
+//  #include <winuser.h> //MessageBox(...)
+  #include <windows.h> //MessageBox(...)
+#endif
 //  extern BYTE g_byValue1 ;
 
 //Define global variables here, so that I_CPUcontroller-derived class and
@@ -330,7 +334,7 @@
 
       g_byValue1 = //-56 -
         100 - g_byValue1 ;
-      return 1 ;
+      return g_byValue1 ;
     }
     return FLT_MIN ;
   }
@@ -428,8 +432,9 @@
       << GetVoltageAsEncodedInMSRIntelCore( dwLowmostBits )
       << " written multiplier would be:"
       << GetMultiplierAsEncodedInMSRIntelCore(dwLowmostBits) ;
-
+#ifdef _WIN32
     MessageBox(NULL, ss.str().c_str(), "info" , MB_OK ) ;
+#endif
 #endif
     DEBUGN( ss.str() )
 //    g_byValue1 =

@@ -1,4 +1,5 @@
 #include "I_CPUcontroller.hpp"
+//#include <windef.h> //for BYTE
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
@@ -10,8 +11,12 @@
 #include <preprocessor_macros/Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
-  #include "Xerces/XMLAccess.hpp" //for "ReadXMLdocumentInitAndTermXerces(...)"
+  #include "Xerces/XMLAccess.hpp" //for "ReadXMLfileInitAndTermXerces(...)"
   #include <Xerces/SAX2MainConfigHandler.hpp>
+#endif
+
+#ifndef MAXWORD
+  #define MAXWORD 65535
 #endif
 
 I_CPUcontroller::I_CPUcontroller()
@@ -1007,7 +1012,7 @@ void I_CPUcontroller::SetOtherDVFSaccess(
 //      //this
 //      );
 //    if(
-//      ReadXMLdocumentInitAndTermXerces(//"config.xml"
+//      ReadXMLfileInitAndTermXerces(//"config.xml"
 //
 //      //mp_configurationHandler->LoadConfiguration(
 //

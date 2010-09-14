@@ -1,5 +1,12 @@
-// dllmain.cpp : Definiert den Einstiegspunkt f�r die DLL-Anwendung.
-//Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany
+//This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
+//Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany.
+//It must not be used commercially without the permission of Trilobyte
+//SE GmbH, Berlin, Germany.
+//It may be used for educational / academic purposes for free.
+//It may be used for personal use for free.
+//If you want to publish (parts) this source code or generated binaries for other
+// purposes than for a DLL for x86Info&Control you have to ask Trilobyte.
+//If you use (parts) of this source code then this license text must be contained.
 #ifdef _MSC_VER //MS compiler
 #include "stdafx.h"
 #endif
@@ -17,18 +24,22 @@
 // inline_register_access_functions.hpp", for I_CPUcontgroller-derived to
 // "-I Conroller/.../_
 // inline_register_access_functions.hpp"
-#include <Windows/AssignPointersToExportedExeFunctions/\
+
+//#include <Windows/AssignPointersToExportedExeFunctions/\_
+//inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
+#include <Controller/AssignPointersToExportedExeFunctions/\
 inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <Controller/CPU-related/Intel/Nehalem/Nehalem.hpp>
 #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 //  #include <Controller/DynLibCPUcontroller.h>
 //  #include <Controller/CPU-related/Intel/Nehalem/NehalemController.hpp>
 //#include <ModelData/ModelData.hpp>
+
 //for BITMASK_FOR_LOWMOST_5BIT
 #include <preprocessor_macros/bitmasks.h>
 #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
 //#define _DEBUG
-#include <Windows/AssignPointersToExportedExeFunctions/\
+#include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
 
 #ifdef _DEBUG
@@ -36,12 +47,11 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif
 //  #include <Windows/GetNumberOfLogicalCPUs.h>
 
-//  #include <global.h> //for DEBUGN(...)
-
 #include <float.h> //for FLT_MIN
 //#include <sstream> //std::stringstream
 #include <tchar.h> //_T()
-#include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
+#include <windef.h> //for APIENTRY
+//#include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
 //  #include <winuser.h> //::MessageBox(...)
 
 #ifdef _DEBUG
@@ -75,58 +85,107 @@ DWORD g_dwValue1 , g_dwValue2 ;
 //"When external names follow the C naming conventions, they must also be
 //declared as extern "C" in C++ code, to prevent them from using C++ naming
 //conventions."
-//For exporting this function with the same name as here in the source file.
-//Especially for MinGW this line is needed in order to be called automatically
-//for DLL attach / detach etc. actions.
-extern "C" __declspec(dllexport)
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-           )
+#ifdef _WIN32
+  #define EXPORT extern "C" __declspec(dllexport)
+#else
+  //http://www.linuxquestions.org/questions/programming-9/
+  // how-to-export-function-symbols-750534/:
+  //"__attribute__ ((visibility("default")))  // (similar to __declspec(dllexport))"
+  #define EXPORT extern "C" //__attribute__ ((visibility("default")))
+#endif
+
+#ifndef APIENTRY
+  #define APIENTRY
+#endif
+
+void InitOtherOSthanWindows()
 {
+  #ifdef _DEBUG
+  std::string strExeFileNameWithoutDirs = "" ;//GetStdString( GetExeFileNameWithoutDirs() ) ;
+  std::string stdstrFilename = strExeFileNameWithoutDirs +
+    ("NehalemControllerDLL_log.txt") ;
+  g_logger.OpenFile2( stdstrFilename ) ;
+  DEBUGN("this Log file is open")
+  //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
+  #endif //#ifdef _DEBUG
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr ,
+    g_pfn_write_msr
+    ) ;
+  DEBUGN("g_pfnreadmsr:" << g_pfnreadmsr
+      << "g_pfn_write_msr:" << g_pfn_write_msr)
+}
+
+bool InitWindows()
+{
+  #ifdef _DEBUG
+  std::string strExeFileNameWithoutDirs = GetStdString( GetExeFileNameWithoutDirs() ) ;
+  std::string stdstrFilename = strExeFileNameWithoutDirs +
+  ("NehalemControllerDLL_log.txt") ;
+  g_logger.OpenFile2( stdstrFilename ) ;
+  DEBUGN("this Log file is open")
+  //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
+  #endif
+  //gp_nehalem_clocksnothaltedcpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
+  //  ) ;
+  //Reaches here when compiled with MSC but not when MinGW?!
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr , g_pfn_write_msr ) ;
+  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
+  {
+    MessageBox( NULL,
+      //_T() macro: ANSI-> "", unicode: ->L""; for Microsoft's compiler
+      //each line needs a _T() macro.
+      _T("Pointers could not be assigned to the execu-tables export functions\n")
+      _T("Does the executable that loads this DLL have ReadMSR and WriteMSR")
+      _T("export functions at all?(analyze this with a tool)")
+      //Title
+      ,_T("error")
+      , MB_OK) ;
+    return FALSE ;
+  }
+  //Force the cond. "< min. time diff" to become true.
+  g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
+  g_dwPreviousTickCountInMilliseconds
+    //->time diff gets > max. time diff, so it calcs a ref clock.
+    -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
+  //The reference clock is needed for setting the current frequency. So it
+  //must be determined prior to any call of this function.
+  GetCurrentReferenceClock(
+    12.0,
+    g_fReferenceClockInMHz ,
+    1000 ,
+    MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
+  DEBUGN("first calculated reference clock in MHz: "
+    << g_fReferenceClockInMHz )
+  return TRUE ;
+}
+
+#ifdef _WIN32 //Defined in MSVC, MinGW for 32//64 bit Windows.
+  //For exporting this function with the same name as here in the source file.
+  //Especially for MinGW this line is needed in order to be called automatically
+  //for DLL attach / detach etc. actions.
+  #define DLLMAIN_FRONT_SIGNATURE EXPORT BOOL APIENTRY
+#else //#ifdef _WIN32
+  //from http://tdistler.com/2007/10/05/
+  // implementing-dllmain-in-a-linux-shared-library:
+  #define DLLMAIN_FRONT_SIGNATURE void __attribute__ ((constructor))
+#endif //#ifdef _WIN32
+
+DLLMAIN_FRONT_SIGNATURE DllMain(
+#ifdef _WIN32
+  HMODULE hModule,
+  DWORD  ul_reason_for_call,
+  LPVOID lpReserved
+#endif //#ifdef _WIN32
+  )
+{
+#ifdef _WIN32
   switch (ul_reason_for_call)
   {
   case DLL_PROCESS_ATTACH:
   {
-#ifdef _DEBUG
-std::string strExeFileNameWithoutDirs = GetStdString( GetExeFileNameWithoutDirs() ) ;
-std::string stdstrFilename = strExeFileNameWithoutDirs +
-    ("NehalemControllerDLL_log.txt") ;
-g_logger.OpenFile2( stdstrFilename ) ;
-DEBUGN("this Log file is open")
-//  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
-#endif
-    //gp_nehalem_clocksnothaltedcpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
-    //  ) ;
-    //Reaches here when compiled with MSC but not when MinGW?!
-    AssignPointersToExportedExeFunctions() ;
-    if( ! g_pfnreadmsr || ! g_pfn_write_msr )
-    {
-      MessageBox( NULL,
-        //_T() macro: ANSI-> "", unicode: ->L""; for Microsoft's compiler
-        //each line needs a _T() macro.
-        _T("Pointers could not be assigned to the execu-tables export functions\n")
-        _T("Does the executable that loads this DLL have ReadMSR and WriteMSR")
-        _T("export functions at all?(analyze this with a tool)")
-        //Title
-        ,_T("error")
-        , MB_OK) ;
-      return FALSE ;
-    }
-    //Force the cond. "< min. time diff" to become true.
-    g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
-    g_dwPreviousTickCountInMilliseconds
-      //->time diff gets > max. time diff, so it calcs a ref clock.
-      -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
-    //The reference clock is needed for setting the current frequency. So it
-    //must be determined prior to any call of this function.
-    GetCurrentReferenceClock(
-      12.0,
-      g_fReferenceClockInMHz ,
-      1000 ,
-      MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-    DEBUGN("first calculated reference clock in MHz: "
-      << g_fReferenceClockInMHz )
+    return InitWindows() ;
   }
   case DLL_THREAD_ATTACH:
   case DLL_THREAD_DETACH:
@@ -134,79 +193,22 @@ DEBUGN("this Log file is open")
     break;
   }
   return TRUE;
+#else //#ifdef _WIN32
+  InitOtherOSthanWindows() ;
+#endif //#ifdef _WIN32
 }
+//#endif //#ifdef _WIN32
 
+//Calling convention--must be the same as in the DLL
+//function signature that calls this function?!
+//WINAPI
 //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
 #define NEHALEM_DLL_CALLING_CONVENTION
 
-//  //_declspec(dllexport)
-//  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//  //"When external names follow the C naming conventions, they must also be
-//  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-//  //conventions."
-//  extern "C" __declspec(dllexport)
-//  void
-//    //Calling convention--must be the same as in the DLL
-//    //function signature that calls this function?!
-//    //WINAPI
-//    NEHALEM_DLL_CALLING_CONVENTION
-//    Init( //I_CPUcontroller * pi_cpu
-//    //CPUaccess object inside the exe.
-////    I_CPUaccess * pi_cpuaccess
-//    void * p_v
-//    , ReadMSR_func_type pfnreadmsr
-//    //BYTE by
-//    )
-//  {
-//  //  g_pi_cpuaccess = pi_cpuaccess ;
-//  #ifdef _DEBUG
-//    //ReadMSR_func_type rdmsr = (ReadMSR_func_type) (void*) & pi_cpuaccess->RdmsrEx ;
-//    std::stringstream stdstrstream ;
-//    //For checking if the members are on the same RAM address between MSVC and MinGW:
-//    stdstrstream << "DLL::Init(...)--\naddress of I_CPUaccess:" << & pi_cpuaccess << "\n"
-//      << "address of I_CPUaccess::mp_model: " << & pi_cpuaccess->mp_model <<"\n"
-//      << "address in I_CPUaccess::mp_model: " << pi_cpuaccess->mp_model <<"\n"
-//      //<< "address in I_CPUaccess::RdmsrEx: " << & pi_cpuaccess->RdmsrEx()
-//      << "address of I_CPUaccess::mp_cpu_controller: " << & pi_cpuaccess->mp_cpu_controller <<"\n"
-//      << "address in I_CPUaccess::mp_cpu_controller: " << pi_cpuaccess->mp_cpu_controller ;
-//    MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
-//      "", MB_OK) ;
-//  #endif
-//    //g_pi_cpuaccess->mp_cpu_controller = & g_nehalemcontroller ;
-//    AssignPointersToExportedExeFunctions() ;
-//    //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
-//    //g_pfnreadmsr = pfnreadmsr ;
-//    //MSC-gerated version has no problems
-//  //#ifndef _MSC_VER
-//  //  std::stringstream str ;
-//  //  str << "DLL::Init--Adress of CPUaccess: " << pi_cpuaccess ;
-//  //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
-//  //#endif
-//    ////from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-//    ////("Calling an Exported Function in an EXE from Within a DLL"):
-//    //g_pfnreadmsr = (ReadMSR_func_type)::GetProcAddress(
-//    //  GetModuleHandle(NULL),
-//    //  "ReadMSR");
-//    //WORD w = GetMaximumFrequencyInMHz(0) ;
-//    //pi_cpuaccess->mp_model->m_cpucoredata.
-//    //  //Add to the set of default p-states and to the set of avail. p-states.
-//    //  AddDefaultVoltageForFreq( 0.0 , w ) ;
-//    //pi_cpuaccess->mp_model->m_cpucoredata.
-//    //  //Add to the set of default p-states and to the set of avail. p-states.
-//    //  AddDefaultVoltageForFreq( 0.0 ,931 ) ;
-//    //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
-//  }
-
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
 //The array pointed to by the return value must be freed by the caller (i.e.
 //x86I&C GUI or service) of this function.
 float *
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   NEHALEM_DLL_CALLING_CONVENTION
   //The reference clock might change, also during runtime.
   //This is why it is a good idea to get the possible multipliers.
@@ -234,10 +236,12 @@ float *
     & dwHighmostBits,
     1 << wCoreID //m_dwAffinityMask
     ) ;
+  DEBUGN("Dyn Lib--return value of Exe's ReadMSR:" << (WORD) g_byValue1)
   if( g_byValue1 ) //successfully read from MSR
   {
-    //max.  multiplier
+    //Maximum  multiplier
     g_byValue1 = (BYTE) ( dwLowmostBits & 255 ) ;
+    DEBUGN("Dyn Lib--max mulit:" << (WORD) g_byValue1)
     BYTE byNumMultis = g_byValue1 -
       //min. multi - 1
       6 ;
@@ -270,17 +274,11 @@ float *
   return NULL ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
 //For exporting this function with the same name as here in the source file.
-extern "C" __declspec(dllexport)
+EXPORT
 //The array pointed to by the return value must be freed by the caller (i.e.
 //x86I&C GUI or service) of this function.
 float *
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   NEHALEM_DLL_CALLING_CONVENTION
   GetAvailableVoltagesInVolt(
     WORD wCoreID
@@ -289,15 +287,13 @@ float *
 //    BYTE byMaxMultiplier = 0 ;
 //    DWORD dwLowmostBits , dwHighmostBits ;
 //  #ifdef _DEBUG
-  //MSC-gerated version has no problems
+  //MSC-generated version has no problems
 //#ifndef _MSC_VER
 //    std::stringstream stdstrstream ;
 //  str << "DLL::GetMaximumFrequencyInMHz--Adress of CPUaccess: " << g_pi_cpuaccess ;
 //  //str << "address of CPUaccess->ReadMSRex: " << & I_CPUaccess::RdmsrEx ;
 //  str << "address of g_pfnreadmsr: " << g_pfnreadmsr ;
 //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
-//  //<MaximumTurboRatioLimit1C startbit="0" bitlength="8"/>
-//  //<MaximumTurboRatioLimit4C startbit="24" bitlength="8"/>
 //  #endif
    //g_pi_cpuaccess->RdmsrEx(
    BYTE byNumVoltages = 2 ;
@@ -305,7 +301,7 @@ float *
    //If allocating the array on the heap succeeded.
    if( ar_f )
    {
-     ar_f[0] = 0.0 ;
+     ar_f[0] = 0.65 ;
      ar_f[1] = 0.9 ;
      *p_wNum = byNumVoltages ;
    }
@@ -324,14 +320,8 @@ float *
   return ar_f ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
   BYTE
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   NEHALEM_DLL_CALLING_CONVENTION
   GetCurrentVoltageAndFrequency(
     float * p_fVoltageInVolt
@@ -359,6 +349,11 @@ extern "C" __declspec(dllexport)
     //Intel: "15:0 Current performance State Value"
     //   "63:16 Reserved"
     * p_fMultiplier = ( g_dwValue1 & 255 ) ;
+    DEBUGN("dyn lib GetCurrentVoltageAndFrequency--voltage:"
+      << * p_fVoltageInVolt )
+#ifdef __linux__
+    * p_fReferenceClockInMHz = 133.3 ;
+#else
     //This call sets g_fReferenceClockInMHz to the current reference clock.
     //This update of the value would be senseful for setting the CPU core
     //via "frequency" as parameter value the next time.
@@ -368,6 +363,9 @@ extern "C" __declspec(dllexport)
       * p_fReferenceClockInMHz ,
       1000 , //min. timespan in ms
       10000 ) ;
+#endif
+    DEBUGN("dyn lib GetCurrentVoltageAndFrequency--ref clock:"
+      << * p_fReferenceClockInMHz )
     //Timespan too high or too low.
     if( * p_fReferenceClockInMHz == 0.0 )
       * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
@@ -381,11 +379,6 @@ extern "C" __declspec(dllexport)
   return g_byValue1 ;
 }
 
-//  //_declspec(dllexport)
-//  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//  //"When external names follow the C naming conventions, they must also be
-//  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-//  //conventions."
 //  extern "C" __declspec(dllexport)
 //  WORD
 //    //Calling convention--must be the same as in the DLL
@@ -393,41 +386,13 @@ extern "C" __declspec(dllexport)
 //    NEHALEM_DLL_CALLING_CONVENTION
 //    GetNumberOfCPUcores()
 //  {
-//  //  DWORD dwReturnLength = 0 ;
 //    WORD wNumberOfCPUcores = 0 ;
-//  //  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION p_slpi = NULL ;
-//    //NtquerySystemInfor(SYSTEM_BASCI_INFO)
-//    //BOOL WINAPI
-//    //get the number of bytes needed.
-//    //if( ! GetLogicalProcessorInformation(
-//    //  p_slpi //__out    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer,
-//    //  , & dwReturnLength //__inout  PDWORD ReturnLength
-//    //  )
-//    //  && ::GetLastError() == ERROR_INSUFFICIENT_BUFFER
-//    //{
-//    //  p_slpi = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION) new BYTE[dwReturnLength ];
-//    //  if( GetLogicalProcessorInformation(
-//    //    p_slpi //__out    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer,
-//    //    , & dwReturnLength //__inout  PDWORD ReturnLength
-//    //      )
-//    //    )
-//    //  {
-//    //    wNumberOfCPUcores = p_slpi->ProcessorMask ;
-//    //    delete []
-//    //  }
-//    //}
 //    wNumberOfCPUcores = GetNumLogicalCPUs() ;
 //    return wNumberOfCPUcores ;
 //  }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
 float
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   NEHALEM_DLL_CALLING_CONVENTION
   //WINAPI
   GetTemperatureInCelsius ( WORD wCoreID
@@ -475,15 +440,63 @@ float
   return FLT_MIN ;
 }
 
-//_declspec(dllexport)
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
+void
+  NEHALEM_DLL_CALLING_CONVENTION
+  Init( //I_CPUcontroller * pi_cpu
+  //CPUaccess object inside the exe.
+//  I_CPUaccess * pi_cpuaccess
+  void * p_v
+//  , ReadMSR_func_type pfnreadmsr
+  //BYTE by
+  )
+{
+//  InitOtherOSthanWindows() ;
+}
+
+//  extern "C" __declspec(dllexport)
+//  void
+//    Init( //I_CPUcontroller * pi_cpu
+//    //CPUaccess object inside the exe.
+////    I_CPUaccess * pi_cpuaccess
+//    void * p_v
+//    , ReadMSR_func_type pfnreadmsr
+//    //BYTE by
+//    )
+//  {
+//  //  g_pi_cpuaccess = pi_cpuaccess ;
+//  #ifdef _DEBUG
+//    //ReadMSR_func_type rdmsr = (ReadMSR_func_type) (void*) & pi_cpuaccess->RdmsrEx ;
+//    std::stringstream stdstrstream ;
+//    //For checking if the members are on the same RAM address between MSVC and MinGW:
+//    stdstrstream << "DLL::Init(...)--\naddress of I_CPUaccess:" << & pi_cpuaccess << "\n"
+//      << "address of I_CPUaccess::mp_model: " << & pi_cpuaccess->mp_model <<"\n"
+//      << "address in I_CPUaccess::mp_model: " << pi_cpuaccess->mp_model <<"\n"
+//      //<< "address in I_CPUaccess::RdmsrEx: " << & pi_cpuaccess->RdmsrEx()
+//      << "address of I_CPUaccess::mp_cpu_controller: " << & pi_cpuaccess->mp_cpu_controller <<"\n"
+//      << "address in I_CPUaccess::mp_cpu_controller: " << pi_cpuaccess->mp_cpu_controller ;
+//    MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
+//      "", MB_OK) ;
+//  #endif
+//    //g_pi_cpuaccess->mp_cpu_controller = & g_nehalemcontroller ;
+//    //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
+//    //MSC-generated version has no problems
+//  //#ifndef _MSC_VER
+//  //  std::stringstream str ;
+//  //  str << "DLL::Init--Adress of CPUaccess: " << pi_cpuaccess ;
+//  //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
+//  //#endif
+//    //pi_cpuaccess->mp_model->m_cpucoredata.
+//    //  //Add to the set of default p-states and to the set of avail. p-states.
+//    //  AddDefaultVoltageForFreq( 0.0 , w ) ;
+//    //pi_cpuaccess->mp_model->m_cpucoredata.
+//    //  //Add to the set of default p-states and to the set of avail. p-states.
+//    //  AddDefaultVoltageForFreq( 0.0 ,931 ) ;
+//    //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
+//  }
+
+EXPORT
 WORD
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   NEHALEM_DLL_CALLING_CONVENTION
   PrepareForNextPerformanceCounting(
    DWORD dwAffMask
@@ -495,15 +508,9 @@ WORD
     byPerformanceEventSelectRegisterNumber) ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
 //For exporting this function with the same name as here in the source file.
-extern "C" __declspec(dllexport)
+EXPORT
   BYTE
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   //NEHALEM_DLL_CALLING_CONVENTION
   //WINAPI
 //    __stdcall
@@ -540,21 +547,3 @@ extern "C" __declspec(dllexport)
     << (WORD) g_byValue1 )
   return g_byValue1 ;
 }
-
-//  //_declspec(dllexport)
-//    void InitCPUcoreUsageGet()
-//  {
-//  }
-//
-//  float
-//    //Calling convention--must be the same as in the DLL
-//    //function signature that calls this function?!
-//    NEHALEM_DLL_CALLING_CONVENTION
-//    GetCPUcoreUsage( WORD wCPUcoreID )
-//  {
-//    //float fCPUusage = g_clocksnothaltedcpucoreusagegetter.
-//    //  GetPercentalUsageForCore( wCPUcoreID ) ;
-//    //return //100 ;
-//    //  (BYTE) ( fCPUusage * 100 ) ;
-//    return -1.0 ;
-//  }

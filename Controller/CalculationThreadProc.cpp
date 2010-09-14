@@ -13,11 +13,11 @@
 #include <stdlib.h> //rand()
 
 //wxWidgets does not provide the needed "set CPU affinity". So I must
-//distinguish.
-#ifdef _WINDOWS
+//distinguish/ use a native API directly.
+#ifdef _WIN32 //Built-in macro in eclipse under Windows (also Win 7 64 bit)
   #include <Windows/CalculationThread.hpp>
 #else 
-  #ifdef _LINUX
+  #ifdef __linux__ //Built-in macro in eclipse under Linux //_LINUX
   #include <Linux/CalculationThread.hpp>
   #endif
 #endif
@@ -364,8 +364,8 @@ DWORD
       if( 
         //float op.
         //5.0/1.0 != 5.0 
-        //d/-1.0 != -d 
-        //d/ (2.0*d) != 0.5 
+        //d/-1.0 != -d
+        //d/ (2.0*d) != 0.5
         //( d / ( 3.0 * d ) ) != dExpectedValue
         //1.0  / d  != dExpectedValue
         //dAllBitsSet / dAllBitsSet != 1.0
