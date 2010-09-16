@@ -28,7 +28,8 @@
   //only useful for user interface
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #endif
-#include <Xerces/SAX2MainConfigHandler.hpp>
+#include <Xerces/SAX2MainConfigHandler.hpp> //class SAX2MainConfigHandler
+//class SAX2DefaultVoltageForFrequency
 #include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
 #include <Xerces/XMLAccess.hpp> //ReadXMLfileInitAndTermXerces(...)
 
@@ -159,25 +160,31 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
 //#ifdef _WINDOWS
     mp_model->m_cpucoredata.m_byNumberOfCPUCores =
       GetNumberOfLogicalCPUcores() ;
-    LOGN("number of CPU core reported by Windows:"
-      << (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores )
+    LOGN("number of CPU cores reported by the Operating System:"
+      <<
+      //Cast to integer to not output the value as character
+      (WORD)
+      mp_model->m_cpucoredata.m_byNumberOfCPUCores )
 //#endif
   }
   else
     LOGN("number of CPU cores:"
-      << (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores )
+      <<
+      //Cast to integer to not output the value as character
+      (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores )
 
-  //Set -> allocate array for OnPaint() / DVFS
-  p_cpucoredata->SetCPUcoreNumber(mp_model->m_cpucoredata.m_byNumberOfCPUCores) ;
+  //SetCPUcoreNumber(...) -> allocate array for OnPaint() / DVFS
+  p_cpucoredata->SetCPUcoreNumber(
+    mp_model->m_cpucoredata.m_byNumberOfCPUCores) ;
 
   if( r_p_cpucontroller )
   {
-    //For Pentium Ms e.g. it enables SpeedStep.
+    //Init(): For Pentium Ms e.g. it enables SpeedStep.
     r_p_cpucontroller->Init() ;
     if( r_p_icpucoreusagegetter )
     {
       r_p_cpucontroller->mp_icpucoreusagegetter = r_p_icpucoreusagegetter ;
-      //Start performance counting etc.
+      //Init(): Starts performance counting etc.
       r_p_icpucoreusagegetter->Init() ;
       r_p_icpucoreusagegetter->SetAttributeData( mp_model ) ;
     }

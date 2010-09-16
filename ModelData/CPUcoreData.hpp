@@ -1,24 +1,24 @@
 #pragma once //include guard
 
-#include <global.h> //for BYTE, WORD
-//#include <windef.h> //for BYTE
-#include "VoltageAndFreq.hpp" //class MaxVoltageForFreq
+//#include <global.h> //for BYTE, WORD
+#include <windef.h> //for BYTE
+#include "VoltageAndFreq.hpp" //class VoltageAndFreq
 //CPU controller (dyn libs) do not need thread synchronisation yet.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   #include <Controller/multithread/condition_type.hpp>
   #include <Controller/multithread/criticalsection_type.hpp>
   #include <Controller/multithread/mutex_type.hpp>
 #endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-#include <ModelData/PerCPUcoreAttributes.hpp>
+//#include <ModelData/PerCPUcoreAttributes.hpp>
 //CPU controller (dyn libs) do not need thread synchronisation yet.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
 //  #include <Windows/multithread/Win32EventBasedCondition.hpp>
     //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
-  #include <wxWidgets/DynFreqScalingThread.hpp>
-  #include <wx/thread.h> //for wxCondition
+//  #include <wxWidgets/DynFreqScalingThread.hpp>
+//  #include <wx/thread.h> //for wxCondition
 #endif
-#include <map>
-#include <set>
+#include <map> //class std::map
+#include <set> //class std::set
 #include <string> //std::string
 
 #define CPU_CORE_DATA_NOT_SET 255
@@ -27,8 +27,10 @@
 
 //using namespace wxWidgets ;
 
+//Forward declarations (faster than #include)
 class I_CPUcontroller ;
 class MaxVoltageForFreq ;
+class PerCPUcoreAttributes ;
 
 //The member variables can be shared through the subclass of 
 //ICPUcoreUsageGetter and the user interface class.

@@ -4,9 +4,12 @@
 
   //If not included: compiler error "C1010".
   #include "SAX2MainConfigHandler.hpp"
-  #include "XercesHelper.hpp" //for GetAttributeValue(...)
   #include <Controller/Logger/Logger.hpp> //class Logger
+  #include <ModelData/ModelData.hpp> //class Model
   #include <UserInterface/UserInterface.hpp> //class UserInterface
+  //for XercesAttributesHelper::GetAttributeValue(...)
+  #include <Xerces/XercesAttributesHelper.hpp>
+  #include <Xerces/XercesHelper.hpp> //XercesHelper::ToStdString(const XMLCh *)
 
   //class XERCES_CPP_NAMESPACE::Attributes
   #include <xercesc/sax2/Attributes.hpp>
@@ -44,39 +47,44 @@
 	}
 	
   void SAX2MainConfigHandler::HandleDynamicVoltage_and_FrequencyScaling(
-    const XERCES_CPP_NAMESPACE::Attributes & attrs)
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
     bool bEnableDVFS = false ;
     float fValue ;
     std::string strAttributeName = "enable" ;
     WORD wValue ;
-	  if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),
-	      bEnableDVFS )
+	  if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+	    strAttributeName.c_str(), bEnableDVFS )
 	    )
 	  {
       m_p_model->m_cpucoredata.m_bEnableDVFS = bEnableDVFS ;
     }
     strAttributeName = "usage_poll_wait_time_in_ms" ;
-    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),wValue))
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+      strAttributeName.c_str(),wValue))
     {
       m_p_model->m_cpucoredata.m_wMilliSecondsWaitBetweenDFVS = wValue ;
     }
     strAttributeName = "CPU_core_load_threshold_for_increase" ;
-    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+      strAttributeName.c_str(),fValue) )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreLoadThresholdForIncreaseInPercent =
         fValue ;
       LOGN("using \"" << fValue << "\" as CPU core load threshold for increase" )
     }
     strAttributeName = "throttle_temp_in_deg_Celsius" ;
-    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+        strAttributeName.c_str(),fValue)
+      )
     {
       m_p_model->m_cpucoredata.m_fThrottleTempInDegCelsius =
         fValue ;
       LOGN("using \"" << fValue << "\" as CPU core throttle temp thres" )
     }
     strAttributeName = "increase_factor" ;
-    if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue)
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+        strAttributeName.c_str(), fValue )
       )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor = fValue ;
@@ -84,7 +92,8 @@
         m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
     strAttributeName = "factor" ;
-    if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue)
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+        strAttributeName.c_str(), fValue )
       )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreFreqFactor = fValue ;
@@ -104,13 +113,13 @@
 //              "confirm"
 //              ,bConfirm )
 //        )
-    if( XercesHelper::GetAttributeValue(
+    if( XercesAttributesHelper::GetAttributeValue(
           attrs
           ,"skip_cpu_type_check"
           ,bConfirm )
       )
       m_p_model->SetSkipCPUTypeCheck(bConfirm) ;
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         (
           attrs,
           "enable_overvoltage_protection"
@@ -118,7 +127,7 @@
         )
       )
       m_p_model->m_bEnableOvervoltageProtection = bConfirm ;
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         (
           attrs,
           "use_default_formula_for_overvoltage_protection"
@@ -126,7 +135,7 @@
         )
       )
       m_p_model->m_bUseDefaultFormularForOvervoltageProtection = bConfirm ;
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         ( 
           attrs,
           //Use "( char * )" to avoid g++ Linux compiler warning
@@ -157,7 +166,7 @@
       //  << endl );
       if( m_strElementName == "log_file_filter" )
       {
-        if( XercesHelper::GetAttributeValue(
+        if( XercesAttributesHelper::GetAttributeValue(
           attrs ,
           //Use "( char * )" to avoid g++ Linux compiler warning
           // "deprecated conversion from string constant to ‘char*’ "
@@ -183,10 +192,13 @@
 	}
 	
 	void SAX2MainConfigHandler::fatalError(
-	  const XERCES_CPP_NAMESPACE::SAXParseException & exception )
+	  const XERCES_CPP_NAMESPACE::SAXParseException &
+	    cr_xercesc_sax_parse_exception
+	  )
 	{
     LOGN( "SAX2 handler: Fatal Error: "
-      << GetStdString( std::wstring( (wchar_t *) exception.getMessage() ) )
-      << " at line: " << exception.getLineNumber() ) ;
+      << XercesHelper::ToStdString( cr_xercesc_sax_parse_exception.getMessage()
+        )
+      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber() ) ;
 	}
 #endif //#ifdef COMPILE_WITH_XERCES

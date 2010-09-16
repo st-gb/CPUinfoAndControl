@@ -13,7 +13,7 @@
 #include <preprocessor_macros/bitmasks.h>
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
 #include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
-#include <Controller/character_string/tchar_conversion.h> //GetCharPointer(...)
+//#include <Controller/character_string/tchar_conversion.h> //GetCharPointer(...)
 #include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/GetHardwareAccessErrorDescription.hpp>

@@ -42,6 +42,7 @@
 #include <Controller/MainController.hpp>
 #include <Controller/character_string/stdtstr.hpp> //Getstdtstring(...)
 #include <ModelData/ModelData.hpp> //class CPUcoreData
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <ModelData/RegisterData.hpp>
 //#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
@@ -2744,7 +2745,7 @@ void MainFrame::DrawCurrentPstateInfo(
 ////          //.3f : 3 digits after comma
 ////          _T(" %s")
 ////          _T(" %s")
-//          //"counter val.:%I64u"
+//          //"counter m_floating_point_unionValue.:%I64u"
 //          ,
 //          (WORD) byCPUcoreID
 //          //fVoltageInVolt ,
