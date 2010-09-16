@@ -4,9 +4,11 @@
 
 	//If not included: compiler error "C1010".
 	#include "SAX2DefaultVoltageForFrequency.hpp"
-  #include "XercesHelper.hpp" //for GetAttributeValue(...)
   #include <ModelData/ModelData.hpp> //class Model
   #include <UserInterface/UserInterface.hpp> //class UserInterface
+  //for XercesAttributesHelper::GetAttributeValue(...)
+  #include <Xerces/XercesAttributesHelper.hpp>
+  #include <Xerces/XercesHelper.hpp> //XercesHelper::ToStdString(const XMLCh *)
 
 	#include <xercesc/sax2/Attributes.hpp>//class XERCES_CPP_NAMESPACE::Attributes
 	#include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
@@ -31,26 +33,27 @@
 //	XERCES_CPP_NAMESPACE_USE
 	
 	SAX2DefaultVoltageForFrequency::SAX2DefaultVoltageForFrequency(
-	  UserInterface & p_userinterface 
+	  UserInterface & r_userinterface 
 	  , Model & model
 	  )
 	{
 	  m_p_model = & model ;
-	  m_p_userinterface = & p_userinterface ;
+	  m_p_userinterface = & r_userinterface ;
 	}
 
   void SAX2DefaultVoltageForFrequency::handleFreqAndVoltageElement(
-    const XERCES_CPP_NAMESPACE::Attributes & attrs
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
   {
 	  float fValue = 0.0 ;
 	  WORD wFreqInMHz ;
     std::string strAttributeName = "frequency_in_MHz" ;
-	  if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),
-	      wFreqInMHz )
+	  if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+	      strAttributeName.c_str(), wFreqInMHz )
 	    )
 	  {
-      //LOGN("got \"" << strAttributeName << "\" attribute value: " << wFreqInMHz )
+      //LOGN("got \"" << strAttributeName << "\" attribute value: " <<
+	    //wFreqInMHz )
 #ifdef _DEBUG
       LOGN("Address of service attributes: " << m_p_model)
       LOGN("CPU model: " << (WORD) m_p_model->m_cpucoredata.m_byModel )
@@ -72,7 +75,9 @@
 #ifdef _DEBUG
       LOGN("before getting " << strAttributeName << "att. value " )
 #endif
-	    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+	    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+	        strAttributeName.c_str(),fValue)
+        )
 	    {
         //LOGN("got \"" << strAttributeName << "\" attribute value: " << fValue )
 	      //m_p_model->AddMaxVoltageForFreq(wFreqInMHz,fValue) ;
@@ -90,13 +95,17 @@
 	    //  m_p_userinterface->Confirm(ostrstream) ;
 	    //}
 	    strAttributeName = "min_voltage_in_Volt" ;
-	    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+	    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+	        strAttributeName.c_str(),fValue)
+	      )
 	    {
         m_p_model->m_cpucoredata.AddLowestStableVoltageAndFreq(fValue,
           wFreqInMHz) ;
 	    }
 	    strAttributeName = "voltage_in_Volt" ;
-	    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+	    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+	        strAttributeName.c_str(),fValue)
+	      )
 	    {
         //m_p_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.insert( 
         //  //std::pair<WORD,float>(wFreqInMHz,fValue) 
@@ -120,7 +129,7 @@
     const XMLCh * const cpc_xmchURI,
     const XMLCh * const cpc_xmchLocalName,
     const XMLCh * const cpc_xmchQualifiedName,
-    const XERCES_CPP_NAMESPACE::Attributes & attrs
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
 	  )
 	{
 	  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
@@ -133,17 +142,19 @@
 	    //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
 	    //<< endl );
       if( m_strElementName == "freq_and_voltage" )
-	      handleFreqAndVoltageElement(attrs) ;
+	      handleFreqAndVoltageElement(cr_xercesc_attributes) ;
 	    //Release memory AFTER comparing.
       XERCES_CPP_NAMESPACE::XMLString::release(&pchXMLelementName);
     }
 	}
 	
 	void SAX2DefaultVoltageForFrequency::fatalError(
-	  const XERCES_CPP_NAMESPACE::SAXParseException & exception )
+	  const XERCES_CPP_NAMESPACE::SAXParseException &
+	    cr_xercesc_sax_parse_exception )
 	{
     LOGN( "SAX2 handler: Fatal Error: "
-      << GetStdString( std::wstring( (wchar_t *) exception.getMessage() ) )
-      << " at line: " << exception.getLineNumber() ) ;
+      << XercesHelper::ToStdString( cr_xercesc_sax_parse_exception.getMessage()
+        )
+      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber() ) ;
 	}
 #endif //#ifdef COMPILE_WITH_XERCES

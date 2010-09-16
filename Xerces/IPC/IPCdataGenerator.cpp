@@ -12,6 +12,7 @@
 #include <Controller/character_string/format_as_string.hpp>
 //#include <global.h> //LOGN
 #include <ModelData/ModelData.hpp> //class ModelData
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
 #include <Xerces/XercesHelper.hpp> //for "XERCES_STRING_FROM_ANSI_STRING" macro
 

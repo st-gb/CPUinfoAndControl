@@ -30,6 +30,7 @@
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #include <Controller/multithread/I_Thread.hpp> //class I_Thread
 #include <ModelData/ModelData.hpp>
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <wxWidgets/Controller/wxStringHelper.hpp> //getwxString(...)
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON

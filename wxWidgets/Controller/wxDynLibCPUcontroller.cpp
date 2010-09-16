@@ -1,13 +1,16 @@
 #include "wxDynLibCPUcontroller.hpp"
+#include <Controller/exported_functions.h> //for "::ReadMSR(...)"
+//GetErrorMessageFromErrorCodeA(...), OperatingSystem::GetLastErrorCode()
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 //#include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp> //for passing to dyn libs "Init()"
-#include <Controller/exported_functions.h> //for "::ReadMSR(...)"
-#include <ModelData/ModelData.hpp>
-#include <UserInterface/UserInterface.hpp>
+#include <ModelData/ModelData.hpp> //class Model
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
+#include <UserInterface/UserInterface.hpp> //class UserInterface
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32
-  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
-  #include <Windows/DLLloadError.hpp>
+//  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
+  #include <Windows/DLLloadError.hpp>//DLLloadError::GetPossibleSolution(DWORD)
 #endif //#ifdef _WIN32
 #include <wxWidgets/Controller/wxStringHelper.hpp> //for GetStdString()
 
@@ -247,20 +250,21 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   }
   else
   {
-//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
-#ifdef _WIN32
-    DWORD dw = ::GetLastError() ;
-    //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
-    std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
-    stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
-    LOGN("loading CPU controller dynamic library failed:" <<
-        stdstrErrMsg )
-#else //#ifdef _WIN32
+    DWORD dw = OperatingSystem::GetLastErrorCode() ;
     std::string stdstrErrMsg = //EnglishMessageFromLastErrorCode() ;
       "loading the dynamic library\"" + GetStdString( r_wxstrFilePath )
       + "\" failed:"
-      + GetErrorMessageFromLastErrorCodeA() ;
+      + GetErrorMessageFromErrorCodeA(dw) ;
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32
+//    DWORD dw = ::GetLastError() ;
+    //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
+//    std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
+    stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
+#else //#ifdef _WIN32
 #endif //#ifdef _WIN32
+    LOGN("loading CPU controller dynamic library failed:" <<
+        stdstrErrMsg )
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
     throw CPUaccessException(stdstrErrMsg) ;
   }

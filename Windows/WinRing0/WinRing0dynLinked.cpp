@@ -10,7 +10,7 @@
 #include "../global.h" //for DEBUG()
 #include "../preprocessor_helper_macros.h"
 #include <Controller/stdstring_format.hpp>
-#include <Controller/tchar_conversion.h> //GetCharPointer(...)
+//#include <Controller/tchar_conversion.h> //GetCharPointer(...)
 #include <Windows/ErrorCodeFromGetLastErrorToString.h>
 
 //#include <OlsApiInitDef.h> //for _IsMsr

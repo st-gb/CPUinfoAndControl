@@ -2,6 +2,7 @@
 //Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
 //"undefined reference".
 #include <binary_search.cpp> //GetArrayIndexForClosestLessOrEqual(...)
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {

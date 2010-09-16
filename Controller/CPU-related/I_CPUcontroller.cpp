@@ -6,7 +6,7 @@
 //#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/character_string/stdtstr.hpp> //get...
 #include <ModelData/ModelData.hpp> //class Model
-#include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <UserInterface/UserInterface.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h>
 

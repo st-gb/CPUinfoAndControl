@@ -1,8 +1,10 @@
 #pragma once //Include guard.
+#ifndef DYNFREQSCALINGTHREADBASE_HPP
+  #define DYNFREQSCALINGTHREADBASE_HPP
 
 //#include <windef.h> //for WORD
-#include <ModelData/PerCPUcoreAttributes.hpp>
-#include <preprocessor_macros/Windows_compatible_typedefs.h>
+//#include <ModelData/PerCPUcoreAttributes.hpp>
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD
 typedef void *ExitCode;
 
 //Forward declarations (faster than #include)
@@ -76,3 +78,4 @@ public:
     DWORD Start() ;
   void Stop() ;
 };
+#endif //DYNFREQSCALINGTHREADBASE_HPP

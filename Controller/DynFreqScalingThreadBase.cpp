@@ -4,6 +4,7 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
 #include <ModelData/CPUcoreData.hpp> //class CPUcoreData
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 //LOGN(...), DEBUGN(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
