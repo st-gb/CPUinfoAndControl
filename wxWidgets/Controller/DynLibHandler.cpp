@@ -6,6 +6,8 @@
  */
 
 #include <Controller/CPUcontrolBase.hpp>
+//GetNumberOfLogicalCPUcores()
+#include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <wxWidgets/Controller/DynLibHandler.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
@@ -30,13 +32,14 @@ namespace wxWidgets
     // TODO Auto-generated destructor stub
   }
 
-  void DynLibHandler::CreateDynLibCPUcontroller(
+  bool DynLibHandler::CreateDynLibCPUcontroller(
     std::string & r_stdstrDynLibFilePath
 //    ,
 //    I_CPUaccess * p_i_cpuaccess,
 //    I_UserInterface * mp_userinterface
     )
   {
+    bool bSuccess = false ;
     wxString wxstrFilePath = getwxString( r_stdstrDynLibFilePath );
     try
     {
@@ -50,6 +53,7 @@ namespace wxWidgets
 //        , mp_userinterface
         , mr_cpucontrolbase.mp_userinterface
         ) ;
+      bSuccess = true ;
   //        LOGN("before DLL::GetAvailableMultipliers")
   //        gp_cpucontrolbase->mp_wxdynlibcpucontroller->GetAvailableMultipliers(
   //          mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers) ;
@@ -67,24 +71,33 @@ namespace wxWidgets
   //           gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
       //gp_cpucontrolbase->mp_wxdynlibcpucontroller = r_p_cpucontroller ;
 //      r_p_cpucontroller = mp_wxdynlibcpucontroller ;
+
       //This number is important for CPU core creating usage getter.
-      mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
+      WORD wNumberOfLogicalCPUcores =
         mr_cpucontrolbase.m_p_cpucontrollerDynLib->GetNumberOfCPUcores() ;
+      if( wNumberOfLogicalCPUcores ) // <> 0
+        mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
+          wNumberOfLogicalCPUcores ;
+      else
+        mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
+          GetNumberOfLogicalCPUcores() ;
     }
     //Catch because: if executed from GUI it can continue.
     catch( ... )
     {
 //      r_p_cpucontroller = NULL ;
     }
+    return bSuccess ;
   }
 
-  void DynLibHandler::CreateDynLibCPUcoreUsageGetter(
+  bool DynLibHandler::CreateDynLibCPUcoreUsageGetter(
     std::string & r_stdstrDynLibFilePath
 //    ,
 //    I_CPUaccess * p_i_cpuaccess,
 //    I_UserInterface * mp_userinterface
     )
   {
+    bool bSuccess = false ;
     try
     {
       wxString wxstrDynLibFilePath = getwxString( r_stdstrDynLibFilePath ) ;
@@ -98,6 +111,7 @@ namespace wxWidgets
 //        , * p_cpucoredata
         , mr_cpucontrolbase.m_model.m_cpucoredata
         ) ;
+      bSuccess = true ;
       LOGN("after allocating dyn lib CPU core usage getter")
       //gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = r_p_icpucoreusagegetter ;
 //      r_p_icpucoreusagegetter = mr_cpucontrolbase.
@@ -120,6 +134,7 @@ namespace wxWidgets
     {
 //      r_p_icpucoreusagegetter = NULL ;
     }
+    return bSuccess ;
   }
 
   std::string DynLibHandler::GetDynLibPath(const std::string & cr_strFileName )

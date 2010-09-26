@@ -40,6 +40,9 @@
   #define WINRING0_DRIVER_NAME "WinRing0.sys"
 #endif
 
+#define SUCCESS 1
+#define FAILURE 0
+
 WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
   //: //C++ style initialisations
   //,mp_userinterface(pui)

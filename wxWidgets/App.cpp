@@ -7,7 +7,7 @@
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define THREAD_PROC_CALLING_CONVENTION WINAPI
 #else
   #define THREAD_PROC_CALLING_CONVENTION /* -> empty string */
@@ -41,7 +41,7 @@
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 
 #include "DynFreqScalingThread.hpp"
-#ifdef _WIN32 //built-in macro in MinGW/ eclipse under Windows
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/DynFreqScalingThread.hpp>
   #include <Windows/GetNumberOfLogicalCPUs.h>
   #include <Windows/HideMinGWconsoleWindow.h>
@@ -56,6 +56,7 @@
 #endif
 //#include <strstream> //ostrstream
 #include <string> //
+//#include <errno.h> //for "errno"
 
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
@@ -716,6 +717,7 @@ void wxX86InfoAndControlApp::InitSharedMemory()
 BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
 {
   LOGN("GetConfigDataViaInterProcessCommunication begin")
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency(
     * this ,
     m_model ) ;
@@ -763,6 +765,7 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
     else
       return 0 ;
   }
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   return 2 ;
 }
 
@@ -788,8 +791,10 @@ bool wxX86InfoAndControlApp::OnInit()
   m_arartchCmdLineArgument = new TCHAR * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
 //  mp_modelData = new Model() ;
   mp_modelData = & m_model ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   m_sax2_ipc_current_cpu_data_handler.m_cpc_cpucoredata =
     & mp_modelData->m_cpucoredata ;
+#endif
   //If allocation succeeded.
   if( m_arartchCmdLineArgument && mp_modelData )
   {
@@ -821,10 +826,16 @@ bool wxX86InfoAndControlApp::OnInit()
     g_logger.OpenFile( stdtstrLogFilePath ) ;
     LOGN("process ID of this process: ")
 
-    //Intitialise to be valid.
-    m_arartchCmdLineArgument[ 0 ] = _T("") ;
+    //Initialize to be valid.
+    m_arartchCmdLineArgument[ 0 ] =
+      //For an empty string: "_T("")" causes Linux g++ warning or error->use value
+      // "\0" / "0"
+      //_T("") ;
+      //String terminating NULL
+      0 ;
     m_arartchCmdLineArgument[ NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS - 1 ] = 
-      (TCHAR * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).c_str() ;
+      (TCHAR * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).
+      c_str() ;
 
     mp_userinterface = //p_frame ;
       this ;
@@ -852,7 +863,7 @@ bool wxX86InfoAndControlApp::OnInit()
 //      m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
       try //catch CPUaccessexception
       {
-    #ifdef _WINDOWS
+    #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
       //WinRing0dynLinked winring0dynlinked(p_frame) ;
       //If allocated statically within this block / method the object 
       //gets invalid after leaving the block where it was declared.
@@ -889,7 +900,9 @@ bool wxX86InfoAndControlApp::OnInit()
           << r_cpuaccessexception.m_stdstrErrorMessage )
         //We may continue to use this program: e.g. for testing usage getter
         //DLLs or for showing the usage etc. via IPC.
-        mp_i_cpuaccess = NULL ;
+        //If the construction of a I_CPUaccess object failed the pointer should
+        //already be NULL.
+//        mp_i_cpuaccess = NULL ;
       }
       m_maincontroller.SetAttributeData( mp_modelData ) ;
       //m_winring0dynlinked.SetUserInterface(p_frame);
@@ -930,12 +943,12 @@ bool wxX86InfoAndControlApp::OnInit()
 //        else
 //          LOGN("number of CPU cores:"
 //            << mp_modelData->m_cpucoredata.m_byNumberOfCPUCores )
-        if( mp_i_cpuaccess )
-          //Now we have created the CPU controller. It knows how many cores it has.
-          //The core count is an important information e.g. for the Linux MSR device
-          //file access.
-          mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
-            GetNumberOfCPUcores() ) ;
+//        if( mp_i_cpuaccess )
+//          //Now we have created the CPU controller. It knows how many cores it has.
+//          //The core count is an important information e.g. for the Linux MSR device
+//          //file access.
+//          mp_i_cpuaccess->InitPerCPUcoreAccess( mp_cpucontroller->
+//            GetNumberOfCPUcores() ) ;
         mp_cpucontroller->SetCmdLineArgs(
           NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
           m_arartchCmdLineArgument ) ;

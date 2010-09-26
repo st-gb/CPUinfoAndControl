@@ -20,7 +20,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <Controller/CPU-related/Intel/Intel_registers.h>
 #include <float.h> //FLT_MIN
 #include <windef.h> //BYTE, DWORD
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include <winuser.h> //MessageBox(...)
   #include <windows.h> //MessageBox(...)
 #endif
@@ -42,7 +42,8 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
   inline float * GetAvailableMultipliersIntelCore(WORD & r_byNumMultis)
   {
     float * ar_f = NULL ;
-    //ex.: "value at MSR address 408:6 23 73 42 6 0 73 42 "
+    //                        byte index: 7  6  5  4  3  2  1  0
+    //example: "value at MSR address 408:06 23 73 42 06 00 73 42 "
     // 6: min. multiplier (if SuperLowFrequencyMode= min. Multi= 6/2=3)
     // 73: max. multiplier: 73dec = 1001001bin
     //                                 1001bin = 9dec
@@ -51,16 +52,18 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //      (*g_pfnreadmsr) (
       ReadMSR(
       IA32_PERF_STATUS,
-      & g_dwValue1,// bit  0-31 (register "EAX")
+      & g_dwValue1,// bits 0-31 (register "EAX")
       & g_dwValue2,
       1 //<< wCoreID //m_dwAffinityMask
       ) ;
     if( g_byValue1 ) //successfully read from MSR.
     {
       //LowestFrequencyMode (LFM) multiplier.
-      g_byValue2 = ( ( g_dwValue1 >> 24 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
+      g_byValue2 = ( ( g_dwValue2 >> 24 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
+      DEBUGN("LowestFrequencyMode (LFM) multiplier:" << (WORD) g_byValue2 )
       //Max multiplier.
-      g_fValue1 = GetMultiplierAsEncodedInMSRIntelCore( g_dwValue1 ) ;
+      g_fValue1 = GetMultiplierAsEncodedInMSRIntelCore( g_dwValue2 ) ;
+      DEBUGN("Max multiplier:" << g_fValue1 )
       //ex. # multi if LowFrequencyMode (LFM=6-> SuperLowFrequencyMode=3), max.
       // multi = 9.5: {3,4,5,  6;6.5;7;7.5;8,8.5,9,9.5} = 3 + 8 = 11 multipliers
       //Number of different multipliers = highest multiplier-lowest multiplier + 1
@@ -77,6 +80,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
         // // lowest LowestFrequencyMode multi
         // g_byValue2
         ) * 2 + 1 ) ;
+      DEBUGN("# multis:" << (WORD) r_byNumMultis )
       ar_f = new float [ //g_byValue1
         r_byNumMultis ] ;
       if( ar_f ) //Allocating memory on heap succeeded.
@@ -90,6 +94,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
             //Minimum multi + Index
 //            ( g_byValue2 + g_byValue1 )
             g_fValue1 + (float) g_byValue1 * 0.5 ;
+          DEBUGN("adding multiplier " << g_fValue1 )
         }
       }
     }
@@ -149,28 +154,37 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 
   inline float GetMultiplierAsEncodedInMSRIntelCore(DWORD dwValue )
   {
-    g_byValue1 = ( dwValue >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
+    static BYTE byFrequencyIDentifier =
+    //g_byValue1 =
+      ( dwValue >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
     //1000 0110 bin (134dec) was multiplier 3
     //      110 bin=6dec
     //If multiplier should be divided by "2".
     //73 (0100 1001 bin) was multi/ FID "9"
     //         1001 bin = 9dec
     //-> only the lowmost 4 bits are used?!
-    g_byValue2 = g_byValue1 & BITMASK_FOR_LOWMOST_5BIT ;
-    if( g_byValue1 & 128 )
+    //g_byValue2 = g_byValue1 & BITMASK_FOR_LOWMOST_5BIT ;
+    byFrequencyIDentifier &= BITMASK_FOR_LOWMOST_5BIT ;
+    if( //g_byValue1 & 128
+        byFrequencyIDentifier & 128
+      )
     {
       //Intel: "15:0 Current performance State Value"
       //   "63:16 Reserved"
-      return (float) g_byValue2 / 2.0 ;
+      return (float) //g_byValue2 / 2.0 ;
+        byFrequencyIDentifier / 2.0 ;
     }
     else
     {
       if( //Half multi
-        g_byValue1 & 64
+//        g_byValue1 & 64
+        byFrequencyIDentifier & 64
         )
-        return (float) g_byValue2 + 0.5 ;
+        return (float) //g_byValue2 + 0.5 ;
+          byFrequencyIDentifier + 0.5 ;
       else
-        return g_byValue2 ;
+        return //g_byValue2 ;
+          byFrequencyIDentifier ;
     }
   }
 
@@ -333,7 +347,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //        BITMASK_FOR_LOWMOST_5BIT ;
 
       g_byValue1 = //-56 -
-        100 - g_byValue1 ;
+        105 - g_byValue1 ;
       return g_byValue1 ;
     }
     return FLT_MIN ;
@@ -432,22 +446,22 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
       << GetVoltageAsEncodedInMSRIntelCore( dwLowmostBits )
       << " written multiplier would be:"
       << GetMultiplierAsEncodedInMSRIntelCore(dwLowmostBits) ;
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
     MessageBox(NULL, ss.str().c_str(), "info" , MB_OK ) ;
 #endif
 #endif
     DEBUGN( ss.str() )
-//    g_byValue1 =
-//      WriteMSR(
-//      IA32_PERF_CTL,
-//      dwLowmostBits,// bit  0-31 (register "EAX")
-//      //  "32  IDA Engage. (R/W)   When set to 1: disengages IDA
-//      //   since: 06_0FH (Mobile)
-//      //  "63:33 Reserved"
-//      0 ,
-//      //m_dwAffinityMask
-//      1 << byCoreID
-//      ) ;
+    g_byValue1 =
+      WriteMSR(
+      IA32_PERF_CTL,
+      dwLowmostBits,// bit  0-31 (register "EAX")
+      //  "32  IDA Engage. (R/W)   When set to 1: disengages IDA
+      //   since: 06_0FH (Mobile)
+      //  "63:33 Reserved"
+      0 ,
+      //m_dwAffinityMask
+      1 << byCoreID
+      ) ;
     return g_byValue1 ;
   }
 

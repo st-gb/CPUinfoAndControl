@@ -1,6 +1,6 @@
 /*
- * AssignPointersToExportedExeMSRfunctions.c
- *
+ * AssignPointersToExportedExeMSRfunctions.cpp
+ * (use extension ".cpp" in order to use the C++ include folders from eclipse)
  *  Created on: Sep 3, 2010
  *      Author: Stefan
  */
@@ -8,6 +8,7 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
 #ifdef __linux__
   #include <dlfcn.h> //for dlopen(...)
+  #include <stddef.h> //for "NULL"
 #endif
 
 ReadMSR_func_type g_pfnreadmsr ;

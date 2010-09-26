@@ -6,12 +6,13 @@
  */
 
 #include "DynVoltAndFreqScaling.hpp"
+//for DynFreqScalingThreadBase(...)
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
 
 //DynVoltAndFreqScaling::DynVoltAndFreqScaling() {
 //}
 DynVoltAndFreqScaling::DynVoltAndFreqScaling(
   ICPUcoreUsageGetter * p_icpu
-  //, GriffinController * p_pumastatectrl
   , I_CPUcontroller * p_cpucontroller
   , CPUcoreData & r_cpucoredata
   )

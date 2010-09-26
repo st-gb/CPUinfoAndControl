@@ -1,6 +1,6 @@
 #pragma once //include guard
-#ifndef DYNFREQSCALINGTHREAD_HPP
-#define DYNFREQSCALINGTHREAD_HPP
+#ifndef WXWIDGETS_DYNFREQSCALINGTHREAD_HPP
+#define WXWIDGETS_DYNFREQSCALINGTHREAD_HPP
 
 #include <wx/thread.h> //because base class wxThread
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
@@ -48,4 +48,4 @@ namespace wxWidgets
     DWORD Start() ;
   };
 }
-#endif //#ifndef DYNFREQSCALINGTHREAD_HPP
+#endif //#ifndef WXWIDGETS_DYNFREQSCALINGTHREAD_HPP

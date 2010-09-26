@@ -66,9 +66,7 @@ public:
   std::string getMSRFile(DWORD_PTR
     //Only 1 bit should be set in this value
     dwAffinityMask) ;
-  static std::string getMSRdeviceFilePath(DWORD_PTR
-    //Only 1 bit should be set in this value
-    dwAffinityMask) ;
+  static std::string getMSRdeviceFilePath( BYTE byCPUcoreID) ;
 
   void UIconfirm(const std::string & str) ;
   BOOL CpuidEx(

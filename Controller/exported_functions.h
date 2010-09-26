@@ -18,7 +18,7 @@ extern "C" {
 //#include <basetsd.h> //DWORD_PTR
 
 //from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define AM_LIB_EXPORT __declspec(dllexport)
 #else
   #define AM_LIB_EXPORT //__attribute__ ((visibility("default")))

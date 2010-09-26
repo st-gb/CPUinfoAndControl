@@ -558,8 +558,8 @@ void CPUregisterWriteDialog::OnWriteToMSR(
     DWORD dwLow = ullWriteToMSR ;
     if( wxMessageBox( wxstrAllValues +
       wxString::Format(
-        wxT("writing low bytes %lu and high bytes %u to MSR index %lu to "
-          "core %lu")
+        wxT("writing low bytes %lu and high bytes %lu to MSR index %lu to "
+          "core %u")
         , dwLow,
         dwHigh ,
         mp_msrdata->m_dwIndex ,

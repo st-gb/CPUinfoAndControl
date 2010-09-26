@@ -1,6 +1,6 @@
 #pragma once //include guard
-#ifndef DYNFREQSCALINGTHREAD_HPP
-#define DYNFREQSCALINGTHREAD_HPP
+#ifndef WINDOWS_API_DYNFREQSCALINGTHREAD_HPP
+#define WINDOWS_API_DYNFREQSCALINGTHREAD_HPP
 
 //#include "../Controller/ICPUcoreUsageGetter.hpp"
 #include <Controller/DynFreqScalingThreadBase.hpp> //Base class for this class.
@@ -42,4 +42,4 @@ namespace Windows_API
     //  ) ;
   };
 };
-#endif //#ifndef DYNFREQSCALINGTHREAD_HPP
+#endif //#ifndef WINDOWS_API_DYNFREQSCALINGTHREAD_HPP

@@ -1,6 +1,17 @@
 
 Seide soll Den x86I&C-Sourcecode auf dem Stick loeschen, da unverschlüsselt
 
+- crash of the GUI after resume from standy (the voltage and freq settings dialog was open)
+- bei Pentium M DLL: nur jede 2te Spannung konnte über die GUI eingestellt werden
+- "set as wanted voltage" hat nicht funktioniert -> es stand nichts in der p-state.xml
+- Multplikator-Anzeige GLEICH wenn Freq'n Voltage-Dialog agezeigt wird
+- COre 2 DLL muss Multiplikator 3 anbieten
+- wenn unload CPU controller, dann verschwindet die Menüleiste
+- wenn die (CPU controller) DLL (war eine cygwin-erstellte DLL-Datei->
+  cygwin1.dll konnte nicht gefunden werden?!) nicht geladen werden konnte, 
+  wird Log-Datei angelegt, es steht aber nichts drin 
+- bei "save performance state settings soll der richtige Pfad ausgewählt und vorher ggf. erstellt werden
+- wenn die "p-state".xml-Datei nicht existiert, dann bringt er eine SAXParseException:-> ausführlicher
 - GUI caused the service to crash after connect
 - GUI crashed when the service was stopped
 - GUI CRASHED when exited

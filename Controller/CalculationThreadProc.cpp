@@ -5,6 +5,7 @@
 //errors in Visual Studio for the include of <string>.
 #include "CalculationThreadProc.h"
 //class ICPUcoreUsageGetter
+#include <Controller/Sleep.hpp> //for OperatingSystem::Sleep(...)
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class
 #include <ModelData/ModelData.hpp> //class Model
@@ -14,7 +15,7 @@
 
 //wxWidgets does not provide the needed "set CPU affinity". So I must
 //distinguish/ use a native API directly.
-#ifdef _WIN32 //Built-in macro in eclipse under Windows (also Win 7 64 bit)
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #include <Windows/CalculationThread.hpp>
 #else 
   #ifdef __linux__ //Built-in macro in eclipse under Linux //_LINUX
@@ -243,7 +244,7 @@ DWORD
           // fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
             pcalculationthread->mp_userinterface->RedrawEverything() ;
           }
-         Sleep( wSleepTimeInMs ) ;
+          OperatingSystem::Sleep( wSleepTimeInMs ) ;
        //  if( fLoad * fCPUusageReferringToMaxFreq 
        }
     }

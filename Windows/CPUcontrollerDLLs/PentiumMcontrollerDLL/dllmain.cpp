@@ -1,38 +1,32 @@
 // dllmain.cpp : Definiert den Einstiegspunkt f�r die DLL-Anwendung.
-
 #ifdef _MSC_VER //MS compiler
 #include "stdafx.h"
 #endif
-
-//#include <Controller\I_CPUcontroller.hpp>
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
-#include <Controller/I_CPUaccess.hpp> //passed as parameter in Init(...)
-#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
-#include <Controller/CPU-related/Intel/Intel_registers.h>
-//include for PentiumM.hpp: //ReadMSR(...), WriteMSR(...)
-#include <Windows/AssignPointersToExportedExeFunctions/\
+//A I_CPUaccess pointer is passed as parameter in Init(...)
+#include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+//GetCurrentReferenceClock(...)
+//#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
+//Include for PentiumM.hpp: //ReadMSR(...), WriteMSR(...)
+#include <Controller/AssignPointersToExportedExeFunctions/\
 inline_register_access_functions.hpp>
+//For the inline functions used in this source file.
 #include <Controller/CPU-related/Intel/PentiumM/PentiumM.hpp>
-#include <Controller/CPU-related/Intel/PentiumM/PentiumM_registers.h>
-//#include <Controller/CPU-related/Intel/PentiumM/PentiumM_Controller.hpp>
 
-#include <Windows/AssignPointersToExportedExeFunctions/\
-inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
-
-//#include <Controller/DynLibCPUcontroller.h>
 //#include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
-//#include <Controller/ExportedExeFunctionsCPUaccess.hpp> //ReadMSR(...) etc.
-#include <ModelData/ModelData.hpp>
+#ifdef INSERT_DEFAULT_P_STATES
+  #include <ModelData/ModelData.hpp>
+#endif //#ifdef INSERT_DEFAULT_P_STATES
 //#include <Windows/GetNumberOfLogicalCPUs.h>
-#include <Windows/AssignPointersToExportedExeFunctions/\
+//For AssignPointersToExportedExeMSRfunctions(...)
+#include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
 #ifdef _DEBUG
   #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
-#include <preprocessor_macros/preprocessor_helper_macros.h>
 
 #include <tchar.h> //_T()
-#include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
+#include <windows.h> //for MessageBox(...), MB_OK
 
 extern ReadMSR_func_type g_pfnreadmsr ;
 extern WriteMSR_func_type g_pfn_write_msr ;
@@ -49,7 +43,20 @@ ULONGLONG g_ullPerformanceEventCounterNumberOfFIDchange ;
 Logger g_logger ;
 #endif
 
-extern "C" __declspec(dllexport)
+//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
+//"When external names follow the C naming conventions, they must also be
+//declared as extern "C" in C++ code, to prevent them from using C++ naming
+//conventions."
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #define EXPORT extern "C" __declspec(dllexport)
+#else
+  //http://www.linuxquestions.org/questions/programming-9/
+  // how-to-export-function-symbols-750534/:
+  //"__attribute__ ((visibility("default")))  // (similar to __declspec(dllexport))"
+  #define EXPORT extern "C" //__attribute__ ((visibility("default")))
+#endif
+
+EXPORT
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -60,16 +67,17 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	case DLL_PROCESS_ATTACH:
   {
 #ifdef _DEBUG
-    std::string strExeFileNameWithoutDirs = GetStdString(
-      GetExeFileNameWithoutDirs() ) ;
-    std::string stdstrFilename = strExeFileNameWithoutDirs +
+//    std::string strExeFileNameWithoutDirs = GetStdString(
+//      GetExeFileNameWithoutDirs() ) ;
+    std::string stdstrFilename = //strExeFileNameWithoutDirs +
         ("PentiumM_DLL_log.txt") ;
     g_logger.OpenFile2( stdstrFilename ) ;
     DEBUGN("this Log file is open")
 #endif
 //	  MessageBox(NULL,"DLL_PROCESS_ATTACH","ii",MB_OK) ;
 	  //for g_pfnreadmsr etc.
-	  AssignPointersToExportedExeFunctions() ;
+	  AssignPointersToExportedExeMSRfunctions(
+	    g_pfnreadmsr , g_pfn_write_msr ) ;
 	  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
 //    if( ! g_exportedexefunctionscpuaccess.AssignPointersToExportedExeFunctions()
 //      )
@@ -110,12 +118,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 //#define DLL_CALLING_CONVENTION __stdcall
 #define DLL_CALLING_CONVENTION
 
-//_declspec(dllexport)
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
 void
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
@@ -145,7 +148,7 @@ void
   MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
     "", MB_OK) ;
 #endif
-
+#ifdef INSERT_DEFAULT_P_STATES
   float fVoltageForLowestMulti ;
   float fLowestMulti ;
   float fVoltageForHighestMulti ;
@@ -172,7 +175,7 @@ void
         (WORD) ( fHighestMulti * g_fReferenceClockInMHz)
         ) ;
   }
-
+#endif //INSERT_DEFAULT_P_STATES
 //  AssignExeFunctionPointers() ;
   //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
   //MSC-generated version has no problems
@@ -191,12 +194,7 @@ void
   //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
 }
 
-////_declspec(dllexport)
-////http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-////"When external names follow the C naming conventions, they must also be
-////declared as extern "C" in C++ code, to prevent them from using C++ naming
-////conventions."
-//extern "C" __declspec(dllexport)
+//EXPORT
 //  DWORD
 //  DLL_CALLING_CONVENTION
 //  GetMultiplier(WORD wCoreID )
@@ -213,11 +211,7 @@ void
 //  return dwLowmostBits ;
 //}
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
 //The array pointed to by the return value must be freed by the caller of this function.
 float *
   //Calling convention--must be the same as in the DLL
@@ -290,12 +284,9 @@ float *
   return ar_f ;
 }
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
-//The array pointed to by the return value must be freed by the caller of this function.
+EXPORT
+//The array pointed to by the return value must be freed by the caller of this
+//function.
 float *
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
@@ -366,12 +357,7 @@ float *
   return NULL ;
 }
 
-//_declspec(dllexport)
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
   BYTE 
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
@@ -418,22 +404,13 @@ extern "C" __declspec(dllexport)
 //  return byRet ;
 }
 
-////http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-////"When external names follow the C naming conventions, they must also be
-////declared as extern "C" in C++ code, to prevent them from using C++ naming
-////conventions."
-//extern "C" __declspec(dllexport)
+//EXPORT
 //float GetCurrentReferenceClock()
 //{
 //
 //}
 
-////_declspec(dllexport)
-////http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-////"When external names follow the C naming conventions, they must also be
-////declared as extern "C" in C++ code, to prevent them from using C++ naming
-////conventions."
-//extern "C" __declspec(dllexport)
+//EXPORT
 //WORD
 //  //Calling convention--must be the same as in the DLL
 //  //function signature that calls this function?!
@@ -443,12 +420,7 @@ extern "C" __declspec(dllexport)
 //  return 1 ;
 //}
 
-//_declspec(dllexport)
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-extern "C" __declspec(dllexport)
+EXPORT
   BYTE
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!

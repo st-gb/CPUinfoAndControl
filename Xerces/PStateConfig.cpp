@@ -51,8 +51,8 @@
 
 #define FREQ_AND_VOLTAGE_LITERAL "freq_and_voltage"
 #define FREQ_AND_VOLTAGE_WCHAR_LITERAL L"freq_and_voltage"
-#define FREQUENCY_IN_MHZ_LITERAL "frequency_in_MHz"
-//#define FREQUENCY_IN_MHZ_WCHAR_LITERAL L##FREQUENCY_IN_MHZ_LITERAL
+#define FREQUENCY_IN_MHZ_ANSI_LITERAL "frequency_in_MHz"
+//#define FREQUENCY_IN_MHZ_WCHAR_LITERAL L##FREQUENCY_IN_MHZ_ANSI_LITERAL
 #define FREQUENCY_IN_MHZ_WCHAR_LITERAL L"frequency_in_MHz"
 
 #define XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI "/*/freq_and_voltage"
@@ -108,7 +108,7 @@
         XERCES_STRING_FROM_ANSI_STRING( to_stdstring<WORD>(wFreq).c_str() )
         );
       LOGN("Successfully set attribute value " << wFreq << " for "
-        FREQUENCY_IN_MHZ_LITERAL )
+        FREQUENCY_IN_MHZ_ANSI_LITERAL )
     }
     catch( const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception )
     {
@@ -172,10 +172,13 @@
     PossiblyReleaseDOM_XPathResult() ;
     try
     {
+      LOGWN_WSPRINTF(L"evaluating %ls", XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR)
+      //Gets NULL on failure/ exception.
       mp_domxpathresult = mp_dom_document->
         //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMXPathEvaluator.html
         // #8785175b7f816234978a931a60000039:
-        // DOMXPathException, DOMException
+        // "DOMXPathException", "DOMException"
+        // returns NULL on failure/ exception
         evaluate(
         //p_xmlchXpath,
         //Avoid g++ warning "no matching function for call to
@@ -188,6 +191,73 @@
         XERCES_CPP_NAMESPACE::DOMXPathResult::ORDERED_NODE_SNAPSHOT_TYPE,
         NULL
         );
+      XMLSize_t nDOMqueryResultsetLength =
+        //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
+        //"XPathException   TYPE_ERR: raised if resultType is not
+        //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
+        mp_domxpathresult->getSnapshotLength();
+      LOGN("number of " << //archXPath
+        XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << " elements: "
+        << nDOMqueryResultsetLength )
+//      //Use "[]" rather than "char *" to avoid g++ Linux compiler warning
+//      // "deprecated conversion from string constant to ‘char*’ "
+//      char arp_chAttributeName [] = "frequency_in_MHz" ;
+//      XMLCh * xmlchAttributeName = XERCES_CPP_NAMESPACE::XMLString::transcode(
+//        arp_chAttributeName);
+//      if( xmlchAttributeName)
+//      {
+        XERCES_CPP_NAMESPACE::DOMNamedNodeMap * p_dom_namednodemap ;
+        XERCES_CPP_NAMESPACE::DOMNode * p_domnodeAttribute ;
+       const XMLCh * cp_xmlchAttrValue ;
+        DWORD dwValue ;
+  //      XercesAttributesHelper xerces_attributes_helper ;
+
+        //Iterate over all "freq_and_voltage" XML elements.
+        for( //XMLSize_t
+          WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
+          wResultSetIndex ++ )
+        {
+          LOGN("at " << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
+            << " element " << wResultSetIndex )
+          //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
+          //"XPathException  TYPE_ERR: raised if resultType is not
+          //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
+          mp_domxpathresult->snapshotItem(wResultSetIndex);
+          //theSerializer->write(p_domxpathresult->getNodeValue(),
+          //  theOutputDesc);
+          //Get all attributes for the current XML element.
+          p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
+            getAttributes() ;
+          //for( XMLSize_t xmlsize_tAttIdx = 0 ; p_dom_namednodemap->getLength() ;
+          //    ++ xmlsize_tAttIdx )
+          //{
+          p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
+            //"frequency_in_MHz"
+//            xmlchAttributeName
+            //Avoid g++ warning "no matching function for call to
+            //‘xercesc_3_0::DOMElement::getAttribute(const wchar_t [17])’ "
+            (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL
+            ) ;
+          //Attribute exists.
+          if ( p_domnodeAttribute )
+          {
+            cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
+            std::string stdstr = XercesHelper::ToStdString(
+              cp_xmlchAttrValue) ;
+            LOGN("attribute name for " << //arp_chAttributeName
+              FREQUENCY_IN_MHZ_ANSI_LITERAL
+              << ": " << stdstr )
+            //cp_xmlchAttrValue = cp_xmlchAttrValue ;
+//            xerces_attributes_helper.ToDWORD( stdstr , & dwValue ) ;
+            from_stdstring<DWORD>( dwValue, stdstr ) ;
+            m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
+              std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
+          }
+          //}
+//        }
+//        XERCES_CPP_NAMESPACE::XMLString::release( & xmlchAttributeName );
+      }
+  //    XMLString::release( & p_xmlchXpath);
     }
     catch( const XERCES_CPP_NAMESPACE::DOMXPathException &
       cr_xercesc_dom_xpath_exception )
@@ -206,62 +276,6 @@
     }
     LOGN("mp_domxpathresult: " << mp_domxpathresult )
 
-    XMLSize_t nDOMqueryResultsetLength =
-      //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
-      //"XPathException   TYPE_ERR: raised if resultType is not
-      //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
-      mp_domxpathresult->getSnapshotLength();
-    LOGN("number of " << //archXPath
-      XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << " elements: "
-      << nDOMqueryResultsetLength )
-    XERCES_CPP_NAMESPACE::DOMNamedNodeMap * p_dom_namednodemap ;
-    XERCES_CPP_NAMESPACE::DOMNode * p_domnodeAttribute ;
-    //Use "[]" rather than "char *" to avoid g++ Linux compiler warning
-    // "deprecated conversion from string constant to ‘char*’ "
-    char arp_chAttributeName [] = "frequency_in_MHz" ;
-    XMLCh * xmlchAttributeName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-      arp_chAttributeName);
-    const XMLCh * cp_xmlchAttrValue ;
-    DWORD dwValue ;
-    XercesAttributesHelper xerces_attributes_helper ;
-
-    //Iterate over all "freq_and_voltage" XML elements.
-    for( //XMLSize_t
-      WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
-      wResultSetIndex ++ )
-    {
-      LOGN("at " << //archXPath
-        XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << " element " << wResultSetIndex )
-      //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
-      //"XPathException  TYPE_ERR: raised if resultType is not
-      //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
-      mp_domxpathresult->snapshotItem(wResultSetIndex);
-      //theSerializer->write(p_domxpathresult->getNodeValue(),
-      //  theOutputDesc);
-      //Get all attributes for the current XML element.
-      p_dom_namednodemap = mp_domxpathresult->getNodeValue()->getAttributes() ;
-      //for( XMLSize_t xmlsize_tAttIdx = 0 ; p_dom_namednodemap->getLength() ;
-      //    ++ xmlsize_tAttIdx )
-      //{
-        p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
-          //"frequency_in_MHz"
-          xmlchAttributeName ) ;
-        //Attribute exists.
-        if ( p_domnodeAttribute )
-        {
-          cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
-          std::string stdstr = XercesHelper::ToStdString(
-            cp_xmlchAttrValue) ;
-          LOGN("attribute name for " << arp_chAttributeName << ": " << stdstr )
-          //cp_xmlchAttrValue = cp_xmlchAttrValue ;
-          xerces_attributes_helper.ToDWORD( stdstr , & dwValue ) ;
-          m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
-            std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
-        }
-      //}
-    }
-    XERCES_CPP_NAMESPACE::XMLString::release( & xmlchAttributeName );
-//    XMLString::release( & p_xmlchXpath);
     LOGN("end of freq in MHz to DOM index")
     return p_dom_xpath_ns_resolver ;
   }
@@ -807,6 +821,7 @@
           //"DOMException", "DOMLSException"
           parseURI( //p_chFullXMLFilePath
             mpc_chFullXMLFilePath );
+        LOGN( "File \"" << mpc_chFullXMLFilePath << "\" successfully parsed.")
         //If parseURI throws an exception this instruction is not executed.
         byRet = 1 ;
       }
@@ -856,7 +871,12 @@
     mp_dom_implementation = XERCES_CPP_NAMESPACE::DOMImplementationRegistry::
       //"Return the first registered implementation that has the desired features,
       // or null if none is found."
-      getDOMImplementation( L"LS" );
+      getDOMImplementation(
+        //Convert/ cast to "const XMLCh *" to avoid Linux g++ error
+        //"no matching function for call to ‘xercesc_3_0::
+        //DOMImplementationRegistry::getDOMImplementation(const wchar_t [3])’ "
+        (const XMLCh *)
+        L"LS" );
 //    PossiblyAddVoltages(
 //      //true: do not change, only test if it would be changed.
 //      false //bool bTest
@@ -1039,40 +1059,44 @@
         BuildStdmapFreqInMHzInDOMtree2DOMindex(
 //          m_stdmapFreqInMHzInDOMtree2DOMindex
           ) ;
-//        bool bCreateMaxVoltageAttribute ;
-
-      //WORD wSize = model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
-//        WORD wFreq ;
-      //for( WORD wIndex = 0 ; wIndex < wSize ; ++ wIndex )
-
-      //if( PossiblyAddDefaultVoltages() )
-      //  bDOMtreeModified = true ;
-      //if( PossiblyAddLowestStableVoltages() )
-      //  bDOMtreeModified = true ;
-      //if( PossiblyAddWantedVoltages() )
-      //  bDOMtreeModified = true ;
-      bDOMtreeModified = PossiblyAddVoltages( bTest ) ;
-      if( //bDOMtreeModified
-        m_bDOMtreeDiffersOrDifferedFromModelData )
+      //If BuildStdmapFreqInMHzInDOMtree2DOMindex succeeded.
+      if( mp_domxpathresult )
       {
-        LOGN( "the DOM tree (from file)" //is modified"
-          "differs or differed from the in-program data")
-        if( ! bTest )
+  //        bool bCreateMaxVoltageAttribute ;
+
+        //WORD wSize = model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() ;
+  //        WORD wFreq ;
+        //for( WORD wIndex = 0 ; wIndex < wSize ; ++ wIndex )
+
+        //if( PossiblyAddDefaultVoltages() )
+        //  bDOMtreeModified = true ;
+        //if( PossiblyAddLowestStableVoltages() )
+        //  bDOMtreeModified = true ;
+        //if( PossiblyAddWantedVoltages() )
+        //  bDOMtreeModified = true ;
+        bDOMtreeModified = PossiblyAddVoltages( bTest ) ;
+        if( //bDOMtreeModified
+          m_bDOMtreeDiffersOrDifferedFromModelData )
         {
-          XERCES_CPP_NAMESPACE::LocalFileFormatTarget localfileformattarget(
-            mpc_chFullXMLFilePath
-            );
-          WriteDOM(
-            mp_dom_elementRoot
-//            , p_chFullXMLFilePath
-//            , p_dom_implementation
-            , localfileformattarget
-            ) ;
+          LOGN( "the DOM tree (from file)" //is modified"
+            "differs or differed from the in-program data")
+          if( ! bTest )
+          {
+            XERCES_CPP_NAMESPACE::LocalFileFormatTarget localfileformattarget(
+              mpc_chFullXMLFilePath
+              );
+            WriteDOM(
+              mp_dom_elementRoot
+  //            , p_chFullXMLFilePath
+  //            , p_dom_implementation
+              , localfileformattarget
+              ) ;
+          }
         }
-      }
-      else
-      {
+        else
+        {
 
+        }
       }
 //      mp_dom_document->release();
 //      mp_domxpathresult->release();
@@ -1308,6 +1332,21 @@
   XercesConfigurationHandler::~XercesConfigurationHandler()
   {
     LOGN("~XercesConfigurationHandler")
+//    if( mp_dom_ls_parser )
+//    {
+//      LOGN("Before releasing DOM parser")
+//      //Also releases the DOMdocument:
+//      //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMLSParser.html
+//      // #9fa70302351aecdabddb71c4dfd0d626:
+//      //"The parser owns the returned DOMDocument.  It will be deleted
+//      // when the parser is released."
+//      mp_dom_ls_parser->release() ;
+//      LOGN("After releasing DOM parser")
+//    }
+    //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMLSParser.html
+    // #9fa70302351aecdabddb71c4dfd0d626:
+    //"The parser owns the returned DOMDocument.  It will be deleted
+    // when the parser is released."
     if( mp_dom_document )
     {
       LOGN("before releasing DOM document")

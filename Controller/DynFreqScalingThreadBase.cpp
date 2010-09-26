@@ -9,8 +9,9 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
 #include <binary_search.cpp> //GetClosesLess()
+#include <supress_unused_variable.h> //SUPRESS_UNUSED_VARIABLE_WARNING
 //#include <global.h> //LOGN
-#include "Sleep.h" //for OperatingSystem::Sleep(...)
+#include <Controller/Sleep.hpp> //for OperatingSystem::Sleep(...)
 
 //DynFreqScalingThreadBase::DynFreqScalingThreadBase(
 //  ICPUcoreUsageGetter * p_icpu
@@ -511,9 +512,16 @@ ExitCode DynFreqScalingThreadBase::Entry()
   else //if(mp_cpucontroller->m_b1CPUcorePowerPlane )
   {
     BYTE byCoreID ;
+    //Declare outside of "SetLowerFrequencyFromAvailableMultipliers" to not
+    //be created every time.
     float fFreqInMHz ;
     float fLowerMultiplier ;
     float fNextMultiplierCalculatedFromCurrentLoad ;
+    //Avoid Linux g++ warning "‘fFreqInMHz’ may be used uninitialized in this
+    // function"
+    SUPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
+    SUPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
+    SUPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
     while( m_vbRun )
     {
       LOGN("DVFS thread running")
@@ -635,7 +643,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
         SignalCPUdataCanBeSafelyRead() ;
       }
       //LOGN("End of scaling thread loop");
-      Sleep(//m_wMilliSecondsToWait
+      OperatingSystem::Sleep(//m_wMilliSecondsToWait
         mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
       LOGN("DynFreqScalingThreadBase::Entry(): after "
           "Sleep"

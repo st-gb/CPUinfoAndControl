@@ -142,7 +142,11 @@ public:
       || 
       errno == ERANGE
       || 
-      i64 > ULONG_MAX 
+      i64 >
+      //Avoid g++ warning "comparison between signed and unsigned integer
+      // expressions"
+      (__int64)
+      ULONG_MAX
       || 
       i64 < 0 
       )

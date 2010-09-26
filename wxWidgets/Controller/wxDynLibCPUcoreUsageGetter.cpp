@@ -1,9 +1,10 @@
 #include "wxDynLibCPUcoreUsageGetter.hpp"
-//GetErrorMessageFromErrorCodeA(...), OperatingSystem::GetLastErrorCode()
+//GetErrorMessageFromErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <Controller/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 #include <Controller/I_CPUaccess.hpp>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
   #include <Windows/DLLloadError.hpp>
 #endif //#ifdef _WIN32
@@ -93,7 +94,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     DWORD dw = OperatingSystem::GetLastErrorCode() ;
     stdstrErrMsg += GetErrorMessageFromErrorCodeA(dw) ;
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    DWORD dw = ::GetLastError() ;
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
 //    stdstrErrMsg += ::GetLastErrorMessageString(dw) ;

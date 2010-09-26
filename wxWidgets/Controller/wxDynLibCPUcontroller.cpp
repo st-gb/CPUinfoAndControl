@@ -1,14 +1,15 @@
 #include "wxDynLibCPUcontroller.hpp"
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
-//GetErrorMessageFromErrorCodeA(...), OperatingSystem::GetLastErrorCode()
+//GetErrorMessageFromErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <Controller/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 //#include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp> //for passing to dyn libs "Init()"
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <UserInterface/UserInterface.hpp> //class UserInterface
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
   #include <Windows/DLLloadError.hpp>//DLLloadError::GetPossibleSolution(DWORD)
 #endif //#ifdef _WIN32
@@ -32,6 +33,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   mp_userinterface (p_userinterface)
   , m_wNumberOfLogicalCPUcores ( 1 )
 {
+  //TODO crashes here if the CPU access initialization failed.
   mp_model = p_cpuaccess->mp_model ;
   //m_wxdynamiclibraryCPUctl ;
 
@@ -256,7 +258,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       + "\" failed:"
       + GetErrorMessageFromErrorCodeA(dw) ;
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    DWORD dw = ::GetLastError() ;
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
 //    std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
@@ -266,6 +268,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     LOGN("loading CPU controller dynamic library failed:" <<
         stdstrErrMsg )
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
+    mp_userinterface->Confirm(stdstrErrMsg) ;
     throw CPUaccessException(stdstrErrMsg) ;
   }
 }
@@ -404,17 +407,30 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
       fMultiplier
       << ","
       << (WORD) byCoreID << ")" )
-     by = //(*m_pfnsetcurrentpstate)(
-    //      wFreqInMHz
-    //      , wMilliVolt
-    //      , byCoreID
-    //      ) ;
-       (*m_pfnSetCurrentVoltageAndMultiplier)(
-          fVoltageInVolt
-         //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-         , //byMultiplierToUse
-         fMultiplier
-         , byCoreID ) ;
+    //The CPU controller should determine the closest voltage.
+    //Else not every voltage may be available to the CPU controller:
+    // If e.g. for a Pentium M the voltage to set is 0.768 V and the Voltage ID
+    //should be got then the Voltage ID was the one of 0.746 V (because of
+    //false rounding?)
+    //If the closest voltage is determined here then this would be redundant.
+//    if( r_cpucoredata.m_arfAvailableVoltagesInVolt )
+//    {
+//      WORD wArrayIndex = GetArrayIndexForClosestValue(
+//        r_cpucoredata.m_arfAvailableVoltagesInVolt,
+//        r_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.size() ,
+//        fVoltageInVolt
+//        ) ;
+//      if( wArrayIndex != MAXWORD )
+//        fVoltageInVolt = r_cpucoredata.m_arfAvailableVoltagesInVolt[
+//          wArrayIndex ] ;
+//    }
+    by = ( * m_pfnSetCurrentVoltageAndMultiplier)(
+      fVoltageInVolt
+      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+      , //byMultiplierToUse
+      fMultiplier
+      , byCoreID
+      ) ;
     DEBUGN("return value of DLL's function SetCurrentVoltageAndMultiplier( "
       << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
       fMultiplier
@@ -439,20 +455,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentPstate(
       float fMultiplier ;
       //
 //      float fReferenceClockInMHz ;
-       BYTE byReturn =
-//        (*m_pfngetcurrentpstate)(
-//        & r_wFreqInMHz
-//#ifdef GET_VOLTAGE_IN_MILLIVOLT
-//        , & wMilliVolt
-//#else
-//        , r_fVoltageInVolt
-//#endif
-//        , byCoreID
-//        ) ;
-//#ifdef GET_VOLTAGE_IN_MILLIVOLT
-//       r_fVoltageInVolt = (float) wMilliVolt / 1000.0 ;
-//#endif
-         (*m_pfnGetCurrentVoltageAndFrequency) (
+       BYTE byReturn = ( * m_pfnGetCurrentVoltageAndFrequency) (
          & r_fVoltageInVolt
          , & fMultiplier
 //         , & fReferenceClockInMHz
@@ -487,23 +490,9 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
   if( m_pfnGetCurrentVoltageAndFrequency )
   {
     LOGN("dyn lib CPU controller: GetCurrentVoltageAndFrequency")
-     BYTE byReturn =
-//        (*m_pfngetcurrentpstate)(
-//        & r_wFreqInMHz
-//#ifdef GET_VOLTAGE_IN_MILLIVOLT
-//        , & wMilliVolt
-//#else
-//        , r_fVoltageInVolt
-//#endif
-//        , byCoreID
-//        ) ;
-//#ifdef GET_VOLTAGE_IN_MILLIVOLT
-//       r_fVoltageInVolt = (float) wMilliVolt / 1000.0 ;
-//#endif
-       (*m_pfnGetCurrentVoltageAndFrequency) (
+     BYTE byReturn = ( * m_pfnGetCurrentVoltageAndFrequency) (
        & r_fVoltageInVolt
        , & r_fMultiplier
-//         , & fReferenceClockInMHz
        , & r_fReferenceClockInMHz
        , wCoreID
        ) ;

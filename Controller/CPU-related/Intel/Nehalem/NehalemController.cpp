@@ -2,7 +2,7 @@
 
 #include "NehalemController.hpp"
 //#include <windef.h> //for "NULL"
-#include <Controller/Intel_registers.h>
+#include <Controller/CPU-related/Intel/Intel_registers.h>
 #include <ModelData/ModelData.hpp>
 //#include <I_CPUaccess.hpp>
 #include <Controller/I_CPUaccess.hpp>
@@ -25,10 +25,10 @@ void NehalemController::DecreaseVoltageBy1Step(float & r_fVoltage)
   r_fVoltage = GetVoltageInVolt( wVoltageID ) ;
 }
 
-float NehalemController::GetReferenceClock()
-{
-
-}
+//float NehalemController::GetReferenceClock()
+//{
+//
+//}
 
 BYTE NehalemController::Init()
 {
@@ -88,7 +88,7 @@ BYTE NehalemController::GetCurrentVoltageAndFrequency(
 {
   WORD wFreqInMHz ;
   //float fVoltageInVolt ;
-  GetCurrentPstate(
+  return GetCurrentPstate(
     wFreqInMHz
     , r_fVoltageInVolt
     , byCoreID

@@ -64,7 +64,7 @@ public:
 };
 
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define COMPILE_WITH_SERVICE_PROCESS_CONTROL
 #endif
 
@@ -128,6 +128,8 @@ public:
   WORD m_wMaxFreqInMHzTextWidth ;
   WORD m_wMaxVoltageInVoltTextWidth ;
   WORD m_wMaxTemperatureTextWidth ;
+  WORD m_wTextHeight ;
+  WORD m_wYcoordinate ;
 private:
   wxBitmap * mp_wxbitmap ;
   wxBitmap * mp_wxbitmapStatic ;
@@ -238,6 +240,7 @@ public:
   //void 
   BYTE CreateDynamicMenus() ;
   void DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc) ;
+  void DetermineTextHeight(wxDC & r_wxdc) ;
   void DisableWindowsDynamicFreqScalingHint();
 //  wxString GetSetPstateMenuItemLabel(
 //    BYTE byPstateNumber
@@ -254,6 +257,20 @@ public:
     , float fMaxVoltage
     ) ;
   void DrawCurrentPstateInfo( wxDC & r_wxdc ) ;
+  inline void DrawFrequency(
+    wxDC & r_wxdc ,
+    WORD wFrequencyInMHz ,
+  //  WORD wMaxFreqInMHz ,
+    wxCoord wxcoordWidth ,
+    wxCoord wxcoordHeight ,
+    WORD wLeftEndOfCurrFreqText ,
+    wxString wxstrFreq ,
+    WORD & wXcoordinate ,
+    WORD & wYcoordinate ,
+    std::map<WORD,WORD>::iterator & r_iterstdmapYcoord2RightEndOfFreqString ,
+    std::map<WORD,WORD> & stdmapYcoord2RightEndOfFreqString ,
+    std::map<WORD,WORD>::iterator & r_iterstdmap_ycoord2rightendoffreqstringToUse
+    ) ;
   void DrawPerformanceStatesCrosses(
     wxDC & r_wxdc 
     , const std::set<VoltageAndFreq> & cr_stdsetmaxvoltageforfreq 
@@ -272,12 +289,17 @@ public:
     , float fMaxVoltage
 //    , WORD wXcoordOfBeginOfYaxis
     ) ;
+  void DrawVoltage(wxDC & r_wxdc, float fVoltage) ;
+  void DrawVoltage(wxDC & r_wxdc, float fVoltage, WORD wYcoordinate) ;
   void DrawVoltageFreqCross(
     wxDC & r_wxdc
     , float fVoltageInVolt
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  inline WORD GetXcoordinateForFrequency( WORD wFreqInMHz) ;
+  inline WORD GetYcoordinateForFrequency( WORD wFreqInMHz) ;
+  void GetYcoordinateForVoltage(float fVoltageInVolt ) ;
   inline bool IsCPUcontrollerAccessAllowedThreadSafe()
   {
     {
