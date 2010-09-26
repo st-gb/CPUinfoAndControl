@@ -11,7 +11,7 @@
 //#ifdef _WINDOWS
   #include <windef.h>
 //#endif
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
    #include <basetsd.h> //DWORD_PTR
 #endif //#ifdef _WIN32
 

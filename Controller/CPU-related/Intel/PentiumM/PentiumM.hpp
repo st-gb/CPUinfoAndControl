@@ -29,7 +29,7 @@ extern DWORD g_dwValue1 ;
 extern float g_fReferenceClockInMHz ;
 
 inline float GetVoltage(BYTE byVoltageID) ;
-inline BYTE GetVoltageID_PentiumM(float fVoltage ) ;
+inline float GetVoltageID_PentiumM_asFloat(float fVoltage ) ;
 
 //Purpose of this function: converting from float to integer causes rounding
 // errors:
@@ -42,15 +42,20 @@ inline BYTE GetClosestVoltageID(float fVoltageInVolt )
   //WORD wVoltageID = (fVoltageInVolt - 0.7 ) / 0.016 ;
 //  float fVoltageMinusLowestVoltage = (fVoltageInVolt - 0.7 ) ;
   float fVoltageID = //fVoltageMinusLowestVoltage / 0.016 ;
-    GetVoltageID_PentiumM(fVoltageInVolt) ;
+    GetVoltageID_PentiumM_asFloat(fVoltageInVolt) ;
+  DEBUGN("GetClosestVoltageID--fVoltageID" << fVoltageID )
   //ceil( fVoltageID );
   WORD wVoltageID = //(fVolt - 0.7 ) / 0.016 ;
     //Avoid g++ warning "warning: converting to `WORD' from `float'"
     (WORD) fVoltageID ;
+  DEBUGN("GetClosestVoltageID--wVoltageID" << wVoltageID )
   if( fVoltageID - (float) wVoltageID >=
       //e.g. if desired voltage is 7.014: 7.014 - 7 = 0.014; 0.014/0.016=0.875
       0.5 )
     ++ wVoltageID ;
+  DEBUGN("GetClosestVoltageID--wVoltageID" << wVoltageID )
+  DEBUGN("GetClosestVoltageID--voltage in Volt" << fVoltageInVolt << "-> voltage ID:"
+    << wVoltageID )
   return wVoltageID ;
 }
 
@@ -188,12 +193,21 @@ inline float GetVoltage(BYTE byVoltageID)
   return 0.7 + 0.016 * byVoltageID ;
 }
 
-inline BYTE GetVoltageID_PentiumM(float fVoltageInVolt )
+inline float GetVoltageID_PentiumM_asFloat(float fVoltageInVolt)
 {
   //Pentium M datasheet: Table 3-1: 0.016 Volt difference = 1 Voltage ID step
   //Examined following values :
   //Voltage ID 0 = 0.7V 1=0.716 V,...27=1.132V,...,40=1.340 Volt
-  return (BYTE) ( (fVoltageInVolt - 0.7 ) / 0.016 ) ;
+  DEBUGN("GetVoltageID_PentiumM--voltage in Volt:" << fVoltageInVolt
+    << "-> voltage ID:" << (fVoltageInVolt - 0.7 ) / 0.016
+    << "-> as integer:" << (WORD) ( (fVoltageInVolt - 0.7 ) / 0.016 )
+    )
+  return (fVoltageInVolt - 0.7 ) / 0.016 ;
+}
+
+inline BYTE GetVoltageID_PentiumM(float fVoltageInVolt )
+{
+  return (BYTE) GetVoltageID_PentiumM_asFloat( fVoltageInVolt) ;
 }
 
 inline BYTE SetCurrentVoltageAndMultiplierPentiumM(
@@ -219,7 +233,7 @@ inline BYTE SetCurrentVoltageAndMultiplierPentiumM(
 //    g_dwLowmostBits,// bit  0-31 (register "EAX")
     ( (BYTE) fMultiplier << 8 ) |
       GetClosestVoltageID(fVoltageInVolt) ,
-//      GetVoltageID_PentiumM(VoltageInVolt) ,
+//      GetVoltageID_PentiumM(fVoltageInVolt) ,
     0,
     //m_dwAffinityMask
     1 << wCoreID

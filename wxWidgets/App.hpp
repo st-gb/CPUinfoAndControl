@@ -2,7 +2,7 @@
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define _COMPILE_WITH_CALC_THREAD
 #endif
 
@@ -27,14 +27,16 @@
 //for x86IandC::thread_type
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
-//TODO program Did not exit when a taskbar icon is included.
-#define COMPILE_WITH_SYSTEM_TRAY_ICON
+//Under Linux an error message (~"no image handler for type 3 defined") is shown
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #define COMPILE_WITH_SYSTEM_TRAY_ICON
+#endif
 
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
 #endif
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include "SystemTrayAccess.hpp"
 #endif
 //#include <wxWidgets/UserInterface/Mainframe.hpp>
@@ -55,7 +57,7 @@
 class MainFrame ;
 class MyTaskBarIcon ;
 class UserInterface ;
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 class WinRing0_1_3RunTimeDynLinked ;
 #else
   #include <Linux/MSRdeviceFile.h>
@@ -78,7 +80,7 @@ private:
   TCHAR ** m_arartchCmdLineArgument ;
 //  wxThread m_wxthreadIPC ;
   void * m_systemtray_icon_notification_window ;
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
@@ -89,7 +91,7 @@ private:
   //e.g. point to console or GUI.
   MainFrame * mp_frame ;
 //  UserInterface * mp_userinterface ;
-  #ifdef _WINDOWS
+  #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
@@ -123,7 +125,9 @@ private:
   #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 public:
 //  Model m_model ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   SAX2IPCcurrentCPUdataHandler m_sax2_ipc_current_cpu_data_handler ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Must be created on heap, else left mouse clicks were not processed?
   MyTaskBarIcon * mp_taskbaricon ;
 //  MyTaskBarIcon m_taskbaricon ;

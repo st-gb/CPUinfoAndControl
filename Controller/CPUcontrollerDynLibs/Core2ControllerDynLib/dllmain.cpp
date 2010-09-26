@@ -23,7 +23,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif
 //#include <Windows/GetNumberOfLogicalCPUs.h>
 //  #include <preprocessor_helper_macros.h>  //for BITMASK_FOR_LOWMOST_5BIT
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #include <windows.h> //for LOGFONTA etc. for winuser.h
 #endif
 //#include <winuser.h> //::MessageBox(...)
@@ -49,7 +49,7 @@ Logger g_logger ;
 //declared as extern "C" in C++ code, to prevent them from using C++ naming
 //conventions."
 //For exporting this function with the same name as here in the source file.
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define EXPORT extern "C" __declspec(dllexport)
 #else
   //http://www.linuxquestions.org/questions/programming-9/
@@ -101,7 +101,7 @@ bool Init()
     ) ;
   if( ! g_pfnreadmsr || ! g_pfn_write_msr )
   {
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
     ::MessageBox(
       NULL ,
       "Pointers could not be assigned to the executables export functions\n"
@@ -126,7 +126,7 @@ bool Init()
   return true ;
 }
 
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //For exporting this function with the same name as here in the source file.
 //Especially for MinGW this line is needed in order to be called automatically
 //for DLL attach / detach etc. actions.
@@ -251,6 +251,32 @@ void
   )
 {
   Init() ;
+//  float fVoltageForLowestMulti ;
+//  float fLowestMulti ;
+//  float fVoltageForHighestMulti ;
+//  float fHighestMulti ;
+//
+//  if( GetDefaultPstates(
+//      fVoltageForLowestMulti,
+//      fLowestMulti,
+//      fVoltageForHighestMulti,
+//      fHighestMulti
+//      )
+//    )
+//  {
+//    DEBUGN("adding default voltage " << fVoltageForLowestMulti << " for "
+//      << (WORD) fLowestMulti * g_fReferenceClockInMHz << "MHz" )
+//    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+//      AddDefaultVoltageForFreq( fVoltageForLowestMulti,
+//        (WORD) ( fLowestMulti * g_fReferenceClockInMHz )
+//        ) ;
+//    DEBUGN("adding default voltage " << fVoltageForHighestMulti << " for "
+//      << (WORD) fHighestMulti * g_fReferenceClockInMHz << "MHz" )
+//    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+//      AddDefaultVoltageForFreq( fVoltageForHighestMulti,
+//        (WORD) ( fHighestMulti * g_fReferenceClockInMHz)
+//        ) ;
+//  }
 }
 
 EXPORT

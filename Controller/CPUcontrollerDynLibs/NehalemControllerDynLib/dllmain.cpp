@@ -11,8 +11,7 @@
 #include "stdafx.h"
 #endif
 
-//#include <Controller\I_CPUcontroller.hpp>
-//  #include <Controller/I_CPUaccess.hpp>
+//For GetCurrentReferenceClock(...)
 #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 #include <Controller/CPU-related/Intel/Intel_registers.h>
 //Used by "Nehalem.hpp". The alternative would be:
@@ -29,10 +28,9 @@
 //inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <Controller/AssignPointersToExportedExeFunctions/\
 inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
+//For PrepareForNextPerformanceCountingNehalem(...) (etc.)
 #include <Controller/CPU-related/Intel/Nehalem/Nehalem.hpp>
 #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
-//  #include <Controller/DynLibCPUcontroller.h>
-//  #include <Controller/CPU-related/Intel/Nehalem/NehalemController.hpp>
 //#include <ModelData/ModelData.hpp>
 
 //for BITMASK_FOR_LOWMOST_5BIT
@@ -45,15 +43,14 @@ AssignPointersToExportedExeMSRfunctions.h>
 #ifdef _DEBUG
   #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
-//  #include <Windows/GetNumberOfLogicalCPUs.h>
 
 #include <float.h> //for FLT_MIN
 //#include <sstream> //std::stringstream
 #include <tchar.h> //_T()
 #include <windef.h> //for APIENTRY
-//#include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
-//  #include <winuser.h> //::MessageBox(...)
-
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #include <windows.h> //for MessageBox(...)
+#endif
 #ifdef _DEBUG
   Logger g_logger ;
 #endif
@@ -70,22 +67,12 @@ BYTE g_byValue1 , g_byValue2 ;
 DWORD g_dwValue1 , g_dwValue2 ;
 
 #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
-//#include <Controller\Intel\Nehalem\NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
-//
-//Nehalem::ClocksNotHaltedCPUcoreUsageGetter * gp_nehalem_clocksnothaltedcpucoreusagegetter ;
-//
-//NehalemController g_nehalemcontroller ;
-//Nehalem::ClocksNotHaltedCPUcoreUsageGetter
-//  g_nehalem_clocksnothaltedcpucoreusagegetter( 0, g_nehalemcontroller ) ;
-
-//I_CPUaccess * g_pi_cpuaccess ;
-//Nehalem::ClocksNotHaltedCPUcoreUsageGetter g_clocksnothaltedcpucoreusagegetter ;
 
 //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
 //"When external names follow the C naming conventions, they must also be
 //declared as extern "C" in C++ code, to prevent them from using C++ naming
 //conventions."
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define EXPORT extern "C" __declspec(dllexport)
 #else
   //http://www.linuxquestions.org/questions/programming-9/
@@ -101,7 +88,8 @@ DWORD g_dwValue1 , g_dwValue2 ;
 void InitOtherOSthanWindows()
 {
   #ifdef _DEBUG
-  std::string strExeFileNameWithoutDirs = "" ;//GetStdString( GetExeFileNameWithoutDirs() ) ;
+  std::string strExeFileNameWithoutDirs = "" ;
+    //GetStdString( GetExeFileNameWithoutDirs() ) ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
     ("NehalemControllerDLL_log.txt") ;
   g_logger.OpenFile2( stdstrFilename ) ;
@@ -116,6 +104,7 @@ void InitOtherOSthanWindows()
       << "g_pfn_write_msr:" << g_pfn_write_msr)
 }
 
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 bool InitWindows()
 {
   #ifdef _DEBUG
@@ -160,8 +149,9 @@ bool InitWindows()
     << g_fReferenceClockInMHz )
   return TRUE ;
 }
+#endif //#ifdef _WIN32
 
-#ifdef _WIN32 //Defined in MSVC, MinGW for 32//64 bit Windows.
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //For exporting this function with the same name as here in the source file.
   //Especially for MinGW this line is needed in order to be called automatically
   //for DLL attach / detach etc. actions.
@@ -173,14 +163,14 @@ bool InitWindows()
 #endif //#ifdef _WIN32
 
 DLLMAIN_FRONT_SIGNATURE DllMain(
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   HMODULE hModule,
   DWORD  ul_reason_for_call,
   LPVOID lpReserved
 #endif //#ifdef _WIN32
   )
 {
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   switch (ul_reason_for_call)
   {
   case DLL_PROCESS_ATTACH:
@@ -478,21 +468,12 @@ void
 //    MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
 //      "", MB_OK) ;
 //  #endif
-//    //g_pi_cpuaccess->mp_cpu_controller = & g_nehalemcontroller ;
-//    //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
 //    //MSC-generated version has no problems
 //  //#ifndef _MSC_VER
 //  //  std::stringstream str ;
 //  //  str << "DLL::Init--Adress of CPUaccess: " << pi_cpuaccess ;
 //  //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
 //  //#endif
-//    //pi_cpuaccess->mp_model->m_cpucoredata.
-//    //  //Add to the set of default p-states and to the set of avail. p-states.
-//    //  AddDefaultVoltageForFreq( 0.0 , w ) ;
-//    //pi_cpuaccess->mp_model->m_cpucoredata.
-//    //  //Add to the set of default p-states and to the set of avail. p-states.
-//    //  AddDefaultVoltageForFreq( 0.0 ,931 ) ;
-//    //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
 //  }
 
 EXPORT

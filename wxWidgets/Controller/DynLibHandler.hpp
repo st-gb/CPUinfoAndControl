@@ -30,13 +30,13 @@ namespace wxWidgets
 //    wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
 //    wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   public:
-    void CreateDynLibCPUcontroller(
+    bool CreateDynLibCPUcontroller(
       std::string & strDynLibFilePath
 //      ,
 //      I_CPUaccess * p_i_cpuaccess,
 //      I_UserInterface * mp_userinterface
       ) ;
-    void CreateDynLibCPUcoreUsageGetter(
+    bool CreateDynLibCPUcoreUsageGetter(
       std::string & strDynLibFilePath
 //      ,
 //      I_CPUaccess * p_i_cpuaccess,

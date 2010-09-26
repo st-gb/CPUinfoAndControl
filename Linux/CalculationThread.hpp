@@ -1,4 +1,5 @@
 #pragma once //include guard
+
 //#include "Controller/I_CPUcontrollerAction.hpp"
 #include <Controller/ICalculationThread.hpp>
 #include "ModelData/SpecificCPUcoreActionAttributes.hpp"
@@ -17,7 +18,6 @@ class CalculationThread
 {
 private:
 public:
-  HANDLE m_hThread ;
   bool m_bCalcError ;
   BYTE m_byCoreID ;
   volatile bool m_vbContinue ;

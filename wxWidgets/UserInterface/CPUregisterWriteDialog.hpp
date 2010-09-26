@@ -24,6 +24,7 @@
 #include <wx/dialog.h>
 #include <vector>
 
+//Forward declaration instead of include's(=faster)
 class Model ;
 class I_CPUcontroller ;
 class MSRdata ;
@@ -43,7 +44,7 @@ private:
   wxGridSizer * mp_wxgridsizerAttributeNameAndValue ;
   wxListBox * p_wxlistbox ;
   std::vector<wxTextCtrl * > m_stdvec_p_wxtextctrl ;
-  WORD m_wNumIgnoreChanges ;
+  unsigned long m_wNumIgnoreChanges ;
 public:
   CPUregisterWriteDialog(
     wxWindow * parent ,

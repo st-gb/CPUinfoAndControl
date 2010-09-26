@@ -6,63 +6,51 @@
  */
 
 #include "SAX2_CPUspecificHandler.hpp"
-#include "../stdafx.h"
-#include "../global.h" //for if "COMPILE_WITH_XERCES" is defined or not
-#include "XercesHelper.hpp"
-#include "ModelData/RegisterData.hpp"
-//#include "ModelData/ValueTables.hpp"
-#include <UserInterface/UserInterface.hpp>
-
-//#include "PStates.h"
-#include <xercesc/sax2/Attributes.hpp>
-#include <xercesc/util/XMLString.hpp> //for XMLString::transcode(...)
-#include <ostream>
-//#include <bits/stringfwd.h> //for "endl"
-
-//#include "global.h" //for DEBUG(...) etc.
-
-//#include <string>
-//#include <sstream> //for istringstream
-//#include <iostream>
-//#include "../global.h"
-//#include <exception> //for class std::exception
-#ifndef WIN32
-        #include <stdexcept> //for class "runtime_error"
-#endif //#ifndef WIN32
-//using namespace std;
-
-//#define MB_CUR_MAX 1
-
-
+#ifdef _MSC_VER //if MicroSoft Compiler
+  #include "../stdafx.h"
+#endif //#ifdef _MSC_VER
+#include <ModelData/ModelData.hpp> //class Model
+#include <ModelData/RegisterData.hpp> //class RegisterData
+#include <ModelData/ValueTables.hpp> //ARRAY_INDEX_OF_ATTR_VALUE
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOG(..)
+#include <UserInterface/UserInterface.hpp> //class UserInterface
+#include <Xerces/XercesAttributesHelper.hpp> //class XercesAttributesHelper
+//class XercesHelper::ToStdString(const XMLCh *)
+#include <Xerces/XercesHelper.hpp>
+#include <xercesc/sax2/Attributes.hpp>//Class "XERCES_CPP_NAMESPACE::Attributes"
+//for XERCES_CPP_NAMESPACE::XMLString::transcode(...)
+#include <xercesc/util/XMLString.hpp>
+#include <map> //class std::map
 //With Xerces < Version 2.8:
-//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces statically (else many "LNK2001" and "LNK2019" and linker errors).
+//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
+// statically (else many "LNK2001" and "LNK2019" and linker errors).
 //with Xerces 3.0: "XERCES_STATIC_LIBRARY"
 //And: Add "Advapi32.lib" as additional dependancy for the linker.
-//zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst: "LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in MSVCRT.lib(MSVCR80.dll) definiert."
+//zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst:
+//"LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
+//MSVCRT.lib(MSVCR80.dll) definiert."
 
-XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xerces::"
+//XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the
+//"xerces::"
 
-// need to properly scope any forward declarations
-XERCES_CPP_NAMESPACE_BEGIN
-  class Attributes;
-XERCES_CPP_NAMESPACE_END
-
+#define SUCCESS 1
+#define FAILURE 0
 
 SAX2_CPUspecificHandler::SAX2_CPUspecificHandler(
-    UserInterface & r_userinterface,
-    Model & r_modeldata
+  UserInterface & r_userinterface,
+  Model & r_modeldata
   )
   : 
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   m_bInsideValidCPUIDelement(false)
   , m_bInsideValidMSRelement(false)
-  , m_xerceshelper(r_userinterface)
+//  , m_xerceshelper(r_userinterface)
   //, m_stdvec_msrdata_riter 
 {
-    mp_modeldata = & r_modeldata ;
-    mp_userinterface = & r_userinterface ;
-    m_stdvec_msrdata_riter = mp_modeldata->m_stdvector_msrdata.rend() ;
+  mp_modeldata = & r_modeldata ;
+  mp_userinterface = & r_userinterface ;
+  m_stdvec_msrdata_riter = mp_modeldata->m_stdvector_msrdata.rend() ;
 }
 
 SAX2_CPUspecificHandler::SAX2_CPUspecificHandler(
@@ -74,27 +62,28 @@ SAX2_CPUspecificHandler::~SAX2_CPUspecificHandler() {
 }
 
 void SAX2_CPUspecificHandler::endElement(
-    const   XMLCh * const    cpc_xmlchURI ,
-    const   XMLCh * const    cpc_xmlchLocalName ,
-    const   XMLCh * const    cpc_xmlchQualifiedName //,
-    //const   Attributes &    cr_xercesc_attributes
+  const XMLCh * const cpc_xmlchURI ,
+  const XMLCh * const cpc_xmlchLocalName ,
+  const XMLCh * const cpc_xmlchQualifiedName //,
+  //const   Attributes &    cr_xercesc_attributes
   )
 {
-  char * pchXMLelementName = XMLString::transcode(cpc_xmlchLocalName);
+  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
+    cpc_xmlchLocalName);
   m_strElementName = std::string(pchXMLelementName) ;
   if( m_strElementName == "MSR" )
       m_bInsideValidMSRelement = false ;
   if( m_strElementName == "CPUID" )
     m_bInsideValidCPUIDelement = false ;
   //Release memory AFTER comparing.
-  XMLString::release(&pchXMLelementName);
+  XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
 }
 
 //An MSR data is 64 bits wide. And inside this storage often single different
 //data is stored. E.g. the INTel PERF_CTL MSR has FreqID data bits 0 to 8
 //and VoltageID data from bits 8 to 16.
 void SAX2_CPUspecificHandler::HandleInsideMSRelement(
-  const Attributes & r_xercesc_attributes
+  const XERCES_CPP_NAMESPACE::Attributes & r_xercesc_attributes
   )
 {
   bool bCalculateDiff ;
@@ -102,7 +91,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
   BYTE byBitLength ;
   std::string strMSRdataName = m_strElementName ;
   std::string strXMLattributeName ;
-  if( XercesHelper::GetAttributeValue
+  if( XercesAttributesHelper::GetAttributeValue
       (
       r_xercesc_attributes,//"processor_name"
       //By casting explicitely: avoid Linux g++ warning
@@ -116,7 +105,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
   {
     strMSRdataName = strXMLattributeName ;
   }
-  if( XercesHelper::GetAttributeValue
+  if( XercesAttributesHelper::GetAttributeValue
       (
       r_xercesc_attributes,//"processor_name"
       //By casting explicitely: avoid Linux g++ warning
@@ -128,7 +117,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
       )
     )
   {
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         (
         r_xercesc_attributes,//"processor_name"
         "diff" ,
@@ -141,10 +130,12 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
     }
     else
       bCalculateDiff = false ;
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         (
-        r_xercesc_attributes,//"processor_name"
-        "bitlength" ,
+        r_xercesc_attributes,
+        //Avoid Linux g++ "warning deprecated conversion from string constant
+        //to ‘char*’"
+        (char *) "bitlength" ,
         //strValue
         byBitLength
         )
@@ -175,12 +166,12 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
     BYTE byNumXMLattributes = r_xercesc_attributes.getLength() ;
     if( byNumXMLattributes > 0 )
     {
-	XMLSize_t index = 0 ;
+      XMLSize_t index = 0 ;
       arstdstrResultingNameAndValue[ARRAY_INDEX_OF_ATTR_NAME] = 
-        XercesHelper::ToStdString(r_xercesc_attributes.getLocalName( //0 
+        XercesHelper::ToStdString(r_xercesc_attributes.getLocalName( //0
 	  index ) ) ;
       arstdstrResultingNameAndValue[ARRAY_INDEX_OF_ATTR_VALUE] = 
-        XercesHelper::ToStdString(r_xercesc_attributes.getValue( 
+        XercesHelper::ToStdString(r_xercesc_attributes.getValue(
 	  //(unsigned int) 0
 	  index ) ) ;
     }
@@ -223,7 +214,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
 //data is stored. E.g. the INTel PERF_CTL MSR has FreqID data bits 0 to 8
 //and VoltageID data from bits 8 to 16.
 void SAX2_CPUspecificHandler::HandleInsideCPUIDelement(
-  const Attributes & r_xercesc_attributes
+  const XERCES_CPP_NAMESPACE::Attributes & r_xercesc_attributes
   )
 {
 //  bool bCalculateDiff ;
@@ -232,10 +223,12 @@ void SAX2_CPUspecificHandler::HandleInsideCPUIDelement(
   std::string strMSRdataName = m_strElementName ;
   std::string strXMLattributeName ;
   std::string stdstrGenPurposeRegName ;
-  if( XercesHelper::GetAttributeValue
+  if( XercesAttributesHelper::GetAttributeValue
       (
-      r_xercesc_attributes,//"processor_name"
-      "name" ,
+      r_xercesc_attributes,
+      //Avoid Linux g++ "warning deprecated conversion from string constant
+      //to ‘char*’"
+      (char *) "name" ,
       //strValue
       strXMLattributeName
       )
@@ -263,10 +256,12 @@ void SAX2_CPUspecificHandler::HandleInsideCPUIDelement(
   //if( m_strElementName == "EAX" )
   //  byStartBit = 0 ;
   //if( 
-  if( XercesHelper::GetAttributeValue
+  if( XercesAttributesHelper::GetAttributeValue
       (
-      r_xercesc_attributes,//"processor_name"
-      "startbit" ,
+      r_xercesc_attributes,
+      //Avoid Linux g++ "warning deprecated conversion from string constant
+      //to ‘char*’"
+      (char *) "startbit" ,
       //strValue
       byStartBit
       )
@@ -285,10 +280,12 @@ void SAX2_CPUspecificHandler::HandleInsideCPUIDelement(
     //}
     //else
     //  bCalculateDiff = false ;
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         (
-        r_xercesc_attributes,//"processor_name"
-        "bitlength" ,
+        r_xercesc_attributes,
+        //Avoid Linux g++ "warning deprecated conversion from string constant
+        //to ‘char*’"
+        (char *) "bitlength" ,
         //strValue
         byBitLength
         )
@@ -304,34 +301,31 @@ void SAX2_CPUspecificHandler::HandleInsideCPUIDelement(
 }
 
 void SAX2_CPUspecificHandler::HandleCPUIDelement(
-  const Attributes & r_xercesc_attributes
+  const XERCES_CPP_NAMESPACE::Attributes & r_xercesc_attributes
   )
 {
   DWORD dwIndex ;
   char archAttributeName [] = "index" ;
   char archCoreIDattributeName [] = "core" ;
 //    std::string stdstrAttributeName = "MSR" ;
-  if( //XercesHelper::GetAttributeValue
-    m_xerceshelper.GetAttributeValue
+  if( ConvertXercesAttributesValue<DWORD>
       (
-      r_xercesc_attributes,//"processor_name"
-      archAttributeName ,
-      //* StdStringToDWORD::Convert ,
-      //m_xerceshelper.ToDWORD
-      //strValue
-      //dwIndex
-      dwIndex
+      r_xercesc_attributes,
+      dwIndex ,
+      archAttributeName
       )
     == SUCCESS
     )
   {
     m_bInsideValidCPUIDelement = true ;
     std::string stdstrRegisterName ;
-    m_xerceshelper.GetAttributeValue
+    XercesAttributesHelper::GetAttributeValue
       (
-      r_xercesc_attributes,//"processor_name"
+      r_xercesc_attributes,
       //archAttributeName ,
-      "name" ,
+      //Avoid Linux g++ "warning deprecated conversion from string constant
+      //to ‘char*’"
+      (char *) "name" ,
       //* StdStringToDWORD::Convert ,
       //m_xerceshelper.ToDWORD
       //strValue
@@ -344,11 +338,11 @@ void SAX2_CPUspecificHandler::HandleCPUIDelement(
       ) ;
     m_stdvec_cpuiddata_riter = mp_modeldata->m_stdvector_cpuiddata.rbegin() ;
     if( //XercesHelper::GetAttributeValue
-      m_xerceshelper.GetAttributeValue
+        ConvertXercesAttributesValue<DWORD>
         (
-        r_xercesc_attributes,//"processor_name"
-        archCoreIDattributeName ,
-        dwIndex
+        r_xercesc_attributes ,
+        dwIndex ,
+        archCoreIDattributeName
         )
       == SUCCESS
       )
@@ -359,40 +353,38 @@ void SAX2_CPUspecificHandler::HandleCPUIDelement(
 }
 
 void SAX2_CPUspecificHandler::HandleMSRelement(
-  const Attributes & r_xercesc_attributes
+  const XERCES_CPP_NAMESPACE::Attributes & r_xercesc_attributes
   )
 {
   DWORD dwIndex ;
   char archAttributeName [] = "index" ;
   char archCoreIDattributeName [] = "core" ;
 //    std::string stdstrAttributeName = "MSR" ;
-  if( //XercesHelper::GetAttributeValue
-    m_xerceshelper.GetAttributeValue
+  if( ConvertXercesAttributesValue<DWORD>
       (
       r_xercesc_attributes,//"processor_name"
-      archAttributeName ,
+      dwIndex ,
+      archAttributeName
       //* StdStringToDWORD::Convert ,
       //m_xerceshelper.ToDWORD
       //strValue
-      //dwIndex
-      dwIndex
       )
     == SUCCESS
     )
   {
     m_bInsideValidMSRelement = true ;
     std::string stdstrRegisterName ;
-    if(
-      m_xerceshelper.GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         (
-        r_xercesc_attributes,//"processor_name"
+        r_xercesc_attributes,
         //archAttributeName ,
-        "name" ,
+        //Avoid Linux g++ "warning deprecated conversion from string constant
+        //to ‘char*’"
+        (char *) "name" ,
         //* StdStringToDWORD::Convert ,
         //m_xerceshelper.ToDWORD
         //strValue
-        //dwIndex
-      stdstrRegisterName
+        stdstrRegisterName
         )
       == SUCCESS
       && stdstrRegisterName != ""
@@ -405,30 +397,29 @@ void SAX2_CPUspecificHandler::HandleMSRelement(
       mp_modeldata->m_stdvector_msrdata.push_back(MSRdata(dwIndex)) ;
     m_stdvec_msrdata_riter = mp_modeldata->m_stdvector_msrdata.rbegin() ;
   }
-  if( //XercesHelper::GetAttributeValue
-    m_xerceshelper.GetAttributeValue
+  if( ConvertXercesAttributesValue<DWORD>
       (
-      r_xercesc_attributes,//"processor_name"
-      archCoreIDattributeName ,
-      dwIndex
+      r_xercesc_attributes,
+      dwIndex ,
+      archCoreIDattributeName
       )
     == SUCCESS
     )
   {
-		m_stdvec_msrdata_riter->m_byCoreID = dwIndex ;
+    m_stdvec_msrdata_riter->m_byCoreID = dwIndex ;
   }
 }
 
 void SAX2_CPUspecificHandler::startElement
   (
-  const   XMLCh * const    cpc_xmlchURI,
-  const   XMLCh * const    cpc_xmlchLocalName,
-  const   XMLCh * const    cpc_xmlchQualifiedName,
-  const   //xercesc_2_8::
-    Attributes & r_xercesc_attributes
+  const XMLCh * const cpc_xmlchURI,
+  const XMLCh * const cpc_xmlchLocalName,
+  const XMLCh * const cpc_xmlchQualifiedName,
+  const XERCES_CPP_NAMESPACE::Attributes & r_xercesc_attributes
   )
 {
-  char * pchXMLelementName = XMLString::transcode(cpc_xmlchLocalName);
+  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
+    cpc_xmlchLocalName);
   std::string strValue ;
   LOG( "XML element: " << pchXMLelementName << std::endl );
   m_strElementName = std::string(pchXMLelementName) ;
@@ -450,22 +441,20 @@ void SAX2_CPUspecificHandler::startElement
   else if( m_strElementName == "MSR" )
   {
     HandleMSRelement(r_xercesc_attributes) ;
-	}
+  }
   else if( m_strElementName == "CPUID" )
   {
     HandleCPUIDelement(r_xercesc_attributes) ;
   }
-//Release memory AFTER comparing.
-  XMLString::release(&pchXMLelementName);
+  //Release memory AFTER comparing.
+  XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
 }
 
-	void SAX2_CPUspecificHandler::fatalError(const SAXParseException& exception)
-	{
-	    char* message = XMLString::transcode(exception.getMessage());
-      //DEBUG_COUT( << "SAX2 handler: Fatal Error: " << message
-	     //    << " at line: " << exception.getLineNumber()
-	     //    << endl ) ;
-      LOG( "SAX2 handler: Fatal Error: " << message
-         << " at line: " << exception.getLineNumber()
-         << "\n" ) ;
-	}
+void SAX2_CPUspecificHandler::fatalError(
+  const XERCES_CPP_NAMESPACE::SAXParseException & r_xercesc_sax_parse_exception)
+{
+  LOG( "SAX2 handler: Fatal Error: " << XercesHelper::ToStdString(
+    r_xercesc_sax_parse_exception.getMessage() )
+   << " at line: " << r_xercesc_sax_parse_exception.getLineNumber()
+   << "\n" ) ;
+}

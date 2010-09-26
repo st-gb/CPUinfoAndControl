@@ -1,4 +1,4 @@
-#ifdef COMPILE_WITH_XERCES
+//#ifdef COMPILE_WITH_XERCES
 //  #include "../stdafx.h"
 //  #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
@@ -201,4 +201,4 @@
         )
       << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber() ) ;
 	}
-#endif //#ifdef COMPILE_WITH_XERCES
+//#endif //#ifdef COMPILE_WITH_XERCES

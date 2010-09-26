@@ -16,7 +16,7 @@ typedef unsigned long DWORD;
 //-and also by the CPU controller DLL source code.
 
 //( * dll_GetCurrentPstate_type)
-#ifdef _WIN32 //defined under MSVC and (eclipse) MinGW (also 64 bit Windows)
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define CALLING_CONVENTION _cdecl
 #else
   #define CALLING_CONVENTION /* ->empty */

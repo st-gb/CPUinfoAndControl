@@ -382,6 +382,7 @@ void MainController::ReadMainConfig(
   //The main cfg also contains the exclusion log message filter--load it in any
   //case.
   SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
+  DEBUGN( "number of Trie nodes: " << g_logger.m_trie.m_dwNumberOfNodes )
   ReadXMLfileInitAndTermXerces(
     //const char* xmlFile
     stdstrMainConfigFileName.c_str()

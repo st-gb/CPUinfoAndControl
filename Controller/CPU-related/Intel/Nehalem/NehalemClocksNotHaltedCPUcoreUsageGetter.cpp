@@ -15,9 +15,13 @@
 //#include <Controller/GriffinController.hpp>
 //#include <Controller/Intel/Nehalem/NehalemController.hpp>
 #include <Controller/I_CPUaccess.hpp>
-#include <Controller/value_difference.h> //ULONG_VALUE_DIFF
-#include <preprocessor_helper_macros.h>
-#include <Windows.h> //for GetTickCount: include Winbase.h (include Windows.h)
+#include <preprocessor_macros/bitmasks.h> //BITMASK_FOR_LOWMOST_8BIT
+#include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
+#ifdef _WIN32 //Built-in preprocessor macro for MSVC, MinGW (also for 64 bit)
+  #include <windows.h> // for GetTickCount: include Winbase.h (include Windows.h)
+#else
+  #include <Linux/GetTickCount.hpp>
+#endif
 //#include <Controller/I_CPUcontroller.hpp> //ReadmsrEx
 
 //TODO correct treatment of value overflow? bitwidth of value is important

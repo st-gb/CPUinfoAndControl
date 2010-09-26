@@ -13,7 +13,10 @@
 #endif
 #include "PerCPUcoreAttributes.hpp"
 
-extern CPUcontrolBase * gp_cpucontrolbase ;
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  extern CPUcontrolBase * gp_cpucontrolbase ;
+#endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+
 #ifdef COMPILE_WITH_LOG
 extern Logger g_logger ;
 #endif //#ifdef COMPILE_WITH_LOG

@@ -47,23 +47,32 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
 //  , I_CPUcontroller * & r_p_cpucontroller
   )
 {
-  std::string stdstr = stdstrCPUtypeRelativeDirPath + "CPUcontroller.cfg" ;
+  std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
+    "CPUcontroller.cfg" ;
+  std::string stdstr = stdstrFilePath ;
   if( ReadFileContent( stdstr ) )
   {
-    std::string stdstrFilePath = "CPUcontrollerDynLibs/" + stdstr ;
-//    std::string stdstrFullFilePath =
-    m_model.m_stdstrCPUcontrollerDynLibPath = m_dynlibhandler.
-      GetDynLibPath(stdstrFilePath) ;
-    LOGN("should load/ attach "
-//      << stdstrFullFilePath
-      << m_model.m_stdstrCPUcontrollerDynLibPath
-      << " as CPU controller" )
-    m_dynlibhandler.CreateDynLibCPUcontroller(
-//      stdstrFullFilePath //,
-      m_model.m_stdstrCPUcontrollerDynLibPath
-//      mp_i_cpuaccess,
-//      mp_userinterface
-      ) ;
+    if( stdstr.empty() )
+      LOGN("Do not load/ attach CPU core usage getter because string read "
+        "from file \"" << stdstrFilePath
+        << " that should contain the dynamic libary name seems to be empty" )
+    else
+    {
+      std::string stdstrFilePath = "CPUcontrollerDynLibs/" + stdstr ;
+  //    std::string stdstrFullFilePath =
+      m_model.m_stdstrCPUcontrollerDynLibPath = m_dynlibhandler.
+        GetDynLibPath(stdstrFilePath) ;
+      LOGN("should load/ attach "
+  //      << stdstrFullFilePath
+        << m_model.m_stdstrCPUcontrollerDynLibPath
+        << " as CPU controller" )
+      m_dynlibhandler.CreateDynLibCPUcontroller(
+  //      stdstrFullFilePath //,
+        m_model.m_stdstrCPUcontrollerDynLibPath
+  //      mp_i_cpuaccess,
+  //      mp_userinterface
+        ) ;
+    }
   }
 }
 
@@ -72,22 +81,31 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
 //  , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter
   )
 {
-  std::string stdstr = stdstrCPUtypeRelativeDirPath + "CPUcoreUsageGetter.cfg" ;
+  std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
+    "CPUcoreUsageGetter.cfg" ;
+  std::string stdstr = stdstrFilePath ;
   if( ReadFileContent( stdstr ) )
   {
-    std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstr ;
-    std::string stdstrFullFilePath = m_dynlibhandler.
-      GetDynLibPath(stdstrFilePath) ;
-    m_model.m_stdstrCPUcoreUsageGetterDynLibPath =
-      stdstrFullFilePath ;
-    LOGN("should load/ attach " << stdstrFullFilePath
-      << " as CPU core usage getter" )
-    m_dynlibhandler.CreateDynLibCPUcoreUsageGetter(
-      stdstrFullFilePath
-//      ,
-//      mp_i_cpuaccess,
-//      mp_userinterface
-      ) ;
+    if( stdstr.empty() )
+      LOGN("Do not load/ attach CPU core usage getter because string read from "
+        "file " << stdstrFilePath
+        << " that should contain the dynamic libary name seems to be empty" )
+    else
+    {
+      std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstr ;
+      std::string stdstrFullFilePath = m_dynlibhandler.
+        GetDynLibPath(stdstrFilePath) ;
+      m_model.m_stdstrCPUcoreUsageGetterDynLibPath =
+        stdstrFullFilePath ;
+      LOGN("should load/ attach " << stdstrFullFilePath
+        << " as CPU core usage getter" )
+      m_dynlibhandler.CreateDynLibCPUcoreUsageGetter(
+        stdstrFullFilePath
+  //      ,
+  //      mp_i_cpuaccess,
+  //      mp_userinterface
+        ) ;
+    }
   }
 }
 
@@ -116,6 +134,10 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
       delete mp_cpucontroller ;
     //If pointer is not NULL.
     if( mp_cpucoreusagegetter )
+      //TODO problem under _Linux_: when unloading the dyn lib the global
+      // variables ( "g_stdstrLog" etc.) that
+      // are _automatically shared between the exe and DLL) are destroyed.->Program
+      // crash when accessing them.
       delete mp_cpucoreusagegetter ;
     //if( ! mp_dynfreqscalingthread )
     //    delete mp_dynfreqscalingthread ;

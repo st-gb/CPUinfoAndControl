@@ -116,7 +116,7 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
 
 void MyTaskBarIcon::CreatePowerSchemesMenu()
 {
-#ifdef _WIN32 //Defined for MinGW, MSVC (even for 64 bit).
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WORD wEventID = LAST_ID ;
   wxMenu * wxmenuPowerSchemes = new wxMenu;
   std::set<std::wstring> set_wstr ;
@@ -153,7 +153,7 @@ void MyTaskBarIcon::CreatePowerSchemesMenu()
 
 void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
-#ifdef _WIN32 //Defined for MinGW, MSVC (even for 64 bit).
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   int nEventID = wxevent.GetId() ;
   LOGN( "taskbar icon event proc " )
   PowerProfDynLinked * p_powerprofdynlinked =

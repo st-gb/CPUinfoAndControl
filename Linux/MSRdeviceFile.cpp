@@ -5,10 +5,14 @@
  * Created on 15. November 2009, 18:38
  */
 
+#include <global.h> //for SUCCESS, FAILURE
 #include "MSRdeviceFile.h"
 //#include <Controller/character_string/stdstring_format.hpp>
+//Linker? error when <errno.h> was _also_ (->twice) included (indirectly) from
+// other include files before.
 //for GetErrorMessageFromLastErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <Controller/character_string/stdstring_format.hpp> //to_stdstring(T )
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUG()
 //#include <preprocessor_macros/bitmasks.h>
 //#include <Linux/EnglishMessageFromErrorCode.h>
@@ -26,6 +30,8 @@
 "-This program uses a device file to communicate with the CPU for higher "\
 "privileges. Does the program have sufficient rights for accessing "\
 "(read,write[,...]) the file ?\n"
+
+//extern int errno;
 
 //MSRdeviceFile::MSRdeviceFile()
 //{
@@ -109,7 +115,11 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //      int i = e.type ;
       std::string stdstrMessage = std::string("Failed to open the file \"") +
         stdstrMSRfilePath + "\" cause: " ;//" + e.what() ;
-      switch (errno)
+      //TODO exchange i by errno
+//      int nErrno = 0 ;
+      switch ( errno
+        //nErrno
+        )
       {
         case EACCES:  stdstrMessage += "Permission denied.\n"
           "possible solution: run this program as administrator/root\n"
@@ -126,9 +136,13 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
           break;
         default:      stdstrMessage += "Unknown error.\n"; break;
       }
+      LOGN(stdstrMessage)
       UIconfirm( stdstrMessage ) ;
       throw CPUaccessException(stdstrMessage) ;
     }
+    else
+      LOGN("successfully opened file \"" << stdstrMSRfilePath << "\""
+        "for reading and writing ")
   }
 }
 
@@ -162,23 +176,27 @@ BOOL MSRdeviceFile::CpuidEx(
 {
   BOOL bReturn = FAILURE ;
   //__get_cpuid_max() ;
-  unsigned int uiEAX ;
-  unsigned int uiEBX ;
-	unsigned int uiECX ;
-  unsigned int uiEDX ;
+//  unsigned int uiEAX ;
+//  unsigned int uiEBX ;
+//  unsigned int uiECX ;
+//  unsigned int uiEDX ;
   //TODO set CPU (core) affinity,
   //TODO use parameters _directly_ for "__get_cpuid(...)"
   bReturn = __get_cpuid (
     dwFunctionIndex //unsigned int __level,
-	  , & uiEAX //, p_dwEAX //unsigned int *__eax,
-    , & uiEBX //, p_dwEBX //unsigned int *__ebx,
-	  , & uiECX //p_dwECX //unsigned int *__ecx,
-    , & uiEDX //p_dwEDX //unsigned int *__edx
+//    , & uiEAX //
+    , (unsigned int *) p_dwEAX //unsigned int *__eax,
+//    , & uiEBX //
+    , (unsigned int *) p_dwEBX //unsigned int *__ebx,
+//    , & uiECX //
+    , (unsigned int *) p_dwECX //unsigned int *__ecx,
+//    , & uiEDX //
+    , (unsigned int *) p_dwEDX //unsigned int *__edx
     ) ;
-  * p_dwEAX = uiEAX ;
-  * p_dwEBX = uiEBX ;
-  * p_dwECX = uiECX ;
-  * p_dwEDX = uiEDX ;
+//  * p_dwEAX = uiEAX ;
+//  * p_dwEBX = uiEBX ;
+//  * p_dwECX = uiECX ;
+//  * p_dwEDX = uiEDX ;
 
   return bReturn ;
 }
@@ -317,9 +335,12 @@ BOOL // TRUE: success, FALSE: failure
     -1
     )
   {
-    UIconfirm( std::string("Seeking failed in file ") + getMSRdeviceFilePath(
-      m_byCoreID) + std::string("\n")
-      );
+    std::string stdstrErrMsg = ("Seeking failed in file ") + getMSRdeviceFilePath(
+      m_byCoreID) //+ std::string("\n")
+      + "to offset" + to_stdstring(dwIndex) + ":"
+      + GetErrorMessageFromLastErrorCodeA() ;
+    LOGN(stdstrErrMsg)
+//    UIconfirm( stdstrErrMsg );
     return FAILURE;
   }
   m_ssize_t =

@@ -1,12 +1,12 @@
 #pragma once //include guard
 
-//#include <bits/stl_algobase.h> //for std::max(...). else:522: error: expected unqualified-id before '(' token
+//#include <bits/stl_algobase.h> //for std::max(...). else:522: error:
+// expected unqualified-id before '(' token
 #include <vector> //for std::vector
 //Must be included here in the header file (else linker error LNK2001)
 //#include <wx/checkbox.h>
 //#include <wx/dialog.h>
 #include <wx/event.h>
-//#include <ModelData/PStates.h> //for class PState
 
 //Forward declarations (to  avoid including the wxWidgets header files HERE)
 class wxBoxSizer ;
@@ -100,7 +100,7 @@ public:
   void OnSetAsWantedVoltageButton(wxCommandEvent & );
   void OnSpinVoltageDown(wxSpinEvent & event) ;
   void OnSpinVoltageUp(wxSpinEvent & event) ;
-  void OutputFreqAndVoltageByControlValues() ;
+  void OutputFrequencyByControlValues() ;
   void OutputVoltageByControlValues() ;
   void RemoveAttention(wxWindow * p_wxwindow);
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;
@@ -110,6 +110,6 @@ public:
   WORD SetNearestLowerPossibleFreqInMHz(
     WORD wFreqInMHz ) ;
   void VoltageIDchanged(int nNewValue) ;
-  //Neccessary in order to get scroll events; to avoid compilation errors.
+  //Necessary in order to get scroll events; to avoid compilation errors.
   DECLARE_EVENT_TABLE()
 };

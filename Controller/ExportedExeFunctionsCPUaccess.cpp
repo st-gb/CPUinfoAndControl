@@ -5,6 +5,7 @@
  *      Author: Stefan
  */
 #include "ExportedExeFunctionsCPUaccess.hpp"
+#include <Controller/Sleep.hpp> //for inline OperatingSystem::Sleep(...)
 //#include <Controller/CPU-related/ReadTimeStampCounter.h>
 //#include <Controller/CPU-related/AssignPointersToExportedExeMSRfunctions.hpp>
 #include <Controller/AssignPointersToExportedExeFunctions/\
@@ -115,7 +116,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 
   void ExportedExeFunctionsCPUaccess::Sleep(WORD wMillis)
   {
-    ::Sleep( wMillis ) ;
+    OperatingSystem::Sleep( wMillis ) ;
   }
 
   BOOL

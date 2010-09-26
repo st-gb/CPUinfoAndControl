@@ -44,8 +44,8 @@ public:
   ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
 protected:
   bool m_bXercesSuccessfullyInitialized ;
-  dynlibhandler_type m_dynlibhandler ;
 public:
+  dynlibhandler_type m_dynlibhandler ;
   I_CPUaccess * mp_i_cpuaccess ;
   Model m_model ;
   UserInterface * mp_userinterface ;

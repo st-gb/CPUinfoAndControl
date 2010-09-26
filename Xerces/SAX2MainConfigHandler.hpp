@@ -1,4 +1,4 @@
-#ifdef COMPILE_WITH_XERCES
+//#ifdef COMPILE_WITH_XERCES
 //#include <global.h> //for DEBUG(...) etc.
 
 //Include "xerces...\include" in the "include path" for the following "#include"s.
@@ -57,4 +57,4 @@ public:
     const XERCES_CPP_NAMESPACE::Attributes & attrs
   );
 };
-#endif//COMPILE_WITH_XERCES
+//#endif//COMPILE_WITH_XERCES

@@ -121,20 +121,21 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
     wxALIGN_TOP
     , 5 //Determines the border width
     );
-
   p_wxboxsizerCPUcoreFrequencyInMHz->Add(
     mp_wxsliderFreqInMHz
     , 1
     //,wxEXPAND | wxALL
     , wxLEFT | wxRIGHT
-    , 5 );
-
+    , 0 //Determines the border width
+    );
   mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T("") );
   p_wxboxsizerCPUcoreFrequencyInMHz->Add(
     mp_wxstatictextFreqInMHz
-    , 1
+//    , 1
+    , 0 //0=the control should not take more space if the sizer is enlarged
     , wxLEFT | wxRIGHT
-    , 5 );
+    , 5 //Determines the border width
+    );
   p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
     p_wxboxsizerCPUcoreFrequencyInMHz ,
     1 ,
@@ -589,6 +590,8 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //Force the neighbour controls of "voltage in volt" to be resized.
   Layout() ;
   HandlePstateMayHaveChanged() ;
+  OutputVoltageByControlValues() ;
+  OutputFrequencyByControlValues() ;
   LOGN("end of voltage and freq dialog creation")
 }
 
@@ -966,26 +969,7 @@ void FreqAndVoltageSettingDlg::HandleMultiplierValueChanged()
   //      )
   //      RemoveAttention(mp_wxsliderCPUcoreFrequencyMultiplier);
   //HandleCPUcoreFrequencyOrVoltageChanged(mp_wxsliderCPUcoreFrequencyMultiplier);
-  float fFreq //= //mp_cpucontroller->GetCPUcoreFrequencyInMHz(
-    //wSliderValue ) ;
-    //GetCPUcoreFrequencyFromSliderValue() ;
-    ;
-  float fMultiplier = GetMultiplierFromSliderValue() ;
-  fFreq = fMultiplier * mp_cpucontroller->m_fReferenceClockInMHz ;
-  m_wPreviousFrequencyInMHz =
-    //"(WORD)" to avoid g++ compiler warning
-    // "converting to `WORD' from `float'"
-    (WORD) fFreq ;
-  mp_wxstatictextFreqInMHz->SetLabel(
-    wxString::Format(
-      //We need a _T() macro (wide char-> L"", char->"") for EACH
-      //line to make it compatible between char and wide char.
-      wxT("multi:%.3f\n%.3f MHz"), //PState::GetVoltageInVolt(
-      fMultiplier, fFreq
-      )
-    );
-  //The freq label may need more space now, so recalc its size.
-  p_wxboxsizerCPUcoreFrequencyInMHz->RecalcSizes() ;
+  OutputFrequencyByControlValues() ;
   mp_mainframe->m_wFreqInMHzOfCurrentActiveCoreSettings =
       m_wPreviousFrequencyInMHz ;
 //  m_byPreviousMultiplierValue = byCurrentCPUcoreFrequencyMultiplierValue ;
@@ -1363,10 +1347,10 @@ void FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton(
       "clock and so the CPU core frequency is is 0 MHz/ unknown"),
       wxT("error")) ;
 }
-void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
+void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewSliderValue)
 {
   LOGN("VoltageIDchanged()")
-  mp_wxsliderCPUcoreVoltage->SetValue(nNewValue) ;
+  mp_wxsliderCPUcoreVoltage->SetValue(nNewSliderValue) ;
 //  float fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
 //  float fMaxVoltage = mp_cpucontroller->GetMaximumVoltageInVolt() ;
 //  //Max voltage ID is not always the max voltage: with AMD Griffin this is
@@ -1402,21 +1386,25 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
   mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings =
 //    mp_cpucontroller->GetVoltageInVolt(nNewValue) ;
 //      mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ nNewValue] ;
-      GetVoltageInVoltFromSliderValue() ;
+    GetVoltageInVoltFromSliderValue() ;
+  LOGN("voltage in Volt corresponding to the slider value " << nNewSliderValue
+    << " :" << mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings )
   if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsChecked() )
   {
-    float fStableVoltageToSet = mp_cpucontroller->GetVoltageInVolt(
-        nNewValue ) 
-        //Add 0.07 V for stability safety
-        + 0.07 ;
-    WORD wVoltageID = //In order to get the voltage in Volt that corresponds
-      //to a voltage ID boundary first convert to the corresponding 
-      //(possibly rounded) voltage ID.
-      mp_cpucontroller->GetVoltageID(
-      fStableVoltageToSet ) ;
-    //Store value in member for OnSetAsMinimumVoltage().
-    m_fWantedVoltageInVolt = mp_cpucontroller->GetVoltageInVolt( 
-      wVoltageID ) ;
+    //float fStableVoltageToSet = mp_cpucontroller->GetVoltageInVolt(
+      //nNewSliderValue )
+    m_fWantedVoltageInVolt =
+      mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings
+      //Add 0.07 V for stability safety
+      + 0.07 ;
+//    WORD wVoltageID = //In order to get the voltage in Volt that corresponds
+//      //to a voltage ID boundary first convert to the corresponding
+//      //(possibly rounded) voltage ID.
+//      mp_cpucontroller->GetVoltageID(
+//      fStableVoltageToSet ) ;
+//    //Store value in member for OnSetAsMinimumVoltage().
+//    m_fWantedVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(
+//      wVoltageID ) ;
     mp_wxstatictextWantedVoltageInVolt->SetLabel( 
       wxString::Format(
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
@@ -1433,8 +1421,33 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewValue)
   mp_mainframe->m_wxtimer.Start(mp_mainframe->m_dwTimerIntervalInMilliseconds);
 }
 
-void FreqAndVoltageSettingDlg::OutputFreqAndVoltageByControlValues()
+void FreqAndVoltageSettingDlg::OutputFrequencyByControlValues()
 {
+  //TODO Does not show the "... MHz" when the multiplier has at leat 1 digit
+  // more than the previous multiplier AND the value come from the service
+  if( mp_cpucontroller )
+  {
+    float fFreq //= //mp_cpucontroller->GetCPUcoreFrequencyInMHz(
+      //wSliderValue ) ;
+      //GetCPUcoreFrequencyFromSliderValue() ;
+      ;
+    float fMultiplier = GetMultiplierFromSliderValue() ;
+    fFreq = fMultiplier * mp_cpucontroller->m_fReferenceClockInMHz ;
+    m_wPreviousFrequencyInMHz =
+      //"(WORD)" to avoid g++ compiler warning
+      // "converting to `WORD' from `float'"
+      (WORD) fFreq ;
+    mp_wxstatictextFreqInMHz->SetLabel(
+      wxString::Format(
+        //We need a _T() macro (wide char-> L"", char->"") for EACH
+        //line to make it compatible between char and wide char.
+        wxT("multi:%.3f\n%.3f MHz"), //PState::GetVoltageInVolt(
+        fMultiplier, fFreq
+        )
+      );
+    //The freq label may need more space now, so recalc its size.
+    p_wxboxsizerCPUcoreFrequencyInMHz->RecalcSizes() ;
+  }
 }
 
 void FreqAndVoltageSettingDlg::OutputVoltageByControlValues()
@@ -1478,6 +1491,10 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
   if( fVoltageInVolt > 0.0 )
   {
     mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
+    LOGN("settings dialog--voltage to set:"
+      << fVoltageInVolt
+      << "multiplier to set:" << GetMultiplierFromSliderValue()
+      )
     WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
     if( wNumCPUcores > 1 )
     {

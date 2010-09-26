@@ -50,7 +50,7 @@ public:
 //    , I_CPUcontroller * p_cpucontroller
 //    , CPUcoreData & r_cpucoredata
 //    ) ;
-  DynFreqScalingThreadBase::DynFreqScalingThreadBase(
+  DynFreqScalingThreadBase(
     CPUcontrolBase & r_cpucontrolbase
     , CPUcoreData & r_cpucoredata
     ) ;

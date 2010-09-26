@@ -37,7 +37,7 @@ int main( int argc, char *  argv[] )
   //The main cfg also contains the exclusion log message filter--load it in any
   //case.
   SAX2MainConfigHandler sax2mainconfighandler( model, & dummyuserinterface );
-  ReadXMLdocumentInitAndTermXerces(
+  ReadXMLfileInitAndTermXerces(
     //const char* xmlFile
     stdstrMainConfigFileName.c_str()
     , model

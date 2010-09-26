@@ -3,9 +3,10 @@
 #ifndef I_CPUACCESS_H
 #define I_CPUACCESS_H
 
-#include "global.h" //for BYTE etc.
+//#include "global.h" //for BYTE etc.
+#include <windef.h> //BYTE, BOOL (etc.)
 #include <string>
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <windef.h> //for BOOL etc.
   #include <basetsd.h> //DWORD_PTR
   //#include <WINDOWS.h> //for BOOL et.c
