@@ -68,8 +68,8 @@ public:
   #define COMPILE_WITH_SERVICE_PROCESS_CONTROL
 #endif
 
-class MainFrame:
-  public wxFrame //,
+class MainFrame
+  : public wxFrame //,
 //  //Must be public, else MSVC++ error "C4996"
 //  public UserInterface
   //, public wxTimer 
@@ -201,9 +201,9 @@ private:
 //  void CreateAndInitMenuItemPointers() ;
 public:
   MainFrame(
-    const wxString& title, 
-    const wxPoint & pos,
-    const wxSize & size
+    const wxString & cr_wxstrTitle,
+    const wxPoint & cr_wxpointPos,
+    const wxSize & cr_wxsize
     , I_CPUcontroller * p_cpucontroller
     //, CPUcoreData * p_cpucoredata
     , Model * p_model

@@ -131,6 +131,8 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
   wxBoxSizer * p_wxsizerButtons = new wxBoxSizer( wxVERTICAL ) ;
   mp_wxbuttonWriteMSR = new wxButton( this, ID_WriteToMSR ,
     wxT("write to MSR") ) ;
+  mp_wxbuttonWriteMSR->SetToolTip( wxT("writes to the CPU's Model Specific "
+    "Register") ) ;
   //mp_sizerAttributeNameAndValue->Add( mp_wxbuttonWriteMSR) ;
   p_wxsizerButtons->Add( mp_wxbuttonWriteMSR) ;
   wxButton * p_wxbuttonReadFromMSR = new wxButton( this, ID_ReadFromMSR , 

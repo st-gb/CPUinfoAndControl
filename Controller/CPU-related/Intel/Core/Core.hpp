@@ -34,7 +34,8 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
   BYTE g_byValue1, g_byValue2 ;
 //  extern float g_fReferenceClockInMHz ;
   float g_fReferenceClockInMHz ;
-  DWORD g_dwValue1, g_dwValue2 ;
+//  DWORD g_dwValue1, g_dwValue2 ;
+  extern DWORD g_dwValue1, g_dwValue2 ;
   float g_fValue1 ;
 
   inline float GetMultiplierAsEncodedInMSRIntelCore(DWORD dwValue ) ;
@@ -104,6 +105,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
   inline float * GetAvailableVoltagesInVoltIntelCore(WORD & r_byNumVoltages)
   {
     float * ar_f = NULL ;
+    //                    byte index:7  6  5  4 3 2  1  0
     //ex.: "value at MSR address 408:6 23 73 42 6 0 73 42 "
     // 23: min. voltage: = 0.7125 + 23*0.0125V = 1 V
     // 42=max. Spannung: 0.7125V + 42 * 0.0125V = 0.7125V + 0.525 = 1.2375V
@@ -112,19 +114,20 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
       ReadMSR(
       IA32_PERF_STATUS,
       & g_dwValue1,// bit  0-31 (register "EAX")
-      & g_dwValue2,
+      & g_dwValue2, //bytes 4-8
       1 //<< wCoreID //m_dwAffinityMask
       ) ;
     if( g_byValue1 ) //Reading from ModelSpecificRegister succeeded.
     {
-      //Lowest voltage ID.
-      g_byValue2 = ( ( g_dwValue1 >> 16 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
+//      //Lowest voltage ID.
+//      g_byValue2 = ( ( g_dwValue2 >> 16 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
       //Number of different voltages = highest voltage ID-lowest voltage ID + 1
 //      g_byValue1 =
       r_byNumVoltages =
         //Highest voltage ID.
-        ( g_dwValue1 & BITMASK_FOR_LOWMOST_8BIT ) -
-        g_byValue2
+        ( g_dwValue2 & BITMASK_FOR_LOWMOST_8BIT )
+//        //lowest voltage ID
+//        - g_byValue2
         + 1 ;
       ar_f = new float [ //g_byValue1
         r_byNumVoltages ] ;
@@ -135,8 +138,9 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
         for( g_byValue1 = 0 ; g_byValue1 < r_byNumVoltages ; ++ g_byValue1 )
         {
           ar_f[g_byValue1] = 0.7125 +
-            //Minimum voltage ID + Index
-            ( g_byValue2 + g_byValue1 )
+//            //Minimum voltage ID + Index
+//            ( g_byValue2 + g_byValue1 )
+            g_byValue1
             * 0.0125 ;
         }
       }
@@ -154,8 +158,9 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 
   inline float GetMultiplierAsEncodedInMSRIntelCore(DWORD dwValue )
   {
-    static BYTE byFrequencyIDentifier =
+    static BYTE byFrequencyIDentifier = 0 ;
     //g_byValue1 =
+    byFrequencyIDentifier =
       ( dwValue >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
     //1000 0110 bin (134dec) was multiplier 3
     //      110 bin=6dec
@@ -164,25 +169,26 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     //         1001 bin = 9dec
     //-> only the lowmost 4 bits are used?!
     //g_byValue2 = g_byValue1 & BITMASK_FOR_LOWMOST_5BIT ;
-    byFrequencyIDentifier &= BITMASK_FOR_LOWMOST_5BIT ;
+//    byFrequencyIDentifier &= BITMASK_FOR_LOWMOST_5BIT ;
     if( //g_byValue1 & 128
-        byFrequencyIDentifier & 128
+        byFrequencyIDentifier & 128 //128dec = 1000 0000bin
       )
     {
       //Intel: "15:0 Current performance State Value"
       //   "63:16 Reserved"
       return (float) //g_byValue2 / 2.0 ;
-        byFrequencyIDentifier / 2.0 ;
+        ( byFrequencyIDentifier & BITMASK_FOR_LOWMOST_5BIT ) / 2.0 ;
     }
     else
     {
       if( //Half multi
 //        g_byValue1 & 64
-        byFrequencyIDentifier & 64
+        byFrequencyIDentifier & 64 //64dec = 0100 0000bin
         )
         return (float) //g_byValue2 + 0.5 ;
-          byFrequencyIDentifier + 0.5 ;
+          ( byFrequencyIDentifier & BITMASK_FOR_LOWMOST_5BIT ) + 0.5 ;
       else
+        //Neither bit 7 nor bit 8 is set.
         return //g_byValue2 ;
           byFrequencyIDentifier ;
     }

@@ -22,7 +22,7 @@ CalculationThread::CalculationThread(
   BYTE byCoreID ,
   DWORD 
 //#ifdef _MSC_VER
-#ifdef _WINDOWS
+#ifdef _WIN32 //defined for MinGW, MSVC (also for 64 bit)
   //WINAPI ("stdcall") is needed for Windows API's "::CreateThread(...)"
   WINAPI 
 #endif //#ifdef _MSC_VER
