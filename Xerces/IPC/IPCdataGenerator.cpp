@@ -14,7 +14,8 @@
 #include <ModelData/ModelData.hpp> //class ModelData
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
-#include <Xerces/XercesHelper.hpp> //for "XERCES_STRING_FROM_ANSI_STRING" macro
+#include <Xerces/XercesHelper.hpp> //x86InfoAndControl::InitializeXerces()
+#include <Xerces/XercesString.hpp> //for "XERCES_STRING_FROM_ANSI_STRING" macro
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/MemBufFormatTarget.hpp>

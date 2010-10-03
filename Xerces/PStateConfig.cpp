@@ -45,7 +45,8 @@
 #include <ModelData/ModelData.hpp> //class Model
 //Class XercesAttributesHelper
 #include <Xerces/XercesAttributesHelper.hpp>
-#include <Xerces/XercesHelper.hpp> //for XERCES_STRING_FROM_ANSI_STRING()
+//#include <Xerces/XercesHelper.hpp> //for XERCES_STRING_FROM_ANSI_STRING()
+#include <Xerces/XercesString.hpp> //for XERCES_STRING_FROM_ANSI_STRING()
 //  #include <global.h> //for LOGN()
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
@@ -114,7 +115,8 @@
     {
       LOGN("AddFrequencyToDOMtree: DOMException while creating, appending DOM "
         "element or setting attribute value: "
-        << XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+        << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+        Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
         )
     }
 //    LOGN("before insert into freq in MHz -> DOM index map")
@@ -206,54 +208,54 @@
 //        arp_chAttributeName);
 //      if( xmlchAttributeName)
 //      {
-        XERCES_CPP_NAMESPACE::DOMNamedNodeMap * p_dom_namednodemap ;
-        XERCES_CPP_NAMESPACE::DOMNode * p_domnodeAttribute ;
-       const XMLCh * cp_xmlchAttrValue ;
-        DWORD dwValue ;
-  //      XercesAttributesHelper xerces_attributes_helper ;
+      XERCES_CPP_NAMESPACE::DOMNamedNodeMap * p_dom_namednodemap ;
+      XERCES_CPP_NAMESPACE::DOMNode * p_domnodeAttribute ;
+      const XMLCh * cp_xmlchAttrValue ;
+      DWORD dwValue ;
+//      XercesAttributesHelper xerces_attributes_helper ;
 
-        //Iterate over all "freq_and_voltage" XML elements.
-        for( //XMLSize_t
-          WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
-          wResultSetIndex ++ )
-        {
-          LOGN("at " << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
-            << " element " << wResultSetIndex )
-          //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
-          //"XPathException  TYPE_ERR: raised if resultType is not
-          //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
-          mp_domxpathresult->snapshotItem(wResultSetIndex);
-          //theSerializer->write(p_domxpathresult->getNodeValue(),
-          //  theOutputDesc);
-          //Get all attributes for the current XML element.
-          p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
-            getAttributes() ;
-          //for( XMLSize_t xmlsize_tAttIdx = 0 ; p_dom_namednodemap->getLength() ;
-          //    ++ xmlsize_tAttIdx )
-          //{
-          p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
-            //"frequency_in_MHz"
+      //Iterate over all "freq_and_voltage" XML elements.
+      for( //XMLSize_t
+        WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
+        wResultSetIndex ++ )
+      {
+        LOGN("at " << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
+          << " element " << wResultSetIndex )
+        //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
+        //"XPathException  TYPE_ERR: raised if resultType is not
+        //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
+        mp_domxpathresult->snapshotItem(wResultSetIndex);
+        //theSerializer->write(p_domxpathresult->getNodeValue(),
+        //  theOutputDesc);
+        //Get all attributes for the current XML element.
+        p_dom_namednodemap = mp_domxpathresult->getNodeValue()->
+          getAttributes() ;
+        //for( XMLSize_t xmlsize_tAttIdx = 0 ; p_dom_namednodemap->getLength() ;
+        //    ++ xmlsize_tAttIdx )
+        //{
+        p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
+          //"frequency_in_MHz"
 //            xmlchAttributeName
-            //Avoid g++ warning "no matching function for call to
-            //‘xercesc_3_0::DOMElement::getAttribute(const wchar_t [17])’ "
-            (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL
-            ) ;
-          //Attribute exists.
-          if ( p_domnodeAttribute )
-          {
-            cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
-            std::string stdstr = XercesHelper::ToStdString(
-              cp_xmlchAttrValue) ;
-            LOGN("attribute name for " << //arp_chAttributeName
-              FREQUENCY_IN_MHZ_ANSI_LITERAL
-              << ": " << stdstr )
-            //cp_xmlchAttrValue = cp_xmlchAttrValue ;
+          //Avoid g++ warning "no matching function for call to
+          //‘xercesc_3_0::DOMElement::getAttribute(const wchar_t [17])’ "
+          (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL
+          ) ;
+        //Attribute exists.
+        if ( p_domnodeAttribute )
+        {
+          cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
+          std::string stdstr = //XercesHelper::ToStdString(cp_xmlchAttrValue) ;
+            Xerces::ToStdString(cp_xmlchAttrValue) ;
+          LOGN("attribute name for " << //arp_chAttributeName
+            FREQUENCY_IN_MHZ_ANSI_LITERAL
+            << ": " << stdstr )
+          //cp_xmlchAttrValue = cp_xmlchAttrValue ;
 //            xerces_attributes_helper.ToDWORD( stdstr , & dwValue ) ;
-            from_stdstring<DWORD>( dwValue, stdstr ) ;
-            m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
-              std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
-          }
-          //}
+          from_stdstring<DWORD>( dwValue, stdstr ) ;
+          m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
+            std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
+        }
+        //}
 //        }
 //        XERCES_CPP_NAMESPACE::XMLString::release( & xmlchAttributeName );
       }
@@ -263,15 +265,16 @@
       cr_xercesc_dom_xpath_exception )
     {
       LOGN("BuildStdmapFreqInMHzInDOMtree2DOMindex: DOMXPathException: "
-        << XercesHelper::ToStdString(
-        cr_xercesc_dom_xpath_exception.getMessage() )
+        << //XercesHelper::ToStdString(
+            //cr_xercesc_dom_xpath_exception.getMessage() )
+        Xerces::ToStdString(cr_xercesc_dom_xpath_exception.getMessage() )
         )
     }
     catch( const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception )
     {
       LOGN("BuildStdmapFreqInMHzInDOMtree2DOMindex: DOMException: "
-        << XercesHelper::ToStdString(
-        cr_xercesc_dom_exception.getMessage() )
+        << //XercesHelper::ToStdString(cr_xercesc_dom_exception.getMessage() )
+        Xerces::ToStdString(cr_xercesc_dom_exception.getMessage() )
         )
     }
     LOGN("mp_domxpathresult: " << mp_domxpathresult )
@@ -446,8 +449,9 @@
       LOGN("GetDOM_XPathResultForFrequencies: DOMXPathException. "
         "An error occurred during processing of the "
         "XPath expression." // Msg is:"
-        << XercesHelper::ToStdString( cr_xercesc_dom_xpath_exception.
-          getMessage() )
+        << //XercesHelper::ToStdString( cr_xercesc_dom_xpath_exception.
+          //getMessage() )
+          Xerces::ToStdString( cr_xercesc_dom_xpath_exception.getMessage() )
         )
 //      retval = 4;
     }
@@ -455,8 +459,8 @@
     {
       LOGN("GetDOM_XPathResultForFrequencies: "
         "An error occurred during processing of the XPath expression: "
-        //"Msg is:"
-        << XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+        << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+          Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
         )
         retval = 4;
     }
@@ -553,8 +557,8 @@
             cp_xmlchAttrValue = p_domnodeAttribute->
               //"@exception DOMException"
               getNodeValue() ;
-            std::string stdstr = XercesHelper::ToStdString(
-              cp_xmlchAttrValue) ;
+            std::string stdstr =//XercesHelper::ToStdString(cp_xmlchAttrValue) ;
+              Xerces::ToStdString(cp_xmlchAttrValue) ;
             //cp_xmlchAttrValue = cp_xmlchAttrValue ;
             xerces_attributes_helper.ToDWORD( stdstr , & dwValue ) ;
             if( dwValue == wFreqInMHz )
@@ -574,8 +578,9 @@
     {
       LOGN( "GetFreqnVoltDOMelement:"
         "An error occurred during processing of the XPath expression. Msg is:"
-        << XercesHelper::ToStdString(cr_xercesc_dom_xpath_exception.
-          getMessage() )
+        << //XercesHelper::ToStdString(cr_xercesc_dom_xpath_exception.
+          //getMessage() )
+          Xerces::ToStdString(cr_xercesc_dom_xpath_exception.getMessage() )
         )
         retval = 4;
     }
@@ -583,7 +588,8 @@
     {
       LOGN( "GetFreqnVoltDOMelement:An error occurred during processing of the "
         "XPath expression. Msg is:"
-        << XercesHelper::ToStdString(cr_xercesc_dom_exception.getMessage() )
+        << //XercesHelper::ToStdString(cr_xercesc_dom_exception.getMessage() )
+          Xerces::ToStdString(cr_xercesc_dom_exception.getMessage() )
         )
         retval = 4;
     }
@@ -688,8 +694,9 @@
               {
                 float fVoltageFromProgramMemory = citer_stdset_voltageandfreq->
                     m_fVoltageInVolt ;
-                stdstr = XercesHelper::ToStdString(
-                  p_domnodeAttribute->getNodeValue() ) ;
+                stdstr = //XercesHelper::ToStdString(
+                  //p_domnodeAttribute->getNodeValue() ) ;
+                Xerces::ToStdString(p_domnodeAttribute->getNodeValue() ) ;
                 from_stdstring<float>( fVoltageFromFile ,
                   stdstr
                   //, & fVoltage
@@ -837,8 +844,10 @@
       catch(const XERCES_CPP_NAMESPACE::DOMLSException &
         cr_xercesc_domls_exception )
       {
-        LOGN( "DOMLSException. message is: \n" << XercesHelper::ToStdString(
-          cr_xercesc_domls_exception.getMessage() ) << "\n")
+        LOGN( "DOMLSException. message is: \n" << //XercesHelper::ToStdString(
+          //cr_xercesc_domls_exception.getMessage() )
+          Xerces::ToStdString(cr_xercesc_domls_exception.getMessage() )
+          )
           //          return FAILURE ;
       }
       catch (const XERCES_CPP_NAMESPACE::DOMException &
@@ -923,7 +932,8 @@
        fVoltageFromModelData
         << "for attribute name "        << cpc_XMLAttrName
         << " for freq "
-        << XercesHelper::ToStdString( mp_dom_elementFreqnVolt->getAttribute(
+        << //XercesHelper::ToStdString( mp_dom_elementFreqnVolt->getAttribute(
+          Xerces::ToStdString( mp_dom_elementFreqnVolt->getAttribute(
           //Avoid g++ warning "no matching function for call to
           //‘xercesc_3_0::DOMElement::getAttribute(const wchar_t [17])’ "
           (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL )
@@ -1109,8 +1119,9 @@
       LOGN( "TestIfCfgIsChangedOrChangeCfg:"
         "An error occurred during processing of the XPath expression. "
         "Msg is:"
-        << XercesHelper::ToStdString( cr_xercesc_dom_xpath_exception.
-          getMessage() )
+        << //XercesHelper::ToStdString( cr_xercesc_dom_xpath_exception.
+          //getMessage() )
+          Xerces::ToStdString( cr_xercesc_dom_xpath_exception.getMessage() )
         )
 //        retval = 4;
     }
@@ -1119,7 +1130,8 @@
       LOGN( "TestIfCfgIsChangedOrChangeCfg:"
         "An error occurred during processing of the XPath expression. "
         "Msg is:"
-        << XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+        << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+          Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
         )
 //        retval = 4;
     }
@@ -1220,7 +1232,8 @@
     {
       //mp_userinterface->Confirm(e.getMessage() ) ;
       LOGN("DOMException while creating p-state DOM tree:"
-        << XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+        << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
+          Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
         )
       return 1 ;
     }
@@ -1296,7 +1309,8 @@
           cr_xercesc_xml_exception )
       {
         LOG( "MergeWithExistingConfigFile: XMLException:"
-          << XercesHelper::ToStdString( cr_xercesc_xml_exception.getMessage() )
+          << //XercesHelper::ToStdString( cr_xercesc_xml_exception.getMessage() )
+            Xerces::ToStdString( cr_xercesc_xml_exception.getMessage() )
             //<< "\n"
           )
         return 1;

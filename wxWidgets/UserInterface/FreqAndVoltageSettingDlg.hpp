@@ -53,8 +53,11 @@ private:
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
 //  wxCheckBox * mp_wxcheckboxValidPstate ;
 //  wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
-  wxCheckBox * mp_wxcheckboxbuttonAlsoSetWantedVoltage ;
+  wxCheckBox * mp_wxcheckboxAlsoSetWantedVoltage ;
   wxCheckBox * mp_wxcheckboxOnlySafeRange ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  wxCheckBox * mp_wxcheckboxPauseService ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Array of pointers to checkbox.
   wxCheckBox ** m_ar_p_wxcheckbox ;
   wxSlider * mp_wxsliderCPUcoreDivisorID ;
@@ -78,11 +81,21 @@ private:
     wxSizer * p_wxsizerSuperordinate  ) ;
   inline void AddPerformanceStateSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddSetAsMinVoltageSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddSetAsWantedVoltageSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
 public:
   FreqAndVoltageSettingDlg(
     wxWindow * parent
     , I_CPUcontroller * p_cpucontroller
-    , BYTE byCoreID ) ;
+    , BYTE byCoreID
+    , wxWindowID wxwindow_id = wxID_ANY,
+    const wxString & cr_wxstrTitle = wxT("voltage and frequency settings"),
+    const wxPoint & cr_wxpointWindowPosition = wxDefaultPosition,
+    const wxSize & cr_wxsizeWindow = wxSize( 600,300 ),
+    long lStyle = wxCLOSE_BOX | wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
+    ) ;
   ~FreqAndVoltageSettingDlg() ;
   void OnActivate(wxActivateEvent & r_activateevent ) ;
   void CreateSliders();

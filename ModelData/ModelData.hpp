@@ -12,6 +12,7 @@
 #include "ValueTables.hpp"
 #include "VoltageAndFreq.hpp"
 #include <Controller/character_string/stdtstr.hpp>
+#include <ModelData/UserInterfaceAttributes.hpp>
 
 //class MSRdata ;
 //class ValueTables ;
@@ -23,6 +24,7 @@ class Model
 {
   BYTE m_byNumberOfCPUCores ;
 public:
+  bool m_bAppendProcessID ;
   volatile bool m_bCollectPstatesAsDefault ;
   bool m_bEnableOvervoltageProtection ;
   bool m_bSkipCPUtypeCheck ;
@@ -40,17 +42,18 @@ public:
   std::vector<MSRdata> m_stdvector_msrdata ;
   std::vector<CPUIDdata> m_stdvector_cpuiddata ;
   WORD m_wMaxFrequency ;
-  //std::vector<MaxVoltageForFreq> m_vecmaxvoltageforfreq ;
-  //Use a std::set because so the elements are sorted when inserting them.
-  //Also advantage: if the core frequencies are not sorted within the config
-  //file there is no error (because they are sorted by the set).
-  std::set<MaxVoltageForFreq> m_setmaxvoltageforfreq ;
+//  //std::vector<MaxVoltageForFreq> m_vecmaxvoltageforfreq ;
+//  //Use a std::set because so the elements are sorted when inserting them.
+//  //Also advantage: if the core frequencies are not sorted within the config
+//  //file there is no error (because they are sorted by the set).
+//  std::set<MaxVoltageForFreq> m_setmaxvoltageforfreq ;
   CPUcoreData m_cpucoredata ;
   ServiceAttributes m_serviceattributes ;
+  Attributes::UserInterfaceAttributes m_userinterfaceattributes ;
   ValueTables m_valuetables ;
-  Model( ) ;//GriffinController * p_griffincontroller ) ;
+  Model( ) ;
 
-  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
+//  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
   void AddValueTableRow(std::vector<std::string [2]>
     stdvecstdstrAttributeNameAndValue) ;
   //void Model::AddValueTableRow(

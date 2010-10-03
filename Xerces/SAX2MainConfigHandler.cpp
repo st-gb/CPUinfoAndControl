@@ -103,7 +103,7 @@
   }
 	
   void SAX2MainConfigHandler::HandleTopmostXMLelement(
-    const XERCES_CPP_NAMESPACE::Attributes & attrs )
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
     bool bConfirm ;
 	  std::string strValue ;
@@ -114,14 +114,14 @@
 //              ,bConfirm )
 //        )
     if( XercesAttributesHelper::GetAttributeValue(
-          attrs
+          cr_xercesc_attributes
           ,"skip_cpu_type_check"
           ,bConfirm )
       )
       m_p_model->SetSkipCPUTypeCheck(bConfirm) ;
     if( XercesAttributesHelper::GetAttributeValue
         (
-          attrs,
+          cr_xercesc_attributes,
           "enable_overvoltage_protection"
           ,bConfirm
         )
@@ -129,7 +129,7 @@
       m_p_model->m_bEnableOvervoltageProtection = bConfirm ;
     if( XercesAttributesHelper::GetAttributeValue
         (
-          attrs,
+          cr_xercesc_attributes,
           "use_default_formula_for_overvoltage_protection"
           ,bConfirm
         )
@@ -137,7 +137,7 @@
       m_p_model->m_bUseDefaultFormularForOvervoltageProtection = bConfirm ;
     if( XercesAttributesHelper::GetAttributeValue
         ( 
-          attrs,
+          cr_xercesc_attributes,
           //Use "( char * )" to avoid g++ Linux compiler warning
           // "deprecated conversion from string constant to ‘char*’ "
           ( char * ) "log_file_path",

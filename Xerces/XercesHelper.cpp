@@ -7,6 +7,7 @@
 #include "../stdafx.h"
 #include "XercesHelper.hpp"
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
+#include <Xerces/XercesString.hpp> //Xerces::ToStdString(const XMLCh * )
 
 //for XERCES_CPP_NAMESPACE::XMLString::transcode(...)
 #include <xercesc/util/XMLString.hpp>
@@ -91,18 +92,5 @@ std::string XercesHelper::ToStdString(
   const XMLCh * p_xmlch
   )
 {
-  std::string strValue ;
-  //If the attribute exists.
-  if(p_xmlch)
-  {
-    char * pchAttributeValue = XERCES_CPP_NAMESPACE::XMLString::transcode(
-      p_xmlch) ;
-    if( pchAttributeValue )
-    {
-      strValue = std::string(pchAttributeValue);
-      //Release memory of dyn. alloc. buffer (else memory leaks).
-      XERCES_CPP_NAMESPACE::XMLString::release(&pchAttributeValue);
-    }
-  }
-  return strValue ;
+  return Xerces::ToStdString(p_xmlch) ;
 }

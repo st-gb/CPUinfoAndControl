@@ -4,7 +4,7 @@
 //Include "xerces...\include" in the "include path" for the following "#include"s.
 ////class XERCES_CPP_NAMESPACE::Attributes
 //#include <xercesc/sax2/Attributes.hpp>
-//class XERCES_CPP_NAMESPACE::DefaultHandler
+//Base class XERCES_CPP_NAMESPACE::DefaultHandler
 #include <xercesc/sax2/DefaultHandler.hpp>
 
 #include <string> //for std::string

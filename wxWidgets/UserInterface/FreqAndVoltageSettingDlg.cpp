@@ -11,23 +11,24 @@
     #include "wx/wx.h"
 #endif
 
-#include <global.h> //for BYTE
-#include "FreqAndVoltageSettingDlg.hpp"
-#include <Controller/CPU-related/I_CPUcontroller.hpp>
-#include <ModelData/CPUcoreData.hpp>
-#include <ModelData/ModelData.hpp>
+#include <windef.h> //for BYTE
+#include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
+#include <Controller/CPU-related/I_CPUcontroller.hpp>//class I_CPUcontroller
+#include <ModelData/CPUcoreData.hpp> //class CPUcoreData
+//#include <ModelData/ModelData.hpp> //class Model
+#include <wxWidgets/App.hpp> //for wxGetApp()
 #include <wx/button.h> //for class wxButton
 #include <wx/checkbox.h> //for class wxCheckBox
-#include <wx/dialog.h> //for class wxDialog
+#include <wx/dialog.h> //for base class wxDialog
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
 #include <wx/sizer.h> //for class wxBoxSizer
 #include <wx/slider.h> //for class wxSlider
-#include <wx/spinbutt.h> //class wxSpinButton 
-//for a line which may be used in a dialog to separate the groups of controls. 
-#include <wx/statline.h> 
+//#include <wx/spinbutt.h> //class wxSpinButton
+////for a line which may be used in a dialog to separate the groups of controls.
+//#include <wx/statline.h> //class wxStaticLine
 #include <wx/stattext.h> //for wxStaticText
 #include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
-#include "MainFrame.hpp" //for class MyFrame
+#include "MainFrame.hpp" //for class MainFrame
 
 //An enum guarantees a unique number for each element.
 enum
@@ -66,24 +67,30 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
   wxSizer * p_wxsizerSuperordinate )
 {
   wxSizer * p_wxboxsizerCPUcoreCheckBox = new wxBoxSizer(wxHORIZONTAL);
+  wxStaticText * p_wxstatictext = new wxStaticText(
+    this,
+    wxID_ANY,
+    _T("affected\ncores:")
+    ) ;
+  p_wxstatictext->SetToolTip( wxT("the CPU cores the frequency and voltage "
+    "should be applied to ") ) ;
   p_wxboxsizerCPUcoreCheckBox->Add(
-    new wxStaticText(this, wxID_ANY,
-    //_T("core frequency in MHz: ")));
-    _T("affected\ncores"//\nin MHz"
-      ":")
-      )
+    p_wxstatictext
     , 0 //0=the control should not take more space if the sizer is enlarged
     , wxLEFT | wxRIGHT |
     wxALIGN_TOP
     , 5 //Determines the border width
     );
+
   WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
   m_ar_p_wxcheckbox = new wxCheckBox * [ wNumCPUcores ] ;
   if( m_ar_p_wxcheckbox ) //Allocating the array succeeded.
     for( WORD wCoreID = 0 ; wCoreID < wNumCPUcores ; ++ wCoreID )
     {
-      m_ar_p_wxcheckbox[ wCoreID ] = new wxCheckBox(this,wxID_ANY,
+      m_ar_p_wxcheckbox[ wCoreID ] = new wxCheckBox( this, wxID_ANY,
         wxString::Format(wxT("%u"), wCoreID) ) ;
+      if( mp_model->m_userinterfaceattributes.m_bSelectAllCPUcores )
+        m_ar_p_wxcheckbox[ wCoreID ]->SetValue(true) ; //Set the check.
       p_wxboxsizerCPUcoreCheckBox->Add(
         m_ar_p_wxcheckbox[ wCoreID ]
         , 1
@@ -110,6 +117,24 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
   wxSizer * p_wxsizerSuperordinate )
 {
   p_wxboxsizerCPUcoreFrequencyInMHz = new wxBoxSizer(wxHORIZONTAL);
+  //p_wxboxsizerCPUcoreFrequencyMultiplier->Add(//p_wxsliderCPUcoreFrequencyMultiplier
+  //  mp_wxsliderCPUcoreFrequencyMultiplier, 1
+  //  //, wxEXPAND | wxALL,
+  //  , wxLEFT | wxRIGHT
+  //  , 5);
+
+  //p_wxboxsizerCPUcoreFrequencyInMHz->Add(new wxStaticText(this, wxID_ANY,
+  //  //_T("core frequency in MHz: ")));
+  //  _T("->resulting core frequency in MHz: ")));
+  //mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T(""));
+  //p_wxboxsizerCPUcoreFrequencyInMHz->Add(mp_wxstatictextFreqInMHz, 1 ,
+  //  wxEXPAND | wxALL, 0);
+  //sizerTop->Add(p_wxboxsizerCPUcoreFrequencyInMHz,
+  //  0 //proportion parameter: if "0" it takes the least space
+  //  , wxFIXED_MINSIZE | wxALL,
+  //  //Determines the border width, if the flag  parameter is set to include
+  //  //any border flag.
+  //  2);
   p_wxboxsizerCPUcoreFrequencyInMHz->Add(
     new wxStaticText(this, wxID_ANY,
     //_T("core frequency in MHz: ")));
@@ -156,6 +181,47 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
   wxButton * p_wxbuttonDecBy1VoltageStep ;
   wxButton * p_wxbuttonIncBy1VoltageStep ;
   wxBoxSizer * p_wxboxsizerCPUcoreVoltage = new wxBoxSizer(wxHORIZONTAL);
+  //  wxFlexGridSizer * p_wxflexgridsizerCPUcoreVoltageInVolt = new
+  //    wxFlexGridSizer(
+  //    //number of columns: zero, it will be calculated to form the total
+  //    //number of children in the sizer
+  //    0 );
+  //p_wxboxsizerCPUcoreVoltageInVolt->Add(
+  //p_wxboxsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
+//    , 1
+//    , wxEXPAND | wxALL
+//    , 0 );
+  //mp_wxspinbuttonVoltageInVolt = new wxSpinButton(this, //wxID_ANY
+  //  ID_SpinVoltage ) ;
+  //mp_wxspinbuttonVoltageInVolt->SetRange(
+  //  mp_i_cpucontroller->GetMinimumVoltageInVolt() //-> Millivolt
+  //    * 1000 ,
+  //  mp_i_cpucontroller->GetMaximumVoltageInVolt() //-> Millivolt
+  //    * 1000
+  //  );
+  //mp_wxspinbuttonVoltageInVolt->SetValue(
+  //    mp_i_cpucontroller->GetMinimumVoltageInVolt() * 1000 );
+
+//  p_wxbuttonIncBy1VoltageStep = new wxButton( this
+//    , ID_SpinVoltage
+//    , wxT("&+")
+//    ) ;
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
+//    p_wxbuttonIncBy1VoltageStep
+//    , 0
+//    , //wxEXPAND |
+//    wxALL
+//    , 0 );
+//  p_wxbuttonDecBy1VoltageStep = new wxButton( this
+//    , ID_DecreaseVoltage
+//    , wxT("&-")
+//    ) ;
+//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
+//    p_wxbuttonDecBy1VoltageStep
+//    , 1
+//    , wxEXPAND | wxALL
+//    , 0 );
   p_wxboxsizerCPUcoreVoltage->Add(
     new wxStaticText(this, wxID_ANY, _T("voltage" //\nIDentifier
       ":" ))
@@ -175,7 +241,7 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
     1
     //,wxEXPAND | wxALL
     , wxLEFT | wxRIGHT
-    , 5);
+    , 2 );
   mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, _T("") );
   p_wxboxsizerCPUcoreVoltage->Add(
     mp_wxstatictextVoltageInVolt ,
@@ -226,11 +292,11 @@ inline void FreqAndVoltageSettingDlg::AddPerformanceStateSizer(
     new wxStaticText(this, wxID_ANY, _T("p-state:"))
     , 0 //0=the control should not take more space if the sizer is enlarged
     //These flags are used to specify which side(s) of the sizer item the border width will apply to.
-    , wxLEFT | wxRIGHT |
-    //wxALIGN_CENTER_VERTICAL
+    , wxLEFT | wxRIGHT
+      | wxALIGN_CENTER_VERTICAL
     //The label and the adjustable value should be at the same vertical
     //position, so place at the top.
-    wxALIGN_TOP
+//    | wxALIGN_TOP
     , 5 //Determines the border width
     );
   p_wxboxsizerCPUcorePstate->Add(//p_wxsliderCPUcoreDivisorID
@@ -252,14 +318,154 @@ inline void FreqAndVoltageSettingDlg::AddPerformanceStateSizer(
       );
 }
 
+inline void FreqAndVoltageSettingDlg::AddSetAsMinVoltageSizer(
+  wxSizer * p_wxsizerSuperordinate )
+{
+  wxFlexGridSizer * p_wxflexgridsizerSetAsMinVoltage = new wxFlexGridSizer(
+    //number of columns: zero, it will be calculated to form the total
+    //number of children in the sizer
+    0 );
+  mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
+    this, wxID_ANY, _T("")
+    ) ;
+  mp_wxbuttonSetAsMinVoltage = new wxButton( this,
+    ID_SetAsMinVoltage, wxT("set as minimum voltage") ) ;
+  mp_wxbuttonSetAsMinVoltage->SetToolTip( wxT("This should be the lowest "
+    "stable voltage for a specific frequency to avoid setting a too low "
+    "voltage") ) ;
+  mp_wxcheckboxAlsoSetWantedVoltage = new wxCheckBox(this, wxID_ANY,
+    wxT("also set wanted voltage:") ) ;
+  mp_wxcheckboxAlsoSetWantedVoltage->SetToolTip(
+    wxString::Format( wxT("adds an operating safety margin of %f Volt and sets"
+      " the resulting voltage for Dynamic Voltage and Frequency Scaling"),
+      mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt )
+    ) ;
+  //p_wxboxsizerSetAsMinVoltage->Add(
+  p_wxflexgridsizerSetAsMinVoltage->Add(
+    mp_wxbuttonSetAsMinVoltage
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //[...]can change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable[...]
+    , 1
+    , //wxEXPAND |
+    wxFIXED_MINSIZE | wxALL
+    , 0
+    );
+  //p_wxboxsizerSetAsMinVoltage->Add(
+  p_wxflexgridsizerSetAsMinVoltage->Add(
+    mp_wxcheckboxAlsoSetWantedVoltage
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //[...]can change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable[...]
+    , 1
+    , //wxEXPAND |
+    wxFIXED_MINSIZE | wxALL
+    , 0 //Determines the border width
+    );
+  //  p_wxboxsizerSetAsMinVoltage->Add(
+  p_wxflexgridsizerSetAsMinVoltage->Add(
+    mp_wxstatictextWantedVoltageInVolt
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //[...]can change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable[...]
+    , 1
+    , //wxEXPAND |
+    wxFIXED_MINSIZE | wxALL
+    , 0
+    );
+  LOGN("before adding the set as min voltage sizer")
+  p_wxsizerSuperordinate->Add(
+    //mp_wxbuttonSetAsMinVoltage,
+    //p_wxboxsizerSetAsMinVoltage ,
+    p_wxflexgridsizerSetAsMinVoltage ,
+    //proportion parameter: if "0" it takes the least space
+    0 ,
+    //1 ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"If you would rather have a window item stay the size it started with
+    //then use wxFIXED_MINSIZE. "
+    //wxEXPAND |
+    wxFIXED_MINSIZE |
+    wxALL,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2);
+}
+
+inline void FreqAndVoltageSettingDlg::AddSetAsWantedVoltageSizer(
+  wxSizer * p_wxsizerSuperordinate )
+{
+  wxFlexGridSizer * p_wxflexgridsizerSetAsWantedVoltage = new wxFlexGridSizer(
+    //number of columns: zero, it will be calculated to form the total
+    //number of children in the sizer
+    0 );
+  mp_wxbuttonSetAsWantedVoltage = new wxButton( this,
+    ID_SetAsWantedVoltage, wxT("set as wanted voltage") ) ;
+  mp_wxbuttonSetAsWantedVoltage->SetToolTip(
+    wxT("this is the voltage that should be used for Dynamic Voltage and "
+      "Frequency Scaling") ) ;
+  p_wxflexgridsizerSetAsWantedVoltage->Add(
+    mp_wxbuttonSetAsWantedVoltage
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //[...]can change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable[...]
+    , 1
+    , //wxEXPAND |
+    wxFIXED_MINSIZE | wxALL
+    , 0
+    );
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  mp_wxcheckboxPauseService = new wxCheckBox( this, wxID_ANY,
+    wxT("pause service") ) ;
+  mp_wxcheckboxPauseService->
+    //http://docs.wxwidgets.org/2.8/wx_wxcheckbox.html#wxcheckboxsetvalue:
+    //"If true, the check is on, otherwise it is off."
+    SetValue(true) ;
+  mp_wxcheckboxPauseService->SetToolTip(
+    wxT("pauses the Dynamic Voltage and Frequency Scaling done by the service "
+      "(else the voltage and/ or multiplier may be changed by the service "
+      "immediately afterwards)")
+    ) ;
+  p_wxflexgridsizerSetAsWantedVoltage->Add(
+    mp_wxcheckboxPauseService
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //[...]can change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable[...]
+    , 1
+    , //wxEXPAND |
+    wxFIXED_MINSIZE | wxALL
+    , 0
+    );
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  p_wxsizerSuperordinate->Add(
+    p_wxflexgridsizerSetAsWantedVoltage,
+    //proportion parameter: if "0" it takes the least space
+    0 ,
+    //1 ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"If you would rather have a window item stay the size it started with
+    //then use wxFIXED_MINSIZE. "
+    //wxEXPAND |
+    wxFIXED_MINSIZE |
+    wxALL,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2 );
+}
+
 FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
-  wxWindow * parent
+  wxWindow * p_wxwindowParent
   , I_CPUcontroller * p_cpucontroller
   , BYTE byCoreID
+  , wxWindowID wxwindow_id ,
+  const wxString & cr_wxstrTitle ,
+  const wxPoint & cr_wxpointWindowPosition ,
+  const wxSize & cr_wxsizeWindow ,
+  long lStyle
   )
   : wxDialog( 
-      parent, 
-      wxID_ANY, 
+      p_wxwindowParent, 
+      wxwindow_id //wxID_ANY,
 #ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
       wxString::Format( 
       //We need a wxT() macro (wide char-> L"", char->"") for EACH
@@ -268,21 +474,38 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
       byCoreID 
     )
 #else //#ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
-    wxT("voltage and frequency settings")
+    , cr_wxstrTitle //wxT("voltage and frequency settings")
 #endif //#ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
-    , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
-    , wxSize(400, 400)
-    , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
+    //A value of (-1, -1) indicates a default size.
+    , cr_wxpointWindowPosition //wxPoint(30, 30)
+    , cr_wxsizeWindow //wxSize(600, 300)
+    , lStyle //wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
     )
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   , m_byCoreID(byCoreID)
   , m_byPstateID(0)
   , mp_cpucontroller (p_cpucontroller)
-  , mp_mainframe( (MainFrame *) parent )
+  , mp_mainframe( (MainFrame *) p_wxwindowParent )
   , mp_model ( p_cpucontroller->mp_model )
 {
   LOGN("voltage and freq dialog begin")
+//  //http://docs.wxwidgets.org/trunk/classwx_tool_tip.html
+//  // #527208d12631dfb3e6dea71011b887d6:
+//  // "Enable or disable tooltips globally."
+//  wxToolTip::Enable( true) ;
+//  //http://docs.wxwidgets.org/trunk/classwx_tool_tip.html
+//  // #5db5357f084afef9c4602baf0cb89105
+//  //"Set the delay after which the tooltip appears."
+//  wxToolTip::SetDelay (//long msecs
+//    0 ) ;
+//  //"Set the delay after which the tooltip disappears or how long a tooltip
+//  // remains visible."
+//  wxToolTip::SetAutoPop (//long msecs
+//    5000) ;
+//  //"Set tooltip maximal width in pixels. "
+//  wxToolTip::SetMaxWidth (//int width
+//    1000) ;
   //http://wiki.wxwidgets.org/Avoiding_Memory_Leaks#Child_windows:
   //"When a wxWindow is destroyed, it automatically deletes all its children. 
   //These children are all the objects that received the window as the
@@ -293,22 +516,12 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 //  wxBoxSizer * p_wxboxsizerValidPstate = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerCPUcoreDivisor = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerCPUcoreFrequencyMultiplier = new wxBoxSizer(wxHORIZONTAL);
-  //wxBoxSizer *
 //  wxBoxSizer * p_wxboxsizerCPUcoreVoltageInVolt = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer * p_wxboxsizerOK_Cancel = new wxBoxSizer(wxHORIZONTAL);
 //  wxBoxSizer * p_wxboxsizerSetAsMinVoltage = new wxBoxSizer(wxHORIZONTAL);
-  wxBoxSizer * sizerTop = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer * p_wxboxsizerTop = new wxBoxSizer(wxVERTICAL);
 //  wxButton * p_wxbuttonDecBy1VoltageStep ;
 //  wxButton * p_wxbuttonIncBy1VoltageStep ;
-  wxFlexGridSizer * p_wxflexgridsizerSetAsMinVoltage = new wxFlexGridSizer(
-    //number of columns: zero, it will be calculated to form the total 
-    //number of children in the sizer
-    0 );
-//  wxFlexGridSizer * p_wxflexgridsizerCPUcoreVoltageInVolt = new
-//    wxFlexGridSizer(
-//    //number of columns: zero, it will be calculated to form the total
-//    //number of children in the sizer
-//    0 );
 
   //mp_wxbuttonApply = new wxButton(this, wxID_APPLY ) ;
   mp_wxbuttonApply = new wxButton(this, wxID_APPLY, _T("&Write p-state") ) ;
@@ -334,10 +547,9 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     //TODO tooltip is not permanent
     mp_wxbuttonApply->SetToolTip( wxstrToolTip ) ;
   }
-  mp_wxbuttonSetAsWantedVoltage = new wxButton( this, 
-    ID_SetAsWantedVoltage, wxT("set as wanted voltage") ) ;
-  mp_wxbuttonSetAsMinVoltage = new wxButton( this, 
-    ID_SetAsMinVoltage, wxT("set as minimum voltage") ) ;
+  else
+    mp_wxbuttonApply->SetToolTip( wxT("write/ set (both) the configured "
+      "multiplier/ frequency AND voltage") ) ;
   //wxButton *btn = new wxButton(this, DIALOGS_MODELESS_BTN, _T("Apply"));
   CreateSliders();
 
@@ -348,15 +560,10 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 //  mp_wxcheckboxCOFVIDcontrol = new wxCheckBox(this, wxID_ANY,
 //      //_T("Set as current after apply") ) ;
 //      _T("write into COFVID control register") ) ;
-  mp_wxcheckboxbuttonAlsoSetWantedVoltage = new wxCheckBox(this, wxID_ANY,
-    wxT("also set wanted voltage:") ) ;
 
-  mp_wxstatictextExpectedCurrentDissipation = new wxStaticText(
-    this, wxID_ANY, _T("") 
-    ) ;
-  mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
-    this, wxID_ANY, _T("") 
-    ) ;
+//  mp_wxstatictextExpectedCurrentDissipation = new wxStaticText(
+//    this, wxID_ANY, _T("")
+//    ) ;
 
   //mp_wxsliderCPUcorePstate->SetBackgroundStyle(wxBG_STYLE_COLOUR);
   //mp_wxsliderCPUcorePstate->SetForegroundColour(*wxRED);
@@ -366,195 +573,27 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 
   //m_vecp_wxcontrol.push_back(p_wxsliderCPUcoreFrequencyMultiplier);
 
-  //p_wxboxsizerCPUcoreFrequencyMultiplier->Add( 
-  //  new wxStaticText(this, wxID_ANY, _T("multiplier:"))
-  //  , 0 //0=the control should not take more space if the sizer is enlarged 
-  //  //These flags are used to specify which side(s) of the sizer item the border width will apply to. 
-  //  , //wxEXPAND | 
-  //  //wxALL, 
-  //  wxLEFT | wxRIGHT | 
-  //  //wxALIGN_CENTER_VERTICAL
-  //  //The label and the adjustable value should be at the same vertical
-  //  //position, so place at the top.
-  //  wxALIGN_TOP
-  //  , 5 //Determines the border width
-  //  );
-  //p_wxboxsizerCPUcoreFrequencyMultiplier->Add(//p_wxsliderCPUcoreFrequencyMultiplier
-  //  mp_wxsliderCPUcoreFrequencyMultiplier, 1
-  //  //, wxEXPAND | wxALL,
-  //  , wxLEFT | wxRIGHT
-  //  , 5);
-
   //Only display the checkbox options if more than 1 logical CPU core exists.
   //(else if 1 CPU core then it is clear that the 1st and only core should be
   // used)
   if( mp_model->m_cpucoredata.GetNumberOfCPUcores() > 1 )
-    AddCPUcoreCheckBoxSizer(sizerTop) ;
-  AddPerformanceStateSizer(sizerTop) ;
+    AddCPUcoreCheckBoxSizer(p_wxboxsizerTop) ;
+  AddPerformanceStateSizer(p_wxboxsizerTop) ;
 
-  AddCPUcoreFrequencySizer(sizerTop) ;
+  AddCPUcoreFrequencySizer(p_wxboxsizerTop) ;
 
-  AddCPUcoreVoltageSizer(sizerTop) ;
-  //sizerTop->Add(
-  //    p_wxboxsizerCPUcoreFrequencyMultiplier, 1 , 
-  //    wxEXPAND | //wxALL
-  //      wxBOTTOM
-  //    , 
-  //    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-  //    //"Determines the border width, if the flag  parameter is set to 
-  //    //include any border flag."
-  //    //10 
-  //    2
-  //    );
+  AddCPUcoreVoltageSizer(p_wxboxsizerTop) ;
 
-  //p_wxboxsizerCPUcoreFrequencyInMHz->Add(new wxStaticText(this, wxID_ANY, 
-  //  //_T("core frequency in MHz: ")));
-  //  _T("->resulting core frequency in MHz: ")));
-  //mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T(""));
-  //p_wxboxsizerCPUcoreFrequencyInMHz->Add(mp_wxstatictextFreqInMHz, 1 , 
-  //  wxEXPAND | wxALL, 0);
-  //sizerTop->Add(p_wxboxsizerCPUcoreFrequencyInMHz, 
-  //  0 //proportion parameter: if "0" it takes the least space
-  //  , wxFIXED_MINSIZE | wxALL, 
-  //  //Determines the border width, if the flag  parameter is set to include 
-  //  //any border flag.
-  //  2);
+  AddSetAsMinVoltageSizer(p_wxboxsizerTop );
+
+  AddSetAsWantedVoltageSizer(p_wxboxsizerTop );
     //sizerTop->AddSpacer(50) ;
   //sizerTop->Add(new wxStaticLine( this, wxID_ANY ) ) ;
 
-  //mp_wxstatictextPercentageOfDefaultVoltage = new wxStaticText(this, wxID_ANY, _T("") );
+  //mp_wxstatictextPercentageOfDefaultVoltage = new wxStaticText(this,
+  // wxID_ANY, _T("") );
   //sizerTop->Add( mp_wxstatictextPercentageOfDefaultVoltage ) ;
-
-  //p_wxboxsizerCPUcoreVoltageInVolt->Add(
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add(
-//    new wxStaticText( this, wxID_ANY,
-//      //_T("core voltage in Volt: ") )
-//      _T("->resulting core voltage in Volt: ")
-//      )
-//    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-//    //[...]can change its size in the main orientation of the wxBoxSizer -
-//    //where 0 stands for not changeable[...]
-//    , 1
-//    , //wxEXPAND |
-//    wxFIXED_MINSIZE | wxALL
-//    , 0
-//    );
-  //p_wxboxsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
-//    , 1
-//    , wxEXPAND | wxALL
-//    , 0 );
-  //mp_wxspinbuttonVoltageInVolt = new wxSpinButton(this, //wxID_ANY
-  //  ID_SpinVoltage ) ;
-  //mp_wxspinbuttonVoltageInVolt->SetRange( 
-  //  mp_i_cpucontroller->GetMinimumVoltageInVolt() //-> Millivolt 
-  //    * 1000 , 
-  //  mp_i_cpucontroller->GetMaximumVoltageInVolt() //-> Millivolt 
-  //    * 1000 
-  //  );
-  //mp_wxspinbuttonVoltageInVolt->SetValue(
-  //    mp_i_cpucontroller->GetMinimumVoltageInVolt() * 1000 );
-
-//  p_wxbuttonIncBy1VoltageStep = new wxButton( this
-//    , ID_SpinVoltage
-//    , wxT("&+")
-//    ) ;
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonIncBy1VoltageStep
-//    , 0
-//    , //wxEXPAND |
-//    wxALL
-//    , 0 );
-//  p_wxbuttonDecBy1VoltageStep = new wxButton( this
-//    , ID_DecreaseVoltage
-//    , wxT("&-")
-//    ) ;
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonDecBy1VoltageStep
-//    , 1
-//    , wxEXPAND | wxALL
-//    , 0 );
-//  sizerTop->Add(
-//    //p_wxboxsizerCPUcoreVoltageInVolt,
-//    p_wxflexgridsizerCPUcoreVoltageInVolt ,
-//    //proportion parameter: if "0" it takes the least space
-//    0 ,
-//    //1 ,
-//    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-//    //"If you would rather have a window item stay the size it started with
-//    //then use wxFIXED_MINSIZE. "
-//    wxEXPAND |
-//    //wxFIXED_MINSIZE |
-//    wxALL,
-//    //Determines the border width, if the flag  parameter is set to include
-//    //any border flag.
-//    2);
-
-  //p_wxboxsizerSetAsMinVoltage->Add(
-  p_wxflexgridsizerSetAsMinVoltage->Add(
-    mp_wxbuttonSetAsMinVoltage
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //[...]can change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable[...]
-    , 1
-    , //wxEXPAND |
-    wxFIXED_MINSIZE | wxALL
-    , 0
-    );
-  //p_wxboxsizerSetAsMinVoltage->Add(
-  p_wxflexgridsizerSetAsMinVoltage->Add(
-    mp_wxcheckboxbuttonAlsoSetWantedVoltage
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //[...]can change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable[...]
-    , 1
-    , //wxEXPAND |
-    wxFIXED_MINSIZE | wxALL
-    , 0 //Determines the border width
-    );
-//  p_wxboxsizerSetAsMinVoltage->Add(
-  p_wxflexgridsizerSetAsMinVoltage->Add(
-    mp_wxstatictextWantedVoltageInVolt
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //[...]can change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable[...]
-    , 1
-    , //wxEXPAND |
-    wxFIXED_MINSIZE | wxALL
-    , 0
-    );
-  LOGN("before adding the set as min voltage sizer")
-  sizerTop->Add(
-    //mp_wxbuttonSetAsMinVoltage, 
-    //p_wxboxsizerSetAsMinVoltage ,
-    p_wxflexgridsizerSetAsMinVoltage ,
-    //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"If you would rather have a window item stay the size it started with
-    //then use wxFIXED_MINSIZE. "
-    //wxEXPAND |
-    wxFIXED_MINSIZE |
-    wxALL,
-    //Determines the border width, if the flag  parameter is set to include 
-    //any border flag.
-    2);
   
-  sizerTop->Add(
-    mp_wxbuttonSetAsWantedVoltage, 
-    //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"If you would rather have a window item stay the size it started with
-    //then use wxFIXED_MINSIZE. "
-    //wxEXPAND |
-    wxFIXED_MINSIZE |
-    wxALL,
-    //Determines the border width, if the flag  parameter is set to include 
-    //any border flag.
-    2 );
   //p_wxboxsizerOK_Cancel->Add(new wxButton(this, wxID_APPLY //, _T("Apply")
   //  ) );
   p_wxboxsizerOK_Cancel->Add( mp_wxbuttonApply ) ;
@@ -567,7 +606,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     wxT("only safe range") ) ;
   p_wxboxsizerOK_Cancel->Add( mp_wxcheckboxOnlySafeRange) ;
   LOGN("before adding the OK etc. sizer")
-  sizerTop->Add(
+  p_wxboxsizerTop->Add(
     p_wxboxsizerOK_Cancel, 
     0 , 
     wxFIXED_MINSIZE, 
@@ -577,18 +616,25 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     );
 
   LOGN("before adding to the outer sizer")
-  SetSizer(sizerTop);
+  SetSizer(p_wxboxsizerTop);
 
-  sizerTop->SetSizeHints(this);
-  sizerTop->Fit(this);
-  //"[...] wxToolTip::SetDelay can be used to globally alter tooltips behaviour"
-  wxToolTip::SetDelay(5000);
+  p_wxboxsizerTop->SetSizeHints(this);
+  p_wxboxsizerTop->Fit(this);
   //To show the computed freq and voltage at the beginning yet.
   //OutputFreqAndVoltageByControlValues();
   //OutputVoltageByControlValues();
 //  VoltageIDchanged(m_wVoltageID) ;
   //Force the neighbour controls of "voltage in volt" to be resized.
   Layout() ;
+  if( mp_model->m_userinterfaceattributes.m_wToolTipDelay != MAXWORD )
+    //http://docs.wxwidgets.org/trunk/classwx_tool_tip.html
+    // #5db5357f084afef9c4602baf0cb89105
+    //"Set the delay after which the tooltip appears."
+    //"[...] wxToolTip::SetDelay can be used to globally alter tooltips behaviour"
+    //wxToolTip::SetDelay(...) must be called here. When it was called in
+    //App::OnInit() or in MainFrame's constructor it did not work.
+    wxToolTip::SetDelay(mp_model->m_userinterfaceattributes.m_wToolTipDelay);
+//  wxToolTip::SetDelay(5000);
   HandlePstateMayHaveChanged() ;
   OutputVoltageByControlValues() ;
   OutputFrequencyByControlValues() ;
@@ -733,13 +779,15 @@ void FreqAndVoltageSettingDlg::CreateSliders()
       //, 0
 //    , mp_cpucontroller->GetMinimumVoltageID()
     , 0
-    //, MAX_VALUE_FOR_VID //slider max value
+    //slider max value
+    //, MAX_VALUE_FOR_VID
 //    , mp_cpucontroller->GetMaximumVoltageID()
     , wMaxValue
     //If the default point (-1, -1) is specified then a default point is chosen.
     , wxPoint(-1, -1)
-    //If the default size (-1, -1) is specified then a default size is chosen.
-    , wxSize(-1, -1)
+//    //If the default size (-1, -1) is specified then a default size is chosen.
+//    , wxSize(-1, -1)
+    , wxDefaultSize
     , wxSL_AUTOTICKS //| wxSL_LABELS
     ) ;
   ////Possibly force calc of wanted voltage.
@@ -1266,7 +1314,7 @@ void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton(
 //            )
           voltageandfreq
         ) ;
-    if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsChecked() )
+    if( mp_wxcheckboxAlsoSetWantedVoltage->IsChecked() )
     {
   //    mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
   //      insert(
@@ -1389,14 +1437,15 @@ void FreqAndVoltageSettingDlg::VoltageIDchanged(int nNewSliderValue)
     GetVoltageInVoltFromSliderValue() ;
   LOGN("voltage in Volt corresponding to the slider value " << nNewSliderValue
     << " :" << mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings )
-  if( mp_wxcheckboxbuttonAlsoSetWantedVoltage->IsChecked() )
+  if( mp_wxcheckboxAlsoSetWantedVoltage->IsChecked() )
   {
     //float fStableVoltageToSet = mp_cpucontroller->GetVoltageInVolt(
       //nNewSliderValue )
     m_fWantedVoltageInVolt =
       mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings
       //Add 0.07 V for stability safety
-      + 0.07 ;
+      //+ 0.07 ;
+      + mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt ;
 //    WORD wVoltageID = //In order to get the voltage in Volt that corresponds
 //      //to a voltage ID boundary first convert to the corresponding
 //      //(possibly rounded) voltage ID.
@@ -1495,6 +1544,8 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
       << fVoltageInVolt
       << "multiplier to set:" << GetMultiplierFromSliderValue()
       )
+    if( mp_wxcheckboxPauseService->IsChecked() )
+      wxGetApp().PauseService() ;
     WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
     if( wNumCPUcores > 1 )
     {

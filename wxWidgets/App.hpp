@@ -193,6 +193,7 @@ public:
   {
     return mp_modelData ;
   }
+  void PauseService() ;
   void PossiblyAskForOSdynFreqScalingDisabling() ;
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;

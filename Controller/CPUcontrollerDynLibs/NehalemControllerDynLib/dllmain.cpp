@@ -31,6 +31,9 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //For PrepareForNextPerformanceCountingNehalem(...) (etc.)
 #include <Controller/CPU-related/Intel/Nehalem/Nehalem.hpp>
 #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
+#ifdef _DEBUG
+  #include <Controller/Logger/Logger.hpp> //class Logger
+#endif
 //#include <ModelData/ModelData.hpp>
 
 //for BITMASK_FOR_LOWMOST_5BIT
@@ -341,7 +344,7 @@ EXPORT
     * p_fMultiplier = ( g_dwValue1 & 255 ) ;
     DEBUGN("dyn lib GetCurrentVoltageAndFrequency--voltage:"
       << * p_fVoltageInVolt )
-#ifdef __linux__
+#ifdef __linux_
     * p_fReferenceClockInMHz = 133.3 ;
 #else
     //This call sets g_fReferenceClockInMHz to the current reference clock.

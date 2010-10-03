@@ -17,10 +17,14 @@
   #include "wx/app.h"
 #endif
 #include "wx/wx.h" //for wxMessageBox(...) (,etc.)
+//#include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
+
 #include "App.hpp"
 
 //#include "wxDynFreqScalingTimer.hpp"
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
+//for ::GetErrorMessageFromErrorCodeA(DWORD)
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
@@ -38,16 +42,18 @@
 #endif
 //#include <wxWidgets/wxStringHelper.h>
 #include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
+#include <Xerces/SAX2UserInterfaceConfigHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 
 #include "DynFreqScalingThread.hpp"
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/DynFreqScalingThread.hpp>
-  #include <Windows/GetNumberOfLogicalCPUs.h>
-  #include <Windows/HideMinGWconsoleWindow.h>
+//  #include <Windows/GetNumberOfLogicalCPUs.h>
+//  #include <Windows/HideMinGWconsoleWindow.h>
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/LocalLanguageMessageFromErrorCodeA.h>
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
+  #include <Windows/Service/ServiceBase.hpp> //ServiceBase::PauseService(...)
   //#include <Windows/WinRing0dynlinked.hpp>
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
@@ -774,12 +780,10 @@ bool wxX86InfoAndControlApp::OnInit()
   //Init to NULL for "CPUcontrollerChanged()"
   mp_frame = NULL ;
   gp_cpucontrolbase = this ;
-
   //from http://www.kharchi.eu/algierlib/tips.html:
   //If using MinGW then pass "-mwindows" as linker flag in order to hide the
   //console window.
 //  HideMinGWconsoleWindow() ;
-
 #ifdef COMPILE_WITH_SHARED_MEMORY
   mp_voidMappedViewStartingAddress = NULL ;
   m_handleMapFile = NULL ;
@@ -813,18 +817,31 @@ bool wxX86InfoAndControlApp::OnInit()
       stdtstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName
         //+ _T("_log.txt")
         ) ;
-
-    //Because more than 1 GUI is possible at a time: append a process ID.
-    //So the log files are not overwritten by the GUI instances.
+    Xerces::SAX2UserInterfaceConfigHandler sax2userinterfaceconfighandler(
+      m_model , this
+      ) ;
+    ReadXMLfileWithoutInitAndTermXercesInline(
+      "UserInterface.xml" ,
+      m_model ,
+      this,
+      sax2userinterfaceconfighandler
+      ) ;
     DWORD dwProcID = wxGetProcessId() ;
-    stdtstrLogFilePath += Getstdtstring( to_stdstring<DWORD>(dwProcID) ) ;
+    if( mp_modelData->m_bAppendProcessID )
+    {
+      //Because more than 1 GUI is possible at a time: append a process ID.
+      //So the log files are not overwritten by the GUI instances.
+      stdtstrLogFilePath += Getstdtstring( to_stdstring<DWORD>(dwProcID) ) ;
+    }
     stdtstrLogFilePath += _T("_log.txt") ;
 
     //Maybe it's better to use a file name for the log file that is derived 
     //from THIS executable's file name: e.g. so different log files for the 
     //x86I&C service and the x86I&C GUI are possible.
     g_logger.OpenFile( stdtstrLogFilePath ) ;
-    LOGN("process ID of this process: ")
+    LOGN("process ID of this process:" << dwProcID )
+    m_maincontroller.ReadMainConfig( //m_modelData
+      * mp_modelData, this );
 
     //Initialize to be valid.
     m_arartchCmdLineArgument[ 0 ] =
@@ -858,7 +875,6 @@ bool wxX86InfoAndControlApp::OnInit()
 #endif
     //if( mp_modelData )
     {
-
   	  //TODO program malfunction when the IPC thread is started.
 //      m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
       try //catch CPUaccessexception
@@ -961,8 +977,6 @@ bool wxX86InfoAndControlApp::OnInit()
         //#endif
         CPUcontrollerChanged() ;
       }
-      m_maincontroller.ReadMainConfig( //m_modelData
-        * mp_modelData, this );
       //Get the default, min and max voltages.
       BYTE byGetConfigDataViaInterProcessCommunicationReturnValue =
         GetConfigDataViaInterProcessCommunication() ;
@@ -980,10 +994,15 @@ bool wxX86InfoAndControlApp::OnInit()
         //_T(PROGRAM_NAME)
         //m_stdtstrProgramName
 //        mp_modelData->m_stdtstrProgramName +_T(" GUI")
-        wxstrMainFrameTitle
-        ,
-        wxPoint(50,50),
-        wxSize(450,340)
+        wxstrMainFrameTitle ,
+//        wxPoint(50,50),
+        wxPoint( m_model.m_userinterfaceattributes.
+          m_wMainFrameTopLeftCornerXcoordinateInPixels ,
+          m_model.m_userinterfaceattributes.
+          m_wMainFrameTopLeftCornerYcoordinateInPixels ) ,
+        //wxSize(450,340)
+        wxSize( m_model.m_userinterfaceattributes.m_wMainFrameWidthInPixels
+          , m_model.m_userinterfaceattributes.m_wMainFrameHeightInPixels)
         , mp_cpucontroller
         //, & m_modelData.m_cpucoredata
         //, & mp_modelData->m_cpucoredata
@@ -995,7 +1014,8 @@ bool wxX86InfoAndControlApp::OnInit()
         LOGN("after main frame creation")
         //p_frame->Show(TRUE);
         //SetTopWindow(p_frame);
-        mp_frame->Show(true);
+        if( m_model.m_userinterfaceattributes.m_bShowMainFrameAtStartup )
+          mp_frame->Show(true);
   //      p_wxframe->Show( true ) ;
         LOGN("after showing the main frame")
   //      ShowTaskBarIcon() ;
@@ -1091,6 +1111,70 @@ void wxX86InfoAndControlApp::outputAllPstates(
   unsigned char byCurrentP_state, int & vid)
 {
 
+}
+
+void wxX86InfoAndControlApp::PauseService()
+{
+  bool bTryToPauseViaServiceControlManager = false ;
+  //The connection may have broken after it was established, so check it here.
+  if( ! //::wxGetApp().
+      m_ipcclient.IsConnected() )
+  {
+    LOGN("not connected to the service")
+    if( ! //::wxGetApp().
+        m_ipcclient.Init() )
+      bTryToPauseViaServiceControlManager = true ;
+  }
+  if( //::wxGetApp().
+      m_ipcclient.IsConnected() )
+  {
+    LOGN("OnPauseService--connected to the service")
+    //TODO possibly make IPC communication into a separate thread because it
+    // may freeze the whole GUI.
+    //::wxGetApp().
+        m_ipcclient.SendCommandAndGetResponse(pause_service) ;
+    wxString wxstr = getwxString( //::wxGetApp().
+      m_ipcclient.m_stdwstrMessage ) ;
+    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
+  }
+  else
+    bTryToPauseViaServiceControlManager = true ;
+  if( bTryToPauseViaServiceControlManager )
+    try
+    {
+      std::string stdstrMsg ;
+      if( ServiceBase::PauseService( //mp_model->m_strServiceName.c_str()
+        //We need a _T() macro (wide char-> L"", char->"") for EACH
+        //line to make it compatible between char and wide char.
+        //TODO make name variable because the user can change the name when
+        //installing the service.
+        _T("X86_info_and_control")
+        , stdstrMsg
+        )
+        )
+        ::wxMessageBox( wxT("successfully paused the service via the service "
+          "control manager")) ;
+      else
+      {
+        wxString wxstr = wxT("not connected to the service\n"
+          "->tried to pause via service control manager\n"
+          "Error pausing the service via the service control manager:\n")
+          + getwxString( stdstrMsg) ;
+        ::wxMessageBox( wxstr ) ;
+      }
+    }
+    catch( const ConnectToSCMerror & cr_connecttoscmerror )
+    {
+      ::wxMessageBox( wxString(
+        //We need a _T() macro (wide char-> L"", char->"") for EACH
+        //line to make it compatible between char and wide char.
+        _T("connecting to service control manager failed: ")
+        ) +
+        (const wxChar *) //::LocalLanguageMessageFromErrorCodeA(
+        ::GetErrorMessageFromErrorCodeA(
+        cr_connecttoscmerror.m_dwErrorCode).c_str()
+        ) ;
+    }
 }
 
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS

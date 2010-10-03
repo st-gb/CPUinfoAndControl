@@ -16,17 +16,18 @@
 //wxWidgets include files
 #include <wx/defs.h> //for wxBG_STYLE_CUSTOM
 #include <wx/dcbuffer.h> //for class wxBufferedPaintDC
-#include <wx/dynlib.h> 
-#include "wx/window.h"
+#include <wx/dynlib.h> //wxDynamicLibrary::GetDllExt()
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
-#include "wx/frame.h" //for class wxFrame
+#include "wx/frame.h" //for base class wxFrame
+//#include <wx/icon.h> //for class wxIcon
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
 #include <wx/numdlg.h> //for ::wxGetNumberFromUser(...)
 #include <wx/stattext.h> //for wxStaticText
-#include <wx/wx.h> //for wxMessageBox(...) (,etc.)
-#include <wx/icon.h> //for wxIcon
-#include <wx/timer.h> //for EVT_TIMER (,...?)
 #include <wx/string.h> //for wxString::Format(...)
+#include <wx/timer.h> //for EVT_TIMER (,...?)
+//#include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
+#include <wx/wx.h> //for wxMessageBox(...) (,etc.)
+//#include "wx/window.h"
 //#include <wx/menubar.h>
 
 //#include "../Controller/RunAsService.h" //for MyServiceStart etc.
@@ -37,17 +38,16 @@
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
-#include <Controller/I_CPUaccess.hpp>
-#include <Controller/I_CPUcontrollerAction.hpp>
+#include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+//for member m_stdmapwmenuid2i_cpucontrolleraction
+#include <Controller/I_CPUcontrollerAction.hpp>//class I_CPUcontrollerAction
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
-#include <Controller/MainController.hpp>
 #include <Controller/character_string/stdtstr.hpp> //Getstdtstring(...)
 #include <ModelData/ModelData.hpp> //class CPUcoreData
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <ModelData/RegisterData.hpp>
 //#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
-#include <preprocessor_macros/BuildTimeString.h>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/CalculationThread.hpp>
@@ -57,13 +57,14 @@
   #include <Windows/Service/ServiceBase.hpp>
 #endif
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
-#include <wxWidgets/ModelData/wxCPUcoreID.hpp>
-#include <wxWidgets/DynFreqScalingThread.hpp>
-#include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
 //#include <wxWidgets/wxStringHelper.h> //getwxString()
 #include <wxWidgets/Controller/wxStringHelper.hpp> //getwxString()
+#include <wxWidgets/DynFreqScalingThread.hpp>
+#include <wxWidgets/ModelData/wxCPUcoreID.hpp>
+#include <wxWidgets/UserInterface/AboutDialog.hpp> //class AboutDialog
+#include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
 #include <Xerces/XMLAccess.hpp>
 #include "wxDynamicDialog.hpp"
 #ifdef COMPILE_WITH_MSR_EXAMINATION
@@ -74,7 +75,7 @@
   #define MAXWORD 65535
 #endif //#ifndef MAXWORD
 #include <map> //std::map
-#include <set>
+#include <set> //std::set
 //#include <xercesc/framework/MemBufInputSource.hpp>
 
 #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
@@ -275,14 +276,15 @@ inline void MainFrame::CreateFileMenu()
 
 MainFrame::MainFrame(
   const wxString & cr_wxstrTitle,
-  const wxPoint & pos,
-  const wxSize & size
+  const wxPoint & cr_wxpointTopLeftCornerPosition,
+  const wxSize & cr_wxsize
   , I_CPUcontroller * p_cpucontroller
   //, CPUcoreData * p_cpucoredata 
   , Model * p_model
   , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
-  : wxFrame((wxFrame *)NULL, -1, cr_wxstrTitle, pos, size
+  : wxFrame( (wxFrame *) NULL, -1, cr_wxstrTitle,
+    cr_wxpointTopLeftCornerPosition, cr_wxsize
     //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
     //"Use this style to force a complete redraw of the window whenever it is
     //resized instead of redrawing just the part of the window affected by
@@ -382,11 +384,14 @@ MainFrame::MainFrame(
     );
   LOGN("after appending menu item \"disable OS's dynamic frequency scaling\"")
   //If one can not change the power scheme (Windows) etc.
-  if( ! //mp_i_cpucontroller->mp_dynfreqscalingaccess->
+  if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->
     p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
       ChangeOtherDVFSaccessPossible()
     )
+    LOGN("Changing other DVFS is possible." )
+  else
   {
+    LOGN("Changing other DVFS is not possible." )
     mp_wxmenuitemOtherDVFS->Enable(false);
     mp_wxmenuitemOtherDVFS->SetHelp (
       wxT("Start e.g. as administrator to gain access") ) ;
@@ -417,7 +422,7 @@ MainFrame::MainFrame(
       );
     LOGN("after appending menu item \"" << GetStdString(stdwstr) << "\"")
   }
-#endif //#ifdef COMPILE_WITH_SERVICE_CONTROL
+#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   LOG("after extras menu creation"//\n"
     )
   if( ! p_wxmenuExtras )
@@ -1295,60 +1300,7 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
   LOGN("OnPauseService")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  bool bTryViaSCM = false ;
-  //The connection may have broken after it was established, so check it here.
-  if( ! ::wxGetApp().m_ipcclient.IsConnected() )
-  {
-    LOGN("not connected to the service")
-    if( ! ::wxGetApp().m_ipcclient.Init() )
-      bTryViaSCM = true ;
-  }
-  if( ::wxGetApp().m_ipcclient.IsConnected() )
-  {
-    LOGN("OnPauseService--connected to the service")
-    //TODO possibly make IPC communication into a seperate thread because it
-    // may freeze the whole GUI.
-    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(pause_service) ;
-    wxString wxstr = getwxString( ::wxGetApp().m_ipcclient.m_stdwstrMessage ) ;
-    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
-  }
-  else
-    bTryViaSCM = true ;
-  if( bTryViaSCM )
-    try
-    {
-      std::string stdstrMsg ;
-      if( ServiceBase::PauseService( //mp_model->m_strServiceName.c_str()
-        //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compatible between char and wide char.
-        //TODO make name variable because the user can change the name when
-        //installing the service.
-        _T("X86_info_and_control")
-        , stdstrMsg
-        )
-        )
-        ::wxMessageBox( wxT("successfully paused the service via the service "
-            "control manager")) ;
-      else
-      {
-        wxString wxstr = wxT("not connected to the service\n"
-          "->tried to pause via service control manager\n"
-          "Error pausing the service via the service control manager:\n")
-          + getwxString( stdstrMsg) ;
-        ::wxMessageBox( wxstr ) ;
-      }
-    }
-    catch(ConnectToSCMerror connecttoscmerror )
-    {
-      ::wxMessageBox( wxString(
-        //We need a _T() macro (wide char-> L"", char->"") for EACH 
-        //line to make it compatible between char and wide char.
-        _T("connecting to service control manager failed: ") 
-        ) +
-        (const wxChar *) ::LocalLanguageMessageFromErrorCodeA( 
-        connecttoscmerror.m_dwErrorCode).c_str() 
-        ) ;
-    }
+  mp_wxx86infoandcontrolapp->PauseService() ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
@@ -1376,51 +1328,21 @@ void MainFrame::OnSysTrayIconClick(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
-  std::tstring stdtstr ;
-  std::vector<std::tstring> stdvecstdtstring ;
-  MainController::GetSupportedCPUs(stdvecstdtstring) ;
-  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
-  {
-    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
-  }
-//  if( ! stdtstr.empty() )
-
-  wxMessageBox(
-    //We need a _T() macro (wide char-> L"", char->"") for EACH 
-    //line to make it compatible between char and wide char.
-    
-      //"A tool for optimizing the usage of AMD family 17\n, "
-//      _T("A tool for controlling performance states of AMD family 17\n, ")
-//      _T("codename \"griffin\" (mobile) CPUs, especially for undervolting.\n")
-      //_T("A tool for controlling performance states of AMD family 17\n, ")
-      _T("A tool for giving info about and controlling performance states of (built-in):\n")
-      + stdtstr +
-      _T( "\n")
-      _T("and for other CPUs as dynamic library\n\n")
-      //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-      BUILT_TIME
-      //"AMD--smarter choice than Intel?\n\n"
-      //"To ensure a stable operation:\n"
-      _T("To give important information (that already may be contained in ")
-      _T("the documentation):\n")
-      _T("There may be system instability when switching from power ")
-      _T("supply operation to battery mode\n")
-      _T("So test for this case if needed: test for the different p-states, ")
-      _T("especially for the ones that are much undervolted.\n")
-      _T("If the system is instable, heighten the voltage(s).\n")
-      _T("Note that the OS may freeze if changing voltages, so you may encounter data loss.\n")
-      _T("->save all of your work before.\n\n")
-      //" -when switching from power supply operation to battery,\n"
-      //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
-      _T("Licence/ info: http://www.trilobyte-se.de/x86iandc")
-    ,
-    //_T("About GriffinControlDialog"),
+  wxString wxstrMessage ;
+  GetAboutMessage(wxstrMessage) ;
+  ::wxMessageBox(
+    wxstrMessage ,
     _T("About ") //_T(PROGRAM_NAME)
     //+ mp_i_cpucontroller->mp_model->m_stdtstrProgramName
     + mp_model->m_stdtstrProgramName
     ,
-    wxOK | wxICON_INFORMATION, this
+    wxOK | wxICON_INFORMATION //,
+//    this
     );
+//  AboutDialog * p_aboutdialog = new AboutDialog( getwxString( mp_model->
+//    m_stdtstrProgramName) ) ;
+//  p_aboutdialog->Show() ;
+//  p_aboutdialog->Destroy() ;
 }
 
 void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
