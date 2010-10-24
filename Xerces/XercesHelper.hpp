@@ -8,6 +8,7 @@
 #define	_XERCESHELPER_HPP
 
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //__int64
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
 //from C standard library
 #include <errno.h> //for "ERANGE"
@@ -59,6 +60,7 @@ namespace x86InfoAndControl
     //When Terminate() was called in another block (even if in a function that
     //is called in the same block) than program crash.
     XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate();
+    LOGN("Xerces access terminated")
   }
 }
 

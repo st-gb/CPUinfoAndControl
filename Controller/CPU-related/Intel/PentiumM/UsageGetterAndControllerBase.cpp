@@ -5,16 +5,11 @@
  *      Author: Stefan
  */
 #include "UsageGetterAndControllerBase.hpp"
+#include "PentiumM_registers.h" //MAXIMUM_PERFORMANCE_COUNTER_VALUE
 
 PentiumM::UsageGetterAndControllerBase::UsageGetterAndControllerBase()
 {
-  //for Pentium Ms the perf counter bit width seems to be 40:
-  //                                    <8 bit > <8 bit > <8 bit > <8 bit > <8 bit >
-  //previous value: 5497519814387   100 11111111 11111101 10110111 00110110 11110011
-  //current value:  4398069455221   100 00000000 00000001 01011110 00011001 01110101
-  //#infdef _MSC_VER
-  //suffix "ULL" is not needed by MS compiler, but by g++
-  m_ullMaximumPerfCounterValue = 0xFFFFFFFFFFULL ; //10xF = 10x 4 bit =40 bit
+  m_ullMaximumPerfCounterValue = MAXIMUM_PERFORMANCE_COUNTER_VALUE ;
   //#else
   //m_ullMaximumPerfCounterValue = 0xFFFFFFFFFF ; //10xF = 10x 4 bit =40 bit
   //#endif

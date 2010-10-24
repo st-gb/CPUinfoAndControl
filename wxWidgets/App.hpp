@@ -55,12 +55,12 @@
 //class Windows_API::DynFreqScalingAccess ;
 //class Model ;
 class MainFrame ;
-class MyTaskBarIcon ;
+class TaskBarIcon ;
 class UserInterface ;
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 class WinRing0_1_3RunTimeDynLinked ;
 #else
-  #include <Linux/MSRdeviceFile.h>
+  #include <Linux/MSRdeviceFile.hpp>
 #endif
 #ifdef COMPILE_WITH_CALC_THREAD
 class CalculationThread ;
@@ -129,14 +129,11 @@ public:
   SAX2IPCcurrentCPUdataHandler m_sax2_ipc_current_cpu_data_handler ;
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Must be created on heap, else left mouse clicks were not processed?
-  MyTaskBarIcon * mp_taskbaricon ;
-//  MyTaskBarIcon m_taskbaricon ;
+  TaskBarIcon * mp_taskbaricon ;
+//  TaskBarIcon m_taskbaricon ;
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     NamedPipeClient m_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
-#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
   //"volatile" because it is accessed from more than 1 thread.
@@ -161,7 +158,6 @@ public:
   //Windows_API::DynFreqScalingThread m_dynfreqscalingthread ;
   //DynFreqScalingThread m_dynfreqscalingthread ;
 #endif //#ifdef COMPILE_WITH_CPU_SCALING
-  void EndGetCPUcoreDataViaIPCthread() ;
   wxX86InfoAndControlApp() ;
   //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
   //"You should delete all wxWidgets object that you created by 
@@ -177,7 +173,9 @@ public:
   void CPUcoreUsageGetterDeleted() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
   void DeleteCPUcontroller() ;
+  void DynVoltnFreqScalingEnabled() ;
   void EndDVFS() ;
+  void EndGetCPUcoreDataViaIPCthread() ;
   I_CPUcontroller * GetCPUcontroller()
   {
     return mp_cpucontroller ;
@@ -193,8 +191,13 @@ public:
   {
     return mp_modelData ;
   }
-  void PauseService() ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  void PauseService(
+    bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void PossiblyAskForOSdynFreqScalingDisabling() ;
+#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;

@@ -7,7 +7,7 @@
 //The "#ifdef _WINDOWS" to be compilable even under Linux has to be 
 //here because if an "#ifdef ..." sourrounding "#include "stdafx.h"": 
 //"fatal error C1020: Unerwartetes #endif" under MSVC++
-#ifdef _WINDOWS  
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
  #ifndef __CYGWIN__
 
   #define WIN32_LEAN_AND_MEAN		// Selten verwendete Teile der Windows-Header nicht einbinden.

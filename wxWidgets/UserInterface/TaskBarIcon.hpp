@@ -12,7 +12,7 @@ class MainFrame ;
 //from wxWidgets' sample tbtest
 // Created:     01/02/97
 // RCS-ID:      $Id: tbtest.h 36336 2005-12-03 17:55:33Z vell $
-class MyTaskBarIcon
+class TaskBarIcon
   : public wxTaskBarIcon
 {
 private:
@@ -23,15 +23,15 @@ private:
   wxMenu * p_wxmenu ;
 public:
 #if defined(__WXCOCOA__)
-    MyTaskBarIcon(wxTaskBarIconType iconType = DEFAULT_TYPE)
+    TaskBarIcon(wxTaskBarIconType iconType = DEFAULT_TYPE)
     :   wxTaskBarIcon(iconType)
 #else
-    MyTaskBarIcon(MainFrame * p_mainframe)
+    TaskBarIcon(MainFrame * p_mainframe)
 #endif
     {
       mp_mainframe = p_mainframe ;
     }
-//    MyTaskBarIcon() ;
+//    TaskBarIcon() ;
 
     void OnLeftButtonClick(wxTaskBarIconEvent&);
     void OnMenuRestore(wxCommandEvent&);

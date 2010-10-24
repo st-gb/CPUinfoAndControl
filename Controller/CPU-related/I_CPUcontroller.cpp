@@ -146,7 +146,7 @@ float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
 }
 
 //Stores multiplier, reference clock and voltage into the model data.
-BYTE I_CPUcontroller::GetCurrentVoltageAndFrequency(
+BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
   WORD wCoreID )
 {
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
@@ -158,6 +158,15 @@ BYTE I_CPUcontroller::GetCurrentVoltageAndFrequency(
     wCoreID ) ;
 }
 
+void I_CPUcontroller::GetCurrentTemperatureInCelsiusAndStoreValues(
+  WORD wCoreID )
+{
+  PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
+    m_arp_percpucoreattributes  ;
+  arp_percpucoreattributes[wCoreID].m_fTempInDegCelsius =
+    GetTemperatureInCelsius(wCoreID) ;
+}
+
 // returns: true: p-state with freq >= wanted freq and 
 //    p-state with freq <= wanted freq was found and
 //    voltage could be interpolated 
@@ -167,11 +176,11 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
   , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
   )
 {
-//  LOGN("GetInterpolatedVoltageFromFreq("
-//#ifdef _DEBUG
-//    << wFreqInMHzToGetVoltageFrom
-//#endif
-//    << ", ..." )
+  LOGN("GetInterpolatedVoltageFromFreq("
+#ifdef _DEBUG
+    << wFreqInMHzToGetVoltageFrom
+#endif
+    << ", ..." )
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
     r_stdsetvoltageandfreq.begin() ;
   std::set<VoltageAndFreq>::const_iterator 
@@ -193,17 +202,33 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
     ++ ci_stdsetvoltageandfreq ;
   }
 //  LOGN("GetInterpolatedVoltageFromFreq(...) after loop")
+#ifdef COMPILE_WITH_LOG
+  std::ostringstream ostringstreamLog ;
+  ostringstreamLog << "GetInterpolatedVoltageFromFreq("
+    << wFreqInMHzToGetVoltageFrom
+    << ", ...)--lower freq:" ;
+  if( ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
+    )
+  {
+    ostringstreamLog << ci_stdsetvoltageandfreqNearestLowerEqual->
+      m_wFreqInMHz ;
+  }
+  else
+    ostringstreamLog << " no lower freq than " << wFreqInMHzToGetVoltageFrom ;
+  ostringstreamLog << ", ...)--higher freq:" ;
+  if( ci_stdsetvoltageandfreqNearestHigherEqual != r_stdsetvoltageandfreq.end()
+    )
+    ostringstreamLog << ci_stdsetvoltageandfreqNearestHigherEqual->
+      m_wFreqInMHz ;
+  else
+    ostringstreamLog << " no higher freq than " << wFreqInMHzToGetVoltageFrom ;
+#endif //#ifdef COMPILE_WITH_LOG
+  LOGN( ostringstreamLog.str() )
   if( ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
     && ci_stdsetvoltageandfreqNearestHigherEqual != 
       r_stdsetvoltageandfreq.end()
     )
   {
-//    LOGN("GetInterpolatedVoltageFromFreq(" << wFreqInMHzToGetVoltageFrom
-//      << ", ...)--lower freq:"
-//      << ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
-//      << ", ...)--higher freq:"
-//      << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
-//      )
     if( //This is the case if wFreqInMHzToGetVoltageFrom has the 
       //same freq as one of the p-states.
       //This case must be catched, else wrong values by the 

@@ -28,6 +28,7 @@ namespace wxWidgets
     DynFreqScalingThread(
       CPUcontrolBase & r_cpucontrolbase
       , CPUcoreData & r_cpucoredata
+      , wxThreadKind kind = wxTHREAD_DETACHED
       ) ;
     //void ChangeOperatingPointByLoad(
     //  BYTE byCoreID
@@ -46,6 +47,10 @@ namespace wxWidgets
     }
     //BYTE Start() ;
     DWORD Start() ;
+    void * WaitForTermination()
+    {
+      return Wait() ;
+    }
   };
 }
 #endif //#ifndef WXWIDGETS_DYNFREQSCALINGTHREAD_HPP

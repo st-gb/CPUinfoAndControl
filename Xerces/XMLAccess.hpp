@@ -52,7 +52,7 @@
     ) ;
   char ReadXMLdocument(
     XERCES_CPP_NAMESPACE::InputSource & r_inputsource, //PStates & pstates
-    Model & model,
+//    Model & model,
     UserInterface * p_userinterface ,
    //Base class of implementing Xerces XML handlers.
    //This is useful because there may be more than one XML file to read.
@@ -85,7 +85,7 @@
     LOGN("before readXMLConfig (InputSource)")
     return ReadXMLdocument(
       membufinputsource ,
-      model,
+//      model,
       p_userinterface ,
       r_defaulthandler
       ) ;
@@ -93,7 +93,7 @@
   //return: 0=success
   inline BYTE ReadXMLfileWithoutInitAndTermXercesInline(
     const char * cp_chXMLfilePath,
-    Model & model,
+//    Model & model,
     UserInterface * p_userinterface ,
    //Base class of implementing Xerces XML handlers.
    //This is useful because there may be more than one XML file to read.
@@ -113,7 +113,7 @@
         p_xmlchXMLfilePath ) ;
       byReturn = ! ReadXMLdocument(
         xerces_localfileinputsource ,
-        model,
+//        model,
         p_userinterface ,
         r_defaulthandler
         ) ;

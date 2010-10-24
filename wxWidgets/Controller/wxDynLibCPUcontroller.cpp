@@ -16,7 +16,8 @@
 #include <wxWidgets/Controller/wxStringHelper.hpp> //for GetStdString()
 
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
-#include <binary_search.cpp> //GetClosestLessOrEqual
+//GetClosestLessOrEqual(...), GetClosestGreaterOrEqual(...)
+#include <algorithms/binary_search.cpp>
 #ifdef _MSC_VER
   #include <float.h> //FLT_MIN
 #else
@@ -198,9 +199,39 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       else
         m_pfnGetNumberOfCPUcores = NULL ;
 
-      m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
-        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetTemperatureInCelsius") ) ;
-
+      wxstrFuncName = wxT("GetTemperatureInCelsius") ;
+      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName) )
+      {
+#ifdef COMPILE_WITH_LOG
+        std::string stdstringFunctionName = GetStdString(wxstrFuncName) ;
+#endif
+        bool bFunctionPointerSuccessfullyAssigned = false ;
+        LOGN("The symbol \""
+          << stdstringFunctionName
+          << "\" exists in the dynamic library "
+          //<< r_wxstrFilePath << "\""
+          )
+        m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
+          m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ,
+            & bFunctionPointerSuccessfullyAssigned) ;
+        LOGN("function pointer for function \"" << stdstringFunctionName
+          << "\":" << (void *) m_pfngettemperatureincelsius )
+        if( bFunctionPointerSuccessfullyAssigned )
+          LOGN("successfully assigned pointer to function " <<
+            stdstringFunctionName )
+        else
+          LOGN("Failed to assign pointer to function " <<
+            GetStdString(wxstrFuncName) )
+      }
+      else
+      {
+        LOGN("The symbol \""
+          << GetStdString(wxstrFuncName)
+          << "\" does _not_ exist in the dynamic library "
+          //<< r_wxstrFilePath << "\""
+          )
+        m_pfngettemperatureincelsius = NULL ;
+      }
       wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
       if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
         m_b1CPUcorePowerPlane = false ;
@@ -254,7 +285,8 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   {
     DWORD dw = OperatingSystem::GetLastErrorCode() ;
     std::string stdstrErrMsg = //EnglishMessageFromLastErrorCode() ;
-      "loading the dynamic library\"" + GetStdString( r_wxstrFilePath )
+      "loading the CPU controller dynamic library\""
+      + GetStdString( r_wxstrFilePath )
       + "\" failed:"
       + GetErrorMessageFromErrorCodeA(dw) ;
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
@@ -265,9 +297,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
 #else //#ifdef _WIN32
 #endif //#ifdef _WIN32
-    LOGN("loading CPU controller dynamic library failed:" <<
-        stdstrErrMsg )
-    //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
+    LOGN( stdstrErrMsg )
+    //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) ,
+//    wxT("loading DLL failed") ) ;
     mp_userinterface->Confirm(stdstrErrMsg) ;
     throw CPUaccessException(stdstrErrMsg) ;
   }
@@ -275,6 +307,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 
 wxDynLibCPUcontroller::~wxDynLibCPUcontroller()
 {
+  LOGN("Before Unloading the CPU controller dynamic library")
   m_wxdynamiclibraryCPUctl.Unload() ;
   LOGN("Unloaded the CPU controller dynamic library")
 }
@@ -622,7 +655,14 @@ float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 {
   if( m_pfngettemperatureincelsius )
   {
+#ifdef COMPILE_WITH_LOG
+    float fTemp = ( * m_pfngettemperatureincelsius ) ( wCoreID ) ;
+    LOGN("DynLibCPUcontroller::GetTemperatureInCelsius--temperature for core "
+      << wCoreID << ":" << fTemp )
+    return fTemp ;
+#else
     return ( * m_pfngettemperatureincelsius ) ( wCoreID ) ;
+#endif
   }
   return 
 #ifdef _MSC_VER

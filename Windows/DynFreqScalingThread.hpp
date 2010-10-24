@@ -13,6 +13,7 @@ namespace Windows_API
   class DynFreqScalingThread
     : public DynFreqScalingThreadBase
   {
+    HANDLE m_handleThread ;
   public:
     //float m_fPercentileIncrease ;
     //WORD m_wCurrentFreqInMHz ;
@@ -32,11 +33,15 @@ namespace Windows_API
       CPUcontrolBase & r_cpucontrolbase
       , CPUcoreData & r_cpucoredata
       ) ;
+    //"virtual" because else g++ "warning: `class Windows_API::
+    // DynFreqScalingThread' has virtual functions but non-virtual destructor"
+    virtual ~DynFreqScalingThread() ;
     //int Run() ;
     DWORD Run() ;
     //void Start() ;
     //BYTE Start() ;
     DWORD Start() ;
+    void * WaitForTermination() ;
     //void SetMembers(
     //  ICPUcoreUsageGetter * p_icpucoreusagegetter,
     //  ) ;

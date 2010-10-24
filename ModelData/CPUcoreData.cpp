@@ -1,7 +1,7 @@
 #include "CPUcoreData.hpp"
 //Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
 //"undefined reference".
-#include <binary_search.cpp> //GetArrayIndexForClosestLessOrEqual(...)
+#include <algorithms/binary_search.cpp> //GetArrayIndexForClosestValue(...)
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
@@ -363,9 +363,9 @@ void CPUcoreData::Init()
   void CPUcoreData::SetCPUcoreNumber(BYTE byNumberOfCPUcores)
   {
     LOGN("CPUcoreData::SetCPUcoreNumber("
-#ifdef _DEBUG
+//#ifdef _DEBUG
       << (WORD) byNumberOfCPUcores
-#endif
+//#endif
       << ")" )
     m_byNumberOfCPUCores = byNumberOfCPUcores ;
     PossiblyReleaseMemForCoreNumAffectedData() ;

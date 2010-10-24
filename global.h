@@ -34,7 +34,7 @@
   //  typedef unsigned short WORD;
   //  typedef unsigned long DWORD;
   //  typedef DWORD * PDWORD;
-    #ifndef _WINDOWS
+    #ifndef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
       #include <preprocessor_macros/Windows_compatible_typedefs.h>
     #endif
     //typedef _W64 unsigned long ULONG_PTR;

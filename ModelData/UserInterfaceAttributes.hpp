@@ -14,8 +14,12 @@ namespace Attributes
   class UserInterfaceAttributes
   {
   public:
+    bool m_bPreventVoltageAboveDefaultVoltage ;
+    bool m_bPreventVoltageBelowLowestStableVoltage ;
     bool m_bSelectAllCPUcores ;
     bool m_bShowMainFrameAtStartup ;
+    bool m_bStartDVFSatStartup ;
+    bool m_bTryToPauseViaServiceControlManagerIfViaIPCfails ;
     float m_fOperatingSafetyMarginInVolt ;
     unsigned short m_wMainFrameHeightInPixels ;
     unsigned short m_wMainFrameWidthInPixels ;

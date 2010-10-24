@@ -41,7 +41,7 @@ public:
 //  virtual bool Confirm(
 //    //http://fara.cs.uni-potsdam.de/~kaufmann/?page=GenCppFaqs&faq=IntToString#Answ:
 //    //"schnell" , "deprecated",
-//    //"Ein fehlendes ends führt dazu, dass der Puffer nicht nullterminiert wird."
+//    //"Ein fehlendes ends fÃ¼hrt dazu, dass der Puffer nicht nullterminiert wird."
 //    std::ostrstream & r_ostrstream
 //    //std::ostream & r_ostream
 //    ) = 0//{return true;}
@@ -49,7 +49,7 @@ public:
   virtual bool Confirm(
     //http://fara.cs.uni-potsdam.de/~kaufmann/?page=GenCppFaqs&faq=IntToString#Answ:
     //"schnell" , "deprecated",
-    //"Ein fehlendes ends führt dazu, dass der Puffer nicht nullterminiert wird."
+    //"Ein fehlendes ends fÃ¼hrt dazu, dass der Puffer nicht nullterminiert wird."
     std::ostringstream & r_stdostringstream
     //std::ostream & r_ostream
     ) = 0//{return true;}
@@ -57,6 +57,7 @@ public:
   virtual void CPUcontrollerDeleted() {} ;
   virtual void CPUcoreUsageGetterDeleted() {} ;
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
+  virtual void DynVoltnFreqScalingEnabled() {}
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};
   virtual void RedrawEverything() {} ;

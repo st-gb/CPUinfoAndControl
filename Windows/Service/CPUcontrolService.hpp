@@ -2,9 +2,9 @@
 #ifndef CPUCONTROLSERVICE_HPP_ //Include guard
 #define CPUCONTROLSERVICE_HPP_
 
-#include <Controller/CPUcontrolBase.hpp> //Base class CPUcontrolBase
-//Member variable of class MainController
-#include <Controller/MainController.hpp>
+//#include <Controller/CPUcontrolBase.hpp> //Base class CPUcontrolBase
+//Base class CPUcontrolServiceBase
+#include <Controller/CPUcontrolServiceBase.hpp>
 #include <Controller/I_ServerProcess.hpp> //Base class I_ServerProcess
 //#include <Controller/IPC/I_IPC_DataHandler.hpp>
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
@@ -52,9 +52,8 @@ typedef struct tagWTSSESSION_NOTIFICATION {
 } WTSSESSION_NOTIFICATION, *PWTSSESSION_NOTIFICATION;
 
 //Forward declarations (faster than #include)
-class WinRing0DynLinked ;
 class I_DynFreqScalingAccess ;
-class DynFreqScalingThreadBase ;
+class WinRing0DynLinked ;
 //namespace Xerces
 //{
 //  class IPCdataHandler ;
@@ -66,7 +65,8 @@ class CPUcontrolService
     public I_ServerProcess
   ,
 #endif //#ifdef COMPILE_WITH_IPC
-  public CPUcontrolBase
+//  public CPUcontrolBase
+  public CPUcontrolServiceBase
   , public ServiceBase //for register service ctrl manager ease etc.
 {
 public:
@@ -89,14 +89,12 @@ private:
   std::string m_stdstrServiceName ;
   std::string m_stdstrSharedMemoryName ;//= "CPUcontrolService" ;
 //  std::wstring m_stdwstrProgramName ;
-  std::tstring m_stdtstrProgramName ;
 #ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
   LPVOID mp_voidMappedViewStartingAddress ;
 #endif
   //this might be changed to a pointer later
 //  I_IPC_DataHandler m_ipc_datahandler ;
 public:
-  LPTSTR * mar_tch ;
   //static
     volatile bool m_bProcess ;
   //static
@@ -105,10 +103,6 @@ public:
 #ifdef COMPILE_WITH_CALC_THREAD
   CalculationThread m_calculationthread ;
 #endif //COMPILE_WITH_CALC_THREADs
-  //Must be static. Else: runtime error when calling
-  // DummyUserInterface::Confirm(ostream)
-  static
-    DummyUserInterface m_dummyuserinterface ;
   //Use non-objects rather than MFC objects because I don't want to be
   //dependent on MFC (porting is easier ).
   HANDLE m_hEndProcessingEvent ;
@@ -120,14 +114,7 @@ public:
      SERVICE_STATUS m_servicestatus;
   //static
 //       SERVICE_STATUS_HANDLE   m_service_status_handle;
-  //static
-//       I_CPUcontroller * mp_cpucontroller ;
-  //static
-//       std::ofstream m_ofstream ;
-  //static
-     //Model m_modelDataForCopying ;
-     Model * mp_modelData ;
-//       Model m_model ;
+//     Model * mp_modelData ;
   //static
    //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
    IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
@@ -135,8 +122,6 @@ public:
   //For sending data to clients like a graphical user interface.
   NamedPipeServer m_ipcserver ;
 #endif //#ifdef COMPILE_WITH_IPC
-  //For initialization of CPU controller and CPU core usage getter.
-  MainController m_maincontroller ;
   PTSTR * m_p_ptstrArgument ;
   //For (possibly) disabling Windows' dynamic voltage and frequency scaling.
   PowerProfDynLinked m_powerprofdynlinked ;
@@ -145,10 +130,8 @@ public:
   //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
   //WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
   static std::vector<std::string> m_vecstrCmdLineOptions ;
-  std::tstring m_stdtstrProgramArg ;
   std::vector<std::string> m_vecstdstrCommandLineArgs ;
 //    ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
-  DynFreqScalingThreadBase * mp_dynfreqscalingthreadbase ;
   wxConditionBasedI_Condition
     m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree ;
   wxConditionBasedI_Condition
@@ -174,12 +157,17 @@ public :
   virtual ~CPUcontrolService() ;
 
   bool Continue() ;
+  void CreateHardwareAccessObject() ;
+  static void CreateService( const TCHAR * const cpc_tchServiceName) ;
   //"static" because: there needn't be an object for putting this info out.
   static void CreateStringVector(
     //char arch[] ,
     std::string stdstrInput ,
     std::vector<std::string> & vecstdstrParams
     ) ;
+  static void DeleteService(const TCHAR * cp_tchServiceName
+    , std::string & stdtstrProgramName ) ;
+  void DisableOtherVoltageOrFrequencyChange() ;
   void EndAlterCurrentCPUcoreIPCdata() ;
   static void FillCmdLineOptionsList() ;
   inline BYTE * GetIPCdataThreadSafe(DWORD & r_dwByteSize) ;
@@ -190,8 +178,7 @@ public :
     PWTSSESSION_NOTIFICATION pwtssession_notification) ;
   inline void HandlePowerEvent(DWORD dwEventType ) ;
   inline void HandleInitServiceFailed( DWORD dwStatus) ;
-  inline void HandleStartDynVoltAndFreqScalingThread() ;
-  void Initialize() ;
+  void InitializeMemberVariables() ;
 #ifdef COMPILE_WITH_IPC
   DWORD IPC_Message(
     BYTE byCommand
@@ -204,15 +191,6 @@ public :
   ////static
   //    bool HasLogFilePathOption( int argc, char *  argv[] ) ;
   static void outputUsage();
-  //static
-  DWORD MyServiceInitialization(
-    DWORD   argc,
-    LPTSTR  * argv
-      //DWORD *specificError
-    //, ICalculationThread * p_icalculationthread
-    //, ISpecificController * p_ispecificcontroller
-    //, UserInterface * p_userinterface
-    ) ;
   bool Pause() ;
   SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
   static void requestOption(
@@ -234,7 +212,7 @@ public :
       ) ;
   void SetCommandLineArgs( int argc, char *  argv[] ) ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) ;
-
+  inline void SetInitHardwareAccessWaitHint() ;
   void SetServiceStatus () ;
   void SetInitialServiceStatusAttributeValues() ;
   static bool ShouldCreateService(
@@ -242,7 +220,7 @@ public :
   static bool ShouldDeleteService(
     const std::vector<std::string> & cr_vecstdstrParams );
   static VOID SvcDebugOut(LPSTR String, DWORD Status);
-  bool StartDynVoltnFreqScaling() ;
+  inline void ShowMessage( const std::string & cr_stdstrMessage ) ;
   void Stop() ;
   //Must be "static" because no "this" (would be class-specific) pointer is
   //allowed(?).

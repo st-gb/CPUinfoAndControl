@@ -22,6 +22,8 @@
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.
 class CPUcoreData ;
+class DynFreqScalingThreadBase ;
+class IDynFreqScalingAccess ;
 class I_CPUaccess ;
 class I_CPUcontroller ;
 class ICPUcoreUsageGetter ;
@@ -37,6 +39,10 @@ public:
   // controller dyn libs available. An alternative would be to use RunTime
   // Type Information (RTTI); i.e. "if ( typeid(mp_cpucontroller) ==
   // typeid(wxDynLibCPUcontroller)"
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+  IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
+#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+  DynFreqScalingThreadBase * mp_dynfreqscalingthreadbase ;
   I_CPUcontroller * m_p_cpucontrollerDynLib ;
   ICPUcoreUsageGetter * m_p_cpucoreusagegetterDynLib ;
   criticalsection_type m_criticalsection_typeCPUcoreData ;
@@ -50,7 +56,8 @@ public:
   Model m_model ;
   UserInterface * mp_userinterface ;
 public:
-  CPUcontrolBase() ;
+//  CPUcontrolBase() ;
+  CPUcontrolBase(const UserInterface * const cpc_userinterface ) ;
   //  //dtor must exist, else g++: "undefined reference to `vtable for
   //  //CPUcontrolBase'"?
   //Avoid g++ warning "warning: `class CPUcontrolBase' has virtual functions
@@ -69,7 +76,8 @@ public:
     , WORD wNumCPUcores
     )
   {
-    LOGN("before GetPercentalUsageForAllCores")
+    LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
+      "before GetPercentalUsageForAllCores")
     //TODO exit thread when getting CPU core load fails?
     if( //mp_icpu->//GetPercentalUsageForBothCores
         mp_cpucoreusagegetter->
@@ -79,7 +87,8 @@ public:
         )
       )
     {
-      LOGN("after GetPercentalUsageForAllCores")
+      LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
+        "after GetPercentalUsageForAllCores")
       //Get the current voltage etc. for ALL cores for sending the data for
       // all cores via IPC, even if not needed for
       //DVFS (if single power plane / all cores always at the same p-state
@@ -87,20 +96,26 @@ public:
       //needed).
       for( BYTE byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
       {
-        mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+        mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
   //            float fVoltageInVolt ;
   //            float fMultiplier ;
   //            float fReferenceClockInMhz ;
-  //            mp_cpucontroller->GetCurrentVoltageAndFrequency(
+  //            mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
   //              fVoltageInVolt,
   //              fMultiplier,
   //              fReferenceClockInMhz ,
   //              byCoreID ) ;
+        mp_cpucontroller->GetCurrentTemperatureInCelsiusAndStoreValues(
+          byCoreID) ;
       }
 //      m_criticalsection_typeCPUcoreData.Leave() ;
+      LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
+        "return true")
       return true ;
     }
 //    m_criticalsection_typeCPUcoreData.Leave() ;
+    LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
+      "return false")
     return false ;
   }
   inline bool GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
@@ -120,8 +135,14 @@ public:
 
   virtual void DeleteCPUcontroller() ;
 
-  virtual void EndDVFS() {}
+  virtual void EndDVFS() ; //{}
   virtual void FreeRessources() ;
+  void InitMemberVariables() ;
+  static void OuputCredits() ;
+  //Should be implemented here (and not in UserInterface) because the service
+  // usally can mot get feedback from a user (so this method shouldn't be
+  // implemented there)
+  virtual void PossiblyAskForOSdynFreqScalingDisabling() {}
   //Declare here because e.g. either a service or a GUI may delete a CPU
   //controller.
   //"Possibly" because: if the controller is NULL it is not being deleted.
@@ -133,6 +154,7 @@ public:
 
   I_CPUaccess * GetCPUaccess() { return mp_i_cpuaccess ; }
   virtual void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) {}
+  virtual void StartDynamicVoltageAndFrequencyScaling() ;
 } ;
 
 #endif /* CPUCONTROLBASE_HPP_ */

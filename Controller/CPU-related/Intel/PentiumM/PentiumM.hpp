@@ -17,8 +17,13 @@
 //1 include path must match the path where the header file is in
 //#include <inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
+#include <preprocessor_macros/value_difference.h> //ULONGLONG_VALUE_DIFF
+//PERFORMANCE_COUNTER_VALUE_DIFF(...)
+#include <Controller/CPU-related/PerformanceCounterValueDiff.h>
 //for IA32_PERF_STATUS etc.
 #include <Controller/CPU-related/Intel/Intel_registers.h>
+#include <winnt.h> //ULONGLONG
+#include "PentiumM_registers.h" //MAXIMUM_PERFORMANCE_COUNTER_VALUE
 
 //These variables should be defined in a source (.cpp file) to avoid multiple
 // definitions if this header file is more than once.
@@ -104,7 +109,7 @@ inline BYTE GetCurrentVoltageAndFrequencyPentium_M(
     return 0 ;
   }
 #endif
-  //return 1 ;
+  return 0 ;
 //  return bySuccess ;
 }
 
@@ -158,6 +163,160 @@ inline BYTE GetDefaultPstates(
   return 0 ;
 }
 
+inline void SelectClocksNotHaltedPerformanceCounterEvent_Pentium_M(
+  //BYTE byCoreID
+  ) ;
+
+inline float GetPercentalUsageForCore_Pentium_M(//BYTE byCoreID
+  )
+{
+  //"static": variable is not created every time one stack (like global var.,
+  //but visibility/ scope is local)
+  static BYTE s_byAtMask2ndTimeCPUcoreMask = 0 ;
+  static double dClocksNotHaltedDiffDivTCSdiff = -1.0 ;
+  static ULONGLONG s_ullTimeStampCounterValue = 0 ;
+  static ULONGLONG s_ullPerformanceCounterValue = 0 ;
+  static ULONGLONG s_ullPreviousTimeStampCounterValue = 0 ;
+  static ULONGLONG s_ullPreviousPerformanceCounterValue = 0 ;
+  static ULONGLONG s_ullPerformanceCounterValueDiff = 0 ;
+  static ULONGLONG s_ullTimeStampCounterValueDiff = 0 ;
+  static DWORD dwLow, dwHigh ;
+  ReadMSR(
+    IA32_TIME_STAMP_COUNTER,
+    & g_dwLowmostBits,// bit  0-31 (register "EAX")
+    & g_dwHighmostBits,
+//    1 << byCoreID
+    //Use fixed core 0, because Pentium M has just 1 core
+    1
+    ) ;
+
+  s_ullTimeStampCounterValue = g_dwHighmostBits ;
+  s_ullTimeStampCounterValue <<= 32 ;
+  s_ullTimeStampCounterValue |= g_dwLowmostBits ;
+
+  //mp_pentium_m_controller->ReadPerformanceEventCounterRegister(
+  //  //2
+  //  //1 +
+  //  byCoreID //performance counter ID/ number
+  //  , m_ullPerformanceEventCounter3 ,
+  //  //m_dwAffinityMask
+  //  1 << byCoreID
+  //  ) ;
+
+  ReadMSR(
+    //IA32_PERFEVTSEL0
+    //Intel vol. 3B:
+    //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
+    //address space; the number of MSRs per logical processor is reported using
+    //CPUID.0AH:EAX[15:8]."
+    //"30.2.1.1 Architectural Performance Monitoring Version 1 Facilities":
+    //The bit width of an IA32_PMCx MSR is reported using the
+    //CPUID.0AH:EAX[23:16]
+    //
+    IA32_PMC0
+    , & dwLow
+    , & dwHigh
+    , 1 ) ;
+  //It seems that only 40 bits of the PMC are used with Pentium Ms although also
+  //higher bits are set.
+  //with simply making a difference, I got "1099516786500" (~10^12) although it was a 100 ms
+  //interval, so the max. diff. could be ~ 1800 M/ 10 = 180 M (180 * 10^6)
+  dwHigh &= BITMASK_FOR_LOWMOST_8BIT ;
+  s_ullPerformanceCounterValue = dwHigh ;
+  s_ullPerformanceCounterValue <<= 32 ;
+  s_ullPerformanceCounterValue |= dwLow ;
+  //For the first time there are no previous values for difference .
+  if( //m_bAtLeastSecondTime
+//    ( m_dwAtMask2ndTimeCPUcoreMask >> byCoreID ) & 1
+      s_byAtMask2ndTimeCPUcoreMask == 1
+    )
+  {
+  #ifdef _DEBUG
+    if( s_ullTimeStampCounterValue <
+      m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
+      )
+    {
+  //      //Breakpoint possibility
+  //      int i = 0;
+    }
+    if( s_ullPerformanceCounterValue < m_ar_cnh_cpucore_ugpca[ byCoreID ].
+      m_ullPreviousPerformanceEventCounter3
+      )
+    {
+  //      //Breakpoint possibility
+  //      int i = 0;
+    }
+  #endif //#ifdef _DEBUG
+      //ULONGLONG ullTimeStampCounterValueDiff
+    s_ullTimeStampCounterValueDiff  = //ull -
+      //  m_ullPreviousTimeStampCounterValue;
+      ULONGLONG_VALUE_DIFF( s_ullTimeStampCounterValue ,
+  //      m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
+        s_ullPreviousTimeStampCounterValue
+        ) ;
+
+    s_ullPerformanceCounterValueDiff =
+      PERFORMANCE_COUNTER_VALUE_DIFF(
+//      PerformanceCounterValueDiff(
+        s_ullPerformanceCounterValue ,
+  //      m_ar_cnh_cpucore_ugpca[ byCoreID ].
+  //        m_ullPreviousPerformanceEventCounter3
+        s_ullPreviousPerformanceCounterValue
+      ) ;
+
+    //double
+    dClocksNotHaltedDiffDivTCSdiff =
+      (double) s_ullPerformanceCounterValueDiff /
+      (double) s_ullTimeStampCounterValueDiff ;
+    #ifdef _DEBUG
+    if( dClocksNotHaltedDiffDivTCSdiff > 1.1 ||
+      dClocksNotHaltedDiffDivTCSdiff < 0.02 )
+    {
+    //    //Breakpoint possibility
+    //    int i = 0 ;
+    }
+    #endif
+    //return (float) dClocksNotHaltedDiffDivTCSdiff ;
+  }
+  else
+    //m_bAtLeastSecondTime = true ;
+//    m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
+    s_byAtMask2ndTimeCPUcoreMask = 1 ;
+
+//  m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
+  s_ullPreviousTimeStampCounterValue
+    = s_ullTimeStampCounterValue ;
+//  m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousPerformanceEventCounter3
+  s_ullPreviousPerformanceCounterValue
+    = s_ullPerformanceCounterValue ;
+
+  //Workaround for unabilility to detect ACPI resume (from standy, hibernation)
+  //e.g. by wxWidgets if not on Windows.
+  #ifndef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  ReadMSR(
+    // MSR index
+    IA32_PERFEVTSEL0 ,
+    & dwLow ,//eax,     // bit  0-31
+    & dwHigh , //edx,     // bit 32-63
+    1 // Thread Affinity Mask
+    ) ;
+  BYTE byPerfEvtSelect = dwLow & BITMASK_FOR_LOWMOST_8BIT ;
+  //After an ACPI resume the performance event select it is set to 0.
+  if( //dwLow & BITMASK_FOR_LOWMOST_8BIT
+    byPerfEvtSelect !=
+    INTEL_ARCHITECTURAL_CPU_CLOCKS_NOT_HALTED )
+  {
+    //TODO the performance counter value is reset to zero after standy/
+    //hibernate? then the following assignment is needed for the next
+    //difference to be correct.
+    s_byAtMask2ndTimeCPUcoreMask = 0 ;
+    SelectClocksNotHaltedPerformanceCounterEvent_Pentium_M(//1
+      ) ;
+  }
+  #endif //#ifndef _WIN32
+  return (float) dClocksNotHaltedDiffDivTCSdiff ;
+}
+
 inline void GetReferenceClockAccordingToStepping()
 {
   DWORD dwEAX, dwEBX, dwECX , dwEDX ;
@@ -208,6 +367,80 @@ inline float GetVoltageID_PentiumM_asFloat(float fVoltageInVolt)
 inline BYTE GetVoltageID_PentiumM(float fVoltageInVolt )
 {
   return (BYTE) GetVoltageID_PentiumM_asFloat( fVoltageInVolt) ;
+}
+
+inline void PerformanceEventSelectRegisterWrite_PentiumM(
+  DWORD dwAffinityBitMask ,
+  //Pentium M has 1 or 2 "Performance Event Select Register" from
+  //  MSR ... to MSR ...  for
+  // 1 or 2 "Performance Event Counter Registers" from
+  //  ... to ...
+  //  that store the 48 bit counter value
+  BYTE byPerformanceEventSelectRegisterNumber ,
+  BYTE byEventSelect , //8 bit
+  BYTE byUnitMask , // 8 bit
+  bool bUserMode,
+  bool bOSmode,
+  bool bEdgeDetect,
+  bool bPINcontrol,
+  bool bEnableAPICinterrupt,
+  //Intel vol. 3B (document # 253659):
+  //"When set, performance counting is
+  //enabled in the corresponding performance-monitoring counter; when clear, the
+  //corresponding counter is disabled. The event logic unit for a UMASK must be
+  //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+  //IA32_PMCx."
+  bool bEnablePerformanceCounter,
+  bool bInvertCounterMask ,
+  BYTE byCounterMask
+  )
+{
+  DWORD dwLow = 0 |
+    ( byCounterMask << 24 ) |
+    ( bInvertCounterMask << 23 ) |
+    ( bEnablePerformanceCounter << 22 ) |
+    ( bEnableAPICinterrupt << 20 ) |
+    ( bPINcontrol << 19 ) |
+    ( bEdgeDetect << 18 ) |
+    ( bOSmode << 17 ) |
+    ( bUserMode << 16 ) |
+    ( byUnitMask << 8 ) |
+    ( byEventSelect )
+    ;
+  WriteMSR(
+    // MSR index
+    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber ,
+    dwLow ,//eax,     // bit  0-31
+    0 , //edx,      // bit 32-63
+    1 // Thread Affinity Mask
+    ) ;
+}
+
+inline void SelectClocksNotHaltedPerformanceCounterEvent_Pentium_M(
+  //BYTE byCoreID
+  )
+{
+  PerformanceEventSelectRegisterWrite_PentiumM(
+//    1 << byCoreID ,
+    1 ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from
+    //  MSR ... to MSR ...  for
+    // 1 or 2 "Performance Event Counter Registers" from
+    //  ... to ...
+    //  that store the 48 bit counter value
+    0 ,
+    //CPU_CLOCKS_NOT_HALTED , //event select, 8 bit
+    INTEL_ARCHITECTURAL_CPU_CLOCKS_NOT_HALTED ,
+    0 , // 8 bit unit mask
+    1, //User Mode
+    1, //OS mode
+    0, //edge
+    0, //pin control
+    0, //APIC
+    1, //enable counters
+    0 , //invert counter mask
+    0 //counter mask
+    ) ;
 }
 
 inline BYTE SetCurrentVoltageAndMultiplierPentiumM(

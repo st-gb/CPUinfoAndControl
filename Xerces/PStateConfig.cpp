@@ -50,6 +50,7 @@
 //  #include <global.h> //for LOGN()
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
+#define MAKE_WCHAR_STRING(string) L##string
 #define FREQ_AND_VOLTAGE_LITERAL "freq_and_voltage"
 #define FREQ_AND_VOLTAGE_WCHAR_LITERAL L"freq_and_voltage"
 #define FREQUENCY_IN_MHZ_ANSI_LITERAL "frequency_in_MHz"
@@ -58,6 +59,8 @@
 
 #define XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI "/*/freq_and_voltage"
 #define XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR L"/*/freq_and_voltage"
+//#define XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR \_
+//  MAKE_WCHAR_STRING(XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI)
 
 //  using namespace std;
 //  //To NOT need to prefix the xerces classes with the "xercesc...::"
@@ -187,7 +190,8 @@
         //‘xercesc_3_0::DOMDocument::evaluate(const wchar_t [20],
         //xercesc_3_0::DOMElement*&, xercesc_3_0::DOMXPathNSResolver*&,
         //xercesc_3_0::DOMXPathResult::ResultType, NULL)’ "
-        (const XMLCh * ) XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR ,
+//        (const XMLCh * ) XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR ,
+        XERCES_STRING_FROM_ANSI_STRING(XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI) ,
         mp_dom_elementRoot,
         p_dom_xpath_ns_resolver,
         XERCES_CPP_NAMESPACE::DOMXPathResult::ORDERED_NODE_SNAPSHOT_TYPE,
@@ -236,9 +240,7 @@
         p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
           //"frequency_in_MHz"
 //            xmlchAttributeName
-          //Avoid g++ warning "no matching function for call to
-          //‘xercesc_3_0::DOMElement::getAttribute(const wchar_t [17])’ "
-          (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL
+          XERCES_STRING_FROM_WCHAR_T_STRING(FREQUENCY_IN_MHZ_WCHAR_LITERAL)
           ) ;
         //Attribute exists.
         if ( p_domnodeAttribute )
@@ -1376,5 +1378,4 @@
     }
     LOGN("~XercesConfigurationHandler end")
 //    x86InfoAndControl::TerminateXerces() ;
-    LOGN("Xerces terminated")
   }

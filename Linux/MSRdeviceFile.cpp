@@ -6,7 +6,7 @@
  */
 
 #include <global.h> //for SUCCESS, FAILURE
-#include "MSRdeviceFile.h"
+#include "MSRdeviceFile.hpp" //header file of this class
 //#include <Controller/character_string/stdstring_format.hpp>
 //Linker? error when <errno.h> was _also_ (->twice) included (indirectly) from
 // other include files before.
@@ -23,6 +23,11 @@
 #include <fcntl.h> //O_RDONLY, ...
 #include <ios> //std::iosbase
 #include <sstream> //for class std::stringstream
+#include <stdlib.h> //system(...)
+#include <unistd.h> // execvp(...)
+////from www.xml.com/ldd/...:
+//#include <linux/kmod.h> //must be from an appropriate directory
+////#include "/usr/src/linux-headers-2.6.32-25-generic/include/linux/kmod.h"
 
 #define POSSIBLE_SOLUTION_LITERAL "Possible solutions:\n"\
 "-This program needs elevated privileges for ring 0 / CPU "\
@@ -31,6 +36,7 @@
 "privileges. Does the program have sufficient rights for accessing "\
 "(read,write[,...]) the file ?\n"
 
+#define MSR_KERNEL_MODULE_NAME_ANSI "msr"
 //extern int errno;
 
 //MSRdeviceFile::MSRdeviceFile()
@@ -76,6 +82,34 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //  if(m_pcpucontroller )
 //    m_pcpucontroller->GetNumberOfCPUcores()
 //  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
+
+//  //from kernelbook.sourceforge.net:
+//  if(
+//    //load msr module in order to create device files
+//    // /dev/cpu/>>CPU core ID<</msr
+//   //"
+//   request_module("msr")
+//    )
+//  {
+//    std::string stdstrMessage = "failed to load kernel module"
+//      MSR_KERNEL_MODULE_NAME_ANSI ;
+//    UIconfirm( stdstrMessage ) ;
+//    throw CPUaccessException(stdstrMessage) ;
+//  }
+  system( "chmod 777 load_kernel_module.sh") ;
+  //from www.opengroup.org:
+  if( //execlp( "sh", "sh", "./load_kernel_module.sh"
+      //from www.yolinux.com
+      system(
+      "./load_kernel_module.sh"
+//      , //NULL
+//      (char *) 0
+      ) == -1
+    )
+  {
+    std::string stdstrErrorMessage = GetErrorMessageFromLastErrorCodeA() ;
+    UIconfirm( "error executing load_kernel_module.sh: " + stdstrErrorMessage) ;
+  }
   std::string stdstrMSRfilePath ;
 //  m_arfstreamMSR = new std::fstream [byNumCPUcores] ;
   m_arnFileHandle = new int [byNumCPUcores] ;
