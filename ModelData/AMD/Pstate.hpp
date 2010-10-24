@@ -1,6 +1,6 @@
 #pragma once //include guard
 #include <global.h> //for BYTE, WORD
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #include <windef.h> //for BYTE
 #endif
 //#include "DIDandFID.hpp" //for class DIDandFID

@@ -57,11 +57,14 @@ using namespace wxWidgets ;
 DynFreqScalingThread::DynFreqScalingThread(
   CPUcontrolBase & r_cpucontrolbase
   , CPUcoreData & r_cpucoredata
+  , wxThreadKind kind
   )
-  : DynFreqScalingThreadBase(
+  :
+    wxThread(kind)
+    , DynFreqScalingThreadBase(
     r_cpucontrolbase
     , r_cpucoredata
-  )
+    )
 {
 }
 

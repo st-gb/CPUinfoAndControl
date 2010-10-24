@@ -8,6 +8,33 @@
 #ifndef NEHALEM_HPP_
 #define NEHALEM_HPP_
 
+  #include <preprocessor_macros/bitmasks.h>
+
+  extern DWORD g_dwValue1, g_dwValue2 ;
+
+  inline float GetTimeStampCounterMultiplier()
+  {
+    //see Intel document "Intel(R) 64 and IA-32 Architectures Software
+    //Developer's Manual, Volume 3B: System Programming Guide, Part 2"
+    //"Order Number: 253669-032US" from "September 2009"
+    // "Table B-5.  MSRs in Processors Based on Intel Microarchitecture
+    //(Contd.)(Nehalem)" (page "B-74" / 690)
+    if( ReadMSR(
+      0xCE, //MSR_PLATFORM_INFO
+      & g_dwValue1,
+      & g_dwValue2,
+      1 //scope: package
+      )
+      )
+      return
+        // "15:8 Maximum Non-Turbo Ratio. (R/O)
+        // The is the ratio of the frequency that invariant TSC runs at.
+        // The invariant TSC frequency can be computed by multiplying this ratio
+        // by 133.33 MHz."
+        (g_dwValue1 >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
+    return 0.0 ;
+  }
+
   inline void PerformanceEventSelectRegisterWrite(
     DWORD dwAffMask ,
     //Pentium M has 1 or 2 "Performance Event Select Register" from

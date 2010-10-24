@@ -1,4 +1,4 @@
-// dllmain.cpp : Definiert den Einstiegspunkt f�r die DLL-Anwendung.
+// dllmain.cpp : Definiert den Einstiegspunkt für die DLL-Anwendung.
 #ifdef _MSC_VER //MS compiler
 #include "stdafx.h"
 #endif
@@ -12,6 +12,8 @@
 inline_register_access_functions.hpp>
 //For the inline functions used in this source file.
 #include <Controller/CPU-related/Intel/PentiumM/PentiumM.hpp>
+//for EXPORT, APIENTRY preprocessor macros
+#include <Controller/CPUcontrollerDynLibs/function_specifiers.h>
 
 //#include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 #ifdef INSERT_DEFAULT_P_STATES
@@ -26,15 +28,17 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif
 
 #include <tchar.h> //_T()
-#include <windows.h> //for MessageBox(...), MB_OK
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #include <windows.h> //for MessageBox(...), MB_OK
+#endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 
 extern ReadMSR_func_type g_pfnreadmsr ;
 extern WriteMSR_func_type g_pfn_write_msr ;
-extern float g_fReferenceClockInMHz ;
+//extern float g_fReferenceClockInMHz ;
 
 DWORD g_dwLowmostBits ;
 DWORD g_dwHighmostBits ;
-ULONGLONG g_ullPerformanceEventCounterNumberOfFIDchange ;
+//ULONGLONG g_ullPerformanceEventCounterNumberOfFIDchange ;
 
 //PentiumM_Controller g_pentium_m_controller ;
 //ExportedExeFunctionsCPUaccess g_exportedexefunctionscpuaccess ;
@@ -43,56 +47,65 @@ ULONGLONG g_ullPerformanceEventCounterNumberOfFIDchange ;
 Logger g_logger ;
 #endif
 
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #define EXPORT extern "C" __declspec(dllexport)
-#else
-  //http://www.linuxquestions.org/questions/programming-9/
-  // how-to-export-function-symbols-750534/:
-  //"__attribute__ ((visibility("default")))  // (similar to __declspec(dllexport))"
-  #define EXPORT extern "C" //__attribute__ ((visibility("default")))
+bool InitWindows()
+{
+  #ifdef _DEBUG
+  std::string strExeFileNameWithoutDirs = GetStdString(
+    GetExeFileNameWithoutDirs() ) ;
+  std::string stdstrFilename = strExeFileNameWithoutDirs +
+    ("PentiumM_DLL_log.txt") ;
+  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
+  DEBUGN("this Log file is open")
+  //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
+  #endif
+  //gp_nehalem_clocksnothaltedcpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
+  //  ) ;
+  //Reaches here when compiled with MSC but not when MinGW?!
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr , g_pfn_write_msr ) ;
+  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
+  {
+    MessageBox( NULL,
+      //_T() macro: ANSI-> "", unicode: ->L""; for Microsoft's compiler
+      //each line needs a _T() macro.
+      _T("Pointers could not be assigned to the execu-tables export functions\n")
+      _T("Does the executable that loads this DLL have ReadMSR and WriteMSR")
+      _T("export functions at all?(analyze this with a tool)")
+      //Title
+      ,_T("error")
+      , MB_OK) ;
+    return FALSE ;
+  }
+  return true ;
+}
 #endif
 
 EXPORT
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-					 )
+BOOL APIENTRY DllMain(
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+    HMODULE hModule,
+   DWORD  ul_reason_for_call,
+   LPVOID lpReserved
+#endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+   )
 {
-	switch (ul_reason_for_call)
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
   {
+    InitWindows() ;
+#else
+    //for g_pfnreadmsr etc.
+    AssignPointersToExportedExeMSRfunctions(
+      g_pfnreadmsr , g_pfn_write_msr ) ;
+#endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+    GetReferenceClockAccordingToStepping() ;
 #ifdef _DEBUG
 //    std::string strExeFileNameWithoutDirs = GetStdString(
 //      GetExeFileNameWithoutDirs() ) ;
-    std::string stdstrFilename = //strExeFileNameWithoutDirs +
-        ("PentiumM_DLL_log.txt") ;
-    g_logger.OpenFile2( stdstrFilename ) ;
-    DEBUGN("this Log file is open")
 #endif
-//	  MessageBox(NULL,"DLL_PROCESS_ATTACH","ii",MB_OK) ;
-	  //for g_pfnreadmsr etc.
-	  AssignPointersToExportedExeMSRfunctions(
-	    g_pfnreadmsr , g_pfn_write_msr ) ;
-	  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
-//    if( ! g_exportedexefunctionscpuaccess.AssignPointersToExportedExeFunctions()
-//      )
-	  {
-      ::MessageBox(
-        NULL,
-        _T("Pointers could not be assigned to the execu-tables export functions\n"
-        "Does the executable that loads this DLL have ReadMSR and WriteMSR"
-        "export functions at all?(analyze this with a tool)")
-        //Title
-        ,_T("error")
-        , MB_OK) ;
-	    return FALSE ;
-	  }
-    GetReferenceClockAccordingToStepping() ;
 //	  //force the cond. "< min. time diff" to become true.
 //	  g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
 //	  g_dwPreviousTickCountInMilliseconds -= 100 ; //->time diff > max. time diff
@@ -106,12 +119,14 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 //    g_pentium_m_controller.SetCPUaccess( & g_exportedexefunctionscpuaccess ) ;
 //    //For monitoring the number of FreqID transitions etc.
 //    g_pentium_m_controller.Init() ;
-	}
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  }
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
 		break;
 	}
+#endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 	return TRUE;
 }
 
@@ -133,6 +148,11 @@ void
   )
 {
 //  g_pi_cpuaccess = pi_cpuaccess ;
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr , g_pfn_write_msr ) ;
+  GetReferenceClockAccordingToStepping() ;
+  std::string stdstrFilename = //strExeFileNameWithoutDirs +
+    ("PentiumM_DLL_log.txt") ;
 #ifdef _DEBUG
   //ReadMSR_func_type rdmsr = (ReadMSR_func_type) (void*) & pi_cpuaccess->RdmsrEx ;
   std::stringstream stdstrstream ;
@@ -358,7 +378,7 @@ float *
 }
 
 EXPORT
-  BYTE 
+  BYTE
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
   DLL_CALLING_CONVENTION
@@ -368,7 +388,7 @@ EXPORT
     , float * p_fMultiplier
     //
     , float * p_fReferenceClockInMHz
-    , WORD wCoreID 
+    , WORD wCoreID
   )
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )

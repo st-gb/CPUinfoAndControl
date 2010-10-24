@@ -425,24 +425,30 @@ void PentiumM_Controller::PerformanceEventSelectRegisterWrite(
   //dwLow <<= 24 ;
   //dwLow = 
   //dwLow <<= 24 ;
-  DWORD dwLow = 0 |
-    ( byCounterMask << 24 ) |
-    ( bInvertCounterMask << 23 ) |
-    ( bEnablePerformanceCounter << 22 ) |
-    ( bEnableAPICinterrupt << 20 ) |
-    ( bPINcontrol << 19 ) |
-    ( bEdgeDetect << 18 ) |
-    ( bOSmode << 17 ) |
-    ( bUserMode << 16 ) |
-    ( byUnitMask << 8 ) |
-    ( byEventSelect )
-    ;
-  WrmsrEx(
-    // MSR index
-    IA32_PERFEVTSEL0 + byPerformanceEventSelectRegisterNumber ,
-    dwLow ,//eax,			// bit  0-31
-    0 , //edx,			// bit 32-63
-    1	// Thread Affinity Mask
+  PerformanceEventSelectRegisterWrite_PentiumM(
+    dwAffinityBitMask ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from
+    //  MSR ... to MSR ...  for
+    // 1 or 2 "Performance Event Counter Registers" from
+    //  ... to ...
+    //  that store the 48 bit counter value
+    byPerformanceEventSelectRegisterNumber ,
+    byEventSelect , //8 bit
+    byUnitMask , // 8 bit
+    bUserMode,
+    bOSmode,
+    bEdgeDetect,
+    bPINcontrol,
+    bEnableAPICinterrupt,
+    //Intel vol. 3B (document # 253659):
+    //"When set, performance counting is
+    //enabled in the corresponding performance-monitoring counter; when clear, the
+    //corresponding counter is disabled. The event logic unit for a UMASK must be
+    //disabled by setting IA32_PERFEVTSELx[bit 22] = 0, before writing to
+    //IA32_PMCx."
+    bEnablePerformanceCounter,
+    bInvertCounterMask ,
+    byCounterMask
     ) ;
 }
 

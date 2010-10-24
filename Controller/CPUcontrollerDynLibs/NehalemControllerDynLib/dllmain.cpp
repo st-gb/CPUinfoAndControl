@@ -38,12 +38,14 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 
 //for BITMASK_FOR_LOWMOST_5BIT
 #include <preprocessor_macros/bitmasks.h>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
 #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
 //#define _DEBUG
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
 
-#ifdef _DEBUG
+//_WIN32: Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+#if defined(_DEBUG) && defined(_WIN32)
   #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 
@@ -55,7 +57,10 @@ AssignPointersToExportedExeMSRfunctions.h>
   #include <windows.h> //for MessageBox(...)
 #endif
 #ifdef _DEBUG
-  Logger g_logger ;
+  //This logger variable _must_ have another name than in the executable this
+  //dynamic library is attached to under _Linux_ . Else when this dyn lib is
+  //unloaded the exe's logger destructor is called.
+  Logger g_loggerDynLib ;
 #endif
 
 //defined in "/Windows/AssignPointersToExportedExeFunctions/
@@ -64,6 +69,7 @@ extern ReadMSR_func_type g_pfnreadmsr ;
 extern WriteMSR_func_type g_pfn_write_msr ;
 //  extern float g_fReferenceClockInMHz ;
 float g_fReferenceClockInMHz ;
+static float gs_fTimeStampCounterMultiplier = 0.0 ;
 
 //Use global vars instead of allocating them for each function call (->faster)
 BYTE g_byValue1 , g_byValue2 ;
@@ -95,8 +101,8 @@ void InitOtherOSthanWindows()
     //GetStdString( GetExeFileNameWithoutDirs() ) ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
     ("NehalemControllerDLL_log.txt") ;
-  g_logger.OpenFile2( stdstrFilename ) ;
-  DEBUGN("this Log file is open")
+  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
+  DEBUGN_LOGGER_NAME(g_loggerDynLib,"this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif //#ifdef _DEBUG
   AssignPointersToExportedExeMSRfunctions(
@@ -105,6 +111,7 @@ void InitOtherOSthanWindows()
     ) ;
   DEBUGN("g_pfnreadmsr:" << g_pfnreadmsr
       << "g_pfn_write_msr:" << g_pfn_write_msr)
+  gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
 }
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -114,7 +121,7 @@ bool InitWindows()
   std::string strExeFileNameWithoutDirs = GetStdString( GetExeFileNameWithoutDirs() ) ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
   ("NehalemControllerDLL_log.txt") ;
-  g_logger.OpenFile2( stdstrFilename ) ;
+  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
   DEBUGN("this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif
@@ -136,6 +143,7 @@ bool InitWindows()
       , MB_OK) ;
     return FALSE ;
   }
+  gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
   //Force the cond. "< min. time diff" to become true.
   g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
   g_dwPreviousTickCountInMilliseconds
@@ -144,7 +152,8 @@ bool InitWindows()
   //The reference clock is needed for setting the current frequency. So it
   //must be determined prior to any call of this function.
   GetCurrentReferenceClock(
-    12.0,
+    //12.0,
+    gs_fTimeStampCounterMultiplier ,
     g_fReferenceClockInMHz ,
     1000 ,
     MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
@@ -344,7 +353,8 @@ EXPORT
     * p_fMultiplier = ( g_dwValue1 & 255 ) ;
     DEBUGN("dyn lib GetCurrentVoltageAndFrequency--voltage:"
       << * p_fVoltageInVolt )
-#ifdef __linux_
+//#if !defined(_DEBUG) && defined(__linux_)
+#ifdef STATIC_133MHZ_REFERENCE_CLOCK
     * p_fReferenceClockInMHz = 133.3 ;
 #else
     //This call sets g_fReferenceClockInMHz to the current reference clock.
@@ -352,7 +362,8 @@ EXPORT
     //via "frequency" as parameter value the next time.
     GetCurrentReferenceClock(
       ////720qm has 1,600 M TSC clockticks/s for multiplier 12 -> ": 12"
-      12.0 ,
+//      12.0 ,
+      gs_fTimeStampCounterMultiplier ,
       * p_fReferenceClockInMHz ,
       1000 , //min. timespan in ms
       10000 ) ;

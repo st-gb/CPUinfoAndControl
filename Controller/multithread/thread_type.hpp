@@ -8,12 +8,24 @@
 #ifndef THREAD_TYPE_HPP_
 #define THREAD_TYPE_HPP_
 
-//class wxThreadBasedI_Thread ;
-#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+#define USE_PTHREAD
+
+#if defined(__linux__) && defined(USE_PTHREAD)
+  //class phreadBasedI_Thread
+  #include <Linux/multithread/pthreadBasedI_Thread.hpp>
+  typedef Linux::pthreadBasedI_Thread thread_type ;
+#else
+  //class wxThreadBasedI_Thread ;
+  #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+#endif
 
 namespace x86IandC
 {
+#if defined(__linux__) && defined(USE_PTHREAD)
+  typedef Linux::pthreadBasedI_Thread thread_type ;
+#else
   typedef wxThreadBasedI_Thread thread_type ;
+#endif
 }
 
 #endif /* THREAD_TYPE_HPP_ */

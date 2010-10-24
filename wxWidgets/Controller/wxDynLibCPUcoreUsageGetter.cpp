@@ -43,11 +43,18 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
           //Use wxT() macro to enable to compile with both unicode and ANSI.
           wxT( "GetCPUcoreUsage" ) ) ;
-      m_pfn_dll_usage_getter_num_logical_cpu_cores_type =
-        (dll_usage_getter_num_logical_cpu_cores_type)
-        m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
+      if( m_wxdynamiclibraryCPUcoreUsage.HasSymbol(
           //Use wxT() macro to enable to compile with both unicode and ANSI.
-          wxT("GetNumberOfLogicalCPUcores") ) ;
+          wxT("GetNumberOfLogicalCPUcores")
+          )
+        )
+        m_pfn_dll_usage_getter_num_logical_cpu_cores_type =
+          (dll_usage_getter_num_logical_cpu_cores_type)
+          m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
+            //Use wxT() macro to enable to compile with both unicode and ANSI.
+            wxT("GetNumberOfLogicalCPUcores") ) ;
+      else
+        m_pfn_dll_usage_getter_num_logical_cpu_cores_type = NULL ;
       m_pfn_dll_init_type = (dll_usage_getter_init_type)
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
           //Use wxT() macro to enable to compile with both unicode and ANSI.

@@ -328,7 +328,7 @@ BYTE MainController::ReadPstateConfig(
     if( ! ReadXMLfileWithoutInitAndTermXercesInline(
         //const char* xmlFile
         strProcessorFilePath.c_str()
-        , model
+//        , model
         , p_userinterface
         //Base class of implementing Xerces XML handlers.
         //This is useful because there may be more than one XML file to read.

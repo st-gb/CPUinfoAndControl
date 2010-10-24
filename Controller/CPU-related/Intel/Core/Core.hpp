@@ -444,19 +444,27 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     dwLowmostBits |= ( byFrequencyID << 8 ) ;
 
 #ifdef _DEBUG
+    bool bWrite = true ;
 //    byFrequencyID =
-    std::stringstream ss ;
+    std::stringstream stdstringstreamMessage ;
 //    ss << "multiplier to set: " << fMultiplier << "lowmost bits:"
 //        << dwLowmostBits ;
-    ss << "written voltage would be:"
+    stdstringstreamMessage << "written voltage would be:"
       << GetVoltageAsEncodedInMSRIntelCore( dwLowmostBits )
-      << " written multiplier would be:"
+      << "\nwritten multiplier would be:"
       << GetMultiplierAsEncodedInMSRIntelCore(dwLowmostBits) ;
+    std::string stdstrMessage =  stdstringstreamMessage.str() ;
+    stdstrMessage += "\nshould be written?" ;
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-    MessageBox(NULL, ss.str().c_str(), "info" , MB_OK ) ;
+    if( ::MessageBox( NULL, stdstrMessage.c_str(), "info" , //MB_OK
+          MB_YESNO )
+        == IDNO
+      )
+      bWrite = false ;
 #endif
+    DEBUGN( stdstringstreamMessage.str() )
+    if( bWrite )
 #endif
-    DEBUGN( ss.str() )
     g_byValue1 =
       WriteMSR(
       IA32_PERF_CTL,

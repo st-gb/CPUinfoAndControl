@@ -99,7 +99,7 @@ bool isPrime(//a prime is a natural number-> unsigned value
 	return true;
 }
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 long GetPrime95ResultsFileLength()
 {
   //DWORD dw ;

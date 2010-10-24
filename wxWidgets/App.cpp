@@ -30,6 +30,8 @@
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
 #include <Controller/IPC/I_IPC.hpp> //for "get_current_CPU_data"
+#include <Controller/I_CPUaccess.hpp> //class I_CPUaccess, CPUaccessException
+#include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
 #include <Controller/Logger/Logger.hpp> //class Logger
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
 #include <Controller/multithread/I_Thread.hpp> //class I_Thread
@@ -58,7 +60,7 @@
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #else
-  #include <Linux/MSRdeviceFile.h>
+  #include <Linux/MSRdeviceFile.hpp>
 #endif
 //#include <strstream> //ostrstream
 #include <string> //
@@ -85,14 +87,15 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   :
 //      mp_cpucontroller(NULL)
 //    ,
+  CPUcontrolBase(this) ,
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   mp_taskbaricon( NULL)
 //  , m_wxthreadIPC( )
   ,
 #endif //#ifdef COMPILE_WITH_TASKBAR
-#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  mp_dynfreqscalingaccess(NULL) ,
-#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+//#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+//  mp_dynfreqscalingaccess(NULL) ,
+//#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   m_maincontroller( this )
   , m_vbRetrieveCPUcoreData( true)
   , m_vbGotCPUcoreData (true)
@@ -302,7 +305,7 @@ void wxX86InfoAndControlApp::CPUcontrollerChanged()
   }
   //m_modelData.SetCPUcontroller( mp_i_cpucontroller);
   mp_modelData->SetCPUcontroller( mp_cpucontroller);
-  #ifdef _WINDOWS
+  #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    m_calculationthread.SetCPUcontroller(mp_cpucontroller);
   #endif
   //At the 1st call of this function mp_frame is NULL.
@@ -335,10 +338,10 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
     Refresh() ;
 }
 
-//void wxX86InfoAndControlApp::DisableOwnDVFSAndDVFSbyService()
-//{
-//
-//}
+void wxX86InfoAndControlApp::DynVoltnFreqScalingEnabled()
+{
+  mp_frame->DynVoltnFreqScalingEnabled() ;
+}
 
 void wxX86InfoAndControlApp::EndDVFS()
 {
@@ -393,7 +396,8 @@ int wxX86InfoAndControlApp::OnExit()
   //delete mp_frame ;
 //  if( mp_cpucontroller )
 //    delete mp_cpucontroller ;
-  FreeRessources() ;
+  //Already called by ~CPUcontrolBase()
+//  FreeRessources() ;
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   if( mp_dynfreqscalingaccess )
     delete mp_dynfreqscalingaccess ;
@@ -820,12 +824,15 @@ bool wxX86InfoAndControlApp::OnInit()
     Xerces::SAX2UserInterfaceConfigHandler sax2userinterfaceconfighandler(
       m_model , this
       ) ;
-    ReadXMLfileWithoutInitAndTermXercesInline(
-      "UserInterface.xml" ,
-      m_model ,
-      this,
-      sax2userinterfaceconfighandler
-      ) ;
+    if( //return value: 0 = success
+      ReadXMLfileWithoutInitAndTermXercesInline(
+        "UserInterface.xml" ,
+//        m_model ,
+        this,
+        sax2userinterfaceconfighandler
+        )
+      )
+      Confirm( "loading UserInterface.xml failed" ) ;
     DWORD dwProcID = wxGetProcessId() ;
     if( mp_modelData->m_bAppendProcessID )
     {
@@ -854,8 +861,8 @@ bool wxX86InfoAndControlApp::OnInit()
       (TCHAR * ) (mp_modelData->m_stdtstrProgramName + _T("_config.xml") ).
       c_str() ;
 
-    mp_userinterface = //p_frame ;
-      this ;
+//    mp_userinterface = //p_frame ;
+//      this ;
 #ifdef COMPILE_WITH_SHARED_MEMORY
     InitSharedMemory() ;
 #endif //COMPILE_WITH_SHARED_MEMORY
@@ -923,7 +930,7 @@ bool wxX86InfoAndControlApp::OnInit()
       m_maincontroller.SetAttributeData( mp_modelData ) ;
       //m_winring0dynlinked.SetUserInterface(p_frame);
      
-      #ifdef _WINDOWS
+      #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
       std::wstring stdwstrProgramName = GetStdWstring(m_stdtstrProgramName ) ;
       mp_dynfreqscalingaccess = new PowerProfDynLinked( //m_stdtstrProgramName
         stdwstrProgramName ) ;
@@ -1100,6 +1107,8 @@ bool wxX86InfoAndControlApp::OnInit()
     //TODO program hangs when message that DLL function is missing
     m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc ,
       this ) ;
+    if( m_model.m_userinterfaceattributes.m_bStartDVFSatStartup )
+      StartDynamicVoltageAndFrequencyScaling() ;
     }// if (mp_modelData)
   }
   else
@@ -1113,7 +1122,9 @@ void wxX86InfoAndControlApp::outputAllPstates(
 
 }
 
-void wxX86InfoAndControlApp::PauseService()
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+void wxX86InfoAndControlApp::PauseService(
+  bool bTryToPauseViaServiceControlManagerIfViaIPCfails )
 {
   bool bTryToPauseViaServiceControlManager = false ;
   //The connection may have broken after it was established, so check it here.
@@ -1122,7 +1133,8 @@ void wxX86InfoAndControlApp::PauseService()
   {
     LOGN("not connected to the service")
     if( ! //::wxGetApp().
-        m_ipcclient.Init() )
+        m_ipcclient.Init()
+      && bTryToPauseViaServiceControlManagerIfViaIPCfails )
       bTryToPauseViaServiceControlManager = true ;
   }
   if( //::wxGetApp().
@@ -1132,13 +1144,14 @@ void wxX86InfoAndControlApp::PauseService()
     //TODO possibly make IPC communication into a separate thread because it
     // may freeze the whole GUI.
     //::wxGetApp().
-        m_ipcclient.SendCommandAndGetResponse(pause_service) ;
+    m_ipcclient.SendCommandAndGetResponse(pause_service) ;
     wxString wxstr = getwxString( //::wxGetApp().
       m_ipcclient.m_stdwstrMessage ) ;
     ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
   }
   else
-    bTryToPauseViaServiceControlManager = true ;
+    if( bTryToPauseViaServiceControlManagerIfViaIPCfails )
+      bTryToPauseViaServiceControlManager = true ;
   if( bTryToPauseViaServiceControlManager )
     try
     {
@@ -1170,23 +1183,27 @@ void wxX86InfoAndControlApp::PauseService()
         //line to make it compatible between char and wide char.
         _T("connecting to service control manager failed: ")
         ) +
-        (const wxChar *) //::LocalLanguageMessageFromErrorCodeA(
-        ::GetErrorMessageFromErrorCodeA(
-        cr_connecttoscmerror.m_dwErrorCode).c_str()
+//        (const wxChar *) //::LocalLanguageMessageFromErrorCodeA(
+        getwxString(
+          ::GetErrorMessageFromErrorCodeA( cr_connecttoscmerror.m_dwErrorCode ).
+          c_str()
+          )
         ) ;
     }
 }
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 void wxX86InfoAndControlApp::PossiblyAskForOSdynFreqScalingDisabling()
 {
+//  PossiblyAskForOSdynFreqScalingDisabling() ;
   if( mp_dynfreqscalingaccess->OtherDVFSisEnabled()
     )
     if( ::wxMessageBox(
       //We need a _T() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
       _T("The OS's dynamic frequency scaling must be disabled ")
-      _T("in order that the p-state isn' changed by the OS afterwards.")
+      _T("in order that the p-state isn't changed by the OS afterwards.")
       _T("If the OS's dynamic frequency isn't disabled, should it be done now?")
       ,
       //We need a _T() macro (wide char-> L"", char->"") for EACH
@@ -1247,12 +1264,12 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
       // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
   if( ! mp_taskbaricon )
   {
-    mp_taskbaricon = new MyTaskBarIcon(mp_frame);
+    mp_taskbaricon = new TaskBarIcon(mp_frame);
 //      m_taskbaricon.SetMainFrame(mp_frame) ;
     if( mp_taskbaricon )
     {
 //    #if defined(__WXCOCOA__)
-//      m_dockIcon = new MyTaskBarIcon(wxTaskBarIcon::DOCK);
+//      m_dockIcon = new TaskBarIcon(wxTaskBarIcon::DOCK);
 //    #endif
 //      wxIcon wxicon(
 //        //Use wxT() macro to enable to compile with both unicode and ANSI.
@@ -1288,7 +1305,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
       HICON hicon = (HICON) ::LoadImage(
            //http://msdn.microsoft.com/en-us/library/ms648045%28v=VS.85%29.aspx:

@@ -212,11 +212,6 @@ public:
   ~MainFrame() ;
 
   void AllowCPUcontrollerAccess() ;
-  void Create1DialogAndMenuForAllCores() ;
-  void CreateDialogAndMenuForEveryCore() ;
-  void DenyCPUcontrollerAccess() ;
-  void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * 
-    p_percpucoreattributes ) ;
 
   //Implement method declared in "class UserInterface" 
   //(even if with no instructions) for this class not be abstract.
@@ -239,6 +234,9 @@ public:
 #endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   //void 
   BYTE CreateDynamicMenus() ;
+  void Create1DialogAndMenuForAllCores() ;
+  void CreateDialogAndMenuForEveryCore() ;
+  void DenyCPUcontrollerAccess() ;
   void DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc) ;
   void DetermineTextHeight(wxDC & r_wxdc) ;
   void DisableWindowsDynamicFreqScalingHint();
@@ -297,6 +295,9 @@ public:
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  void DynVoltnFreqScalingEnabled() ;
+  void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes *
+    p_percpucoreattributes ) ;
   inline WORD GetXcoordinateForFrequency( WORD wFreqInMHz) ;
   inline WORD GetYcoordinateForFrequency( WORD wFreqInMHz) ;
   void GetYcoordinateForVoltage(float fVoltageInVolt ) ;

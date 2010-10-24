@@ -8,7 +8,7 @@
 #include <fstream> //for class ofstream
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
 #include <Controller/Logger/Logger.hpp>
-#include <Controller/Logger/log4cplus_Logger.hpp>
+//#include <Controller/Logger/log4cplus/log4cplus_Logger.hpp>
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
@@ -24,7 +24,6 @@
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
-FILE * fileDebug ;
 Logger g_logger ;
 
 CPUcontrolBase * gp_cpucontrolbase ;
@@ -80,154 +79,8 @@ bool ShouldDeleteService(int argc, char *  argv[])
     return bShouldDeleteService ;
 }
 
-void OuputCredits()
-{
-  std::tstring stdtstr ;
-  std::vector<std::tstring> stdvecstdtstring ;
-  MainController::GetSupportedCPUs(stdvecstdtstring) ;
-  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
-    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-    //"This program is an undervolting program for AMD family 17 CPUs.\n" 
-    "This program is a CPU information and control program for (built-in):\n"
-    //maincontroller.GetSupportedCPUtypes() ;
-    + stdtstr +
-    //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" 
-    "license/ info: http://www.trilobyte-se.de/x86iandc/\n" 
-    )
-  std::cout << 
-    "This executable is both in one:\n"
-    "-a(n) (de-)installer for the CPU controlling service\n"
-    "-the CPU controlling service itself\n" ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-    "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
-}
-
 void HandleErrorPlace(BYTE by, const std::string & cr_stdstr )
 {
-}
-
-void CreateService( const TCHAR * const cpc_tchServiceName)
-{
-  try
-  {
-    BYTE by ;
-    DWORD dwLastError = ServiceBase::CreateService( cpc_tchServiceName , by  ) ;
-    if( dwLastError )
-    {
-      //DEBUG("Creating the service failed: error number:%d\n",
-      // dwLastError);
-      //LOG("Creating the service failed: error number:" << dwLastError
-      //    << "\n" );
-      //std::cout
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        "Creating the service failed: error number:" <<
-        dwLastError << "\nError: " << //"\n"
-        LocalLanguageMessageFromErrorCodeA( dwLastError )
-        )
-        ;
-      switch( by )
-      {
-      case ServiceBase::GetModuleFileNameFailed:
-        //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
-        //LOG(
-        WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-          "Getting file name for THIS executable file failed: " <<
-          LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
-          );
-        break ;
-      }
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution( dwLastError , cpc_tchServiceName ,
-        stdstrPossibleSolution ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(stdstrPossibleSolution)
-    }
-    else
-      //printf("Creating service succeeded\n");
-      std::cout << "Creating the service succeeded.\n" ;
-  }
-  catch( ConnectToSCMerror & ctscme )
-  {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
-  }
-}
-
-void DeleteService(const TCHAR * cp_tchServiceName
-  , std::string & stdtstrProgramName )
-{
-  DWORD dwErrorCodeFor1stError ;
-  BYTE by = ServiceBase::DeleteService(//"GriffinStateService"
-    cp_tchServiceName
-    , dwErrorCodeFor1stError
-    ) ;
-  if( by )
-  {
-//    HandleErrorPlace(by, "for deleting the service:") ;
-//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-//      ServiceBase::GetPossibleSolution(dwErrorCodeFor1stError)
-//      ) ;
-    std::string stdstr = "for deleting the service:" ;
-    switch(by)
-    {
-    case ServiceBase::OpenSCManagerFailed:
-    {
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution(
-        dwErrorCodeFor1stError ,
-        cp_tchServiceName
-        , stdstrPossibleSolution
-        ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        stdstr
-        << "opening the service control manager failed"
-        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
-        << stdstrPossibleSolution
-        ) ;
-    }
-      break ;
-    case ServiceBase::OpenServiceFailed:
-    {
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution(
-        dwErrorCodeFor1stError ,
-        cp_tchServiceName
-        , stdstrPossibleSolution
-        ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        stdstr
-        << "Opening the service for service name \"" <<
-          cp_tchServiceName << "\" failed."
-        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
-        << stdstrPossibleSolution
-        )
-    }
-        break ;
-    case ServiceBase::DeleteServiceFailed:
-    {
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution(
-        dwErrorCodeFor1stError ,
-        cp_tchServiceName
-        , stdstrPossibleSolution
-        ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        "Deleting service failed."
-        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
-        << stdstrPossibleSolution
-        )
-    }
-    break ;
-    }
-  }
-  else
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
-      << cp_tchServiceName
-      << "\" succeeded." )
-  std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
-  PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
-    stdwstr ) ;
-  powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
-  powerprofdynlinked.OutputAllPowerSchemes() ;
 }
 
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
@@ -245,19 +98,18 @@ int main( int argc, char *  argv[] )
   {
     if( ! SetExePathAsCurrentDir() )
       WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-          "Getting file path for THIS executable file failed: " <<
-          LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
-          );
+        "Getting file path for THIS executable file failed: " <<
+        LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+        );
 #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
 #endif
-    g_logger.OpenFile( //std::string("GriffinControl_log.txt")
-      stdstrLogFileName ) ;
+    g_logger.OpenFile( stdstrLogFileName ) ;
     DEBUG("Begin of main program entry point\n");
     //Must set the exe path as current dir before (else the file is located in
     //: C:\WINDOWS\System32) !
     //PossiblyOutputUsage() ;
-    OuputCredits() ;
+    CPUcontrolBase::OuputCredits() ;
     if( argc == 1 )
     {
       bool bStartService = true ;
@@ -289,7 +141,8 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-          DeleteService( vecstdstrParams.at(1).c_str(), stdtstrProgramName ) ;
+          CPUcontrolService::DeleteService( vecstdstrParams.at(1).c_str(),
+            stdtstrProgramName ) ;
         }
         bStartService = false ;
       }
@@ -297,7 +150,7 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-          CreateService( vecstdstrParams.at(1).c_str() ) ;
+          CPUcontrolService::CreateService( vecstdstrParams.at(1).c_str() ) ;
         }
         bStartService = false ;
       }

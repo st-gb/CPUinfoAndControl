@@ -71,7 +71,7 @@ AboutDialog::AboutDialog(const wxString & cr_wxstrProgramName )
     wxstrMessage ,
     wxDefaultPosition,
     wxDefaultSize
-#ifdef __WXGTK__
+#ifdef __WXGTK___
     //http://docs.wxwidgets.org/trunk/classwx_static_text.html
     // #fcba401f2915146b1ce25b90c9499ccb:
     //"This function allows to set decorated static label text, when the

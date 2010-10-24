@@ -47,7 +47,6 @@ PentiumM::ClocksNotHaltedCPUcoreUsageGetter::ClocksNotHaltedCPUcoreUsageGetter(
   //DWORD dwECX ;
   //DWORD dwEDX ;
   mp_pentium_m_controller->CpuidEx(
-    
     0x0A , //DWORD index,
     & dwEAX,
     & dwEBX,
@@ -169,137 +168,7 @@ float PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForCore(
   BYTE byCoreID
   )
 {
-	double dClocksNotHaltedDiffDivTCSdiff = -1.0 ;
-  //mp_griffincontroller->RdmsrEx(
-  mp_pentium_m_controller->RdmsrEx(
-    IA32_TIME_STAMP_COUNTER,
-    m_dwLowmostBits,// bit  0-31 (register "EAX")
-    m_dwHighmostBits, 
-    //m_dwAffinityMask
-    1 << byCoreID
-    ) ;
-
-  m_ull = m_dwHighmostBits ;
-  m_ull <<= 32 ;
-  m_ull |= m_dwLowmostBits ;
-
-	//mp_griffincontroller->ReadPerformanceEventCounterRegister(
-  //mp_pentium_m_controller->ReadPerformanceEventCounterRegister(
-  //  //2
-  //  //1 + 
-  //  byCoreID //performance counter ID/ number
-  //  , m_ullPerformanceEventCounter3 ,
-  //  //m_dwAffinityMask 
-  //  1 << byCoreID
-  //  ) ;
-  DWORD dwLow, dwHigh ;
-
-  mp_pentium_m_controller->RdmsrEx(
-    //IA32_PERFEVTSEL0
-    //Intel vol. 3B:
-    //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
-    //address space; the number of MSRs per logical processor is reported using
-    //CPUID.0AH:EAX[15:8]."
-    //"30.2.1.1 Architectural Performance Monitoring Version 1 Facilities":
-    //The bit width of an IA32_PMCx MSR is reported using the
-    //CPUID.0AH:EAX[23:16]
-    //
-    IA32_PMC0
-    , dwLow
-    , dwHigh
-    , 1 ) ;
-  //It seems that only 40 bits of the PMC are used with Pentium Ms although also
-  //higher bits are set.
-  //with simply making a difference, I got "1099516786500" (~10^12) although it was a 100 ms
-  //interval, so the max. diff. could be ~ 1800 M/ 10 = 180 M (180 * 10^6)
-  dwHigh &= BITMASK_FOR_LOWMOST_8BIT ;
-  m_ullPerformanceEventCounter3 = dwHigh ;
-  m_ullPerformanceEventCounter3 <<= 32 ;
-  m_ullPerformanceEventCounter3 |= dwLow ;
-	//For the first time there are no previous values for difference .
-  if( //m_bAtLeastSecondTime 
-	  (m_dwAtMask2ndTimeCPUcoreMask >> byCoreID ) & 1 )
-  {
-
-#ifdef _DEBUG
-    if( m_ull < 
-      m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue 
-      )
-    {
-//      //Breakpoint possibility
-//      int i = 0;
-    }
-    if( m_ullPerformanceEventCounter3 < m_ar_cnh_cpucore_ugpca[ byCoreID ].
-      m_ullPreviousPerformanceEventCounter3 
-      )
-    {
-//      //Breakpoint possibility
-//      int i = 0;
-    }
-#endif //#ifdef _DEBUG
-    //ULONGLONG ullTimeStampCounterValueDiff 
-	m_ullTimeStampCounterValueDiff  = //ull - 
-    //  m_ullPreviousTimeStampCounterValue;
-    ULONGLONG_VALUE_DIFF( m_ull , //m_ullPreviousTimeStampCounterValue
-      m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue
-      ) ;
-
-  //ULONGLONG ullPerformanceEventCounter3Diff = 
-  m_ullPerformanceEventCounter3Diff = 
-    //PERFORMANCE_COUNTER_VALUE_DIFF( m_ullPerformanceEventCounter3 , 
-    PerformanceCounterValueDiff( 
-      m_ullPerformanceEventCounter3 , 
-      //m_ullPreviousPerformanceEventCounter3 
-      m_ar_cnh_cpucore_ugpca[ byCoreID ].
-        m_ullPreviousPerformanceEventCounter3
-    ) ;
-
-  //double 
-	dClocksNotHaltedDiffDivTCSdiff =
-    (double) m_ullPerformanceEventCounter3Diff /
-    (double) m_ullTimeStampCounterValueDiff ;
-#ifdef _DEBUG
-	if( dClocksNotHaltedDiffDivTCSdiff > 1.1 || 
-    dClocksNotHaltedDiffDivTCSdiff < 0.02 )
-	{
-//    //Breakpoint possibility
-//		int i = 0 ;
-	}
-#endif
-    //return (float) dClocksNotHaltedDiffDivTCSdiff ;
-  }
-  else
-    //m_bAtLeastSecondTime = true ;
-	m_dwAtMask2ndTimeCPUcoreMask |= ( 1 << byCoreID ) ;
-
-    //m_ullPreviousTimeStampCounterValue 
-  m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousTimeStampCounterValue 
-    = m_ull ;
-  //m_ullPreviousPerformanceEventCounter3 
-  m_ar_cnh_cpucore_ugpca[ byCoreID ].m_ullPreviousPerformanceEventCounter3
-    = m_ullPerformanceEventCounter3 ;
-
-    //Workaround for unabilility to detect ACPI resume if not on Windows.
-  #ifndef __WXMSW__
-  mp_pentium_m_controller->RdmsrEx(
-    // MSR index
-    IA32_PERFEVTSEL0 ,
-    dwLow ,//eax,			// bit  0-31
-    dwHigh , //edx,			// bit 32-63
-    1	// Thread Affinity Mask
-    ) ;
-  BYTE byPerfEvtSelect = dwLow & BITMASK_FOR_LOWMOST_8BIT ;
-  //After an ACPI resume the performance event select it is set to 0.
-  if( //dwLow & BITMASK_FOR_LOWMOST_8BIT
-    byPerfEvtSelect !=
-    INTEL_ARCHITECTURAL_CPU_CLOCKS_NOT_HALTED )
-  {
-    Init() ;
-  }
-  #endif
-  
-  return //-1.0 ;
-	(float) dClocksNotHaltedDiffDivTCSdiff ;
+  return GetPercentalUsageForCore_Pentium_M();
 }
 
 BYTE PentiumM::ClocksNotHaltedCPUcoreUsageGetter::GetPercentalUsageForAllCores(

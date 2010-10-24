@@ -8,8 +8,8 @@
 //LOGN(...), DEBUGN(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
-#include <binary_search.cpp> //GetClosesLess()
-#include <supress_unused_variable.h> //SUPRESS_UNUSED_VARIABLE_WARNING
+#include <algorithms/binary_search.cpp> //GetClosestLess()
+#include <preprocessor_macros/supress_unused_variable.h> //SUPRESS_UNUSED_VARIABLE_WARNING
 //#include <global.h> //LOGN
 #include <Controller/Sleep.hpp> //for OperatingSystem::Sleep(...)
 
@@ -135,7 +135,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //        , fVoltage
 //        , byCoreID
 //        ) ;
-//      mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//      mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
 //        byCoreID
 //        ) ;
       wFreqInMHz = //"(WORD)" to avoid g++ compiler warning
@@ -189,7 +189,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //        , fVoltage
 //        , byCoreID
 //        ) ;
-//      mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//      mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
 //        byCoreID
 //        ) ;
       wFreqInMHz =
@@ -336,7 +336,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
           //needed).
           for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
           {
-            mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+            mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
             LOGN("multi for core " << (WORD) byCoreID
               << ":" << arp_percpucoreattributes[byCoreID].m_fMultiplier )
             //Even if CPU seemed to have 1 power plane (Nehalem) the different
@@ -442,7 +442,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
             for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
             {
   //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-  //                mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+  //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
                 arp_percpucoreattributes ,
@@ -582,7 +582,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
             for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
             {
   //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-  //                mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+  //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
                 arp_percpucoreattributes ,
@@ -655,7 +655,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
   }
   //Release clients waiting on the condition.
   SignalCPUdataCanBeSafelyRead() ;
-  DEBUGN("ended the Dynamic Voltage and Frequency Scaling loop")
+  LOGN("ended the Dynamic Voltage and Frequency Scaling loop")
   m_vbDVFSthreadStopped = true ;
   return 0;
 }
@@ -717,11 +717,13 @@ bool DynFreqScalingThreadBase::IsStopped()
 }
 
 //BYTE
-//Use DWORD because of GetLastError(...) return code.
+//Use DWORD because of GetLastError(...) return code. 0=success
 DWORD DynFreqScalingThreadBase::Start()
 {
+  LOGN("DynFreqScalingThreadBase::Start()")
   m_vbRun = true ; 
-  return 1 ;
+  LOGN("DynFreqScalingThreadBase::Start()--return" << 0 )
+  return 0 ;
 }
 
 inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
@@ -830,5 +832,26 @@ inline void DynFreqScalingThreadBase::SignalCPUdataCanBeSafelyRead()
 //The DVFS thread is only stopped if the loop ended at first.
 void DynFreqScalingThreadBase::Stop()
 {
+  LOGN("DynFreqScalingThreadBase::Stop()")
   m_vbRun = false ;
+}
+
+DWORD //__stdcall is important for Windows' ::CreateThread()
+//Built-in preprocessor macro for MSVC, MinGW (also for 64 bit)
+#ifdef _WIN32 //under Linux g++ error if "__stdcall"
+  __stdcall
+#endif
+  DynFreqScalingThreadBaseNameSpace::ThreadFunction( void * pv )
+{
+  LOGN("DynFreqScalingThreadBaseNameSpace::ThreadFunction begin--pv:" << pv )
+  DynFreqScalingThreadBase * p_dynfreqscalingthreadbase =
+    (DynFreqScalingThreadBase *) pv ;
+  if( p_dynfreqscalingthreadbase )
+  {
+    //Set "m_vbRun" to true.
+    p_dynfreqscalingthreadbase->Start() ;
+    p_dynfreqscalingthreadbase->Entry() ;
+    return 0 ;
+  }
+  return 1;
 }

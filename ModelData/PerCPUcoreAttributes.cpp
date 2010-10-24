@@ -53,7 +53,8 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     ICPUcoreUsageGetter * p_icpucoreusagegetter
     )
   {
-    DEBUGN("PerCPUcoreAttributes::CreateDynFreqScalingThread" <<
+//    DEBUGN
+    LOGN("PerCPUcoreAttributes::CreateDynFreqScalingThread" <<
       "mp_dynfreqscalingthread:" << mp_dynfreqscalingthread )
     mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
     if ( ! mp_dynfreqscalingthread )
@@ -67,7 +68,9 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
 //        mp_icpucoreusagegetter
 //        , mp_cpucontroller
         * gp_cpucontrolbase
-        , *mp_cpucoredata
+        , * mp_cpucoredata
+        //DETACHED is default, worked with GUI, not with daemon
+        , wxTHREAD_JOINABLE
         );
       //mp_dynfreqscalingthread->
       if( mp_dynfreqscalingthread->Create() == wxTHREAD_NO_ERROR )

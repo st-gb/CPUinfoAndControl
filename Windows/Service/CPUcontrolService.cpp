@@ -7,6 +7,9 @@
 //#include <Controller/CPU-related/I_CPUcontroller.hpp>
 //for ICPUcoreUsageGetter::Init()
 //#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+#include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
+//class DynFreqScalingThreadBase
+#include <Controller/DynFreqScalingThreadBase.hpp>
 #include <Controller/character_string/stdtstr.hpp> //class std::tstring
 #ifdef COMPILE_WITH_IPC
   #include <Controller/IPC/I_IPC.hpp> //for enum "IPCcontrolCodes"
@@ -19,8 +22,6 @@
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 //class XercesConfigurationHandler: for writing into memory buffer for IPC
 #include <Xerces/PStateConfig.hpp>
-#include <Xerces/SAX2ServiceConfigHandler.hpp> //class SAX2ServiceConfigHandler
-#include <Xerces/XMLAccess.hpp> //ReadXMLfileInitAndTermXerces(...)
 
 //for the #defines like "WTS_SESSION_LOGIN" in <wts32api.h>
 //  ( is defined inside the #if (_WIN32_WINNT >= 0x0501)  )
@@ -36,31 +37,23 @@
 //#include <windows.h>
 #include <AccCtrl.h> //SE_SERVICE
 
-#define USE_WINDOWS_THREAD
+//#define USE_WINDOWS_THREAD
 
-#ifdef USE_WINDOWS_THREAD
-  #include <Windows/DynFreqScalingThread.hpp>
-#else //#ifdef USE_WINDOWS_THREAD
-  #include <wxWidgets/DynFreqScalingThread.hpp>
-#endif //#ifdef USE_WINDOWS_THREAD
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/PowerProfFromWin6DynLinked.hpp>
 //#include <Windows/PowerProfUntilWin6DynLinked.hpp>
 //#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #include <Windows/CreateProcess.hpp> //Windows_API::CreateProcess(...)
 
-#define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
 #define NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE 65535
 
 //The static member must also be DEFINED here additional to the declaration 
-//, else linker error LNK2019: Verweis auf nicht aufgel�stes externes Symbol
+//, else linker error LNK2019: Verweis auf nicht aufgelöstes externes Symbol
 //""public: static class CPUcontrolService * CPUcontrolService::
 // msp_cpucontrolservice"
 CPUcontrolService * CPUcontrolService::msp_cpucontrolservice ;
 std::vector<std::string> CPUcontrolService::m_vecstrCmdLineOptions ;
-DummyUserInterface CPUcontrolService::m_dummyuserinterface ;
-
-I_CPUaccess * g_p_cpuaccess ;
+//DummyUserInterface CPUcontrolService::m_dummyuserinterface ;
 
 //This function should be executed in a separate thread.
 DWORD WINAPI GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v )
@@ -97,13 +90,14 @@ DWORD WINAPI GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v )
     // It then locks the mutex again and returns."
     p_cpucontrolservice->m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.
       Wait() ;
+    LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before the loop condition")
     //ok, at least 1 client thread wants to get CPU core data.
 //    LOGN("GetCurrentCPUcoreDataInLoopThreadFunc retrieve CPU core data?"
 //      << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
     while( //break condition
         p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC )
     {
-      LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after Wait()")
+      LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after the loop condition")
       p_cpucontrolservice->m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
           dwByteSize , true) ;
       //Wake up all client threads waiting for IPC data.
@@ -140,6 +134,7 @@ DWORD WINAPI GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v )
 
       p_cpucontrolservice->
         m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Wait() ;
+      LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after Wait()")
     }
     LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
   }
@@ -172,6 +167,7 @@ CPUcontrolService::CPUcontrolService(
   )
   //C++ style inits:
   :
+  CPUcontrolServiceBase( & m_dummyuserinterface ) ,
 //    m_bSyncGUIshowDataWithService ( false ) ,
 #ifdef COMPILE_WITH_IPC
 //    mr_ipc_datahandler(r_ipc_datahandler) ,
@@ -182,7 +178,6 @@ CPUcontrolService::CPUcontrolService(
     //, m_bRun ( true ) 
     //, mp_winring0dynlinked (NULL)
     //, mar_tch(NULL)
-  , m_maincontroller( & m_dummyuserinterface )
   , m_powerprofdynlinked ( r_stdwstrProgramName )
     //,
 //    m_powerprofdynlinked ( r_stdtstrProgramName )
@@ -191,7 +186,7 @@ CPUcontrolService::CPUcontrolService(
   , m_x86iandc_threadGetCurrentCPUcoreData( I_Thread::joinable )
 {
   m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
-  Initialize() ;
+  InitializeMemberVariables() ;
 }
 
 CPUcontrolService::CPUcontrolService(
@@ -203,7 +198,8 @@ CPUcontrolService::CPUcontrolService(
   )
   //C++ style init.
   :
-  m_dwArgCount(argc)
+  CPUcontrolServiceBase( & m_dummyuserinterface )
+  , m_dwArgCount(argc)
 #ifdef COMPILE_WITH_IPC
 //  , mr_ipc_datahandler(r_ipc_datahandler)
   , m_ipc_datahandler ( m_model )
@@ -211,7 +207,7 @@ CPUcontrolService::CPUcontrolService(
 #endif //#ifdef COMPILE_WITH_IPC
 //  , m_powerprofdynlinked ( r_stdtstrProgramName )
 //  , m_stdtstrProgramName ( r_stdtstrProgramName )
-  , m_maincontroller( & m_dummyuserinterface )
+//  , m_maincontroller( & m_dummyuserinterface )
   ,
     m_p_ptstrArgument(argv)
   , m_powerprofdynlinked ( r_stdwstrProgramName )
@@ -220,13 +216,16 @@ CPUcontrolService::CPUcontrolService(
   m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
     //Calling the ctor inside another ctor created the object 2 times!
     //CPUcontrolService() ;
-  Initialize() ;
+  InitializeMemberVariables() ;
 }
 
 CPUcontrolService::~CPUcontrolService()
 {
-  FreeRessources() ;
+  LOGN("~CPUcontrolService() begin")
+  //Already called in ~CPUcontrolBase()
+//  FreeRessources() ;
   EndAlterCurrentCPUcoreIPCdata() ;
+  LOGN("~CPUcontrolService() end")
 }
 
 /**@ return true: already continued*/
@@ -255,19 +254,167 @@ bool CPUcontrolService::Continue()
   return bAlreadyContinued ;
 }
 
+void CPUcontrolService::CreateHardwareAccessObject()
+{
+  //Use parameterized constructor, because there were runtime errors with
+  //parameterless c'tor.
+  //mp_winring0dynlinked = new //WinRing0dynLinked(
+  mp_i_cpuaccess = new
+    WinRing0_1_3RunTimeDynLinked( & m_dummyuserinterface ) ;
+}
+
+void CPUcontrolService::CreateService( const TCHAR * const cpc_tchServiceName)
+{
+  try
+  {
+    BYTE by ;
+    DWORD dwLastError = ServiceBase::CreateService( cpc_tchServiceName , by  ) ;
+    if( dwLastError )
+    {
+      //DEBUG("Creating the service failed: error number:%d\n",
+      // dwLastError);
+      //LOG("Creating the service failed: error number:" << dwLastError
+      //    << "\n" );
+      //std::cout
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "Creating the service failed: error number:" <<
+        dwLastError << "\nError: " << //"\n"
+        LocalLanguageMessageFromErrorCodeA( dwLastError )
+        )
+        ;
+      switch( by )
+      {
+      case ServiceBase::GetModuleFileNameFailed:
+        //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
+        //LOG(
+        WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+          "Getting file name for THIS executable file failed: " <<
+          LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+          );
+        break ;
+      }
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution( dwLastError , cpc_tchServiceName ,
+        stdstrPossibleSolution ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(stdstrPossibleSolution)
+    }
+    else
+      //printf("Creating service succeeded\n");
+      std::cout << "Creating the service succeeded.\n" ;
+  }
+  catch( ConnectToSCMerror & ctscme )
+  {
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
+  }
+}
+
+void CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName
+  , std::string & stdtstrProgramName )
+{
+  DWORD dwErrorCodeFor1stError ;
+  BYTE by = ServiceBase::DeleteService(//"GriffinStateService"
+    cp_tchServiceName
+    , dwErrorCodeFor1stError
+    ) ;
+  if( by )
+  {
+//    HandleErrorPlace(by, "for deleting the service:") ;
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+//      ServiceBase::GetPossibleSolution(dwErrorCodeFor1stError)
+//      ) ;
+    std::string stdstr = "for deleting the service:" ;
+    switch(by)
+    {
+    case ServiceBase::OpenSCManagerFailed:
+    {
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution(
+        dwErrorCodeFor1stError ,
+        cp_tchServiceName
+        , stdstrPossibleSolution
+        ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        stdstr
+        << "opening the service control manager failed"
+        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
+        << stdstrPossibleSolution
+        ) ;
+    }
+      break ;
+    case ServiceBase::OpenServiceFailed:
+    {
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution(
+        dwErrorCodeFor1stError ,
+        cp_tchServiceName
+        , stdstrPossibleSolution
+        ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        stdstr
+        << "Opening the service for service name \"" <<
+          cp_tchServiceName << "\" failed."
+        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
+        << stdstrPossibleSolution
+        )
+    }
+        break ;
+    case ServiceBase::DeleteServiceFailed:
+    {
+      std::string stdstrPossibleSolution ;
+      ServiceBase::GetPossibleSolution(
+        dwErrorCodeFor1stError ,
+        cp_tchServiceName
+        , stdstrPossibleSolution
+        ) ;
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "Deleting service failed."
+        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
+        << stdstrPossibleSolution
+        )
+    }
+    break ;
+    }
+  }
+  else
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
+      << cp_tchServiceName
+      << "\" succeeded." )
+  std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
+  PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
+    stdwstr ) ;
+  powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+  powerprofdynlinked.OutputAllPowerSchemes() ;
+}
+
+void CPUcontrolService::DisableOtherVoltageOrFrequencyChange()
+{
+  m_powerprofdynlinked.DisableFrequencyScalingByOS();
+}
+
 void CPUcontrolService::EndAlterCurrentCPUcoreIPCdata()
 {
+  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata begin")
   m_vbAlterCPUcoreDataForIPC = false ;
+//  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Lock")
   //Lock the mutex so that the thread that called Wait() on the condition
   // receives the wakeup by Signal() (else Signal may be called while the
   // other thread is not Wait() ing and so does not wake up.
-  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock() ;
-  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Signal() ;
+//  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock() ;
+//  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Signal")
+//  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Signal() ;
+//  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
+//    "WaitForTermination of GetCurrentCPUcoreData")
+//  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Unlock() ;
+  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
+    "LockedBroadcast")
+  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.LockedBroadcast() ;
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"you must Wait() for a joinable thread or the system resources used by it
   //will never be freed,
   m_x86iandc_threadGetCurrentCPUcoreData.WaitForTermination() ;
+  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Delete")
   m_x86iandc_threadGetCurrentCPUcoreData.Delete() ;
+  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata end")
 }
 
 void CPUcontrolService::HandleInitServiceFailed( DWORD dwStatus)
@@ -309,7 +456,7 @@ void CPUcontrolService::HandleLogonEvent(
   //            r_service_attributes = mp_modelData->m_service_attributes ;
   //            if( r_service_attributes.m_bStartGUIonLogon )
   ServiceAttributes & r_sa =
-    msp_cpucontrolservice->mp_modelData->m_serviceattributes ;
+    msp_cpucontrolservice->m_model.m_serviceattributes ;
   LOGWN_WSPRINTF(L"GUI exe to start:%ls",
     r_sa.m_stdwstrPathToGUIexe.c_str() )
   if ( ! r_sa.m_stdwstrPathToGUIexe.empty() )
@@ -398,55 +545,8 @@ void CPUcontrolService::HandlePowerEvent(DWORD dwEventType )
   }
 }
 
-void CPUcontrolService::HandleStartDynVoltAndFreqScalingThread()
-{
-  msp_cpucontrolservice->m_powerprofdynlinked.DisableFrequencyScalingByOS();
-  LOGN("service HandleStartDynVoltAndFreqScalingThread--CPU controller: "
-    << msp_cpucontrolservice->mp_cpucontroller
-    << "CPU usage getter: " << msp_cpucontrolservice->mp_cpucoreusagegetter )
-  //Windows_API::DynFreqScalingThread dynfreqscalingthread(
-  msp_cpucontrolservice->mp_dynfreqscalingthreadbase =
-  #ifdef USE_WINDOWS_THREAD
-    new Windows_API::DynFreqScalingThread(
-  #else //USE_WINDOWS_THREAD
-    new wxWidgets::DynFreqScalingThread(
-  #endif //USE_WINDOWS_THREAD
-//    msp_cpucontrolservice->mp_cpucontroller->mp_icpucoreusagegetter
-//    , msp_cpucontrolservice->mp_cpucontroller
-    * this
-//    * msp_cpucontrolservice
-    , msp_cpucontrolservice->mp_modelData->m_cpucoredata
-    ) ;
-  bool bContinue = false ;
-  if( msp_cpucontrolservice->mp_dynfreqscalingthreadbase )
-  {
-    LOGN("Trying to start the Dynamic Voltage and Frequency Scaling thread.")
-    //dynfreqscalingthread.Run() ;
-    DWORD dwRet = msp_cpucontrolservice->mp_dynfreqscalingthreadbase->Start() ;
-    if( dwRet == ERROR_SUCCESS )
-    {
-      LOGN( "Successfully started the Dynamic Voltage and Frequency Scaling "
-          "thread.")
-      bContinue = true ;
-    }
-    else
-    {
-      LOGN( "Error starting Dynamic Voltage and Frequency Scaling thread :"
-        << LocalLanguageMessageFromErrorCodeA(dwRet) )
-    }
-  }
-  if( bContinue )
-  {
-    LOGN("Waiting for the stop service condition to become true")
-    LOGN("service main--current thread ID:" << ::GetCurrentThreadId() )
-    msp_cpucontrolservice->m_vbServiceInitialized = true ;
-    //If not waiting the thread object is destroyed at end of block.
-    ::WaitForSingleObject( msp_cpucontrolservice->
-      m_hEndProcessingEvent, INFINITE) ;
-  }
-}
-
-void CPUcontrolService::Initialize()
+//This method should be called by each constructor.
+void CPUcontrolService::InitializeMemberVariables()
 {
   m_vbAlterCPUcoreDataForIPC = true ;
   m_vbServiceInitialized = false ;
@@ -466,15 +566,15 @@ void CPUcontrolService::Initialize()
   mp_voidMappedViewStartingAddress = NULL ;
   m_handleMapFile = NULL ;
 #endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
-  mp_modelData = NULL ;
+//  mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService" ;
 
   m_hEndProcessingEvent = CreateEvent( 
-      NULL,         // default security attributes
-      TRUE,         // manual-reset event
-      FALSE,         // initial state is non-signaled
-      "EndEvent"  // object name
-      ); 
+    NULL,         // default security attributes
+    TRUE,         // manual-reset event
+    FALSE,         // initial state is non-signaled
+    "EndEvent"  // object name
+    );
   //This method is form: http://msdn.microsoft.com/en-us/library/ms810429.aspx
   // Copy the address of the current object so we can access it from
   // the static member callback functions.
@@ -483,304 +583,6 @@ void CPUcontrolService::Initialize()
   //m_winring0dynlinked.SetUserInterface(&m_dummyuserinterface);
   //DEBUG("end of constructor of service object\n");
   LOGN("before starting thread for GetCurrentCPUcoreDataInLoopThreadFunc")
-}
-
-//Pass ERROR_SUCCESS (0L) or NO_ERROR (0L) if no error
-// Stub initialization function. 
-DWORD CPUcontrolService::MyServiceInitialization(
-  DWORD   argc, 
-  LPTSTR  * argv
-  ) 
-{ 
-  //DWORD dwReturnValue = ERROR_SUCCESS ;
-  DWORD dwReturnValue = ! NO_ERROR ;
-  //argv; 
-  LPTSTR  ** ppartch ;
-  //std::vector<std::string> stdvecstdstrFurtherCmdLineArgs ;
-  //argc; 
-  //DEBUG("initializing the service--begin\n",argc)
-  LOGN( "initializing the service--begin. argument count:" << argc )
-  //specificError; 
-  if( argc < 2 )
-  {
-    LPTSTR ptchFirstArg
-      //Initialize to avoid g++ warning (too many warnings are unuebersichtlich)
-      = NULL ;
-      //TCHAR artchDefaultArg[] = "-config=GriffinControl_config.xml" ;
-          //"-config=C:\\Users\\Public\\config.xml" ;
-      //for( BYTE by = 0 ; by < argc ; ++by )
-
-      if( argc == 1 )
-          ptchFirstArg = argv[0] ;
-      //free(argv[by]);
-      //It crashed here: tried to free an array that hasn't been allocated 
-      //on the heap.
-      //free(argv);
-      //argv = new char * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
-      mar_tch = new char * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
-      argc = NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS ;
-      m_stdtstrProgramArg = std::tstring("-config=") + //m_stdwstrProgramName + 
-        m_stdtstrProgramName + 
-        std::tstring("_config.xml") ;
-      //if( argc == 1 )
-          //argv[0] = ptchFirstArg ;
-          mar_tch[0] = ptchFirstArg ;
-      //argv[1] = new char [ strlen(artchDefaultArg) + 1 ] ;
-      //mar_tch[1] = new char [ strlen(artchDefaultArg) + 1 ] ;
-      //mar_tch[1] = "-config=CPUcontrol_config.xml" ;
-      mar_tch[1] = (LPTSTR) m_stdtstrProgramArg.c_str() ;
-      //strcpy(argv[1],artchDefaultArg);
-      //strcpy(mar_tch[1],artchDefaultArg);
-      ppartch = & mar_tch ;
-      //stdvecstdstrFurtherCmdLineArgs.push_back(
-  }
-  else
-      ppartch = & argv ;
-  //Intension for this try-block is: 
-  //The program should not continue if initializing the CPU access failed.
-  try 
-  {
-    //LOG here because: 
-    //A user sent me a log file because the service crashed around this
-    //place.
-    LOG("Before initializing the CPU access"//\n"
-      )
-    //msp_cpucontrolservice->
-    //  //Estimated time required for a pending start, stop, pause, or 
-    //  //continue operation, in milliseconds. Before the specified amount 
-    //  //of time has elapsed, the service should make its next call to the 
-    //  //SetServiceStatus function with either an incremented dwCheckPoint 
-    //  //value or a change in dwCurrentState. If the amount of time 
-    //  //specified by dwWaitHint passes, and dwCheckPoint has not been 
-    //  //incremented or dwCurrentState has not changed, the service 
-    //  //control manager or service control program can assume that an error 
-    //  //has occurred and the service should be stopped. 
-    //  m_servicestatus.dwWaitHint = 
-    //  //calling "InitializeOls" sometimes took 1:30 (min:s) ro even longer
-    //  //(seen in the log file) so set 360 s = 6 min as a wait hint
-    //  360000 ;
-    //::SetServiceStatus (msp_cpucontrolservice->
-    //    m_service_status_handle, & msp_cpucontrolservice->
-    //    m_servicestatus); 
-    //Use parametrized constructor, because there were runtime errors with 
-    //parameterless c'tor.
-    //mp_winring0dynlinked = new //WinRing0dynLinked(
-    mp_i_cpuaccess = new
-      WinRing0_1_3RunTimeDynLinked(
-      & msp_cpucontrolservice->m_dummyuserinterface ) ;
-    g_p_cpuaccess = mp_i_cpuaccess ;
-    DEBUGN("MyServiceInitialization() CPU access address: " << mp_i_cpuaccess )
-    mp_modelData = //new Model() ;
-        & m_model ;
-    LOGN("Address of service attributes: " << mp_modelData)
-    if( mp_modelData )
-    {
-      //Important! because the DLLs assign their pointers to the model
-      //from the I_CPUaccess::mp_model
-      mp_i_cpuaccess->mp_model = mp_modelData ;
-
-      //This assignment is needed for "CPUID" calls
-      m_maincontroller.SetCPUaccess( //mp_winring0dynlinked) ;
-        mp_i_cpuaccess ) ;
-      m_maincontroller.ReadMainAndPstateConfig( 
-        //m_model, 
-        * mp_modelData 
-        , & msp_cpucontrolservice->m_dummyuserinterface );
-      std::string stdstrServiceCfgFile = "service.xml" ;
-      SAX2ServiceConfigHandler sax2serviceconfighandler(
-//        * mp_modelData ,
-        m_model ,
-        & msp_cpucontrolservice->m_dummyuserinterface );
-      if( ReadXMLfileInitAndTermXerces(
-          stdstrServiceCfgFile.c_str()
-          , *mp_modelData
-//          , p_userinterface
-          , & msp_cpucontrolservice->m_dummyuserinterface
-          //Base class of implementing Xerces XML handlers.
-          //This is useful because there may be more than one XML file to read.
-          //So one calls this functions with different handlers passed.
-          //DefaultHandler & r_defaulthandler
-          , sax2serviceconfighandler
-          )
-        )
-      {
-//        byRet = 1 ;
-      }
-      else
-      {
-        //std::tstring tstr(
-        //  _T("Running this program is unsafe because theres was an error ") ) ;
-        //tstr +=  _T("with the file containg the maximum voltages (") ;
-        //tstr = tstr + strProcessorFilePath ;
-        //tstr += _T(")") ;
-        //throw VoltageSafetyException(
-        //  tstr ) ;
-//        byRet = 1 ;
-      }
-      if( mp_modelData->m_cpucoredata.
-        m_stdsetvoltageandfreqDefault.size() == 0
-        //mp_stdsetvoltageandfreqDefault->size() == 0
-        )
-      {
-        LOGN("no default voltages specified->no overvoltage protection->exiting");
-        return 1 ;
-      }
-      if( mp_modelData->m_cpucoredata.
-        m_stdsetvoltageandfreqWanted.size() == 0 
-        //mp_stdsetvoltageandfreqWanted->size() == 0 
-        )
-      {
-        LOGN("no preferred voltages specified->exiting");
-        return 1 ;
-      }
-      //mp_userinterface = //p_frame ;
-      //  & msp_cpucontrolservice->m_dummyuserinterface ;
-      //The controller must be created before the main frame because 
-      //its view depends of values retrieved from the controller
-      //(e.g. for every core a single menu)
-      //msp_cpucontrolservice->
-      //  mp_cpucontroller = 
-      //  m_maincontroller.CreateCPUcontrollerAndUsageGetter(
-      //    mp_cpucoreusagegetter ) ;
-      //if( !
-        m_maincontroller.
-        //Creates e.g. an AMD Griffin oder Intel Pentium M controller
-        CreateCPUcontrollerAndUsageGetter( 
-          mp_cpucontroller 
-          , mp_cpucoreusagegetter
-          ) ;
-        //)
-      if( ! mp_cpucontroller )
-      {
-        if( ! mp_cpucoreusagegetter )
-        {
-          LOGN("no CPU controller and no usage getter->exiting");
-          return 1 ;
-        }
-        else
-        {
-          LOGN("no CPU controller ->exiting");
-          return 1 ;
-        }
-      }
-      if( ! mp_cpucoreusagegetter )
-      {
-        LOGN("no CPU controller and no usage getter->exiting");
-        return 1 ;
-      }
-      SetCPUcontroller(mp_cpucontroller) ;
-      mp_cpucontroller->SetCmdLineArgs(
-        NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
-        *ppartch ) ;
-      mp_cpucontroller->SetUserInterface( 
-        & msp_cpucontrolservice->m_dummyuserinterface ) ;
-      //Set the CPU access BEFORE getting number of CPU cores in
-      //SetModelData(...) .
-      mp_cpucontroller->SetCPUaccess( //mp_winring0dynlinked) ;
-        mp_i_cpuaccess ) ;
-      mp_cpucontroller->SetModelData( //& m_model
-        mp_modelData ) ;
-      //mp_cpucontroller->SetCalculationThread(& m_calculationthread) ;
-      //mp_cpucontroller->SetOtherDVFSaccess(& m_powerprofdynlinked) ;
-
-      //mp_cpucontroller->SetOtherDVFSaccess( mp_dynfreqscalingaccess ) 
-      mp_cpucontroller->SetOtherDVFSaccess( & m_powerprofdynlinked ) ;
-      //m_model.SetCPUcontroller( mp_cpucontroller);
-      mp_modelData->SetCPUcontroller( mp_cpucontroller);
-
-      //mp_cpucontroller->SetCmdLineArgs(
-      //  NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS ,
-      //  m_arartchCmdLineArgument
-      //  ) ;
-
-      //DEBUG("initializing the service--end\n",argc)
-      LOG( "End of initializing the service\n" //<< argc 
-          )
-//      if( byReturn == SUCCESS )
-//        //It does not make much sense to run this service if not voltages
-//        //are changed/ set due to an error.
-//        dwReturnValue = NO_ERROR ;
-      dwReturnValue = NO_ERROR ;
-      }
-  }
-  //catch(DLLnotLoadedException e)
-  catch( CPUaccessException & r_cpuaccessexception)
-  {
-    //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-    //    "Exception: DLL was not loaded\n" ) ;
-    dwReturnValue = ! NO_ERROR ;
-    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/interactive_services.htm:
-    //"Display a message box by calling the MessageBox function with
-    //MB_SERVICE_NOTIFICATION. This is recommended for displaying simple 
-    //status messages. Do not call MessageBox during service initialization 
-    //or from the HandlerEx routine, unless you call it from a separate 
-    //thread, so that you return to the SCM in a timely manner."
-
-    ::MessageBox(
-      //If this parameter is NULL, the message box has no owner window.
-      NULL
-      , r_cpuaccessexception.m_stdstrErrorMessage.c_str()
-      //title bar
-      //, "error initializing the CPU access"
-      //, strProgramName.c_str()
-//      , getstdstring( m_stdwstrProgramName ).c_str()
-      , m_stdtstrProgramName.c_str()
-      //, "CPUcontrol service error"
-      , MB_SERVICE_NOTIFICATION
-      ) ;
-    //TODO http://msdn.microsoft.com/en-us/library/ms683502%28v=VS.85%29.aspx:
-    // MessageBox with MB_SERVICE_NOTIFICATION works only for
-    // for Windows Server 2003, Windows XP, and Windows 2000->
-    // Better use WTSSendMessage(...) ?!
-    //TODO WTSSendMessage is not in MinGW's <wtsapi.h>
-//    DWORD dwResponse ;
-//    DWORD dwTitleBarStringLenInBytes = m_stdtstrProgramName.length() ;
-//    //TODO correct macros used (also for MSVC)?
-//#if defined _UNICODE || defined UNICODE
-//    dwTitleBarStringLenInBytes *= 2 ;
-//#endif
-//    DWORD dwMessageStringLenInBytes =
-//        cpuaccessexception.m_stdstrErrorMessage.length() ;
-//#if defined _UNICODE || defined UNICODE
-//    dwMessageStringLenInBytes *= 2 ;
-//#endif
-//    //Citations from:
-//    //http://msdn.microsoft.com/en-us/library/aa383842%28VS.85%29.aspx:
-//    ::WTSSendMessage(
-//      //"WTS_CURRENT_SERVER_HANDLE to indicate the RD Session Host server on "
-//      //"which your application is running."
-//      WTS_CURRENT_SERVER_HANDLE
-//      //"To indicate the current session, specify WTS_CURRENT_SESSION"
-//      , WTS_CURRENT_SESSION
-//      , //getstdstring( m_stdtstrProgramName.c_str() )
-//      //(TCHAR*) m_stdtstrProgramName.c_str()
-//      "hh"
-//      , //"The length, in bytes, of the title bar string."
-//        //dwTitleBarStringLenInBytes
-//        2
-//      //"A pointer to a null-terminated string that contains the message to
-//      //display."
-//      , //cpuaccessexception.m_stdstrErrorMessage.c_str()
-//      //(TCHAR*) Getstdtstring( cpuaccessexception.m_stdstrErrorMessage ).c_str()
-//      "jj"
-//      , //"The length, in bytes, of the message string."
-//      //cpuaccessexception.m_stdstrErrorMessage.size()
-////      dwMessageStringLenInBytes
-//      2
-//      , MB_OK
-//      //"The time, in seconds[...]
-//      //If the Timeout parameter is zero, WTSSendMessage  waits indefinitely
-//      //for the user to respond."
-//      , 10
-//      , & dwResponse
-//      //"If TRUE, WTSSendMessage does not return until the user responds or the
-//      //time-out interval elapses."
-//      , //FALSE
-//      TRUE
-//      ) ;
-    //delete e ;
-  }
-  return dwReturnValue; 
 }
 
 void CPUcontrolService::FillCmdLineOptionsList()
@@ -815,7 +617,7 @@ inline BYTE * CPUcontrolService::GetIPCdataThreadSafe(DWORD & r_dwByteSize )
   LOGN("get IPC data: before entering critical section for concurrent "
     "modification by in-program data to IPC data thread")
   //Assign the array pointer and array byte size _inside_ the critical section.
-  mp_modelData->m_cpucoredata.m_wxcriticalsectionIPCdata.Enter() ;
+  m_model.m_cpucoredata.m_wxcriticalsectionIPCdata.Enter() ;
 
   LOGN("get IPC data: after entering critical section for concurrent "
     "modification by in-program data to IPC data thread")
@@ -838,7 +640,7 @@ inline BYTE * CPUcontrolService::GetIPCdataThreadSafe(DWORD & r_dwByteSize )
   LOGN("get IPC data: before leaving critical section for concurrent "
     "modification by in-program data to IPC data thread")
 
-  mp_modelData->m_cpucoredata.m_wxcriticalsectionIPCdata.Leave() ;
+  m_model.m_cpucoredata.m_wxcriticalsectionIPCdata.Leave() ;
   LOGN("get IPC data: after leaving critical section for concurrent "
     "modification by in-program data to IPC data thread")
   return r_arbyPipeDataToSend ;
@@ -868,7 +670,8 @@ DWORD CPUcontrolService::IPC_Message(
   }
     break ;
   case get_current_CPU_data :
-    LOGN("IPC: get_current_CPU_data")
+    LOGN("IPC: get_current_CPU_data--mp_dynfreqscalingthreadbase:"
+      << mp_dynfreqscalingthreadbase )
     if( mp_dynfreqscalingthreadbase && mp_dynfreqscalingthreadbase->
       IsStopped()
       )
@@ -955,7 +758,7 @@ DWORD CPUcontrolService::IPC_Message(
     //GetFrequency(wFrequency);
     break ;
   case sync_GUI_show_data_with_service:
-    mp_modelData->m_bSyncGUIshowDataWithService = true ;
+    m_model.m_bSyncGUIshowDataWithService = true ;
     break ;
   }
 //  m_ipc_datahandler.GetResponse( byCommand ) ;
@@ -1241,9 +1044,8 @@ std::string CPUcontrolService::GetLogFilePath()
 bool CPUcontrolService::Pause()
 {
   bool bAlreadyPaused = false ;
-   msp_cpucontrolservice->m_servicestatus.dwCurrentState = 
-     SERVICE_PAUSED; 
-   msp_cpucontrolservice->m_bProcess = false ;
+  m_servicestatus.dwCurrentState = SERVICE_PAUSED;
+  m_bProcess = false ;
   if( mp_dynfreqscalingthreadbase )
   {
     if( mp_dynfreqscalingthreadbase->IsStopped()
@@ -1260,8 +1062,8 @@ bool CPUcontrolService::Pause()
         )
     }
   }
-   SetServiceStatus() ;
-   return bAlreadyPaused ;
+  SetServiceStatus() ;
+  return bAlreadyPaused ;
 }
 
 void CPUcontrolService::requestOption(
@@ -1457,8 +1259,9 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
       "\n" );
 
   // Initialization code goes here.
-  //"After these calls[...,ServiceStatus()], the function should complete the initialization of the service."
-  dwStatus = msp_cpucontrolservice->MyServiceInitialization(
+  //"After these calls[...,ServiceStatus()], the function should complete the
+  //initialization of the service."
+  dwStatus = msp_cpucontrolservice->Initialize(
     argc
     , argv //&specificError
     );
@@ -1485,11 +1288,21 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   LOGN("service main--CPU controller: "
     << msp_cpucontrolservice->mp_cpucontroller
     << "CPU usage getter: " << msp_cpucontrolservice->mp_cpucoreusagegetter )
-  msp_cpucontrolservice->HandleStartDynVoltAndFreqScalingThread() ;
+  if( ! msp_cpucontrolservice->HandleStartDynVoltAndFreqScalingThread() )
+  {
+    LOGN("Waiting for the stop service condition to become true")
+    LOGN("service main--current thread ID:" << ::GetCurrentThreadId() )
+    msp_cpucontrolservice->m_vbServiceInitialized = true ;
+    //If not waiting the thread object is destroyed at end of block.
+    ::WaitForSingleObject(
+      msp_cpucontrolservice->m_hEndProcessingEvent, INFINITE) ;
+//    WaitForEndOfDVFSthread() ;
+  }
+
   // This is where the service does its work.
   //SvcDebugOut(" From the service: Returning the main thread \n",0);
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-      "From the service: Returning the main thread \n" );
+      "From the service: Returning the main thread" );
   //"[...] your service should use this thread to complete whatever tasks
   //it was designed to do.
   //If a service does not need a thread to do its work (such as a service
@@ -1534,20 +1347,38 @@ void CPUcontrolService::SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew )
 //          delete mp_cpucontroller ;
 //          LOGN(" current CPU controller deleted")
 //        }
-    LOGN("address of model: " << mp_modelData )
+    LOGN("address of model: " << & m_model )
     mp_cpucontroller = p_cpucontrollerNew ;
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
       mp_cpucoreusagegetter->SetCPUcontroller( p_cpucontrollerNew ) ;
     LOGN("after setting CPU controller for usage getter")
-    mp_cpucontroller->SetModelData( //& m_model
-       mp_modelData ) ;
+    mp_cpucontroller->SetModelData( & m_model ) ;
     LOGN("before GetMaximumFrequencyInMHz. number of CPU cores: " <<
-        (WORD) mp_modelData->m_cpucoredata.GetNumberOfCPUcores() )
+        (WORD) m_model.m_cpucoredata.GetNumberOfCPUcores() )
     //Needed for drawing the voltage-frequency curves.
     WORD w = mp_cpucontroller->GetMaximumFrequencyInMHz() ;
     LOGN("after GetMaximumFrequencyInMHz: " << w )
   }
+}
+
+void CPUcontrolService::SetInitHardwareAccessWaitHint()
+{
+  //msp_cpucontrolservice->
+  //  //Estimated time required for a pending start, stop, pause, or
+  //  //continue operation, in milliseconds. Before the specified amount
+  //  //of time has elapsed, the service should make its next call to the
+  //  //SetServiceStatus function with either an incremented dwCheckPoint
+  //  //value or a change in dwCurrentState. If the amount of time
+  //  //specified by dwWaitHint passes, and dwCheckPoint has not been
+  //  //incremented or dwCurrentState has not changed, the service
+  //  //control manager or service control program can assume that an error
+  //  //has occurred and the service should be stopped.
+  //  m_servicestatus.dwWaitHint =
+  //  //calling "InitializeOls" sometimes took 1:30 (min:s) ro even longer
+  //  //(seen in the log file) so set 360 s = 6 min as a wait hint
+  //  360000 ;
+  //SetServiceStatus();
 }
 
 void CPUcontrolService::SetServiceStatus()
@@ -1674,32 +1505,6 @@ bool CPUcontrolService::ShouldDeleteService(
   return bShouldDeleteService ;
 }
 
-bool CPUcontrolService::StartDynVoltnFreqScaling()
-{
-  bool bAlreadyContinued = false ;
-  if( ! mp_dynfreqscalingthreadbase ) 
-    mp_dynfreqscalingthreadbase = new
-#ifdef USE_WINDOWS_THREAD
-    Windows_API::DynFreqScalingThread(
-#else //#ifdef USE_WINDOWS_THREAD
-      wxWidgets::DynFreqScalingThread(
-#endif //#ifdef USE_WINDOWS_THREAD
-//      mp_cpucontroller->mp_icpucoreusagegetter
-//      , mp_cpucontroller
-      * this
-      , mp_modelData->m_cpucoredata
-      ) ;
-  //If allocating memory succeeded.
-  if( mp_dynfreqscalingthreadbase ) 
-  {
-    if( mp_dynfreqscalingthreadbase->m_vbRun )
-      bAlreadyContinued = true ;
-    else
-      mp_dynfreqscalingthreadbase->Start() ;
-  }
-  return bAlreadyContinued ;
-}
-
 void CPUcontrolService::StartIPCserverThread()
 {
   DWORD dwThreadId ;
@@ -1766,7 +1571,7 @@ void CPUcontrolService::StartService()
    }; 
 #ifdef EMULATE_EXECUTION_AS_SERVICE
   LPTSTR argv[1] ;
-  argv[0] = "GriffinControlService" ;
+  argv[0] = "CPUcontrolService" ;
   ServiceMain( 
      //m_dwArgCount,
      1,
@@ -1781,7 +1586,7 @@ void CPUcontrolService::StartService()
   //The StartServiceCtrlDispatcher function connects the main thread of a 
   //service process to the service control manager, which causes the thread 
   //to be the service control dispatcher thread for the calling process.
-  //In DIESEM Thread wird dann "ServiceCtrlHandlerEx" ausgef�hrt.
+  //In DIESEM Thread wird dann "ServiceCtrlHandlerEx" ausgefuehrt.
   //When the service control manager starts a service process, it waits for
   // the process to call the StartServiceCtrlDispatcher function.
   //The main thread of a service process should make this call as soon as
@@ -1801,8 +1606,9 @@ void CPUcontrolService::StartService()
 #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
   //The execution continues here if the service was stopped.
   //DEBUG("end of starting service\n");
-  LOGN("after staring service ctrl dispatcher--current thread id:" << 
+  LOGN("after starting service ctrl dispatcher--current thread id:" <<
     ::GetCurrentThreadId() )
+//  EndAlterCurrentCPUcoreIPCdata() ;
 }
 
 //This method is called by the Windows Service Control Manager.
@@ -1815,9 +1621,10 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
   LPVOID lpContext 
   )
 { 
-  LOGN("service ctrl handler--begin control code:" << dwControl );
-  LOGN("service ctrl handler--current thread id:" << 
-    ::GetCurrentThreadId() )
+  LOGN("service ctrl handler--begin control code:" << dwControl
+    << " current thread id:" << ::GetCurrentThreadId() );
+//  LOGN("service ctrl handler--current thread id:" << ::GetCurrentThreadId() )
+
   //DWORD status;
   // Local variables.
   static DWORD CachedState;
@@ -1848,6 +1655,7 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
       //if( msp_cpucontrolservice->mp_cpucontroller )
       //  msp_cpucontrolservice->mp_cpucontroller->EnableOwnDVFS() ;
       case SERVICE_CONTROL_STOP: 
+        LOGN("service control handler--received stop control code")
         // Do whatever it takes to stop here. 
         msp_cpucontrolservice->Stop() ;
         //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/handlerex.htm
@@ -1914,10 +1722,87 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
     return ERROR_CALL_NOT_IMPLEMENTED ;
 }
 
+void CPUcontrolService::ShowMessage( const std::string & cr_stdstrMessage )
+{
+  ::MessageBox(
+    //If this parameter is NULL, the message box has no owner window.
+    NULL
+    , cr_stdstrMessage.c_str()
+    //title bar
+    //, "error initializing the CPU access"
+    //, strProgramName.c_str()
+//      , getstdstring( m_stdwstrProgramName ).c_str()
+    , m_stdtstrProgramName.c_str()
+    //, "CPUcontrol service error"
+    //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/
+    // interactive_services.htm:
+    //"Display a message box by calling the MessageBox function with
+    //MB_SERVICE_NOTIFICATION. This is recommended for displaying simple
+    //status messages. Do not call MessageBox during service initialization
+    //or from the HandlerEx routine, unless you call it from a separate
+    //thread, so that you return to the SCM in a timely manner."
+    , MB_SERVICE_NOTIFICATION
+    ) ;
+  //TODO http://msdn.microsoft.com/en-us/library/ms683502%28v=VS.85%29.aspx:
+  // MessageBox with MB_SERVICE_NOTIFICATION works only for
+  // for Windows Server 2003, Windows XP, and Windows 2000->
+  // Better use WTSSendMessage(...) ?!
+  //TODO WTSSendMessage is not in MinGW's <wtsapi.h>
+//    DWORD dwResponse ;
+//    DWORD dwTitleBarStringLenInBytes = m_stdtstrProgramName.length() ;
+//    //TODO correct macros used (also for MSVC)?
+//#if defined _UNICODE || defined UNICODE
+//    dwTitleBarStringLenInBytes *= 2 ;
+//#endif
+//    DWORD dwMessageStringLenInBytes =
+//        cpuaccessexception.m_stdstrErrorMessage.length() ;
+//#if defined _UNICODE || defined UNICODE
+//    dwMessageStringLenInBytes *= 2 ;
+//#endif
+//    //Citations from:
+//    //http://msdn.microsoft.com/en-us/library/aa383842%28VS.85%29.aspx:
+//    ::WTSSendMessage(
+//      //"WTS_CURRENT_SERVER_HANDLE to indicate the RD Session Host server on "
+//      //"which your application is running."
+//      WTS_CURRENT_SERVER_HANDLE
+//      //"To indicate the current session, specify WTS_CURRENT_SESSION"
+//      , WTS_CURRENT_SESSION
+//      , //getstdstring( m_stdtstrProgramName.c_str() )
+//      //(TCHAR*) m_stdtstrProgramName.c_str()
+//      "hh"
+//      , //"The length, in bytes, of the title bar string."
+//        //dwTitleBarStringLenInBytes
+//        2
+//      //"A pointer to a null-terminated string that contains the message to
+//      //display."
+//      , //cpuaccessexception.m_stdstrErrorMessage.c_str()
+//      //(TCHAR*) Getstdtstring( cpuaccessexception.m_stdstrErrorMessage ).c_str()
+//      "jj"
+//      , //"The length, in bytes, of the message string."
+//      //cpuaccessexception.m_stdstrErrorMessage.size()
+////      dwMessageStringLenInBytes
+//      2
+//      , MB_OK
+//      //"The time, in seconds[...]
+//      //If the Timeout parameter is zero, WTSSendMessage  waits indefinitely
+//      //for the user to respond."
+//      , 10
+//      , & dwResponse
+//      //"If TRUE, WTSSendMessage does not return until the user responds or the
+//      //time-out interval elapses."
+//      , //FALSE
+//      TRUE
+//      ) ;
+}
+
 void CPUcontrolService::Stop()
 {
+  LOGN("CPUcontrolService::Stop() begin")
   if( mp_dynfreqscalingthreadbase ) 
      mp_dynfreqscalingthreadbase->Stop() ;
+  //TODO implement
+//  EndAllClientThreads() ;
+  mp_dynfreqscalingthreadbase->WaitForTermination() ;
   //::SetEvent( msp_cpucontrolservice->m_hEndProcessingEvent );
 //   msp_cpucontrolservice->
      m_servicestatus.dwWin32ExitCode = 0;
@@ -1928,8 +1813,9 @@ void CPUcontrolService::Stop()
 //   msp_cpucontrolservice->
      m_servicestatus.dwWaitHint      = 0;
 
+  LOGN("CPUcontrolService::Stop()--signalling the main thread to continue")
   //WaitForSingleObject(m_eventStopped);
-  ::SetEvent( //msp_cpucontrolservice->
+  ::SetEvent(
     m_hEndProcessingEvent
     );
 

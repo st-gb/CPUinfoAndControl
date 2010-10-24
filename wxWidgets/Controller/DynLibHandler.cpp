@@ -85,6 +85,9 @@ namespace wxWidgets
     //Catch because: if executed from GUI it can continue.
     catch( ... )
     {
+      LOGN("exception when creating the CPU controller. "
+        "mr_cpucontrolbase.m_p_cpucontrollerDynLib"
+        << mr_cpucontrolbase.m_p_cpucontrollerDynLib )
 //      r_p_cpucontroller = NULL ;
     }
     return bSuccess ;

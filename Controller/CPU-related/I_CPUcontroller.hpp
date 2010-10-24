@@ -20,6 +20,7 @@
 #if defined(_MSC_VER) || (__MINGW32__==1)
   #include <basetsd.h> //for DWORD_PTR
 #endif
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //for BOOL,BYTE,DWORD_PTR,...
 #include <preprocessor_macros/Windows_compatible_typedefs.h>
 #include <set> //for std::set
@@ -82,7 +83,10 @@ public:
 public:
   I_CPUcontroller() ;
   //in order for ~wxDynLibController to be called
-  virtual ~I_CPUcontroller() { }
+  virtual ~I_CPUcontroller()
+  {
+    LOGN("~I_CPUcontroller()")
+  }
   UserInterface * GetUserInterface() { return mp_userinterface ; }
 
   //This CPU instruction (in contrast to wrmsr) is not dangerous.
@@ -126,7 +130,9 @@ public:
     return 0 ; 
   }
   //Stores multiplier, reference clock and voltage into the model data.
-  virtual BYTE GetCurrentVoltageAndFrequency(
+  virtual BYTE GetCurrentVoltageAndFrequencyAndStoreValues(
+    WORD wCoreID ) ;
+  virtual void GetCurrentTemperatureInCelsiusAndStoreValues(
     WORD wCoreID ) ;
 
   virtual BYTE GetCurrentVoltageAndFrequency(

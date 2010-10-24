@@ -7,9 +7,11 @@
 //#include <winnt.h> //for LPWSTR
 #include <Controller/Logger/Logger.hpp>
 #include <Controller/character_string/stdstring_format.hpp> //for to_strstring()
+#include <Controller/character_string/stdtstr.hpp>//for GetStdString(...)
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/UserInterface.hpp>
-#include <Xerces/XercesHelper.hpp> // for "XERCES_STRING_FROM_ANSI_STRING()"
+//#include <Xerces/XercesHelper.hpp> //
+#include <Xerces/XercesString.hpp> //GET_WCHAR_STRING_FROM_XERCES_STRING(...)
 
 #include <iostream>
 #include <xercesc/framework/LocalFileInputSource.hpp>
@@ -72,7 +74,7 @@ char ReadXMLfileInitAndTermXerces(
         p_xmlchXMLfilePath ) ;
       ReadXMLdocument(
         xerces_localfileinputsource ,
-        model,
+//        model,
         p_userinterface ,
         r_defaulthandler
         ) ;
@@ -161,8 +163,8 @@ char ReadXMLdocumentInitAndTermXerces(
 }
 
   char ReadXMLdocument(
-    XERCES_CPP_NAMESPACE::InputSource & r_inputsource, //PStates & pstates
-	  Model & model, 
+    XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
+//	  Model & model,
 	  UserInterface * p_userinterface ,
    //Base class of implementing Xerces XML handlers.
    //This is useful because there may be more than one XML file to read.
@@ -231,27 +233,35 @@ char ReadXMLdocumentInitAndTermXerces(
             getColumnNumber() ;
         XMLFileLoc xmlfilelocLineNumber = cr_saxparseexception.
             getLineNumber() ;
+        std::wstring stdwstrInputSourceName =
+          GET_WCHAR_STRING_FROM_XERCES_STRING(
+              r_inputsource.getSystemId() ) ;
         std::wstring stdwstrMessage = L"XML exception in document \""
-          + std::wstring(
-            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
-            (wchar_t *) r_inputsource.getSystemId() ) +
-          L"\"\n"
+//          + std::wstring(
+//            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+//            (wchar_t *) r_inputsource.getSystemId() )
+          + stdwstrInputSourceName
+          + L"\"\n"
 //          + "\", line " + to_stdstring( cr_saxparseexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxparseexception.getColumnNumber() )
-          + L"in line " + GetStdWstring( to_stdstring(
+          L"in line " + GetStdWstring( to_stdstring(
             xmlfilelocLineNumber ) )
           + L", column " + GetStdWstring( to_stdstring(
             xmlfilelocColumnNumber ) )
 //          + "\", line " + to_stdstring( cr_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxexception.getColumnNumber() )
           + L":\n\"" +
-          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
-          (wchar_t *) cr_saxparseexception.getMessage() ;
+//          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+//          (wchar_t *) cr_saxparseexception.getMessage()
+          GET_WCHAR_STRING_FROM_XERCES_STRING(
+              cr_saxparseexception.getMessage() )
+          ;
 //        stdwstrMessage += L"whole document:" + r_inputsource.makeStream()
-        if( ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
+        if( //column 0 and line 0
+            ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
         {
-          stdwstrMessage += L"\n\nThis probably means that this document/ file does"
-            "not exist" ;
+          stdwstrMessage += L"\n\nThis probably means that this document/ "
+            "file does not exist" ;
         }
         stdwstrMessage +=
 //          + cr_saxexception.getMessage()
@@ -261,7 +271,10 @@ char ReadXMLdocumentInitAndTermXerces(
 //        p_userinterface->Confirm(//pchMessage
 //          //strMessage
 //          stdwstrMessage );
-        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        //Outputting wide strings via std::ofstream (=ANSI) leads to "gedit"
+        //not to recognize the character encoding of the log file.
+//        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        LOGN( GetStdStringInline( stdwstrMessage ) )
       }
       catch( const SAXException & cr_saxexception )
       {
@@ -295,7 +308,10 @@ char ReadXMLdocumentInitAndTermXerces(
         p_userinterface->Confirm(//pchMessage
           //strMessage
           stdwstrMessage );
-        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        //Outputting wide strings via std::ofstream (=ANSI) leads to "gedit"
+        //not to recognize the character encoding of the log file.
+//        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        LOGN( GetStdStringInline( stdwstrMessage ) ) ;
 //        XMLString::release( & pchMessage );
 //          return FAILURE;
       }
