@@ -18,7 +18,7 @@
   #include "stdafx.h"
   #endif
 
-  #include <Controller/CPU-related/GetCurrentReferenceClock.h>
+  #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
   #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
   #include <Controller/CPUindependentHelper.h> //::getBinaryRepresentation(...)

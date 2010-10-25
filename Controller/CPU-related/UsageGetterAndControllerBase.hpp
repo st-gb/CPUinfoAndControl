@@ -11,7 +11,9 @@
 //#ifdef _WINDOWS
   #include <windef.h>
 //#endif
-#include <basetsd.h> //DWORD_PTR
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+   #include <basetsd.h> //DWORD_PTR
+#endif //#ifdef _WIN32
 
 class I_CPUaccess ;
 

@@ -10,15 +10,16 @@
 
 #include <ModelData/ModelData.hpp>
 //#include <UserInterface/UserInterface.hpp>
-#include <Controller/stdtstr.hpp>
+#include <Controller/character_string/stdtstr.hpp>
 #include <Controller/MSVC_adaption/tchar.h>
 
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.
-class UserInterface ;
 class //ISpecificController ;
   I_CPUaccess ;
+class ICPUcoreUsageGetter ;
 class I_CPUcontroller ;
+class UserInterface ;
 
 class MainController 
 {
@@ -29,8 +30,7 @@ private:
   Model * mp_model ;
   UserInterface * mp_userinterface ;
 public:
-  I_CPUcontroller * CreateCPUcontrollerAndUsageGetter(
-    ICPUcoreUsageGetter * & r_p_icpucoreusagegetter ) ;
+  inline void CreateBuiltInCPUcontrollerAndUsageGetter() ;
   BYTE CreateCPUcontrollerAndUsageGetter(
     I_CPUcontroller * & cpu
     , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter) ;
@@ -52,9 +52,14 @@ public:
 //    r_stdvectstr.push_back( stdtstr ) ;
     return 1 ;
   }
-  BYTE Init(
+  BYTE ReadMainAndPstateConfig(
     Model & model 
     , UserInterface * p_userinterface 
+    ) ;
+  void ReadMainConfig(Model & model, UserInterface * p_userinterface ) ;
+  BYTE ReadPstateConfig(
+    Model & model
+    , UserInterface * p_userinterface
     ) ;
   void SetAttributeData( Model * p_model )
   {

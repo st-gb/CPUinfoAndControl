@@ -1,7 +1,13 @@
 #include "wxDynLibCPUcoreUsageGetter.hpp"
+//GetErrorMessageFromErrorCodeA(...)
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <Controller/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 #include <Controller/I_CPUaccess.hpp>
-#include <Windows/ErrorCodeFromGetLastErrorToString.h>
-#include <Windows/DLLloadError.hpp>
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+//  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
+  #include <Windows/DLLloadError.hpp>
+#endif //#ifdef _WIN32
 #include <string>
 #include <global.h>
 
@@ -18,7 +24,8 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   //m_bDLLsuccessfullyLoaded = m_wxdynamiclibraryCPUcoreUsage.Load(
   //  strDLLname//, int flags = wxDL_DEFAULT
   //) ;
-  //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html#wxdynamiclibraryload:
+  //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html
+  // #wxdynamiclibraryload:
   //"Returns true if the library was successfully loaded, false otherwise."
   if( m_wxdynamiclibraryCPUcoreUsage.Load( r_wxstrFilePath
     //strDLLname 
@@ -36,11 +43,18 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
           //Use wxT() macro to enable to compile with both unicode and ANSI.
           wxT( "GetCPUcoreUsage" ) ) ;
-      m_pfn_dll_usage_getter_num_logical_cpu_cores_type =
-        (dll_usage_getter_num_logical_cpu_cores_type)
-        m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
+      if( m_wxdynamiclibraryCPUcoreUsage.HasSymbol(
           //Use wxT() macro to enable to compile with both unicode and ANSI.
-          wxT("GetNumberOfLogicalCPUcores") ) ;
+          wxT("GetNumberOfLogicalCPUcores")
+          )
+        )
+        m_pfn_dll_usage_getter_num_logical_cpu_cores_type =
+          (dll_usage_getter_num_logical_cpu_cores_type)
+          m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
+            //Use wxT() macro to enable to compile with both unicode and ANSI.
+            wxT("GetNumberOfLogicalCPUcores") ) ;
+      else
+        m_pfn_dll_usage_getter_num_logical_cpu_cores_type = NULL ;
       m_pfn_dll_init_type = (dll_usage_getter_init_type)
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
           //Use wxT() macro to enable to compile with both unicode and ANSI.
@@ -50,13 +64,18 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         (*m_pfn_dll_init_type) ( //p_cpuaccess 
         //p_cpuacces->wNumLogicalCPUcores 
         //cpucoredata.m_byNumberOfCPUCores
+
         //By passing a pointer to an object the DLL that receives this pointer
         //has to interpret the struct (an object is a data/ a struct +
         //functions) in the same way as this executable.
         //This means that the members of the struct must both have the
         //same alignment and (relative) position.
         //For instance there were crashes when exe was compiled with MinGW
-        //and the DLL was compiled with MSVC.
+        //and the DLL was compiled with MSVC because of the "vtable"?:
+        //http://de.wikipedia.org/wiki/Tabelle_virtueller_Methoden  /
+        //http://en.wikipedia.org/wiki/Virtual_method_table
+        // meaning (some) function addresses of I_CPUaccess between MSVC and g++
+        // were probably different.
 //#ifndef _DEBUG
 //        //TODO
 //        0 //just for testing what happens if the DLL wants to call operations
@@ -71,24 +90,32 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
       {
         //(*m_pfn_dll_init_type) ( p_cpuaccess ) ;
         bSuccess = true ;
-        LOGN("CPU core usage getter dyn lib: function pointers to its functions assigned")
+        LOGN("CPU core usage getter dyn lib: function pointers to its "
+          "functions assigned")
       }
     }
   }
   if( ! bSuccess )
   {
-    DWORD dw = ::GetLastError() ;
+    std::string stdstrErrMsg = "loading the dynamic library failed:" ;
+    DWORD dw = OperatingSystem::GetLastErrorCode() ;
+    stdstrErrMsg += GetErrorMessageFromErrorCodeA(dw) ;
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+//    DWORD dw = ::GetLastError() ;
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
-    std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
+//    stdstrErrMsg += ::GetLastErrorMessageString(dw) ;
     stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
+#else
+#endif //#ifdef _WIN32
     LOGN("loading CPU core usage getter dynamic library failed:" <<
         stdstrErrMsg )
     //It does not make a sense to use this class instance because the 
     //initialisation failed. So throw an exception.
     throw CPUaccessException(stdstrErrMsg) ;
   }
-  LOGN("End of dyn lib CPU core usage getter ")
+  LOGN("End of dyn lib CPU core usage getter constructor")
 }
 
 wxDynLibCPUcoreUsageGetter::~wxDynLibCPUcoreUsageGetter()
@@ -132,7 +159,7 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
 #ifdef _DEBUG
     {
       float f = (*m_pfngetcpucoreusage)(byCPUcoreNumber) ;
-      DEBUGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
+      LOGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
         "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
       arf[byCPUcoreNumber] = f ;
     }

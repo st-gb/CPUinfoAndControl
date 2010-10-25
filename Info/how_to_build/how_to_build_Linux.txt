@@ -1,5 +1,9 @@
 how to build wxPumaStateCtrlDlg:
-         
+
+http://www.wxwidgets.org/docs/faqgtk.htm#static:
+"Can I statically link the GTK+ library?
+No, this is not possible. It leads to crashes in GTK+."
+
 under Linux (tested with Ubuntu 8.10 32 bit)
  -1. download package "wx2.8-headers", libwxbase2.8-dev (for "wx/setup.h")
  -2. add "/usr/include/wx-2.8" to include path

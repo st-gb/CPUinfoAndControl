@@ -12,7 +12,11 @@
 //#include <windef.h> //WINAPI, LPVOID
 #include "SpecificCPUcoreActionAttributes.hpp"
 
-#define WINAPI      __stdcall
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #define WINAPI __stdcall
+#else
+  #define WINAPI
+#endif
 #define far
 typedef void far            * LPVOID;
 

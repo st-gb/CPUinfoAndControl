@@ -2,22 +2,59 @@
 
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
-#include <ModelData/CPUcoreData.hpp>
+#include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
+#include <ModelData/CPUcoreData.hpp> //class CPUcoreData
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
+//LOGN(...), DEBUGN(...)
+#include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
-#include <binary_search.cpp> //GetClosesLess()
-#include <global.h> //LOGN
-#include "Sleep.h"
+#include <algorithms/binary_search.cpp> //GetClosestLess()
+#include <preprocessor_macros/supress_unused_variable.h> //SUPRESS_UNUSED_VARIABLE_WARNING
+//#include <global.h> //LOGN
+#include <Controller/Sleep.hpp> //for OperatingSystem::Sleep(...)
+
+//DynFreqScalingThreadBase::DynFreqScalingThreadBase(
+//  ICPUcoreUsageGetter * p_icpu
+//  , I_CPUcontroller * p_cpucontroller
+//  , CPUcoreData & r_cpucoredata
+//  )
+//  : //m_bSuccFullyGotPStateFromMSR(false)
+//  //Initialize in the same order as textual in the declaration?
+//  //(to avoid g++ warnings)
+//  mp_cpucoredata(&r_cpucoredata)
+//  , mp_cpucontroller ( p_cpucontroller )
+//  , m_bCalledInit(false)
+//  , m_wMilliSecondsToWait(100)
+//  , m_vbRun(true)
+//  , m_vbDVFSthreadStopped(true)
+//{
+////  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
+////  // the mutex should be initially locked
+////  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
+//
+//  DEBUG("constructor of freq scaling thread base--begin\n");
+//  mp_icpu = p_icpu ;
+//  LOGN("core usage address: " << p_icpu )
+//  //mp_icpu->Init();
+////  m_wMaxFreqInMHz = //2200
+////    r_cpucoredata.m_wMaxFreqInMHz ;
+//  //wxTimer();
+//  m_fPercentileIncrease = 1.5f ;
+//  mp_cpucontroller = p_cpucontroller ;
+//  DEBUG("constructor of freq scaling thread base--end\n");
+//}
 
 DynFreqScalingThreadBase::DynFreqScalingThreadBase(
-  ICPUcoreUsageGetter * p_icpu
-  , I_CPUcontroller * p_cpucontroller
+  CPUcontrolBase & r_cpucontrolbase
   , CPUcoreData & r_cpucoredata
   )
   : //m_bSuccFullyGotPStateFromMSR(false)
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   mp_cpucoredata(&r_cpucoredata)
-  , mp_cpucontroller ( p_cpucontroller )
+  , mr_cpucontrolbase (r_cpucontrolbase)
+  , mp_cpucontroller ( r_cpucontrolbase.mp_cpucontroller )
+  , mp_icpu ( r_cpucontrolbase.mp_cpucoreusagegetter)
   , m_bCalledInit(false)
   , m_wMilliSecondsToWait(100)
   , m_vbRun(true)
@@ -26,22 +63,20 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
 //  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
 //  // the mutex should be initially locked
 //  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
+  LOGN("dyn freq scaling thread base--"
+    << "CPU control base: " << & r_cpucontrolbase
+    << "CPU controller:" << r_cpucontrolbase.mp_cpucontroller
+    << "CPU usage getter: " << r_cpucontrolbase.mp_cpucoreusagegetter )
 
-    DEBUG("constructor of freq scaling thread base--begin\n");
-    mp_icpu = p_icpu ;
-    LOGN("core usage address: " << p_icpu )
-    //mp_icpu->Init();
-    m_wMaxFreqInMHz = //2200
-      r_cpucoredata.m_wMaxFreqInMHz ;
-    //wxTimer();
-    m_wCurrentFreqInMHz = //550
-      m_wMaxFreqInMHz / 4;
-    m_fPercentileIncrease = 1.5f ;
-    m_wAHalfOfMaxFreq = m_wMaxFreqInMHz / 2 ;
-    m_wAQuarterOfMaxFreq = m_wMaxFreqInMHz / 4 ;
-    //mp_pumastatectrl = p_pumastatectrl ;
-    mp_cpucontroller = p_cpucontroller ;
-    DEBUG("constructor of freq scaling thread base--end\n");
+  DEBUG("constructor of freq scaling thread base--begin\n");
+//  mp_icpu = p_icpu ;
+//  LOGN("dyn freq scaling thread base constructor--core usage address: "
+//    << mp_icpu )
+  //mp_icpu->Init();
+  //wxTimer();
+  m_fPercentileIncrease = 1.5f ;
+//  mp_cpucontroller = p_cpucontroller ;
+  DEBUG("constructor of freq scaling thread base--end\n");
 }
 
 void DynFreqScalingThreadBase::ChangeOperatingPointByLoad( 
@@ -49,10 +84,14 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
   , float fLoad 
   )
 {
-  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad(core ID:"
+  LOGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad"
+#ifdef _DEBUG
+    "(core ID:"
     << (WORD) byCoreID << ",load:"
     << fLoad
-    << ")")
+    << ")"
+#endif
+    )
   PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
     m_arp_percpucoreattributes[byCoreID] ;
 //  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad "
@@ -75,7 +114,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
       //p_percpucoreattributes->m_wCurrentFreqInMHz / 
       //  mp_cpucoredata->m_wMaxFreqInMHz 
       //  //This is important for increasing the frequency: if NOT multiplied
-      //  //this condition ">" is not fullfilled. 
+      //  //this condition ">" is not fulfilled.
       //  * 0.75
       )
     {
@@ -96,7 +135,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //        , fVoltage
 //        , byCoreID
 //        ) ;
-//      mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//      mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
 //        byCoreID
 //        ) ;
       wFreqInMHz = //"(WORD)" to avoid g++ compiler warning
@@ -150,7 +189,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //        , fVoltage
 //        , byCoreID
 //        ) ;
-//      mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//      mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
 //        byCoreID
 //        ) ;
       wFreqInMHz =
@@ -297,7 +336,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
           //needed).
           for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
           {
-            mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+            mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
             LOGN("multi for core " << (WORD) byCoreID
               << ":" << arp_percpucoreattributes[byCoreID].m_fMultiplier )
             //Even if CPU seemed to have 1 power plane (Nehalem) the different
@@ -403,7 +442,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
             for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
             {
   //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-  //                mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+  //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
                 arp_percpucoreattributes ,
@@ -464,7 +503,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
         SignalCPUdataCanBeSafelyRead() ;
       }
       //LOGN("End of scaling thread loop");
-      Sleep(//m_wMilliSecondsToWait
+      OperatingSystem::Sleep(//m_wMilliSecondsToWait
         mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
       DEBUGN("DynFreqScalingThreadBase::Entry(): after "
           "Sleep(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")")
@@ -473,12 +512,19 @@ ExitCode DynFreqScalingThreadBase::Entry()
   else //if(mp_cpucontroller->m_b1CPUcorePowerPlane )
   {
     BYTE byCoreID ;
+    //Declare outside of "SetLowerFrequencyFromAvailableMultipliers" to not
+    //be created every time.
     float fFreqInMHz ;
     float fLowerMultiplier ;
     float fNextMultiplierCalculatedFromCurrentLoad ;
+    //Avoid Linux g++ warning "‘fFreqInMHz’ may be used uninitialized in this
+    // function"
+    SUPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
+    SUPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
+    SUPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
     while( m_vbRun )
     {
-      //LOGN("DVFS thread running ")
+      LOGN("DVFS thread running")
       //DEBUG("begin of scaling thread loop\n");
       if( ! m_bCalledInit )
       {
@@ -491,7 +537,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
         //&& m_bSuccFullyGotPStateFromMSR
         )
       {
-  //      LOGN("DynFreqScalingThreadBase::Entry: confirmed yet")
+        LOGN("DynFreqScalingThreadBase::Entry: confirmed yet")
 
   //      //Wait until all threads reading from the CPU core data have finished.
   ////      mp_cpucoredata->m_conditionDVFSthreadMayChangeData.Wait() ;
@@ -512,23 +558,11 @@ ExitCode DynFreqScalingThreadBase::Entry()
   //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Wait()")
         //float fTempInDegCelsius ;
 
-        //TODO exit thread when getting CPU core load fails?
-        if( mp_icpu->//GetPercentalUsageForBothCores
-            GetPercentalUsageForAllCores( //mp_cpucoredata->
-            //m_arfCPUcoreLoadInPercent
-            ar_fCPUcoreLoadInPercent
-            )
-          )
+        if( mr_cpucontrolbase.
+          GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
+            ar_fCPUcoreLoadInPercent, wNumCPUcores) )
         {
-          //Get the current voltage etc. for ALL cores for sending the data for
-          // all cores via IPC, even if not needed for
-          //DVFS (if single power plane / all cores always at the same p-state
-          // then only the frequency for the core with the highest load is
-          //needed).
-          for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
-          {
-            mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
-          }
+          LOGN("after GetCurrentVoltageAndFrequency")
           //check if a temp. could be received:
           //Pentium M CPUs have no temperature register
           if(
@@ -548,7 +582,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
             for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
             {
   //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-  //                mp_cpucontroller->GetCurrentVoltageAndFrequency(byCoreID) ;
+  //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
                 arp_percpucoreattributes ,
@@ -567,7 +601,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
           }//too hot
           else
           {
-//            LOGN("too hot:no")
+            LOGN("too hot:no")
     //        if( mp_icpu->//GetPercentalUsageForBothCores
     //            GetPercentalUsageForAllCores(mp_cpucoredata->
     //            m_arfCPUcoreLoadInPercent)
@@ -609,15 +643,19 @@ ExitCode DynFreqScalingThreadBase::Entry()
         SignalCPUdataCanBeSafelyRead() ;
       }
       //LOGN("End of scaling thread loop");
-      Sleep(//m_wMilliSecondsToWait
+      OperatingSystem::Sleep(//m_wMilliSecondsToWait
         mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
-      DEBUGN("DynFreqScalingThreadBase::Entry(): after "
-          "Sleep(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")")
+      LOGN("DynFreqScalingThreadBase::Entry(): after "
+          "Sleep"
+#ifdef _DEBUG
+          "(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")"
+#endif
+          )
     }//loop
   }
   //Release clients waiting on the condition.
   SignalCPUdataCanBeSafelyRead() ;
-  DEBUGN("ended the Dynamic Voltage and Frequency Scaling loop")
+  LOGN("ended the Dynamic Voltage and Frequency Scaling loop")
   m_vbDVFSthreadStopped = true ;
   return 0;
 }
@@ -679,11 +717,13 @@ bool DynFreqScalingThreadBase::IsStopped()
 }
 
 //BYTE
-//Use DWORD because of GetLastError(...) return code.
+//Use DWORD because of GetLastError(...) return code. 0=success
 DWORD DynFreqScalingThreadBase::Start()
 {
+  LOGN("DynFreqScalingThreadBase::Start()")
   m_vbRun = true ; 
-  return 1 ;
+  LOGN("DynFreqScalingThreadBase::Start()--return" << 0 )
+  return 0 ;
 }
 
 inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
@@ -781,8 +821,8 @@ inline void DynFreqScalingThreadBase::SignalCPUdataCanBeSafelyRead()
   // which allows the thread to continue and starts waiting"
   //blocks here when using wxCondition::Broadcast() (wxWidgets bug?)
 //      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast();
-  mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.Broadcast() ;
-  mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.ResetEvent() ;
+  mp_cpucoredata->m_condition_typeCPUdataCanBeSafelyRead.Broadcast() ;
+//  mp_cpucoredata->m_condition_typeCPUdataCanBeSafelyRead.ResetEvent() ;
   LOGN("DynFreqScalingThreadBase::Entry(): after "
       "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
 }
@@ -792,5 +832,26 @@ inline void DynFreqScalingThreadBase::SignalCPUdataCanBeSafelyRead()
 //The DVFS thread is only stopped if the loop ended at first.
 void DynFreqScalingThreadBase::Stop()
 {
+  LOGN("DynFreqScalingThreadBase::Stop()")
   m_vbRun = false ;
+}
+
+DWORD //__stdcall is important for Windows' ::CreateThread()
+//Built-in preprocessor macro for MSVC, MinGW (also for 64 bit)
+#ifdef _WIN32 //under Linux g++ error if "__stdcall"
+  __stdcall
+#endif
+  DynFreqScalingThreadBaseNameSpace::ThreadFunction( void * pv )
+{
+  LOGN("DynFreqScalingThreadBaseNameSpace::ThreadFunction begin--pv:" << pv )
+  DynFreqScalingThreadBase * p_dynfreqscalingthreadbase =
+    (DynFreqScalingThreadBase *) pv ;
+  if( p_dynfreqscalingthreadbase )
+  {
+    //Set "m_vbRun" to true.
+    p_dynfreqscalingthreadbase->Start() ;
+    p_dynfreqscalingthreadbase->Entry() ;
+    return 0 ;
+  }
+  return 1;
 }

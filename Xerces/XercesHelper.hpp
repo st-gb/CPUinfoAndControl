@@ -7,21 +7,30 @@
 #ifndef _XERCESHELPER_HPP
 #define	_XERCESHELPER_HPP
 
-#include <Windows_compatible_typedefs.h> //__int64
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //__int64
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
+//from C standard library
 #include <errno.h> //for "ERANGE"
 #include <limits.h> //ULONG_MAX
 #include <stdlib.h> //atoi()
-#include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
-#include <xercesc/util/XMLString.hpp>
+#include <string> //class std::string
 
-//// need to properly scope any forward declarations
-//XERCES_CPP_NAMESPACE_BEGIN
-//  class Attributes;
-//XERCES_CPP_NAMESPACE_END
+#include <windef.h> //for CONST etc. for winnt.h
+#include <winnt.h> //for __int64
+//#include <windows.h> //for __int64
 
-//Needed for verzichten auf the exact namspace.
-XERCES_CPP_NAMESPACE_USE
+////from Apache Xerces header directory
+//#include <xercesc/sax2/Attributes.hpp> //for "XERCES_CPP_NAMESPACE::Attributes"
+//for XERCES_CPP_NAMESPACE::XMLString::transcode(...)
+#include <xercesc/util/XMLString.hpp> //class XERCES_CPP_NAMESPACE::XMLString
+#include <xercesc/util/Xerces_autoconf_config.hpp> //for XMLCh
+#include <xercesc/util/XercesVersion.hpp> //XERCES_CPP_NAMESPACE
+
+#define XERCES_ATTRIBUTE_VALUE_INVALID_DATA_FORMAT 2
+
+//Needed for avoiding the exact namespace.
+//XERCES_CPP_NAMESPACE_USE
 
 //http://xerces.apache.org/xerces-c/build-3.html:
 //If you are linking your application to the static Xerces-C++ library,
@@ -31,59 +40,28 @@ XERCES_CPP_NAMESPACE_USE
 //import/export mechanism.
 //#define XERCES_STATIC_LIBRARY
 
-#define XERCES_ATTRIBUTE_VALUE_INVALID_DATA_FORMAT 2
-#define XERCES_ERROR_GETTING_ATTRIBUTE_NAME 3
-#define XERCES_ERROR_CONVERTING_ATTRIBUTE_VALUE_TO_C_STRING 4
-#define XERCES_ATTRIBUTE_VALUE_DOES_NOT_EXIST 5
-#define XERCES_ERROR_CONVERTING_ATTRIBUTE_NAME_TO_XERCES_STRING 6
-
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.
 //class Attributes ;
 class UserInterface ;
-
-//from Xerces sourcecode (CreateDOMDocument sample, CreateDOMDocument.cpp) :
-// ---------------------------------------------------------------------------
-//  This is a simple class that lets us do easy (though not terribly efficient)
-//  trancoding of char* data to XMLCh data.
-// ---------------------------------------------------------------------------
-class XStr
-{
-public :
-    // -----------------------------------------------------------------------
-    //  Constructors and Destructor
-    // -----------------------------------------------------------------------
-    XStr(const char* const toTranscode)
-    {
-        // Call the private transcoding method
-        fUnicodeForm = XMLString::transcode(toTranscode);
-    }
-
-    ~XStr()
-    {
-        XMLString::release(&fUnicodeForm);
-    }
-    // -----------------------------------------------------------------------
-    //  Getter methods
-    // -----------------------------------------------------------------------
-    const XMLCh* unicodeForm() const
-    {
-        return fUnicodeForm;
-    }
-private :
-    // -----------------------------------------------------------------------
-    //  Private data members
-    //
-    //  fUnicodeForm
-    //      This is the Unicode XMLCh format of the string.
-    // -----------------------------------------------------------------------
-    XMLCh*   fUnicodeForm;
-};
-#define X(str) XStr(str).unicodeForm()
+//Need to properly scope any forward declarations.
+XERCES_CPP_NAMESPACE_BEGIN
+  class Attributes;
+XERCES_CPP_NAMESPACE_END
 
 namespace x86InfoAndControl
 {
   bool InitializeXerces() ;
+  inline void TerminateXerces()
+  {
+    //http://xerces.apache.org/xerces-c/program-3.html:
+    //"Independent of the API you want to use, DOM, SAX, or SAX2, your
+    //application must [...] and terminate it after you are done.
+    //When Terminate() was called in another block (even if in a function that
+    //is called in the same block) than program crash.
+    XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate();
+    LOGN("Xerces access terminated")
+  }
 }
 
 class StdStringToDestFormat
@@ -96,24 +74,29 @@ public:
 };
 
 class StdStringToDWORD
-  :public StdStringToDestFormat
+  : public StdStringToDestFormat
 {
 public:
   static BYTE Convert(
     std::string & strAttributeValue ,
     void * pv_AttributeValue 
-  )
+    )
   {
-    BYTE byReturn = FAILURE ;
+    BYTE byReturn = 0 ;
     //DWORD dwRes ;
     //dwRes = atol(strAttributeValue.c_str() ;
     //Use atoi64 because atol return a long value 2^31 to -2^31 but a 
     //DWORD can go to 2^32
-    __int64 i64 = 
+//#ifdef WIN32 //if Windows (MinGW etc.)
+    __int64 i64 =
+//#else
+//    int64 i64 =
+//#endif
       #ifdef _MSC_VER //if MS-compiler
       _atoi64
       #else
       atoi 
+//      strtoul
       #endif
       (strAttributeValue.c_str() ) ;
     if ( //The return value is 0 for _atoi64 if the input cannot be 
@@ -122,7 +105,11 @@ public:
       || 
       errno == ERANGE
       || 
-      i64 > ULONG_MAX 
+      i64 >
+      //Avoid g++ warning "comparison between signed and unsigned integer
+      // expressions"
+      (__int64)
+      ULONG_MAX
       || 
       i64 < 0 
       )
@@ -133,7 +120,7 @@ public:
     else
     {
       //dwRes = i64 ;
-      byReturn = SUCCESS;
+      byReturn = 1 ;
       *((DWORD*) pv_AttributeValue ) = (DWORD) i64; //(void*) () ;
     }
     return byReturn ;
@@ -147,100 +134,9 @@ class XercesHelper
 public:
   XercesHelper();
   XercesHelper(UserInterface & r_userinterface );
-  XercesHelper(const XercesHelper& orig);
+  XercesHelper(const XercesHelper & orig);
   virtual ~XercesHelper();
 //private:
-
-  static BYTE GetAttributeValue(
-    const Attributes & attrs,
-    const char * pc_chAttributeName,
-    bool & rbValue
-    ) ;
-
-  static inline BYTE //SAX2MainConfigHandler::
-      GetAttributeValue
-    (
-    const Attributes & xercesc_attributes,
-    const std::string & cr_stdstrAttributeName,
-    std::string & r_strValue
-    ) ;
-
-  static BYTE GetAttributeValue(
-      const Attributes & attrs,
-      char * lpctstrAttrName,
-      BYTE & rbyValue
-    ) ;
-
-  BYTE //SAX2MainConfigHandler::
-      GetAttributeValue(
-    const Attributes & attrs,
-    const char * lpctstrAttrName,
-    //DWORD & r_dwValue
-    //StdStringToDestFormat & r_stdstringtodestformat ,
-    BYTE ( * pfn)(
-      std::string & strAttributeValue ,
-      void * pv_AttributeValue ) ,
-    //PVOID 
-    void * pv_AttributeValue
-    ) ;
-
-  //Decrease code redundancy:
-  //This function has the code to get the Xerces attribute value
-  //that should be identical for all data types and calls the 
-  //coverter functions (member functions of this class).
-  //For possibility to interact with the user interface in case of convert errors
-  //the converter functions are member functions and so they have
-  //the userinterface member variable.
-  BYTE //SAX2MainConfigHandler::
-    GetAttributeValue(
-    const Attributes & attrs,
-    const char * lpctstrAttrName,
-    //DWORD & r_dwValue
-    //StdStringToDestFormat & r_stdstringtodestformat ,
-    BYTE ( XercesHelper::*pfn )(
-      //const XercesHelper * cp_xerceshelper ,
-      std::string & strAttributeValue ,
-      void * pv_AttributeValue ) ,
-    //const XercesHelper * cp_xerceshelper ,
-    //PVOID 
-    void * pv_AttributeValue
-    ) ;
-
-    static BYTE GetAttributeValue(
-    const Attributes & attrs,
-    const char * lpctstrAttrName,
-    WORD & rwValue
-    ) ;
-
-    //static 
-    BYTE //SAX2MainConfigHandler::
-        GetAttributeValue(
-      const Attributes & attrs,
-      const char * lpctstrAttrName,
-      DWORD & r_dwValue) ;
-
-    static BYTE GetAttributeValue(
-    const Attributes & attrs,
-    const char * lpctstrAttrName,
-    float & rfValue
-    ) ;
-
-  static BYTE GetAttributeValue(
-    const Attributes & attrs,
-    char * lpctstrAttrName,
-//    std::string & r_stdstrAttributeName ,
-    std::string & r_strValue
-    ) ;
-  static BYTE GetAttributeValue
-    (
-    const Attributes & attrs,
-    const char * lpctstrAttrName,
-    std::wstring & r_stdwstrValue
-    ) ;
-  BYTE ToDWORD(
-    std::string & strAttributeValue ,
-    void * pv_AttributeValue
-    ) ;
   static std::string ToStdString(
     const XMLCh * p_xmlch
     ) ;

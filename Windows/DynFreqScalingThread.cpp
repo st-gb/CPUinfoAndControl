@@ -25,10 +25,11 @@
 //typedef __builtin_va_list __gnuc_va_list;
 //#endif
 //#include <stdarg.h>
-#include <iostream> //for "cout"
+#include <iostream> //for "std::cout"
 using namespace std;
-#include <Windows.h> //for CreateThread
+#include <Windows.h> //for CreateThread(...)
 #include "DynFreqScalingThread.hpp"
+#include <Controller/CPUcontrolBase.hpp>
 
 using namespace Windows_API ;
 
@@ -49,7 +50,35 @@ DWORD WINAPI DynFreqScalingThreadProc(LPVOID lpParameter)
   return 0 ;
 }
 
-//int
+//DynFreqScalingThread::DynFreqScalingThread(
+//  ICPUcoreUsageGetter * p_icpu
+//  , I_CPUcontroller * p_cpucontroller
+//  , CPUcoreData & r_cpucoredata
+//  )
+//  :
+//  DynFreqScalingThreadBase(
+//    p_icpu
+//    , p_cpucontroller
+//    , r_cpucoredata
+//    )
+//{
+//}
+
+DynFreqScalingThread::DynFreqScalingThread(
+  CPUcontrolBase & r_cpucontrolbase
+  , CPUcoreData & r_cpucoredata
+  )
+  : DynFreqScalingThreadBase(
+    r_cpucontrolbase
+    , r_cpucoredata
+    )
+{
+  LOGN("win API DVFS thread--CPU controller:"
+    << r_cpucontrolbase.mp_cpucontroller
+    << "CPU usage getter: " << r_cpucontrolbase.mp_cpucoreusagegetter )
+}
+
+//@return 0=success
 DWORD DynFreqScalingThread::Run()
 {
   DWORD dwRet = ERROR_SUCCESS ;
@@ -57,97 +86,85 @@ DWORD DynFreqScalingThread::Run()
   //Call the base class' method that does the work needed for subclasses that
   //(re-)start a DVFS thread.
   DynFreqScalingThreadBase::Start() ;
-  HANDLE handleThread =
+  m_handleThread =
     //http://msdn.microsoft.com/en-us/library/ms682453%28VS.85%29.aspx :
     //"If the function fails, the return value is NULL.
     //To get extended error information, call GetLastError."
     ::CreateThread(
-    NULL,                   // default security attributes
+    //LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    //"If lpThreadAttributes is NULL, the thread gets a default security
+    // descriptor."
+    NULL,  // default security attributes
+    //SIZE_T dwStackSize,
+    //"If this parameter is zero, the new thread uses the default size for the
+    //executable."
     0,                      // use default stack size  
+    //LPTHREAD_START_ROUTINE lpStartAddress,
     DynFreqScalingThreadProc ,       // thread function name
+    //LPVOID lpParameter,
     this ,          // argument to thread function 
-    0,                      // use default creation flags 
+    //DWORD dwCreationFlags,
+    // "If this value is zero, the thread runs immediately after creation."
+    0, // use default creation flags
+    //LPDWORD lpThreadId
     & dwThreadId
     );   // returns the thread identifier 
-  if( handleThread )
+  if( m_handleThread )
   {
     LOGN("Creating the DVFS thread succeeded.")
-    //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
-    //"When a thread terminates, its thread object is not freed until all open
-    //handles to the thread are closed."
-    //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
-    //"Closing a thread handle does not terminate the associated thread or remove
-    //the thread object."
-    //Close the thread handle here (waiting for the end of the thread via
-    // WaitForSingleObject() would need another thread->not so good.)
-    ::CloseHandle(handleThread ) ;
-}
+  }
   else
   {
     LOGN("Creating the DVFS thread failed.")
     dwRet = GetLastError() ;
   }
+  LOGN("Windows_API::DynFreqScalingThread::Run()--return" << dwRet )
   //wxThread->Run() also returns 0 on success
   return //hThread != 0 ;
     dwRet ;
 }
 
+DynFreqScalingThread::~DynFreqScalingThread()
+{
+  //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
+  //"When a thread terminates, its thread object is not freed until all open
+  //handles to the thread are closed."
+  //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
+  //"Closing a thread handle does not terminate the associated thread or remove
+  //the thread object."
+  //Close the thread handle here (waiting for the end of the thread via
+  // WaitForSingleObject() would need another thread->not so good.)
+  ::CloseHandle(m_handleThread ) ;
+}
+
 //BYTE
+//@return 0=success
 DWORD DynFreqScalingThread::Start()
 {
+  LOGN("Windows_API::DynFreqScalingThread::Start() begin")
+#ifdef COMPILE_WITH_LOG
+  DWORD dwRet ;
+  dwRet =
+    //This finally starts the DVFS thread execution.
+    Run() ;
+  LOGN("Windows_API::DynFreqScalingThread::Start()--return " << dwRet )
+  return dwRet ;
+#else
   return Run() ;
+#endif
 }
 
-DynFreqScalingThread::DynFreqScalingThread(
-  ICPUcoreUsageGetter * p_icpu
-  //, GriffinController * p_pumastatectrl
-  , I_CPUcontroller * p_cpucontroller
-  , CPUcoreData & r_cpucoredata
-  )
-  : DynFreqScalingThreadBase(
-      p_icpu
-      //, GriffinController * p_pumastatectrl
-      , p_cpucontroller
-      , r_cpucoredata
-      )
+void * DynFreqScalingThread::WaitForTermination()
 {
+  LOGN("Windows_API::DynFreqScalingThread::WaitForTermination")
+  return (void *) ::WaitForSingleObject(m_handleThread,INFINITE) ;
 }
 
-//#include "UserInterface.hpp"
 ////#include "Controller/ICPUcoreUsageGetter.hpp"
 //#include <Windows.h> //for ::SetThreadAffinityMask(...) ::CloseHandle(...)
-////#include "stdafx.h"
 //
 //void Windows_API::DynFreqScalingThread::SetMembers(
 //  ICPUcoreUsageGetter * p_icpucoreusagegetter,
-//  GriffinController * p_pumastatectrl)
 //{
 //  mp_icpucoreusagegetter = p_icpucoreusagegetter ;
-//  mp_pumastatectrl = p_pumastatectrl ;
-//}
-//
-//void Windows_API::DynFreqScalingThread::Start()
-//{
-//  DWORD dwThreadID ;
-//  //mp_icpucoreusagegetter->Init();
-//  HANDLE m_hThread =
-//    //If the function fails, the return value is NULL.
-//    ::CreateThread(
-//    //LPSECURITY_ATTRIBUTES lpThreadAttributes,
-//    //"If lpThreadAttributes is NULL, the thread gets a default security descriptor."
-//    NULL,
-//    //SIZE_T dwStackSize,
-//    //If this parameter is zero, the new thread uses the default size for the executable.
-//    0,
-//    //LPTHREAD_START_ROUTINE lpStartAddress,
-//    DynFreqScalingThreadProc,
-//    //LPVOID lpParameter,
-//    //NULL,
-//    this,
-//    //DWORD dwCreationFlags,
-//    //If this value is zero, the thread runs immediately after creation.
-//    0,
-//    //LPDWORD lpThreadId
-//    &dwThreadID
-//    );
 //}

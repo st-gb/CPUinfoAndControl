@@ -5,18 +5,39 @@
  * Created on 15. November 2009, 18:38
  */
 
-#include "MSRdeviceFile.h"
-//#include <Windows.h> //for ::GetProcAddress(), ::GetCurrentDirectory
-#include <strstream> //for std::ostrstream
-#include "../global.h" //for DEBUG()
-#include "../preprocessor_helper_macros.h"
-#include <Controller/stdstring_format.hpp>
+#include <global.h> //for SUCCESS, FAILURE
+#include "MSRdeviceFile.hpp" //header file of this class
+//#include <Controller/character_string/stdstring_format.hpp>
+//Linker? error when <errno.h> was _also_ (->twice) included (indirectly) from
+// other include files before.
+//for GetErrorMessageFromLastErrorCodeA(...)
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <Controller/character_string/stdstring_format.hpp> //to_stdstring(T )
+#include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUG()
+//#include <preprocessor_macros/bitmasks.h>
+//#include <Linux/EnglishMessageFromErrorCode.h>
+#include <UserInterface/UserInterface.hpp> //for class "UserInterface"
+
+#include <cpuid.h> //__get_cpuid(...)
+#include <errno.h> //for "errno"
 #include <fcntl.h> //O_RDONLY, ...
-#include <cpuid.h>
-#include <errno.h>
 #include <ios> //std::iosbase
-#include <Linux/EnglishMessageFromErrorCode.h>
-//#include <Windows/ErrorCodeFromGetLastErrorToString.h>
+#include <sstream> //for class std::stringstream
+#include <stdlib.h> //system(...)
+#include <unistd.h> // execvp(...)
+////from www.xml.com/ldd/...:
+//#include <linux/kmod.h> //must be from an appropriate directory
+////#include "/usr/src/linux-headers-2.6.32-25-generic/include/linux/kmod.h"
+
+#define POSSIBLE_SOLUTION_LITERAL "Possible solutions:\n"\
+"-This program needs elevated privileges for ring 0 / CPU "\
+"access. So run it as administrator.\n"\
+"-This program uses a device file to communicate with the CPU for higher "\
+"privileges. Does the program have sufficient rights for accessing "\
+"(read,write[,...]) the file ?\n"
+
+#define MSR_KERNEL_MODULE_NAME_ANSI "msr"
+//extern int errno;
 
 //MSRdeviceFile::MSRdeviceFile()
 //{
@@ -31,21 +52,28 @@
 
 MSRdeviceFile::MSRdeviceFile(UserInterface * pui)
   //: //C++ style initialisations
-  //m_hinstanceWinRingDLL ( NULL ) ,
-  ////m_pfnreadpciconfigdwordex ( NULL ) ,
-  ////m_pfnwritepciconfigdwordex ( NULL ) ,
-  //m_pfnrdmsrex ( NULL ) ,
-  //m_pfnwrmsrex (NULL) ,
-  //m_pfncpuidex ( NULL )
   //,mp_userinterface(pui)
   //mp_userinterface(NULL)
 {
   Init(pui) ;
 }
 
+MSRdeviceFile::MSRdeviceFile(
+  UserInterface * pui ,
+  BYTE byNumberOfLogicalCPUcores
+  )
+//  : m_byNumberOfLogicalCPUcores (byNumberOfLogicalCPUcores)
+{
+  Init(pui) ;
+  m_byNumberOfLogicalCPUcores = byNumberOfLogicalCPUcores ;
+  InitPerCPUcoreAccess( byNumberOfLogicalCPUcores) ;
+}
+
+//This function should be called by all constructors.
 void MSRdeviceFile::Init(UserInterface * pui)
 {
   mp_userinterface = pui ;
+  m_byNumberOfLogicalCPUcores = 0 ;
 }
 
 void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
@@ -54,12 +82,42 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //  if(m_pcpucontroller )
 //    m_pcpucontroller->GetNumberOfCPUcores()
 //  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
+
+//  //from kernelbook.sourceforge.net:
+//  if(
+//    //load msr module in order to create device files
+//    // /dev/cpu/>>CPU core ID<</msr
+//   //"
+//   request_module("msr")
+//    )
+//  {
+//    std::string stdstrMessage = "failed to load kernel module"
+//      MSR_KERNEL_MODULE_NAME_ANSI ;
+//    UIconfirm( stdstrMessage ) ;
+//    throw CPUaccessException(stdstrMessage) ;
+//  }
+  system( "chmod 777 load_kernel_module.sh") ;
+  //from www.opengroup.org:
+  if( //execlp( "sh", "sh", "./load_kernel_module.sh"
+      //from www.yolinux.com
+      system(
+      "./load_kernel_module.sh"
+//      , //NULL
+//      (char *) 0
+      ) == -1
+    )
+  {
+    std::string stdstrErrorMessage = GetErrorMessageFromLastErrorCodeA() ;
+    UIconfirm( "error executing load_kernel_module.sh: " + stdstrErrorMessage) ;
+  }
   std::string stdstrMSRfilePath ;
 //  m_arfstreamMSR = new std::fstream [byNumCPUcores] ;
   m_arnFileHandle = new int [byNumCPUcores] ;
   for(BYTE byCoreIndex = 0 ; byCoreIndex <  byNumCPUcores ; ++ byCoreIndex )
   {
     stdstrMSRfilePath = getMSRFile( 1 << byCoreIndex ) ;
+    //Using std::fstream seems to be impossible with device files
+    //(program crash)
 //    m_arfstreamMSR[byCoreIndex].exceptions (
 //      std::fstream::eofbit | std::fstream::failbit | std::fstream::badbit );
 //    try
@@ -77,15 +135,26 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //        throw CPUaccessException("failed to open file") ;
 //      }
 //    }
-//    catch (std::fstream::failure e)
-    if (( m_arnFileHandle[byCoreIndex] = open(//msrfile
-      stdstrMSRfilePath.c_str() , //O_RDONLY
-      O_RDWR )) == -1)
+//    catch (const std::fstream::failure & e)
+    if ( ( m_arnFileHandle[ byCoreIndex ] =
+      //http://lkml.org/lkml/1997/2/27/59:
+      //" To read/write, you open the device [...]" ->
+      //http://linux.die.net/man/2/open
+      open( stdstrMSRfilePath.c_str() , //O_RDONLY
+      O_RDWR )) ==
+      //"-1 if an error occurred "
+      -1
+      )
     {
 //      int i = e.type ;
-        std::string stdstrMessage = std::string("Failed to open the file \"") +
-          stdstrMSRfilePath + "\" cause: " ;//" + e.what() ;
-      switch (errno) {
+      std::string stdstrMessage = std::string("Failed to open the file \"") +
+        stdstrMSRfilePath + "\" cause: " ;//" + e.what() ;
+      //TODO exchange i by errno
+//      int nErrno = 0 ;
+      switch ( errno
+        //nErrno
+        )
+      {
         case EACCES:  stdstrMessage += "Permission denied.\n"
           "possible solution: run this program as administrator/root\n"
           "do this e.g. via \"sudo\"";
@@ -101,24 +170,27 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
           break;
         default:      stdstrMessage += "Unknown error.\n"; break;
       }
-        UIconfirm( stdstrMessage ) ;
-        throw CPUaccessException(stdstrMessage) ;
+      LOGN(stdstrMessage)
+      UIconfirm( stdstrMessage ) ;
+      throw CPUaccessException(stdstrMessage) ;
     }
+    else
+      LOGN("successfully opened file \"" << stdstrMSRfilePath << "\""
+        "for reading and writing ")
   }
 }
 
-//WinRing0dynLinked::WinRing0dynLinked(UserInterface * pui)
 MSRdeviceFile::MSRdeviceFile()
   //: mp_userinterface(pui)
 {
-  //WinRing0dynLinked(NULL);
   Init(NULL) ;
 }
 
 MSRdeviceFile::~MSRdeviceFile()
 {
-  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
-  for(BYTE byCoreIndex = 0 ; byCoreIndex <  byNumCPUcores ; ++ byCoreIndex )
+//  BYTE byNumCPUcores = GetNumberOfCPUCores() ;
+  for(BYTE byCoreIndex = 0 ; byCoreIndex <  m_byNumberOfLogicalCPUcores ;
+    ++ byCoreIndex )
   {
 //    m_arfstreamMSR[byCoreIndex].close( ) ;
     close( m_arnFileHandle[byCoreIndex] ) ;
@@ -138,22 +210,27 @@ BOOL MSRdeviceFile::CpuidEx(
 {
   BOOL bReturn = FAILURE ;
   //__get_cpuid_max() ;
-  unsigned int uiEAX ;
-  unsigned int uiEBX ;
-	unsigned int uiECX ;
-  unsigned int uiEDX ;
-  //TODO set CPU (core) affinity.
+//  unsigned int uiEAX ;
+//  unsigned int uiEBX ;
+//  unsigned int uiECX ;
+//  unsigned int uiEDX ;
+  //TODO set CPU (core) affinity,
+  //TODO use parameters _directly_ for "__get_cpuid(...)"
   bReturn = __get_cpuid (
     dwFunctionIndex //unsigned int __level,
-	  , & uiEAX //, p_dwEAX //unsigned int *__eax,
-    , & uiEBX //, p_dwEBX //unsigned int *__ebx,
-	  , & uiECX //p_dwECX //unsigned int *__ecx,
-    , & uiEDX //p_dwEDX //unsigned int *__edx
+//    , & uiEAX //
+    , (unsigned int *) p_dwEAX //unsigned int *__eax,
+//    , & uiEBX //
+    , (unsigned int *) p_dwEBX //unsigned int *__ebx,
+//    , & uiECX //
+    , (unsigned int *) p_dwECX //unsigned int *__ecx,
+//    , & uiEDX //
+    , (unsigned int *) p_dwEDX //unsigned int *__edx
     ) ;
-  * p_dwEAX = uiEAX ;
-  * p_dwEBX = uiEBX ;
-  * p_dwECX = uiECX ;
-  * p_dwEDX = uiEDX ;
+//  * p_dwEAX = uiEAX ;
+//  * p_dwEBX = uiEBX ;
+//  * p_dwECX = uiECX ;
+//  * p_dwEDX = uiEDX ;
 
   return bReturn ;
 }
@@ -170,10 +247,6 @@ std::string MSRdeviceFile::getMSRFile(DWORD_PTR
   //1bin ->0 10bin ->1 100bin->2
   while( dwAffinityMask >>= 1 )
     ++ byCoreID ;
-//  if(affinityMask == 1)
-//    byCoreID = 0 ;
-//  else
-//    byCoreID = 1 ;
   //msr0 = for 1st CPU
   ostrstr << "/dev/cpu/" << (WORD) byCoreID << "/msr" ;
 
@@ -181,58 +254,17 @@ std::string MSRdeviceFile::getMSRFile(DWORD_PTR
   return ostrstr.str() ;
 }
 
-BOOL // TRUE: success, FALSE: failure
-  MSRdeviceFile::RdmsrEx(
-  DWORD dwIndex,		// MSR index
-  PDWORD p_dweax,			// bit  0-31
-  PDWORD p_dwedx,			// bit 32-63
-  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
-)
+std::string MSRdeviceFile::getMSRdeviceFilePath(BYTE byCPUcoreID )
 {
-  BOOL bReturn = FAILURE ;
+  std::ostringstream ostrstr;
+  // "msr0" = for 1st CPU
+  ostrstr << "/dev/cpu/" << (WORD) byCPUcoreID << "/msr" ;
+  return ostrstr.str() ;
+}
 
-//    //Show the detailed error message here because the details
-//    //(how the access to the MSR is realised: via WinRing0)
-//    //depend on the implementation.
-//  UIconfirm(
-//    "Reading from MSR failed. "
-//    "\nerror message: \"" + strErrorMessage + "\"(error code: "
-//    + to_stdstring<DWORD>( //(WORD) byModel
-//      dwErrorCode //, std::hex
-//      )
-//    + ")\n"
-//    + stdstrAdditionalInfo + "\n"
-//    "Possible solutions:\n"
-//    "-This program needs elevated privileges for ring 0 / CPU "
-//    "access. So run it as administrator.\n"
-//    "-This program uses "
-//    "a DLL to communicate with the CPU for higher privileges. Does the "
-//    "file \"WinRing0[...].sys\" lay within the same directory as "
-//    "\"WinRing0[...].dll\"?\n");
-//  throw ReadMSRexception() ;
-    //RdpmcEx seemed to cause a blue screen (maybe because of wrong param values)
-    //bReturn =
-    //(*m_pfnrdpmcex)(
-    //   dwIndex
-    //   ,p_dweax
-    //   ,p_dwedx
-    //   ,affinityMask
-    //  );
-//    const char * msrfile ;
-//    int fd;
-//    int result;
-    unsigned long long msrvalue;
-    //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
-    //msrfile = getMSRFile(dwAffinityMask) ;
-    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
-//
-//    if ((fd = open(//msrfile
-//      stdstrMSRfile.c_str() , O_RDONLY)) == -1)
-    BYTE byCoreID = 0 ;
-    //1bin ->0 10bin ->1 100bin->2
-    while( dwAffinityMask >>= 1 )
-      ++ byCoreID ;
-
+//Using std::fstream seems to be impossible with device files
+//(there were program crashs?!)
+//inline AccessMSRviaStdFileStreams()
 //    //Set position of the get pointer.
 //    m_arfstreamMSR[byCoreID].seekg(dwIndex,std::ios_base::beg) ;
 //    if( m_arfstreamMSR[byCoreID].failbit ||
@@ -256,16 +288,16 @@ BOOL // TRUE: success, FALSE: failure
 //    {
 //      fail.what() ;
 //    }
-    //m_arfstreamMSR[byCoreID].read ( (char *) & msrvalue , 8 );
-    //m_arfstreamMSR[byCoreID].get( (char *) & msrvalue, 8 ) ;
-    //dw = m_arfstreamMSR[byCoreID].get() ;
+//m_arfstreamMSR[byCoreID].read ( (char *) & msrvalue , 8 );
+//m_arfstreamMSR[byCoreID].get( (char *) & msrvalue, 8 ) ;
+//dw = m_arfstreamMSR[byCoreID].get() ;
 
 //      std::string stdstrMsg = "Can't open file " + stdstrMSRfile +
 //        std::string(" for reading!\n") ;
-     // std::string stdstrMSRfile(msrfile) ;
+ // std::string stdstrMSRfile(msrfile) ;
 
-    //The stream was at the end of the source of characters before the
-    //function was called.
+//The stream was at the end of the source of characters before the
+//function was called.
 //    if( m_arfstreamMSR[byCoreID].failbit )
 //      dw = 0 ;
 //    if( m_arfstreamMSR[byCoreID].eofbit )
@@ -291,32 +323,84 @@ BOOL // TRUE: success, FALSE: failure
 //        );
 //      return FAILURE;
 //    }
-    if (lseek( m_arnFileHandle[byCoreID], dwIndex, SEEK_SET) == -1)
-    {
-      UIconfirm(std::string("Seeking failed in file ") //+ std::string(msrfile)
-        + std::string("\n")
-        );
-      return FAILURE;
-    }
+//}
 
-    int result = (int)read( m_arnFileHandle[byCoreID], &msrvalue, (size_t)8);
+BOOL // TRUE: success, FALSE: failure
+  MSRdeviceFile::RdmsrEx(
+  DWORD dwIndex,		// MSR index
+  PDWORD p_dweax,			// bit  0-31
+  PDWORD p_dwedx,			// bit 32-63
+  DWORD_PTR dwAffinityMask	// Thread Affinity Mask
+)
+{
+//  BOOL bReturn = FAILURE ;
+//    //Show the detailed error message here because the details
+//    //(how the access to the MSR is realised: via WinRing0)
+//    //depend on the implementation.
+//  UIconfirm(
+//    "Reading from MSR failed. "
+//    "\nerror message: \"" + strErrorMessage + "\"(error code: "
+//    + to_stdstring<DWORD>( //(WORD) byModel
+//      dwErrorCode //, std::hex
+//      )
+//    + ")\n"
+//    + stdstrAdditionalInfo + "\n");
+//  throw ReadMSRexception() ;
+  //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
+  m_byCoreID = 0 ;
+  //1bin ->0 10bin ->1 100bin->2
+  while( dwAffinityMask >>= 1 )
+    ++ m_byCoreID ;
 
-    if (result == -1)
-    {
-//      printf("Read error in file \"%s\"!\n", msrfile);
-      return FAILURE;
-    }
-//    if(close(fd) < 0 )
-//    {
-//      printf("Close error in file %s!\n", msrfile);
-//      return FAILURE;
-//    }
+//    AccessMSRviaStdFileStreams()s
 
-    *p_dwedx = msrvalue >> 32;
-    *p_dweax = msrvalue;
-
-    return SUCCESS;
-    //return bReturn ;
+  if (
+    //http://lkml.org/lkml/1997/2/27/59:
+    //"To read/write, you open the device and seek to the index of the
+    //needed register. E.g. for register Nr.10, this becomes "lseek(f,10,0);"
+    lseek( //"int fildes" ("file descriptor")
+      m_arnFileHandle[m_byCoreID], dwIndex, SEEK_SET) ==
+    //http://www.opengroup.org/onlinepubs/009695399/functions/lseek.html:
+    //"Upon successful completion, the resulting offset, as measured in bytes
+    //from the beginning of the file, shall be returned.
+    //Otherwise, (off_t)
+    //-1 shall be returned, errno shall be set to indicate the error, and
+    //the file offset shall remain unchanged."
+    -1
+    )
+  {
+    std::string stdstrErrMsg = ("Seeking failed in file ") + getMSRdeviceFilePath(
+      m_byCoreID) //+ std::string("\n")
+      + "to offset" + to_stdstring(dwIndex) + ":"
+      + GetErrorMessageFromLastErrorCodeA() ;
+    LOGN(stdstrErrMsg)
+//    UIconfirm( stdstrErrMsg );
+    return FAILURE;
+  }
+  m_ssize_t =
+    //http://www.opengroup.org/onlinepubs/009695399/functions/read.html:
+    //"Upon successful completion, read() [XSI] [Option Start]  and pread()
+    //[Option End] shall return a non-negative integer indicating the number
+    //of bytes actually read. Otherwise, the functions shall return -1 and
+    //set errno to indicate the error."
+    read( m_arnFileHandle[m_byCoreID],
+    //http://lkml.org/lkml/1997/2/27/59:
+    //"Regardless of the specified size, always 8 bytes (two long ints,
+    //64 bits) are copied (actual size of a register).
+    //The high dword (edx) is followed by the low dword (eax)."
+    & m_ullMSRvalue,
+    (size_t) 8 );
+  if ( m_ssize_t == -1)
+  {
+    UIconfirm( std::string("Reading failed from file ") + getMSRdeviceFilePath(
+      m_byCoreID) + GetErrorMessageFromLastErrorCodeA() + std::string("\n")
+      );
+    return FAILURE;
+  }
+  * p_dwedx = m_ullMSRvalue >> 32;
+  * p_dweax = m_ullMSRvalue;
+  return SUCCESS;
+  //return bReturn ;
 }
 
 inline BOOL MSRdeviceFile::RdpmcEx(
@@ -372,48 +456,66 @@ MSRdeviceFile::WritePciConfigDwordEx (
 BOOL // TRUE: success, FALSE: failure
 //WINAPI
 MSRdeviceFile::WrmsrEx(
-	DWORD dwIndex,		// MSR index
-	DWORD dwEAX,			// bit  0-31
-	DWORD dwEDX,			// bit 32-63
-	DWORD dwAffinityMask	// Thread Affinity Mask
-)
+  DWORD dwIndex,		// MSR index
+  DWORD dwEAX,			// bit  0-31
+  DWORD dwEDX,			// bit 32-63
+  DWORD dwAffinityMask	// Thread Affinity Mask
+  )
 {
-  BOOL bReturn = FAILURE ;
-  unsigned long long ullMSRvalue ;
-    //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
-    //msrfile = getMSRFile(dwAffinityMask) ;
-//    std::string stdstrMSRfile = getMSRFile(dwAffinityMask) ;
-//
-//    if ((fd = open(//msrfile
-//      stdstrMSRfile.c_str() , O_RDONLY)) == -1)
-    BYTE byCoreID = 0 ;
-    //1bin ->0 10bin ->1 100bin->2
-    while( dwAffinityMask >>= 1 )
-      ++ byCoreID ;
+//  BOOL bReturn = FAILURE ;
+  //DEBUG("readMSR(%lx,...,%lu)\n",dwRegisterNumber,affinityMask);
+  m_byCoreID = 0 ;
+  //1bin ->0 10bin ->1 100bin->2
+  while( dwAffinityMask >>= 1 )
+    ++ m_byCoreID ;
 
 //    m_arfstreamMSR[byCoreID].seekg(dwIndex,std::ios_base::beg) ;
 //    m_arfstreamMSR[byCoreID].readsome( (char *) & msrvalue,8) ;
-    if (lseek( m_arnFileHandle[byCoreID], dwIndex, SEEK_SET) == -1)
-    {
-      UIconfirm(std::string("Seeking failed in file ") //+ std::string(msrfile)
-        + std::string("\n")
-        );
-      return FAILURE;
-    }
-    ullMSRvalue = dwEDX ;
-    ullMSRvalue <<= 32 ;
-    ullMSRvalue |= dwEAX ;
-    int result = (int)write( m_arnFileHandle[byCoreID], & ullMSRvalue, (size_t)8);
+  if (
+    //http://lkml.org/lkml/1997/2/27/59:
+    //"To read/write, you open the device and seek to the index of the
+    //needed register. E.g. for register Nr.10, this becomes "lseek(f,10,0);"
+    lseek( m_arnFileHandle[m_byCoreID], dwIndex, SEEK_SET) ==
+    //http://www.opengroup.org/onlinepubs/009695399/functions/lseek.html:
+    //"Upon successful completion, the resulting offset, as measured in bytes
+    //from the beginning of the file, shall be returned.
+    //Otherwise, (off_t)
+    //-1 shall be returned, errno shall be set to indicate the error, and
+    //the file offset shall remain unchanged."
+    -1
+    )
+  {
+    UIconfirm( std::string("Seeking failed in file ")
+      + getMSRdeviceFilePath(m_byCoreID)
+      + GetErrorMessageFromLastErrorCodeA()
+      + std::string("\n")
+      + std::string(POSSIBLE_SOLUTION_LITERAL)
+      );
+    return FAILURE;
+  }
+  m_ullMSRvalue = dwEDX ;
+  m_ullMSRvalue <<= 32 ;
+  m_ullMSRvalue |= dwEAX ;
+  m_ssize_t = (int) write( m_arnFileHandle[m_byCoreID],
+    //http://lkml.org/lkml/1997/2/27/59:
+    //"Regardless of the specified size, always 8 bytes (two long ints,
+    //64 bits) are copied (actual size of a register).
+    //The high dword (edx) is followed by the low dword (eax)."
+    & m_ullMSRvalue,
+    (size_t) 8 );
 
-    if (result == -1)
-    {
-      UIconfirm( EnglishMessageFromErrorCode(errno) ) ;
-      return FAILURE;
-    }
-//    if(close(fd) < 0 )
-//    {
-//      printf("Close error in file %s!\n", msrfile);
-//      return FAILURE;
-//    }
-  return bReturn ;
+  if ( m_ssize_t == -1 )
+  {
+    UIconfirm( //EnglishMessageFromErrorCode(errno)
+      std::string("Writing to file ")
+      + getMSRdeviceFilePath(m_byCoreID)
+      + std::string("failed:")
+      + GetErrorMessageFromLastErrorCodeA()
+      + std::string("\n")
+      + std::string(POSSIBLE_SOLUTION_LITERAL)
+      ) ;
+    return FAILURE;
+  }
+//  return bReturn ;
+  return SUCCESS ;
 }

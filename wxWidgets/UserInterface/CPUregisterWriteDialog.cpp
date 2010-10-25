@@ -13,11 +13,11 @@
 
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
-#include <Controller/stdstring_format.hpp> //from_stdstring()
+#include <Controller/character_string/stdstring_format.hpp> //from_stdstring()
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
 //std::string GetStdString(wxString & wxstr) etc.
-#include <wxWidgets/Controller/wxStringHelper.h>
+#include <wxWidgets/Controller/wxStringHelper.hpp>
 
 //An enum guarantees a unique number for each element.
 enum
@@ -131,6 +131,8 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
   wxBoxSizer * p_wxsizerButtons = new wxBoxSizer( wxVERTICAL ) ;
   mp_wxbuttonWriteMSR = new wxButton( this, ID_WriteToMSR ,
     wxT("write to MSR") ) ;
+  mp_wxbuttonWriteMSR->SetToolTip( wxT("writes to the CPU's Model Specific "
+    "Register") ) ;
   //mp_sizerAttributeNameAndValue->Add( mp_wxbuttonWriteMSR) ;
   p_wxsizerButtons->Add( mp_wxbuttonWriteMSR) ;
   wxButton * p_wxbuttonReadFromMSR = new wxButton( this, ID_ReadFromMSR , 
@@ -558,7 +560,7 @@ void CPUregisterWriteDialog::OnWriteToMSR(
     DWORD dwLow = ullWriteToMSR ;
     if( wxMessageBox( wxstrAllValues +
       wxString::Format(
-        wxT("writing low bytes %lu and high bytes %u to MSR index %lu to "
+        wxT("writing low bytes %lu and high bytes %lu to MSR index %lu to "
           "core %u")
         , dwLow,
         dwHigh ,

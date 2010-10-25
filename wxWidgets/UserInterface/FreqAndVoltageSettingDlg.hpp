@@ -1,12 +1,12 @@
 #pragma once //include guard
 
-//#include <bits/stl_algobase.h> //for std::max(...). else:522: error: expected unqualified-id before '(' token
+//#include <bits/stl_algobase.h> //for std::max(...). else:522: error:
+// expected unqualified-id before '(' token
 #include <vector> //for std::vector
 //Must be included here in the header file (else linker error LNK2001)
 //#include <wx/checkbox.h>
 //#include <wx/dialog.h>
 #include <wx/event.h>
-//#include <ModelData/PStates.h> //for class PState
 
 //Forward declarations (to  avoid including the wxWidgets header files HERE)
 class wxBoxSizer ;
@@ -34,7 +34,7 @@ private:
   MainFrame * mp_mainframe ;
   Model * mp_model ;
   WORD m_wPreviousFrequencyInMHz ;
-  WORD m_wVoltageID ;
+  WORD m_wVoltageSliderValue ;
   //http://wiki.wxwidgets.org/Avoiding_Memory_Leaks#Child_windows:
   //"When a wxWindow is destroyed, it automatically deletes all its children.
   //These children are all the objects that received the window as the
@@ -53,8 +53,15 @@ private:
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
 //  wxCheckBox * mp_wxcheckboxValidPstate ;
 //  wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
-  wxCheckBox * mp_wxcheckboxbuttonAlsoSetWantedVoltage ;
-  wxCheckBox * mp_wxcheckboxOnlySafeRange ;
+  wxCheckBox * mp_wxcheckboxAlsoSetWantedVoltage ;
+//  wxCheckBox * mp_wxcheckboxOnlySafeRange ;
+  wxCheckBox * mp_wxcheckboxPreventVoltageAboveDefaultVoltage ;
+  wxCheckBox * mp_wxcheckboxPreventVoltageBelowLowestStableVoltage ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  wxCheckBox * mp_wxcheckboxPauseService ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  //Array of pointers to checkbox.
+  wxCheckBox ** m_ar_p_wxcheckbox ;
   wxSlider * mp_wxsliderCPUcoreDivisorID ;
   wxSlider * mp_wxsliderCPUcorePstate ;
   wxSlider * mp_wxsliderFreqInMHz ;
@@ -66,36 +73,67 @@ private:
   wxStaticText * mp_wxstatictextWantedVoltageInVolt ;
   wxStaticText * mp_wxstatictextExpectedCurrentDissipation ;
   wxStaticText * mp_wxstatictextPercentageOfDefaultVoltage ;
+  wxString m_wxstrIconFilesPrefix ; //= wxT("icons/") ;
+  wxString m_wxstrWriteVoltageAndMultiplierToolTip ;
 //  wxSpinCtrlDouble * mp_wxspinctrldoubleMultiplier ;
 private:
+  inline void AddCPUcoreCheckBoxSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreFrequencySizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
   inline void AddCPUcoreVoltageSizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
+  inline void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  inline void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  inline void AddPerformanceStateSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddPreventVoltageAboveDefaultVoltageButton(
+    wxSizer * p_wxsizer ) ;
+  inline void AddPreventVoltageBelowLowestStableVoltageButton(
+    wxSizer * p_wxsizer ) ;
+  inline void AddSetAsMinVoltageSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddSetAsWantedVoltageSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddStabilizeVoltageButton( wxSizer * p_wxsizer ) ;
 public:
   FreqAndVoltageSettingDlg(
     wxWindow * parent
     , I_CPUcontroller * p_cpucontroller
-    , BYTE byCoreID ) ;
+    , BYTE byCoreID
+    , wxWindowID wxwindow_id = wxID_ANY,
+    const wxString & cr_wxstrTitle = wxT("voltage and frequency settings"),
+    const wxPoint & cr_wxpointWindowPosition = wxDefaultPosition,
+    const wxSize & cr_wxsizeWindow = wxSize( 600,300 ),
+    long lStyle = wxCLOSE_BOX | wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
+    ) ;
   ~FreqAndVoltageSettingDlg() ;
-  void OnActivate(wxActivateEvent & r_activateevent ) ;
+  void ConnectCharEvent( wxWindow * p_wxWindow ) ;
+  inline void CPUcoreVoltageChanged() ;
   void CreateSliders();
   inline float GetCPUcoreFrequencyFromSliderValue() ;
   inline float GetMultiplierFromSliderValue() ;
   inline float GetVoltageInVoltFromSliderValue() ;
   void HandleCPUcoreFrequencyOrVoltageChanged(wxWindow * r_wxwindow) ;
+  inline void HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent) ;
   void HandleMultiplierValueChanged() ;
   void HandlePstateMayHaveChanged() ;
-  void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
+  void OnActivate(wxActivateEvent & r_activateevent ) ;
   void OnApplyButton(wxCommandEvent & );
+  void OnChar( wxKeyEvent & event) ;
+  void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
   void OnDecVoltage(wxCommandEvent & );
   void OnIncVoltage(wxCommandEvent & );
+  void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
   void OnSetAsMinVoltageButton(wxCommandEvent & );
   void OnSetAsWantedVoltageButton(wxCommandEvent & );
-  void OnSpinVoltageDown(wxSpinEvent & event) ;
-  void OnSpinVoltageUp(wxSpinEvent & event) ;
-  void OutputFreqAndVoltageByControlValues() ;
+//  void OnSpinVoltageDown(wxSpinEvent & event) ;
+//  void OnSpinVoltageUp(wxSpinEvent & event) ;
+  void OnStabilizeVoltageButton(wxCommandEvent & wxcmd ) ;
+  void OutputFrequencyByControlValues() ;
   void OutputVoltageByControlValues() ;
+  inline void PossiblyWriteVoltageAndMultiplier_Inline(
+    float fVoltageInVolt) ;
   void RemoveAttention(wxWindow * p_wxwindow);
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;
   WORD SetNearestHigherPossibleFreqInMHz(
@@ -103,7 +141,9 @@ public:
   //void 
   WORD SetNearestLowerPossibleFreqInMHz(
     WORD wFreqInMHz ) ;
-  void VoltageIDchanged(int nNewValue) ;
-  //Neccessary in order to get scroll events; to avoid compilation errors.
+  void ChangeVoltageSliderValue(int nNewValue) ;
+  inline BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
+  inline bool VoltageIsValid(float fVoltageInVolt) ;
+  //Necessary in order to get scroll events; to avoid compilation errors.
   DECLARE_EVENT_TABLE()
 };

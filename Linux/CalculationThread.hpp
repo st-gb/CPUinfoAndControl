@@ -1,17 +1,11 @@
 #pragma once //include guard
-////because of: fatal error C1189: #error :  Building MFC application with /MD[d] (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or do not use /MD[d]
-//#define _AFXDLL
-//#include <afxmt.h> //for CCriticalSection
-#include <Windows.h> //for ::SetThreadAffinityMask(...) ::CloseHandle(...)
-//#include "../Controller/PumaStateCtrl.h"
-//#include <Controller/GriffinController.hpp>
+
 //#include "Controller/I_CPUcontrollerAction.hpp"
-#include "../ICalculationThread.hpp"
+#include <Controller/ICalculationThread.hpp>
 #include "ModelData/SpecificCPUcoreActionAttributes.hpp"
 
-//pre-declaratiosn (faster than to include header files--include them in the
+//Forward declaration (faster than to include header files--include them in the
 //source file)
-//class PumaStateCtrl ;
 class I_CPUcontroller ;
 class UserInterface ;
 
@@ -23,18 +17,13 @@ class CalculationThread
   , public SpecificCPUcoreActionAttributes
 {
 private:
-  //CWinThread * mp_winthread ;
 public:
-  HANDLE m_hThread ;
   bool m_bCalcError ;
   BYTE m_byCoreID ;
   volatile bool m_vbContinue ;
   DWORD //WINAPI 
     ( WINAPI * mpfn_CalculationThreadProc) (LPVOID ) ;
-  //PumaStateCtrl 
-  //GriffinController * mp_pumastatectrl ;
   I_CPUcontroller * mp_cpucontroller ;
-  //CCriticalSection m_ccritsection ;
 //  CRITICAL_SECTION m_criticalsection ;
   UserInterface * mp_userinterface ;
 
@@ -47,8 +36,7 @@ public:
   void StartCalculationThread(BYTE byCoreID) ;
 
   CalculationThread() ;
-  CalculationThread(//PumaStateCtrl 
-    //GriffinController * p_pumastatectrl 
+  CalculationThread(
     I_CPUcontroller * p_cpucontroller
     );
   CalculationThread(
@@ -63,8 +51,6 @@ public:
     LOG("End thread\n");
   }
   bool IsRunning() { return m_vbContinue ; }
-  //void SetPumaStateCtrl(//PumaStateCtrl 
-  //  GriffinController * p_pumastatectrl);
   void SetCPUcontroller(
     I_CPUcontroller * p_cpucontroller ) ;
 };

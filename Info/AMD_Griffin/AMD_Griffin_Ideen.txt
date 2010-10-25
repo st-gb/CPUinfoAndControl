@@ -1,0 +1,106 @@
+-Performance für dyn. voltage and freq-scaling:
+ This section provides the performance counter events that may be selected through [The Performance Event
+Select Register (PERF_CTL[3:0])] MSRC001_00[03:00][EventSelect and UnitMask]. See that register and
+[The Performance Event Counter Registers (PERF_CTR[3:0])] MSRC001_00[07:04] for details.
+ -EventSelect 0C1h Retired uops:
+  retired=execution completed and architectural state updated=> 
+  Anzahl innerhalb einer bestimmten Zeit gibt an, wie %ual beschäftigt die CPU ist
+  wenn es viele sind seit .
+ -EventSelect 0C0h Retired Instructions
+ -EventSelect 076h CPU Clocks not Halted
+
+-Performance-Verringerung verhindern duch abfragen von 
+	EventSelect 0E8h Thermal Status
+	UnitMask Description
+	01h Number of clocks MEMHOT_L is asserted.
+	02h Reserved.
+	04h Number of times the HTC transitions from inactive to active.
+	20h Number of clocks HTC P-state is inactive.
+	40h Number of clocks HTC P-state is active.
+	80h PROCHOT_L asserted by an external source and P-state change occurred.
+
+-Idee: siehe MSRC001_00[6B:64] P-state [7:0] Registers: IddValue etc. verändern, um 
+ Lüfter leiser drehen zu lassen (könnte möglich sein)
+IddValue: current value field. Read-write. After a reset, IddDiv and IddValue combine to specify
+the expected current dissipation of a single core that is in the P-state corresponding to the MSR
+number. These values are intended to be used to create ACPI-defined _PSS objects (see section
+2.4.2.6 [ACPI Processor P-state Objects]).
+
+-F3x190 Downcore Control Register (ach doch nicht, ist nur lesbar)
+  -3:0 DisCore[3:0]. Read-only. 1=Disable the core. 0=Enable the core.
+-Spannung unterhalb von 0,75 V:
+   -vllt. kann man dahon schreiben über das 
+     -F3x1E4 SBI Control Register
+     -F3x1E8 SBI Address Register
+   -2.4.1.2 Serial VID Interface
+	The processor includes an interface, intended to control external voltage regulators, called the serial VID interface
+	(SVI). The SVI encodes voltage regulator control commands, including the VID code, using SMBus protocol
+	over two pins, SVD and SVC, to generate write commands to external voltage regulators. The processor
+	is the master and the voltage regulator(s) are the slave(s). Both pins are outputs of the master; SVD is driven by
+	the slave as well. SVC is a clock that strobes SVD, the data pin, on the rising edge. The frequency of the SVC
+	is controlled by F3xA0[SviHighFreqSel]. The SVI protocol is specified in the AMD Voltage Regulator Specification,
+	#40182.
+	-um evtl. die VID über das SVI zu steuern, um unter 0,75V zu kommen:
+	 -mit SpeedFan 4.36 kann man SMBus-Infos anzeigen lassen: Reiter "Info", 
+	 Schaltfläche "Find SMBus devices"
+	 -unter Linux: "i2ctools": 
+	  nach einem "sudo modprobe i2c-dev" zeigte "sudo i2cdetect -F 00" einen SMBus (eine Art IC2) an
+	 -siehe Intersil[...].pdf Seite 14: es handelt sich mit Sicherheit im das SVI proto.
+	-Achtung: SMBus/I2C-gerät kann auch das BIOS sein
+-um die Doku für "AMD Voltage Regulator Specification, #40182." 
+ zu bekommen: in einem Laden, der AMD-CPUs einzeln verkauft, "Non-Disclosure 
+ Agreement mit Händler unterzeichnen"
+ vllt. versuchen, an den Distributor von Computer-Händler rankommen.
+ Registrieren über Webseite bringt wahrscheinlich nichts.
+-undervolting mit 1.05 V bei 2.1 GHz war NICHT möglich, obwohl die Frequenz 
+	 über der overvolt prot Kurve liegen sollte 
+	 (lag wohl an Abrundung eines float durch Konvert. in integer)
+	 
+-vielleicht den C1E Zustand für 1 core, um Strom zu sparen 
+  (AMD Family 11h Processor BKDG 2.4.3.1.1.1 BIOS Requirements to Initialize IO Hub Initiated C1E)
+
+-MSRC001_0071 COFVID Status Register:
+	-MainPllOpFreqIdMax: main PLL operating frequency ID maximum. Read-only. Specifies the
+	maximum main PLL operating frequency supported by the processor. The maximum frequency is 100
+	MHz * (MainPllOpFreqIdMax + 08h), if MainPllOpFreqIdMax is greater than zero; if
+	MainPllOpFreqIdMax = 00h, then there is no frequency limit. See F3xD4[MainPllOpFreqId].
+	-MinVid: minimum voltage
+	-MaxVid: maximum voltage.
+-Anzahl CPUs 
+ -in 2.16.1 Multi-Core Support
+ -CPUID Fn8000_0008 Address Size And Physical Core Count Information
+-um die maximale Taktfrequenz zu kriegen: 
+ -CPUID Function 8000_0004: 
+  Register EDX steht bei mir " 28" als Teil von "ZM-82" (->2,2 GHz)
+ -MSRC001_0071 COFVID Status Register:
+  MainPllOpFreqIdMax: main PLL operating frequency ID maximum. Read-only. Specifies the
+maximum main PLL operating frequency supported by the processor. The maximum frequency is 100
+MHz * (MainPllOpFreqIdMax + 08h), if MainPllOpFreqIdMax is greater than zero; if
+MainPllOpFreqIdMax = 00h, then there is no frequency limit. See F3xD4[MainPllOpFreqId].
+
+-Idee: wenn aus Überhitzungsgründen auf den p-State 1 geschaltet wird,
+ könnte man für den p-state 0 so Spannung und Freq dynamisch 
+ heruntersetzen, bis das nicht mehr passiert
+ -01h Number of clocks MEMHOT_L is asserted.
+
+-AMD BIOS amd Kernel Dev Guide for 11h:
+  EventSelect 1E9h Sideband Signals and Special Cycles:
+   UnitMask Description:
+	01h HALT
+	02h STOPGRANT
+	04h SHUTDOWN
+	08h WBINVD
+	10h INVD
+	20h Reserved.
+	40h Reserved.
+	80h Reserved.
+-2.4.2.6 ACPI Processor P-state Objects
+-Power (mW) = voltage * MSRC001_00[6B:64][IddValue] * 1/10^MSRC001_00[6B:64][IddDiv] * 1000
+-EventSelect 0E8h Thermal Status
+	UnitMask Description
+	01h Number of clocks MEMHOT_L is asserted.
+	02h Reserved.
+	04h Number of times the HTC transitions from inactive to active.
+	20h Number of clocks HTC P-state is inactive.
+	40h Number of clocks HTC P-state is active.
+	80h PROCHOT_L asserted by an external source and P-state change occurred.

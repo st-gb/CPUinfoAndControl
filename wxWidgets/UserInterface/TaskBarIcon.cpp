@@ -22,11 +22,12 @@
 #include "wx/taskbar.h"
 #include "TaskBarIcon.hpp"
 
+#include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
 #ifdef __WXMSW__
   #include <Windows/LocalLanguageMessageFromErrorCode.h>
-  #include <Windows/PowerProf/PowerProfDynLinked.hpp>
+  #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
   #include <wxWidgets/App.hpp> //wxGetApp()
-  #include <wxWidgets/Controller/wxStringHelper.h>
+  #include <wxWidgets/Controller/wxStringHelper.hpp>
 #endif
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 
@@ -41,43 +42,43 @@ enum {
     LAST_ID
 };
 
-BEGIN_EVENT_TABLE(MyTaskBarIcon, wxTaskBarIcon)
-    EVT_MENU(PU_RESTORE, MyTaskBarIcon::OnMenuRestore)
-    EVT_MENU(PU_EXIT,    MyTaskBarIcon::OnMenuExit)
-//    EVT_MENU(PU_NEW_ICON,MyTaskBarIcon::OnMenuSetNewIcon)
-//    EVT_MENU(PU_OLD_ICON,MyTaskBarIcon::OnMenuSetOldIcon)
-//    EVT_MENU(PU_CHECKMARK,MyTaskBarIcon::OnMenuCheckmark)
-//    EVT_UPDATE_UI(PU_CHECKMARK,MyTaskBarIcon::OnMenuUICheckmark)
-//    EVT_TASKBAR_LEFT_DCLICK  (MyTaskBarIcon::OnLeftButtonDClick)
-    EVT_TASKBAR_LEFT_DOWN  (MyTaskBarIcon::OnLeftButtonClick)
-//    EVT_MENU(PU_SUB1, MyTaskBarIcon::OnMenuSub)
-//    EVT_MENU(PU_SUB2, MyTaskBarIcon::OnMenuSub)
+BEGIN_EVENT_TABLE(TaskBarIcon, wxTaskBarIcon)
+    EVT_MENU(PU_RESTORE, TaskBarIcon::OnMenuRestore)
+    EVT_MENU(PU_EXIT,    TaskBarIcon::OnMenuExit)
+//    EVT_MENU(PU_NEW_ICON,TaskBarIcon::OnMenuSetNewIcon)
+//    EVT_MENU(PU_OLD_ICON,TaskBarIcon::OnMenuSetOldIcon)
+//    EVT_MENU(PU_CHECKMARK,TaskBarIcon::OnMenuCheckmark)
+//    EVT_UPDATE_UI(PU_CHECKMARK,TaskBarIcon::OnMenuUICheckmark)
+//    EVT_TASKBAR_LEFT_DCLICK  (TaskBarIcon::OnLeftButtonDClick)
+    EVT_TASKBAR_LEFT_DOWN  (TaskBarIcon::OnLeftButtonClick)
+//    EVT_MENU(PU_SUB1, TaskBarIcon::OnMenuSub)
+//    EVT_MENU(PU_SUB2, TaskBarIcon::OnMenuSub)
 END_EVENT_TABLE()
 
-void MyTaskBarIcon::OnMenuRestore(wxCommandEvent& )
+void TaskBarIcon::OnMenuRestore(wxCommandEvent& )
 {
   if( mp_mainframe )
     mp_mainframe->Show(true);
 }
 
-void MyTaskBarIcon::OnMenuExit(wxCommandEvent& )
+void TaskBarIcon::OnMenuExit(wxCommandEvent& )
 {
   mp_mainframe->Close(true);
 }
 //
 //static bool check = true;
 //
-//void MyTaskBarIcon::OnMenuCheckmark(wxCommandEvent& )
+//void TaskBarIcon::OnMenuCheckmark(wxCommandEvent& )
 //{
 //       check =!check;
 //}
 //
-//void MyTaskBarIcon::OnMenuUICheckmark(wxUpdateUIEvent &event)
+//void TaskBarIcon::OnMenuUICheckmark(wxUpdateUIEvent &event)
 //{
 //       event.Check( check );
 //}
 
-//void MyTaskBarIcon::OnMenuSub(wxCommandEvent&)
+//void TaskBarIcon::OnMenuSub(wxCommandEvent&)
 //{
 //    wxMessageBox(wxT("You clicked on a submenu!"));
 //}
@@ -88,7 +89,7 @@ void MyTaskBarIcon::OnMenuExit(wxCommandEvent& )
 //Windows and Unix platforms, this is when the user right-clicks the icon).
 //Override this function in order to provide popup menu associated with the
 //icon"
-wxMenu * MyTaskBarIcon::CreatePopupMenu()
+wxMenu * TaskBarIcon::CreatePopupMenu()
 {
   // Try creating menus different ways
   // TODO: Probably try calling SetBitmap with some XPMs here
@@ -113,8 +114,9 @@ wxMenu * MyTaskBarIcon::CreatePopupMenu()
     return p_wxmenu;
 }
 
-void MyTaskBarIcon::CreatePowerSchemesMenu()
+void TaskBarIcon::CreatePowerSchemesMenu()
 {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WORD wEventID = LAST_ID ;
   wxMenu * wxmenuPowerSchemes = new wxMenu;
   std::set<std::wstring> set_wstr ;
@@ -140,16 +142,18 @@ void MyTaskBarIcon::CreatePowerSchemesMenu()
       (wEventID,*stdset_c_iter) ) ;
     Connect( wEventID ++ , //wxID_ANY,
       wxEVT_COMMAND_MENU_SELECTED ,
-      wxCommandEventHandler(MyTaskBarIcon::OnDynamicallyCreatedUIcontrol)
+      wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
       );
   }
   p_wxmenu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
     wxmenuPowerSchemes);
 //  wxmenuPowerSchemes->Check( LAST_ID , true ) ;
+#endif //#ifdef _WIN32
 }
 
-void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
+void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   int nEventID = wxevent.GetId() ;
   LOGN( "taskbar icon event proc " )
   PowerProfDynLinked * p_powerprofdynlinked =
@@ -194,9 +198,10 @@ void MyTaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
       }
     }
   }
+#endif //#ifdef _WIN32
 }
 
-void MyTaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
+void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 {
   LOGN("left mouse click on system tray icon")
   if( mp_mainframe )
@@ -207,7 +212,7 @@ void MyTaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 //  mp_mainframe->Maximize(true ) ;
 }
 
-//void MyTaskBarIcon::SetMainFrame(MainFrame * p_mf )
+//void TaskBarIcon::SetMainFrame(MainFrame * p_mf )
 //{
 //  mp_mainframe = p_mf ;
 //}

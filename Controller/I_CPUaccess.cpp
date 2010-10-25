@@ -1,10 +1,12 @@
 //#include "ISpecificController.hpp"
 #include "I_CPUaccess.hpp"
-#include <preprocessor_helper_macros.h> //for BITMASK_FOR_LOWMOST_7BIT
+//for BITMASK_FOR_LOWMOST_7BIT
+#include <preprocessor_macros/bitmasks.h>
 #include <Controller/CPU-related/ReadTimeStampCounter.h>
 
 #include <string.h> //strcat(...)
 #include <windef.h> //for DWORD
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
 //http://en.wikipedia.org/wiki/CPUID
 // #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
 //"48-byte null-terminated ASCII processor brand string."
@@ -147,13 +149,16 @@ bool //ISpecificController
   bool bSuccess ;
   char * archCPUID ;
   bSuccess = GetProcessorNameByCPUID(archCPUID) ;
-  r_stdstr = std::string( archCPUID ) ;
-  //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
-  delete archCPUID ;
+  if( bSuccess )
+  {
+    r_stdstr = std::string( archCPUID ) ;
+    //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
+    delete archCPUID ;
+  }
   return bSuccess ;
 }
 
-bool I_CPUaccess::GetProcessorNoLeadingSpaces( std::string & r_stdstr ) 
+bool I_CPUaccess::GetProcessorNameWithoutLeadingSpaces( std::string & r_stdstr ) 
 {
   bool bSuccess ;
   char * archCPUID ;
@@ -202,7 +207,6 @@ bool //ISpecificController
     if( dwEAX >= 0x80000004 )
     {
       BYTE byCPUID_Address = 0, byCharIndex = 0;
-      bSuccess = true ;
       //char archCPUID[//4*4
       //  CPUID_PROCESSOR_NAME_CHAR_NUMBER
       //  //For string terminating "\0" .
@@ -210,43 +214,47 @@ bool //ISpecificController
       archCPUID = new char [ CPUID_PROCESSOR_NAME_CHAR_NUMBER
         //For string terminating "\0" .
         + 1 ] ;
-      archCPUID[ CPUID_PROCESSOR_NAME_CHAR_NUMBER ] = '\0';
-      for( ; byCPUID_Address < 3 ; ++ byCPUID_Address )
+      if( archCPUID )
       {
-        if( CpuidEx(
-          //http://en.wikipedia.org/wiki/CPUID
-          // #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
-          // "EAX=80000002h,80000003h,80000004h: Processor Brand String"
-          //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
-          0x80000002 + byCPUID_Address,
-          ((DWORD *)(archCPUID + byCharIndex) ),
-          ((DWORD *)(archCPUID + byCharIndex + 4 )),
-          ((DWORD *)(archCPUID + byCharIndex + 8 )),
-          ((DWORD *)(archCPUID + byCharIndex + 12 ))
-          , 1
-          ) 
-          )
+        bSuccess = true ;
+        archCPUID[ CPUID_PROCESSOR_NAME_CHAR_NUMBER ] = '\0';
+        for( ; byCPUID_Address < 3 ; ++ byCPUID_Address )
         {
-          byCharIndex += 16 ;
-          //DEBUG("CPUID address:%lu "
-          //  //"EAX:%lu,EBX:%lu ECX:%lu,EDX:%lu "
-          //  //"%s\n"
-          //  "\n"
-          //  ,
-          //  (0x80000002+byCPUID_Address)//, 
-          //  //dwEAX, dwEBX, dwECX, dwEDX,
-          //  //archCPUID
-          //  );
-          //LOG("CPUID address:" << ( 0x80000002 + byCPUID_Address ) << " \n" );
-          //archProcessorName[
-        }
-        else
-        {
-          //DEBUG("Error getting processor name of this CPU\n");
-          bSuccess = false ;
-          break ;
-        }
-      }//end for-loop
+          if( CpuidEx(
+            //http://en.wikipedia.org/wiki/CPUID
+            // #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
+            // "EAX=80000002h,80000003h,80000004h: Processor Brand String"
+            //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
+            0x80000002 + byCPUID_Address,
+            ((DWORD *)(archCPUID + byCharIndex) ),
+            ((DWORD *)(archCPUID + byCharIndex + 4 )),
+            ((DWORD *)(archCPUID + byCharIndex + 8 )),
+            ((DWORD *)(archCPUID + byCharIndex + 12 ))
+            , 1
+            )
+            )
+          {
+            byCharIndex += 16 ;
+            //DEBUG("CPUID address:%lu "
+            //  //"EAX:%lu,EBX:%lu ECX:%lu,EDX:%lu "
+            //  //"%s\n"
+            //  "\n"
+            //  ,
+            //  (0x80000002+byCPUID_Address)//,
+            //  //dwEAX, dwEBX, dwECX, dwEDX,
+            //  //archCPUID
+            //  );
+            //LOG("CPUID address:" << ( 0x80000002 + byCPUID_Address ) << " \n" );
+            //archProcessorName[
+          }
+          else
+          {
+            //DEBUG("Error getting processor name of this CPU\n");
+            bSuccess = false ;
+            break ;
+          }
+        }//end for-loop
+      }
 //      if( bSuccess )
 //        //DEBUG("processor name of this CPU is: %s\n", archCPUID );
 //        LOG("Processor name of this CPU is: " << archCPUID << "\n" );

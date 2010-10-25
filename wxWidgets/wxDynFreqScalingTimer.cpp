@@ -1,13 +1,14 @@
 
 #include "wxDynFreqScalingTimer.hpp"
 
+#include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
 #include <wx/timer.h>
 
 wxDynFreqScalingTimer::wxDynFreqScalingTimer(
     ICPUcoreUsageGetter * p_icpu,
-    GriffinController * p_pumastatectrl
+    I_CPUcontroller * p_cpucontroller
     )
     : m_bSuccFullyGotPStateFromMSR(false)
     , m_bCalledInit(false)
@@ -15,15 +16,14 @@ wxDynFreqScalingTimer::wxDynFreqScalingTimer(
     DEBUG("constructor of timer--begin\n");
     mp_icpu = p_icpu ;
     //mp_icpu->Init();
-    m_wMaxFreqInMHz = //2200
-      p_pumastatectrl->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
+    m_wMaxFreqInMHz = p_cpucontroller->mp_model->m_cpucoredata.m_wMaxFreqInMHz ;
     //wxTimer();
     m_wCurrentFreqInMHz = //550
       m_wMaxFreqInMHz / 4 ;
     m_fPercentileIncrease = 1.5f ;
     m_wAHalfOfMaxFreq = m_wMaxFreqInMHz / 2 ;
     m_wAQuarterOfMaxFreq = m_wMaxFreqInMHz / 4 ;
-    mp_pumastatectrl = p_pumastatectrl ;
+    mp_pumastatectrl = p_cpucontroller ;
 #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
     if( mp_pumastatectrl->GetPStateFromMSR(//p_pstateCurrent->m_byNumber
       2,m_dwMSRLow,m_dwMSRHigh,

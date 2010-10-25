@@ -16,8 +16,14 @@
 #include <map>
 //#include <set>
 
-//forwars decl.
-class XERCES_CPP_NAMESPACE::Attributes ;
+//#include <windef.h> //for BYTE
+
+//Forward declarations.
+namespace XERCES_CPP_NAMESPACE
+{
+  class Attributes ;
+}
+class CPUcoreData ;
 
 class SAX2IPCcurrentCPUdataHandler
   :
@@ -27,8 +33,11 @@ class SAX2IPCcurrentCPUdataHandler
   //For drawing the current CPU p-state via a subclass of I_CPUcontroller
   , public I_CPUcontroller
 {
+//  const CPUcoreData * const m_cpc_cpucoredata ;
 public:
+  CPUcoreData * m_cpc_cpucoredata ;
   wxCriticalSection m_wxcriticalsection ;
+  void endDocument() ;
   BYTE GetCurrentVoltageAndFrequency(
     float & r_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -48,13 +57,14 @@ public:
     m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock ;
   float GetTemperatureInCelsius( WORD wCoreID ) ;
   void startDocument();
+  ~SAX2IPCcurrentCPUdataHandler() ;
   void startElement(
       const   XMLCh* const    uri,
       const   XMLCh* const    localname,
       const   XMLCh* const    qname,
       const   XERCES_CPP_NAMESPACE::Attributes &     attrs
   );
-//  SAX2IPCcurrentCPUdataHandler()
+//  SAX2IPCcurrentCPUdataHandler( const CPUcoreData & r_cpucoredata ) ;
 //  {
 //
 //    m_wxcriticalsection.Enter() ;

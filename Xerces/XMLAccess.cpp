@@ -4,11 +4,14 @@
 
 #include "XMLAccess.hpp"
 #include <global.h> //for SUCCESS, FAILURE
-#include <Controller/Logger.hpp>
-#include <Controller/stdstring_format.hpp> //for to_strstring()
+//#include <winnt.h> //for LPWSTR
+#include <Controller/Logger/Logger.hpp>
+#include <Controller/character_string/stdstring_format.hpp> //for to_strstring()
+#include <Controller/character_string/stdtstr.hpp>//for GetStdString(...)
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/UserInterface.hpp>
-#include <Xerces/XercesHelper.hpp> // for "X()"
+//#include <Xerces/XercesHelper.hpp> //
+#include <Xerces/XercesString.hpp> //GET_WCHAR_STRING_FROM_XERCES_STRING(...)
 
 #include <iostream>
 #include <xercesc/framework/LocalFileInputSource.hpp>
@@ -22,7 +25,7 @@ using namespace xercesc;
 
 extern Logger g_logger ;
 
-char ReadXMLdocumentInitAndTermXerces(
+char ReadXMLfileInitAndTermXerces(
   const char * cp_chXMLfilePath,
   Model & model,
   UserInterface * p_userinterface ,
@@ -63,15 +66,15 @@ char ReadXMLdocumentInitAndTermXerces(
   if( bXercesSuccessfullyInitialized )
   {
     //  XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
-    //    X(cp_chXMLfilePath) ) ;
+    //    XERCES_STRING_FROM_ANSI_STRING(cp_chXMLfilePath) ) ;
     XMLCh * p_xmlchXMLfilePath = XMLString::transcode(cp_chXMLfilePath);
     if( p_xmlchXMLfilePath )
     {
       XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
         p_xmlchXMLfilePath ) ;
-      readXMLConfig(
+      ReadXMLdocument(
         xerces_localfileinputsource ,
-        model,
+//        model,
         p_userinterface ,
         r_defaulthandler
         ) ;
@@ -159,9 +162,9 @@ char ReadXMLdocumentInitAndTermXerces(
   return SUCCESS ;
 }
 
-  char readXMLConfig(
-    XERCES_CPP_NAMESPACE::InputSource & r_inputsource, //PStates & pstates
-	  Model & model, 
+  char ReadXMLdocument(
+    XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
+//	  Model & model,
 	  UserInterface * p_userinterface ,
    //Base class of implementing Xerces XML handlers.
    //This is useful because there may be more than one XML file to read.
@@ -170,7 +173,7 @@ char ReadXMLdocumentInitAndTermXerces(
     )
 	{
     BYTE byReturn = FAILURE ;
-      //DEBUG("ReadXMLdocumentInitAndTermXerces begin--filename:%s\n",xmlFile);
+      //DEBUG("ReadXMLfileInitAndTermXerces begin--filename:%s\n",xmlFile);
     //Initialize to NULL just to avoid (g++) compiler warning.
 	  XERCES_CPP_NAMESPACE::SAX2XMLReader * p_sax2xmlreader = NULL ;
 	  p_sax2xmlreader = XMLReaderFactory::createXMLReader();
@@ -200,7 +203,7 @@ char ReadXMLdocumentInitAndTermXerces(
         DEBUG("-----------End of loading from XML document/ input source\n") ;
 //          if( model.m_bTruncateLogFileForEveryStartup )
 //              g_logger.TruncateFileToZeroAndRewrite() ;
-         byReturn = SUCCESS;
+        byReturn = SUCCESS;
       }
       catch ( const XMLException & cr_xmlexception )
       {
@@ -208,9 +211,12 @@ char ReadXMLdocumentInitAndTermXerces(
         //Use wide string because maybe chinese file names.
         std::wstring stdwstrMessage =
           std::wstring( L"XML exception in document \"" )
-          + std::wstring( r_inputsource.getSystemId() ) +
+          + std::wstring(
+            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+            (wchar_t *) r_inputsource.getSystemId() ) +
           L"\" :" + //message
-          cr_xmlexception.getMessage() ;
+          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+          (wchar_t *) cr_xmlexception.getMessage() ;
 //        char * message = XMLString::transcode(toCatch.getMessage());
         p_userinterface->Confirm( //std::string( "XML exception in file" ) +
           //xmlFile +
@@ -227,22 +233,35 @@ char ReadXMLdocumentInitAndTermXerces(
             getColumnNumber() ;
         XMLFileLoc xmlfilelocLineNumber = cr_saxparseexception.
             getLineNumber() ;
+        std::wstring stdwstrInputSourceName =
+          GET_WCHAR_STRING_FROM_XERCES_STRING(
+              r_inputsource.getSystemId() ) ;
         std::wstring stdwstrMessage = L"XML exception in document \""
-          + std::wstring( r_inputsource.getSystemId() ) +
-          L"\"\n"
+//          + std::wstring(
+//            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+//            (wchar_t *) r_inputsource.getSystemId() )
+          + stdwstrInputSourceName
+          + L"\"\n"
 //          + "\", line " + to_stdstring( cr_saxparseexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxparseexception.getColumnNumber() )
-          + L"in line " + GetStdWstring( to_stdstring(
+          L"in line " + GetStdWstring( to_stdstring(
             xmlfilelocLineNumber ) )
           + L", column " + GetStdWstring( to_stdstring(
             xmlfilelocColumnNumber ) )
 //          + "\", line " + to_stdstring( cr_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( cr_saxexception.getColumnNumber() )
-          + L":\n\"" + cr_saxparseexception.getMessage() ;
-        if( ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
+          + L":\n\"" +
+//          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+//          (wchar_t *) cr_saxparseexception.getMessage()
+          GET_WCHAR_STRING_FROM_XERCES_STRING(
+              cr_saxparseexception.getMessage() )
+          ;
+//        stdwstrMessage += L"whole document:" + r_inputsource.makeStream()
+        if( //column 0 and line 0
+            ! xmlfilelocColumnNumber && ! xmlfilelocLineNumber )
         {
-          stdwstrMessage += L"\n\nThis probably means that this document/ file does"
-            "not exist" ;
+          stdwstrMessage += L"\n\nThis probably means that this document/ "
+            "file does not exist" ;
         }
         stdwstrMessage +=
 //          + cr_saxexception.getMessage()
@@ -252,7 +271,10 @@ char ReadXMLdocumentInitAndTermXerces(
 //        p_userinterface->Confirm(//pchMessage
 //          //strMessage
 //          stdwstrMessage );
-        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        //Outputting wide strings via std::ofstream (=ANSI) leads to "gedit"
+        //not to recognize the character encoding of the log file.
+//        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        LOGN( GetStdStringInline( stdwstrMessage ) )
       }
       catch( const SAXException & cr_saxexception )
       {
@@ -265,7 +287,9 @@ char ReadXMLdocumentInitAndTermXerces(
 //          std::string(xmlFile)
         //Use wide string because maybe chinese file names.
         std::wstring stdwstrMessage = L"XML exception in document \""
-          + std::wstring( r_inputsource.getSystemId() ) +
+          + std::wstring(
+            //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+            (wchar_t *) r_inputsource.getSystemId() ) +
           L"\" :"
 //          + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
 //          + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
@@ -276,13 +300,18 @@ char ReadXMLdocumentInitAndTermXerces(
 //          + "\", line " + to_stdstring( r_saxexception.getLineNumber() )
 //          + ", column " + to_stdstring( r_saxexception.getColumnNumber() )
 //          + L": " + r_saxparseexception.getMessage()
-          + cr_saxexception.getMessage()
+          +
+          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+          (wchar_t *) cr_saxexception.getMessage()
           + L"\nIn order to solve this problem you may look into the XML "
           "specifications for element names etc" ;
         p_userinterface->Confirm(//pchMessage
           //strMessage
           stdwstrMessage );
-        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        //Outputting wide strings via std::ofstream (=ANSI) leads to "gedit"
+        //not to recognize the character encoding of the log file.
+//        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
+        LOGN( GetStdStringInline( stdwstrMessage ) ) ;
 //        XMLString::release( & pchMessage );
 //          return FAILURE;
       }

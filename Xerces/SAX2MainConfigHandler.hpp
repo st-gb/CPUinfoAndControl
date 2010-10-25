@@ -1,18 +1,13 @@
-//Include "xerces...\include" in the "include path" for the following "#include"s.
-#ifdef WIN32 //with Linux I can't compile with xerces yet.
-  //#define COMPILE_WITH_XERCES
-#endif
-#ifdef COMPILE_WITH_XERCES
-#include <global.h> //for DEBUG(...) etc.
-#include <ModelData/ModelData.hpp>
+//#ifdef COMPILE_WITH_XERCES
+//#include <global.h> //for DEBUG(...) etc.
 
-#include <xercesc/sax2/Attributes.hpp> //for "xercesc_2_8::Attributes"
+//Include "xerces...\include" in the "include path" for the following "#include"s.
+////class XERCES_CPP_NAMESPACE::Attributes
+//#include <xercesc/sax2/Attributes.hpp>
+//Base class XERCES_CPP_NAMESPACE::DefaultHandler
 #include <xercesc/sax2/DefaultHandler.hpp>
 
 #include <string> //for std::string
-
-//Needed for verzichten auf the exact namspace.
-XERCES_CPP_NAMESPACE_USE
 
 //http://xerces.apache.org/xerces-c/build-3.html:
 //If you are linking your application to the static Xerces-C++ library,
@@ -26,10 +21,16 @@ XERCES_CPP_NAMESPACE_USE
 
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.
+class I_CPUcontroller ;
+class Model ;
 class UserInterface ;
+// need to properly scope any forward declarations
+XERCES_CPP_NAMESPACE_BEGIN
+  class Attributes;
+XERCES_CPP_NAMESPACE_END
 
 class SAX2MainConfigHandler
-  : public DefaultHandler 
+  : public XERCES_CPP_NAMESPACE::DefaultHandler
   //ContentHandler
 {
 private:
@@ -38,40 +39,22 @@ private:
   std::string m_strProcessorName ;
   std::string m_strElementName ;
   UserInterface * m_p_userinterface ;
-
 public:
   SAX2MainConfigHandler(
-      Model & m_model,
-      UserInterface * p_userinterface //,
-      //I_CPUcontroller * p_cpucontroller
-      );
-
-    //MySAX2Handler(const MySAX2Handler & mysax2){};
-  void startElement(
-      const   XMLCh* const    uri,
-      const   XMLCh* const    localname,
-      const   XMLCh* const    qname,
-      const   Attributes&     attrs
-  );
-  void fatalError(const SAXParseException&);
-
-  void handlePstateElement(  
-    const   //xercesc_2_8::
-    Attributes & attrs
-    ) ;
-
-  void HandleDynamicVoltage_and_FrequencyScaling(const Attributes & attrs) ;
-
-  void handleFreqAndLowestStableVoltageElement(
-    const   //xercesc_2_8::
-      Attributes & attrs
-    ) ;
-
-  void handleFreqAndMaxVoltageElement(
-    const   //xercesc_2_8::
-    Attributes & attrs
+    Model & m_model,
+    UserInterface * p_userinterface //,
+    //I_CPUcontroller * p_cpucontroller
     );
-  void HandleTopmostXMLelement(const Attributes & attrs) ;
+  void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException & );
+  void HandleDynamicVoltage_and_FrequencyScaling(
+    const XERCES_CPP_NAMESPACE::Attributes & attrs ) ;
+  void HandleTopmostXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & attrs ) ;
+  void startElement(
+    const XMLCh * const cpc_xmchURI,
+    const XMLCh * const cpc_xmchLocalName,
+    const XMLCh * const cpc_xmchQualifiedName,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs
+  );
 };
-#endif//COMPILE_WITH_XERCES
-
+//#endif//COMPILE_WITH_XERCES

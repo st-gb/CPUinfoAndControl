@@ -23,6 +23,8 @@ enum IPCcontrolCodes
   //This should get the current data like temperature, CPU core load, voltage,
   // frequency.
   , get_current_CPU_data
+  //Gets min/ max/ wanted voltages (etc.) from the service.
+  , get_configuration_data
 };
 
 class I_IPC_Server

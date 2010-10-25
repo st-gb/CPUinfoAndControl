@@ -6,12 +6,13 @@
 // sein
 #include <stdio.h> //for sprintf(...)
 #include <fstream> //for class ofstream
-#include <Controller/stdtstr.hpp> //std::tstring
-#include <Controller/Logger/log4cplus_Logger.hpp>
-#include <Windows/CurrentDir.h> // for SetExePathAsCurrentDir()
+#include <Controller/character_string/stdtstr.hpp> //std::tstring
+#include <Controller/Logger/Logger.hpp>
+//#include <Controller/Logger/log4cplus/log4cplus_Logger.hpp>
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
+#include <Windows/SetExePathAsCurrentDir.h> // for SetExePathAsCurrentDir()
 //#include <Xerces/IPC/IPCdataGenerator.hpp>
 #include <string>
 #include <conio.h> //for getche()
@@ -23,7 +24,6 @@
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
-FILE * fileDebug ;
 Logger g_logger ;
 
 CPUcontrolBase * gp_cpucontrolbase ;
@@ -79,109 +79,8 @@ bool ShouldDeleteService(int argc, char *  argv[])
     return bShouldDeleteService ;
 }
 
-void OuputCredits()
-{
-  std::tstring stdtstr ;
-  std::vector<std::tstring> stdvecstdtstring ;
-  MainController::GetSupportedCPUs(stdvecstdtstring) ;
-  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
-    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( 
-    //"This program is an undervolting program for AMD family 17 CPUs.\n" 
-    "This program is a CPU information and control program for (built-in):\n"
-    //maincontroller.GetSupportedCPUtypes() ;
-    + stdtstr +
-    //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n" 
-    "license/ info: http://www.trilobyte-se.de/x86iandc/\n" 
-    )
-  std::cout << 
-    "This executable is both in one:\n"
-    "-a(n) (de-)installer for the CPU controlling service\n"
-    "-the CPU controlling service itself\n" ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-    "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
-}
-
 void HandleErrorPlace(BYTE by, const std::string & cr_stdstr )
 {
-}
-
-void DeleteService(const TCHAR * cp_tchServiceName
-  , std::string & stdtstrProgramName )
-{
-  DWORD dwErrorCodeFor1stError ;
-  BYTE by = ServiceBase::DeleteService(//"GriffinStateService"
-    cp_tchServiceName
-    , dwErrorCodeFor1stError
-    ) ;
-  if( by )
-  {
-//    HandleErrorPlace(by, "for deleting the service:") ;
-//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-//      ServiceBase::GetPossibleSolution(dwErrorCodeFor1stError)
-//      ) ;
-    std::string stdstr = "for deleting the service:" ;
-    switch(by)
-    {
-    case ServiceBase::OpenSCManagerFailed:
-    {
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution(
-        dwErrorCodeFor1stError ,
-        cp_tchServiceName
-        , stdstrPossibleSolution
-        ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        stdstr
-        << "opening the service control manager failed"
-        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
-        << stdstrPossibleSolution
-        ) ;
-    }
-      break ;
-    case ServiceBase::OpenServiceFailed:
-    {
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution(
-        dwErrorCodeFor1stError ,
-        cp_tchServiceName
-        , stdstrPossibleSolution
-        ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        stdstr
-        << "Opening the service for service name \"" <<
-          cp_tchServiceName << "\" failed."
-        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
-        << stdstrPossibleSolution
-        )
-    }
-        break ;
-    case ServiceBase::DeleteServiceFailed:
-    {
-      std::string stdstrPossibleSolution ;
-      ServiceBase::GetPossibleSolution(
-        dwErrorCodeFor1stError ,
-        cp_tchServiceName
-        , stdstrPossibleSolution
-        ) ;
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-        "Deleting service failed."
-        << LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
-        << stdstrPossibleSolution
-        )
-    }
-    break ;
-    }
-  }
-  else
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
-      << cp_tchServiceName
-      << "\"succeeded." )
-  std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
-  PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
-    stdwstr ) ;
-  powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
-  powerprofdynlinked.OutputAllPowerSchemes() ;
 }
 
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
@@ -197,17 +96,20 @@ int main( int argc, char *  argv[] )
   std::string stdstrLogFileName = std::string(argv[0]) + std::tstring("_log.txt") ;
   try
   {
-    SetExePathAsCurrentDir() ;
+    if( ! SetExePathAsCurrentDir() )
+      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "Getting file path for THIS executable file failed: " <<
+        LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+        );
 #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
 #endif
-    g_logger.OpenFile( //std::string("GriffinControl_log.txt")
-      stdstrLogFileName ) ;
+    g_logger.OpenFile( stdstrLogFileName ) ;
     DEBUG("Begin of main program entry point\n");
     //Must set the exe path as current dir before (else the file is located in
     //: C:\WINDOWS\System32) !
     //PossiblyOutputUsage() ;
-    OuputCredits() ;
+    CPUcontrolBase::OuputCredits() ;
     if( argc == 1 )
     {
       bool bStartService = true ;
@@ -239,7 +141,8 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-          DeleteService( vecstdstrParams.at(1).c_str(), stdtstrProgramName ) ;
+          CPUcontrolService::DeleteService( vecstdstrParams.at(1).c_str(),
+            stdtstrProgramName ) ;
         }
         bStartService = false ;
       }
@@ -247,14 +150,7 @@ int main( int argc, char *  argv[] )
       {
         if( vecstdstrParams.size() > 1 )
         {
-          try
-          {
-            ServiceBase::CreateService( vecstdstrParams.at(1).c_str() ) ;
-          }
-          catch(ConnectToSCMerror & ctscme )
-          {
-            WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
-          }
+          CPUcontrolService::CreateService( vecstdstrParams.at(1).c_str() ) ;
         }
         bStartService = false ;
       }
@@ -269,7 +165,7 @@ int main( int argc, char *  argv[] )
 //            , xerces_ipc_data_handler
             ) ;
 //          Xerces::IPCdataHandler xerces_ipc_data_handler(
-//            cpucontrolservice.m_modelData ) ;
+//            cpucontrolservice.m_model ) ;
           gp_cpucontrolbase = & cpucontrolservice ;
           cpucontrolservice.StartService();
       }
@@ -285,11 +181,13 @@ int main( int argc, char *  argv[] )
               ) ;
         }
         if( ShouldCreateService(argc, argv) && argc > 2 )
+        {
+          BYTE by ;
         //    CreateService(
         //if( //::AfxMessageBox("Should the undervolting service be installed now?",
         //    //IDYES | IDNO ) == IDYES  )
-           ServiceBase::CreateService(//"GriffinControlService"
-                argv[2]) ;
+          ServiceBase::CreateService( argv[2], by ) ;
+        }
         else
             std::cout << "\nNOT installing the service\n" ;
     }

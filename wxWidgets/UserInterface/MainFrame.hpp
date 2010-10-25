@@ -5,7 +5,8 @@
 #define STARTED 1
 
 //#include "StdAfx.h" //for ULONGLONG
-#include <Windows_compatible_typedefs.h> //for ULONGLONG
+//#include <preprocessor_macros/Windows_compatible_typedefs.h> //for ULONGLONG
+#include <winnt.h> //for ULONGLONG
 
 //// For compilers that support precompilation, includes "wx/wx.h".
 //#include "wx/wxprec.h"
@@ -62,8 +63,13 @@ public:
   float m_fVoltageInVolt ;
 };
 
-class MainFrame:
-  public wxFrame //,
+//Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #define COMPILE_WITH_SERVICE_PROCESS_CONTROL
+#endif
+
+class MainFrame
+  : public wxFrame //,
 //  //Must be public, else MSVC++ error "C4996"
 //  public UserInterface
   //, public wxTimer 
@@ -94,11 +100,12 @@ private:
   float m_fMaxMinusMinVoltage ;
   float m_fMaxVoltage ;
   float m_fMinVoltage ;
-  float m_fPreviousCPUusage ;
+//  float m_fPreviousCPUusage ;
 public:
   float m_fVoltageInVoltOfCurrentActiveCoreSettings ;
 private:
-  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
+//  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
+  //Array of pointers to dialogs
   FreqAndVoltageSettingDlg ** m_arp_freqandvoltagesettingdlg ;
   I_CPUcontroller * mp_i_cpucontroller ;
   int m_nLowestIDForSetVIDnFIDnDID ;
@@ -110,13 +117,8 @@ private:
     SpecificCPUcoreActionAttributes *> m_stdmapwxuicontroldata ;
   std::vector<//classes derived from wxObject
     wxObject> m_stdvectorwxuicontroldata ;
+  std::vector<FreqAndVoltageSettingDlg * > m_stdvec_p_freqandvoltagesettingdlg ;
   std::vector<wxMenu *> m_vecp_wxmenuCore ;
-  ULONGLONG m_ullHighestDiff ;
-  ULONGLONG m_ullHighestPerformanceEventCounter2Diff ;
-  ULONGLONG m_ullPreviousCPUusage ;
-  ULONGLONG m_ullPreviousPerformanceEventCounter2 ;
-  ULONGLONG m_ullPreviousPerformanceEventCounter3 ;
-  ULONGLONG m_ullPreviousTimeStampCounterValue ;
 public:
   volatile bool m_vbAnotherWindowIsActive ;
   WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
@@ -126,6 +128,8 @@ public:
   WORD m_wMaxFreqInMHzTextWidth ;
   WORD m_wMaxVoltageInVoltTextWidth ;
   WORD m_wMaxTemperatureTextWidth ;
+  WORD m_wTextHeight ;
+  WORD m_wYcoordinate ;
 private:
   wxBitmap * mp_wxbitmap ;
   wxBitmap * mp_wxbitmapStatic ;
@@ -196,11 +200,10 @@ private:
 //    ) ;
 //  void CreateAndInitMenuItemPointers() ;
 public:
-
   MainFrame(
-    const wxString& title, 
-    const wxPoint& pos, 
-    const wxSize& size
+    const wxString & cr_wxstrTitle,
+    const wxPoint & cr_wxpointPos,
+    const wxSize & cr_wxsize
     , I_CPUcontroller * p_cpucontroller
     //, CPUcoreData * p_cpucoredata
     , Model * p_model
@@ -209,9 +212,6 @@ public:
   ~MainFrame() ;
 
   void AllowCPUcontrollerAccess() ;
-  void DenyCPUcontrollerAccess() ;
-  void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes * 
-    p_percpucoreattributes ) ;
 
   //Implement method declared in "class UserInterface" 
   //(even if with no instructions) for this class not be abstract.
@@ -229,10 +229,16 @@ public:
   void CPUcoreUsageGetterDeleted() ;
 
   inline void CreateFileMenu() ;
+#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   void CreateServiceMenuItems() ;
+#endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   //void 
   BYTE CreateDynamicMenus() ;
+  void Create1DialogAndMenuForAllCores() ;
+  void CreateDialogAndMenuForEveryCore() ;
+  void DenyCPUcontrollerAccess() ;
   void DetermineMaxVoltageAndMaxFreqDrawWidth(wxDC & r_wxdc) ;
+  void DetermineTextHeight(wxDC & r_wxdc) ;
   void DisableWindowsDynamicFreqScalingHint();
 //  wxString GetSetPstateMenuItemLabel(
 //    BYTE byPstateNumber
@@ -249,6 +255,20 @@ public:
     , float fMaxVoltage
     ) ;
   void DrawCurrentPstateInfo( wxDC & r_wxdc ) ;
+  inline void DrawFrequency(
+    wxDC & r_wxdc ,
+    WORD wFrequencyInMHz ,
+  //  WORD wMaxFreqInMHz ,
+    wxCoord wxcoordWidth ,
+    wxCoord wxcoordHeight ,
+    WORD wLeftEndOfCurrFreqText ,
+    wxString wxstrFreq ,
+    WORD & wXcoordinate ,
+    WORD & wYcoordinate ,
+    std::map<WORD,WORD>::iterator & r_iterstdmapYcoord2RightEndOfFreqString ,
+    std::map<WORD,WORD> & stdmapYcoord2RightEndOfFreqString ,
+    std::map<WORD,WORD>::iterator & r_iterstdmap_ycoord2rightendoffreqstringToUse
+    ) ;
   void DrawPerformanceStatesCrosses(
     wxDC & r_wxdc 
     , const std::set<VoltageAndFreq> & cr_stdsetmaxvoltageforfreq 
@@ -267,12 +287,20 @@ public:
     , float fMaxVoltage
 //    , WORD wXcoordOfBeginOfYaxis
     ) ;
+  void DrawVoltage(wxDC & r_wxdc, float fVoltage) ;
+  void DrawVoltage(wxDC & r_wxdc, float fVoltage, WORD wYcoordinate) ;
   void DrawVoltageFreqCross(
     wxDC & r_wxdc
     , float fVoltageInVolt
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  void DynVoltnFreqScalingEnabled() ;
+  void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes *
+    p_percpucoreattributes ) ;
+  inline WORD GetXcoordinateForFrequency( WORD wFreqInMHz) ;
+  inline WORD GetYcoordinateForFrequency( WORD wFreqInMHz) ;
+  void GetYcoordinateForVoltage(float fVoltageInVolt ) ;
   inline bool IsCPUcontrollerAccessAllowedThreadSafe()
   {
     {
@@ -335,7 +363,6 @@ public:
 //      , //const
 //        PState & pstate
 //      ) ;
-  //void SetPumaStateController(GriffinController * p_pumastatectrl) ;
   void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
@@ -349,7 +376,7 @@ public:
     , I_CPUcontroller * p_cpucontroller
     ) ;
 #ifdef wxHAS_POWER_EVENTS
-  //void OnSuspending(wxPowerEvent& event)
+  void OnSuspending(wxPowerEvent& event) ;
   //{
   //    wxLogMessage(_T("System suspend starting..."));
   //    if ( wxMessageBox(_T("Veto suspend?"), _T("Please answer"),
@@ -359,11 +386,11 @@ public:
   //        wxLogMessage(_T("Vetoed suspend."));
   //    }
   //}
-  //void OnSuspended(wxPowerEvent& WXUNUSED(event))
+  void OnSuspended(wxPowerEvent& WXUNUSED(event)) ;
   //{
   //    wxLogMessage(_T("System is going to suspend."));
   //}
-  //void OnSuspendCancel(wxPowerEvent& WXUNUSED(event))
+  void OnSuspendCancel(wxPowerEvent& WXUNUSED(event)) ;
   //{
   //    wxLogMessage(_T("System suspend was cancelled."));
   //}

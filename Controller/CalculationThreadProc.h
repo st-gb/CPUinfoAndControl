@@ -6,9 +6,10 @@
   //#include <StdAfx.h>
   //#include "../StdAfx.h"
 #else
-  #include <global.h> //for WORD
+//  #include <global.h> //for WORD
 #endif
-#include <Windows_compatible_typedefs.h>
+//#include <preprocessor_macros/Windows_compatible_typedefs.h>
+#include <windef.h> //for DWORD
 
 //#define STARTED 0
 //#define ENDED 0

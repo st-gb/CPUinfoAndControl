@@ -5,12 +5,17 @@
  *      Author: Stefan
  */
 
+#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   //Keep away the dependency on this class for dyn libs.
   #include <wxWidgets/DynFreqScalingThread.hpp>
 #endif
-#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include "PerCPUcoreAttributes.hpp"
+
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  extern CPUcontrolBase * gp_cpucontrolbase ;
+#endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
 
 #ifdef COMPILE_WITH_LOG
 extern Logger g_logger ;
@@ -48,8 +53,9 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     ICPUcoreUsageGetter * p_icpucoreusagegetter
     )
   {
-    DEBUGN("PerCPUcoreAttributes::CreateDynFreqScalingThread" <<
-        "mp_dynfreqscalingthread:" << mp_dynfreqscalingthread )
+//    DEBUGN
+    LOGN("PerCPUcoreAttributes::CreateDynFreqScalingThread" <<
+      "mp_dynfreqscalingthread:" << mp_dynfreqscalingthread )
     mp_icpucoreusagegetter = p_icpucoreusagegetter  ;
     if ( ! mp_dynfreqscalingthread )
     {
@@ -59,16 +65,23 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     //upon termination.[...]"
       mp_dynfreqscalingthread = new //DynFreqScalingThread(
         wxWidgets::DynFreqScalingThread(
-        mp_icpucoreusagegetter
-        , mp_cpucontroller
-        , *mp_cpucoredata
+//        mp_icpucoreusagegetter
+//        , mp_cpucontroller
+        * gp_cpucontrolbase
+        , * mp_cpucoredata
+        //DETACHED is default, worked with GUI, not with daemon
+        , wxTHREAD_JOINABLE
         );
       //mp_dynfreqscalingthread->
       if( mp_dynfreqscalingthread->Create() == wxTHREAD_NO_ERROR )
       {
         LOGN("Dynamic Voltage and Frequency Scaling thread successfully "
           "created")
+//Prevent unused variable error for "wxthreaderror" if not compiled
+//with logging.
+#ifdef COMPILE_WITH_LOG
         wxThreadError wxthreaderror = mp_dynfreqscalingthread->Run() ;
+#endif //#ifdef COMPILE_WITH_LOG
         LOGN("after starting Dynamic Voltage and Frequency Scaling thread"
           "--result: " << wxthreaderror )
       }

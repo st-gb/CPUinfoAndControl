@@ -1,13 +1,19 @@
 #pragma once // include guard
-#include "global.h" //for BYTE etc.
+
+#ifndef I_CPUACCESS_H
+#define I_CPUACCESS_H
+
+//#include "global.h" //for BYTE etc.
+#include <windef.h> //BYTE, BOOL (etc.)
 #include <string>
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <windef.h> //for BOOL etc.
   #include <basetsd.h> //DWORD_PTR
   //#include <WINDOWS.h> //for BOOL et.c
 #else
-  #include <Windows_compatible_typedefs.h>
+  #include <preprocessor_macros/Windows_compatible_typedefs.h>
 #endif
+//#include <windef.h> //for BOOL
 //#include <Windows_compatible_typedefs.h>
 #ifndef WINAPI 
   #define WINAPI __stdcall
@@ -140,7 +146,7 @@ public:
     //this method.
     char * & archCPUID 
     ) ;
-  bool GetProcessorNoLeadingSpaces( std::string & r_stdstr ) ;
+  bool GetProcessorNameWithoutLeadingSpaces( std::string & r_stdstr ) ;
 //It makes sense to implement the get family and model as a
 //method of the base CPU access class (instead of e.g. as a method 
 //of a CPU controller class) for the following reason:
@@ -242,3 +248,5 @@ public:
       DWORD affinityMask	// Thread Affinity Mask
     ) = 0 ;
 };
+
+#endif //#ifndef I_CPUACCESS_H

@@ -1,3 +1,38 @@
+-Idee: Problematische Unterspannungen kann man schon durch Rechenfehler 
+ erkennen (Prime95 bringt dann Fehler und bricht den Rechen-Thread mit 
+ dem fehlerhaften Ergebnis ab) schon vor einem Freeze.
+ Wenn man jetzt innerhalb PumaStateCtrl solche Berechnungen durchführt, kann man bei
+ einem fehlerhaften Ergebnis die Spannung wieder hochsetzen und so einem Freeze entgehen.
+ Dadurch könnte man alle? möglichen Taktfrequenzen während einer einzigen Windows-Sitzung
+ (da kein Freeze) durchprobieren
+ -als core 0 bei 2,2 GHz und core 1 bei 550 MHz at 0.75 V: 
+  schwarzer Bildschirm (freeze), Mauszeiger aber zu sehen
+  wenn core 0: 2200 MHz auf 1,0 V gesetzt wurde. prime95(mit 2 threads) 
+  zeigte aber KEINE Rechenfehler an.
+ -als core 0 bei 2,2 GHz und core 1 bei 2200 MHz at 1.05 V: 
+  schwarzer Bildschirm (freeze), Mauszeiger aber zu sehen
+  wenn core 0: 2200 MHz auf 1,0125 V gesetzt wurde. prime95(mit 2 threads) 
+  zeigte aber KEINE Rechenfehler an.
+  
 mit Prime95: Torture test -> ">>Small<< FFTs"
-  -Der Thread, der die Berechnungen durchführt, muss auch genug Rechenzeit pro Gesamtreichenzeit bekommen,
+  -Der Thread, der die Berechnungen durchführt, muss auch genug Rechenzeit 
+   pro Gesamtreichenzeit bekommen,
    sonst trat--falls ich mich recht erinnere--kein Prime-Rechenfehler auf.
+   
+-laut Jan Groneberg (sind wohl auch nur Vermutungen) um eine zu niedrige 
+ Spannung zu finden:
+  -alle CPU-Kerne auslasten
+  -Fließkommazahlen verwendn
+  -Werte abwechseln
+  -Divisionen (durchführen?)
+  -moeglicherweise Primzahlen berechnen und mit vorher berechneten Werten vergleichen
+  -"ollydebug" verwenden (um Prime95 zu analysieren?)
+-vllt. Restklassen-Arithmetik/ berechnung großer Primzahlen für Erkennung ob Spannung zu gering
+
+-Idee: Auslasten der Cores selber durchführen (also 2 Threads mit einer Schleife: "while(!break){;}", 
+  und nicht erst durch ein externes Programm wie "prime95"
+  dann kann darauf basierend die niedrigste Spannung für eine bestimmte Frequenz selbstständig
+  festgestellt werden: Zeitpunkt in hoher zeitlicher Auflösung (=in s/Millisekunden) in Datei 
+  schreiben und flushen, dann direkt danach die Spannung einstellen und weiteren Zeitpunkt in 
+  Datei schreiben. So kann mit hoher Wahrscheinlichkeit gesagt werden,
+  ob der Rechner eingefroren ist und daher die niedrigste Spannung gefunden wurde.

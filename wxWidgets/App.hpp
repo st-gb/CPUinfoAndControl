@@ -2,7 +2,7 @@
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #define _COMPILE_WITH_CALC_THREAD
 #endif
 
@@ -10,26 +10,33 @@
 //#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 //#include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
-#include <Controller/stdtstr.hpp> //std::tstring
+#include <Controller/character_string/stdtstr.hpp> //std::tstring
+//#include <Controller/multithread/native_API_event_type.hpp>
+#include <Controller/multithread/condition_type.hpp>
+#include <Controller/multithread/thread_type.hpp>
 #include <Controller/MainController.hpp> //class MainController
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/UserInterface.hpp>//base class UserInterface
 //#include <Windows/DynFreqScalingAccess.hpp>
 //#include <Windows/PowerProfDynLinked.hpp>
-#include <Windows/NamedPipe/NamedPipeClient.hpp> //class NamedPipeClient
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  #include <Windows/NamedPipe/NamedPipeClient.hpp> //class NamedPipeClient
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //class SAX2IPCcurrentCPUdataHandler
 #include <Xerces/IPC/SAX2IPCcurrentCPUdataHandler.hpp>
 //for x86IandC::thread_type
-#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+//#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
-//TODO program Did not exit when a taskbar icon is included.
-#define COMPILE_WITH_SYSTEM_TRAY_ICON
+//Under Linux an error message (~"no image handler for type 3 defined") is shown
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  #define COMPILE_WITH_SYSTEM_TRAY_ICON
+#endif
 
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
 #endif
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include "SystemTrayAccess.hpp"
 #endif
 //#include <wxWidgets/UserInterface/Mainframe.hpp>
@@ -48,12 +55,12 @@
 //class Windows_API::DynFreqScalingAccess ;
 //class Model ;
 class MainFrame ;
-class MyTaskBarIcon ;
+class TaskBarIcon ;
 class UserInterface ;
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 class WinRing0_1_3RunTimeDynLinked ;
 #else
-  #include <Linux/MSRdeviceFile.h>
+  #include <Linux/MSRdeviceFile.hpp>
 #endif
 #ifdef COMPILE_WITH_CALC_THREAD
 class CalculationThread ;
@@ -70,11 +77,10 @@ class wxX86InfoAndControlApp
   , public CPUcontrolBase
 {
 private:
-  bool m_bXercesSuccessfullyInitialized ;
   TCHAR ** m_arartchCmdLineArgument ;
 //  wxThread m_wxthreadIPC ;
   void * m_systemtray_icon_notification_window ;
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
 #endif
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
@@ -85,7 +91,7 @@ private:
   //e.g. point to console or GUI.
   MainFrame * mp_frame ;
 //  UserInterface * mp_userinterface ;
-  #ifdef _WINDOWS
+  #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
@@ -118,15 +124,16 @@ private:
     CalculationThread m_calculationthread ;
   #endif //#ifdef _COMPILE_WITH_CALC_THREAD
 public:
-  Model m_model ;
+//  Model m_model ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   SAX2IPCcurrentCPUdataHandler m_sax2_ipc_current_cpu_data_handler ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Must be created on heap, else left mouse clicks were not processed?
-  MyTaskBarIcon * mp_taskbaricon ;
-//  MyTaskBarIcon m_taskbaricon ;
+  TaskBarIcon * mp_taskbaricon ;
+//  TaskBarIcon m_taskbaricon ;
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     NamedPipeClient m_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
 //  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
   //"volatile" because it is accessed from more than 1 thread.
@@ -135,7 +142,9 @@ public:
   std::tstring m_stdtstrProgramName ;
   wxCriticalSection m_wxcriticalsectionIPCthread ;
   wxMutex m_wxmutexIPCthread ;
-  wxCondition m_wxconditionIPCthread ;
+//  wxCondition m_wxconditionIPCthread ;
+//  x86IandC::native_API_event_type
+  condition_type m_condition_type_eventIPCthread ;
   x86IandC::thread_type m_x86iandc_threadIPC ;
 #ifdef COMPILE_WITH_CPU_SCALING
   //wxDynFreqScalingTimer * mp_wxdynfreqscalingtimer ;
@@ -164,7 +173,9 @@ public:
   void CPUcoreUsageGetterDeleted() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
   void DeleteCPUcontroller() ;
+  void DynVoltnFreqScalingEnabled() ;
   void EndDVFS() ;
+  void EndGetCPUcoreDataViaIPCthread() ;
   I_CPUcontroller * GetCPUcontroller()
   {
     return mp_cpucontroller ;
@@ -173,13 +184,20 @@ public:
   {
     return mp_i_cpuaccess ;
   }
+  BYTE GetConfigDataViaInterProcessCommunication() ;
   void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
   void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;
   Model * GetModel()
   {
     return mp_modelData ;
   }
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  void PauseService(
+    bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void PossiblyAskForOSdynFreqScalingDisabling() ;
+#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;

@@ -1,0 +1,84 @@
+/* from
+ http://www.rodneybeede.com/Compiling_a_C___Windows_executable_with_embedded_version_information_and_icon.html
+ 
+ To specify the version DON'T modify this file
+ 
+ Instead do
+  windres.exe -D VER_FILEVERSION=2008,8,20,629 -D VER_FILEVERSION_STR=2008,8,20,629 project.rc project.opc
+  
+ Note that you should specify values without leading 0 (zero's) otherwise
+ the number will be considered as octal and converted to decimal
+*/
+
+
+#ifndef VER_FILEVERSION
+/* A default version number */
+#define VER_FILEVERSION     0,0,0,0
+#endif
+
+#ifndef FILE_DESCRIPTION
+  #define FILE_DESCRIPTION "x86 CPU information & control program--GUI"
+#endif
+
+#ifndef VER_FILEVERSION_STR
+/* A default version number */
+#define VER_FILEVERSION_STR   "0,0,0,0"
+#endif
+
+
+/* defines for VERSIONINFO block */
+#define VOS_NT                  0x00040000L
+
+/* VS_VERSION.dwFileType */
+#define VFT_UNKNOWN             0x00000000L
+#define VFT_APP                 0x00000001L
+#define VFT_DLL                 0x00000002L
+#define VFT_DRV                 0x00000003L
+#define VFT_FONT                0x00000004L
+#define VFT_VXD                 0x00000005L
+#define VFT_STATIC_LIB          0x00000007L
+
+
+/* See MSDN "VERSIONINFO Resource"
+  http://msdn.microsoft.com/en-us/library/aa381058(VS.85).aspx
+*/
+1 VERSIONINFO
+/* Fixed-info */
+FILEVERSION VER_FILEVERSION
+PRODUCTVERSION VER_FILEVERSION
+
+/* No special flags */
+FILEFLAGSMASK 0x0L
+FILEFLAGS 0x0L
+
+/* OS is 32-bit Windows */
+FILEOS VOS_NT
+
+/* File is an application */
+FILETYPE VFT_APP
+
+/* Not a VFT_DRV, VFT_FONT, or VFT_VXD */
+FILESUBTYPE 0x0L
+
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+    /* Block language charset is U.S. English, Unicode */
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
+            VALUE "FileDescription", FILE_DESCRIPTION
+            VALUE "FileVersion",    "0,0,0,0"
+            VALUE "InternalName",   "CPU info & control"
+            VALUE "LegalCopyright",  "Copyright (C) 2010"
+            VALUE "OriginalFilename", ""
+            VALUE "ProductName",    "x86Info&Control"
+            VALUE "ProductVersion",  "0,0,0,0"
+        END
+    END
+    
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

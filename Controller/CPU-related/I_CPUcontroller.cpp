@@ -1,17 +1,22 @@
 #include "I_CPUcontroller.hpp"
+//#include <windef.h> //for BYTE
 #include <Controller/CPUindependentHelper.h>
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/tchar_conversion.h> //for GetCharPointer(...)
-#include <Controller/stdtstr.hpp> //get...
+#include <Controller/character_string/stdtstr.hpp> //get...
 #include <ModelData/ModelData.hpp> //class Model
-#include <ModelData/CPUcoreData.hpp> //PerCPUcoreAttributes
+#include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <UserInterface/UserInterface.hpp>
-#include <Windows_compatible_typedefs.h>
+#include <preprocessor_macros/Windows_compatible_typedefs.h>
 
 #ifdef COMPILE_WITH_XERCES
-  #include "Xerces/XMLAccess.hpp" //for "ReadXMLdocumentInitAndTermXerces(...)"
+  #include "Xerces/XMLAccess.hpp" //for "ReadXMLfileInitAndTermXerces(...)"
   #include <Xerces/SAX2MainConfigHandler.hpp>
+#endif
+
+#ifndef MAXWORD
+  #define MAXWORD 65535
 #endif
 
 I_CPUcontroller::I_CPUcontroller()
@@ -141,7 +146,7 @@ float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
 }
 
 //Stores multiplier, reference clock and voltage into the model data.
-BYTE I_CPUcontroller::GetCurrentVoltageAndFrequency(
+BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
   WORD wCoreID )
 {
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
@@ -153,6 +158,15 @@ BYTE I_CPUcontroller::GetCurrentVoltageAndFrequency(
     wCoreID ) ;
 }
 
+void I_CPUcontroller::GetCurrentTemperatureInCelsiusAndStoreValues(
+  WORD wCoreID )
+{
+  PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
+    m_arp_percpucoreattributes  ;
+  arp_percpucoreattributes[wCoreID].m_fTempInDegCelsius =
+    GetTemperatureInCelsius(wCoreID) ;
+}
+
 // returns: true: p-state with freq >= wanted freq and 
 //    p-state with freq <= wanted freq was found and
 //    voltage could be interpolated 
@@ -162,11 +176,11 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
   , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
   )
 {
-//  LOGN("GetInterpolatedVoltageFromFreq("
-//#ifdef _DEBUG
-//    << wFreqInMHzToGetVoltageFrom
-//#endif
-//    << ", ..." )
+  LOGN("GetInterpolatedVoltageFromFreq("
+#ifdef _DEBUG
+    << wFreqInMHzToGetVoltageFrom
+#endif
+    << ", ..." )
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq = 
     r_stdsetvoltageandfreq.begin() ;
   std::set<VoltageAndFreq>::const_iterator 
@@ -188,17 +202,33 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
     ++ ci_stdsetvoltageandfreq ;
   }
 //  LOGN("GetInterpolatedVoltageFromFreq(...) after loop")
+#ifdef COMPILE_WITH_LOG
+  std::ostringstream ostringstreamLog ;
+  ostringstreamLog << "GetInterpolatedVoltageFromFreq("
+    << wFreqInMHzToGetVoltageFrom
+    << ", ...)--lower freq:" ;
+  if( ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
+    )
+  {
+    ostringstreamLog << ci_stdsetvoltageandfreqNearestLowerEqual->
+      m_wFreqInMHz ;
+  }
+  else
+    ostringstreamLog << " no lower freq than " << wFreqInMHzToGetVoltageFrom ;
+  ostringstreamLog << ", ...)--higher freq:" ;
+  if( ci_stdsetvoltageandfreqNearestHigherEqual != r_stdsetvoltageandfreq.end()
+    )
+    ostringstreamLog << ci_stdsetvoltageandfreqNearestHigherEqual->
+      m_wFreqInMHz ;
+  else
+    ostringstreamLog << " no higher freq than " << wFreqInMHzToGetVoltageFrom ;
+#endif //#ifdef COMPILE_WITH_LOG
+  LOGN( ostringstreamLog.str() )
   if( ci_stdsetvoltageandfreqNearestLowerEqual != r_stdsetvoltageandfreq.end()
     && ci_stdsetvoltageandfreqNearestHigherEqual != 
       r_stdsetvoltageandfreq.end()
     )
   {
-//    LOGN("GetInterpolatedVoltageFromFreq(" << wFreqInMHzToGetVoltageFrom
-//      << ", ...)--lower freq:"
-//      << ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz
-//      << ", ...)--higher freq:"
-//      << ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
-//      )
     if( //This is the case if wFreqInMHzToGetVoltageFrom has the 
       //same freq as one of the p-states.
       //This case must be catched, else wrong values by the 
@@ -1007,7 +1037,7 @@ void I_CPUcontroller::SetOtherDVFSaccess(
 //      //this
 //      );
 //    if(
-//      ReadXMLdocumentInitAndTermXerces(//"config.xml"
+//      ReadXMLfileInitAndTermXerces(//"config.xml"
 //
 //      //mp_configurationHandler->LoadConfiguration(
 //

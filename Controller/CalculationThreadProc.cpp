@@ -5,6 +5,7 @@
 //errors in Visual Studio for the include of <string>.
 #include "CalculationThreadProc.h"
 //class ICPUcoreUsageGetter
+#include <Controller/Sleep.hpp> //for OperatingSystem::Sleep(...)
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class
 #include <ModelData/ModelData.hpp> //class Model
@@ -13,15 +14,15 @@
 #include <stdlib.h> //rand()
 
 //wxWidgets does not provide the needed "set CPU affinity". So I must
-//distinguish.
-#ifdef _WINDOWS
+//distinguish/ use a native API directly.
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #include <Windows/CalculationThread.hpp>
 #else 
-  #ifdef _LINUX
+  #ifdef __linux__ //Built-in macro in eclipse under Linux //_LINUX
   #include <Linux/CalculationThread.hpp>
   #endif
 #endif
-#include <Windows_compatible_typedefs.h>
+#include <preprocessor_macros/Windows_compatible_typedefs.h>
 
 DWORD 
 #ifdef _MSC_VER
@@ -98,7 +99,7 @@ bool isPrime(//a prime is a natural number-> unsigned value
 	return true;
 }
 
-#ifdef _WINDOWS
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 long GetPrime95ResultsFileLength()
 {
   //DWORD dw ;
@@ -243,7 +244,7 @@ DWORD
           // fPreviousCPUusageReferringToMaxFreq = fCPUusageReferringToMaxFreq ;
             pcalculationthread->mp_userinterface->RedrawEverything() ;
           }
-         Sleep( wSleepTimeInMs ) ;
+          OperatingSystem::Sleep( wSleepTimeInMs ) ;
        //  if( fLoad * fCPUusageReferringToMaxFreq 
        }
     }
@@ -364,8 +365,8 @@ DWORD
       if( 
         //float op.
         //5.0/1.0 != 5.0 
-        //d/-1.0 != -d 
-        //d/ (2.0*d) != 0.5 
+        //d/-1.0 != -d
+        //d/ (2.0*d) != 0.5
         //( d / ( 3.0 * d ) ) != dExpectedValue
         //1.0  / d  != dExpectedValue
         //dAllBitsSet / dAllBitsSet != 1.0

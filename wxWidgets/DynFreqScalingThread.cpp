@@ -16,8 +16,8 @@
 #include "DynFreqScalingThread.hpp"
 
 //Is already declared in class WXDLLIMPEXP_BASE wxThread but
-//curiosly needs to be defined here.
-typedef void *ExitCode;
+//curiously needs to be defined here.
+typedef void * ExitCode;
 
 class CPUcoreData ;
 class ICPUcoreUsageGetter ;
@@ -27,32 +27,45 @@ using namespace wxWidgets ;
 
 //"[...]It does not create or start execution of the real thread -- 
 //for this you should use the Create and Run methods.[...]"
+//DynFreqScalingThread::DynFreqScalingThread(
+//    ICPUcoreUsageGetter * p_icpu
+//    , I_CPUcontroller * p_cpucontroller
+//    , CPUcoreData & r_cpucoredata
+//    )
+////    //, m_bCalledInit(false)
+////    //, mp_cpucoredata(&r_cpucoredata)
+////    //, m_vbRun(true)
+////    //, m_wMilliSecondsToWait(600)
+////    //, mp_i_cpucontroller ( p_cpucontroller )
+//  : DynFreqScalingThreadBase(
+//      p_icpu
+//      , p_cpucontroller
+//      , r_cpucoredata
+//      )
+//{
+////    //DEBUG("constructor of freq scaling thread--begin\n");
+////    //mp_icpu = p_icpu ;
+////    //LOGN("core usage address: " << p_icpu )
+////    ////mp_icpu->Init();
+////    //m_wMaxFreqInMHz = r_cpucoredata.m_wMaxFreqInMHz ;
+////    //m_fPercentileIncrease = 1.5f ;
+////    //mp_i_cpucontroller = p_cpucontroller ;
+////    //I_CPUcontroller
+////    DEBUG("constructor of freq scaling thread--end\n");
+//}
+
 DynFreqScalingThread::DynFreqScalingThread(
-    ICPUcoreUsageGetter * p_icpu
-    , I_CPUcontroller * p_cpucontroller
-    , CPUcoreData & r_cpucoredata
+  CPUcontrolBase & r_cpucontrolbase
+  , CPUcoreData & r_cpucoredata
+  , wxThreadKind kind
+  )
+  :
+    wxThread(kind)
+    , DynFreqScalingThreadBase(
+    r_cpucontrolbase
+    , r_cpucoredata
     )
-//    //, m_bCalledInit(false)
-//    //, mp_cpucoredata(&r_cpucoredata)
-//    //, m_vbRun(true)
-//    //, m_wMilliSecondsToWait(600)
-//    //, mp_i_cpucontroller ( p_cpucontroller )
-  : DynFreqScalingThreadBase(
-      p_icpu
-      , p_cpucontroller
-      , r_cpucoredata
-      )
 {
-//    //DEBUG("constructor of freq scaling thread--begin\n");
-//    //mp_icpu = p_icpu ;
-//    //LOGN("core usage address: " << p_icpu )
-//    ////mp_icpu->Init();
-//    //m_wMaxFreqInMHz = //2200
-//    //  r_cpucoredata.m_wMaxFreqInMHz ;
-//    //m_fPercentileIncrease = 1.5f ;
-//    //mp_i_cpucontroller = p_cpucontroller ;
-//    //I_CPUcontroller
-//    DEBUG("constructor of freq scaling thread--end\n");
 }
 
 //BYTE

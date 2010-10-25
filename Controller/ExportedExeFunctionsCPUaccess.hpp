@@ -8,9 +8,9 @@
 #ifndef EXPORTEDEXEFUNCTIONSCPUACCESS_HPP_
 #define EXPORTEDEXEFUNCTIONSCPUACCESS_HPP_
 
-#include <windows.h> //for ::Sleep()
+//#include <windows.h> //for ::Sleep()
 #include "ExportedExeFunctions.h" //ReadMSR_func_type, WriteMSR_func_type
-#include <Controller/I_CPUaccess.hpp>
+#include <Controller/I_CPUaccess.hpp> //Base class I_CPUaccess
 
 //Purpose of this class: that CPU controller
 //classes that can be used as built-into-exe-file
@@ -71,6 +71,7 @@ class ExportedExeFunctionsCPUaccess
     , PDWORD p_dwValue
     ) ;
 
+  //TODO make inline
   void Sleep(WORD wMillis) ;
 
   BOOL

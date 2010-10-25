@@ -5,21 +5,21 @@
 #define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
-Model::Model(
-             )
-    //C++ style inits:
-    :
-    //Initialize in the same order as textual in the declaration?
-    //(to avoid g++ warnings)
-    m_bCollectPstatesAsDefault(false)
-    , m_bEnableOvervoltageProtection(true)
-    , m_bSkipCPUtypeCheck(false)
-    , m_bSyncGUIshowDataWithService ( false )
-    , m_bTruncateLogFileForEveryStartup(true)
-    , m_bUseDefaultFormularForOvervoltageProtection(false)
-    , m_bUsePstate0AsMaxFreq (false)
-    , mp_cpucontroller (NULL)
-    , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
+Model::Model()
+  //C++ style inits:
+  :
+  //Initialize in the same order as textual in the declaration?
+  //(to avoid g++ warnings)
+  m_bAppendProcessID(true)
+  , m_bCollectPstatesAsDefault(false)
+  , m_bEnableOvervoltageProtection(true)
+  , m_bSkipCPUtypeCheck(false)
+  , m_bSyncGUIshowDataWithService ( false )
+  , m_bTruncateLogFileForEveryStartup(true)
+  , m_bUseDefaultFormularForOvervoltageProtection(false)
+  , m_bUsePstate0AsMaxFreq (false)
+  , mp_cpucontroller (NULL)
+  , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
   {
     //m_cpucoredata
 #ifdef _DEBUG
@@ -28,11 +28,11 @@ Model::Model(
     m_dPreviousPERF_CTRvalue = 0.0 ;
   }
 
-  void Model::AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue)
-  {
-    //m_vecmaxvoltageforfreq.push_back(MaxVoltageForFreq(fValue,wFreqInMHz) );
-    m_setmaxvoltageforfreq.insert(MaxVoltageForFreq(fValue,wFreqInMHz) ) ;
-  }
+//  void Model::AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue)
+//  {
+//    //m_vecmaxvoltageforfreq.push_back(MaxVoltageForFreq(fValue,wFreqInMHz) );
+//    m_setmaxvoltageforfreq.insert(MaxVoltageForFreq(fValue,wFreqInMHz) ) ;
+//  }
 
 //  void Model::AddValueTableRow(
 //    //std::vector<RegisterDataTable>::iterator iter_regdatatable ,

@@ -13,9 +13,11 @@
 class SpecificCPUcoreActionAttributes
 {
 public:
-  BYTE m_byCoreID ;
+  //BYTE
+  unsigned char m_byCoreID ;
   SpecificCPUcoreActionAttributes() ;
-  SpecificCPUcoreActionAttributes(BYTE byCoreID)
+  SpecificCPUcoreActionAttributes(//BYTE
+    unsigned char byCoreID)
   {
     m_byCoreID = byCoreID ;
   }

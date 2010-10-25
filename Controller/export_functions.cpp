@@ -13,12 +13,12 @@
 //extern CPUcontrolBase * gp_cpucontrolbase ;
 extern I_CPUaccess * g_p_cpuaccess ;
 
-//from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
-#ifdef _WIN32
-#define AM_LIB_EXPORT __declspec(dllexport)
-#else
-#define AM_LIB_EXPORT
-#endif // _WIN32
+////from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
+//#ifdef _WIN32
+//  #define AM_LIB_EXPORT __declspec(dllexport)
+//#else
+//  #define AM_LIB_EXPORT __attribute__ ((visibility("default")))
+//#endif // _WIN32
 
 //from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
 //("Calling an Exported Function in an EXE from Within a DLL"):
@@ -36,8 +36,17 @@ extern "C"
     PDWORD p_dwValue
   )
   {
-//    LOGN("ReadMSR")
-    BOOL boolRet = FALSE ;
+//    LOGN("ReadPCIconfigSpace")
+//    BOOL boolRet = FALSE ;
+    //http://en.wikipedia.org/wiki/Static_variable:
+    //"Static local variables: variables declared as static inside a function
+    // are statically allocated while having the same scope as automatic local
+    // variables. Hence whatever values the function puts into its static
+    //local variables during one call will still be present when the function
+    //is called again."
+    //By using static: not created on stack (->faster)
+    static BOOL boolRet ;
+    boolRet = FALSE ;
 //    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
 //    I_CPUaccess * p_cpuaccess = //wxGetApp().
 //      gp_cpucontrolbase->
@@ -74,11 +83,28 @@ extern "C"
   )
   {
 //    LOGN("ReadMSR")
-    BOOL boolRet = FALSE ;
+//    BOOL boolRet = FALSE ;
+    //http://en.wikipedia.org/wiki/Static_variable:
+    //"Static local variables: variables declared as static inside a function
+    // are statically allocated while having the same scope as automatic local
+    // variables. Hence whatever values the function puts into its static
+    //local variables during one call will still be present when the function
+    //is called again."
+    //By using static: not created on stack (->faster)
+    static BOOL boolRet ;
+    boolRet = FALSE ;
 //    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
 //    I_CPUaccess * p_cpuaccess = //wxGetApp().
 //      gp_cpucontrolbase->
 //      GetCPUaccess() ;
+    DEBUGN("Exe's exported ReadMSR("
+      << "MSR index:" << dwIndex
+      << " " << p_dweax
+      << " " << p_dwedx
+      << " Aff mask:" << affinityMask
+      << ")"
+      << " g_p_cpuaccess:" << g_p_cpuaccess
+      )
     //May be NULL if CPUaccess' init failed
     if( //p_cpuaccess
       g_p_cpuaccess )
@@ -91,15 +117,15 @@ extern "C"
         //m_dwAffinityMask
         affinityMask
         ) ;
+      DEBUGN( "exe::ReadMSR after g_p_cpuaccess->RdmsrEx(Index,affinityMask): "
+        << dwIndex << " "
+        << * p_dweax << " "
+        << * p_dwedx << " "
+        << affinityMask
+        << "\n" )
     }
     #ifdef _DEBUG
     //if( dwIndex == 0x1AD )
-//      DEBUG_COUT( "exe::ReadMSR(Index,affinityMask): "
-//        << dwIndex << " "
-//        << *p_dweax << " "
-//        << *p_dwedx << " "
-//        << affinityMask
-//        << "\n" )
     #endif
     return boolRet ;
   }
@@ -111,7 +137,16 @@ extern "C"
     DWORD_PTR affinityMask  // Thread Affinity Mask
     )
   {
-    BOOL boolRet = FALSE ;
+//    BOOL boolRet = FALSE ;
+    //http://en.wikipedia.org/wiki/Static_variable:
+    //"Static local variables: variables declared as static inside a function
+    // are statically allocated while having the same scope as automatic local
+    // variables. Hence whatever values the function puts into its static
+    //local variables during one call will still be present when the function
+    //is called again."
+    //By using static: not created on stack (->faster)
+    static BOOL boolRet ;
+    boolRet = FALSE ;
 //    LOGN("WriteMSR")
     DEBUGN("::WriteMSR(" << dwIndex
       << "," << dwEAX
@@ -152,4 +187,3 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif //#ifdef __cplusplus
-

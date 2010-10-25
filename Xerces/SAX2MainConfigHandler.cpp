@@ -1,133 +1,90 @@
-////#ifdef WIN32 //with Linux I can't compile with xerces yet.
-//#ifdef _WINDOWS //with Linux I can't compile with xerces yet.
-//  #define COMPILE_WITH_XERCES
-//#endif
-
-#ifdef COMPILE_WITH_XERCES
-  #include "../stdafx.h"
-  #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
+//#ifdef COMPILE_WITH_XERCES
+//  #include "../stdafx.h"
+//  #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
   //If not included: compiler error "C1010".
   #include "SAX2MainConfigHandler.hpp"
-  #include "XercesHelper.hpp" //for GetAttributeValue(...)
-  #include <UserInterface/UserInterface.hpp>
+  #include <Controller/Logger/Logger.hpp> //class Logger
+  #include <ModelData/ModelData.hpp> //class Model
+  #include <UserInterface/UserInterface.hpp> //class UserInterface
+  //for XercesAttributesHelper::GetAttributeValue(...)
+  #include <Xerces/XercesAttributesHelper.hpp>
+  #include <Xerces/XercesHelper.hpp> //XercesHelper::ToStdString(const XMLCh *)
 
-  //#include "PStates.h"
+  //class XERCES_CPP_NAMESPACE::Attributes
   #include <xercesc/sax2/Attributes.hpp>
-  #include <xercesc/util/xmlstring.hpp> //for XMLString::transcode(...)
-  //#include "global.h" //for DEBUG(...) etc.
+  //for XERCES_CPP_NAMESPACE::XMLString::transcode(...)
+  #include <xercesc/util/XMLString.hpp>
+  #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...) etc.
 
-  #include <string>
-  #include <sstream> //for istringstream
-  #include <iostream>
-  #include <exception> //for class std::exception
-	#ifndef WIN32
-		#include <stdexcept> //for class "runtime_error"
-	#endif //#ifndef WIN32
-	using namespace std;
+  #include <string> //std::string
+  #include <sstream> //for std::istringstream
 	
 	//#define MB_CUR_MAX 1 
-	
+  extern Logger g_logger ;
 	
 	//With Xerces < Version 2.8:
-	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces statically (else many "LNK2001" and "LNK2019" and linker errors).
+	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
+  // statically (else many "LNK2001" and "LNK2019" and linker errors).
 	//with Xerces 3.0: "XERCES_STATIC_LIBRARY"
 	//And: Add "Advapi32.lib" as additional dependancy for the linker.
-	//zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst: "LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in MSVCRT.lib(MSVCR80.dll) definiert."
+	//zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst:
+  //"LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
+  //MSVCRT.lib(MSVCR80.dll) definiert."
 	
-	XERCES_CPP_NAMESPACE_USE //to NOT need to prefix the xerces classes with the "xerces::"
+//  //to NOT need to prefix the xerces classes with the "xercesc_...::"
+//	XERCES_CPP_NAMESPACE_USE
 	
-	// need to properly scope any forward declarations
-	XERCES_CPP_NAMESPACE_BEGIN
-	  class Attributes;
-	XERCES_CPP_NAMESPACE_END
-	
-	//#ifdef WIN32
-	class NumberFormatException 
-    : public
-    #if defined(__CYGWIN__) || defined(__MINGW32__)
-    //  ::RuntimeException
-      std::exception
-    #else
-      std::runtime_error
-  #endif
-	{
-	public:
-	   NumberFormatException(const std::string& s)
-      #ifdef __CYGWIN__
-      //  ::RuntimeException
-      //  std::exception()
-      #else
-        #ifdef _MSC_VER
-        :
-        std::runtime_error(s)
-        #endif
-      #endif
-      {}
-	};
-	//#endif
-	
-	template <class T>
-	bool from_string(
-	   T& t, 
-	   const std::string& s
-	   //,std::ios_base& (*f)(std::ios_base&)
-	  )
-	{
-	  //DEBUG("from_string:%s\n",s);
-//	  LOG("from_string:" << s //<< "\n"
-//	    )
-	  std::istringstream iss(s);
-	  return !(iss //>> f 
-	    >> t
-	    ).fail();
-	}
-	
-	
-	SAX2MainConfigHandler::SAX2MainConfigHandler(//PStates & pstates
+	SAX2MainConfigHandler::SAX2MainConfigHandler(
 	  Model & model ,
 	  UserInterface * p_userinterface //,
     //I_CPUcontroller * p_cpucontroller
 	  )
 	{
-	  //m_p_pstates = & pstates ;
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
     //p_cpucontroller = p_cpucontroller ;
 	}
 	
   void SAX2MainConfigHandler::HandleDynamicVoltage_and_FrequencyScaling(
-    const Attributes & attrs)
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
     bool bEnableDVFS = false ;
     float fValue ;
     std::string strAttributeName = "enable" ;
     WORD wValue ;
-	  if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),bEnableDVFS))
+	  if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+	    strAttributeName.c_str(), bEnableDVFS )
+	    )
 	  {
       m_p_model->m_cpucoredata.m_bEnableDVFS = bEnableDVFS ;
     }
     strAttributeName = "usage_poll_wait_time_in_ms" ;
-    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),wValue))
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+      strAttributeName.c_str(),wValue))
     {
       m_p_model->m_cpucoredata.m_wMilliSecondsWaitBetweenDFVS = wValue ;
     }
     strAttributeName = "CPU_core_load_threshold_for_increase" ;
-    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+      strAttributeName.c_str(),fValue) )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreLoadThresholdForIncreaseInPercent =
         fValue ;
       LOGN("using \"" << fValue << "\" as CPU core load threshold for increase" )
     }
     strAttributeName = "throttle_temp_in_deg_Celsius" ;
-    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+        strAttributeName.c_str(),fValue)
+      )
     {
       m_p_model->m_cpucoredata.m_fThrottleTempInDegCelsius =
         fValue ;
       LOGN("using \"" << fValue << "\" as CPU core throttle temp thres" )
     }
     strAttributeName = "increase_factor" ;
-    if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue)
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+        strAttributeName.c_str(), fValue )
       )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor = fValue ;
@@ -135,7 +92,8 @@
         m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
     strAttributeName = "factor" ;
-    if( XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue)
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+        strAttributeName.c_str(), fValue )
       )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreFreqFactor = fValue ;
@@ -143,141 +101,9 @@
         m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
   }
-
-  void SAX2MainConfigHandler::handleFreqAndLowestStableVoltageElement(
-    const   //xercesc_2_8::
-      Attributes & attrs
-    )
-	{
-    float fValue ;
-	  WORD wFreqInMHz ;
-    std::string strAttributeName = "frequency_in_MHz" ;
-	  if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),wFreqInMHz))
-	  {
-	    strAttributeName = "voltage_in_Volt" ;
-	    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
-	    {
-        m_p_model->m_cpucoredata.AddLowestStableVoltageAndFreq(fValue,wFreqInMHz) ;
-	    }
-	    else
-	    {
-//	      std::ostrstream ostrstream ;
-//	      ostrstream
-	      std::ostringstream stdostringstream ;
-	      stdostringstream << "Error getting \"" <<
-	        strAttributeName << "\" attribute for \""
-	        << m_strElementName << "\" element" ;
-	      m_p_userinterface->Confirm(//ostrstream
-	        stdostringstream ) ;
-	    }
-	  }
-	  else
-	  {
-//	    std::ostrstream ostrstream ;
-//	    ostrstream
-	    std::ostringstream stdostringstream ;
-	    stdostringstream << "Error getting \"" << strAttributeName << "\" for "
-	      "\"" << m_strElementName << "\" element" ;
-	    m_p_userinterface->Confirm( //ostrstream
-	      stdostringstream ) ;
-	  }
-  }
-
-  void SAX2MainConfigHandler::handleFreqAndMaxVoltageElement(
-    const   //xercesc_2_8::
-      Attributes & attrs
-    )
-	{
-	  float fValue ;
-	  WORD wFreqInMHz ;
-    std::string strAttributeName = "frequency_in_MHz" ;
-	  if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),wFreqInMHz))
-	  {
-	    strAttributeName = "max_voltage_in_Volt" ;
-	    if(XercesHelper::GetAttributeValue(attrs,strAttributeName.c_str(),fValue))
-	    {
-	      m_p_model->AddMaxVoltageForFreq(wFreqInMHz,fValue) ;
-	    }
-	    else
-	    {
-//	      std::ostrstream ostrstream ;
-//	      ostrstream
-	      std::ostringstream stdostringstream ;
-	      stdostringstream << "Error getting \"" <<
-	        strAttributeName << "\" attribute for \""
-	        << m_strElementName << "\" element" ;
-	      m_p_userinterface->Confirm(//ostrstream
-	        stdostringstream ) ;
-	    }
-	  }
-	  else
-	  {
-//	    std::ostrstream ostrstream ;
-//	    ostrstream
-      std::ostringstream stdostringstream ;
-       stdostringstream << "Error getting \"" << strAttributeName << "\" for "
-	      "\"" << m_strElementName << "\" element" ;
-	    m_p_userinterface->Confirm(//ostrstream
-	      stdostringstream ) ;
-	  }
-	}
-	
-	void SAX2MainConfigHandler::handlePstateElement(
-	  const   //xercesc_2_8::
-	  Attributes & attrs
-	  )
-	{
-//	    bool bChange = false ;
-	//#ifdef PRIVATE_RELEASE //hide the other possibilities
-	    //BYTE byFreqID;
-    //#endif
-	    //WORD //wNumber, 
-	    //  wVID ;
-	#ifdef PRIVATE_RELEASE //hide the other possibilities
-	    WORD wValue ;
-  #endif
-	//    if(XercesHelper::GetAttributeValue(attrs,"VID",wVID))
-	//      //m_p_pstates->SetPStateVID((BYTE)wNumber,(BYTE)wVID);
-	//      m_p_model->m_pstates.SetPStateVID(byPstateID,(BYTE)wVID);
-	////#ifdef PRIVATE_RELEASE //hide the other possibilities
-	//    if(XercesHelper::GetAttributeValue(attrs,"FID",byFreqID))
-	//    {
-	//      //bChange = true;
-	//      //m_p_pstates->SetPStateFID((BYTE)wNumber,byFreqID);
-	//      m_p_model->m_pstates.SetPStateFID(byPstateID,byFreqID);
-	//    }
-	    ////Maximum voltage for current p-state.
-	    //if(GetAttributeValue(attrs,"max_voltage_in_volt",fMaxVoltage))
-	    //{
-	    //  //bChange = true;
-	    //  m_p_pstates->SetPStateMaxVoltageInVolt((BYTE)wNumber,byFreqID);
-	    //}
-      WORD wValue ;
-	    if( XercesHelper::GetAttributeValue(attrs,"FreqInMHz",wValue) )
-	    {
-        LOG( "XML attribute name: \"FreqInMHz\"; value: " << wValue //<< "\n"
-          )
-        //Gets the nearest possoble freq and stores it into the data model.
-        //mp_i_cpucontroller->SetNearestFreqInMHz( wValue ) ;
-	    }
-      std::string stdstrAttributeName = "VoltageInVolt" ;
-      float fValue ;
-      if( XercesHelper::GetAttributeValue(attrs,stdstrAttributeName.c_str(), fValue) )
-	    {
-        LOG( "XML attribute name: \"" << stdstrAttributeName.c_str() << 
-          "\"; value: " << fValue << "\n" );
-        //m_p_model->m_pstates.SetPStateVID( byPstateID , 
-        //  mp_i_cpucontroller->
-        //  GetVoltageIDFromVoltageInVolt( fValue )
-        //  );
-	    }
-	//#endif //#ifdef PUBLIC_RELEASE
-	    //if(bChange)
-	    //  m_p_pstates->SetPStateVID((BYTE)wNumber,(BYTE)wVID);
-	}
 	
   void SAX2MainConfigHandler::HandleTopmostXMLelement(
-    const Attributes & attrs )
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
     bool bConfirm ;
 	  std::string strValue ;
@@ -287,149 +113,92 @@
 //              "confirm"
 //              ,bConfirm )
 //        )
-      //m_p_pstates->m_bConfirm = bConfirm ;
-//      m_p_model->m_pstates.m_bConfirm = bConfirm ;
-    if( XercesHelper::GetAttributeValue(
-              attrs
-              ,"skip_cpu_type_check"
-              ,bConfirm )
-         )
+    if( XercesAttributesHelper::GetAttributeValue(
+          cr_xercesc_attributes
+          ,"skip_cpu_type_check"
+          ,bConfirm )
+      )
       m_p_model->SetSkipCPUTypeCheck(bConfirm) ;
-    //if( XercesHelper::GetAttributeValue
-   //       (
-   //           attrs,
-   //           "use_p_state_0_as_max_freq",
-   //           bConfirm
-   //       )
-   //     )
-    //  m_p_model->m_bUsePstate0AsMaxFreq = bConfirm ;
-    if( XercesHelper::GetAttributeValue
-          (
-              attrs,
-              "enable_overvoltage_protection"
-              ,bConfirm
-          )
+    if( XercesAttributesHelper::GetAttributeValue
+        (
+          cr_xercesc_attributes,
+          "enable_overvoltage_protection"
+          ,bConfirm
         )
+      )
       m_p_model->m_bEnableOvervoltageProtection = bConfirm ;
-    if( XercesHelper::GetAttributeValue
-          ( 
-            attrs,
+    if( XercesAttributesHelper::GetAttributeValue
+        (
+          cr_xercesc_attributes,
           "use_default_formula_for_overvoltage_protection"
-            ,bConfirm
-          ) 
+          ,bConfirm
         )
+      )
       m_p_model->m_bUseDefaultFormularForOvervoltageProtection = bConfirm ;
-    if( XercesHelper::GetAttributeValue
+    if( XercesAttributesHelper::GetAttributeValue
         ( 
-            attrs,
-          "log_file_path", 
+          cr_xercesc_attributes,
+          //Use "( char * )" to avoid g++ Linux compiler warning
+          // "deprecated conversion from string constant to ‘char*’ "
+          ( char * ) "log_file_path",
             strValue
-        ) 
+        )
       )
       m_p_model->m_stdstrLogFilePath = strValue ;
   }
 
   void SAX2MainConfigHandler::startElement
     (
-    const   XMLCh * const cpc_xmchURI,
-    const   XMLCh * const cpc_xmchLocalName,
-    const   XMLCh * const cpc_xmchQualifiedName,
-    const   XERCES_CPP_NAMESPACE::Attributes & attrs
+    const XMLCh * const cpc_xmchURI,
+    const XMLCh * const cpc_xmchLocalName,
+    const XMLCh * const cpc_xmchQualifiedName,
+    const XERCES_CPP_NAMESPACE::Attributes & attrs
 	  )
 	{
-	  char * pchXMLelementName = XMLString::transcode(cpc_xmchLocalName);
-	  std::string strValue ;
-	  LOG( "XML element: " << pchXMLelementName << endl );
-	  m_strElementName = std::string(pchXMLelementName) ;
-	  //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname << endl );
-	  //if( strcmp(pchXMLelementName, "CPU") == 0 )
-	  if( m_strElementName == "CPU" )
+	  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
+	    cpc_xmchLocalName);
+	  if( pchXMLelementName )
 	  {
-      char archAttributeName [] = "processor_name" ;
-	    if( XercesHelper::GetAttributeValue
-          (
-              attrs,//"processor_name"
-              archAttributeName ,
-              strValue
+      std::string strValue ;
+      LOG( "XML element: " << pchXMLelementName << "\n" );
+      m_strElementName = std::string(pchXMLelementName) ;
+      //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
+      //  << endl );
+      if( m_strElementName == "log_file_filter" )
+      {
+        if( XercesAttributesHelper::GetAttributeValue(
+          attrs ,
+          //Use "( char * )" to avoid g++ Linux compiler warning
+          // "deprecated conversion from string constant to ‘char*’ "
+          ( char * ) "exclude" ,
+          strValue )
           )
-        )
-	    {
-	      if( strValue.empty() )
-              m_p_userinterface->Confirm( "In XML file: Error: \""
-                "processor_name\""
-                " is empty" ) ;
-          else
-	        m_strProcessorName = strValue ;
-	    }
-	    else
-	      m_p_userinterface->Confirm("Error getting \"processor_name\" for \"CPU\" element") ;
-	  }
-	  else if( m_strElementName == "log_file_filter" )
-	  {
-	    if( XercesHelper::GetAttributeValue(
-	      attrs ,
-	      "exclude" ,
-	      strValue )
-        )
-	    {
-	      g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
-	    }
-	  }
-    else if( m_strElementName == "freq_and_lowest_stable_voltage" )
-    {
-	    handleFreqAndLowestStableVoltageElement(attrs) ;
-    }
-	  //if( strcmp(pchXMLelementName, "freq_and_max_voltage") == 0 )
-	  else if( m_strElementName == "freq_and_max_voltage" )
-	  {
-	    if( //WithinSpecificCPUtype() && //m_p_model->m_m_parchCPUID == 
-          //If the XML file's "processor_name" is identical or a substring 
-          //of the name that is in the CPUID register within the CPU.
-	      m_p_model->m_strProcessorName.find(m_strProcessorName) != 
-	      std::string::npos 
-	      || 
-          //If the CPU name that is in the CPUID register within the CPU 
-          //is identical or a substring 
-          //of the XML file's "processor_name" .
-          m_strProcessorName.find(m_p_model->m_strProcessorName) != 
-	      std::string::npos 
-	      )
-	    {
-	      //DEBUG("CPU name matches CPU name in config file\n");
-          LOG("CPU name \"" << m_p_model->m_strProcessorName << 
-              "\" according to CPUID matches CPU name \"" 
-              << m_strProcessorName 
-              << "\" in config file\n" );
-	      //Only handle the voltage/max freq combo that applies to
-	      //the CPU that runs this program.
-	      handleFreqAndMaxVoltageElement(attrs) ;
-	    }
-	    return ;
-	  }
-	  //else if( m_strElementName == "pstate" )
-	  //{
-	  //  handlePstateElement(attrs) ;
-	  //  return ;
-	  //}
-	  else if( m_strElementName == //"main_config" 
-      "CPU_control_main_config" )
-	  {
-      HandleTopmostXMLelement(attrs) ;
-	  }
-    else if( m_strElementName == "DynamicVoltage_and_FrequencyScaling" )
-      HandleDynamicVoltage_and_FrequencyScaling(attrs) ;
-	  //Release memory AFTER comparing.
-	  XMLString::release(&pchXMLelementName);
+        {
+          LOGN("string to exclude from logging:" << strValue )
+  //	      g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+          g_logger.AddExcludeFromLogging(strValue) ;
+        }
+      }
+      else if( m_strElementName == //"main_config"
+        "CPU_control_main_config" )
+      {
+        HandleTopmostXMLelement(attrs) ;
+      }
+      else if( m_strElementName == "DynamicVoltage_and_FrequencyScaling" )
+        HandleDynamicVoltage_and_FrequencyScaling(attrs) ;
+      //Release memory AFTER comparing.
+      XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
+	  } //if( pchXMLelementName )
 	}
 	
-	void SAX2MainConfigHandler::fatalError(const SAXParseException& exception)
+	void SAX2MainConfigHandler::fatalError(
+	  const XERCES_CPP_NAMESPACE::SAXParseException &
+	    cr_xercesc_sax_parse_exception
+	  )
 	{
-	    char* message = XMLString::transcode(exception.getMessage());
-      //DEBUG_COUT( << "SAX2 handler: Fatal Error: " << message
-	     //    << " at line: " << exception.getLineNumber()
-	     //    << endl ) ;
-      LOG( "SAX2 handler: Fatal Error: " << message
-         << " at line: " << exception.getLineNumber()
-         << endl ) ;
+    LOGN( "SAX2 handler: Fatal Error: "
+      << XercesHelper::ToStdString( cr_xercesc_sax_parse_exception.getMessage()
+        )
+      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber() ) ;
 	}
-#endif //#ifdef COMPILE_WITH_XERCES
+//#endif //#ifdef COMPILE_WITH_XERCES

@@ -54,6 +54,93 @@ WORD GetMaximumVoltageID() ;
 WORD GetMinimumVoltageID() ;
 void GetMinAndMaxVoltageID(BYTE &,BYTE &) ;
 
+inline float * GetAvailableMultipliers(WORD * p_wNumberOfArrayElements )
+{
+  float fMaxMultiDiv2 ;
+  //TODO should be MainPllOpFreqId from F3xD4 Clock Power/Timing Control 0 Register
+  g_fMainPllOpFreqId = g_fMainPllOpFreqIdMax ;
+  float fMaxMultiplier = g_fMainPllOpFreqId + 8 ;
+  //41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG:
+  //" if MainPllOpFreqIdMax = 00h, then there is no frequency limit."
+  if( g_fMainPllOpFreqIdMax )
+  {
+    fMaxMultiDiv2 =
+     //"The frequency specified by (100 MHz * (CpuFid + 08h)) must always be
+     //>50% of and <= 100% of the frequency specified by
+     //F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]"
+     ( fMaxMultiplier ) / 2 ;
+  }
+  else
+  {
+    //41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG:
+    //" if MainPllOpFreqIdMax = 00h, then there is no frequency limit."
+    fMaxMultiDiv2 =
+      //41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG p.236:
+      //"5:0 CpuFid: core frequency ID."
+      //highest value for 6 bits is 111111bin = 63dec
+      ( 63 + 8 ) / 2 ;
+  }
+  DEBUGN("fMainPllOpFreqIdDiv2:" << fMaxMultiDiv2)
+  BYTE byMaxMultiDiv2 = (BYTE) fMaxMultiDiv2 ;
+  //"The frequency specified by (100 MHz * (CpuFid + 08h)) must always be
+  //>50% of and <= 100% of the frequency specified by
+  //F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
+  while( byMaxMultiDiv2 <= fMaxMultiDiv2 )
+    ++ byMaxMultiDiv2 ;
+  BYTE byNumMultisPerDivisor = (BYTE)
+      ( fMaxMultiplier - byMaxMultiDiv2 + 1 ) ;
+  BYTE byNumMultis =
+    //e.g. 22 - 12 + 1 = 11 multipliers (12,13,14,15,16,17,18,19,20,21,22)
+    byNumMultisPerDivisor *
+    //num divisor IDs exc. Divisor ID "o"
+    3
+    //for divisor ID 0 other FIDs than max. FID cause a crash.
+    + 1 ;
+  DEBUGN("byMaxMultiDiv2" << (WORD) byMaxMultiDiv2
+    << " byNumMultisPerDivisor: " << (WORD) byNumMultisPerDivisor
+    << " byNumMultis" << (WORD) byNumMultis )
+  float * ar_f = new float[byNumMultis] ;
+  //If allocating the array on the heap succeeded.
+  if( ar_f )
+  {
+    BYTE byMultiplierIndex = 0 ;
+    * p_wNumberOfArrayElements = byNumMultis ;
+    float fDivisor ;
+    float fMulti = //The minimum multiplier for Griffin
+      (float) byMaxMultiDiv2 / 8.0 ;
+//     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
+    for( BYTE byDivisorIDIndex = 3 ; byDivisorIDIndex > 0
+      ; -- byDivisorIDIndex )
+    {
+      fDivisor = (float)
+        //^= power of 2
+        ( 1 << byDivisorIDIndex ) ;
+      DEBUGN("fDivisor:" << fDivisor )
+      for( BYTE byFrequencyID = byMaxMultiDiv2 ;
+        byFrequencyID <= fMaxMultiplier ; ++ byFrequencyID )
+      {
+//      8:6 CpuDid: core divisor ID. Read-write.
+//      Specifies the CPU frequency divisor; see CpuFid.
+//      0h=Divisor of 1   3h=Divisor of 8
+//      1h=Divisor of 2   4h - 7h=Reserved
+//      2h=Divisor of 4
+        fMulti = (float) byFrequencyID /
+          fDivisor ;
+        DEBUGN("adding multi" << fMulti )
+        ar_f[ byMultiplierIndex ] = fMulti ;
+//       stdstrstream << fMulti << " " ;
+        ++ byMultiplierIndex ;
+      }
+    }
+    DEBUGN("adding multi" << fMaxMultiplier )
+    ar_f[ byMultiplierIndex ] = fMaxMultiplier ;
+    return ar_f ;
+  }
+  else
+    *p_wNumberOfArrayElements = 0 ;
+  return NULL ;
+}
+
 inline float * GetAvailableVoltages(WORD & r_wNum )
 {
 //  g_byValue1 = GetMaximumVoltageID() ;
@@ -80,6 +167,59 @@ inline float * GetAvailableVoltages(WORD & r_wNum )
     }
   }
   return ar_f ;
+}
+
+inline BYTE GetCurrentVoltageAndFrequencyAMDGriffin(
+  float * p_fVoltageInVolt,
+  float * p_fMultiplier ,
+  float * p_fReferenceClockInMHz ,
+  WORD wCoreID
+  )
+{
+  g_byValue3 =
+//    (*g_pfnreadmsr) (
+    ReadMSR(
+    COFVID_STATUS_REGISTER ,    // MSR index
+  //      P_STATE_STATUS_REGISTER
+    & g_dwMSRlowmost,// bit  0-31 (register "EAX")
+    & g_dwMSRhighmost,
+    1 << wCoreID //m_dwAffinityMask
+    ) ;
+  //Frequency ID. "5:0 CurCpuFid: current core frequency ID. Read-only."
+  g_byValue1 = (BYTE)( g_dwMSRlowmost & BITMASK_FOR_LOWMOST_6BIT ) ;
+  //Divisor ID. "8:6 CurCpuDid: current core divisor ID. Read-only."
+  g_byValue2 = //(BYTE)(
+  //      (g_dwLowmostBits & 448//=111000000bin
+  //      ) >> START_BIT_FOR_CPU_CORE_DIVISOR_ID ) ; //<=>bits 6-8 shifted to     }
+    ( g_dwMSRlowmost >> START_BIT_FOR_CPU_CORE_DIVISOR_ID ) &
+    BITMASK_FOR_LOWMOST_3BIT ;
+  //multi = Frequency IDentifier + 8 / 2 ^ "Divisor IDentifier"
+  * p_fMultiplier = ( (float) ( g_byValue1 + 8 ) ) /
+      (float) ( 1 << g_byValue2 ) ;
+  //voltage ID "15:9 CurCpuVid: current core VID. Read-only."
+  g_byValue1 = //(BYTE) (
+  //      (g_dwLowmostBits & BITMASK_FOR_CPU_CORE_VOLTAGE_ID//=1111111000000000bin
+  //    ) >> 9 ) ; //<=>bits 9-15 shifted   }
+    ( g_dwMSRlowmost >> 9 ) & BITMASK_FOR_LOWMOST_7BIT ;
+  //Diff 1.0875 (VID 30) & 0.925 (VID=17) = 0.1625V
+  //1 voltage ID step = 0.1625V / (30-17) = 0.1625V / 13 = 0.0125
+  //0.925- 17 * 0.0125 = 0.7125 ;
+  * p_fVoltageInVolt = //0.7125 + g_byValue3 * 0.0125 ;
+    //The maximum possible voltage.
+    1.55f - ( (float)( g_byValue1 ) * 0.0125f ) ;
+
+  //TODO better use APIC Timer Operation?
+  //BIOS and Kernel Developer’s Guide (BKDG) For AMD Family 11h Processors:
+  // "The pro-cessor bus clock is divided by the value in APIC3E0[Div] to
+  //obtain a time base for the timer."
+  //This call sets g_fReferenceClockInMHz to the current reference clock.
+  //This update of the value would be senseful for setting the CPU core
+  //via "frequency" as parameter value the next time.
+  //    GetCurrentReferenceClock(12.0 ,
+  //      1 , //min. timespan in ms
+  //      10000 ) ;
+  * p_fReferenceClockInMHz = 100.0 ;
+  return g_byValue3 ;
 }
 
 //inline

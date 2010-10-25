@@ -1,8 +1,10 @@
 #pragma once //include guard
+#ifndef WINDOWS_API_DYNFREQSCALINGTHREAD_HPP
+#define WINDOWS_API_DYNFREQSCALINGTHREAD_HPP
 
 //#include "../Controller/ICPUcoreUsageGetter.hpp"
-#include <Controller/DynFreqScalingThreadBase.hpp>
-#include <global.h> //for WORD
+#include <Controller/DynFreqScalingThreadBase.hpp> //Base class for this class.
+#include <windef.h> //for DWORD
 
 class ICPUcoreUsageGetter ;
 
@@ -11,30 +13,38 @@ namespace Windows_API
   class DynFreqScalingThread
     : public DynFreqScalingThreadBase
   {
+    HANDLE m_handleThread ;
   public:
     //float m_fPercentileIncrease ;
     //WORD m_wCurrentFreqInMHz ;
     //ICPUcoreUsageGetter * mp_icpucoreusagegetter;
     //DynFreqScalingThread( WORD wMaxFreqInMHz )
-    //  : m_wMaxFreqInMHz(//2200
-    //    wMaxFreqInMHz )
+    //  : m_wMaxFreqInMHz( wMaxFreqInMHz )
     //  , m_fPercentileIncrease(1.5f)
     //  , m_bSuccFullyGotPStateFromMSR(true)
     //{
     //}
+//    DynFreqScalingThread(
+//      ICPUcoreUsageGetter * p_icpu
+//      , I_CPUcontroller * p_cpucontroller
+//      , CPUcoreData & r_cpucoredata
+//      ) ;
     DynFreqScalingThread(
-      ICPUcoreUsageGetter * p_icpu
-      , I_CPUcontroller * p_cpucontroller
+      CPUcontrolBase & r_cpucontrolbase
       , CPUcoreData & r_cpucoredata
       ) ;
-    //void Start() ;
+    //"virtual" because else g++ "warning: `class Windows_API::
+    // DynFreqScalingThread' has virtual functions but non-virtual destructor"
+    virtual ~DynFreqScalingThread() ;
     //int Run() ;
     DWORD Run() ;
+    //void Start() ;
     //BYTE Start() ;
     DWORD Start() ;
+    void * WaitForTermination() ;
     //void SetMembers(
     //  ICPUcoreUsageGetter * p_icpucoreusagegetter,
-    //  GriffinController * p_pumastatectrl
     //  ) ;
   };
 };
+#endif //#ifndef WINDOWS_API_DYNFREQSCALINGTHREAD_HPP

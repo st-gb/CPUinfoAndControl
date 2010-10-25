@@ -16,6 +16,10 @@
 #define VER_FILEVERSION     0,0,0,0
 #endif
 
+#ifndef FILE_DESCRIPTION
+  #define FILE_DESCRIPTION "x86 CPU information & control program"
+#endif
+
 #ifndef VER_FILEVERSION_STR
 /* A default version number */
 #define VER_FILEVERSION_STR   "0,0,0,0"
@@ -63,7 +67,7 @@ BEGIN
         BLOCK "040904B0"
         BEGIN
             VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
-            VALUE "FileDescription",  "x86 CPU information & control program"
+            VALUE "FileDescription", FILE_DESCRIPTION
             VALUE "FileVersion",    "0,0,0,0"
             VALUE "InternalName",   "CPU info & control"
             VALUE "LegalCopyright",  "Copyright (C) 2010"

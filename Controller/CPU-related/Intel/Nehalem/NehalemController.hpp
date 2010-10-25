@@ -2,7 +2,7 @@
 
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //#include <windows.h> //ULONGLONG
-#include <Windows_compatible_typedefs.h> //for ULONGLONG
+//#include <Windows_compatible_typedefs.h> //for ULONGLONG
 
 //#define IA32_APERF 0xE8 //dec. 232
 
