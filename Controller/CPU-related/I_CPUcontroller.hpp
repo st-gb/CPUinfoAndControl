@@ -67,6 +67,24 @@ class I_CPUcontroller
 {
 //protected or public to inherit the attributes (member vars)
 public:
+//  enum CheckWhetherVoltageIsAboveDefaultVoltage
+//  {
+//    not_above = 0 ,
+//    No2PstatesForVoltageInterpolationFound ,
+//    VoltageIsAboveDefaultVoltage
+//  };
+//  enum CheckWhetherVoltageIsBelowLowestStableVoltage
+//  {
+//    not_below = 0 ,
+//    No2PstatesForVoltageInterpolationFound ,
+//    VoltageIsBelowLowestStableVoltage
+//  };
+  enum CheckWhetherVoltageIsInSafeRange
+  {
+    in_safe_range = 0 ,
+    No2PstatesForVoltageInterpolationFound ,
+    VoltageIsOutsideSafeRange
+  };
   float m_fReferenceClockInMHz ;
   bool m_b1CPUcorePowerPlane ;
   int m_byNumberOfCmdLineArgs;
@@ -89,6 +107,10 @@ public:
   }
   UserInterface * GetUserInterface() { return mp_userinterface ; }
 
+  BYTE CheckWhetherVoltageIsAboveDefaultVoltage(float fVoltageInVolt,
+    float fCPUcoreFrequencyinMHz) ;
+  BYTE CheckWhetherVoltageIsBelowLowestStableVoltage(float fVoltageInVolt,
+    float fCPUcoreFrequencyinMHz) ;
   //This CPU instruction (in contrast to wrmsr) is not dangerous.
   //So it can be implemented for every CPU controller in this base class.
   virtual BOOL CpuidEx(
@@ -103,7 +125,7 @@ public:
 //      std::string & strValue );
   virtual void DecreaseVoltageBy1Step(float & r_fVoltage) {}
   BYTE DisableFrequencyScalingByOS() ;
-  BYTE EnableOwnDVFS() ;
+//  BYTE EnableOwnDVFS() ;
   //Some of these frequences may not be applicable.
   //e.g. AMD Griffin crashes with freq > 1/2 max freq & < max freq
   //It probably was more correct it would be called to walk through the possible 

@@ -3,7 +3,7 @@
 //#include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
 	//If not included: compiler error "C1010".
-	#include "SAX2DefaultVoltageForFrequency.hpp"
+	#include "SAX2VoltagesForFrequencyHandler.hpp"
   #include <ModelData/ModelData.hpp> //class Model
   #include <UserInterface/UserInterface.hpp> //class UserInterface
   //for XercesAttributesHelper::GetAttributeValue(...)
@@ -32,7 +32,7 @@
 //  //To NOT need to prefix the xerces classes with the "xerces::".
 //	XERCES_CPP_NAMESPACE_USE
 	
-	SAX2DefaultVoltageForFrequency::SAX2DefaultVoltageForFrequency(
+	SAX2VoltagesForFrequencyHandler::SAX2VoltagesForFrequencyHandler(
 	  UserInterface & r_userinterface 
 	  , Model & model
 	  )
@@ -41,7 +41,7 @@
 	  m_p_userinterface = & r_userinterface ;
 	}
 
-  void SAX2DefaultVoltageForFrequency::handleFreqAndVoltageElement(
+  void SAX2VoltagesForFrequencyHandler::handleFreqAndVoltageElement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
   {
@@ -124,7 +124,7 @@
 	  }    
   }
 	
-  void SAX2DefaultVoltageForFrequency::startElement
+  void SAX2VoltagesForFrequencyHandler::startElement
     (
     const XMLCh * const cpc_xmchURI,
     const XMLCh * const cpc_xmchLocalName,
@@ -148,7 +148,7 @@
     }
 	}
 	
-	void SAX2DefaultVoltageForFrequency::fatalError(
+	void SAX2VoltagesForFrequencyHandler::fatalError(
 	  const XERCES_CPP_NAMESPACE::SAXParseException &
 	    cr_xercesc_sax_parse_exception )
 	{

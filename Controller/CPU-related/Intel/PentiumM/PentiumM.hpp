@@ -32,9 +32,54 @@ extern DWORD g_dwHighmostBits ;
 //These variables may be defined in file "PentiumM.cpp" .
 extern DWORD g_dwValue1 ;
 extern float g_fReferenceClockInMHz ;
+extern bool gs_b2ndTimeOrLaterReadTSCandFIDchange ;
 
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
+  #define PERFORMANCE_COUNTER_FOR_FID_CHANGE IA32_PMC0
+  inline void SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent() ;
+  #include "GetReferenceClockViaTSCdiffDivMultiIfNoFiDchange.hpp"
+#endif //GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
+
+//Forward declarations of functions.
 inline float GetVoltage(BYTE byVoltageID) ;
 inline float GetVoltageID_PentiumM_asFloat(float fVoltage ) ;
+
+//inline void GetBaseClockViaTSCdiffdivMuliplierIfNoFIDchange()
+//{
+//  //Workaround for unabilility to detect ACPI resume (from standy, hibernation)
+//  //e.g. by wxWidgets if not on Windows.
+//  #ifndef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+//  ReadMSR(
+//    // MSR index
+//    IA32_PERFEVTSEL0 ,
+//    & g_dwLowmostBits ,//eax,     // bit  0-31
+//    & g_dwHighmostBits , //edx,     // bit 32-63
+//    1 // Thread Affinity Mask
+//    ) ;
+//  BYTE byPerfEvtSelect = g_dwLowmostBits & BITMASK_FOR_LOWMOST_8BIT ;
+//  //After an ACPI resume the performance event select it is set to 0.
+//  if( //dwLow & BITMASK_FOR_LOWMOST_8BIT
+//    byPerfEvtSelect == EMON_EST_TRANS )
+//  {
+//    ReadMSR(
+//      // MSR index
+//      PERFORMANCE_COUNTER_FOR_FID_CHANGE ,
+//      & g_dwLowmostBits ,//eax,     // bit  0-31
+//      & g_dwHighmostBits , //edx,     // bit 32-63
+//      1 // Thread Affinity Mask
+//      ) ;
+//  }
+//  else
+//  {
+//    //TODO the performance counter value is reset to zero after standy/
+//    //hibernate? then the following assignment is needed for the next
+//    //difference to be correct.
+//    gs_b2ndTimeOrLaterReadTSCandFIDchange = false ;
+//    SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent(//1
+//      ) ;
+//  }
+//  #endif //#ifndef _WIN32
+//}
 
 //Purpose of this function: converting from float to integer causes rounding
 // errors:
@@ -96,8 +141,8 @@ inline BYTE GetCurrentVoltageAndFrequencyPentium_M(
 //    byVoltageID = byVoltageID ;
 #endif
 //    bySuccess = 1 ;
-#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
-    GetBaseClockViaTSCdiffdivMuliplierIfNoFIDchange() ;
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
+    GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(1) ;
 #endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
     r_fReferenceClockInMHz = g_fReferenceClockInMHz ;
     return 1 ;
@@ -472,5 +517,45 @@ inline BYTE SetCurrentVoltageAndMultiplierPentiumM(
     1 << wCoreID
     ) ;
 }
+
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
+inline void SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent()
+{
+  PerformanceEventSelectRegisterWrite_PentiumM(
+    1 //<< byCoreID ,
+    ,
+    //Pentium M has 1 or 2 "Performance Event Select Register" from
+    //  MSR ... to MSR ...  for
+    // 1 or 2 "Performance Event Counter Registers" from
+    //  ... to ...
+    //  that store the 48 bit counter value
+    //Performance Event Counter number
+//    1 ,
+    0 , //for Pentium M: If no performance event counter 0 than counter 1
+    // can't be used?!
+    EMON_EST_TRANS ,
+    //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
+    ONLY_FREQUENCY_TRANSITIONS_MASK ,
+    1, //User Mode
+    1, //OS mode
+    0, //edge
+    0, //pin control
+    0, //APIC
+    1, //enable counters
+    0 , //invert counter mask
+    0 //counter mask
+    ) ;
+  WriteMSR( //IA32_PMC1
+//    IA32_PMC0
+    PERFORMANCE_COUNTER_FOR_FID_CHANGE
+    //Set to 1 so that next time no more 0 so that this function is called again.
+    , 1
+    , 0
+    , 1 ) ;
+  //Cause to fetch 2 values for taking a diff for _each_ value type (TSC, time,
+  //  FID changes)
+  gs_b2ndTimeOrLaterReadTSCandFIDchange = false ;
+}
+#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
 
 #endif /* PENTIUMM_HPP_ */

@@ -3,12 +3,20 @@
 #include <windows.h>
 //for format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
+#include <ModelData/ModelData.hpp> //class Model
 #include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <sstream> //class std::ostringstream
 //including specstrings.h lead to error messages for std::string include files?!
 //#include <specstrings.h> //for __out
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/named_pipe_client.htm
 
 #define BUFSIZE 512
+#define NAMED_PIPE_NAME_ANSI "\\\\.\\pipe\\CPUcontrollerService"
+
+void NamedPipeClient::Disconnect()
+{
+  Disconnect_Inline() ;
+}
 
 bool NamedPipeClient::GetConnectionStateViaGetNamedPipeHandleState()
 {
@@ -71,10 +79,22 @@ bool NamedPipeClient::GetConnectionStateViaGetNamedPipeHandleState()
 //NamedPipeClient::NamedPipeClient(
 //  LPTSTR lpszPipename //= TEXT("\\\\.\\pipe\\mynamedpipe"); 
 //  )
-BYTE NamedPipeClient::Init()
+BYTE NamedPipeClient::Init(std::string & r_stdstrMessage)
 {
   m_bConnected = false ;
-  LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\CPUcontrollerService") ;
+  LPTSTR lptstrPipename ;
+  if( m_r_model.m_stdwstrPipeName.empty() )
+  {
+    std::tstring stdtstrPipeName = TEXT(NAMED_PIPE_NAME_ANSI) ;
+    lptstrPipename = //_tcscpy(lptstrPipename, TEXT(NAMED_PIPE_NAME_ANSI) ) ;
+      //Else: "error: invalid conversion from `const wchar_t*' to `TCHAR*'"
+      (TCHAR*)
+      stdtstrPipeName.c_str() ;
+  }
+  else
+    lptstrPipename =
+      //Else: "error: invalid conversion from `const wchar_t*' to `TCHAR*'"
+      (TCHAR*) Getstdtstring( m_r_model.m_stdwstrPipeName ).c_str() ;
   //LPTSTR lpvMessage=TEXT("Default message from client"); 
   //TCHAR chBuf[BUFSIZE]; 
   //BOOL fSuccess; 
@@ -82,10 +102,14 @@ BYTE NamedPipeClient::Init()
   DWORD dwLastError ;
  
   // Try to open a named pipe; wait for it, if necessary. 
-  while (1) 
+  do
   { 
-    m_handleClientPipe = ::CreateFile( 
-      lpszPipename,   // pipe name 
+    m_handleClientPipe =
+      //http://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx:
+      //"If the function fails, the return value is INVALID_HANDLE_VALUE.
+      //To get extended error information, call GetLastError."
+      ::CreateFile(
+      lptstrPipename,   // pipe name 
       GENERIC_READ |  // read and write access 
       GENERIC_WRITE, 
       0,              // no sharing 
@@ -106,23 +130,37 @@ BYTE NamedPipeClient::Init()
  
       dwLastError = ::GetLastError() ;
       // Exit if an error other than ERROR_PIPE_BUSY occurs. 
-      if ( ::GetLastError() != ERROR_PIPE_BUSY ) 
+      if ( dwLastError != ERROR_PIPE_BUSY )
       {
-        LOGN("Could not open pipe:" << 
-          ::LocalLanguageMessageFromErrorCodeA(dwLastError) ); 
-         return 0;
+        std::ostringstream stdostringstreamMessage ;
+        stdostringstreamMessage << "Could not open pipe \""
+//          << NAMED_PIPE_NAME_ANSI
+          << GetStdString( std::tstring( lptstrPipename) )
+          << "\": "
+          << ::LocalLanguageMessageFromErrorCodeA(dwLastError) ;
+        if( dwLastError ==
+          //http://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx:
+          //"If the CreateNamedPipe function was not successfully called on
+          //the server prior to this operation, a pipe will not exist and
+          //CreateFile will fail with ERROR_FILE_NOT_FOUND."
+            ERROR_FILE_NOT_FOUND )
+          stdostringstreamMessage << "\nThis probably means that the service "
+            "has not been started." ;
+        r_stdstrMessage = stdostringstreamMessage.str() ;
+        LOGN( r_stdstrMessage);
+        return 0;
       }
  
       // All pipe instances are busy, so wait for 20 seconds. 
  
-      if ( ! ::WaitNamedPipe(lpszPipename, 20000)) 
+      if ( ! ::WaitNamedPipe(lptstrPipename, 20000)) 
       { 
          dwLastError = ::GetLastError() ;
          LOGN("Could not open pipe:" <<
            ::LocalLanguageMessageFromErrorCodeA(dwLastError) );
          return 0;
       } 
-   } 
+   } while (1) ;
  
    //// The pipe connected; change to message-read mode. 
    //dwMode = PIPE_READMODE_MESSAGE;
@@ -185,9 +223,10 @@ bool NamedPipeClient::IsConnected()
 //  m_pfnCallback = pfnCallback ;
 //}
 
-NamedPipeClient::NamedPipeClient()
+NamedPipeClient::NamedPipeClient(Model & r_model )
   :
     m_vbIsReadingOrWriting (false) ,
+    m_r_model( r_model) ,
     m_vbIsGettingCPUcoreData(false) ,
 //      m_vbIsGettingCPUcoreData(true) ,
     m_arbyIPCdata (NULL)

@@ -9,7 +9,7 @@
 #define GETREFERENCECLOCKVIATSCDIFFDIVMULTIIFNOFIDCHANGE_HPP_
 
 #ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
-inline void GetBaseClockViaTSCdiffdivMuliplierIfNoFIDchange(BYTE byFID)
+inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
 {
   m_dwTickCountInMilliseconds = ::GetTickCount();
   //For taking a difference we need to have recorded a value before.

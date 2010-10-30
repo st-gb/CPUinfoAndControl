@@ -312,6 +312,7 @@ public:
   }
   void OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnClose(wxCloseEvent & event) ;
+  void OnDisconnectFromService( wxCommandEvent & WXUNUSED(event) ) ;
   void OnDisableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
   void OnEnableOtherVoltageOrFrequencyAccess( wxCommandEvent & WXUNUSED(event) ) ;
   void OnEraseBackground(wxEraseEvent& event) ;

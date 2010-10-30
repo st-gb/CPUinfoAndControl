@@ -25,7 +25,7 @@ Model::Model()
 #ifdef _DEBUG
 //      const Model * pmodel = this ;
 #endif
-    m_dPreviousPERF_CTRvalue = 0.0 ;
+//    m_dPreviousPERF_CTRvalue = 0.0 ;
   }
 
 //  void Model::AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue)

@@ -10,14 +10,15 @@
 #ifndef GRIFFIN_H_
 #define GRIFFIN_H_
 
-#include <preprocessor_helper_macros.h> //BITMASK_FOR_LOWMOST_3BIT
+#include <preprocessor_macros/bitmasks.h> //BITMASK_FOR_LOWMOST_3BIT
 //#include <math.h> //log2(...), pow()
 
 //for ReadMSR(), WriteMSR(); should be the file for
 // I_CPUcontroller-derived class (that calls I_CPUcontroller-derived::ReadMSR()
 //or for the DLL (that calls the exe's exported function)
 // 1 include path must match the path where the header file is in.
-#include <inline_register_access_functions.hpp>
+#include <Controller/AssignPointersToExportedExeFunctions/\
+inline_register_access_functions.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
 
 //extern //inline
@@ -49,6 +50,20 @@ extern float g_fMainPllOpFreqId ;
 extern float g_fMainPllOpFreqIdMaxDiv2 ;
 extern float g_fMaxMultiDiv2 ;
 extern float g_fValue1 ;
+
+//#define COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+
+#ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+  //class I_CPUcontroller ;
+  #include <Controller/CPU-related/I_CPUcontroller.hpp>
+
+  extern I_CPUcontroller * g_p_cpucontroller ;
+  extern std::set<VoltageAndFreq> * g_p_stdsetvoltageandfreqWanted ;
+#endif
+
+#ifdef _DEBUG
+#include <math.h> //pow(...)
+#endif
 
 WORD GetMaximumVoltageID() ;
 WORD GetMinimumVoltageID() ;
@@ -429,7 +444,7 @@ inline void GetFreqIDandDivisorIDfromMulti(
 //so call this method "n" times if you want the same p-state for "n" cores.
 inline BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitmask)
 {
-  BYTE byReturn = FAILURE ;
+  BYTE byReturn = EXIT_FAILURE ;
 
   //Safety check.
   if( byNewPstate < NUMBER_OF_PSTATES )
@@ -463,7 +478,7 @@ inline BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitm
         )
       {
         LOGN_VERBOSE("Setting p-state succeeded.");
-        byReturn = SUCCESS ;
+        byReturn = EXIT_SUCCESS ;
         //Wait 1 millisecond (> maximum stabilization time).
 //          SLEEP_1_MILLI_SECOND
       }
@@ -471,7 +486,7 @@ inline BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitm
       {
         DEBUG("Setting p-state failed\n");
       }
-      byReturn = SUCCESS ;
+      byReturn = EXIT_SUCCESS ;
 #endif //_EMULATE_TURION_X2_ULTRA_ZM82
 //#ifndef LINK_TO_WINRING0_STATICALLY
 //    }
@@ -479,6 +494,74 @@ inline BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitm
   }
   return byReturn ;
 }
+
+#ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+inline BYTE GetMaxMultiIfGreaterCurrentPstateLimitMulti(
+  BYTE byCoreID , float & fVoltageInVolt , float & fMultiplier )
+{
+  static BYTE bySuccess = false ;
+  //At my laptop the current limit was set to "0" on AC power, "1" on DC power.
+  //If 100% CPU load and above freq calculated by the current p-state limit,
+  //the previous freq persists. To avoid this, retrieve the current limit.
+  bySuccess = ::ReadMSR(
+    P_STATE_CURRENT_LIMIT_REGISTER,
+    & g_dwMSRlowmost,
+    & g_dwMSRhighmost,
+    1 << byCoreID ) ;
+  //TODO to use this variable we would have to get the "desired voltages"
+  static BYTE byCurPstateLimit ;
+  byCurPstateLimit = g_dwMSRlowmost & BITMASK_FOR_LOWMOST_3BIT ;
+  //TODO to use this variable we would have to get the "desired voltages"
+  // for the performance state (from the executable) the limit applies to
+  static float fMaxMultiplierAccordingCurrentLimit ;
+  fMaxMultiplierAccordingCurrentLimit =
+    //g_fMaxMultiplier
+    ( g_fMainPllOpFreqIdMax + 8 ) / ( 1 << byCurPstateLimit ) ;
+  DEBUGN("p-state current limit:" << //dwMSRlowmost
+    (WORD) byCurPstateLimit
+    << " -> current max. Frequency ID:" << fMaxMultiplierAccordingCurrentLimit )
+  if( fMultiplier > fMaxMultiplierAccordingCurrentLimit )
+  {
+    //Use the max multiplier according to the limit because the multiplier
+    //wouldn't be applied.
+    fMultiplier = fMaxMultiplierAccordingCurrentLimit ;
+
+    fVoltageInVolt = 0.0 ;
+    //TODO because the voltage changed (is too high):
+    //get voltage for new multiplier.
+    bySuccess = g_p_cpucontroller->GetInterpolatedVoltageFromFreq(
+      (WORD) ( fMultiplier *
+      //Reference clock for AMD Griffin usually is 100 MHz.
+      100.0 ) ,
+      fVoltageInVolt ,
+      * g_p_stdsetvoltageandfreqWanted
+      ) ;
+    DEBUGN("multiplier > max. multplier according to current P state limit"
+      "current pstate multi:" << fMultiplier
+      << "voltage:" << fVoltageInVolt )
+    return bySuccess ;
+//    //This indirectly calls _this_ function.
+//      SetFreqAndVoltageFromFreq
+//      ( wMaxFreqAccordingCurrentLimit, byCoreID) ;
+  }
+#ifdef _DEBUG
+  else
+  {
+//    float fVoltageInVoltTest ;
+//    g_p_cpucontroller->GetInterpolatedVoltageFromFreq(
+//      (WORD) ( fMultiplier * 100.0 ) ,
+//      fVoltageInVoltTest ,
+//      * g_p_stdsetvoltageandfreqWanted
+//        ) ;
+    DEBUGN("multiplier <= max. multplier according to current P state limit"
+      "current pstate multi:" << fMultiplier
+      << "interpolated voltage (in Volt) would be:" << fVoltageInVoltTest )
+  }
+#endif
+//  else
+  return bySuccess ;
+}
+#endif //#ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
 
 //http://www.parashift.com/c++-faq-lite/inline-functions.html:
 //"Note: It's imperative that the function's definition (the part between the
@@ -501,37 +584,15 @@ inline void SetVoltageAndMultiplier(
     << "," << (WORD) byCoreID )
   //GetVIDmFIDnDID(dwLow, pstateMergedFromUserAndMSR ) ;
 
-  BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
-  //At my laptop the current limit was set to "0" on AC power, "1" on DC power.
-  //If 100% CPU load and above freq calculated by the current p-state limit,
-  //the previous freq persists. To avoid this, retrieve the current limit.
-  ReadMSR(
-    P_STATE_CURRENT_LIMIT_REGISTER,
-    & g_dwMSRlowmost,
-    & g_dwMSRhighmost,
-    1 << byCoreID ) ;
-  //TODO to use this variable we would have to get the "desired voltages"
-//  BYTE byCurPstateLimit = g_dwMSRlowmost & BITMASK_FOR_LOWMOST_3BIT ;
-  //TODO to use this variable we would have to get the "desired voltages"
-  // for the performance state (from the executable) the limit applies to
-//  float fMaxMultiplierAccordingCurrentLimit =
-//    //g_fMaxMultiplier
-//    ( g_fMainPllOpFreqIdMax + 8 ) / ( 1 << byCurPstateLimit ) ;
-  DEBUGN("p-state current limit:" << //dwMSRlowmost
-    (WORD) byCurPstateLimit
-    << " -> current max. Frequency ID:" << fMaxMultiplierAccordingCurrentLimit )
-//  if( fMultiplier > fMaxMultiplierAccordingCurrentLimit )
-//  {
-//    fMultiplier = fMaxMultiplierAccordingCurrentLimit ;
-//    //TODO because the voltage changed (is too high):
-//    //get voltage for new multiplier.
-//
-////    //This indirectly calls _this_ function.
-////      SetFreqAndVoltageFromFreq
-////      ( wMaxFreqAccordingCurrentLimit, byCoreID) ;
-//  }
-//  else
+#ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+  if( GetMaxMultiIfGreaterCurrentPstateLimitMulti(byCoreID,fVoltageInVolt,
+    fMultiplier) &&
+    //fVoltageInVolt <> 0 (is 0 if GetInterpolated...(...) failed)
+    fVoltageInVolt
+    )
+#endif
   {
+    BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
     GetFreqIDandDivisorIDfromMulti(fMultiplier,g_byFreqID,g_byDivisorID) ;
     GetMSRregisterValue(
       byVoltageID, //didandfid
@@ -540,6 +601,7 @@ inline void SetVoltageAndMultiplier(
       , g_dwMSRhighmost ,
       g_dwMSRlowmost ) ;
 
+//#ifndef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
     DWORD dwMSRregisterIndex = GetMSRregisterForPstate( //didandfid.m_byDivisorID
       g_byDivisorID
       ) ;
@@ -579,6 +641,7 @@ inline void SetVoltageAndMultiplier(
 //        )
 //        byRet = true ;
     }
+//#endif //#ifndef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
   }
 }
 

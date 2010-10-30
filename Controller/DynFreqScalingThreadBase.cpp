@@ -9,7 +9,8 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
 #include <algorithms/binary_search.cpp> //GetClosestLess()
-#include <preprocessor_macros/supress_unused_variable.h> //SUPRESS_UNUSED_VARIABLE_WARNING
+//SUPPRESS_UNUSED_VARIABLE_WARNING(...)
+#include <preprocessor_macros/suppress_unused_variable.h>
 //#include <global.h> //LOGN
 #include <Controller/Sleep.hpp> //for OperatingSystem::Sleep(...)
 
@@ -519,9 +520,9 @@ ExitCode DynFreqScalingThreadBase::Entry()
     float fNextMultiplierCalculatedFromCurrentLoad ;
     //Avoid Linux g++ warning "‘fFreqInMHz’ may be used uninitialized in this
     // function"
-    SUPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
-    SUPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
-    SUPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
+    SUPPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
+    SUPPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
+    SUPPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
     while( m_vbRun )
     {
       LOGN("DVFS thread running")
