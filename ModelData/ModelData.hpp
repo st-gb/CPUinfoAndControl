@@ -32,7 +32,7 @@ public:
   bool m_bTruncateLogFileForEveryStartup ;
   bool m_bUseDefaultFormularForOvervoltageProtection ;
   bool m_bUsePstate0AsMaxFreq ;
-  double m_dPreviousPERF_CTRvalue ;
+//  double m_dPreviousPERF_CTRvalue ;
   I_CPUcontroller * mp_cpucontroller ;
   std::string m_strProcessorName ;
   std::string m_stdstrLogFilePath ;
@@ -48,7 +48,12 @@ public:
 //  //file there is no error (because they are sorted by the set).
 //  std::set<MaxVoltageForFreq> m_setmaxvoltageforfreq ;
   CPUcoreData m_cpucoredata ;
+#ifdef COMPILE_AS_GUI
+  std::wstring m_stdwstrPipeName ;
+#endif
+#ifdef COMPILE_AS_SERVICE
   ServiceAttributes m_serviceattributes ;
+#endif //#ifdef COMPILE_AS_SERVICE
   Attributes::UserInterfaceAttributes m_userinterfaceattributes ;
   ValueTables m_valuetables ;
   Model( ) ;

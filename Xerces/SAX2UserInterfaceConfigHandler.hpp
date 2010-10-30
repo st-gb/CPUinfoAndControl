@@ -36,9 +36,19 @@ namespace Xerces
       );
     virtual
     ~SAX2UserInterfaceConfigHandler();
-    void HandleMainFrameXMLelement(
+    //The following functions are only called _once_. So the code is _not_
+    //pasted _multiple_ times because it is declared "inline".
+    inline void HandleDynamicVoltageAndFrequencyScalingXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
-    void HandleVoltageAndFrequencySettingsDialogXMLelement(
+    inline void HandleLogFileNameXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleMainFrameXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleServiceXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleToolTipXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleVoltageAndFrequencySettingsDialogXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     void startElement(
       const XMLCh * const cp_xmlchURI,

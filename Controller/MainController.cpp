@@ -29,8 +29,8 @@
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #endif
 #include <Xerces/SAX2MainConfigHandler.hpp> //class SAX2MainConfigHandler
-//class SAX2DefaultVoltageForFrequency
-#include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
+//class SAX2VoltagesForFrequencyHandler
+#include <Xerces/SAX2VoltagesForFrequencyHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //ReadXMLfileInitAndTermXerces(...)
 
 ////compiling with pre-declarations is faster than with "#include"s 
@@ -319,7 +319,7 @@ BYTE MainController::ReadPstateConfig(
       strCPUtypeRelativeDirPath
         + "/" + strProcessorName + ".xml"
       ;
-    SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency( 
+    SAX2VoltagesForFrequencyHandler sax2voltages_for_frequency_handler( 
       * p_userinterface, model );
     //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
     #ifdef COMPILE_WITH_MSR_EXAMINATION
@@ -334,7 +334,7 @@ BYTE MainController::ReadPstateConfig(
         //This is useful because there may be more than one XML file to read.
         //So one calls this functions with different handlers passed.
         //DefaultHandler & r_defaulthandler
-        , sax2defaultvoltageforfrequency
+        , sax2voltages_for_frequency_handler
         )
       )
     {

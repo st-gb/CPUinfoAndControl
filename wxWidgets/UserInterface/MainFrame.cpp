@@ -32,12 +32,14 @@
 
 //#include "../Controller/RunAsService.h" //for MyServiceStart etc.
 #include "FreqAndVoltageSettingDlg.hpp"
-//SUPRESS_UNUSED_VARIABLE_WARNING(...)
-#include <preprocessor_macros/supress_unused_variable.h>
+//SUPPRESS_UNUSED_VARIABLE_WARNING(...)
+#include <preprocessor_macros/suppress_unused_variable.h>
 #include <Controller/CalculationThreadProc.h>
 //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
+////for ::GetErrorMessageFromLastErrorCodeA(...)
+//#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
 //for member m_stdmapwmenuid2i_cpucontrolleraction
@@ -49,6 +51,8 @@
 #include <ModelData/RegisterData.hpp>
 //#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
+//SUPPRESS_UNUSED_VARIABLE_WARNING(...)
+#include <preprocessor_macros/suppress_unused_variable.h>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/CalculationThread.hpp>
@@ -113,6 +117,7 @@ enum
   , ID_StartService
   , ID_StopService
   , ID_ConnectToOrDisconnectFromService
+  , ID_DisconnectFromService
 #endif
 
   , ID_UpdateViewInterval
@@ -185,6 +190,8 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnStopService )
   EVT_MENU( ID_ConnectToOrDisconnectFromService ,
     MainFrame::OnConnectToOrDisconnectFromService )
+  EVT_MENU( ID_DisconnectFromService ,
+    MainFrame::OnDisconnectFromService )
 #endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
 //#endif
   //#ifdef _WINDOWS
@@ -687,13 +694,21 @@ void MainFrame::CreateServiceMenuItems()
 {
   wxString wxstrConnectOrDisconnect ;
   p_wxmenuService = new wxMenu ;
+  if( ServiceBase::CanStartService() )
+  {
+    p_wxmenuService->Append( ID_StartService , wxT("&start") ) ;
+    //Stopping a service needs the same? rights/ privileges as starting a
+    //service, so display the "stop" menu item, too.
+    p_wxmenuService->Append( ID_StopService , wxT("s&top") ) ;
+  }
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
 //    wxstrConnectOrDisconnect = wxT("disconnect") ;
 //  else
-    wxstrConnectOrDisconnect = wxT("connect") ;
+    wxstrConnectOrDisconnect = wxT("c&onnect") ;
   p_wxmenuService->Append( ID_ConnectToOrDisconnectFromService,
     wxstrConnectOrDisconnect );
+  p_wxmenuService->Append( ID_DisconnectFromService, wxT("&DISCOnnect") );
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   //pause and continue is possible via service ctrl mgr
   p_wxmenuService->Append( ID_ContinueService, _T("&Continue") );
@@ -1077,8 +1092,8 @@ void MainFrame::OnClose(wxCloseEvent & event )
       strPstateSettingsFileName )
     )
   {
-    std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/" +
-      strPstateSettingsFileName ;
+    std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/"
+      + strPstateSettingsFileName ;
     LOGN("before checking for a changed p-states config ")
     //TODO uncomment
     if( m_xercesconfigurationhandler.IsConfigurationChanged(//strPstateSettingsFileName
@@ -1135,16 +1150,25 @@ void MainFrame::OnConnectToOrDisconnectFromService(
       wxT("already connected to the service")
       ) ;
   else
+  {
 //    if( ::wxGetApp().m_ipcclient.Init() )
 //      p_wxmenuService->SetLabel( ID_ConnectToOrDisconnectFromService ,
 //        wxT( "disconnect" )
 //        ) ;
-    if( ::wxGetApp().m_ipcclient.Init() )
+    std::string stdstrMessage ;
+    if( ::wxGetApp().m_ipcclient.Init(stdstrMessage) )
       ::wxMessageBox( wxT("connected to the service now")
         ) ;
     else
-      ::wxMessageBox( wxT("Could not connect to the service")
-        ) ;
+      ::wxMessageBox( wxT("Could not connect to the service") +
+          ( stdstrMessage.empty() ? //wxT("")
+            wxString( wxT("") )
+            : //wxT(":\n")
+            //+ wxString( wxT(":\n") ) + getwxString(stdstrMessage) )
+            getwxString( ":\n" + stdstrMessage )
+          )
+        );
+  }
 #endif
 }
 
@@ -1176,6 +1200,22 @@ void MainFrame::OnDisableOtherVoltageOrFrequencyAccess(
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   ::wxGetApp().mp_dynfreqscalingaccess->DisableFrequencyScalingByOS() ;
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+}
+
+void MainFrame::OnDisconnectFromService(
+  wxCommandEvent & WXUNUSED(event) )
+{
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
+    mp_wxx86infoandcontrolapp->m_ipcclient.Disconnect_Inline() ;
+  else
+  {
+    ::wxMessageBox(
+      //Use wxT() to enable to compile with both unicode and ANSI.
+      wxT("NOT connected to the service")
+      ) ;
+  }
+#endif
 }
 
 void MainFrame::OnEnableOtherVoltageOrFrequencyAccess(
@@ -1317,24 +1357,23 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::OnStartService(wxCommandEvent & WXUNUSED(event))
 {
-  #ifdef _WINDOWS
-//  ServiceBase::StartService( //mp_model->m_strServiceName.c_str()
-//    //We need a _T() macro (wide char-> L"", char->"") for EACH
-//    //line to make it compatible between char and wide char.
-//    _T("CPUcontrolService")
-//    );
-  #endif
+  #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
+  mp_wxx86infoandcontrolapp->StartService() ;
+  #endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
 }
 
 void MainFrame::OnStopService(wxCommandEvent & WXUNUSED(event))
 {
+#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   //ServiceBase::StopService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
+  mp_wxx86infoandcontrolapp->StopService() ;
+#endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
 }
 
 void MainFrame::OnSysTrayIconClick(wxCommandEvent & WXUNUSED(event))
 {
-  wxMessageBox(wxT("OnSysTrayIconClick") ) ;
+  ::wxMessageBox( wxT("OnSysTrayIconClick") ) ;
 }
 
 void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
@@ -2285,6 +2324,7 @@ void MainFrame::DrawCurrentPstateInfo(
   #ifdef _DEBUG
     bool bIsGettingCPUcoreData = mp_wxx86infoandcontrolapp->m_ipcclient.
       m_vbIsGettingCPUcoreData ;
+    SUPPRESS_UNUSED_VARIABLE_WARNING(bIsGettingCPUcoreData)
   #endif
   if( ::wxGetApp().m_ipcclient.IsConnected()
     //This flag should be (set to) "true" as long as writing and reading data
@@ -2492,7 +2532,7 @@ void MainFrame::DrawCurrentPstateInfo(
 #ifdef _DEBUG
         wxString & r_wxstr = ar_wxstrFreqInMHz[ wCoreID ] ;
         //Avoid g++ warning "unused variable ‘r_wxstr’"
-        SUPRESS_UNUSED_VARIABLE_WARNING(r_wxstr)
+        SUPPRESS_UNUSED_VARIABLE_WARNING(r_wxstr)
 #endif
         r_wxdc.DrawText(
           ar_wxstrFreqInMHz[ wCoreID ]

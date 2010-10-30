@@ -4,7 +4,7 @@
 //#endif
 
 //#ifdef COMPILE_WITH_XERCES
-  #include "../stdafx.h"
+  #include <stdafx.h>
   #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
 
   //If not included: compiler error "C1010".

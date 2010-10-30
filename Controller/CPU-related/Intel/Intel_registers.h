@@ -63,7 +63,7 @@
 //"Number of Enhanced Intel SpeedStep technology transitions:"
 #define EMON_EST_TRANS 0x58
 //"Mask = 02H - Only Frequency transitions"
-#define OnlyFrequencytransitionsMask 0x2
+#define ONLY_FREQUENCY_TRANSITIONS_MASK 0x2
 
 //Intel Core:
 #define MSR_FSB_FREQ 0xCD

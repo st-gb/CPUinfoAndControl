@@ -201,6 +201,8 @@ public:
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
+  void StartService() ;
+  void StopService() ;
 };
 
 DECLARE_APP(wxX86InfoAndControlApp)

@@ -14,7 +14,8 @@
 //GetErrorMessageFromErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/I_CPUaccess.hpp> //class CPUaccessException
-#include <Xerces/SAX2ServiceConfigHandler.hpp> //class SAX2ServiceConfigHandler
+//class SAX2ServiceConfigHandler
+#include <Xerces/service/SAX2ServiceConfigHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //ReadXMLfileInitAndTermXerces(...)
 #ifdef USE_WINDOWS_THREAD
   #include <Windows/DynFreqScalingThread.hpp>

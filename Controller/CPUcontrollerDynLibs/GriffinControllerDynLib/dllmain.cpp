@@ -21,16 +21,45 @@
   #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
   #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
+  //for EXPORT, APIENTRY preprocessor macros
+  #include <Controller/CPUcontrollerDynLibs/function_specifiers.h>
   #include <Controller/CPUindependentHelper.h> //::getBinaryRepresentation(...)
   #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
-  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
-  #include <Windows/AssignPointersToExportedExeFunctions/\
-AssignPointersToExportedExeFunctions.h>
-  #include <Windows/AssignPointersToExportedExeFunctions/\
+  #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
+  #include <Controller/AssignPointersToExportedExeFunctions/\
+AssignPointersToExportedExeMSRfunctions.h>
+  #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointerToExportedExeReadPCIconfig.h>
   #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
   //#include <Windows/GetNumberOfLogicalCPUs.h>
-  #include <preprocessor_helper_macros.h>  //for BITMASK_FOR_LOWMOST_5BIT
+  //for BITMASK_FOR_LOWMOST_5BIT
+  #include <preprocessor_macros/preprocessor_helper_macros.h>
+
+//  #define COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+
+  #if defined(COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT) || defined(_DEBUG)
+    #define COMPILE_WITH_MODEL_DEFINITION
+  #endif
+
+  #ifdef COMPILE_WITH_MODEL_DEFINITION
+    #include <Controller/I_CPUaccess.hpp>
+    #include <Controller/CPU-related/I_CPUcontroller.hpp>
+    #include <ModelData/ModelData.hpp>
+    #include <ModelData/VoltageAndFreq.hpp>
+    #include <set>
+    I_CPUcontroller * g_p_cpucontroller ;
+    I_CPUaccess * g_pi_cpuaccess ;
+    std::set<VoltageAndFreq> * g_p_stdsetvoltageandfreqWanted ;
+  #else
+    //fwd decl.
+    class I_CPUaccess ;
+  #endif
+
+#ifdef _DEBUG
+#include <Controller/Logger/Logger.hpp>
+Logger g_logger ;
+#endif
+
 
   #include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
   #include <winuser.h> //MessageBox
@@ -40,12 +69,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
   extern ReadMSR_func_type g_pfnreadmsr ;
   extern WriteMSR_func_type g_pfn_write_msr ;
-  extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+//  extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+  ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
   extern float g_fReferenceClockInMHz ;
-
-  #ifdef _DEBUG
-Logger g_logger ;
-#endif
 
   BYTE g_byValue1 ;
   BYTE g_byValue2 ;
@@ -120,7 +146,8 @@ Logger g_logger ;
     case DLL_PROCESS_ATTACH:
 #ifdef _DEBUG
       {
-      std::string strExeFileNameWithoutDirs = GetExeFileNameWithoutDirs() ;
+      std::string strExeFileNameWithoutDirs //= GetExeFileNameWithoutDirs() ;
+        ;
       std::string stdstrFilename = strExeFileNameWithoutDirs +
           ("GriffinControllerDLL_log.txt") ;
       g_logger.OpenFile2( stdstrFilename ) ;
@@ -143,8 +170,8 @@ Logger g_logger ;
       }
 #endif
       DEBUGN("after GetMainPllOpFreqIdMax")
-      AssignPointersToExportedExeFunctions() ;
-      AssignPointerToExportedExeReadPCIconfig() ;
+      AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
+      AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
       //Pointers to Exe's fct must be assigned prior to the call of
       //GetMainPllOpFreqIdMax() !
       GetMainPllOpFreqIdMax() ;
@@ -264,13 +291,71 @@ Logger g_logger ;
       g_pfnReadPCIconfigSpace(
       0, //bus number
       //Bus 0, Device number 24, Function 3 is "CPU Miscellaneous Control"
-      g_byValue1 ,//) ((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
+//      g_byValue1
+      CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER
+      ,//) ((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
       F3xA4_REPORTED_TEMPERATURE_CONTROL_REGISTER ,
       & dwValue
       ) ;
     fTempInDegCelsius = (float)( dwValue >> 21 ) / 8.0f ;
     return fTempInDegCelsius ;
 //      0.0 ;
+  }
+
+  //#define DLL_CALLING_CONVENTION __stdcall
+  #define DLL_CALLING_CONVENTION
+
+  EXPORT
+  void
+    //Calling convention--must be the same as in the DLL
+    //function signature that calls this function?!
+    //WINAPI
+    DLL_CALLING_CONVENTION
+    Init( //I_CPUcontroller * pi_cpu
+    //CPUaccess object inside the exe.
+    I_CPUaccess * pi_cpuaccess
+  //  Trie *
+  //  , ReadMSR_func_type pfnreadmsr
+    //BYTE by
+    )
+  {
+  //  g_pi_cpuaccess = pi_cpuaccess ;
+#ifdef __linux__
+    AssignPointersToExportedExeMSRfunctions(
+      g_pfnreadmsr , g_pfn_write_msr ) ;
+#endif
+    std::string stdstrFilename = //strExeFileNameWithoutDirs +
+      ("PentiumM_DLL_log.txt") ;
+  #ifdef _DEBUG
+    //ReadMSR_func_type rdmsr = (ReadMSR_func_type) (void*) & pi_cpuaccess->RdmsrEx ;
+    std::stringstream stdstrstream ;
+    //For checking if the members are on the same RAM address between MSVC and MinGW:
+    stdstrstream << "DLL::Init(...)--\naddress of I_CPUaccess:" << & pi_cpuaccess << "\n"
+      << "address of I_CPUaccess::mp_model: " << & pi_cpuaccess->mp_model <<"\n"
+      << "address in I_CPUaccess::mp_model: " << pi_cpuaccess->mp_model <<"\n"
+      //<< "address in I_CPUaccess::RdmsrEx: " << & pi_cpuaccess->RdmsrEx()
+      << "address of I_CPUaccess::mp_cpu_controller: " <<
+        & pi_cpuaccess->mp_cpu_controller <<"\n"
+      << "address in I_CPUaccess::mp_cpu_controller: " <<
+        pi_cpuaccess->mp_cpu_controller ;
+    MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
+      "", MB_OK) ;
+  #endif
+  #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+    g_pi_cpuaccess = pi_cpuaccess ;
+    g_p_cpucontroller = pi_cpuaccess->mp_cpu_controller ;
+    g_p_stdsetvoltageandfreqWanted = & g_pi_cpuaccess->mp_model->m_cpucoredata.
+      m_stdsetvoltageandfreqWanted ;
+  #endif //INSERT_DEFAULT_P_STATES
+  //  AssignExeFunctionPointers() ;
+    //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
+    //MSC-generated version has no problems
+  //#ifndef _MSC_VER
+  //  std::stringstream str ;
+  //  str << "DLL::Init--Adress of CPUaccess: " << pi_cpuaccess ;
+  //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
+  //#endif
+    //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
   }
 
   //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:

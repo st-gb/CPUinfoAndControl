@@ -43,7 +43,8 @@
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
 #endif
 //#include <wxWidgets/wxStringHelper.h>
-#include <Xerces/SAX2DefaultVoltageForFrequency.hpp>
+//class SAX2VoltagesForFrequencyHandler
+#include <Xerces/SAX2VoltagesForFrequencyHandler.hpp>
 #include <Xerces/SAX2UserInterfaceConfigHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 
@@ -96,6 +97,9 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  mp_dynfreqscalingaccess(NULL) ,
 //#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  m_ipcclient( m_model ) ,
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   m_maincontroller( this )
   , m_vbRetrieveCPUcoreData( true)
   , m_vbGotCPUcoreData (true)
@@ -336,6 +340,42 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
   //Force redraw of the client area.
   mp_frame->//ReDraw() ;
     Refresh() ;
+}
+
+void wxX86InfoAndControlApp::DeleteCPUcontroller( )
+{
+  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() cpu controller:" <<
+      mp_cpucontroller )
+  //if( p_cpucontroller )
+  //{
+    //Avoid program crash because of the mainframe tries to get the current
+    //performance state.
+    mp_frame->DenyCPUcontrollerAccess() ;
+    if( mp_cpucontroller )
+      //Release memory.
+      delete mp_cpucontroller ;
+    mp_cpucontroller = NULL ;
+    //May be NULL at startup.
+    if( mp_cpucoreusagegetter )
+    {
+      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--before "
+          "setting CPU controller access for the usage getter")
+      mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
+      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
+          "setting CPU controller access for the usage getter")
+    }
+    //mp_i_cpucontroller->SetModelData( //& m_modelData
+    //  mp_modelData ) ;
+//    CPUcontrollerChanged() ;
+    //For the draw functions to function properly.
+    mp_frame->SetCPUcontroller( mp_cpucontroller ) ;
+    mp_frame->AllowCPUcontrollerAccess() ;
+    DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
+        "calling AllowCPUcontrollerAccess()")
+    //Force an update of the canvas.
+    mp_frame->RedrawEverything() ;
+  //}
+  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
 }
 
 void wxX86InfoAndControlApp::DynVoltnFreqScalingEnabled()
@@ -618,6 +658,8 @@ void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
   //will never be freed,
 #ifdef COMPILE_WITH_LOG
   DWORD dwThreadReturnCode = (DWORD) m_x86iandc_threadIPC.WaitForTermination() ;
+#else
+  m_x86iandc_threadIPC.WaitForTermination() ;
 #endif
   LOGN("after waiting for the end of the IPC thread. return code: " <<
     dwThreadReturnCode )
@@ -724,11 +766,12 @@ void wxX86InfoAndControlApp::InitSharedMemory()
 //  m_wxthreadIPC.Run() ;
 //}
 
+//@return 0=success
 BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
 {
   LOGN("GetConfigDataViaInterProcessCommunication begin")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  SAX2DefaultVoltageForFrequency sax2defaultvoltageforfrequency(
+  SAX2VoltagesForFrequencyHandler sax2voltages_for_frequency_handler(
     * this ,
     m_model ) ;
   if( //sending command succeeded
@@ -761,7 +804,7 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
       m_model ,
       this ,
 //      m_sax2_ipc_current_cpu_data_handler
-      sax2defaultvoltageforfrequency
+      sax2voltages_for_frequency_handler
       ) == FAILURE
       )
     {
@@ -794,7 +837,8 @@ bool wxX86InfoAndControlApp::OnInit()
   mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService" ;
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
-  m_stdtstrProgramName = _T("X86_info_and_control") ;
+  m_stdtstrProgramName = //_T("X86_info_and_control") ;
+    _T("x86_info_and_control") ;
 
   m_arartchCmdLineArgument = new TCHAR * [NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS];
 //  mp_modelData = new Model() ;
@@ -990,10 +1034,22 @@ bool wxX86InfoAndControlApp::OnInit()
       if( byGetConfigDataViaInterProcessCommunicationReturnValue )
         m_maincontroller.ReadPstateConfig( //m_modelData
           * mp_modelData, this );
+      else
+      {
+//        mp_cpucontroller = & m_sax2_ipc_current_cpu_data_handler ;
+        //For getting the reference clock.
+        ::FetchCPUcoreDataFromIPC( this ) ;
+        if( m_sax2_ipc_current_cpu_data_handler.
+          m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.size() > 0 )
+          m_sax2_ipc_current_cpu_data_handler.m_fReferenceClockInMHz =
+            m_sax2_ipc_current_cpu_data_handler.
+            m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.begin()->second.
+            m_fReferenceClock ;
+      }
 
       DEBUGN("before creating the main frame")
       wxString wxstrMainFrameTitle = //wxT("GUI") ;
-          wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI") ;
+        wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI") ;
       ////The user interface must be created before the controller because
       ////it should show error messages because of e.g. missing privileges.
       //p_frame = new MyFrame(
@@ -1330,38 +1386,56 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
   return false ;
 }
 
-void wxX86InfoAndControlApp::DeleteCPUcontroller( )
+void wxX86InfoAndControlApp::StartService()
 {
-  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() cpu controller:" <<
-      mp_cpucontroller )
-  //if( p_cpucontroller )
-  //{
-    //Avoid program crash because of the mainframe tries to get the current
-    //performance state.
-    mp_frame->DenyCPUcontrollerAccess() ;
-    if( mp_cpucontroller )
-      //Release memory.
-      delete mp_cpucontroller ;
-    mp_cpucontroller = NULL ;
-    //May be NULL at startup.
-    if( mp_cpucoreusagegetter )
-    {
-      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--before "
-          "setting CPU controller access for the usage getter")
-      mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
-      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
-          "setting CPU controller access for the usage getter")
-    }
-    //mp_i_cpucontroller->SetModelData( //& m_modelData
-    //  mp_modelData ) ;
-//    CPUcontrollerChanged() ;
-    //For the draw functions to function properly.
-    mp_frame->SetCPUcontroller( mp_cpucontroller ) ;
-    mp_frame->AllowCPUcontrollerAccess() ;
-    DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
-        "calling AllowCPUcontrollerAccess()")
-    //Force an update of the canvas.
-    mp_frame->RedrawEverything() ;
-  //}
-  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
+  try
+  {
+    if( ! ServiceBase::StartService( //mp_model->m_strServiceName.c_str()
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+  //    _T("CPUcontrolService"
+  //      )
+        //mp_wxx86infoandcontrolapp->m_stdtstrProgramName.c_str()
+        m_stdtstrProgramName.c_str()
+        )
+      )
+      ::wxMessageBox( wxT("starting the service succeeded") ) ;
+    else
+      ::wxMessageBox( wxT("error starting the service:") +
+        getwxString( //::LocalLanguageMessageAndErrorCodeA( ::GetLastError() )
+          ::GetErrorMessageFromLastErrorCodeA()
+           )
+        ) ;
+  }
+  catch( const ConnectToSCMerror & cr_connecttoscmerror )
+  {
+    ::wxMessageBox( wxT("error connecting to the service control manager") ) ;
+  }
+}
+
+void wxX86InfoAndControlApp::StopService()
+{
+  try
+  {
+    if( ! ServiceBase::StopService( //mp_model->m_strServiceName.c_str()
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+  //    _T("CPUcontrolService"
+  //      )
+//        mp_wxx86infoandcontrolapp->m_stdtstrProgramName.c_str()
+        m_stdtstrProgramName.c_str()
+        )
+      )
+      ::wxMessageBox( wxT("stopping the service succeeded") ) ;
+    else
+      ::wxMessageBox( wxT("error stopping the service:") +
+        getwxString( ::GetErrorMessageFromLastErrorCodeA()
+          //::LocalLanguageMessageAndErrorCodeA( ::GetLastError() )
+           )
+        ) ;
+  }
+  catch( const ConnectToSCMerror & cr_connecttoscmerror )
+  {
+    ::wxMessageBox( wxT("error connecting to the service control manager") ) ;
+  }
 }

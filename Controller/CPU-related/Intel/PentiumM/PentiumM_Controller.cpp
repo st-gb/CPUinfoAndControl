@@ -354,45 +354,6 @@ void PentiumM_Controller::IncreaseVoltageBy1Step(float & r_fVoltage)
 //  //  ) ;
 //}
 
-#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
-void PentiumM_Controller::MonitorNumberOfFrequencyIDtransitions()
-{
-  PerformanceEventSelectRegisterWrite(
-    1 //<< byCoreID ,
-    ,
-    //Pentium M has 1 or 2 "Performance Event Select Register" from
-    //  MSR ... to MSR ...  for
-    // 1 or 2 "Performance Event Counter Registers" from
-    //  ... to ...
-    //  that store the 48 bit counter value
-    //Performance Event Counter number
-//    1 ,
-    0 ,
-    EMON_EST_TRANS ,
-    //LAST_LEVEL_CACHE_MISSES_UMASK , // 8 bit unit mask
-    OnlyFrequencytransitionsMask ,
-    1, //User Mode
-    1, //OS mode
-    0, //edge
-    0, //pin control
-    0, //APIC
-    1, //enable counters
-    0 , //invert counter mask
-    0 //counter mask
-    ) ;
-  mp_cpuaccess->WrmsrEx( //IA32_PMC1
-//    IA32_PMC0
-    PERFORMANCE_COUNTER_FOR_FID_CHANGE
-    //Set to 1 so that next time no more 0 so that this function is called again.
-    , 1
-    , 0
-    , 1 ) ;
-  //Cause to fetch 2 values for taking a diff for _each_ value type (TSC, time,
-  //  FID changes)
-  m_b2ndTimeOrLaterReadTSCandFIDchange = false ;
-}
-#endif
-
 //AFAIK performance counter for counter other than 0 also needs counter 0
 // to have the enable flag set to "1".
 void PentiumM_Controller::PerformanceEventSelectRegisterWrite(
