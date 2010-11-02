@@ -8,7 +8,9 @@
 #include <ModelData/ModelData.hpp> //class Model
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
 #include <preprocessor_macros/suppress_unused_variable.h>
-#include <Xerces/SAX2UserInterfaceConfigHandler.hpp>
+#include <Xerces/UserInterface/SAX2UserInterfaceConfigHandler.hpp>
+//PossiblyHandleLoggingExclusionFilter_Inline(...)
+#include <Xerces/XercesHelper.hpp>
 //XercesAttributesHelper::GetAttributeValue(...)
 #include <Xerces/XercesString.hpp> //ansi_or_wchar_string_compare(...)
 #include <Xerces/XercesAttributesHelper.hpp>//ConvertXercesAttributesValue(...)
@@ -219,9 +221,9 @@ namespace Xerces
 
   void SAX2UserInterfaceConfigHandler::startElement
     (
-    const XMLCh * const cp_xmlchURI,
-    const XMLCh * const cp_xmlchLocalName,
-    const XMLCh * const cp_xmlchQualifiedName,
+    const XMLCh * const cpc_xmlchURI,
+    const XMLCh * const cpc_xmlchLocalName,
+    const XMLCh * const cpc_xmlchQualifiedName,
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
   {
@@ -229,13 +231,13 @@ namespace Xerces
     //_MUST use XMLString::transcode() Linux: a wcscmp comparison does not work
     // here.
     char * p_chLocalName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-      cp_xmlchLocalName) ;
-    DEBUG_WCOUTN( L"local name:" << cp_xmlchLocalName << L"log_file_name: "
+      cpc_xmlchLocalName) ;
+    DEBUG_WCOUTN( L"local name:" << cpc_xmlchLocalName << L"log_file_name: "
       << stdwstr )
 #ifdef _DEBUG
     if( strlen(p_chLocalName ) > 3 )
     {
-      char * p_ch2 = (char *) cp_xmlchLocalName ;
+      char * p_ch2 = (char *) cpc_xmlchLocalName ;
       SUPPRESS_UNUSED_VARIABLE_WARNING(p_ch2)
       DEBUG_WCOUTN( L"local name bytes:"
         << ( * p_ch2 ? *p_ch2 : ' ' )
@@ -251,49 +253,55 @@ namespace Xerces
 #endif //#ifdef _DEBUG
 //    std::string stdstrLocalName(p_chLocalName) ;
     DEBUG_WPRINTFN( L"local name:%ls log_file_name:%ls" ,
-      (wchar_t *) cp_xmlchLocalName ,
+      (wchar_t *) cpc_xmlchLocalName ,
       stdwstr.c_str()
       )
+    if( PossiblyHandleLoggingExclusionFilter_Inline(
+      cpc_xmlchLocalName,
+      cr_xercesc_attributes)
+      )
+      ;
+    else
     //TODO inperformant string comparison if multiple strings to compare start
     //with the same prefix: "e.g." "start", "start_at_startup"
     //_possibly_ do something like this: a _trie_ with a pointer to
     // a handler function for the string at its leaves.
-    if( ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+    if( ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("Dynamic_Voltage_and_Frequency_Scaling") )
       )
     {
       HandleDynamicVoltageAndFrequencyScalingXMLelement(cr_xercesc_attributes) ;
     }
     else if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
           ANSI_OR_WCHAR("log_file_name") )
       )
     {
       HandleLogFileNameXMLelement( cr_xercesc_attributes);
     }
     else if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("main_frame") )
       )
     {
       HandleMainFrameXMLelement(cr_xercesc_attributes) ;
     }
     else if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("service") )
       )
     {
       HandleServiceXMLelement(cr_xercesc_attributes) ;
     }
     else if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("tooltip") )
       )
     {
       HandleToolTipXMLelement(cr_xercesc_attributes) ;
     }
     else if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("voltage_and_frequency_settings_dialog") )
       )
     {

@@ -65,9 +65,20 @@
     {
       m_p_model->m_cpucoredata.m_wMilliSecondsWaitBetweenDFVS = wValue ;
     }
+    strAttributeName = "check_whether_temperature_decreased_wait_time_in_ms" ;
+    if( XercesAttributesHelper::GetAttributeValue( cr_xercesc_attributes,
+      strAttributeName.c_str(), m_p_model->m_cpucoredata.
+      m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased )
+      )
+    {
+      LOGN("using \"" << m_p_model->m_cpucoredata.
+        m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased << "\" as "
+        << strAttributeName )
+    }
     strAttributeName = "CPU_core_load_threshold_for_increase" ;
     if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
-      strAttributeName.c_str(),fValue) )
+        strAttributeName.c_str(),fValue)
+      )
     {
       m_p_model->m_cpucoredata.m_fCPUcoreLoadThresholdForIncreaseInPercent =
         fValue ;
@@ -78,8 +89,7 @@
         strAttributeName.c_str(),fValue)
       )
     {
-      m_p_model->m_cpucoredata.m_fThrottleTempInDegCelsius =
-        fValue ;
+      m_p_model->m_cpucoredata.m_fThrottleTempInDegCelsius = fValue ;
       LOGN("using \"" << fValue << "\" as CPU core throttle temp thres" )
     }
     strAttributeName = "increase_factor" ;
@@ -149,14 +159,14 @@
 
   void SAX2MainConfigHandler::startElement
     (
-    const XMLCh * const cpc_xmchURI,
-    const XMLCh * const cpc_xmchLocalName,
-    const XMLCh * const cpc_xmchQualifiedName,
-    const XERCES_CPP_NAMESPACE::Attributes & attrs
+    const XMLCh * const cpc_xmlchURI,
+    const XMLCh * const cpc_xmlchLocalName,
+    const XMLCh * const cpc_xmlchQualifiedName,
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
 	  )
 	{
 	  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-	    cpc_xmchLocalName);
+	    cpc_xmlchLocalName);
 	  if( pchXMLelementName )
 	  {
       std::string strValue ;
@@ -164,28 +174,18 @@
       m_strElementName = std::string(pchXMLelementName) ;
       //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
       //  << endl );
-      if( m_strElementName == "log_file_filter" )
-      {
-        if( XercesAttributesHelper::GetAttributeValue(
-          attrs ,
-          //Use "( char * )" to avoid g++ Linux compiler warning
-          // "deprecated conversion from string constant to ‘char*’ "
-          ( char * ) "exclude" ,
-          strValue )
-          )
-        {
-          LOGN("string to exclude from logging:" << strValue )
-  //	      g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
-          g_logger.AddExcludeFromLogging(strValue) ;
-        }
-      }
+      if( PossiblyHandleLoggingExclusionFilter_Inline(
+        cpc_xmlchLocalName,
+        cr_xercesc_attributes)
+        )
+        ;
       else if( m_strElementName == //"main_config"
         "CPU_control_main_config" )
       {
-        HandleTopmostXMLelement(attrs) ;
+        HandleTopmostXMLelement(cr_xercesc_attributes) ;
       }
       else if( m_strElementName == "DynamicVoltage_and_FrequencyScaling" )
-        HandleDynamicVoltage_and_FrequencyScaling(attrs) ;
+        HandleDynamicVoltage_and_FrequencyScaling(cr_xercesc_attributes) ;
       //Release memory AFTER comparing.
       XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
 	  } //if( pchXMLelementName )

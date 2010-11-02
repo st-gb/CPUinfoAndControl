@@ -45,7 +45,7 @@
 //#include <wxWidgets/wxStringHelper.h>
 //class SAX2VoltagesForFrequencyHandler
 #include <Xerces/SAX2VoltagesForFrequencyHandler.hpp>
-#include <Xerces/SAX2UserInterfaceConfigHandler.hpp>
+#include <Xerces/UserInterface/SAX2UserInterfaceConfigHandler.hpp>
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 
 #include "DynFreqScalingThread.hpp"

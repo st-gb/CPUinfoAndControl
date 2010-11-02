@@ -1,18 +1,23 @@
-#pragma once //Include guard.
+/*
+ * CPUcontrollerDynLib_function_definitions.h
+ *
+ *  Created on: Oct 30, 2010
+ *      Author: Stefan
+ */
 
-//#include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
-//#include <Controller/exported_functions.h>
-//#include <windef.h> //BYTE et.c
+#ifndef CPUCONTROLLERDYNLIB_FUNCTION_DEFINITIONS_H_
+#define CPUCONTROLLERDYNLIB_FUNCTION_DEFINITIONS_H_
 
-typedef unsigned char BYTE ;
-typedef unsigned short WORD;
-//typedef WORD near * PWORD;
-typedef WORD * PWORD;
-typedef unsigned long DWORD;
+//typedef unsigned char BYTE ;
+//typedef unsigned short WORD;
+////typedef WORD near * PWORD;
+//typedef WORD * PWORD;
+//typedef unsigned long DWORD;
+#include <windef.h> //BYTE et.c
 
 //these typedefs can be used by
 //-the code that e.g. uses wxDynLib or only the Windows API
-//and attaches to the CPU controller DLLs 
+//and attaches to the CPU controller DLLs
 //-and also by the CPU controller DLL source code.
 
 //( * dll_GetCurrentPstate_type)
@@ -23,8 +28,8 @@ typedef unsigned long DWORD;
 #endif
 //#define CALLING_CONVENTION __stdcall
 
-//name_or_func_ptr may be 
-//-"(*pfn)" for function pointer declarations or 
+//name_or_func_ptr may be
+//-"(*pfn)" for function pointer declarations or
 //-"func" for function declarations/ definitions
 #define GET_CURRENT_PSTATE_SIG(name_or_func_ptr,suffix) \
   BYTE \
@@ -74,13 +79,13 @@ typedef WORD (
   //function signature that calls this function?!
   CALLING_CONVENTION
   * dll_GetMinimumVoltageID_type) () ;
-typedef 
-  BYTE (//WINAPI 
+typedef
+  BYTE (//WINAPI
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
   CALLING_CONVENTION
   * dll_GetCurrentPstate_type) (
-    PWORD p_wFreqInMHz 
+    PWORD p_wFreqInMHz
     , //float & Volt
 #ifdef GET_VOLTAGE_IN_MILLIVOLT
     //When the voltage was converted to an integer with milliVolt there were
@@ -89,7 +94,7 @@ typedef
 #else
     float & r_f
 #endif
-    , WORD wCoreID 
+    , WORD wCoreID
   ) ;
 typedef
   BYTE (//WINAPI
@@ -106,22 +111,22 @@ typedef
   ) ;
 
   //GET_CURRENT_PSTATE_SIG("(* dll_GetCurrentPstate_type)",;)
-typedef 
-  WORD (//WINAPI 
+typedef
+  WORD (//WINAPI
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
   CALLING_CONVENTION
   * dll_GetNumberOfCPUcores_type) (
   ) ;
-typedef 
-  float (//WINAPI 
+typedef
+  float (//WINAPI
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
   CALLING_CONVENTION
   * dll_GetCPUusage_type) ( WORD wCoreID
   ) ;
-typedef 
-  float (//WINAPI 
+typedef
+  float (//WINAPI
   //Calling convention--must be the same as in the DLL
   //function signature that calls this function?!
   CALLING_CONVENTION
@@ -195,8 +200,10 @@ typedef BOOL ( // TRUE: success, FALSE: failure
   //function signature that calls this function?!
   CALLING_CONVENTION
   * dll_WriteMSR_type) (
-    DWORD index,		// MSR index
-    DWORD dwLow ,//eax,			// bit  0-31
-    DWORD dwHigh, //edx,			// bit 32-63
-    DWORD affinityMask	// Thread Affinity Mask
+    DWORD index,    // MSR index
+    DWORD dwLow ,//eax,     // bit  0-31
+    DWORD dwHigh, //edx,      // bit 32-63
+    DWORD affinityMask  // Thread Affinity Mask
     ) ;
+
+#endif /* CPUCONTROLLERDYNLIB_FUNCTION_DEFINITIONS_H_ */

@@ -218,7 +218,7 @@ void I_CPUcontroller::GetCurrentTemperatureInCelsiusAndStoreValues(
   WORD wCoreID )
 {
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
-    m_arp_percpucoreattributes  ;
+    m_arp_percpucoreattributes ;
   arp_percpucoreattributes[wCoreID].m_fTempInDegCelsius =
     GetTemperatureInCelsius(wCoreID) ;
 }
