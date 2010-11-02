@@ -7,6 +7,7 @@
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 //LOGN(...), DEBUGN(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h>
+#include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF(...)
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
 #include <algorithms/binary_search.cpp> //GetClosestLess()
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
@@ -52,12 +53,17 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
   : //m_bSuccFullyGotPStateFromMSR(false)
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
-  mp_cpucoredata(&r_cpucoredata)
+  mp_cpucoredata( & r_cpucoredata)
   , mr_cpucontrolbase (r_cpucontrolbase)
+  , m_ar_fPreviousTemperaturesInDegCelsius ( NULL )
+  , m_ar_fPreviousMinusCurrentTemperature( NULL)
   , mp_cpucontroller ( r_cpucontrolbase.mp_cpucontroller )
   , mp_icpu ( r_cpucontrolbase.mp_cpucoreusagegetter)
-  , m_bCalledInit(false)
-  , m_wMilliSecondsToWait(100)
+  , m_arp_percpucoreattributes ( r_cpucoredata.m_arp_percpucoreattributes )
+//  , m_bCalledInit(false)
+//  , m_wMilliSecondsToWait(100)
+  , m_wMilliSecondsToWaitForCoolDown( //2000
+      r_cpucoredata.m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased)
   , m_vbRun(true)
   , m_vbDVFSthreadStopped(true)
 {
@@ -80,6 +86,23 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
   DEBUG("constructor of freq scaling thread base--end\n");
 }
 
+void DynFreqScalingThreadBase::CalcDiffBetweenCurrentAndPreviousTemperature()
+{
+//  LOGN("DynFreqScalingThreadBase::CalcDiffBetweenCurrentAndPrevious"
+//    "Temperature() begin")
+//  if( m_bGotCPUcoreDataAtLeast1Time )
+  {
+    for( BYTE byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
+    {
+      m_ar_fPreviousMinusCurrentTemperature[byCoreID] =
+        m_ar_fPreviousTemperaturesInDegCelsius [byCoreID] -
+        m_arp_percpucoreattributes[ byCoreID ].m_fTempInDegCelsius ;
+    }
+  }
+//  LOGN("DynFreqScalingThreadBase::CalcDiffBetweenCurrentAndPrevious"
+//    "Temperature() end")
+}
+
 void DynFreqScalingThreadBase::ChangeOperatingPointByLoad( 
   BYTE byCoreID 
   , float fLoad 
@@ -93,7 +116,8 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
     << ")"
 #endif
     )
-  PerCPUcoreAttributes & r_percpucoreattributes = mp_cpucoredata->
+  PerCPUcoreAttributes & r_percpucoreattributes = //mp_cpucoredata->
+//    m_arp_percpucoreattributes[byCoreID] ;
     m_arp_percpucoreattributes[byCoreID] ;
 //  DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad "
 //    " address of r_percpucoreattributes:" << & r_percpucoreattributes)
@@ -266,9 +290,12 @@ ExitCode DynFreqScalingThreadBase::Entry()
   //Refer directly (->faster?!).
   float * ar_fCPUcoreLoadInPercent = mp_cpucoredata->
     m_arfCPUcoreLoadInPercent ;
-  WORD wNumCPUcores = mp_cpucoredata->GetNumberOfCPUcores() ;
-  LOGN("DVFS thread: number of CPU cores:" << wNumCPUcores )
-  PerCPUcoreAttributes * arp_percpucoreattributes =
+  m_b1stTimeInRowTooHot = true ;
+  m_wNumCPUcores = mp_cpucoredata->GetNumberOfCPUcores() ;
+  m_ar_fPreviousTemperaturesInDegCelsius = new float[ m_wNumCPUcores ] ;
+  m_ar_fPreviousMinusCurrentTemperature = new float[ m_wNumCPUcores ] ;
+  LOGN("DVFS thread: number of CPU cores:" << m_wNumCPUcores )
+  PerCPUcoreAttributes * m_arp_percpucoreattributes =
     mp_cpucoredata->m_arp_percpucoreattributes ;
   //If ganged then there is only 1 power plane for ALL CPU cores.
   //-> setting voltage affects _all_ CPU cores.
@@ -290,11 +317,11 @@ ExitCode DynFreqScalingThreadBase::Entry()
     {
       //LOGN("DVFS thread running ")
       //DEBUG("begin of scaling thread loop\n");
-      if( ! m_bCalledInit )
-      {
-        m_bCalledInit = true ;
-        //mp_icpu->Init();
-      }
+//      if( ! m_bCalledInit )
+//      {
+//        m_bCalledInit = true ;
+//        //mp_icpu->Init();
+//      }
       //bool m_wCurrentFreqInMHz = false ;
       if( mp_cpucontroller->GetUserInterface()->m_bConfirmedYet
         //&& m_bSuccFullyGotPStateFromMSR
@@ -335,17 +362,17 @@ ExitCode DynFreqScalingThreadBase::Entry()
           //DVFS (if single power plane / all cores always at the same p-state
           // then only the frequency for the core with the highest load is
           //needed).
-          for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
+          for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
           {
             mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
             LOGN("multi for core " << (WORD) byCoreID
-              << ":" << arp_percpucoreattributes[byCoreID].m_fMultiplier )
+              << ":" << m_arp_percpucoreattributes[byCoreID].m_fMultiplier )
             //Even if CPU seemed to have 1 power plane (Nehalem) the different
             //cores had different multipliers.
             if( fHighestMultiplier <
-              arp_percpucoreattributes[byCoreID].m_fMultiplier )
+              m_arp_percpucoreattributes[byCoreID].m_fMultiplier )
             {
-              fHighestMultiplier = arp_percpucoreattributes[byCoreID].
+              fHighestMultiplier = m_arp_percpucoreattributes[byCoreID].
                 m_fMultiplier ;
               wCoreWithHighestMultiplier = byCoreID ;
             }
@@ -440,16 +467,16 @@ ExitCode DynFreqScalingThreadBase::Entry()
 //              fLowerMultiplier ,
 //              fNextMultiplierCalculatedFromCurrentLoad
 //              ) ;
-            for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
+            for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
             {
   //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
   //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
-                arp_percpucoreattributes ,
+                m_arp_percpucoreattributes ,
                 ar_fCPUcoreLoadInPercent ,
                 fFreqInMHz,
-                wNumCPUcores ,
+//                m_wNumCPUcores ,
                 fLowerMultiplier ,
                 fNextMultiplierCalculatedFromCurrentLoad
                 ) ;
@@ -523,15 +550,16 @@ ExitCode DynFreqScalingThreadBase::Entry()
     SUPPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
     SUPPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
     SUPPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
+    DWORD dwCurrentTimeInMillis ;
     while( m_vbRun )
     {
       LOGN("DVFS thread running")
       //DEBUG("begin of scaling thread loop\n");
-      if( ! m_bCalledInit )
-      {
-        m_bCalledInit = true ;
-        //mp_icpu->Init();
-      }
+//      if( ! m_bCalledInit )
+//      {
+//        m_bCalledInit = true ;
+//        //mp_icpu->Init();
+//      }
       //bool m_wCurrentFreqInMHz = false ;
       if(
         mp_cpucontroller->GetUserInterface()->m_bConfirmedYet
@@ -559,9 +587,11 @@ ExitCode DynFreqScalingThreadBase::Entry()
   //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Wait()")
         //float fTempInDegCelsius ;
 
+//        mp_cpucoredata.m_arp_percpucoreattributes[]
+
         if( mr_cpucontrolbase.
           GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
-            ar_fCPUcoreLoadInPercent, wNumCPUcores) )
+            ar_fCPUcoreLoadInPercent, m_wNumCPUcores) )
         {
           LOGN("after GetCurrentVoltageAndFrequency")
           //check if a temp. could be received:
@@ -573,6 +603,45 @@ ExitCode DynFreqScalingThreadBase::Entry()
             (mp_cpucoredata->m_bTooHot = mp_cpucontroller->TooHot() )
             )
           {
+            if( m_b1stTimeInRowTooHot )
+            {
+              m_dwBeginInMillisOfTooHot = ::GetTickCount() ;
+              m_b1stTimeInRowTooHot = false ;
+              m_wMilliSecondsPassed = 0 ;
+              //In order to calc the difference between the temperature where it
+              //began to be too hot and the current temperature.
+              SafePreviousTemperatures() ;
+            }
+            else
+            {
+              dwCurrentTimeInMillis = ::GetTickCount() ;
+              m_wMilliSecondsPassed = ULONG_VALUE_DIFF( dwCurrentTimeInMillis
+                , m_dwBeginInMillisOfTooHot ) ;
+              CalcDiffBetweenCurrentAndPreviousTemperature() ;
+              for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
+              {
+                if( //If temperature did not decrease.
+                    m_ar_fPreviousMinusCurrentTemperature[byCoreID] <= 0
+                    && m_wMilliSecondsPassed > m_wMilliSecondsToWaitForCoolDown
+  //                  DidNotCoolDownInTime()
+                    )
+                {
+    //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
+    //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
+                  SetLowerFrequencyFromAvailableMultipliers(
+                    byCoreID ,
+                    m_arp_percpucoreattributes ,
+                    ar_fCPUcoreLoadInPercent ,
+                    fFreqInMHz,
+//                    m_wNumCPUcores ,
+                    fLowerMultiplier ,
+                    fNextMultiplierCalculatedFromCurrentLoad
+                    ) ;
+                  m_dwBeginInMillisOfTooHot = dwCurrentTimeInMillis ;
+                  m_b1stTimeInRowTooHot = true ;
+                }
+              }// for-loop
+            }
             //DEBUG_COUTN(
 //            LOGN("too hot:yes")
               //DEBUG("core 0 usage: %lf\n",mp_cpucoredata->m_arfCPUcoreLoadInPercent);
@@ -580,20 +649,6 @@ ExitCode DynFreqScalingThreadBase::Entry()
               //  mp_cpucoredata->m_arwCurrentFreqInMHz[0],mp_cpucoredata->
               //  m_arfCPUcoreLoadInPercent);
 
-            for( byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
-            {
-  //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-  //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
-              SetLowerFrequencyFromAvailableMultipliers(
-                byCoreID ,
-                arp_percpucoreattributes ,
-                ar_fCPUcoreLoadInPercent ,
-                fFreqInMHz,
-                wNumCPUcores ,
-                fLowerMultiplier ,
-                fNextMultiplierCalculatedFromCurrentLoad
-                ) ;
-            }// for-loop
             if( mp_cpucoredata->m_byUpdateViewOnDVFS )
               //e.g. force redraw if it's a GUI.
               mp_cpucontroller->GetUserInterface()->
@@ -602,6 +657,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
           }//too hot
           else
           {
+            //Assign for the next time it gets too hot.
+            m_b1stTimeInRowTooHot = true ;
             LOGN("too hot:no")
     //        if( mp_icpu->//GetPercentalUsageForBothCores
     //            GetPercentalUsageForAllCores(mp_cpucoredata->
@@ -616,6 +673,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
               ) ;
             }
           }
+          m_bGotCPUcoreDataAtLeast1Time = true ;
         }
         else
           DEBUGN("DynFSB::Entry()--GetPercentalUsageForAllCores() failed()")
@@ -717,14 +775,22 @@ bool DynFreqScalingThreadBase::IsStopped()
   return m_vbDVFSthreadStopped ;
 }
 
-//BYTE
-//Use DWORD because of GetLastError(...) return code. 0=success
-DWORD DynFreqScalingThreadBase::Start()
+void DynFreqScalingThreadBase::SafePreviousTemperatures()
 {
-  LOGN("DynFreqScalingThreadBase::Start()")
-  m_vbRun = true ; 
-  LOGN("DynFreqScalingThreadBase::Start()--return" << 0 )
-  return 0 ;
+//  LOGN("DynFreqScalingThreadBase::SafePreviousTemperatures() begin")
+//  if( m_bGotCPUcoreDataAtLeast1Time )
+  {
+    for( BYTE byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
+    {
+//      LOGN("DynFreqScalingThreadBase::SafePreviousTemperatures() index:"
+//        << (WORD) byCoreID
+//        << "temp.:" << m_arp_percpucoreattributes[ byCoreID ].
+//        m_fTempInDegCelsius )
+      m_ar_fPreviousTemperaturesInDegCelsius [byCoreID] =
+        m_arp_percpucoreattributes[ byCoreID ].m_fTempInDegCelsius ;
+    }
+  }
+//  LOGN("DynFreqScalingThreadBase::SafePreviousTemperatures() end")
 }
 
 inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
@@ -733,7 +799,7 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
   PerCPUcoreAttributes * arp_percpucoreattributes  ,
   float ar_fCPUcoreLoadInPercent [],
   float fFreqInMHz,
-  WORD wNumCPUcores ,
+//  WORD wNumCPUcores ,
   float fLowerMultiplier ,
   float fNextMultiplierCalculatedFromCurrentLoad
   )
@@ -744,9 +810,9 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
 //    arp_percpucoreattributes[ byCoreID].m_fMultiplier )
   //fLowerMultiplier = //mp_cpucoredata->GetLowerMultiplier(
   WORD wArrayIndexOfLowerValue =
-    GetClosestLess(
+    ::GetClosestLess(
     mp_cpucoredata->m_arfAvailableMultipliers
-    , wNumCPUcores
+    , mp_cpucoredata->m_stdset_floatAvailableMultipliers.size()
     , arp_percpucoreattributes[ byCoreID].m_fMultiplier
     ) ;
   if( wArrayIndexOfLowerValue < MAXWORD )
@@ -764,11 +830,14 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
     arp_percpucoreattributes[ byCoreID].m_fMultiplier
     //the load may be ~0 or even < 0 (depends on CPU core usage getter code)
     * ar_fCPUcoreLoadInPercent[byCoreID] ;
-//  LOGN("DynFreqScalingThreadBase::SetLowerFrequency core " << (WORD) byCoreID
-//    << "multi from load="
-//    << "multi(" << arp_percpucoreattributes[ byCoreID].m_fMultiplier
-//    << ")*load(" << ar_fCPUcoreLoadInPercent[byCoreID]
-//    << ")=" << fNextMultiplierCalculatedFromCurrentLoad )
+  LOGN("DynFreqScalingThreadBase::SetLowerFrequency core "
+    << (WORD) byCoreID
+    << " multi < " << arp_percpucoreattributes[ byCoreID].m_fMultiplier
+    << ":" << fLowerMultiplier
+    << " multi from load="
+    << "multi(" << arp_percpucoreattributes[ byCoreID].m_fMultiplier
+    << ")*load(" << ar_fCPUcoreLoadInPercent[byCoreID]
+    << ")=" << fNextMultiplierCalculatedFromCurrentLoad )
   if(   //                    fFreqInMHz * ar_fCPUcoreLoadInPercent[byCoreID] <
       fNextMultiplierCalculatedFromCurrentLoad
          <
@@ -829,6 +898,16 @@ inline void DynFreqScalingThreadBase::SignalCPUdataCanBeSafelyRead()
 }
 
 //SyncOnStoppedState()
+
+//BYTE
+//Use DWORD because of GetLastError(...) return code. 0=success
+DWORD DynFreqScalingThreadBase::Start()
+{
+  LOGN("DynFreqScalingThreadBase::Start()")
+  m_vbRun = true ;
+  LOGN("DynFreqScalingThreadBase::Start()--return" << 0 )
+  return 0 ;
+}
 
 //The DVFS thread is only stopped if the loop ended at first.
 void DynFreqScalingThreadBase::Stop()

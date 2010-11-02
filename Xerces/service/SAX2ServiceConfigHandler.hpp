@@ -46,7 +46,8 @@ public:
     UserInterface * p_userinterface //,
     //I_CPUcontroller * p_cpucontroller
     );
-
+  void HandleGUIpathesXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes) ;
   void startElement(
     const XMLCh * const cp_xmlchURI,
     const XMLCh * const cp_xmlchLocalName,

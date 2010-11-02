@@ -76,6 +76,7 @@ public:
   WORD m_wAHalfOfMaxFreq ;
   //DFVS = dyn. volt. and freq. scaling
   WORD m_wMilliSecondsWaitBetweenDFVS ;
+  WORD m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased ;
   WORD m_wFamily ;
 //CPU controller (dyn libs) do not need thread synchronisation yet.
 #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB

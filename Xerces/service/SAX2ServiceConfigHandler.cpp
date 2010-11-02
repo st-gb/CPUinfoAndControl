@@ -15,7 +15,9 @@
   #include <UserInterface/UserInterface.hpp>//class UserInterface
   //for XercesAttributesHelper::GetAttributeValue(...)
   #include <Xerces/XercesAttributesHelper.hpp>
-  #include <Xerces/XercesHelper.hpp> //XercesHelper::ToStdString(const XMLCh *)
+//XercesHelper::ToStdString(const XMLCh *),
+//PossiblyHandleLoggingExclusionFilter_Inline(...)
+  #include <Xerces/XercesHelper.hpp>
 
 //class XERCES_CPP_NAMESPACE::Attributes
   #include <xercesc/sax2/Attributes.hpp>
@@ -53,93 +55,106 @@
     //p_cpucontroller = p_cpucontroller ;
 	}
 
+	void SAX2ServiceConfigHandler::HandleGUIpathesXMLelement(
+	  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
+	{
+    if( m_strElementName == "GUI_pathes" )
+    {
+      std::wstring stdwstrValue ;
+  //      char archAttributeName [] = "current_dir_for_GUI" ;
+      std::string stdstrAttributeName = "current_dir_for_GUI" ;
+      LOGN("trying to get XML attribute value for \"" <<
+        stdstrAttributeName << "\"")
+  //      xercesc_3_1:: Get
+      if( XercesAttributesHelper::GetAttributeValue
+          (
+            cr_xercesc_attributes,//"processor_name"
+  //            archAttributeName ,
+            stdstrAttributeName.c_str() ,
+            stdwstrValue
+          )
+        )
+      {
+        LOGN("XML attribute \"" << stdstrAttributeName << "\" exists")
+        LOGWN_WSPRINTF(L"Before setting current dir for GUI to %ls" ,
+          stdwstrValue.c_str()
+          )
+        LOGN("SAX2ServiceConfigHandler--address of model:" << m_p_model)
+        LOGN("SAX2ServiceConfigHandler--address of service attributes:"
+          << & m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo )
+        LOGN("SAX2ServiceConfigHandler--address of GUI current dir:"
+          << & m_p_model->m_serviceattributes.
+          m_stdwstrGUICurrentDirFullPathTo )
+        LOGN("SAX2ServiceConfigHandler--address of GUI current dir char ptr:"
+          << m_p_model->m_serviceattributes.
+          m_stdwstrGUICurrentDirFullPathTo.c_str() )
+  //          LOGN("SAX2ServiceConfigHandler--model->m_strProcessorName :"
+  //            << m_p_model->m_strProcessorName )
+  //          LOGN("m_p_model->m_serviceattributes.m_stdstrPathToGUIexe:"
+  //            << m_p_model->m_serviceattributes.m_stdstrPathToGUIexe )
+        //TODO program crash here
+        m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo =
+          stdwstrValue ;
+        //Use wide string because the character set for the language may
+        //need more than 256 characters.
+        LOGWN_WSPRINTF(L"set current dir for GUI to %ls" ,
+          //stdwstrValue.c_str()
+          m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo.
+          c_str()
+          )
+      }
+      stdstrAttributeName = "path_to_GUI_exe" ;
+      LOGN("trying to get XML attribute value for \"" <<
+        stdstrAttributeName << "\"")
+      if( XercesAttributesHelper::GetAttributeValue
+          (
+            cr_xercesc_attributes,//"processor_name"
+  //                archAttributeName ,
+            stdstrAttributeName.c_str() ,
+            stdwstrValue
+          )
+        )
+      {
+        m_p_model->m_serviceattributes.m_stdwstrPathToGUIexe =
+          stdwstrValue ;
+        //Use wide string because the character set for the language may
+        //need more than 256 characters.
+        LOGWN_WSPRINTF(L"set path to GUI exe to %ls" , //stdwstrValue.c_str()
+          m_p_model->m_serviceattributes.m_stdwstrPathToGUIexe.c_str() )
+      }
+    }
+  }
+
   void SAX2ServiceConfigHandler::startElement
     (
     const XMLCh * const cp_xmlchURI,
-    const XMLCh * const cp_xmlchLocalName,
+    const XMLCh * const cpc_xmlchLocalName,
     const XMLCh * const cp_xmlchQualifiedName,
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
 	  )
 	{
 	  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-	    cp_xmlchLocalName);
+	    cpc_xmlchLocalName);
 	  if( pchXMLelementName )
 	  {
-      std::wstring stdwstrValue ;
       LOGN( "XML element: " << pchXMLelementName );
       m_strElementName = std::string(pchXMLelementName) ;
+      if( PossiblyHandleLoggingExclusionFilter_Inline(
+        cpc_xmlchLocalName,
+        cr_xercesc_attributes)
+        )
+        ;
+      else
+        HandleGUIpathesXMLelement(cr_xercesc_attributes) ;
       //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
       // << endl );
-      if( m_strElementName == "GUI_pathes" )
-      {
-  //      char archAttributeName [] = "current_dir_for_GUI" ;
-        std::string stdstrAttributeName = "current_dir_for_GUI" ;
-        LOGN("trying to get XML attribute value for \"" <<
-          stdstrAttributeName << "\"")
-  //	    xercesc_3_1:: Get
-        if( XercesAttributesHelper::GetAttributeValue
-            (
-              cr_xercesc_attributes,//"processor_name"
-  //            archAttributeName ,
-              stdstrAttributeName.c_str() ,
-              stdwstrValue
-            )
-          )
-        {
-          LOGN("XML attribute \"" << stdstrAttributeName << "\" exists")
-          LOGWN_WSPRINTF(L"Before setting current dir for GUI to %ls" ,
-            stdwstrValue.c_str()
-            )
-          LOGN("SAX2ServiceConfigHandler--address of model:" << m_p_model)
-          LOGN("SAX2ServiceConfigHandler--address of service attributes:"
-            << & m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo )
-          LOGN("SAX2ServiceConfigHandler--address of GUI current dir:"
-            << & m_p_model->m_serviceattributes.
-            m_stdwstrGUICurrentDirFullPathTo )
-          LOGN("SAX2ServiceConfigHandler--address of GUI current dir char ptr:"
-            << m_p_model->m_serviceattributes.
-            m_stdwstrGUICurrentDirFullPathTo.c_str() )
-//          LOGN("SAX2ServiceConfigHandler--model->m_strProcessorName :"
-//            << m_p_model->m_strProcessorName )
-//          LOGN("m_p_model->m_serviceattributes.m_stdstrPathToGUIexe:"
-//            << m_p_model->m_serviceattributes.m_stdstrPathToGUIexe )
-          //TODO program crash here
-          m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo =
-            stdwstrValue ;
-          //Use wide string because the character set for the language may
-          //need more than 256 characters.
-          LOGWN_WSPRINTF(L"set current dir for GUI to %ls" ,
-            //stdwstrValue.c_str()
-            m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo.
-            c_str()
-            )
-        }
-        stdstrAttributeName = "path_to_GUI_exe" ;
-        LOGN("trying to get XML attribute value for \"" <<
-          stdstrAttributeName << "\"")
-        if( XercesAttributesHelper::GetAttributeValue
-            (
-              cr_xercesc_attributes,//"processor_name"
-//                archAttributeName ,
-              stdstrAttributeName.c_str() ,
-              stdwstrValue
-            )
-          )
-        {
-          m_p_model->m_serviceattributes.m_stdwstrPathToGUIexe =
-            stdwstrValue ;
-          //Use wide string because the character set for the language may
-          //need more than 256 characters.
-          LOGWN_WSPRINTF(L"set path to GUI exe to %ls" , //stdwstrValue.c_str()
-            m_p_model->m_serviceattributes.m_stdwstrPathToGUIexe.c_str() )
-        }
-      }
+
   //    else if( m_strElementName == "path_to_GUI_exe" )
   //    {
   //
   //    }
       //Release memory AFTER comparing.
-      XERCES_CPP_NAMESPACE::XMLString::release(&pchXMLelementName);
+      XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
 	  }
 	}
 	
