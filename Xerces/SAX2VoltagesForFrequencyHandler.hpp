@@ -34,17 +34,17 @@ XERCES_CPP_NAMESPACE_END
 //import/export mechanism.
 //#define XERCES_STATIC_LIBRARY
 
-class SAX2DefaultVoltageForFrequency
+class SAX2VoltagesForFrequencyHandler
   : public XERCES_CPP_NAMESPACE::DefaultHandler
 {
 //  XercesHelper m_xerceshelper ;
 public:
-  SAX2DefaultVoltageForFrequency(
+  SAX2VoltagesForFrequencyHandler(
     UserInterface & r_userinterface,
     Model & r_modeldata
     );
-  SAX2DefaultVoltageForFrequency(const SAX2DefaultVoltageForFrequency & orig);
-  //virtual ~SAX2DefaultVoltageForFrequency();
+  SAX2VoltagesForFrequencyHandler(const SAX2VoltagesForFrequencyHandler & orig);
+  //virtual ~SAX2VoltagesForFrequencyHandler();
 //private:
   UserInterface * m_p_userinterface ;
   Model * m_p_model ;

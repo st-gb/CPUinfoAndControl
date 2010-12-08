@@ -9,6 +9,7 @@
 #include <wx/event.h>
 
 //Forward declarations (to  avoid including the wxWidgets header files HERE)
+class wxBitmapToggleButton ;
 class wxBoxSizer ;
 class wxCheckBox ;
 class wxControl ;
@@ -46,9 +47,13 @@ private:
   ////in order to release the memory later (by storing the pointer
   ////to them).
   //std::vector<wxControl * > m_vecp_wxcontrol ;
+#ifdef wxUSE_BITMAPTOGGLEBTN
+  wxBitmapToggleButton * m_p_wxbitmapToggleButtonPause ;
+#endif //#ifdef wxUSE_BITMAPTOGGLEBTN
   wxBoxSizer * p_wxboxsizerCPUcoreFrequencyInMHz ;
+  wxBoxSizer * p_wxboxsizerTop ;
   wxButton * mp_wxbuttonApply ;
-  wxButton * mp_wxbuttonSetAsMinVoltage ;
+//  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
 //  wxCheckBox * mp_wxcheckboxValidPstate ;
@@ -77,6 +82,8 @@ private:
   wxString m_wxstrWriteVoltageAndMultiplierToolTip ;
 //  wxSpinCtrlDouble * mp_wxspinctrldoubleMultiplier ;
 private:
+  inline void AddApplyOrCancelSizer(
+    wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreCheckBoxSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreFrequencySizer(
@@ -85,12 +92,15 @@ private:
     wxSizer * p_wxsizerSuperordinate  ) ;
   inline void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  inline void AddPauseServiceCheckbox(wxSizer * p_wxsizer ) ;
   inline void AddPerformanceStateSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddPreventVoltageAboveDefaultVoltageButton(
     wxSizer * p_wxsizer ) ;
   inline void AddPreventVoltageBelowLowestStableVoltageButton(
     wxSizer * p_wxsizer ) ;
+  inline void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
+  inline void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddSetAsMinVoltageSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddSetAsWantedVoltageSizer(
@@ -112,6 +122,7 @@ public:
   inline void CPUcoreVoltageChanged() ;
   void CreateSliders();
   inline float GetCPUcoreFrequencyFromSliderValue() ;
+  inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   inline float GetMultiplierFromSliderValue() ;
   inline float GetVoltageInVoltFromSliderValue() ;
   void HandleCPUcoreFrequencyOrVoltageChanged(wxWindow * r_wxwindow) ;
@@ -124,6 +135,8 @@ public:
   void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
   void OnDecVoltage(wxCommandEvent & );
   void OnIncVoltage(wxCommandEvent & );
+  void OnPreventVoltageAboveDefaultVoltageCheckbox(wxCommandEvent & ) ;
+  void OnPreventVoltageBelowLowestStableVoltageCheckbox(wxCommandEvent & ) ;
   void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
   void OnSetAsMinVoltageButton(wxCommandEvent & );
   void OnSetAsWantedVoltageButton(wxCommandEvent & );
@@ -143,7 +156,8 @@ public:
     WORD wFreqInMHz ) ;
   void ChangeVoltageSliderValue(int nNewValue) ;
   inline BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
-  inline bool VoltageIsValid(float fVoltageInVolt) ;
+  inline BYTE VoltageIsWithinValidRange(float fVoltageInVolt
+    , float fCPUcoreFrequencyinMHz) ;
   //Necessary in order to get scroll events; to avoid compilation errors.
   DECLARE_EVENT_TABLE()
 };

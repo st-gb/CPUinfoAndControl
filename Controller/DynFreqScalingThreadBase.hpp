@@ -21,15 +21,24 @@ class DynFreqScalingThreadBase
 //private:
   //"protected" to inherit member attributes
 protected:
+  bool m_b1stTimeInRowTooHot ;
+  bool m_bGotCPUcoreDataAtLeast1Time ;
   CPUcoreData * mp_cpucoredata ;
   CPUcontrolBase & mr_cpucontrolbase ;
-  I_CPUcontroller * mp_cpucontroller ;
-  ICPUcoreUsageGetter * mp_icpu ;
-  bool m_bCalledInit ;
-  //DWORD m_dwMSRLow,m_dwMSRHigh ;
+  DWORD m_dwBeginInMillisOfTooHot ;
+  float * m_ar_fPreviousTemperaturesInDegCelsius ;
+  float * m_ar_fPreviousMinusCurrentTemperature ;
   float m_fVoltage ;
   float m_fPercentileIncrease ;
-  WORD m_wMilliSecondsToWait ;
+  I_CPUcontroller * mp_cpucontroller ;
+  ICPUcoreUsageGetter * mp_icpu ;
+  PerCPUcoreAttributes * m_arp_percpucoreattributes ;
+//  bool m_bCalledInit ;
+  //DWORD m_dwMSRLow,m_dwMSRHigh ;
+  WORD m_wMilliSecondsPassed ;
+  WORD m_wMilliSecondsToWaitForCoolDown ;
+//  WORD m_wMilliSecondsToWait ;
+  WORD m_wNumCPUcores ;
   void ChangeOperatingPointByLoad( 
     BYTE byCoreID 
     , float fLoad 
@@ -55,19 +64,30 @@ public:
     CPUcontrolBase & r_cpucontrolbase
     , CPUcoreData & r_cpucoredata
     ) ;
+  //"virtual" because else g++: "warning: `class DynFreqScalingThreadBase'
+  // has virtual functions but non-virtual destructor"
+  virtual ~DynFreqScalingThreadBase()
+  {
+    if( m_ar_fPreviousTemperaturesInDegCelsius )
+      delete m_ar_fPreviousTemperaturesInDegCelsius ;
+    if( m_ar_fPreviousMinusCurrentTemperature )
+      delete m_ar_fPreviousMinusCurrentTemperature ;
+  }
+  inline void CalcDiffBetweenCurrentAndPreviousTemperature() ;
   ExitCode Entry() ;
   //implement in the API of the concrete thread class.
   virtual bool IsRunning() const { return false ; }
   //"virtual" because it may be overwritten.
   virtual bool IsStopped() ; //{} ;
   BYTE GetCPUcoreWithHighestLoad( float & fHighestCPUcoreLoadInPercent) ;
+  inline void SafePreviousTemperatures() ;
   void SignalCPUdataCanBeSafelyRead() ;
   void SetLowerFrequencyFromAvailableMultipliers(
     BYTE byCoreID ,
     PerCPUcoreAttributes * arp_percpucoreattributes ,
     float ar_fCPUcoreLoadInPercent [] ,
     float fFreqInMHz,
-    WORD wNumCPUcores ,
+//    WORD wNumCPUcores ,
     float fLowerMultiplier ,
     float fNextMultiplierCalculatedFromCurrentLoad
     ) ;

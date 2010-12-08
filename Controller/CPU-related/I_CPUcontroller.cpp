@@ -37,6 +37,63 @@ I_CPUcontroller::I_CPUcontroller()
 {
 }
 
+BYTE I_CPUcontroller::CheckWhetherVoltageIsAboveDefaultVoltage(
+  float fVoltageInVolt, float fCPUcoreFrequencyinMHz)
+{
+  BYTE bVoltageIsValid = //not_above ;
+    in_safe_range ;
+  float fInterpolatedVoltage ;
+  if( //mp_cpucontroller->GetInterpolatedVoltageFromFreq(
+    GetInterpolatedVoltageFromFreq(
+      (WORD) fCPUcoreFrequencyinMHz ,
+      fInterpolatedVoltage ,
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault
+      )
+    )
+  {
+    LOGN("VoltageIsValid--interpolated voltage:" << fInterpolatedVoltage )
+    if(//Voltage to set is _above_ default voltage (-> too high/ dangerous).
+      fVoltageInVolt > fInterpolatedVoltage )
+    {
+      LOGN("voltage is above default voltage-> invalid")
+      bVoltageIsValid = //VoltageIsAboveDefaultVoltage ;
+        VoltageIsOutsideSafeRange ;
+    }
+  }
+  else
+    bVoltageIsValid = No2PstatesForVoltageInterpolationFound ;
+  return bVoltageIsValid ;
+}
+
+BYTE I_CPUcontroller::CheckWhetherVoltageIsBelowLowestStableVoltage(
+  float fVoltageInVolt, float fCPUcoreFrequencyinMHz)
+{
+  BYTE bVoltageIsValid = //not_below ;
+    in_safe_range ;
+  float fInterpolatedVoltage ;
+  if( //mp_cpucontroller->GetInterpolatedVoltageFromFreq(
+    GetInterpolatedVoltageFromFreq(
+      (WORD) fCPUcoreFrequencyinMHz ,
+      fInterpolatedVoltage ,
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable
+      )
+    )
+  {
+    LOGN("VoltageIsValid--interpolated voltage:" << fInterpolatedVoltage )
+    if(//Voltage to set is _below_ lowest settable voltage (-> too low/
+      //device may freeze/ malfunction/ can cause wrong CPU cache content).
+      fVoltageInVolt < fInterpolatedVoltage )
+    {
+      LOGN("voltage is below lowest stable voltage-> invalid")
+      bVoltageIsValid = //VoltageIsBelowLowestStableVoltage ;
+        VoltageIsOutsideSafeRange ;
+    }
+  }
+  else
+    bVoltageIsValid = No2PstatesForVoltageInterpolationFound ;
+  return bVoltageIsValid ;
+}
+
 //This CPU instruction (in contrast to wrmsr) is not dangerous.
 //So it can be implemented for every CPU controller in this base class.
 BOOL I_CPUcontroller::CpuidEx(
@@ -71,49 +128,48 @@ BYTE I_CPUcontroller::DisableFrequencyScalingByOS()
   return 0 ;
 }
 
-BYTE I_CPUcontroller::EnableOwnDVFS()
-{
-  LOGN("Enable own Dynamic Voltage and Frequency Scaling--ptrs:" << 
-    mp_model << mp_dynfreqscalingaccess )
-  if( mp_model && mp_dynfreqscalingaccess )
-  {
-    LOGN("Should enable Dynamic Voltage and Frequency Scaling?:" << 
-      mp_model->m_cpucoredata.m_bEnableDVFS )
-    if( mp_model->m_cpucoredata.m_bEnableDVFS )
-    {
-      if( mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-        )
-        DisableFrequencyScalingByOS();
-      PerCPUcoreAttributes * p_percpucoreattributes = 
-        & mp_model->m_cpucoredata.
-        m_arp_percpucoreattributes[ //p_atts->m_byCoreID 
-        0 ] ;
-      #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-      LOGN("freq scaling thread:" << p_percpucoreattributes->mp_dynfreqscalingthread )
-      //Keep away the dependance on Logger class for dyn libs.
-      //DynFreqScalingThread * p_dynfreqscalingthread
-      if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
-      {
-        LOGN("Other Dynamic Voltage and Frequency Scaling (register write)"
-          " is enabled?:" << mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-          )
-        if( ! //mp_pumastatectrl->mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-            mp_dynfreqscalingaccess->OtherDVFSisEnabled() 
-          )
-        {
-          //p_percpucoreattributes->mp_dynfreqscalingthread 
-          p_percpucoreattributes->SetCPUcontroller( this ) ;
-          p_percpucoreattributes->CreateDynFreqScalingThread( 
-            mp_icpucoreusagegetter
-            ) ;
-          return 1 ;
-        }
-      }
-      #endif
-    }
-  }
-  return 0 ;
-}
+//BYTE I_CPUcontroller::EnableOwnDVFS()
+//{
+//  LOGN("Enable own Dynamic Voltage and Frequency Scaling--ptrs:" <<
+//    mp_model << mp_dynfreqscalingaccess )
+//  if( mp_model && mp_dynfreqscalingaccess )
+//  {
+//    LOGN("Should enable Dynamic Voltage and Frequency Scaling?:" <<
+//      mp_model->m_cpucoredata.m_bEnableDVFS )
+//    if( mp_model->m_cpucoredata.m_bEnableDVFS )
+//    {
+//      if( mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+//        )
+//        DisableFrequencyScalingByOS();
+//      PerCPUcoreAttributes * p_percpucoreattributes = ModelDataModelData
+//        & mp_model->m_cpucoredata.
+//        m_arp_percpucoreattributes[ //p_atts->m_byCoreID
+//        0 ] ;
+//      #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+//      LOGN("freq scaling thread:" << p_percpucoreattributes->mp_dynfreqscalingthread )
+//      //Keep away the dependance on Logger class for dyn libs.
+//      //DynFreqScalingThread * p_dynfreqscalingthread
+//      if ( ! p_percpucoreattributes->mp_dynfreqscalingthread )
+//      {
+//        LOGN("Other Dynamic Voltage and Frequency Scaling (register write)"
+//          " is enabled?:" << mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+//          )
+//        if( ! mp_dynfreqscalingaccess->OtherDVFSisEnabled()
+//          )
+//        {
+//          //p_percpucoreattributes->mp_dynfreqscalingthread
+//          p_percpucoreattributes->SetCPUcontroller( this ) ;
+//          p_percpucoreattributes->CreateDynFreqScalingThread(
+//            mp_icpucoreusagegetter
+//            ) ;
+//          return 1 ;
+//        }
+//      }
+//      #endif
+//    }
+//  }
+//  return 0 ;
+//}
 
 float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
 {
@@ -162,7 +218,7 @@ void I_CPUcontroller::GetCurrentTemperatureInCelsiusAndStoreValues(
   WORD wCoreID )
 {
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
-    m_arp_percpucoreattributes  ;
+    m_arp_percpucoreattributes ;
   arp_percpucoreattributes[wCoreID].m_fTempInDegCelsius =
     GetTemperatureInCelsius(wCoreID) ;
 }

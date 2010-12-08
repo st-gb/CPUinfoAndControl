@@ -9,12 +9,16 @@
 //#include <specstrings.h> //for __out
 #include <Controller/multithread/criticalsection_type.hpp>
 
+//Forward declarations.
+class Model ;
+
 class NamedPipeClient
 {
   BOOL m_bool ;
   bool m_bConnected ;
   volatile bool m_vbIsReadingOrWriting ;
   HANDLE m_handleClientPipe; 
+  Model & m_r_model ;
   criticalsection_type m_criticalsection_typeIOandIsconnected ;
 public:
   volatile bool m_vbIsGettingCPUcoreData ;
@@ -24,9 +28,21 @@ public:
   DWORD m_dwMaxUserNameSize ;
   std::wstring m_stdwstrMessage ;
   //NamedPipeClient( LPTSTR lpszPipename ) ;
+  void Disconnect() ;
+  //_Must_ be defined here, else ~"undefined reference to Disconnect_Inline
+  // in MainFrame.cpp".
+  inline void Disconnect_Inline()
+  {
+    ::CloseHandle(m_handleClientPipe);
+  }
   inline bool GetConnectionStateViaGetNamedPipeHandleState() ;
   void OnDisconnect() ;
-  BYTE Init() ;
+  BYTE Init()
+  {
+    std::string stdstrMessage ;
+    return Init(stdstrMessage) ;
+  }
+  BYTE Init(std::string & r_stdstrMessage) ;
   bool IsConnected() ; //{ return m_bConnected ; }
   inline BOOL Read(
     //__out
@@ -48,6 +64,6 @@ public:
     //__inout_opt
     LPOVERLAPPED lpOverlapped
     ) ;
-  NamedPipeClient() ;
+  NamedPipeClient(Model & r_model ) ;
   ~NamedPipeClient() ;
 };

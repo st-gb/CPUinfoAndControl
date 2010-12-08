@@ -22,8 +22,10 @@
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   #include <Windows/NamedPipe/NamedPipeClient.hpp> //class NamedPipeClient
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-//class SAX2IPCcurrentCPUdataHandler
-#include <Xerces/IPC/SAX2IPCcurrentCPUdataHandler.hpp>
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  //class SAX2IPCcurrentCPUdataHandler
+  #include <Xerces/UserInterface/SAX2IPCcurrentCPUdataHandler.hpp>
+#endif
 //for x86IandC::thread_type
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
@@ -201,6 +203,8 @@ public:
   void RedrawEverything() ;
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
+  void StartService() ;
+  void StopService() ;
 };
 
 DECLARE_APP(wxX86InfoAndControlApp)

@@ -509,9 +509,13 @@ BOOL WinRing0_1_3RunTimeDynLinked::ReadPciConfigDwordEx(
     ;
   }
   else
+  {
+    DWORD dwErrorCode = ::GetLastError( ) ;
+    std::string strErrorMessage = GetHardwareAccessErrorDescription(
+      dwErrorCode, "PCI configuration space" , dwPCIaddress ) ;
     //bit description
 //    16-31 Reserved
-    UIconfirm("Accessing the PCI config space at\nPCI bus "
+    UIconfirm("Reading from the PCI configuration space at\nPCI bus "
       + to_stdstring<WORD>(
       //WinRing0: "8-15 PCI Bus Number"
       (dwPCIaddress >> 8 ) & BITMASK_FOR_LOWMOST_8BIT )
@@ -522,13 +526,16 @@ BOOL WinRing0_1_3RunTimeDynLinked::ReadPciConfigDwordEx(
       //WinRing0: "0- 2 Function Number"
       dwPCIaddress & BITMASK_FOR_LOWMOST_3BIT )
       + "\n, register address " + to_stdstring<WORD>( dwRegAddress )
-      + "\nfailed. possible causes:\n"
+      + "\nfailed.\n"
+      + strErrorMessage
+      + "possible causes:\n"
       "This program needs elevated privileges for ring 0 "
       "access. So run it as administrator.\n"
       "This program uses "
       "a DLL to communicate with the CPU for higher privileges. Does the "
       "file \"WinRing0[...].sys\" lay within the same directory as "
       "\"WinRing0[...].dll\"?\n");
+  }
   return bReturn ;
 }
 
@@ -610,7 +617,7 @@ WinRing0_1_3RunTimeDynLinked::WritePciConfigDwordEx (
     ;
   }
   else
-    UIconfirm("Accessing the CPU failed. possible causes:\n"
+    UIconfirm("Writing to the CPU configuration space failed. possible causes:\n"
       "This program needs elevated privileges for ring 0 "
       "access. So run it as administrator.\n"
       "This program uses "

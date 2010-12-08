@@ -6,7 +6,11 @@
  */
 
 #include <ModelData/ModelData.hpp> //class Model
-#include <Xerces/SAX2UserInterfaceConfigHandler.hpp>
+//SUPPRESS_UNUSED_VARIABLE_WARNING(...)
+#include <preprocessor_macros/suppress_unused_variable.h>
+#include <Xerces/UserInterface/SAX2UserInterfaceConfigHandler.hpp>
+//PossiblyHandleLoggingExclusionFilter_Inline(...)
+#include <Xerces/XercesHelper.hpp>
 //XercesAttributesHelper::GetAttributeValue(...)
 #include <Xerces/XercesString.hpp> //ansi_or_wchar_string_compare(...)
 #include <Xerces/XercesAttributesHelper.hpp>//ConvertXercesAttributesValue(...)
@@ -31,6 +35,57 @@ namespace Xerces
   SAX2UserInterfaceConfigHandler::~SAX2UserInterfaceConfigHandler()
   {
     // TODO Auto-generated destructor stub
+  }
+
+  void SAX2UserInterfaceConfigHandler::
+    HandleDynamicVoltageAndFrequencyScalingXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+    char * p_chXMLattributeName = "start_at_startup" ;
+//    bool bStartDVFSatStartup ;
+    if( XercesAttributesHelper::GetAttributeValue(
+      cr_xercesc_attributes
+       ,//"start_at_startup"
+       p_chXMLattributeName
+       ,//bStartDVFSatStartup
+       m_p_model->m_userinterfaceattributes.m_bStartDVFSatStartup
+       )
+     )
+    {
+      LOGN("bool value for \"" << p_chXMLattributeName << "\":"
+        << //bStartDVFSatStartup
+        m_p_model->m_userinterfaceattributes.m_bStartDVFSatStartup
+        )
+//      m_p_model->m_userinterfaceattributes.m_bStartDVFSatStartup =
+//        bStartDVFSatStartup ;
+    }
+    else
+      LOGN("Getting bool value for \"" << p_chXMLattributeName << "\"failed.")
+  }
+
+  void SAX2UserInterfaceConfigHandler::HandleLogFileNameXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+//    bool bAppendProcessID ;
+    char * p_chXMLattributeName = "append_process_ID" ;
+    if( //ConvertXercesAttributesValue<bool>(
+      XercesAttributesHelper::GetAttributeValue(
+      cr_xercesc_attributes
+       ,//"append_process_ID"
+       p_chXMLattributeName
+       ,//bAppendProcessID
+       m_p_model->m_bAppendProcessID
+       )
+     )
+    {
+      LOGN("bool value for \"" << p_chXMLattributeName << "\":"
+        << //bAppendProcessID
+        m_p_model->m_bAppendProcessID
+        )
+//      m_p_model->m_bAppendProcessID = bAppendProcessID ;
+    }
+    else
+      LOGN("Getting bool value for \"" << p_chXMLattributeName << "\"failed.")
   }
 
   void SAX2UserInterfaceConfigHandler::HandleMainFrameXMLelement(
@@ -69,6 +124,52 @@ namespace Xerces
      )
       m_p_model->m_userinterfaceattributes.
         m_wMainFrameTopLeftCornerYcoordinateInPixels = w ;
+  }
+
+  void SAX2UserInterfaceConfigHandler::HandleServiceXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+    LOGN("service element")
+    std::string stdstrAttributeName = "pipe_name" ;
+    std::wstring stdwstr //= Xerces::ConvertXercesStringToStdWstring(
+      //cr_xercesc_attributes.getLocalName() ) ;
+      ;
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes
+         , stdstrAttributeName.c_str()
+         , m_p_model->m_stdwstrPipeName ) == SUCCESS
+      )
+    {
+      LOGN("Getting attribute value for \"" << stdstrAttributeName
+        << "\" succeeded" )
+    }
+    else
+    {
+      LOGN("Getting attribute value for \"" << stdstrAttributeName
+        << "\" failed")
+    }
+  }
+
+  inline void SAX2UserInterfaceConfigHandler::HandleToolTipXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+    LOGN("tooltip element")
+    std::string stdstr = "delay_in_milliseconds" ;
+    WORD w ;
+    if( ConvertXercesAttributesValue<WORD>(
+      cr_xercesc_attributes
+       , //stdstr.c_str()
+       "delay_in_milliseconds"
+       ,w )
+     )
+    {
+      LOGN("Getting attribute value for \"" << stdstr << "\" succeeded" )
+      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
+    }
+    else
+    {
+      LOGN("Getting attribute value for \"" << stdstr << "\" failed")
+    }
   }
 
   void SAX2UserInterfaceConfigHandler::
@@ -120,9 +221,9 @@ namespace Xerces
 
   void SAX2UserInterfaceConfigHandler::startElement
     (
-    const XMLCh * const cp_xmlchURI,
-    const XMLCh * const cp_xmlchLocalName,
-    const XMLCh * const cp_xmlchQualifiedName,
+    const XMLCh * const cpc_xmlchURI,
+    const XMLCh * const cpc_xmlchLocalName,
+    const XMLCh * const cpc_xmlchQualifiedName,
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
   {
@@ -130,13 +231,14 @@ namespace Xerces
     //_MUST use XMLString::transcode() Linux: a wcscmp comparison does not work
     // here.
     char * p_chLocalName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-      cp_xmlchLocalName) ;
-    DEBUG_WCOUTN( L"local name:" << cp_xmlchLocalName << L"log_file_name: "
+      cpc_xmlchLocalName) ;
+    DEBUG_WCOUTN( L"local name:" << cpc_xmlchLocalName << L"log_file_name: "
       << stdwstr )
 #ifdef _DEBUG
     if( strlen(p_chLocalName ) > 3 )
     {
-      char * p_ch2 = (char *) cp_xmlchLocalName ;
+      char * p_ch2 = (char *) cpc_xmlchLocalName ;
+      SUPPRESS_UNUSED_VARIABLE_WARNING(p_ch2)
       DEBUG_WCOUTN( L"local name bytes:"
         << ( * p_ch2 ? *p_ch2 : ' ' )
         << ( *( p_ch2 + 1 ) ? *( p_ch2 + 1 ) : ' ' )
@@ -151,85 +253,59 @@ namespace Xerces
 #endif //#ifdef _DEBUG
 //    std::string stdstrLocalName(p_chLocalName) ;
     DEBUG_WPRINTFN( L"local name:%ls log_file_name:%ls" ,
-      (wchar_t *) cp_xmlchLocalName ,
+      (wchar_t *) cpc_xmlchLocalName ,
       stdwstr.c_str()
       )
-    if( ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+    if( PossiblyHandleLoggingExclusionFilter_Inline(
+      cpc_xmlchLocalName,
+      cr_xercesc_attributes)
+      )
+      ;
+    else
+    //TODO inperformant string comparison if multiple strings to compare start
+    //with the same prefix: "e.g." "start", "start_at_startup"
+    //_possibly_ do something like this: a _trie_ with a pointer to
+    // a handler function for the string at its leaves.
+    if( ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("Dynamic_Voltage_and_Frequency_Scaling") )
       )
     {
-      bool bStartDVFSatStartup ;
-      if( XercesAttributesHelper::GetAttributeValue(
-        cr_xercesc_attributes
-         ,"start_at_startup"
-         ,bStartDVFSatStartup )
-       )
-      {
-        LOGN("bool value for bStartDVFSatStartup:" << bStartDVFSatStartup )
-        m_p_model->m_userinterfaceattributes.m_bStartDVFSatStartup =
-          bStartDVFSatStartup ;
-      }
-      else
-        LOGN("getting bool value for bStartDVFSatStartup failed ")
+      HandleDynamicVoltageAndFrequencyScalingXMLelement(cr_xercesc_attributes) ;
     }
-    if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+    else if( //If strings equal.
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
           ANSI_OR_WCHAR("log_file_name") )
       )
     {
-      bool bAppendProcessID ;
-      if( //ConvertXercesAttributesValue<bool>(
-        XercesAttributesHelper::GetAttributeValue(
-        cr_xercesc_attributes
-         ,"append_process_ID"
-         ,bAppendProcessID )
-       )
-      {
-        LOGN("bool value for append_process_ID:" << bAppendProcessID )
-        m_p_model->m_bAppendProcessID = bAppendProcessID ;
-      }
-      else
-        LOGN("getting bool value for append_process_ID failed ")
+      HandleLogFileNameXMLelement( cr_xercesc_attributes);
     }
-    else
-    {
-    if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
-        ANSI_OR_WCHAR("tooltip") )
-      )
-    {
-      LOGN("tooltip element")
-      std::string stdstr = "delay_in_milliseconds" ;
-      WORD w ;
-      if( ConvertXercesAttributesValue<WORD>(
-        cr_xercesc_attributes
-         , //stdstr.c_str()
-         "delay_in_milliseconds"
-         ,w )
-       )
-      {
-        LOGN("Getting attribute value for \"" << stdstr << "\" succeeded" )
-        m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
-      }
-      else
-      {
-        LOGN("Getting attribute value for \"" << stdstr << "\" failed")
-      }
-    }
-    if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+    else if( //If strings equal.
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("main_frame") )
       )
     {
       HandleMainFrameXMLelement(cr_xercesc_attributes) ;
     }
-    if( //If strings equal.
-      ! ansi_or_wchar_string_compare( cp_xmlchLocalName,
+    else if( //If strings equal.
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
+        ANSI_OR_WCHAR("service") )
+      )
+    {
+      HandleServiceXMLelement(cr_xercesc_attributes) ;
+    }
+    else if( //If strings equal.
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
+        ANSI_OR_WCHAR("tooltip") )
+      )
+    {
+      HandleToolTipXMLelement(cr_xercesc_attributes) ;
+    }
+    else if( //If strings equal.
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
         ANSI_OR_WCHAR("voltage_and_frequency_settings_dialog") )
       )
     {
       HandleVoltageAndFrequencySettingsDialogXMLelement(cr_xercesc_attributes) ;
-    }
     }
     XERCES_CPP_NAMESPACE::XMLString::release( & p_chLocalName ) ;
   }//SAX2UserInterfaceConfigHandler::startElement(...)

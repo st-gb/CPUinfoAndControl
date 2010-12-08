@@ -34,7 +34,7 @@
 #include <wxWidgets/multithread/wxConditionBasedI_Condition.hpp>
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 //Member variable of class Xerces::IPCdataHandler
-#include <Xerces/IPC/IPCdataGenerator.hpp>
+#include <Xerces/service/IPCdataGenerator.hpp>
 
 //#include <fstream> //for class std::ofstream
 #include <vector> //class std::vector

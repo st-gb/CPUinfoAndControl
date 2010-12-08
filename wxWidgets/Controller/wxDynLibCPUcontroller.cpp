@@ -64,8 +64,16 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 //        ) ) ;
 //#endif
       wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
-      LOGN("Dyn Lib assigned fct ptr to symbol " << wxstrFuncName )
-      LOGN("Dyn Lib before calling " << wxstrFuncName )
+      LOGN("Dyn Lib assigned fct ptr to symbol "
+        //Convert to std::string, else g++ linker error:
+        //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
+        << ::GetStdString( wxstrFuncName )
+        )
+      LOGN("Dyn Lib before calling "
+        //Convert to std::string, else g++ linker error:
+        //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
+        << ::GetStdString( wxstrFuncName )
+        )
       DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
 
 //      //TODO

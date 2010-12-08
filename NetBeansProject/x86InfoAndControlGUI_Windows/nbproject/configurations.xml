@@ -235,15 +235,14 @@
           <itemPath>../../Windows/PowerProf/PowerProf_From_Win6.h</itemPath>
           <itemPath>../../Windows/PowerProf/PowerProf_defines.h</itemPath>
         </logicalFolder>
-        <itemPath>../../Windows/CPUcontrolService.cpp</itemPath>
-        <itemPath>../../Windows/CPUcontrolService.hpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageGetterIWbemServices.cpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageGetterIWbemServices.hpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageGetterNTQSI_WintopVxd.hpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.cpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.hpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageNTQSI_OO.hpp</itemPath>
-        <itemPath>../../Windows/CPUcoreUsageNTQSI_OO2.hpp</itemPath>
+        <logicalFolder name="WinRing0" displayName="WinRing0" projectFiles="true">
+          <itemPath>../../Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.cpp</itemPath>
+          <itemPath>../../Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp</itemPath>
+          <itemPath>../../Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.cpp</itemPath>
+          <itemPath>../../Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp</itemPath>
+          <itemPath>../../Windows/WinRing0/WinRing0dynLinked.cpp</itemPath>
+          <itemPath>../../Windows/WinRing0/WinRing0dynlinked.hpp</itemPath>
+        </logicalFolder>
         <itemPath>../../Windows/CalculationThread.cpp</itemPath>
         <itemPath>../../Windows/CalculationThread.hpp</itemPath>
         <itemPath>../../Windows/CurrentDir.cpp</itemPath>
@@ -264,11 +263,6 @@
         <itemPath>../../Windows/NamedPipeClient.hpp</itemPath>
         <itemPath>../../Windows/NamedPipeServer.cpp</itemPath>
         <itemPath>../../Windows/NamedPipeServer.hpp</itemPath>
-        <itemPath>../../Windows/ServiceBase.cpp</itemPath>
-        <itemPath>../../Windows/ServiceBase.hpp</itemPath>
-        <itemPath>../../Windows/WinRing0dynLinked.cpp</itemPath>
-        <itemPath>../../Windows/WinRing0dynlinked.hpp</itemPath>
-        <itemPath>../../Windows/main.cpp</itemPath>
       </logicalFolder>
       <logicalFolder name="wxWidgets" displayName="wxWidgets" projectFiles="true">
         <logicalFolder name="Controller" displayName="Controller" projectFiles="true">
@@ -389,6 +383,7 @@
       <itemPath>../../UserInterfaceBase.hpp</itemPath>
       <itemPath>../../Windows_compatible_typedefs.h</itemPath>
       <itemPath>../../Windows_specific.h</itemPath>
+      <itemPath>../../criticalsection_type.hpp</itemPath>
       <itemPath>../../global.h</itemPath>
       <itemPath>../../main.cpp</itemPath>
       <itemPath>../../preprocessor_helper_macros.h</itemPath>
@@ -412,7 +407,7 @@
     <conf name="Debug" type="1">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <compilerSet>MinGW|MinGW</compilerSet>
+        <compilerSet>Cygwin_4.x|Cygwin_4.x</compilerSet>
         <cRequired>false</cRequired>
         <platform>3</platform>
       </toolsSet>
@@ -425,6 +420,9 @@
         <ccTool>
           <commandlineTool>g++.exe</commandlineTool>
           <incDir>
+            <pElem>C:/wxWidgets-2.8.10/include</pElem>
+            <pElem>C:/Extras/xerces-c-3.0.1/src</pElem>
+            <pElem>${XERCES_SOURCE_PATH}</pElem>
             <pElem>../..</pElem>
             <pElem>../../Controller/MSVC_adaption_</pElem>
             <pElem>${WXWIDGETS_CYGWIN_PATH}/include</pElem>
@@ -435,6 +433,7 @@
             <pElem>../../MS_PlatformSDK6.1</pElem>
             <pElem>T:/MS_PlatformSDK6.1</pElem>
             <pElem>C:/Programme/cygwin/usr/include/mingw</pElem>
+            <pElem>C:/Program Files/WinRing0_1_2_0Alpha1/source/dll</pElem>
           </incDir>
           <preprocessorList>
             <Elem>_WINDOWS</Elem>
@@ -506,16 +505,6 @@
       </item>
       <item path="../../Linux/daemon.c" ex="true" tool="0">
       </item>
-      <item path="../../Windows/CPUcontrolService.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Windows/CPUcoreUsageGetterIWbemServices.cpp"
-            ex="true"
-            tool="1">
-      </item>
-      <item path="../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.cpp"
-            ex="true"
-            tool="1">
-      </item>
       <item path="../../Windows/DiscretionaryAccessControlList.cpp"
             ex="true"
             tool="1">
@@ -527,8 +516,6 @@
       <item path="../../Windows/NamedPipeClient.cpp" ex="true" tool="1">
       </item>
       <item path="../../Windows/NamedPipeServer.cpp" ex="true" tool="1">
-      </item>
-      <item path="../../Windows/main.cpp" ex="true" tool="1">
       </item>
       <item path="../../main.cpp" ex="true" tool="1">
       </item>
@@ -570,6 +557,137 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+    </conf>
+    <conf name="MinGW_Debug" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>MinGW|MinGW</compilerSet>
+        <cRequired>false</cRequired>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <incDir>
+            <pElem>T:/MS_PlatformSDK6.1</pElem>
+          </incDir>
+        </cTool>
+        <ccTool>
+          <commandlineTool>g++.exe</commandlineTool>
+          <incDir>
+            <pElem>C:/Extras/xerces-c-3.0.1/src</pElem>
+            <pElem>${XERCES_SOURCE_PATH}</pElem>
+            <pElem>C:/Libs</pElem>
+            <pElem>../..</pElem>
+            <pElem>../../Controller/MSVC_adaption_</pElem>
+            <pElem>${WXWIDGETS_FULL_ROOT_PATH}/include</pElem>
+            <pElem>${WX_ANSI_DBG_STATIC_SETUP_H_CYG_PATH}</pElem>
+            <pElem>C:/wxWidgets-2.8.10/msw-mingw-debug/lib/wx/include/msw-ansi-debug-static-2.8_</pElem>
+            <pElem>${WINRING0_CYGWIN_PATH}/source/dll</pElem>
+            <pElem>../../MS_PlatformSDK6.1</pElem>
+            <pElem>T:/MS_PlatformSDK6.1</pElem>
+            <pElem>C:/Programme/cygwin/usr/include/mingw</pElem>
+            <pElem>C:/Program Files/WinRing0_1_2_0Alpha1/source/dll</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>_WINDOWS</Elem>
+            <Elem>__WXMSW__</Elem>
+            <Elem>NOMINMAX</Elem>
+            <Elem>COMPILE_WITH_XERCES</Elem>
+            <Elem>INCLUDE_POWERPROF_FOR_WINDOWS_ABOVE_VERSION6</Elem>
+            <Elem>_GLIBCXX_USE_WCHAR_T_</Elem>
+            <Elem>_GLIBCXX_OSTREAM_</Elem>
+            <Elem>DEFINE_POWER_DATA_ACCESSOR</Elem>
+            <Elem>_DEBUG</Elem>
+            <Elem>_GLIBCXX_DEBUG_</Elem>
+            <Elem>UNICODE_</Elem>
+            <Elem>_UNICODE_</Elem>
+            <Elem>_GLIBCXX_EXPORT_TEMPLATE_</Elem>
+            <Elem>XERCES_STATIC_LIBRARY</Elem>
+            <Elem>XML_LIBRARY</Elem>
+            <Elem>COMPILE_WITH_AMD_GRIFFIN</Elem>
+          </preprocessorList>
+        </ccTool>
+        <linkerTool>
+          <linkerAddLib>
+            <pElem>${WX_CYG_ANSI_DBG_STAT_LIB_PATH}</pElem>
+            <pElem>C:/Libs/WinRing0_1_2_0Alpha1/release_</pElem>
+            <pElem>${WINRING0_CYG_LIB_PATH}</pElem>
+          </linkerAddLib>
+          <linkerLibItems>
+            <linkerLibLibItem>advapi32</linkerLibLibItem>
+            <linkerLibLibItem>xerces-c.dll</linkerLibLibItem>
+            <linkerLibLibItem>xerces-c</linkerLibLibItem>
+            <linkerLibLibItem>wx_mswd_core-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_based-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wx_mswd_adv-2.8</linkerLibLibItem>
+            <linkerLibLibItem>wxexpatd-2.8</linkerLibLibItem>
+            <linkerLibLibItem>comdlg32</linkerLibLibItem>
+            <linkerLibLibItem>gdi32</linkerLibLibItem>
+            <linkerLibLibItem>comctl32</linkerLibLibItem>
+            <linkerLibLibItem>ole32</linkerLibLibItem>
+            <linkerLibLibItem>uuid</linkerLibLibItem>
+            <linkerLibLibItem>oleaut32</linkerLibLibItem>
+            <linkerLibLibItem>kernel32</linkerLibLibItem>
+            <linkerLibLibItem>WinRing0</linkerLibLibItem>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="../../Controller/Linux.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/MSVC_adaption/LocalLanguageMessageFromErrorCode.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Controller/MSVC_adaption/stdlib_mscv_extras.c"
+            ex="true"
+            tool="0">
+      </item>
+      <item path="../../Controller/MSVC_adaption/tchar.h" ex="true" tool="3">
+      </item>
+      <item path="../../Controller/SelectPstateAction.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/Windows.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Controller/console.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/CalculationThread.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/EnglishMessageFromErrorCode.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/MSRdeviceFile.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Linux/daemon.c" ex="true" tool="0">
+      </item>
+      <item path="../../Windows/DiscretionaryAccessControlList.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../Windows/DynFreqScalingAccess.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/DynFreqScalingThread.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/NamedPipeClient.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../Windows/NamedPipeServer.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../main.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxGUI.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/CPUIDaccess.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller.cpp" ex="true" tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketClient.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../wxWidgets/Controller/wxServiceSocketServer.cpp"
+            ex="true"
+            tool="1">
+      </item>
+      <item path="../../wxWidgets/wxDynFreqScalingTimer.cpp" ex="true" tool="1">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

@@ -16,7 +16,7 @@ CC=gcc-4.exe
 CCC=g++-4.exe
 CXX=g++-4.exe
 FC=
-AS=as.exe
+AS=
 
 # Macros
 CND_PLATFORM=Cygwin_4.x-Windows
@@ -32,14 +32,14 @@ OBJECTDIR=build/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/console.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0dynLinked.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CurrentDir.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcoreUsageGetterIWbemServices.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/GetWindowsVersion.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxGUI.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/HighLoadThreadAttributes.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MainController.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/MSRaccess.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcoreUsageGetterNtQuerySystemInformation.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynFreqScalingThreadBase.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Windows.o \
@@ -49,7 +49,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/Controller.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/FreqAndVoltageSettingDlg.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/PowerProf/PowerProfDynLinked.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/main.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Logger.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/App.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/LocalLanguageMessageFromErrorCode.o \
@@ -65,7 +64,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/ErrorCodeFromGetLastErrorToString.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/CalculationThreadProc.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin/SAX2MainConfigHandler.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0dynLinked.o \
+	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdlib_mscv_extras.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/PowerProf/PowerProfFromWin6DynLinked.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/PentiumM/PentiumM_ClocksNotHaltedCPUcoreUsageGetter.o \
@@ -88,7 +87,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/AMD/Griffin/GriffinController.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/DiscretionaryAccessControlList.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/DynFreqScalingDlg.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/ServiceBase.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/main.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/XercesHelper.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Intel/Nehalem/NehalemController.o \
@@ -97,7 +95,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/CPUIDaccess.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/DynVoltAndFreqScaling.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUaccess.o \
-	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcontrolService.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/stdafx.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/PowerProf/PowerProfUntilWin6DynLinked.o \
 	${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Linux/EnglishMessageFromErrorCode.o \
@@ -143,15 +140,15 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/console.o: nbproject/Makefile-${CND
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/console.o ../../Controller/console.cpp
 
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0dynLinked.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/WinRing0/WinRing0dynLinked.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0dynLinked.o ../../Windows/WinRing0/WinRing0dynLinked.cpp
+
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CurrentDir.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/CurrentDir.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CurrentDir.o ../../Windows/CurrentDir.cpp
-
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcoreUsageGetterIWbemServices.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/CPUcoreUsageGetterIWbemServices.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcoreUsageGetterIWbemServices.o ../../Windows/CPUcoreUsageGetterIWbemServices.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/GetWindowsVersion.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/GetWindowsVersion.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
@@ -162,6 +159,11 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxGUI.o: nbproject/Makefile-${CND_CONF}.mk ../
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxGUI.o ../../wxGUI.cpp
+
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.o ../../Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData/HighLoadThreadAttributes.o: nbproject/Makefile-${CND_CONF}.mk ../../ModelData/HighLoadThreadAttributes.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/ModelData
@@ -177,11 +179,6 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/MSRaccess.o: nbproject/Makefile-${CN
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/MSRaccess.o ../../wxWidgets/MSRaccess.cpp
-
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcoreUsageGetterNtQuerySystemInformation.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcoreUsageGetterNtQuerySystemInformation.o ../../Windows/CPUcoreUsageGetterNtQuerySystemInformation.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/SAX2DefaultVoltageForFrequency.o: nbproject/Makefile-${CND_CONF}.mk ../../Xerces/SAX2DefaultVoltageForFrequency.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces
@@ -227,11 +224,6 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/PowerProf/PowerProfDynLinked.o: nbproj
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/PowerProf
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/PowerProf/PowerProfDynLinked.o ../../Windows/PowerProf/PowerProfDynLinked.cpp
-
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/main.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/main.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/main.o ../../Windows/main.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/Logger.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/Logger.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
@@ -308,10 +300,10 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin/SAX2MainConfigHandler.o: nb
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Xerces/AMD/Griffin/SAX2MainConfigHandler.o ../../Xerces/AMD/Griffin/SAX2MainConfigHandler.cpp
 
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0dynLinked.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/WinRing0dynLinked.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
+${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.cpp 
+	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0
 	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0dynLinked.o ../../Windows/WinRing0dynLinked.cpp
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.o ../../Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption/stdlib_mscv_extras.o: nbproject/Makefile-${CND_CONF}.mk ../../Controller/MSVC_adaption/stdlib_mscv_extras.c 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/MSVC_adaption
@@ -423,11 +415,6 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/DynFreqScalingDlg.o: n
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/wxWidgets/UserInterface/DynFreqScalingDlg.o ../../wxWidgets/UserInterface/DynFreqScalingDlg.cpp
 
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/ServiceBase.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/ServiceBase.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/ServiceBase.o ../../Windows/ServiceBase.cpp
-
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/main.o: nbproject/Makefile-${CND_CONF}.mk ../../main.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT
 	${RM} $@.d
@@ -467,11 +454,6 @@ ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUaccess.o: nbproject/Makefile-$
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Controller/I_CPUaccess.o ../../Controller/I_CPUaccess.cpp
-
-${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcontrolService.o: nbproject/Makefile-${CND_CONF}.mk ../../Windows/CPUcontrolService.cpp 
-	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows
-	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/Windows/CPUcontrolService.o ../../Windows/CPUcontrolService.cpp
 
 ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT/stdafx.o: nbproject/Makefile-${CND_CONF}.mk ../../stdafx.cpp 
 	${MKDIR} -p ${OBJECTDIR}/_ext/_DOTDOT/_DOTDOT

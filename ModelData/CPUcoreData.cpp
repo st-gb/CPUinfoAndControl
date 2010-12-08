@@ -183,6 +183,7 @@ void CPUcoreData::Init()
   //(creation of menus per CPU core )
   m_byNumberOfCPUCores = 0 ;
   m_wMaxFreqInMHz = 0 ;
+  m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased = 5000 ; //5 seconds.
   m_arp_percpucoreattributes = NULL ;
   mp_cpucontroller = NULL ;
   m_wMilliSecondsWaitBetweenDFVS = 200 ;

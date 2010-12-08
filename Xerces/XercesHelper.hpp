@@ -9,6 +9,9 @@
 
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //__int64
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <Xerces/XercesString.hpp> //Xerces::ansi_or_wchar_string_compare(...)
+//XercesAttributesHelper::GetAttributeValue(...)
+#include <Xerces/XercesAttributesHelper.hpp>
 
 //from C standard library
 #include <errno.h> //for "ERANGE"
@@ -28,6 +31,8 @@
 #include <xercesc/util/XercesVersion.hpp> //XERCES_CPP_NAMESPACE
 
 #define XERCES_ATTRIBUTE_VALUE_INVALID_DATA_FORMAT 2
+
+extern Logger g_logger ;
 
 //Needed for avoiding the exact namespace.
 //XERCES_CPP_NAMESPACE_USE
@@ -141,5 +146,35 @@ public:
     const XMLCh * p_xmlch
     ) ;
 };
+
+//@return true = "log_file_filter" element occured
+inline bool PossiblyHandleLoggingExclusionFilter_Inline(
+  const XMLCh * const cpc_xmchLocalName ,
+  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
+{
+  bool bRet = false ;
+
+  if( //If the strings equal.
+      ! Xerces::ansi_or_wchar_string_compare( cpc_xmchLocalName ,
+      ANSI_OR_WCHAR("log_file_filter") )
+    )
+  {
+    std::string stdstrValue ;
+    bRet = true ;
+    if( XercesAttributesHelper::GetAttributeValue(
+      cr_xercesc_attributes ,
+      //Use "( char * )" to avoid g++ Linux compiler warning
+      // "deprecated conversion from string constant to ‘char*’ "
+      ( char * ) "exclude" ,
+      stdstrValue )
+      )
+    {
+      LOGN("string to exclude from logging:" << stdstrValue )
+//        g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+      g_logger.AddExcludeFromLogging(stdstrValue) ;
+    }
+  }
+  return bRet ;
+}
 
 #endif	/* _XERCESHELPER_HPP */

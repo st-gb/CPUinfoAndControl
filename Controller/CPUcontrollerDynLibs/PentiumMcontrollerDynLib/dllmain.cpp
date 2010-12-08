@@ -36,6 +36,7 @@ extern ReadMSR_func_type g_pfnreadmsr ;
 extern WriteMSR_func_type g_pfn_write_msr ;
 //extern float g_fReferenceClockInMHz ;
 
+bool gs_b2ndTimeOrLaterReadTSCandFIDchange ;
 DWORD g_dwLowmostBits ;
 DWORD g_dwHighmostBits ;
 //ULONGLONG g_ullPerformanceEventCounterNumberOfFIDchange ;
@@ -127,6 +128,9 @@ BOOL APIENTRY DllMain(
 		break;
 	}
 #endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
+  SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent() ;
+#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
 	return TRUE;
 }
 
