@@ -389,6 +389,44 @@ inline void GetReferenceClockAccordingToStepping()
   }
 }
 
+inline float GetTemperatureInDegCelsiusPentiumM()
+{
+  static DWORD dwEAX ;
+  static DWORD dwEDX ;
+  ReadMSR(
+    IA32_THERM_STATUS ,
+    & dwEAX,     // bit  0-31
+    & dwEDX,     // bit 32-63
+    //1bin =core 0; 10bin=2dec= core 1
+    1  // Thread Affinity Mask
+    ) ;
+  //See Intel Vol. 3A doc # 253668 14-19, chapter
+  // "14.5.5.2 Reading the Digital Sensor" :
+  //"Critical temperature conditions are detected
+//  using the “Critical Temperature Status” bit. When this bit is set, the processor is
+//  operating at a critical temperature and immediate shutdown of the system should
+//  occur. Once the “Critical Temperature Status” bit is set, reliable operation is not guar-
+//  anteed."
+
+  //"Thermal Threshold #1 Status (bit 6, RO) — Indicates whether the actual
+//  temperature is currently higher than or equal to the value set in Thermal
+//  Threshold #1. If bit 6 = 0, the actual temperature is lower. If bit 6 = 1, the
+//  actual temperature is greater than or equal to TT#1. Quantitative information of
+//  actual temperature can be inferred from Digital Readout, bits 22:16.""
+
+//  "Critical Temperature Status (bit 4, RO) — Indicates whether the critical
+//  temperature detector output signal is currently active. If bit 4 = 1, the critical
+//  temperature detector output signal is currently active."
+  //bit 2 PROCHOT # or FORCEPR# event (RO)
+  return dwEAX &
+    //4dec = 100 bin
+    //
+    Critical_Temperature_Status_bit_mask |
+    dwEAX & Thermal_Threshold_1_Status_bit_mask
+    ? 99.0
+    : 30.0 ;
+}
+
 inline float GetVoltage(BYTE byVoltageID)
 {
   //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step

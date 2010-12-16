@@ -1,3 +1,7 @@
+-"wx core" lib for "wxApp" for getting wxEvents for non-blocking sockets
+ -needs gdi32.a for function "SelectObject" etc.
+ -needs comctl32 for function "InitCommonControls" etc.
+ -needs comdlg32 for function "ChooseFontA", GetOpenFileNameA etc.
 -libwx_base[x].a ->enter "wx_base[x]"
  for
    -wxDynamicLibrary

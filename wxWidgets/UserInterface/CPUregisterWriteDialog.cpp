@@ -16,8 +16,8 @@
 #include <Controller/character_string/stdstring_format.hpp> //from_stdstring()
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
-//std::string GetStdString(wxString & wxstr) etc.
-#include <wxWidgets/Controller/wxStringHelper.hpp>
+//std::string GetStdString(wxString & wxstr), getwxString(...) etc.
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 //An enum guarantees a unique number for each element.
 enum

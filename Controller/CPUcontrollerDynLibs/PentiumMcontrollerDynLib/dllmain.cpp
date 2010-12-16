@@ -134,13 +134,13 @@ BOOL APIENTRY DllMain(
 	return TRUE;
 }
 
+//Calling convention--must be the same as in the DLL
+//function signature that calls this function?!
 //#define DLL_CALLING_CONVENTION __stdcall
 #define DLL_CALLING_CONVENTION
 
 EXPORT
 void
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   //WINAPI
   DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
@@ -238,8 +238,6 @@ void
 EXPORT
 //The array pointed to by the return value must be freed by the caller of this function.
 float *
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   DLL_CALLING_CONVENTION
   //the reference clock might change. So better get the possible multipliers.
   GetAvailableMultipliers(
@@ -312,8 +310,6 @@ EXPORT
 //The array pointed to by the return value must be freed by the caller of this
 //function.
 float *
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   DLL_CALLING_CONVENTION
   //the reference clock might change. So better get the possible multipliers.
   GetAvailableVoltagesInVolt(
@@ -383,8 +379,6 @@ float *
 
 EXPORT
   BYTE
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   DLL_CALLING_CONVENTION
   GetCurrentVoltageAndFrequency(
     float * p_fVoltageInVolt
@@ -428,6 +422,16 @@ EXPORT
 //  return byRet ;
 }
 
+EXPORT
+float
+  DLL_CALLING_CONVENTION
+  GetTemperatureInCelsius ( WORD wCoreID
+  )
+{
+  return //(float) byTempInDegCelsius ;
+    GetTemperatureInDegCelsiusPentiumM() ;
+}
+
 //EXPORT
 //float GetCurrentReferenceClock()
 //{
@@ -446,8 +450,6 @@ EXPORT
 
 EXPORT
   BYTE
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   DLL_CALLING_CONVENTION
   SetCurrentVoltageAndMultiplier(
     float fVoltageInVolt

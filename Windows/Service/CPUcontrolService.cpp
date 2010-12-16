@@ -17,11 +17,12 @@
 //DEBUG(...), DEBUGN(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //for LocalLanguageMessageFromErrorCode(...)
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 //class WinRing0_1_3RunTimeDynLinked
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 //class XercesConfigurationHandler: for writing into memory buffer for IPC
 #include <Xerces/PStateConfig.hpp>
+#include <wx/apptrait.h> //class wxAppTraits
 
 //for the #defines like "WTS_SESSION_LOGIN" in <wts32api.h>
 //  ( is defined inside the #if (_WIN32_WINNT >= 0x0501)  )
@@ -43,7 +44,8 @@
 //#include <Windows/PowerProfFromWin6DynLinked.hpp>
 //#include <Windows/PowerProfUntilWin6DynLinked.hpp>
 //#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
-#include <Windows/CreateProcess.hpp> //Windows_API::CreateProcess(...)
+//Windows_API::CreateProcess(...)
+#include <Windows/CreateProcess/CreateProcess.hpp>
 
 #define NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE 65535
 
@@ -172,7 +174,8 @@ CPUcontrolService::CPUcontrolService(
 #ifdef COMPILE_WITH_IPC
 //    mr_ipc_datahandler(r_ipc_datahandler) ,
   m_ipc_datahandler ( m_model ) ,
-  m_ipcserver(this)
+  m_ipcserver(this) ,
+  m_wxservicesocketserver( this )
 #endif //#ifdef COMPILE_WITH_IPC
     //m_bProcess ( true )
     //, m_bRun ( true ) 
@@ -203,7 +206,8 @@ CPUcontrolService::CPUcontrolService(
 #ifdef COMPILE_WITH_IPC
 //  , mr_ipc_datahandler(r_ipc_datahandler)
   , m_ipc_datahandler ( m_model )
-  , m_ipcserver(this)
+  , m_ipcserver(this) ,
+  m_wxservicesocketserver( this )
 #endif //#ifdef COMPILE_WITH_IPC
 //  , m_powerprofdynlinked ( r_stdtstrProgramName )
 //  , m_stdtstrProgramName ( r_stdtstrProgramName )
@@ -308,8 +312,10 @@ void CPUcontrolService::CreateService( const TCHAR * const cpc_tchServiceName)
   }
 }
 
-void CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName
-  , std::string & stdtstrProgramName )
+void CPUcontrolService::DeleteService(
+  const TCHAR * cp_tchServiceName
+  , const std::string & stdtstrProgramName
+  )
 {
   DWORD dwErrorCodeFor1stError ;
   BYTE by = ServiceBase::DeleteService(//"GriffinStateService"
@@ -1066,7 +1072,87 @@ bool CPUcontrolService::Pause()
   return bAlreadyPaused ;
 }
 
-void CPUcontrolService::requestOption(
+//ReadOptionsAsStringLine()
+//{
+//std::cout << "select your option now: >>i/I<<nstall this program as service\n" ;
+////std::cin >> stdstrInput ;
+//std::cin.getline( //::getline(std::cin,
+//    //stdstrInput
+//    arch , 100 ) ; //.getline(
+//CreateStringVector(
+//  arch ,
+//  r_vecstdstrParams
+//  ) ;
+//stdstrInput = std::string(arch) ;
+//DEBUG("whole string length: %u\n", stdstrInput.length() );
+//for( WORD wIndex = 0 ; wIndex < stdstrInput.length(); ++ wIndex )
+//{
+//    switch ( stdstrInput[ wIndex ] )
+//    {
+//    case ' ':
+//    case '\t':
+//        bWhitespace = true ;
+//        ////Only if NOT the 1st of 2 AnfZeichen take a substring.
+//        ////(-> a anf-zeichen is there to allow a single string that
+//        ////even includes white spaces)
+//        //if( ! bAnfZeichen )
+//        //    vecstdstrParams.push_back(
+//        //        stdstrInput.substr( wBeginOfSubstring , //wNumberOfChanrs
+//        //        wIndex - wBeginOfSubstring + 1 )
+//        //      ) ;
+//        bStringSeperator = true ;
+//        break ;
+//    case '\"':
+//        if(
+//            //If already an AnfZeichen, then this AnfZeichen is the closing
+//            //AnfZeichen.
+//            bAnfZeichen )
+//        {
+//            //vecstdstrParams.push_back(
+//            //    stdstrInput.substr( wBeginOfSubstring , //wNumberOfChanrs
+//            //    wIndex - wBeginOfSubstring + 1 );
+//            bStringSeperator = true ;
+//        }
+//        else // 1st Anfzeichen of pair of 2 Anfzeichen.
+//            //The substring starts directly after this Anfuehrungs-zeichen.
+//            wBeginOfSubstring = wIndex + 1 ;
+//        //Invert value of variable.
+//        bAnfZeichen != bAnfZeichen ;
+//        break ;
+//    default:
+//        bWhitespace = false ;
+//        bStringSeperator = false ;
+//        if ( wBeginOfSubstring ==
+//            NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE )
+//            wBeginOfSubstring = wIndex ;
+//    }
+//    DEBUG("character: %c index:%u\n", stdstrInput[ wIndex ], wIndex ) ;
+//    if( bStringSeperator )
+//        wNumberOfSubstringChars = wIndex - wBeginOfSubstring ;
+//    if(
+//        //Last string character
+//        wIndex == stdstrInput.length() - 1
+//        )
+//        wNumberOfSubstringChars = wIndex - wBeginOfSubstring + 1;
+//    if( wNumberOfSubstringChars )
+//        //Only if NOT the 1st of 2 AnfZeichen take a substring.
+//        //(-> a anf-zeichen is there to allow a single string that
+//        //even includes white spaces)
+//        if( ! bAnfZeichen )
+//        {
+//            DEBUG("string seperator or end of whole string\n");
+//            vecstdstrParams.push_back(
+//                stdstrInput.substr( wBeginOfSubstring , //wNumberOfChanrs
+//                //wIndex - wBeginOfSubstring + 1
+//                wNumberOfSubstringChars )
+//              ) ;
+//            wBeginOfSubstring = NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE ;
+//            wNumberOfSubstringChars = 0 ;
+//        }
+//}
+//}
+
+int CPUcontrolService::requestOption(
     //Make as parameter as reference: more ressource-saving than
     //to return (=a copy).
     std::vector<std::string> & r_vecstdstrParams 
@@ -1083,13 +1169,16 @@ void CPUcontrolService::requestOption(
         "[i/I]nstall this program as service\n" 
         "[d/D]einstall/ [d/D]elete (this) service\n"
         "[r/R]einstall (this) service (delete->install)\n"
+        "[s/S]tart (this) service\n"
+        "Sto[p/P] (this) service\n"
+        "[q/Q]uit\n"
         ;
     int nChar = getche();
     std::cout << "\n" ;
     switch( toupper(nChar) )
     {
     case 'I':
-        std::cout << "You choosed to install the service\n" ;
+        std::cout << "You chose to install the service\n" ;
         std::cout << "Now input the name for the service. "
           "Input no text to choose the default name \"" << 
           stdstrDefaultProcessName << 
@@ -1099,7 +1188,7 @@ void CPUcontrolService::requestOption(
         bContinue = true ;
         break ;
     case 'D':
-        std::cout << "You choosed to delete the service\n" ;
+        std::cout << "You chose to delete the service\n" ;
         std::cout << "Now input the name for the service to delete. "
           "Input no text to choose the default name \"" << 
           stdstrDefaultProcessName << 
@@ -1109,7 +1198,7 @@ void CPUcontrolService::requestOption(
         bContinue = true ;
         break ;
     case 'R':
-      std::cout << "You choosed to reinstall the service\n" ;
+      std::cout << "You chose to reinstall the service\n" ;
       std::cout << "Now input the name for the service to delete and install "
         "afterwards. "
         "Input no text to choose the default name \"" <<
@@ -1119,8 +1208,29 @@ void CPUcontrolService::requestOption(
       //Valid input char->continue.
       bContinue = true ;
       break ;
-    default: 
-        std::cout << "You did not input a valid option\n" ;
+    case 'S':
+      std::cout << "You chose to start the service\n" ;
+      std::cout << "Now input the name for the service to start. "
+        "Input no text to choose the default name \"" <<
+        stdstrDefaultProcessName <<
+        "\"\nPress ENTER/ Return to finish.\n" ;
+      r_vecstdstrParams.push_back(_T("-s") );
+      bContinue = true ;
+      break ;
+    case 'P':
+      std::cout << "You chose to stop the service\n" ;
+      std::cout << "Now input the name for the service to start. "
+        "Input no text to choose the default name \"" <<
+        stdstrDefaultProcessName <<
+        "\"\nPress ENTER/ Return to finish.\n" ;
+      r_vecstdstrParams.push_back(_T("-p") );
+      bContinue = true ;
+      break ;
+    //Just for exclusion of the "default" switch.
+    case 'Q':
+      break ;
+   default:
+        std::cout << "You did not input a valid option.\n" ;
     }
     if( bContinue )
     {
@@ -1142,83 +1252,8 @@ void CPUcontrolService::requestOption(
           r_vecstdstrParams.push_back( r_stdstrServiceName ) ;
         }
     }
-
-    //std::cout << "select your option now: >>i/I<<nstall this program as service\n" ;
-    ////std::cin >> stdstrInput ;
-    //std::cin.getline( //::getline(std::cin, 
-    //    //stdstrInput 
-    //    arch , 100 ) ; //.getline(
-    //CreateStringVector(
-    //  arch , 
-    //  r_vecstdstrParams 
-    //  ) ;
-    //stdstrInput = std::string(arch) ;
-    //DEBUG("whole string length: %u\n", stdstrInput.length() );
-    //for( WORD wIndex = 0 ; wIndex < stdstrInput.length(); ++ wIndex )
-    //{
-    //    switch ( stdstrInput[ wIndex ] )
-    //    {
-    //    case ' ':
-    //    case '\t':
-    //        bWhitespace = true ;
-    //        ////Only if NOT the 1st of 2 AnfZeichen take a substring.
-    //        ////(-> a anf-zeichen is there to allow a single string that 
-    //        ////even includes white spaces)
-    //        //if( ! bAnfZeichen )
-    //        //    vecstdstrParams.push_back( 
-    //        //        stdstrInput.substr( wBeginOfSubstring , //wNumberOfChanrs
-    //        //        wIndex - wBeginOfSubstring + 1 ) 
-    //        //      ) ;
-    //        bStringSeperator = true ;
-    //        break ;
-    //    case '\"':
-    //        if( 
-    //            //If already an AnfZeichen, then this AnfZeichen is the closing
-    //            //AnfZeichen.
-    //            bAnfZeichen )
-    //        {
-    //            //vecstdstrParams.push_back( 
-    //            //    stdstrInput.substr( wBeginOfSubstring , //wNumberOfChanrs
-    //            //    wIndex - wBeginOfSubstring + 1 );
-    //            bStringSeperator = true ;
-    //        }
-    //        else // 1st Anfzeichen of pair of 2 Anfzeichen.
-    //            //The substring starts directly after this Anfuehrungs-zeichen.
-    //            wBeginOfSubstring = wIndex + 1 ;
-    //        //Invert value of variable.
-    //        bAnfZeichen != bAnfZeichen ;
-    //        break ;
-    //    default:
-    //        bWhitespace = false ;
-    //        bStringSeperator = false ;
-    //        if ( wBeginOfSubstring == 
-    //            NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE )
-    //            wBeginOfSubstring = wIndex ;
-    //    }
-    //    DEBUG("character: %c index:%u\n", stdstrInput[ wIndex ], wIndex ) ;
-    //    if( bStringSeperator )
-    //        wNumberOfSubstringChars = wIndex - wBeginOfSubstring ;
-    //    if( 
-    //        //Last string character 
-    //        wIndex == stdstrInput.length() - 1 
-    //        )
-    //        wNumberOfSubstringChars = wIndex - wBeginOfSubstring + 1;
-    //    if( wNumberOfSubstringChars )
-    //        //Only if NOT the 1st of 2 AnfZeichen take a substring.
-    //        //(-> a anf-zeichen is there to allow a single string that 
-    //        //even includes white spaces)
-    //        if( ! bAnfZeichen )
-    //        {
-    //            DEBUG("string seperator or end of whole string\n");
-    //            vecstdstrParams.push_back( 
-    //                stdstrInput.substr( wBeginOfSubstring , //wNumberOfChanrs
-    //                //wIndex - wBeginOfSubstring + 1 
-    //                wNumberOfSubstringChars ) 
-    //              ) ;
-    //            wBeginOfSubstring = NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE ;
-    //            wNumberOfSubstringChars = 0 ;
-    //        }
-    //}
+    //ReadOptionsAsStringLine() ;
+    return nChar ;
 }
 
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/
@@ -1261,7 +1296,9 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   // Initialization code goes here.
   //"After these calls[...,ServiceStatus()], the function should complete the
   //initialization of the service."
-  dwStatus = msp_cpucontrolservice->Initialize(
+  dwStatus = (
+    //Tell g++ that CPUcontrolServiceBase's Initialize is meant.
+    (CPUcontrolServiceBase *) msp_cpucontrolservice)->Initialize(
     argc
     , argv //&specificError
     );
@@ -1282,6 +1319,7 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
     GetCurrentCPUcoreDataInLoopThreadFunc ,
     msp_cpucontrolservice
     ) ;
+  StartwxSocketServerThread() ;
   StartIPCserverThread() ;
 #endif
 
@@ -1505,6 +1543,34 @@ bool CPUcontrolService::ShouldDeleteService(
   return bShouldDeleteService ;
 }
 
+bool CPUcontrolService::ShouldStartService(
+    const std::vector<std::string> & vecstdstrParams )
+{
+  bool bShouldStartService = false ;
+  //if( argc > 1 )
+  //    //if( strcmp(argv[1],"-i") == 0 )
+  //    if( std::string(argv[1]) == "-d" )
+  if ( IsWithinStrings(vecstdstrParams, "-s" )
+      )
+    bShouldStartService = true ;
+
+  return bShouldStartService ;
+}
+
+bool CPUcontrolService::ShouldStopService(
+    const std::vector<std::string> & vecstdstrParams )
+{
+  bool bShouldStopService = false ;
+  //if( argc > 1 )
+  //    //if( strcmp(argv[1],"-i") == 0 )
+  //    if( std::string(argv[1]) == "-d" )
+  if ( IsWithinStrings(vecstdstrParams, "-p" )
+      )
+    bShouldStopService = true ;
+
+  return bShouldStopService ;
+}
+
 void CPUcontrolService::StartIPCserverThread()
 {
   DWORD dwThreadId ;
@@ -1531,12 +1597,57 @@ void CPUcontrolService::StartIPCserverThread()
     //"When a thread terminates, its thread object is not freed until all open
     //handles to the thread are closed."
     //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
-    //"Closing a thread handle does not terminate the associated thread or remove
-    //the thread object."
+    //"Closing a thread handle does not terminate the associated thread or
+    //remove the thread object."
     //Close the thread handle here (waiting for the end of the thread via
     // WaitForSingleObject() would need another thread->not so good.)
     ::CloseHandle(handleThread ) ;
   }
+}
+
+void CPUcontrolService::StartwxSocketServerThread()
+{
+  DWORD dwThreadId ;
+  msp_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000) ;
+//  msp_cpucontrolservice->m_wxservicesocketserver.Init() ;
+  //IPC_servers wait for client and are often BLOCKING, so THIS
+  //block would not continue execution->start client
+  //connection listening in dedicated thread.
+  HANDLE handleThread =
+    ::CreateThread(
+    NULL,                   // default security attributes
+    0,                      // use default stack size
+    IPC_ServerThread,       // thread function name
+    // argument to thread function
+    & msp_cpucontrolservice->m_wxservicesocketserver ,
+    0,                      // use default creation flags
+    & dwThreadId
+    );   // returns the thread identifier
+  if ( handleThread == NULL )
+  {
+     LOGN("creating the IPC server thread failed");
+     return ;
+  }
+  else
+  {
+    //http://msdn.microsoft.com/en-us/library/ms686724%28v=VS.85%29.aspx:
+    //"When a thread terminates, its thread object is not freed until all open
+    //handles to the thread are closed."
+    //http://msdn.microsoft.com/en-us/library/ms724211%28v=VS.85%29.aspx:
+    //"Closing a thread handle does not terminate the associated thread or
+    //remove the thread object."
+    //Close the thread handle here (waiting for the end of the thread via
+    // WaitForSingleObject() would need another thread->not so good.)
+    ::CloseHandle(handleThread ) ;
+  }
+  //http://docs.wxwidgets.org/trunk/classwx_app_traits.html
+  // #11205b08706b4d83bc83d0170511c909:
+  // "The version in wxConsoleAppTraits returns a console-specific event loop
+  // which can be used to handle timer and socket events in console programs
+  // under Unix and MSW"
+//  wxAppTraits::CreateEventLoop() ;
+  //The socket events need to be processed in a thread!
+//  wxEventLoopBase * p = wxConsoleAppTraits::CreateEventLoop() ;
 }
 
 void CPUcontrolService::StartService()

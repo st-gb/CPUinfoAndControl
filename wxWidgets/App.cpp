@@ -37,7 +37,8 @@
 #include <Controller/multithread/I_Thread.hpp> //class I_Thread
 #include <ModelData/ModelData.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
-#include <wxWidgets/Controller/wxStringHelper.hpp> //getwxString(...)
+//getwxString(...)
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
@@ -63,6 +64,9 @@
 #else
   #include <Linux/MSRdeviceFile.hpp>
 #endif
+//class NonBlocking::wxServiceSocketClient
+#include <wxWidgets/Controller/non-blocking_socket/client/\
+wxServiceSocketClient.hpp>
 //#include <strstream> //ostrstream
 #include <string> //
 //#include <errno.h> //for "errno"
@@ -98,7 +102,8 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //  mp_dynfreqscalingaccess(NULL) ,
 //#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  m_ipcclient( m_model ) ,
+  //m_ipcclient( m_model ) ,
+  m_p_i_ipcclient(NULL) ,
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   m_maincontroller( this )
   , m_vbRetrieveCPUcoreData( true)
@@ -265,6 +270,50 @@ bool wxX86InfoAndControlApp::Confirm(
   return bReturn ;
 }
 
+void wxX86InfoAndControlApp::CreateAndShowMainFrame()
+{
+  LOGN("before creating the main frame")
+  wxString wxstrMainFrameTitle = //wxT("GUI") ;
+    wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI") ;
+  ////The user interface must be created before the controller because
+  ////it should show error messages because of e.g. missing privileges.
+  //p_frame = new MyFrame(
+  mp_frame = new MainFrame(
+    //_T(PROGRAM_NAME)
+    //m_stdtstrProgramName
+  //        mp_modelData->m_stdtstrProgramName +_T(" GUI")
+    wxstrMainFrameTitle ,
+  //        wxPoint(50,50),
+    wxPoint( m_model.m_userinterfaceattributes.
+      m_wMainFrameTopLeftCornerXcoordinateInPixels ,
+      m_model.m_userinterfaceattributes.
+      m_wMainFrameTopLeftCornerYcoordinateInPixels ) ,
+    //wxSize(450,340)
+    wxSize( m_model.m_userinterfaceattributes.m_wMainFrameWidthInPixels
+      , m_model.m_userinterfaceattributes.m_wMainFrameHeightInPixels)
+    , mp_cpucontroller
+    //, & m_modelData.m_cpucoredata
+    //, & mp_modelData->m_cpucoredata
+    , mp_modelData
+    , this
+    );
+  if( mp_frame )
+  {
+    LOGN("after main frame creation")
+    //p_frame->Show(TRUE);
+    //SetTopWindow(p_frame);
+    if( m_model.m_userinterfaceattributes.m_bShowMainFrameAtStartup )
+      mp_frame->Show(true);
+  //      p_wxframe->Show( true ) ;
+    LOGN("after showing the main frame")
+  //      ShowTaskBarIcon() ;
+    //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
+    //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
+    SetTopWindow(mp_frame);
+    LOGN("after setting the main frame as top level window")
+  }
+}
+
 void wxX86InfoAndControlApp::CPUcontrollerChanged()
 {
   //May be NULL.
@@ -328,9 +377,138 @@ void wxX86InfoAndControlApp::CPUcontrollerDeleted()
   mp_frame->CPUcontrollerDeleted() ;
 }
 
+bool wxX86InfoAndControlApp::ConnectIPCclient(
+  const wxString & cr_wxstrIPCclientURL
+//  , std::string & r_stdstrMessage
+  )
+{
+  if( cr_wxstrIPCclientURL != wxEmptyString )
+  {
+    //Guard against concurrent operations on the wx86InfoAndControlApp's
+    // m_p_i_ipclient object: no operation should occur until the object's
+    // creation has finished.
+    wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
+      //mp_wxx86infoandcontrolapp->
+      m_wxcriticalsectionIPCobject ) ;
+
+    if( //mp_wxx86infoandcontrolapp->
+        m_p_i_ipcclient )
+      delete //mp_wxx86infoandcontrolapp->
+      m_p_i_ipcclient ;
+    //see http://msdn.microsoft.com/en-us/library/aa365783%28v=VS.85%29.aspx:
+    //valid pipe names:
+    // "\\ServerName\pipe\PipeName"
+    // "\\.\pipe\PipeName" ( period (".") means: local computer )
+    const wxChar * cp_wxchPipeNameRegEx = //wxT("\\\\?*\\pipe\\*") ;
+      wxT("*?*\\pipe\\*") ;
+      //wxT("\\*") ;
+    if( cr_wxstrIPCclientURL.Matches( //wxT("\\\\?*\\pipe")
+          cp_wxchPipeNameRegEx
+          )
+      )
+    {
+      LOGN("address \"" << GetStdString(cr_wxstrIPCclientURL)
+        << "\" is a pipe address")
+//      mp_model->m_stdwstrPipeName = GetStdWstring(cr_wxstrIPCclientURL) ;
+      m_model.m_stdwstrPipeName = GetStdWstring(cr_wxstrIPCclientURL) ;
+      //mp_wxx86infoandcontrolapp->
+      m_p_i_ipcclient = new
+        Windows::NamedPipeClient( //* mp_model
+          m_model ) ;
+    }
+    else
+    {
+      wxString wxstrPipeName( cp_wxchPipeNameRegEx) ;
+      LOGN("address \"" << GetStdString(cr_wxstrIPCclientURL)
+        << "\"is not a pipe address: \""
+        << GetStdString( cr_wxstrIPCclientURL )
+        << "\" does not match \""
+        << GetStdString( wxstrPipeName ) << "\"-> trying to connect via socket" )
+      //mp_wxx86infoandcontrolapp->
+        m_p_i_ipcclient = new
+        NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
+    }
+    //mp_wxx86infoandcontrolapp->
+    m_wxstrDataProviderURL = cr_wxstrIPCclientURL ;
+    //ConnectToDataProvider_Inline() ;
+    return ConnectToDataProviderAndShowResult() ;
+  }
+  return false ;
+}
+
+bool wxX86InfoAndControlApp::ConnectToDataProviderAndShowResult()
+{
+  std::string stdstrMessage ;
+  bool bConnected =
+    //::wxGetApp().m_ipcclient.ConnectToDataProvider(stdstrMessage)
+    //mp_wxx86infoandcontrolapp->
+    IPCclientConnectToDataProvider(
+      stdstrMessage ) ;
+  if( bConnected )
+    ::wxMessageBox( wxT("connected to the service now")
+      ) ;
+  else
+    ::wxMessageBox( wxT("Could not connect to the service") +
+        ( stdstrMessage.empty() ? //wxT("")
+          wxString( wxT("") )
+          : //wxT(":\n")
+          //+ wxString( wxT(":\n") ) + getwxString(stdstrMessage) )
+          getwxString( ":\n" + stdstrMessage )
+        )
+      );
+  return bConnected ;
+}
+
 void wxX86InfoAndControlApp::CPUcoreUsageGetterDeleted()
 {
   mp_frame->CPUcoreUsageGetterDeleted() ;
+}
+
+void wxX86InfoAndControlApp::CreateHardwareAccessObject()
+{
+  try //catch CPUaccessexception
+  {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  //WinRing0dynLinked winring0dynlinked(p_frame) ;
+  //If allocated statically within this block / method the object
+  //gets invalid after leaving the block where it was declared.
+  //mp_winring0dynlinked
+  //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
+#ifdef _MSC_VER_ //possible because the import library is for MSVC
+  mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
+    this ) ;
+#else //Use runtime dynamic linking because no import library is available for
+  //MinGW.
+  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
+    this ) ;
+#endif
+  //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
+  //  mp_i_cpuaccess ) ;
+#else
+  //m_maincontroller.SetCPUaccess(NULL) ;
+  //m_MSRdeviceFile.SetUserInterface(this) ;
+  mp_i_cpuaccess = new MSRdeviceFile(this, GetNumberOfLogicalCPUcores() ) ;
+  //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
+#endif
+  //Assign to the global variable so that the functions (ReadMSR(...) etc.)
+  //that are exported by this executable can access the CPU registers.
+  g_p_cpuaccess = mp_i_cpuaccess ;
+  //the main controller needs CPUID (I_CPUaccess class ) access in order to
+  //retrieve the CPU by model, family etc.
+  m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
+  mp_i_cpuaccess->mp_model = mp_modelData ;
+  }
+  catch(//ReadMSRexception
+      CPUaccessException & r_cpuaccessexception )
+  {
+    LOGN("caught a CPUaccessException:"
+      << r_cpuaccessexception.m_stdstrErrorMessage )
+    //We may continue to use this program: e.g. for testing usage getter
+    //DLLs or for showing the usage etc. via IPC.
+    //If the construction of a I_CPUaccess object failed the pointer should
+    //already be NULL.
+//        mp_i_cpuaccess = NULL ;
+  }
 }
 
 void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
@@ -461,24 +639,32 @@ void //wxX86InfoAndControlApp::
 {
   LOGN("FetchCPUcoreDataFromIPC begin")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  NamedPipeClient & r_namedpipeclient = p_wxx86infoandcontrolapp->
-      m_ipcclient ;
-  if( //sending command succeeded
-    r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) &&
+//  NamedPipeClient & r_namedpipeclient = p_wxx86infoandcontrolapp->
+//      m_ipcclient ;
+  //Lock concurrent access to p_i_ipcclient from another thread.
+  wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
+    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCobject ) ;
+  IPC_Client * p_i_ipcclient = p_wxx86infoandcontrolapp->m_p_i_ipcclient ;
+  if( p_i_ipcclient &&
+      //sending command succeeded
+//    r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) &&
+      p_i_ipcclient->SendCommandAndGetResponse(get_current_CPU_data) &&
   //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
 //  if(
-    r_namedpipeclient.m_arbyIPCdata &&
+//    r_namedpipeclient.m_arbyIPCdata &&
+      p_i_ipcclient->m_arbyIPCdata &&
     // > 0 bytes
-    r_namedpipeclient.m_dwSizeInByte
+//    r_namedpipeclient.m_dwIPCdataSizeInByte
+      p_i_ipcclient->m_dwIPCdataSizeInByte
     )
   {
 //      mp_wxx86infoandcontrolapp->m_ipc_current_cpu_data_handler
 //      mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler.
-//        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ) ;
+//        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwIPCdataSizeInByte ) ;
 //      XERCES_CPP_NAMESPACE::MemBufInputSource membufinputsource(
 ////        arby,
 ////        dwSizeInBytes ,
-//        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ,
+//        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwIPCdataSizeInByte ,
 //        L"IPC_buffer" ) ;
     {
 //      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
@@ -486,8 +672,10 @@ void //wxX86InfoAndControlApp::
 //      ReadXMLdocumentInitAndTermXerces(
       if( ReadXMLdocumentWithoutInitAndTermXerces(
   //        membufinputsource,
-        r_namedpipeclient.m_arbyIPCdata ,
-        r_namedpipeclient.m_dwSizeInByte ,
+//        r_namedpipeclient.m_arbyIPCdata ,
+        p_i_ipcclient->m_arbyIPCdata ,
+//        r_namedpipeclient.m_dwIPCdataSizeInByte ,
+        p_i_ipcclient->m_dwIPCdataSizeInByte ,
         L"IPC_buffer" ,
         p_wxx86infoandcontrolapp->m_model ,
         p_wxx86infoandcontrolapp ,
@@ -775,31 +963,38 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
     * this ,
     m_model ) ;
   if( //sending command succeeded
-    m_ipcclient.SendCommandAndGetResponse(get_configuration_data) &&
+    //m_ipcclient.SendCommandAndGetResponse(get_configuration_data) &&
+    IPC_ClientSendCommandAndGetResponse_Inline(get_configuration_data) &&
   //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
   //  if(
-    m_ipcclient.m_arbyIPCdata &&
+    //m_ipcclient.m_arbyIPCdata &&
+    m_p_i_ipcclient->m_arbyIPCdata &&
     // > 0 bytes
-    m_ipcclient.m_dwSizeInByte
+    //m_ipcclient.m_dwIPCdataSizeInByte
+    m_p_i_ipcclient->m_dwIPCdataSizeInByte
     )
   {
     LOGN("GetConfigDataViaInterProcessCommunication-- number of IPC bytes:"
-      << m_ipcclient.m_dwSizeInByte )
+      //<< m_ipcclient.m_dwIPCdataSizeInByte
+      << m_p_i_ipcclient->m_dwIPCdataSizeInByte
+      )
   //      mp_wxx86infoandcontrolapp->m_ipc_current_cpu_data_handler
   //      mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler.
-  //        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ) ;
+  //        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwIPCdataSizeInByte ) ;
   //      XERCES_CPP_NAMESPACE::MemBufInputSource membufinputsource(
   ////        arby,
   ////        dwSizeInBytes ,
-  //        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwSizeInByte ,
+  //        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwIPCdataSizeInByte ,
   //        L"IPC_buffer" ) ;
   //      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
   //        m_wxcriticalsection ) ;
   //      ReadXMLdocumentInitAndTermXerces(
     if( ReadXMLdocumentWithoutInitAndTermXerces(
 //        membufinputsource,
-      m_ipcclient.m_arbyIPCdata ,
-      m_ipcclient.m_dwSizeInByte ,
+      //m_ipcclient.m_arbyIPCdata ,
+      m_p_i_ipcclient->m_arbyIPCdata ,
+      //m_ipcclient.m_dwIPCdataSizeInByte ,
+      m_p_i_ipcclient->m_dwIPCdataSizeInByte ,
       L"IPC_buffer" ,
       m_model ,
       this ,
@@ -819,7 +1014,67 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
       return 0 ;
   }
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  LOGN("GetConfigDataViaInterProcessCommunication return 2")
   return 2 ;
+}
+
+void wxX86InfoAndControlApp::IPCclientDisconnect()
+{
+  wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
+    m_wxcriticalsectionIPCobject ) ;
+  if( //Must be the 1st evaluation: check whether pointer is NULL
+    m_p_i_ipcclient )
+    return m_p_i_ipcclient->Disconnect() ;
+}
+
+bool wxX86InfoAndControlApp::IPCclientConnectToDataProvider(
+  std::string & r_stdstrMessage )
+{
+  return IPCclientConnect_Inline( r_stdstrMessage) ;
+}
+
+inline bool wxX86InfoAndControlApp::IPCclientConnect_Inline(
+  std::string & r_stdstrMessage)
+{
+  //Lock concurrent access to p_i_ipcclient from another thread.
+  wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
+    m_wxcriticalsectionIPCobject ) ;
+  if( //Must be the 1st evaluation: check whether pointer is NULL
+    m_p_i_ipcclient )
+    return m_p_i_ipcclient->ConnectToDataProvider(r_stdstrMessage) ;
+  return false ;
+}
+
+bool wxX86InfoAndControlApp::IPC_ClientIsConnected()
+{
+  return IPC_ClientIsConnected_Inline() ;
+}
+
+//Accumulates operations needed for determining if the IPC client object is
+//connected to the ICP server.
+inline bool wxX86InfoAndControlApp::IPC_ClientIsConnected_Inline()
+{
+//  x86IandC::critical_section_locker_type criticalsection_locker_typeIPCobject(
+//    mp_wxx86infoandcontrolapp->m_criticalsection_typeIPCobject ) ;
+  wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
+    m_wxcriticalsectionIPCobject ) ;
+//  IPC_Client * p_i_ipc_client = mp_wxx86infoandcontrolapp->m_p_i_ipcclient ;
+  return
+    //Must be the 1st evaluation: check whether pointer is NULL
+    m_p_i_ipcclient
+    && m_p_i_ipcclient->IsConnected() ;
+}
+
+inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
+  BYTE byCommand )
+{
+  //Lock concurrent access to p_i_ipcclient from another thread.
+  wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
+    m_wxcriticalsectionIPCobject ) ;
+  if( //Must be the 1st evaluation: check whether pointer is NULL
+    m_p_i_ipcclient )
+    return m_p_i_ipcclient->SendCommandAndGetResponse( byCommand ) ;
+  return 0 ;
 }
 
 bool wxX86InfoAndControlApp::OnInit()
@@ -877,6 +1132,8 @@ bool wxX86InfoAndControlApp::OnInit()
         )
       )
       Confirm( "loading UserInterface.xml failed" ) ;
+    else
+      m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
     DWORD dwProcID = wxGetProcessId() ;
     if( mp_modelData->m_bAppendProcessID )
     {
@@ -921,56 +1178,25 @@ bool wxX86InfoAndControlApp::OnInit()
     DEBUGN("before starting IPC thread")
 //    m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
     DEBUGN("after starting IPC thread")
-  	if( m_ipcclient.Init() )
+//    std::string stdstrMessage ;
+    wxString wxstrIPCdataProviderURL( getwxString( m_model.m_stdwstrPipeName)
+      ) ;
+    ConnectIPCclient(//stdstrMessage
+      wxstrIPCdataProviderURL
+      ) ;
+//  	if( //m_ipcclient.Init()
+//      //m_p_i_ipcclient && m_p_i_ipcclient->ConnectToDataProvider(stdstrMessage)
+//  	  ConnectIPCclient(//stdstrMessage
+//  	    wxstrIPCdataProviderURL
+//  	    )
+//      )
   	  LOGN("initializing IPC (for connection to the service) succeeded")
 #endif
     //if( mp_modelData )
     {
   	  //TODO program malfunction when the IPC thread is started.
 //      m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
-      try //catch CPUaccessexception
-      {
-    #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-      //WinRing0dynLinked winring0dynlinked(p_frame) ;
-      //If allocated statically within this block / method the object 
-      //gets invalid after leaving the block where it was declared.
-      //mp_winring0dynlinked 
-      //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
-#ifdef _MSC_VER_ //possible because the import library is for MSVC
-      mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
-        this ) ;
-#else //Use runtime dynamic linking because no import library is available for
-      //MinGW.
-      mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
-        this ) ;
-#endif
-      //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
-      //  mp_i_cpuaccess ) ;
-    #else
-      //m_maincontroller.SetCPUaccess(NULL) ;
-      //m_MSRdeviceFile.SetUserInterface(this) ;
-      mp_i_cpuaccess = new MSRdeviceFile(this, GetNumberOfLogicalCPUcores() ) ;
-      //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
-    #endif
-      //Assign to the global variable so that the functions (ReadMSR(...) etc.)
-      //that are exported by this executable can access the CPU registers.
-      g_p_cpuaccess = mp_i_cpuaccess ;
-      //the main controller needs CPUID (I_CPUaccess class ) access in order to
-      //retrieve the CPU by model, family etc.
-      m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
-      mp_i_cpuaccess->mp_model = mp_modelData ;
-      }
-      catch(//ReadMSRexception
-          CPUaccessException & r_cpuaccessexception )
-      {
-        LOGN("caught a CPUaccessException:"
-          << r_cpuaccessexception.m_stdstrErrorMessage )
-        //We may continue to use this program: e.g. for testing usage getter
-        //DLLs or for showing the usage etc. via IPC.
-        //If the construction of a I_CPUaccess object failed the pointer should
-        //already be NULL.
-//        mp_i_cpuaccess = NULL ;
-      }
+  	  CreateHardwareAccessObject() ;
       m_maincontroller.SetAttributeData( mp_modelData ) ;
       //m_winring0dynlinked.SetUserInterface(p_frame);
      
@@ -995,8 +1221,8 @@ bool wxX86InfoAndControlApp::OnInit()
           ) 
         )
       {
-//        //If neither a built-in or dynamically linked CPU controller or usage getter
-//        //returned a core number > 0
+//        //If neither a built-in or dynamically linked CPU controller nor
+//        //usage getter returned a core number > 0
 //        if( mp_modelData->m_cpucoredata.m_byNumberOfCPUCores == 0 )
 //        {
 //          LOGN("number of CPU cores not set neither by CPU controller nor by "
@@ -1047,52 +1273,13 @@ bool wxX86InfoAndControlApp::OnInit()
             m_fReferenceClock ;
       }
 
-      DEBUGN("before creating the main frame")
-      wxString wxstrMainFrameTitle = //wxT("GUI") ;
-        wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI") ;
-      ////The user interface must be created before the controller because
-      ////it should show error messages because of e.g. missing privileges.
-      //p_frame = new MyFrame(
-      mp_frame = new MainFrame(
-        //_T(PROGRAM_NAME)
-        //m_stdtstrProgramName
-//        mp_modelData->m_stdtstrProgramName +_T(" GUI")
-        wxstrMainFrameTitle ,
-//        wxPoint(50,50),
-        wxPoint( m_model.m_userinterfaceattributes.
-          m_wMainFrameTopLeftCornerXcoordinateInPixels ,
-          m_model.m_userinterfaceattributes.
-          m_wMainFrameTopLeftCornerYcoordinateInPixels ) ,
-        //wxSize(450,340)
-        wxSize( m_model.m_userinterfaceattributes.m_wMainFrameWidthInPixels
-          , m_model.m_userinterfaceattributes.m_wMainFrameHeightInPixels)
-        , mp_cpucontroller
-        //, & m_modelData.m_cpucoredata
-        //, & mp_modelData->m_cpucoredata
-        , mp_modelData
-        , this
-        );
-      if( mp_frame )
-      {
-        LOGN("after main frame creation")
-        //p_frame->Show(TRUE);
-        //SetTopWindow(p_frame);
-        if( m_model.m_userinterfaceattributes.m_bShowMainFrameAtStartup )
-          mp_frame->Show(true);
-  //      p_wxframe->Show( true ) ;
-        LOGN("after showing the main frame")
-  //      ShowTaskBarIcon() ;
-        //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
-        //"You call wxApp::SetTopWindow to let wxWidgets know about the top window."
-        SetTopWindow(mp_frame);
-      }
-      LOGN("after setting the main frame as top level window")
+      CreateAndShowMainFrame() ;
     //#ifdef _WINDOWS
     //  m_calculationthread.SetCPUcontroller(mp_i_cpucontroller);
     //#endif
 //      mp_frame->SetCPUcontroller(mp_cpucontroller) ;
 //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-//    if( m_ipcclient.Init() )
+//    if( m_ipcclient.ConnectToDataProvider() )
 //      LOGN("initializing IPC (for connection to the service) succeeded")
 //#endif
 
@@ -1185,25 +1372,37 @@ void wxX86InfoAndControlApp::PauseService(
   bool bTryToPauseViaServiceControlManager = false ;
   //The connection may have broken after it was established, so check it here.
   if( ! //::wxGetApp().
-      m_ipcclient.IsConnected() )
+      //m_ipcclient.IsConnected()
+      IPC_ClientIsConnected_Inline()
+    )
   {
     LOGN("not connected to the service")
+    std::string stdstrMessage ;
     if( ! //::wxGetApp().
-        m_ipcclient.Init()
+        //m_ipcclient.Init()
+        IPCclientConnect_Inline(stdstrMessage)
       && bTryToPauseViaServiceControlManagerIfViaIPCfails )
       bTryToPauseViaServiceControlManager = true ;
   }
   if( //::wxGetApp().
-      m_ipcclient.IsConnected() )
+      //m_ipcclient.IsConnected()
+      IPC_ClientIsConnected_Inline()
+    )
   {
     LOGN("OnPauseService--connected to the service")
     //TODO possibly make IPC communication into a separate thread because it
     // may freeze the whole GUI.
     //::wxGetApp().
-    m_ipcclient.SendCommandAndGetResponse(pause_service) ;
-    wxString wxstr = getwxString( //::wxGetApp().
-      m_ipcclient.m_stdwstrMessage ) ;
-    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
+    //m_ipcclient.SendCommandAndGetResponse(pause_service) ;
+    IPC_ClientSendCommandAndGetResponse_Inline(pause_service) ;
+//    wxString wxstr = getwxString( //::wxGetApp().
+//      m_ipcclient.m_stdwstrMessage ) ;
+//    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
+    if( m_p_i_ipcclient )
+    {
+      wxString wxstr = getwxString( m_p_i_ipcclient->m_stdwstrMessage ) ;
+      ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
+    }
   }
   else
     if( bTryToPauseViaServiceControlManagerIfViaIPCfails )

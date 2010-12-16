@@ -7,6 +7,7 @@
 #ifndef _XERCESHELPER_HPP
 #define	_XERCESHELPER_HPP
 
+#include <Controller/Logger/Logger.hpp> //class Logger
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //__int64
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <Xerces/XercesString.hpp> //Xerces::ansi_or_wchar_string_compare(...)
@@ -31,6 +32,8 @@
 #include <xercesc/util/XercesVersion.hpp> //XERCES_CPP_NAMESPACE
 
 #define XERCES_ATTRIBUTE_VALUE_INVALID_DATA_FORMAT 2
+
+//class Logger ;
 
 extern Logger g_logger ;
 

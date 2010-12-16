@@ -4,7 +4,7 @@
 //for format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #include <Windows/access_rights/DiscretionaryAccessControlList.h>
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 #ifdef __CYGWIN__
   #include <mingw/tchar.h> //for _T(...)
 #else

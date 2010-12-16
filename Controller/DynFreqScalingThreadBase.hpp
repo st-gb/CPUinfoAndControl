@@ -23,11 +23,17 @@ class DynFreqScalingThreadBase
 protected:
   bool m_b1stTimeInRowTooHot ;
   bool m_bGotCPUcoreDataAtLeast1Time ;
+  BYTE byCoreID ;
   CPUcoreData * mp_cpucoredata ;
   CPUcontrolBase & mr_cpucontrolbase ;
   DWORD m_dwBeginInMillisOfTooHot ;
+  DWORD m_dwCurrentTimeInMillis ;
+  float * m_ar_fCPUcoreLoadInPercent ;
   float * m_ar_fPreviousTemperaturesInDegCelsius ;
   float * m_ar_fPreviousMinusCurrentTemperature ;
+  float m_fFreqInMHz ;
+  float m_fLowerMultiplier ;
+  float m_fNextMultiplierCalculatedFromCurrentLoad ;
   float m_fVoltage ;
   float m_fPercentileIncrease ;
   I_CPUcontroller * mp_cpucontroller ;
@@ -35,6 +41,7 @@ protected:
   PerCPUcoreAttributes * m_arp_percpucoreattributes ;
 //  bool m_bCalledInit ;
   //DWORD m_dwMSRLow,m_dwMSRHigh ;
+  WORD wFreqInMHz ;
   WORD m_wMilliSecondsPassed ;
   WORD m_wMilliSecondsToWaitForCoolDown ;
 //  WORD m_wMilliSecondsToWait ;
@@ -75,6 +82,8 @@ public:
   }
   inline void CalcDiffBetweenCurrentAndPreviousTemperature() ;
   ExitCode Entry() ;
+  inline void HandleCPUtooHotDVFS() ;
+  void HandleSameCPUcoreVoltageForAllCPUcores() ;
   //implement in the API of the concrete thread class.
   virtual bool IsRunning() const { return false ; }
   //"virtual" because it may be overwritten.

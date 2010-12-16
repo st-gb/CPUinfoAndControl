@@ -194,6 +194,44 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     }
   }
 
+  float GetVoltageID_IntelCore_asFloat(float fVoltageInVolt)
+  {
+    //see "GetCurrentVoltageAndFrequency(...)":
+    //VoltageInVolt = 0.7125 + VoltageID * 0.0125 | -0.7125
+    //VoltageInVolt - 0.7125 = VoltageID * 0.0125 | :0.0125
+    //( VoltageInVolt - 0.7125 ) / 0.0125 = VoltageID
+    //<=> VoltageID = ( VoltageInVolt - 0.7125 ) / 0.0125
+    return (fVoltageInVolt - 0.7125f ) / 0.0125f ;
+  }
+
+  //Purpose of this function: converting from float to integer causes rounding
+  // errors:
+  // Analogy: for an AMD Griffin at 1.18 V the voltage ID in float is 29.999998
+  //  and would get 29 (because automatically rounded down 1.164 V) when
+  //  converting to an integer.
+  // For 1.164 voltage ID in float is 29.000004
+  inline BYTE GetClosestVoltageID_IntelCore2(float fVoltageInVolt )
+  {
+    //WORD wVoltageID = (fVoltageInVolt - 0.7 ) / 0.016 ;
+  //  float fVoltageMinusLowestVoltage = (fVoltageInVolt - 0.7 ) ;
+    float fVoltageID = //fVoltageMinusLowestVoltage / 0.016 ;
+      GetVoltageID_IntelCore_asFloat(fVoltageInVolt) ;
+    DEBUGN("GetClosestVoltageID--fVoltageID" << fVoltageID )
+    //ceil( fVoltageID );
+    WORD wVoltageID = //(fVolt - 0.7 ) / 0.016 ;
+      //Avoid g++ warning "warning: converting to `WORD' from `float'"
+      (WORD) fVoltageID ;
+    DEBUGN("GetClosestVoltageID--wVoltageID" << wVoltageID )
+    if( fVoltageID - (float) wVoltageID >=
+        //e.g. if desired voltage is 7.014: 7.014 - 7 = 0.014; 0.014/0.016=0.875
+        0.5 )
+      ++ wVoltageID ;
+    DEBUGN("GetClosestVoltageID--wVoltageID" << wVoltageID )
+    DEBUGN("GetClosestVoltageID--voltage in Volt" << fVoltageInVolt
+      << "-> voltage ID:" << wVoltageID )
+    return wVoltageID ;
+  }
+
   inline BYTE GetCurrentVoltageAndFrequencyIntelCore(
     float * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -432,12 +470,8 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //
 //    BYTE byVoltageID = (dwLowmostBits ) ;
 
-    //see "GetCurrentVoltageAndFrequency(...)":
-    //VoltageInVolt = 0.7125 + VoltageID * 0.0125 | -0.7125
-    //VoltageInVolt - 0.7125 = VoltageID * 0.0125 | :0.0125
-    //( VoltageInVolt - 0.7125 ) / 0.0125 = VoltageID
-    //<=> VoltageID = ( VoltageInVolt - 0.7125 ) / 0.0125
-    BYTE byVoltageID = (BYTE) ( (fVoltageInVolt - 0.7125f ) / 0.0125f ) ;
+    BYTE byVoltageID = GetClosestVoltageID_IntelCore2(fVoltageInVolt) ;
+
     dwLowmostBits = byVoltageID ;
 
     BYTE byFrequencyID = EncodeMultiplierAsInMSRIntelCore(fMultiplier) ;

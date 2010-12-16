@@ -24,10 +24,11 @@
 
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
 #ifdef __WXMSW__
-  #include <Windows/LocalLanguageMessageFromErrorCode.h>
+  #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
   #include <wxWidgets/App.hpp> //wxGetApp()
-  #include <wxWidgets/Controller/wxStringHelper.hpp>
+  //getwxString(...)
+  #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #endif
 #include <wxWidgets/UserInterface/MainFrame.hpp>
 
@@ -192,7 +193,8 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
         if( dw != 65535 )
         {
           std::string stdstr = ::LocalLanguageMessageFromErrorCodeA( dw ) ;
-          ::wxMessageBox( wxT("setting power scheme failed: ") + stdstr ) ;
+          ::wxMessageBox( wxT("setting power scheme failed: ")
+            + getwxString(stdstr ) ) ;
           LOGN( "setting power scheme failed" )
         }
       }

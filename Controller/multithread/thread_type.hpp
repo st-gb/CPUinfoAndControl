@@ -17,6 +17,7 @@
 #else
   //class wxThreadBasedI_Thread ;
   #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+  //#include <wx/thread.h> //class wxCriticalSectionLocker
 #endif
 
 namespace x86IandC
@@ -26,6 +27,7 @@ namespace x86IandC
 #else
   typedef wxThreadBasedI_Thread thread_type ;
 #endif
+  //typedef critical_section_locker_type wxCriticalSectionLocker ;
 }
 
 #endif /* THREAD_TYPE_HPP_ */

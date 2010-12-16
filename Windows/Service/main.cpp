@@ -9,10 +9,10 @@
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
 #include <Controller/Logger/Logger.hpp>
 //#include <Controller/Logger/log4cplus/log4cplus_Logger.hpp>
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
-#include <Windows/SetExePathAsCurrentDir.h> // for SetExePathAsCurrentDir()
+#include <Windows/SetExePathAsCurrentDir/SetExePathAsCurrentDir.h> // for SetExePathAsCurrentDir()
 //#include <Xerces/IPC/IPCdataGenerator.hpp>
 #include <string>
 #include <conio.h> //for getche()
@@ -83,6 +83,74 @@ void HandleErrorPlace(BYTE by, const std::string & cr_stdstr )
 {
 }
 
+void HandleProgramOptions(
+  const std::vector<std::string> & vecstdstrParams ,
+  const std::tstring & stdtstrProgramName
+  )
+{
+  try//ConnectToSCMerror
+  {
+    if( CPUcontrolService::ShouldDeleteService(vecstdstrParams) )
+    {
+      if( vecstdstrParams.size() > 1 )
+      {
+        CPUcontrolService::DeleteService( vecstdstrParams.at(1).c_str(),
+          stdtstrProgramName ) ;
+      }
+//      bStartServiceWithinThisProcess = false ;
+    }
+    if( CPUcontrolService::ShouldCreateService(vecstdstrParams) )
+    {
+      if( vecstdstrParams.size() > 1 )
+      {
+        CPUcontrolService::CreateService( vecstdstrParams.at(1).c_str() ) ;
+      }
+//      bStartServiceWithinThisProcess = false ;
+    }
+    if( CPUcontrolService::ShouldStartService(vecstdstrParams) )
+    {
+      if( vecstdstrParams.size() > 1 )
+      {
+        //CPUcontrolService::StartService( vecstdstrParams.at(1).c_str() ) ;
+        if( ServiceBase::StartService( GetStdTstring_Inline(
+          vecstdstrParams.at(1) ).c_str() ) == ERROR_SUCCESS )
+          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+            "Starting the service succeeded.")
+        else
+          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+            "Starting the service failed:" <<
+            LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << "."
+            )
+      }
+//      bStartServiceWithinThisProcess = false ;
+    }
+    if( CPUcontrolService::ShouldStopService(vecstdstrParams) )
+    {
+      if( vecstdstrParams.size() > 1 )
+      {
+        if( ServiceBase::StopService( GetStdTstring_Inline(
+          vecstdstrParams.at(1) ).c_str() ) == ERROR_SUCCESS )
+          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+            "Stopping the service succeeded.")
+        else
+          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+            "Stopping the service failed:" <<
+            LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << "."
+            )
+      }
+    }
+  }
+  catch( ConnectToSCMerror & r_connect_to_scm_error )
+  {
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "Error connecting to the service control manager:\n"
+      << LocalLanguageMessageFromErrorCodeA(
+        r_connect_to_scm_error.m_dwErrorCode)
+      << PossibleSolution(r_connect_to_scm_error.m_dwErrorCode)
+      )
+  }
+}
+
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
 int main( int argc, char *  argv[] )
@@ -106,55 +174,62 @@ int main( int argc, char *  argv[] )
 #endif
     g_logger.OpenFile( stdstrLogFileName ) ;
     DEBUG("Begin of main program entry point\n");
+//    LOGN( "stdin:" << stdin << " stdout:" << stdout << " argc:" << argc )
+//    if( stdin )
+//      LOGN("Executed as service.")
+//    else
+//      LOGN("Not executed as service.")
     //Must set the exe path as current dir before (else the file is located in
     //: C:\WINDOWS\System32) !
     //PossiblyOutputUsage() ;
     CPUcontrolBase::OuputCredits() ;
     if( argc == 1 )
     {
-      bool bStartService = true ;
+      bool bStartServiceWithinThisProcess = //true ;
+        false ;
       //IDEA: to distinguish between if called as service or by a user:
       //get the parent process name of this process.
       //Programs that run as service have "services.exe" as their parent
       //process.
       CPUcontrolService::outputUsage();
       std::vector<std::string> vecstdstrParams ;
-//Useful for debugging purposes.
-#ifdef EMULATE_EXECUTION_AS_SERVICE
-#else
-      CPUcontrolService::requestOption( vecstdstrParams
-        , stdtstrProgramName );
-#endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
-      if( vecstdstrParams.empty() )
+      //Useful for debugging purposes.
+      #ifdef EMULATE_EXECUTION_AS_SERVICE
+      #else
+      int nChar ;
+      do
       {
-          LOGN("This exe is started as service (and not as installer)");
-      }
-      else
-      {
+        nChar = CPUcontrolService::requestOption( vecstdstrParams
+          , stdtstrProgramName );
+        //LOGN("character entered:" << nChar )
+//        //The vector is empty when this program was executed/ invoked via the
+//        //service control manager.
+//        if( vecstdstrParams.empty() )
+        //The character is "-1" when this program was executed/ invoked via the
+        //service control manager.
+        if( nChar == -1 )
+        {
+          LOGN("This exe is started as service (and not "//"as installer)"
+            "for executing actions)");
+          bStartServiceWithinThisProcess = true ;
+          break ; //Leave this loop.
+        }
+        else
+        {
           DEBUG("Entered strings: ")
           for ( BYTE by = 0 ; by < vecstdstrParams.size() ; ++ by )
               //DEBUG("\"%s\" ", vecstdstrParams.at(by).c_str() );
               LOG("\"" << vecstdstrParams.at(by).c_str() << "\" " );
           DEBUG("\n" );
-      }
-      if( CPUcontrolService::ShouldDeleteService(vecstdstrParams) )
-      {
-        if( vecstdstrParams.size() > 1 )
-        {
-          CPUcontrolService::DeleteService( vecstdstrParams.at(1).c_str(),
-            stdtstrProgramName ) ;
         }
-        bStartService = false ;
+        HandleProgramOptions(vecstdstrParams, stdtstrProgramName) ;
+        //Clear the vector for the next call to CPUcontrolService::
+        //requestOption(...).
+        vecstdstrParams.clear() ;
       }
-      if( CPUcontrolService::ShouldCreateService(vecstdstrParams) )
-      {
-        if( vecstdstrParams.size() > 1 )
-        {
-          CPUcontrolService::CreateService( vecstdstrParams.at(1).c_str() ) ;
-        }
-        bStartService = false ;
-      }
-      if( bStartService )
+      while( toupper( nChar ) != 'Q' ) ;
+      #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
+      if( bStartServiceWithinThisProcess )
       {
          std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
           CPUcontrolService cpucontrolservice(
@@ -175,7 +250,7 @@ int main( int argc, char *  argv[] )
         if( ShouldDeleteService(argc, argv) && argc > 2 )
         {
           DWORD dwErrorCodeFor1stError ;
-            ServiceBase::DeleteService(//"GriffinStateService"
+            ServiceBase::DeleteService(
               argv[2]
               , dwErrorCodeFor1stError
               ) ;
@@ -199,8 +274,10 @@ int main( int argc, char *  argv[] )
   {
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
       "Error connecting to the service control manager:\n"
-      << LocalLanguageMessageFromErrorCodeA(r_connect_to_scm_error.m_dwErrorCode)
-      << PossibleSolution(r_connect_to_scm_error.m_dwErrorCode) )
+      << LocalLanguageMessageFromErrorCodeA(
+        r_connect_to_scm_error.m_dwErrorCode)
+      << PossibleSolution(r_connect_to_scm_error.m_dwErrorCode)
+      )
   }
   std::cout << //"Waiting for input in order for the output to be readable."
     " Hit any key to exit this program\n" ;
