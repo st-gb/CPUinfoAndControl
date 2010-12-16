@@ -383,19 +383,19 @@ BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
         fVoltageInVoltFromNearFreqBelowWantedFreq +
         fVoltagePerMHz * (float) wWantedFreqMinusFreqBelow
         ;
-//      LOGN("GetInterpolatedVoltageFromFreq("
-//        << "\nnearest freq from std::set below:"
-//        << wFreqInMHzFromNearFreqBelowWantedFreq
-//        << "\nnearest freq from std::set above:"
-//        << wFreqInMHzFromNearFreqAboveWantedFreq
-//        << "\nabove - below freq=" << wFreqInMHzFromNearFreqsWantedFreqDiff
-//        << "\nabove - below voltage=" << fVoltageFromFreqAboveAndBelowDiff
-//        << "\nvoltage/MHz(voltage above-below/freq above-below)="
-//        << std::ios::fixed << fVoltagePerMHz
-//        << "\nwanted freq - freq below=" << wWantedFreqMinusFreqBelow
-//        << "\ninterpolated voltage (voltage below+voltage/MHz*"
-//            "\"wanted freq - freq below\"=" << r_fVoltageInVolt
-//        )
+      LOGN("GetInterpolatedVoltageFromFreq("
+        << "\nnearest freq from std::set below:"
+        << wFreqInMHzFromNearFreqBelowWantedFreq
+        << "\nnearest freq from std::set above:"
+        << wFreqInMHzFromNearFreqAboveWantedFreq
+        << "\nabove - below freq=" << wFreqInMHzFromNearFreqsWantedFreqDiff
+        << "\nabove - below voltage=" << fVoltageFromFreqAboveAndBelowDiff
+        << "\nvoltage/MHz(voltage above-below/freq above-below)="
+        << std::ios::fixed << fVoltagePerMHz
+        << "\nwanted freq - freq below=" << wWantedFreqMinusFreqBelow
+        << "\ninterpolated voltage (voltage below+voltage/MHz*"
+            "\"wanted freq - freq below\"=" << r_fVoltageInVolt
+        )
       return true ;
     }
   }
@@ -764,11 +764,12 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
   , BYTE byCoreID)
 {
   BYTE byRet ;
-  DEBUGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
-#ifdef _DEBUG
-    << wFreqInMHz << ","
-    << (WORD) byCoreID << ")"
-#endif
+//  DEBUGN(
+  LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+//#ifdef _DEBUG
+    << "freq in MHZ:" << wFreqInMHz << ","
+    << "core ID:" << (WORD) byCoreID << ")"
+//#endif
     )
   byRet = SetFreqAndVoltageFromFreq(
     wFreqInMHz 
@@ -952,7 +953,20 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
                 << (WORD) byCoreID << ")"
                 "ret val: " << (WORD) byRet )
             }
+            else
+              LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,"
+                "...): voltage not set because "
+                "\"GetInterpolatedVoltageFromFreq(...)\" returned false")
           }
+          else
+            LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,"
+              "...): no array index for multiplier \""
+              << fCalculatedMultiplier << "\"found")
+        }
+        else
+        {
+          LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,...):"
+            "reference clock is 0 _and_ no available multipliers")
         }
       }
     }

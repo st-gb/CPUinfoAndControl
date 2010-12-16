@@ -12,7 +12,8 @@
 //#include <ModelData/RegisterData.hpp>
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 //#include <wxWidgets/wxStringHelper.h>
-#include <wxWidgets/Controller/wxStringHelper.hpp>
+//getwxString(...), GetStdString(wxString & )
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 #include <vector>
 

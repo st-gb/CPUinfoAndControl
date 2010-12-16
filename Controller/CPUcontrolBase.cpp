@@ -15,7 +15,8 @@
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
 #endif
 #include <Controller/MainController.hpp>//MainController::GetSupportedCPUs(...)
-#include <InputOutput/ReadFileContent.hpp> //ReadFileContent(std::string & )
+//ReadFileContent(std::string & )
+#include <InputOutput/ReadFileContent/ReadFileContent.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <UserInterface/UserInterface.hpp>
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
@@ -70,8 +71,9 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
 //  , I_CPUcontroller * & r_p_cpucontroller
   )
 {
-  std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
-    "CPUcontroller.cfg" ;
+  std::string stdstrFilePath ;
+  stdstrFilePath = GetCPUcontrollerConfigFilePath(
+    stdstrCPUtypeRelativeDirPath ) ;
   std::string stdstr = stdstrFilePath ;
   if( ReadFileContent( stdstr ) )
   {
@@ -198,6 +200,15 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
     LOGN("FreeRessources end")
   }
 
+  std::string CPUcontrolBase::GetCPUcontrollerConfigFilePath(
+    const std::string & stdstrCPUtypeRelativeDirPath
+     )
+  {
+    std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
+      "CPUcontroller.cfg" ;
+    return stdstrFilePath ;
+  }
+
 //Sourcecode that is the same for _all_ constructors.
 void CPUcontrolBase::InitMemberVariables()
 {
@@ -220,24 +231,30 @@ void CPUcontrolBase::InitMemberVariables()
 void CPUcontrolBase::OuputCredits()
 {
   std::tstring stdtstr ;
-  std::string stdstr ;
-  std::vector<std::tstring> stdvecstdtstring ;
-  MainController::GetSupportedCPUs(stdvecstdtstring) ;
-  stdstr = GetStdString( stdtstr ) ;
-  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
-    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-    //"This program is an undervolting program for AMD family 17 CPUs.\n"
-    "This program is a CPU information and control program for (built-in):\n"
-//    + stdtstr +
-    + stdstr +
-    //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n"
-    "license/ info: http://www.trilobyte-se.de/x86iandc/\n"
-    )
+  std::string stdstrSupportedCPUs ;
+  std::vector<std::tstring> stdvec_stdtstrSupportedCPUs ;
+  MainController::GetSupportedCPUs(stdvec_stdtstrSupportedCPUs) ;
+  stdstrSupportedCPUs = GetStdString( stdtstr ) ;
+  for(BYTE by = 0 ; by < stdvec_stdtstrSupportedCPUs.size() ; by ++ )
+    stdtstr += _T("-") + stdvec_stdtstrSupportedCPUs.at(by) + _T("\n") ;
+  if( stdstrSupportedCPUs.empty() )
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "This program is a CPU information and control program.\n"
+      //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n"
+      "license/ info: http://www.trilobyte-se.de/x86iandc/\n"
+      )
+  else
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "This program is a CPU information and control program for (built-in):\n"
+  //    + stdtstr +
+      + stdstrSupportedCPUs +
+      //"license/ info: http://amd.goexchange.de / http://sw.goexchange.de\n"
+      "license/ info: http://www.trilobyte-se.de/x86iandc/\n"
+      )
   std::cout <<
     "This executable is both in one:\n"
-    "-a(n) (de-)installer for the CPU controlling service\n"
-    "-the CPU controlling service itself\n" ;
+    "-a console application for executing actions for the service\n"
+    "-the CPU controlling/ information providing service itself\n" ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
 }

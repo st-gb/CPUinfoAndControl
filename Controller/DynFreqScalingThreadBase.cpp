@@ -9,7 +9,7 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF(...)
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
-#include <algorithms/binary_search.cpp> //GetClosestLess()
+#include <algorithms/binary_search/binary_search.cpp> //GetClosestLess()
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
 #include <preprocessor_macros/suppress_unused_variable.h>
 //#include <global.h> //LOGN
@@ -109,12 +109,12 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
   )
 {
   LOGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad"
-#ifdef _DEBUG
+//#ifdef _DEBUG
     "(core ID:"
     << (WORD) byCoreID << ",load:"
     << fLoad
     << ")"
-#endif
+//#endif
     )
   PerCPUcoreAttributes & r_percpucoreattributes = //mp_cpucoredata->
 //    m_arp_percpucoreattributes[byCoreID] ;
@@ -154,7 +154,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 
       //fLoad *= 1.5 ;
 //      float fVoltage ;
-      WORD wFreqInMHz ;
+//      WORD wFreqInMHz ;
 //      mp_cpucontroller->GetCurrentPstate(
 //        wFreqInMHz
 //        , fVoltage
@@ -174,19 +174,21 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
         << wFreqInMHz * mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor
         << (WORD) byCoreID << ")" )
 
-      float m_fCPUcoreFrequencyFactor ;
+//      float m_fCPUcoreFrequencyFactor ;
       //TODO
 //      if( mp_cpucoredata->m_fCPUcoreFreqFactor >
 //        mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor )
 //        m_fCPUcoreFrequencyFactor = mp_cpucoredata->m_fCPUcoreFreqFactor ;
 //      else
-        m_fCPUcoreFrequencyFactor = mp_cpucoredata->
-        m_fCPUcoreFreqIncreaseFactor ;
+//        m_fCPUcoreFrequencyFactor = mp_cpucoredata->
+//          m_fCPUcoreFreqIncreaseFactor ;
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
         //Explicit cast to avoid (g++) compiler warning.
         (WORD)
-          ( wFreqInMHz * m_fCPUcoreFrequencyFactor )
+          ( wFreqInMHz * //m_fCPUcoreFrequencyFactor
+            mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor
+          )
         , byCoreID
         );
       DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad("
@@ -199,7 +201,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
     else
     {
 //      float fVoltage ;
-      WORD wFreqInMHz ;
+//      WORD wFreqInMHz ;
 //      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
 //        "load <= threshold for increase")
       //m_fPreviousCPUusage 
@@ -288,15 +290,203 @@ ExitCode DynFreqScalingThreadBase::Entry()
   LOGN("1 CPU core power plane:" << mp_cpucontroller->m_b1CPUcorePowerPlane )
 
   //Refer directly (->faster?!).
-  float * ar_fCPUcoreLoadInPercent = mp_cpucoredata->
-    m_arfCPUcoreLoadInPercent ;
+  m_ar_fCPUcoreLoadInPercent = mp_cpucoredata->m_arfCPUcoreLoadInPercent ;
   m_b1stTimeInRowTooHot = true ;
   m_wNumCPUcores = mp_cpucoredata->GetNumberOfCPUcores() ;
   m_ar_fPreviousTemperaturesInDegCelsius = new float[ m_wNumCPUcores ] ;
   m_ar_fPreviousMinusCurrentTemperature = new float[ m_wNumCPUcores ] ;
   LOGN("DVFS thread: number of CPU cores:" << m_wNumCPUcores )
-  PerCPUcoreAttributes * m_arp_percpucoreattributes =
+//  PerCPUcoreAttributes * m_arp_percpucoreattributes =
+    m_arp_percpucoreattributes =
     mp_cpucoredata->m_arp_percpucoreattributes ;
+
+//  HandleSameCPUcoreVoltageForAllCPUcores() ;
+  //  else //if(mp_cpucontroller->m_b1CPUcorePowerPlane )
+  {
+//    BYTE byCoreID ;
+//    //Declare outside of "SetLowerFrequencyFromAvailableMultipliers" to not
+//    //be created every time.
+//    float fFreqInMHz ;
+//    float fLowerMultiplier ;
+//    float fNextMultiplierCalculatedFromCurrentLoad ;
+//    //Avoid Linux g++ warning "‘fFreqInMHz’ may be used uninitialized in this
+//    // function"
+//    SUPPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
+//    SUPPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
+//    SUPPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
+//    DWORD dwCurrentTimeInMillis ;
+    while( m_vbRun )
+    {
+      LOGN("DVFS thread running")
+      //DEBUG("begin of scaling thread loop\n");
+//      if( ! m_bCalledInit )
+//      {
+//        m_bCalledInit = true ;
+//        //mp_icpu->Init();
+//      }
+      //bool m_wCurrentFreqInMHz = false ;
+      if(
+        mp_cpucontroller->GetUserInterface()->m_bConfirmedYet
+        //&& m_bSuccFullyGotPStateFromMSR
+        )
+      {
+        LOGN("DynFreqScalingThreadBase::Entry: confirmed yet")
+
+  //      //Wait until all threads reading from the CPU core data have finished.
+  ////      mp_cpucoredata->m_conditionDVFSthreadMayChangeData.Wait() ;
+  //      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
+  //      //After the thread that called conditon.Wait() were woken up:
+  //      //"It then locks the mutex again and returns."
+  //      //So the mutex is unlocked at first if they call again "Wait()"?!
+  //      mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Lock() ;
+  //      LOGN("DynFreqScalingThreadBase::Entry(): after"
+  //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Lock()")
+  //      //Now wait for the other threads that read the CPU core attributes
+  //      //after Broadcast / while Sleep() at the end of this loop.
+  //      //"This method atomically releases the lock on the mutex associated with
+  //      //this condition[...]"
+  //      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Wait() ;
+
+  //      LOGN("DynFreqScalingThreadBase::Entry(): after"
+  //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Wait()")
+        //float fTempInDegCelsius ;
+
+//        mp_cpucoredata.m_arp_percpucoreattributes[]
+
+        if( mr_cpucontrolbase.
+          GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
+            m_ar_fCPUcoreLoadInPercent, m_wNumCPUcores) )
+        {
+          LOGN("after GetCurrentVoltageAndFrequency")
+          //check if a temp. could be received:
+          //Pentium M CPUs have no temperature register
+          if(
+            //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
+            //e.g. the CPU asserts "PROC_HOT" or the temp is above the throttle
+            //temperature.
+            (mp_cpucoredata->m_bTooHot = mp_cpucontroller->TooHot() )
+            )
+          {
+            HandleCPUtooHotDVFS(//dwCurrentTimeInMillis
+              ) ;
+          }//too hot
+          else
+          {
+            //Assign for the next time it gets too hot.
+            m_b1stTimeInRowTooHot = true ;
+            LOGN("too hot:no")
+    //        if( mp_icpu->//GetPercentalUsageForBothCores
+    //            GetPercentalUsageForAllCores(mp_cpucoredata->
+    //            m_arfCPUcoreLoadInPercent)
+    //          )
+            for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
+            {
+              ChangeOperatingPointByLoad( byCoreID ,
+                //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID]
+//                mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
+                m_ar_fCPUcoreLoadInPercent [byCoreID]
+              ) ;
+            }
+          }
+          m_bGotCPUcoreDataAtLeast1Time = true ;
+        }
+        else
+          DEBUGN("DynFSB::Entry()--GetPercentalUsageForAllCores() failed()")
+      }//m_bConfirmedYet
+      else
+        {
+        DEBUGN("DynFreqScalingThreadBase::Entry: NOT confirmed yet")
+        }
+  //    //All CPU core data is retrieved-> now the IPC can send the data without
+  //    // data corruption (that can happen when accessing the data from the IPC
+  //    // thread at the same time)
+  //    if( mp_cpucoredata->m_eventCurrentCPUdataRetrieved.Broadcast()
+  //        )
+
+      //use an inner block so that the mutexlocker object is destroyed early enough
+      // and so the mutex is unlocked when leaving this block.
+      {
+  //      LOGN("DVFS before lock(mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead)")
+  ////      //from http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionctor:
+  ////      // tell the other(s) thread(s) that the CPU core data may be accessed now:
+  ////      //  we must
+  ////      // lock the mutex first or we might signal the condition before the
+  ////      // waiting threads start waiting on it!
+  //      wxMutexLocker lock(mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead);
+
+        SignalCPUdataCanBeSafelyRead() ;
+      }
+      //LOGN("End of scaling thread loop");
+      OperatingSystem::Sleep(//m_wMilliSecondsToWait
+        mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
+      LOGN("DynFreqScalingThreadBase::Entry(): after "
+          "Sleep"
+#ifdef _DEBUG
+          "(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")"
+#endif
+          )
+    }//loop
+  }
+  //Release clients waiting on the condition.
+  SignalCPUdataCanBeSafelyRead() ;
+  LOGN("ended the Dynamic Voltage and Frequency Scaling loop")
+  m_vbDVFSthreadStopped = true ;
+  return 0;
+}
+
+//inline void DynFreqScalingThreadBase::GetLowerFrequencyFromAvailableMultipliers(
+//  //Because this "function" is inline parameters are not copied but replaced.
+//  BYTE byCoreID ,
+//  PerCPUcoreAttributes * arp_percpucoreattributes  ,
+//  float ar_fCPUcoreLoadInPercent [],
+//  float fFreqInMHz,
+//  WORD wNumCPUcores ,
+//  float fLowerMultiplier ,
+//  float fNextMultiplierCalculatedFromCurrentLoad
+//  )
+//{
+//  fNextMultiplierCalculatedFromCurrentLoad =
+//    arp_percpucoreattributes[ byCoreID].m_fMultiplier
+//    * ar_fCPUcoreLoadInPercent[byCoreID] ;
+//  fLowerMultiplier = //mp_cpucoredata->GetLowerMultiplier(
+//    GetClosestLess(
+//    mp_cpucoredata->m_arfAvailableMultipliers
+//    , wNumCPUcores
+//    , arp_percpucoreattributes[ byCoreID].m_fMultiplier
+//    ) ;
+//  LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
+//    "lower multi:" << fLowerMultiplier
+//    << "multi from load:" << fNextMultiplierCalculatedFromCurrentLoad )
+//  if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >=
+//  //                  (float) mp_cpucoredata->m_wMaxFreqInMHz /
+//  //                  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
+//  //                  wFreqInMHz >=
+//  //                  //50% of max. freq
+//  //                  0.5f
+//    //&& fTempInDegCelsius > 90.0f
+//  //                    fFreqInMHz * ar_fCPUcoreLoadInPercent[byCoreID] <
+//      fNextMultiplierCalculatedFromCurrentLoad
+//         <
+//  //                    arp_percpucoreattributes[ byCoreID].GetFreq( fLowerMuliplier )
+//        fLowerMultiplier
+//    )
+//  {
+//    fFreqInMHz = arp_percpucoreattributes[ byCoreID].GetFreqInMHz() ;
+//    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
+//      "lower multi < multi from load ->setting freq" << fFreqInMHz )
+//    //mp_cpucontroller->SetFrequencyInMHz(
+//  }
+//  else
+//  {
+//    fFreqInMHz = fLowerMultiplier *
+//        arp_percpucoreattributes[ byCoreID].m_fReferenceClockInMhz ;
+//    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
+//        "lower multi >= multi from load  ->setting freq" << fFreqInMHz )
+//  }
+//}
+
+void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
+{
   //If ganged then there is only 1 power plane for ALL CPU cores.
   //-> setting voltage affects _all_ CPU cores.
   //So change the performance state only for 1 core .
@@ -350,9 +540,10 @@ ExitCode DynFreqScalingThreadBase::Entry()
 
         //TODO exit thread when getting CPU core load fails?
         if( mp_icpu->//GetPercentalUsageForBothCores
-            GetPercentalUsageForAllCores( //mp_cpucoredata->
-            //m_arfCPUcoreLoadInPercent
-            ar_fCPUcoreLoadInPercent
+            GetPercentalUsageForAllCores(
+            //mp_cpucoredata->m_arfCPUcoreLoadInPercent
+//            ar_fCPUcoreLoadInPercent
+            m_ar_fCPUcoreLoadInPercent
             )
           )
         {
@@ -364,7 +555,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
           //needed).
           for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
           {
-            mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
+            mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
+              byCoreID) ;
             LOGN("multi for core " << (WORD) byCoreID
               << ":" << m_arp_percpucoreattributes[byCoreID].m_fMultiplier )
             //Even if CPU seemed to have 1 power plane (Nehalem) the different
@@ -474,7 +666,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
                 m_arp_percpucoreattributes ,
-                ar_fCPUcoreLoadInPercent ,
+//                ar_fCPUcoreLoadInPercent ,
+                m_ar_fCPUcoreLoadInPercent ,
                 fFreqInMHz,
 //                m_wNumCPUcores ,
                 fLowerMultiplier ,
@@ -537,238 +730,69 @@ ExitCode DynFreqScalingThreadBase::Entry()
           "Sleep(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")")
     } //loop
   }
-  else //if(mp_cpucontroller->m_b1CPUcorePowerPlane )
-  {
-    BYTE byCoreID ;
-    //Declare outside of "SetLowerFrequencyFromAvailableMultipliers" to not
-    //be created every time.
-    float fFreqInMHz ;
-    float fLowerMultiplier ;
-    float fNextMultiplierCalculatedFromCurrentLoad ;
-    //Avoid Linux g++ warning "‘fFreqInMHz’ may be used uninitialized in this
-    // function"
-    SUPPRESS_UNUSED_VARIABLE_WARNING(fFreqInMHz)
-    SUPPRESS_UNUSED_VARIABLE_WARNING(fLowerMultiplier)
-    SUPPRESS_UNUSED_VARIABLE_WARNING(fNextMultiplierCalculatedFromCurrentLoad)
-    DWORD dwCurrentTimeInMillis ;
-    while( m_vbRun )
-    {
-      LOGN("DVFS thread running")
-      //DEBUG("begin of scaling thread loop\n");
-//      if( ! m_bCalledInit )
-//      {
-//        m_bCalledInit = true ;
-//        //mp_icpu->Init();
-//      }
-      //bool m_wCurrentFreqInMHz = false ;
-      if(
-        mp_cpucontroller->GetUserInterface()->m_bConfirmedYet
-        //&& m_bSuccFullyGotPStateFromMSR
-        )
-      {
-        LOGN("DynFreqScalingThreadBase::Entry: confirmed yet")
-
-  //      //Wait until all threads reading from the CPU core data have finished.
-  ////      mp_cpucoredata->m_conditionDVFSthreadMayChangeData.Wait() ;
-  //      //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
-  //      //After the thread that called conditon.Wait() were woken up:
-  //      //"It then locks the mutex again and returns."
-  //      //So the mutex is unlocked at first if they call again "Wait()"?!
-  //      mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Lock() ;
-  //      LOGN("DynFreqScalingThreadBase::Entry(): after"
-  //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Lock()")
-  //      //Now wait for the other threads that read the CPU core attributes
-  //      //after Broadcast / while Sleep() at the end of this loop.
-  //      //"This method atomically releases the lock on the mutex associated with
-  //      //this condition[...]"
-  //      mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Wait() ;
-
-  //      LOGN("DynFreqScalingThreadBase::Entry(): after"
-  //          "mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead.Wait()")
-        //float fTempInDegCelsius ;
-
-//        mp_cpucoredata.m_arp_percpucoreattributes[]
-
-        if( mr_cpucontrolbase.
-          GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
-            ar_fCPUcoreLoadInPercent, m_wNumCPUcores) )
-        {
-          LOGN("after GetCurrentVoltageAndFrequency")
-          //check if a temp. could be received:
-          //Pentium M CPUs have no temperature register
-          if(
-            //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
-            //e.g. the CPU asserts "PROC_HOT" or the temp is above the throttle
-            //temperature.
-            (mp_cpucoredata->m_bTooHot = mp_cpucontroller->TooHot() )
-            )
-          {
-            if( m_b1stTimeInRowTooHot )
-            {
-              m_dwBeginInMillisOfTooHot = ::GetTickCount() ;
-              m_b1stTimeInRowTooHot = false ;
-              m_wMilliSecondsPassed = 0 ;
-              //In order to calc the difference between the temperature where it
-              //began to be too hot and the current temperature.
-              SafePreviousTemperatures() ;
-            }
-            else
-            {
-              dwCurrentTimeInMillis = ::GetTickCount() ;
-              m_wMilliSecondsPassed = ULONG_VALUE_DIFF( dwCurrentTimeInMillis
-                , m_dwBeginInMillisOfTooHot ) ;
-              CalcDiffBetweenCurrentAndPreviousTemperature() ;
-              for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
-              {
-                if( //If temperature did not decrease.
-                    m_ar_fPreviousMinusCurrentTemperature[byCoreID] <= 0
-                    && m_wMilliSecondsPassed > m_wMilliSecondsToWaitForCoolDown
-  //                  DidNotCoolDownInTime()
-                    )
-                {
-    //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
-    //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
-                  SetLowerFrequencyFromAvailableMultipliers(
-                    byCoreID ,
-                    m_arp_percpucoreattributes ,
-                    ar_fCPUcoreLoadInPercent ,
-                    fFreqInMHz,
-//                    m_wNumCPUcores ,
-                    fLowerMultiplier ,
-                    fNextMultiplierCalculatedFromCurrentLoad
-                    ) ;
-                  m_dwBeginInMillisOfTooHot = dwCurrentTimeInMillis ;
-                  m_b1stTimeInRowTooHot = true ;
-                }
-              }// for-loop
-            }
-            //DEBUG_COUTN(
-//            LOGN("too hot:yes")
-              //DEBUG("core 0 usage: %lf\n",mp_cpucoredata->m_arfCPUcoreLoadInPercent);
-              //DEBUG("Frequency before (possible) change:%u, core0 load:%f\n",
-              //  mp_cpucoredata->m_arwCurrentFreqInMHz[0],mp_cpucoredata->
-              //  m_arfCPUcoreLoadInPercent);
-
-            if( mp_cpucoredata->m_byUpdateViewOnDVFS )
-              //e.g. force redraw if it's a GUI.
-              mp_cpucontroller->GetUserInterface()->
-                CurrenCPUfreqAndVoltageUpdated() ;
-  //          }//getperc usage
-          }//too hot
-          else
-          {
-            //Assign for the next time it gets too hot.
-            m_b1stTimeInRowTooHot = true ;
-            LOGN("too hot:no")
-    //        if( mp_icpu->//GetPercentalUsageForBothCores
-    //            GetPercentalUsageForAllCores(mp_cpucoredata->
-    //            m_arfCPUcoreLoadInPercent)
-    //          )
-            for( byCoreID = 0 ; byCoreID < mp_cpucoredata->
-              GetNumberOfCPUcores() ; ++ byCoreID )
-            {
-              ChangeOperatingPointByLoad( byCoreID ,
-                //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID]
-                mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
-              ) ;
-            }
-          }
-          m_bGotCPUcoreDataAtLeast1Time = true ;
-        }
-        else
-          DEBUGN("DynFSB::Entry()--GetPercentalUsageForAllCores() failed()")
-      }//m_bConfirmedYet
-      else
-        {
-        DEBUGN("DynFreqScalingThreadBase::Entry: NOT confirmed yet")
-        }
-  //    //All CPU core data is retrieved-> now the IPC can send the data without
-  //    // data corruption (that can happen when accessing the data from the IPC
-  //    // thread at the same time)
-  //    if( mp_cpucoredata->m_eventCurrentCPUdataRetrieved.Broadcast()
-  //        )
-
-      //use an inner block so that the mutexlocker object is destroyed early enough
-      // and so the mutex is unlocked when leaving this block.
-      {
-  //      LOGN("DVFS before lock(mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead)")
-  ////      //from http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionctor:
-  ////      // tell the other(s) thread(s) that the CPU core data may be accessed now:
-  ////      //  we must
-  ////      // lock the mutex first or we might signal the condition before the
-  ////      // waiting threads start waiting on it!
-  //      wxMutexLocker lock(mp_cpucoredata->m_mutexCPUdataCanBeSafelyRead);
-
-        SignalCPUdataCanBeSafelyRead() ;
-      }
-      //LOGN("End of scaling thread loop");
-      OperatingSystem::Sleep(//m_wMilliSecondsToWait
-        mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS );
-      LOGN("DynFreqScalingThreadBase::Entry(): after "
-          "Sleep"
-#ifdef _DEBUG
-          "(" << mp_cpucoredata->m_wMilliSecondsWaitBetweenDFVS << ")"
-#endif
-          )
-    }//loop
-  }
-  //Release clients waiting on the condition.
-  SignalCPUdataCanBeSafelyRead() ;
-  LOGN("ended the Dynamic Voltage and Frequency Scaling loop")
-  m_vbDVFSthreadStopped = true ;
-  return 0;
 }
 
-//inline void DynFreqScalingThreadBase::GetLowerFrequencyFromAvailableMultipliers(
-//  //Because this "function" is inline parameters are not copied but replaced.
-//  BYTE byCoreID ,
-//  PerCPUcoreAttributes * arp_percpucoreattributes  ,
-//  float ar_fCPUcoreLoadInPercent [],
-//  float fFreqInMHz,
-//  WORD wNumCPUcores ,
-//  float fLowerMultiplier ,
-//  float fNextMultiplierCalculatedFromCurrentLoad
-//  )
-//{
-//  fNextMultiplierCalculatedFromCurrentLoad =
-//    arp_percpucoreattributes[ byCoreID].m_fMultiplier
-//    * ar_fCPUcoreLoadInPercent[byCoreID] ;
-//  fLowerMultiplier = //mp_cpucoredata->GetLowerMultiplier(
-//    GetClosestLess(
-//    mp_cpucoredata->m_arfAvailableMultipliers
-//    , wNumCPUcores
-//    , arp_percpucoreattributes[ byCoreID].m_fMultiplier
-//    ) ;
-//  LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
-//    "lower multi:" << fLowerMultiplier
-//    << "multi from load:" << fNextMultiplierCalculatedFromCurrentLoad )
-//  if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >=
-//  //                  (float) mp_cpucoredata->m_wMaxFreqInMHz /
-//  //                  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
-//  //                  wFreqInMHz >=
-//  //                  //50% of max. freq
-//  //                  0.5f
-//    //&& fTempInDegCelsius > 90.0f
-//  //                    fFreqInMHz * ar_fCPUcoreLoadInPercent[byCoreID] <
-//      fNextMultiplierCalculatedFromCurrentLoad
-//         <
-//  //                    arp_percpucoreattributes[ byCoreID].GetFreq( fLowerMuliplier )
-//        fLowerMultiplier
-//    )
-//  {
-//    fFreqInMHz = arp_percpucoreattributes[ byCoreID].GetFreqInMHz() ;
-//    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
-//      "lower multi < multi from load ->setting freq" << fFreqInMHz )
-//    //mp_cpucontroller->SetFrequencyInMHz(
-//  }
-//  else
-//  {
-//    fFreqInMHz = fLowerMultiplier *
-//        arp_percpucoreattributes[ byCoreID].m_fReferenceClockInMhz ;
-//    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
-//        "lower multi >= multi from load  ->setting freq" << fFreqInMHz )
-//  }
-//}
+void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
+{
+  if( m_b1stTimeInRowTooHot )
+  {
+    m_dwBeginInMillisOfTooHot = ::GetTickCount() ;
+    m_b1stTimeInRowTooHot = false ;
+    m_wMilliSecondsPassed = 0 ;
+    //In order to calc the difference between the temperature where it
+    //began to be too hot and the current temperature.
+    SafePreviousTemperatures() ;
+  }
+  else
+  {
+//    dwCurrentTimeInMillis = ::GetTickCount() ;
+    m_dwCurrentTimeInMillis = ::GetTickCount() ;
+//    m_wMilliSecondsPassed = ULONG_VALUE_DIFF( dwCurrentTimeInMillis
+//      , m_dwBeginInMillisOfTooHot ) ;
+    m_wMilliSecondsPassed = ULONG_VALUE_DIFF( m_dwCurrentTimeInMillis
+      , m_dwBeginInMillisOfTooHot ) ;
+    CalcDiffBetweenCurrentAndPreviousTemperature() ;
+    for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
+    {
+      if( //If temperature did not decrease.
+          m_ar_fPreviousMinusCurrentTemperature[byCoreID] <= 0
+          && m_wMilliSecondsPassed > m_wMilliSecondsToWaitForCoolDown
+  //                  DidNotCoolDownInTime()
+          )
+      {
+  //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
+  //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
+        SetLowerFrequencyFromAvailableMultipliers(
+          byCoreID ,
+          m_arp_percpucoreattributes ,
+          m_ar_fCPUcoreLoadInPercent ,
+//          fFreqInMHz,
+          m_fFreqInMHz,
+  //                    m_wNumCPUcores ,
+//          fLowerMultiplier ,
+          m_fLowerMultiplier ,
+//          fNextMultiplierCalculatedFromCurrentLoad
+          m_fNextMultiplierCalculatedFromCurrentLoad
+          ) ;
+//        m_dwBeginInMillisOfTooHot = dwCurrentTimeInMillis ;
+        m_dwBeginInMillisOfTooHot = m_dwCurrentTimeInMillis ;
+        m_b1stTimeInRowTooHot = true ;
+      }
+    }// for-loop
+  }
+  //DEBUG_COUTN(
+  //            LOGN("too hot:yes")
+    //DEBUG("core 0 usage: %lf\n",mp_cpucoredata->m_arfCPUcoreLoadInPercent);
+    //DEBUG("Frequency before (possible) change:%u, core0 load:%f\n",
+    //  mp_cpucoredata->m_arwCurrentFreqInMHz[0],mp_cpucoredata->
+    //  m_arfCPUcoreLoadInPercent);
+
+  if( mp_cpucoredata->m_byUpdateViewOnDVFS )
+    //e.g. force redraw if it's a GUI.
+    mp_cpucontroller->GetUserInterface()->
+      CurrenCPUfreqAndVoltageUpdated() ;
+  //          }//getperc usage
+}
 
 bool DynFreqScalingThreadBase::IsStopped()
 {

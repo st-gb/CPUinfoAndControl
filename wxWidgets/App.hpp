@@ -7,6 +7,7 @@
 #endif
 
 #include <Controller/CPUcontrolBase.hpp> //base class CPUcontrolBase
+#include <Controller/IPC/I_IPC.hpp> //class IPC_Client
 //#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 //#include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
@@ -102,6 +103,9 @@ private:
   ////an exception (that should be caught, else runtime error) when it is created.
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
+public:
+  wxString m_wxstrCPUcontrollerDynLibFilePath ;
+private:
 #ifdef COMPILE_WITH_SHARED_MEMORY
   HANDLE m_handleMapFile;
   std::string m_stdstrSharedMemoryName ;//= "CPUcontrolService" ;
@@ -110,6 +114,7 @@ private:
   //Model m_modelData ;
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
 
+  inline void CreateAndShowMainFrame() ;
   void InitSharedMemory() ;
   //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
 
@@ -134,7 +139,10 @@ public:
   TaskBarIcon * mp_taskbaricon ;
 //  TaskBarIcon m_taskbaricon ;
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-    NamedPipeClient m_ipcclient ;
+    //NamedPipeClient m_ipcclient ;
+    //Must be a pointer because it is/ should be determined/ changeable at
+    //_runtime_ .
+    IPC_Client * m_p_i_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
   MainController m_maincontroller ;
@@ -143,7 +151,9 @@ public:
   volatile bool m_vbGotCPUcoreData ;
   std::tstring m_stdtstrProgramName ;
   wxCriticalSection m_wxcriticalsectionIPCthread ;
+  wxCriticalSection m_wxcriticalsectionIPCobject ;
   wxMutex m_wxmutexIPCthread ;
+  wxString m_wxstrDataProviderURL ;
 //  wxCondition m_wxconditionIPCthread ;
 //  x86IandC::native_API_event_type
   condition_type m_condition_type_eventIPCthread ;
@@ -173,6 +183,14 @@ public:
   void CPUcontrollerChanged() ;
   void CPUcontrollerDeleted() ;
   void CPUcoreUsageGetterDeleted() ;
+  bool ConnectToDataProviderAndShowResult() ;
+  bool ConnectIPCclient(
+    const wxString & cr_wxstrIPCclientURL
+    //, std::string & r_stdstrMessage
+    ) ;
+  //Created an object of subclass of I_CPUacces for CPU and PCIconfig etc.
+  //access .
+  inline void CreateHardwareAccessObject() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
   void DeleteCPUcontroller() ;
   void DynVoltnFreqScalingEnabled() ;
@@ -193,6 +211,12 @@ public:
   {
     return mp_modelData ;
   }
+  void IPCclientDisconnect() ;
+  bool IPCclientConnectToDataProvider( std::string & r_stdstrMessage ) ;
+  inline bool IPCclientConnect_Inline(std::string & r_stdstrMessage) ;
+  bool IPC_ClientIsConnected() ;
+  inline bool IPC_ClientIsConnected_Inline() ;
+  inline BYTE IPC_ClientSendCommandAndGetResponse_Inline( BYTE byCommand ) ;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;

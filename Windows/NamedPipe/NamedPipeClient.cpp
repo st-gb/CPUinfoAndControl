@@ -4,7 +4,7 @@
 //for format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #include <ModelData/ModelData.hpp> //class Model
-#include <Windows/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 #include <sstream> //class std::ostringstream
 //including specstrings.h lead to error messages for std::string include files?!
 //#include <specstrings.h> //for __out
@@ -12,6 +12,8 @@
 
 #define BUFSIZE 512
 #define NAMED_PIPE_NAME_ANSI "\\\\.\\pipe\\CPUcontrollerService"
+
+using namespace Windows ;
 
 void NamedPipeClient::Disconnect()
 {
@@ -79,7 +81,7 @@ bool NamedPipeClient::GetConnectionStateViaGetNamedPipeHandleState()
 //NamedPipeClient::NamedPipeClient(
 //  LPTSTR lpszPipename //= TEXT("\\\\.\\pipe\\mynamedpipe"); 
 //  )
-BYTE NamedPipeClient::Init(std::string & r_stdstrMessage)
+BYTE NamedPipeClient::ConnectToDataProvider(std::string & r_stdstrMessage)
 {
   m_bConnected = false ;
   LPTSTR lptstrPipename ;
@@ -225,11 +227,12 @@ bool NamedPipeClient::IsConnected()
 
 NamedPipeClient::NamedPipeClient(Model & r_model )
   :
+    m_bConnected(false) ,
     m_vbIsReadingOrWriting (false) ,
     m_r_model( r_model) ,
-    m_vbIsGettingCPUcoreData(false) ,
+    m_vbIsGettingCPUcoreData(false) //,
 //      m_vbIsGettingCPUcoreData(true) ,
-    m_arbyIPCdata (NULL)
+//    m_arbyIPCdata (NULL)
 {
 
 }
@@ -409,7 +412,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
      Read(
      // buffer to receive reply
 //     & dwNumberOfBytes , //chBuf,
-     & m_dwSizeInByte ,
+     & m_dwIPCdataSizeInByte ,
      // size of buffer
      4 ,//BUFSIZE * sizeof(TCHAR),
      & dwNumBytesRead,  // number of bytes read
@@ -422,14 +425,14 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
 #endif
       << " bytes from pipe " //<< //dwNumberOfBytes
 #ifdef _DEBUG //because the own logger can only filter strings that match
-      << ":" << m_dwSizeInByte
+      << ":" << m_dwIPCdataSizeInByte
 #endif
    )
    if( fSuccess
        // do NOT read 0 bytes! this blocks at ReadFile although the server
        // finished to write 0 bytes
        && //dwNumberOfBytes
-       m_dwSizeInByte
+       m_dwIPCdataSizeInByte
      )
    {
 //     m_vbIsGettingCPUcoreData = true ;
@@ -437,11 +440,11 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
      //This array is accessed later in order to process the data.
      if( m_arbyIPCdata )
        delete [] m_arbyIPCdata ;
-     m_arbyIPCdata = new BYTE[ m_dwSizeInByte ] ;
+     m_arbyIPCdata = new BYTE[ m_dwIPCdataSizeInByte ] ;
      LOGN("before read "
 #ifdef _DEBUG //because the own logger can only filter strings that matcb
     //full log messages
-       << m_dwSizeInByte
+       << m_dwIPCdataSizeInByte
 #endif
        << " bytes from pipe ")
      fSuccess =
@@ -452,7 +455,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
         m_arbyIPCdata ,
         // size of buffer
   //      dwNumberOfBytes  ,//BUFSIZE * sizeof(TCHAR),
-        m_dwSizeInByte ,
+        m_dwIPCdataSizeInByte ,
         & dwNumBytesRead,  // number of bytes read
         NULL // NULL = not overlapped
         );
@@ -465,8 +468,8 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
      if( fSuccess )
      {
        m_vbIsGettingCPUcoreData = true ;
-       std::string stdstrBytes //( (char *) m_arbyIPCdata, m_dwSizeInByte )
-         = format_output_data( m_arbyIPCdata, m_dwSizeInByte, 100) ;
+       std::string stdstrBytes //( (char *) m_arbyIPCdata, m_dwIPCdataSizeInByte )
+         = format_output_data( m_arbyIPCdata, m_dwIPCdataSizeInByte, 100) ;
        DEBUGN("data from pipe:" << stdstrBytes ) ;
 //       //Term. NULL char
 //       arby [dwNumberOfBytes ] = 0 ;
@@ -476,7 +479,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
          //http://www.cplusplus.com/reference/string/string/string/:
          //"Content is initialized to a copy of the string formed by the first
          //n  characters in the array of characters pointed by s."
-         , m_dwSizeInByte / 2
+         , m_dwIPCdataSizeInByte / 2
          ) ;
 //       DEBUGWN_WSPRINTF(L"got message from pipe:%ls", m_stdwstrMessage.c_str() )
      }

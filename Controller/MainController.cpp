@@ -223,7 +223,9 @@ BYTE MainController::GetPstatesDirPath(
     BYTE byModel ;
     BYTE byStepping ;
     WORD wFamily ;
-    mp_model->m_cpucoredata.m_strVendorID = strVendorID ;
+    LOGN("Getting vendor ID succeeded")
+    CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
+    r_cpucoredata.m_strVendorID = strVendorID ;
     //std::string strModel ; 
     //std::string strFamily ; 
     //mp_cpuaccess->GetModel(strModel) ;
@@ -231,9 +233,14 @@ BYTE MainController::GetPstatesDirPath(
     if( mp_cpuaccess->//GetFamilyAndModel( //byFamily
       //wFamily , byModel ) 
         GetFamilyAndModelAndStepping(
-          wFamily , byModel , byStepping ) 
+          wFamily ,
+          byModel ,
+          byStepping )
       )
     {
+      r_cpucoredata.m_wFamily = wFamily ;
+      r_cpucoredata.m_byModel = byModel ;
+      r_cpucoredata.m_byStepping = byStepping ;
       WORD wModel = (WORD) byModel ;
       WORD wStepping = (WORD) byStepping ;
       r_strCPUtypeRelativeDirPath = 
@@ -259,6 +266,8 @@ BYTE MainController::GetPstatesDirPath(
       byRet = 1 ;
     }
   }
+  else
+    LOGN("Getting vendor ID failed")
   return byRet ;
 }
 

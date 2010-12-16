@@ -11,8 +11,8 @@
 #include <wxWidgets/Controller/DynLibHandler.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
 #include <wxWidgets/Controller/wxDynLibCPUcoreUsageGetter.hpp>
-//for GetStdString(wxString &)
-#include <wxWidgets/Controller/wxStringHelper.hpp>
+//for GetStdString(wxString &), getwxString(...)
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 #include <wx/dynlib.h> //for wxDynamicLibrary::GetDllExt()
 

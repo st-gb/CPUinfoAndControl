@@ -8,11 +8,18 @@
 #include <windows.h> //LPTSTR 
 //#include <specstrings.h> //for __out
 #include <Controller/multithread/criticalsection_type.hpp>
+#include <Controller/IPC/I_IPC.hpp> //for base class I_IPC_Client
 
 //Forward declarations.
 class Model ;
 
+namespace Windows
+{
 class NamedPipeClient
+  :
+  //Must be inherited from a base class in order the change the type of a
+  // pointer of an IPC_Client subclass at _runtime_ .
+  public IPC_Client
 {
   BOOL m_bool ;
   bool m_bConnected ;
@@ -22,11 +29,11 @@ class NamedPipeClient
   criticalsection_type m_criticalsection_typeIOandIsconnected ;
 public:
   volatile bool m_vbIsGettingCPUcoreData ;
-  BYTE * m_arbyIPCdata ;
-  DWORD m_dwSizeInByte ;
+//  BYTE * m_arbyIPCdata ;
+//  DWORD m_dwIPCdataSizeInByte ;
   DWORD m_dwState , m_dwCurInstances ;
   DWORD m_dwMaxUserNameSize ;
-  std::wstring m_stdwstrMessage ;
+//  std::wstring m_stdwstrMessage ;
   //NamedPipeClient( LPTSTR lpszPipename ) ;
   void Disconnect() ;
   //_Must_ be defined here, else ~"undefined reference to Disconnect_Inline
@@ -40,9 +47,10 @@ public:
   BYTE Init()
   {
     std::string stdstrMessage ;
-    return Init(stdstrMessage) ;
+    return ConnectToDataProvider(stdstrMessage) ;
   }
-  BYTE Init(std::string & r_stdstrMessage) ;
+  //Connects to a data provider (e.g. the CPU control service).
+  BYTE ConnectToDataProvider(std::string & r_stdstrMessage) ;
   bool IsConnected() ; //{ return m_bConnected ; }
   inline BOOL Read(
     //__out
@@ -67,3 +75,4 @@ public:
   NamedPipeClient(Model & r_model ) ;
   ~NamedPipeClient() ;
 };
+}

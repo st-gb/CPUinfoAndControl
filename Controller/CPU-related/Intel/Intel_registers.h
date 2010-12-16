@@ -49,6 +49,10 @@
 #define IA32_PERF_CTL 0x199 //409 (Read/Write); gibt es seit 0F_03H 
 //Thermal Status Information (ReadOnly)
 #define IA32_THERM_STATUS 0x19C //412 
+//Critical Temperature Status (bit 4, RO): 1 << 4 = 2^4 = 16dec = 10000bin
+#define Critical_Temperature_Status_bit_mask 16
+//Thermal Threshold #1 Status (bit 6, RO): 1 << 6 = 2^6 = 64dec = 1000000bin
+#define Thermal_Threshold_1_Status_bit_mask 64
 //#define CPU_CLOCKS_NOT_HALTED 121
 
 #define MSR_TEMPERATURE_TARGET 0x1A2

@@ -137,6 +137,11 @@ public:
 
   virtual void EndDVFS() ; //{}
   virtual void FreeRessources() ;
+  //Used for choosing the CPU controller, for saving as CPU controller for the
+  //current CPU.
+  //inline
+  std::string GetCPUcontrollerConfigFilePath(
+    const std::string & cr_stdstrCPUtypeRelativeDirPath ) ;
   void InitMemberVariables() ;
   static void OuputCredits() ;
   //Should be implemented here (and not in UserInterface) because the service

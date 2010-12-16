@@ -49,6 +49,7 @@ class Model ;
 class PerCPUcoreAttributes ;
 class I_CPUcontrollerAction ;
 class I_CPUcontroller ;
+class ICPUcoreUsageGetter ;
 class SpecificCPUcoreActionAttributes ;
 class wxX86InfoAndControlApp ;
 class wxDynLibCPUcontroller ;
@@ -96,6 +97,7 @@ private:
 public:
   DWORD m_dwTimerIntervalInMilliseconds ;
 private:
+  static float * s_arfTemperatureInDegreesCelsius ;//= NULL ;
   //ClocksNotHaltedCPUcoreUsageGetter m_clocksnothaltedcpucoreusagegetter ;
   float m_fMaxMinusMinVoltage ;
   float m_fMaxVoltage ;
@@ -138,6 +140,7 @@ private:
   //wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
   //wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
+  static wxIcon s_wxiconTemperature ;
   //http://docs.wxwidgets.org/2.6/wx_windowdeletionoverview.html#windowdeletionoverview:
   //"When a wxWindow is destroyed, it automatically deletes all its children. 
   //These children are all the objects that received the window as the 
@@ -157,6 +160,7 @@ private:
 //  wxMenuItem ** marp_wxmenuItemHighLoadThread ;
   wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
   wxString m_wxstrTitle ;
+  static wxString s_wxstrHighestCPUcoreTemperative ;
 public:
   wxTimer m_wxtimer;
 //  wxTimer * m_p_wxtimer;
@@ -229,6 +233,7 @@ public:
   void CPUcoreUsageGetterDeleted() ;
 
   inline void CreateFileMenu() ;
+  inline void ConnectToDataProvider_Inline() ;
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   void CreateServiceMenuItems() ;
 #endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
@@ -298,6 +303,12 @@ public:
   void DynVoltnFreqScalingEnabled() ;
   void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes *
     p_percpucoreattributes ) ;
+  inline bool GetCPUcoreInfoDirectlyOrFromService(
+    ICPUcoreUsageGetter * & p_cpucoreusagegetter ,
+    I_CPUcontroller * & p_cpucontroller //,
+//    wxString & wxstrCPUcoreUsage
+    , bool bGetCPUcoreUsage
+    ) ;
   inline WORD GetXcoordinateForFrequency( WORD wFreqInMHz) ;
   inline WORD GetYcoordinateForFrequency( WORD wFreqInMHz) ;
   void GetYcoordinateForVoltage(float fVoltageInVolt ) ;
@@ -328,10 +339,13 @@ public:
   void OnMSR( wxCommandEvent & WXUNUSED(event) ) ;
   void OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) ) ;
   void OnDynamicallyCreatedUIcontrol(wxCommandEvent & event);
+  void OnSaveAsCPUcontrollerDynLibForThisCPU(
+    wxCommandEvent & WXUNUSED(event) ) ;
   void OnSize(wxSizeEvent & WXUNUSED(event)) ;
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));
   void OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event));
 
+  void OnConnectToService( wxCommandEvent & WXUNUSED(event) ) ;
   void OnConnectToOrDisconnectFromService(wxCommandEvent & WXUNUSED(event) ) ;
   void OnContinueService(wxCommandEvent & WXUNUSED(event));
   void OnPauseService(wxCommandEvent & WXUNUSED(event));
@@ -367,6 +381,7 @@ public:
   void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
+  inline void ShowHighestCPUcoreTemperatureInTaskBar() ;
   void StoreCurrentVoltageAndFreqInArray(
     wxDC & r_wxdc
   //  VoltageAndFreq * & r_ar_voltageandfreq

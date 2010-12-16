@@ -13,11 +13,12 @@
 //  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
   #include <Windows/DLLloadError.hpp>//DLLloadError::GetPossibleSolution(DWORD)
 #endif //#ifdef _WIN32
-#include <wxWidgets/Controller/wxStringHelper.hpp> //for GetStdString()
+//for GetStdString(wxString &)
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
 //GetClosestLessOrEqual(...), GetClosestGreaterOrEqual(...)
-#include <algorithms/binary_search.cpp>
+#include <algorithms/binary_search/binary_search.cpp>
 #ifdef _MSC_VER
   #include <float.h> //FLT_MIN
 #else
@@ -396,10 +397,14 @@ void wxDynLibCPUcontroller::GetAvailableVoltagesInVolt(
 inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier(
   float fVoltageInVolt ,
   float fMultiplier ,
-  WORD byCoreID
+  WORD wCoreID
   )
 {
   BYTE by = 0 ;
+  LOGN("wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier("
+    "voltage in Volt:" << fVoltageInVolt
+    << "multiplier:" << fMultiplier
+    << "core ID:" << wCoreID )
   CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
   float * p_fAvailableMultipliers = r_cpucoredata.m_arfAvailableMultipliers ;
   if( m_pfnSetCurrentVoltageAndMultiplier
@@ -443,11 +448,13 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
     //      "before calling fct. at address " << m_pfnsetcurrentpstate <<
     //      " with args (" << wFreqInMHz << "," << wMilliVolt << ","
     //      << (WORD) byCoreID << ")")
-    DEBUGN("before calling DLL's function SetCurrentVoltageAndMultiplier( "
+//    DEBUGN(
+    LOGN("before calling Dynamic Library's function "
+      "\"SetCurrentVoltageAndMultiplier( "
       << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
       fMultiplier
       << ","
-      << (WORD) byCoreID << ")" )
+      << wCoreID << ")\"" )
     //The CPU controller should determine the closest voltage.
     //Else not every voltage may be available to the CPU controller:
     // If e.g. for a Pentium M the voltage to set is 0.768 V and the Voltage ID
@@ -470,14 +477,18 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
       , //byMultiplierToUse
       fMultiplier
-      , byCoreID
+      , wCoreID
       ) ;
     DEBUGN("return value of DLL's function SetCurrentVoltageAndMultiplier( "
       << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
       fMultiplier
       << ","
-      << (WORD) byCoreID << ") : " << (WORD) by )
+      << wCoreID << ") : " << (WORD) by )
   }
+  else
+    LOGN("wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAnd"
+      "Multiplier(...): function pointer for settting voltage and multiplier "
+      "is NULL or no available multipliers")
   return by ;
 }
 
@@ -715,7 +726,7 @@ BYTE wxDynLibCPUcontroller::SetCurrentVoltageAndMultiplier(
   , WORD wCoreID
   )
 {
-//  LOGN("SetCurrentVoltageAndMultiplier")
+  LOGN("wxDynLibCPUcontroller::SetCurrentVoltageAndMultiplier begin")
 //  if( m_pfnSetCurrentVoltageAndMultiplier
 ////      && //! r_cpucoredata.m_stdset_floatAvailableMultipliers.empty()
 ////      //! r_stdset_fAvailableMultipliers.empty()

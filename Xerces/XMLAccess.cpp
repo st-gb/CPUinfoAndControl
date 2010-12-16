@@ -274,7 +274,7 @@ char ReadXMLdocumentInitAndTermXerces(
         //Outputting wide strings via std::ofstream (=ANSI) leads to "gedit"
         //not to recognize the character encoding of the log file.
 //        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
-        LOGN( GetStdStringInline( stdwstrMessage ) )
+        LOGN( GetStdString_Inline( stdwstrMessage ) )
       }
       catch( const SAXException & cr_saxexception )
       {
@@ -311,7 +311,7 @@ char ReadXMLdocumentInitAndTermXerces(
         //Outputting wide strings via std::ofstream (=ANSI) leads to "gedit"
         //not to recognize the character encoding of the log file.
 //        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
-        LOGN( GetStdStringInline( stdwstrMessage ) ) ;
+        LOGN( GetStdString_Inline( stdwstrMessage ) ) ;
 //        XMLString::release( & pchMessage );
 //          return FAILURE;
       }

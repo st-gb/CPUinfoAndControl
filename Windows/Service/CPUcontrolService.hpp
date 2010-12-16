@@ -28,6 +28,9 @@
 #include <Windows/Service/ServiceBase.hpp> //Base class ServiceBase
 //#include <Windows/WinRing0dynLinked.hpp>
 //#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
+//class wxServiceSocketServer
+#include <wxWidgets/Controller/non-blocking_socket/server/\
+wxServiceSocketServer.hpp>
 ////Also include the cpp file, else "used but never defined warning"
 //#include <wxWidgets/multithread/wxConditionBasedI_Condition.cpp>
 //Member variable of class wxConditionBasedI_Condition
@@ -39,6 +42,7 @@
 //#include <fstream> //for class std::ofstream
 #include <vector> //class std::vector
 #include <windows.h> //for SERVICE_TABLE_ENTRY, ...
+#include <wx/app.h> //for class wxApp
 
 //#define _WIN32_WINNT 0x0400 //for MB_SERVICE_NOTIFICATION
 //#include <winuser.h> //MB_SERVICE_NOTIFICATION
@@ -68,6 +72,8 @@ class CPUcontrolService
 //  public CPUcontrolBase
   public CPUcontrolServiceBase
   , public ServiceBase //for register service ctrl manager ease etc.
+  //For receiving events for non-blocking sockets.
+  , public wxApp
 {
 public:
   DWORD m_dwArgCount ;
@@ -121,6 +127,7 @@ public:
 #ifdef COMPILE_WITH_IPC
   //For sending data to clients like a graphical user interface.
   NamedPipeServer m_ipcserver ;
+  wxServiceSocketServer m_wxservicesocketserver ;
 #endif //#ifdef COMPILE_WITH_IPC
   PTSTR * m_p_ptstrArgument ;
   //For (possibly) disabling Windows' dynamic voltage and frequency scaling.
@@ -166,7 +173,7 @@ public :
     std::vector<std::string> & vecstdstrParams
     ) ;
   static void DeleteService(const TCHAR * cp_tchServiceName
-    , std::string & stdtstrProgramName ) ;
+    , const std::string & stdtstrProgramName ) ;
   void DisableOtherVoltageOrFrequencyChange() ;
   void EndAlterCurrentCPUcoreIPCdata() ;
   static void FillCmdLineOptionsList() ;
@@ -191,9 +198,14 @@ public :
   ////static
   //    bool HasLogFilePathOption( int argc, char *  argv[] ) ;
   static void outputUsage();
+  //Overwrites wxApp::OnInit() ;
+  bool OnInit()
+  {
+    return true ;
+  }
   bool Pause() ;
   SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
-  static void requestOption(
+  static int requestOption(
     //Make as parameter as reference: more resource-saving than
     //to return (=a copy).
     std::vector<std::string> & vecstdstrParams
@@ -219,6 +231,10 @@ public :
     const std::vector<std::string> & cr_vecstdstrParams ) ;
   static bool ShouldDeleteService(
     const std::vector<std::string> & cr_vecstdstrParams );
+  static bool ShouldStartService(
+    const std::vector<std::string> & cr_vecstdstrParams );
+  static bool ShouldStopService(
+    const std::vector<std::string> & cr_vecstdstrParams );
   static VOID SvcDebugOut(LPSTR String, DWORD Status);
   inline void ShowMessage( const std::string & cr_stdstrMessage ) ;
   void Stop() ;
@@ -228,6 +244,7 @@ public :
   // http://msdn.microsoft.com/en-us/library/ms685138%28VS.85%29.aspx
   static void WINAPI ServiceMain(DWORD argc, LPTSTR *argv) ;
   static void StartIPCserverThread() ;
+  static void StartwxSocketServerThread() ;
   void StartService() ;
   inline void WakeUpCreateIPCdataThread() ;
 };

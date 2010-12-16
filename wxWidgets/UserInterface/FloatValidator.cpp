@@ -2,7 +2,8 @@
 #include "wx/wxprec.h"
 //#include <Controller/character_string/tchar_conversion.h> //GetCharPointer()
 #include <Controller/character_string/stdstring_format.hpp> //from_stdstring(...)
-#include <wxWidgets/Controller/wxStringHelper.hpp> //GetStdString(wxString & )
+//GetStdString(wxString & )
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 // for all others, include the necessary headers (this file is usually all you
 // need because it includes almost all "standard" wxWidgets headers)
 #ifndef WX_PRECOMP
