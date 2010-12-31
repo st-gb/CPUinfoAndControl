@@ -163,11 +163,11 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
           pfn_GetCurrentVoltageAndFrequency_type )
         m_wxdynamiclibraryCPUctl.GetSymbol(
           wxT("GetCurrentVoltageAndFrequency") ) ;
-      LOGN("m_pfnGetCurrentVoltageAndFrequency:" << std::ios::hex <<
+      LOGN("m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
         //see http://stackoverflow.com/questions/2064692/
         //  how-to-print-function-pointers-with-cout:
         // cast to (void*), else either 1 or 0 is outputted.
-        (void*) m_pfnGetCurrentVoltageAndFrequency )
+        << (void*) m_pfnGetCurrentVoltageAndFrequency )
 
       //wxDYNLIB_FUNCTION(dll_SetCurrentPstate_type, SetCurrentPstate,
       //  m_wxdynamiclibraryCPUctl) ;
@@ -539,6 +539,13 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
+  LOGN("wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency("
+    << wCoreID << ") begin"
+    "--m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
+    //see http://stackoverflow.com/questions/2064692/
+    //  how-to-print-function-pointers-with-cout:
+    // cast to (void*), else either 1 or 0 is outputted.
+    << (void *) m_pfnGetCurrentVoltageAndFrequency )
   if( m_pfnGetCurrentVoltageAndFrequency )
   {
     LOGN("dyn lib CPU controller: GetCurrentVoltageAndFrequency")
@@ -551,9 +558,12 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
 //    BYTE byReturn = 1 ;
     LOGN("dyn lib CPU controller: after calling DLL's "
       "GetCurrentVoltageAndFrequency"
-#ifdef _DEBUG
-      " r_fReferenceClockInMHz:" << r_fReferenceClockInMHz
-#endif
+//#ifdef _DEBUG
+      << " voltage: " << r_fVoltageInVolt
+      << " multi: " << r_fMultiplier
+      << " r_fReferenceClockInMHz:" << r_fReferenceClockInMHz
+      << " core: " << wCoreID
+//#endif
       )
      if( r_fReferenceClockInMHz )
      {

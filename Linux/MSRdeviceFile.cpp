@@ -13,6 +13,7 @@
 //for GetErrorMessageFromLastErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/character_string/stdstring_format.hpp> //to_stdstring(T )
+#include <ModelData/ModelData.hpp> //class Model
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUG()
 //#include <preprocessor_macros/bitmasks.h>
 //#include <Linux/EnglishMessageFromErrorCode.h>
@@ -60,13 +61,17 @@ MSRdeviceFile::MSRdeviceFile(UserInterface * pui)
 
 MSRdeviceFile::MSRdeviceFile(
   UserInterface * pui ,
-  BYTE byNumberOfLogicalCPUcores
+  BYTE byNumberOfLogicalCPUcores ,
+  Model & r_model
   )
 //  : m_byNumberOfLogicalCPUcores (byNumberOfLogicalCPUcores)
 {
+  LOGN("MSRdeviceFile begin")
   Init(pui) ;
+  mp_model = & r_model ;
   m_byNumberOfLogicalCPUcores = byNumberOfLogicalCPUcores ;
   InitPerCPUcoreAccess( byNumberOfLogicalCPUcores) ;
+  LOGN("MSRdeviceFile end")
 }
 
 //This function should be called by all constructors.
@@ -78,6 +83,7 @@ void MSRdeviceFile::Init(UserInterface * pui)
 
 void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 {
+  LOGN("MSRdeviceFile::InitPerCPUcoreAccess begin")
   //getMSRFile()
 //  if(m_pcpucontroller )
 //    m_pcpucontroller->GetNumberOfCPUcores()
@@ -96,7 +102,12 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //    UIconfirm( stdstrMessage ) ;
 //    throw CPUaccessException(stdstrMessage) ;
 //  }
+//  LOGN("Trying to set current working dir to \""
+//    << mp_model->m_stdstrExecutableStartupPath.c_str() << "\"" )
+//  chdir( mp_model->m_stdstrExecutableStartupPath.c_str() ) ;
   system( "chmod 777 load_kernel_module.sh") ;
+//  LOGN("Trying to set current working dir to \"/\"" )
+//  chdir( "/" ) ;
   //from www.opengroup.org:
   if( //execlp( "sh", "sh", "./load_kernel_module.sh"
       //from www.yolinux.com

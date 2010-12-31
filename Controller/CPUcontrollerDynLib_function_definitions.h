@@ -9,11 +9,11 @@
 #define CPUCONTROLLERDYNLIB_FUNCTION_DEFINITIONS_H_
 
 //typedef unsigned char BYTE ;
-//typedef unsigned short WORD;
+typedef unsigned short WORD;
 ////typedef WORD near * PWORD;
-//typedef WORD * PWORD;
+typedef WORD * PWORD;
 //typedef unsigned long DWORD;
-#include <windef.h> //BYTE et.c
+//#include <windef.h> //BYTE et.c
 
 //these typedefs can be used by
 //-the code that e.g. uses wxDynLib or only the Windows API

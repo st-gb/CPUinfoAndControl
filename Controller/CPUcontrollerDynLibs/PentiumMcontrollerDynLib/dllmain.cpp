@@ -14,6 +14,7 @@ inline_register_access_functions.hpp>
 #include <Controller/CPU-related/Intel/PentiumM/PentiumM.hpp>
 //for EXPORT, APIENTRY preprocessor macros
 #include <Controller/CPUcontrollerDynLibs/function_specifiers.h>
+#include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
 
 //#include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 #ifdef INSERT_DEFAULT_P_STATES

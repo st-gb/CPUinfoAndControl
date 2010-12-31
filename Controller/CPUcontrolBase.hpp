@@ -12,6 +12,7 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/DynLibHandler_type.hpp> //dynlibhandler_type
+#include <Controller/MainController.hpp> //class MainController
 //for criticalsection_type
 #include <Controller/multithread/criticalsection_type.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
@@ -53,6 +54,7 @@ protected:
 public:
   dynlibhandler_type m_dynlibhandler ;
   I_CPUaccess * mp_i_cpuaccess ;
+  MainController m_maincontroller ;
   Model m_model ;
   UserInterface * mp_userinterface ;
 public:
@@ -71,15 +73,19 @@ public:
     const std::string & stdstrCPUtypeRelativeDirPath
 //    , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter
     ) ;
+  //Created an object of subclass of I_CPUacces for CPU and PCIconfig etc.
+  //access .
+  inline virtual void CreateHardwareAccessObject() ;
   inline bool GetUsageAndVoltageAndFrequencyForAllCores(
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores
     )
   {
-    LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
-      "before GetPercentalUsageForAllCores")
+    LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores(...,"
+      << wNumCPUcores << ")--before GetPercentalUsageForAllCores" )
     //TODO exit thread when getting CPU core load fails?
-    if( //mp_icpu->//GetPercentalUsageForBothCores
+    if( ! mp_cpucoreusagegetter || mp_cpucoreusagegetter &&
+        //mp_icpu->//GetPercentalUsageForBothCores
         mp_cpucoreusagegetter->
         GetPercentalUsageForAllCores( //mp_cpucoredata->
         //m_arfCPUcoreLoadInPercent

@@ -1,3 +1,5 @@
+#include <Controller/time/GetTickCount.hpp> //DWORD ::GetTickCount()
+
 #include "DynFreqScalingThreadBase.hpp"
 
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
@@ -284,7 +286,8 @@ ExitCode DynFreqScalingThreadBase::Entry()
   LOGN("Dynamic Voltage and Frequency Scaling thread should run? " <<
     ( m_vbRun ? "yes" : "no") )
   LOGN("CPU core usage getter--address: " << mp_icpu )
-  mp_icpu->Init();
+  if( mp_icpu )
+    mp_icpu->Init();
   LOGN("DVFS after initializing CPU core usage getter. Should run?: "
       << (m_vbRun ? "yes" : "no" ) )
   LOGN("1 CPU core power plane:" << mp_cpucontroller->m_b1CPUcorePowerPlane )
@@ -367,26 +370,13 @@ ExitCode DynFreqScalingThreadBase::Entry()
             (mp_cpucoredata->m_bTooHot = mp_cpucontroller->TooHot() )
             )
           {
+            LOGN("DynFreqScalingThreadBase::Entry()--too hot")
             HandleCPUtooHotDVFS(//dwCurrentTimeInMillis
               ) ;
           }//too hot
           else
           {
-            //Assign for the next time it gets too hot.
-            m_b1stTimeInRowTooHot = true ;
-            LOGN("too hot:no")
-    //        if( mp_icpu->//GetPercentalUsageForBothCores
-    //            GetPercentalUsageForAllCores(mp_cpucoredata->
-    //            m_arfCPUcoreLoadInPercent)
-    //          )
-            for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
-            {
-              ChangeOperatingPointByLoad( byCoreID ,
-                //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID]
-//                mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
-                m_ar_fCPUcoreLoadInPercent [byCoreID]
-              ) ;
-            }
+            HandleCPUnotTooHot() ;
           }
           m_bGotCPUcoreDataAtLeast1Time = true ;
         }
@@ -539,11 +529,13 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
         //float fTempInDegCelsius ;
 
         //TODO exit thread when getting CPU core load fails?
-        if( mp_icpu->//GetPercentalUsageForBothCores
-            GetPercentalUsageForAllCores(
-            //mp_cpucoredata->m_arfCPUcoreLoadInPercent
-//            ar_fCPUcoreLoadInPercent
-            m_ar_fCPUcoreLoadInPercent
+        if( ! mp_icpu ||
+            ( mp_icpu && mp_icpu->//GetPercentalUsageForBothCores
+              GetPercentalUsageForAllCores(
+              //mp_cpucoredata->m_arfCPUcoreLoadInPercent
+  //            ar_fCPUcoreLoadInPercent
+              m_ar_fCPUcoreLoadInPercent
+              )
             )
           )
         {
@@ -736,6 +728,7 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
 {
   if( m_b1stTimeInRowTooHot )
   {
+    LOGN("DynFreqScalingThreadBase::HandleCPUtooHotDVFS()--1st time too hot")
     m_dwBeginInMillisOfTooHot = ::GetTickCount() ;
     m_b1stTimeInRowTooHot = false ;
     m_wMilliSecondsPassed = 0 ;
@@ -745,21 +738,35 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
   }
   else
   {
+    LOGN("DynFreqScalingThreadBase::HandleCPUtooHotDVFS()--at least 2nd time "
+      "too hot")
 //    dwCurrentTimeInMillis = ::GetTickCount() ;
     m_dwCurrentTimeInMillis = ::GetTickCount() ;
 //    m_wMilliSecondsPassed = ULONG_VALUE_DIFF( dwCurrentTimeInMillis
 //      , m_dwBeginInMillisOfTooHot ) ;
     m_wMilliSecondsPassed = ULONG_VALUE_DIFF( m_dwCurrentTimeInMillis
       , m_dwBeginInMillisOfTooHot ) ;
+    LOGN(" milliseconds passed: " << m_wMilliSecondsPassed
+      << "milliSeconds to wait for cooldown:"
+      << m_wMilliSecondsToWaitForCoolDown )
     CalcDiffBetweenCurrentAndPreviousTemperature() ;
     for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
     {
+      LOGN("DynFreqScalingThreadBase::HandleCPUtooHotDVFS()--temperature "
+        "difference between prev and now:"
+        << m_ar_fPreviousMinusCurrentTemperature[byCoreID] << " deg Celsius "
+        "for core " << (WORD) byCoreID
+        )
       if( //If temperature did not decrease.
           m_ar_fPreviousMinusCurrentTemperature[byCoreID] <= 0
           && m_wMilliSecondsPassed > m_wMilliSecondsToWaitForCoolDown
   //                  DidNotCoolDownInTime()
           )
       {
+        LOGN("DynFreqScalingThreadBase::HandleCPUtooHotDVFS()--temperature "
+          "increased more time passed than to wait for cooldown for core "
+          << (WORD) byCoreID
+          )
   //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
   //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
         SetLowerFrequencyFromAvailableMultipliers(
@@ -856,8 +863,8 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
     * ar_fCPUcoreLoadInPercent[byCoreID] ;
   LOGN("DynFreqScalingThreadBase::SetLowerFrequency core "
     << (WORD) byCoreID
-    << " multi < " << arp_percpucoreattributes[ byCoreID].m_fMultiplier
-    << ":" << fLowerMultiplier
+    << " multiplier: " << arp_percpucoreattributes[ byCoreID].m_fMultiplier
+    << ", next lower multiplier:" << fLowerMultiplier
     << " multi from load="
     << "multi(" << arp_percpucoreattributes[ byCoreID].m_fMultiplier
     << ")*load(" << ar_fCPUcoreLoadInPercent[byCoreID]

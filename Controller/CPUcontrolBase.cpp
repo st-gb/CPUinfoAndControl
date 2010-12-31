@@ -6,13 +6,17 @@
  */
 #include "CPUcontrolBase.hpp"
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
+#include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <Controller/I_CPUaccess.hpp>
 //class DynFreqScalingThreadBase
 #include <Controller/DynFreqScalingThreadBase.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
-#ifdef _WIN32
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //class PowerProfDynLinked
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
+  #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
+#else
+  #include <Linux/MSRdeviceFile.hpp>
 #endif
 #include <Controller/MainController.hpp>//MainController::GetSupportedCPUs(...)
 //ReadFileContent(std::string & )
@@ -22,6 +26,19 @@
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
 
 #include <iostream> //std::cout
+
+//Needed for the exported functions.
+I_CPUaccess * g_p_cpuaccess ;
+
+void RemoveCarriageReturn(std::string & r_stdstr )
+{
+  std::string::size_type stdstrsizetype = r_stdstr.find( 0x0A ) ;
+  while( stdstrsizetype != std::string::npos )
+  {
+    r_stdstr.erase(stdstrsizetype,1) ;
+    stdstrsizetype = r_stdstr.find(0x0A) ;
+  }
+}
 
 //CPUcontrolBase::CPUcontrolBase()
 //  :
@@ -37,6 +54,9 @@
 CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
   :
   m_dynlibhandler ( * this ) ,
+  m_maincontroller( //Avoid Linux g++ error "invalid conversion from ‘const
+    //UserInterface*’ to ‘UserInterface*’
+    (UserInterface *) cpc_userinterface) ,
   mp_userinterface ( //Avoid Linux g++ error "invalid conversion from ‘const
     //UserInterface*’ to ‘UserInterface*’
     (UserInterface *)
@@ -83,14 +103,17 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
         << " that should contain the dynamic libary name seems to be empty" )
     else
     {
+      //Linux text editors like "gedit" automatically add a carriage return
+      //character at the end of the (last) line.
+      RemoveCarriageReturn(stdstr) ;
       std::string stdstrFilePath = "CPUcontrollerDynLibs/" + stdstr ;
   //    std::string stdstrFullFilePath =
       m_model.m_stdstrCPUcontrollerDynLibPath = m_dynlibhandler.
         GetDynLibPath(stdstrFilePath) ;
-      LOGN("should load/ attach "
+      LOGN("should load/ attach \""
   //      << stdstrFullFilePath
         << m_model.m_stdstrCPUcontrollerDynLibPath
-        << " as CPU controller" )
+        << "\" as CPU controller" )
       m_dynlibhandler.CreateDynLibCPUcontroller(
   //      stdstrFullFilePath //,
         m_model.m_stdstrCPUcontrollerDynLibPath
@@ -117,13 +140,16 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
         << " that should contain the dynamic libary name seems to be empty" )
     else
     {
+      //Linux text editors like "gedit" automatically add a carriage return
+      //character at the end of the (last) line.
+      RemoveCarriageReturn(stdstr) ;
       std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstr ;
       std::string stdstrFullFilePath = m_dynlibhandler.
         GetDynLibPath(stdstrFilePath) ;
       m_model.m_stdstrCPUcoreUsageGetterDynLibPath =
         stdstrFullFilePath ;
-      LOGN("should load/ attach " << stdstrFullFilePath
-        << " as CPU core usage getter" )
+      LOGN("should load/ attach \"" << stdstrFullFilePath
+        << "\" as CPU core usage getter" )
       m_dynlibhandler.CreateDynLibCPUcoreUsageGetter(
         stdstrFullFilePath
   //      ,
@@ -133,6 +159,59 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
     }
   }
 }
+
+void CPUcontrolBase::CreateHardwareAccessObject()
+{
+  try //catch CPUaccessexception
+  {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  //WinRing0dynLinked winring0dynlinked(p_frame) ;
+  //If allocated statically within this block / method the object
+  //gets invalid after leaving the block where it was declared.
+  //mp_winring0dynlinked
+  //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
+#ifdef _MSC_VER_ //possible because the import library is for MSVC
+  mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
+    this ) ;
+#else //Use runtime dynamic linking because no import library is available for
+  //MinGW.
+  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
+    this ) ;
+#endif
+  //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
+  //  mp_i_cpuaccess ) ;
+#else
+    //m_maincontroller.SetCPUaccess(NULL) ;
+    //m_MSRdeviceFile.SetUserInterface(this) ;
+    mp_i_cpuaccess = new MSRdeviceFile(//this,
+      mp_userinterface ,
+      GetNumberOfLogicalCPUcores() ,
+      m_model
+      ) ;
+    //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
+  #endif
+    //Assign to the global variable so that the functions (ReadMSR(...) etc.)
+    //that are exported by this executable can access the CPU registers.
+    g_p_cpuaccess = mp_i_cpuaccess ;
+    //the main controller needs CPUID (I_CPUaccess class ) access in order to
+    //retrieve the CPU by model, family etc.
+    m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
+    mp_i_cpuaccess->mp_model = //mp_modelData ;
+      & m_model ;
+  }
+  catch(//ReadMSRexception
+      CPUaccessException & r_cpuaccessexception )
+  {
+    LOGN("caught a CPUaccessException:"
+      << r_cpuaccessexception.m_stdstrErrorMessage )
+    //We may continue to use this program: e.g. for testing usage getter
+    //DLLs or for showing the usage etc. via IPC.
+    //If the construction of a I_CPUaccess object failed the pointer should
+    //already be NULL.
+//        mp_i_cpuaccess = NULL ;
+  }
+}
+
 
   void CPUcontrolBase::DeleteCPUcontroller()
   {

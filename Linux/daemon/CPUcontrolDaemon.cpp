@@ -28,8 +28,11 @@ namespace Linux
   //Called by the base class.
   void CPUcontrolDaemon::CreateHardwareAccessObject()
   {
-    mp_i_cpuaccess = new MSRdeviceFile( & m_dummyuserinterface ,
-      GetNumberOfLogicalCPUcores()) ;
+    mp_i_cpuaccess = new MSRdeviceFile(
+      & m_dummyuserinterface ,
+      GetNumberOfLogicalCPUcores() ,
+      m_model
+      ) ;
   }
 
   bool CPUcontrolDaemon::Start()
@@ -38,7 +41,13 @@ namespace Linux
       //dummy parameter values.
       0, NULL) == EXIT_SUCCESS
       )
-      return HandleStartDynVoltAndFreqScalingThread() ;
+    {
+//      if( mp_cpucoreusagegetter )
+        return HandleStartDynVoltAndFreqScalingThread() ;
+          //HandleStartCPUcoreLoadBasedDynVoltAndFreqScalingThread() ;
+//      else
+//        return HandleStartGetCPUcoreInformationThread() ;
+    }
 //    StartDynamicVoltageAndFrequencyScaling() ;
     return false ;
   }

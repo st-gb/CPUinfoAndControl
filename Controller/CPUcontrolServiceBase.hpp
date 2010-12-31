@@ -55,6 +55,7 @@ public:
   //inline bool HandleStartDynVoltAndFreqScalingThread() ;
   //Must not be inline (else "undefined reference to ")
   bool HandleStartDynVoltAndFreqScalingThread() ;
+//  bool HandleStartGetCPUcoreInformationThread() ;
 //static
   DWORD Initialize(
     DWORD dwArgumentCount,
