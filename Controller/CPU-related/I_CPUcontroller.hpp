@@ -165,6 +165,8 @@ public:
     , WORD wCoreID
     )
   {
+    LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequency("
+      << wCoreID << ") begin" )
     return 0 ;
   }
   virtual float GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex ) ;

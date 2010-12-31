@@ -68,7 +68,7 @@
 #include <wxWidgets/Controller/non-blocking_socket/client/\
 wxServiceSocketClient.hpp>
 //#include <strstream> //ostrstream
-#include <string> //
+#include <string> //class std::string
 //#include <errno.h> //for "errno"
 
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
@@ -78,8 +78,8 @@ FILE * fileDebug ; //for debug logging.
 //easy logging.
 Logger g_logger ;
 CPUcontrolBase * gp_cpucontrolbase ;
-//Needed for the exported functions.
-I_CPUaccess * g_p_cpuaccess ;
+////Needed for the exported functions.
+//I_CPUaccess * g_p_cpuaccess ;
 
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
@@ -462,53 +462,6 @@ bool wxX86InfoAndControlApp::ConnectToDataProviderAndShowResult()
 void wxX86InfoAndControlApp::CPUcoreUsageGetterDeleted()
 {
   mp_frame->CPUcoreUsageGetterDeleted() ;
-}
-
-void wxX86InfoAndControlApp::CreateHardwareAccessObject()
-{
-  try //catch CPUaccessexception
-  {
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  //WinRing0dynLinked winring0dynlinked(p_frame) ;
-  //If allocated statically within this block / method the object
-  //gets invalid after leaving the block where it was declared.
-  //mp_winring0dynlinked
-  //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
-#ifdef _MSC_VER_ //possible because the import library is for MSVC
-  mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
-    this ) ;
-#else //Use runtime dynamic linking because no import library is available for
-  //MinGW.
-  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
-    this ) ;
-#endif
-  //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
-  //  mp_i_cpuaccess ) ;
-#else
-  //m_maincontroller.SetCPUaccess(NULL) ;
-  //m_MSRdeviceFile.SetUserInterface(this) ;
-  mp_i_cpuaccess = new MSRdeviceFile(this, GetNumberOfLogicalCPUcores() ) ;
-  //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
-#endif
-  //Assign to the global variable so that the functions (ReadMSR(...) etc.)
-  //that are exported by this executable can access the CPU registers.
-  g_p_cpuaccess = mp_i_cpuaccess ;
-  //the main controller needs CPUID (I_CPUaccess class ) access in order to
-  //retrieve the CPU by model, family etc.
-  m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
-  mp_i_cpuaccess->mp_model = mp_modelData ;
-  }
-  catch(//ReadMSRexception
-      CPUaccessException & r_cpuaccessexception )
-  {
-    LOGN("caught a CPUaccessException:"
-      << r_cpuaccessexception.m_stdstrErrorMessage )
-    //We may continue to use this program: e.g. for testing usage getter
-    //DLLs or for showing the usage etc. via IPC.
-    //If the construction of a I_CPUaccess object failed the pointer should
-    //already be NULL.
-//        mp_i_cpuaccess = NULL ;
-  }
 }
 
 void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()

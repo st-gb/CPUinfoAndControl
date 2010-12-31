@@ -33,6 +33,7 @@ public:
 //};
 
 //Forward declarations (faster than #include)
+class Model ;
 class UserInterface ;
 
 //This class calls the winring0 functions by function pointers.
@@ -58,7 +59,8 @@ public:
   MSRdeviceFile(UserInterface * pui) ;
   MSRdeviceFile(
     UserInterface * pui ,
-    BYTE byNumberOfLogicalCPUcores
+    BYTE byNumberOfLogicalCPUcores ,
+    Model & r_model
     ) ;
   MSRdeviceFile() ;
   ~MSRdeviceFile() ;

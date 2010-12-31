@@ -205,8 +205,11 @@ float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
 BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
   WORD wCoreID )
 {
+  LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues("
+    << wCoreID << ") begin" )
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
     m_arp_percpucoreattributes  ;
+//  LOGN(" I_CPUcontroller:GetCurrentVoltageAndFrequencyAndStoreValues")
   return GetCurrentVoltageAndFrequency(
     arp_percpucoreattributes[wCoreID].m_fVoltageInVolt,
     arp_percpucoreattributes[wCoreID].m_fMultiplier,
@@ -765,7 +768,7 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
 {
   BYTE byRet ;
 //  DEBUGN(
-  LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq("
+  LOGN(" I_CPUcontroller::SetFreqAndVoltageFromFreq("
 //#ifdef _DEBUG
     << "freq in MHZ:" << wFreqInMHz << ","
     << "core ID:" << (WORD) byCoreID << ")"

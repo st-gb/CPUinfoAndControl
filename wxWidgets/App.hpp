@@ -15,7 +15,7 @@
 //#include <Controller/multithread/native_API_event_type.hpp>
 #include <Controller/multithread/condition_type.hpp>
 #include <Controller/multithread/thread_type.hpp>
-#include <Controller/MainController.hpp> //class MainController
+//#include <Controller/MainController.hpp> //class MainController
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/UserInterface.hpp>//base class UserInterface
 //#include <Windows/DynFreqScalingAccess.hpp>
@@ -145,7 +145,7 @@ public:
     IPC_Client * m_p_i_ipcclient ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //  ICPUcoreUsageGetter * mp_cpucoreusagegetter ;
-  MainController m_maincontroller ;
+//  MainController m_maincontroller ;
   //"volatile" because it is accessed from more than 1 thread.
   volatile bool m_vbRetrieveCPUcoreData ;
   volatile bool m_vbGotCPUcoreData ;
@@ -188,9 +188,9 @@ public:
     const wxString & cr_wxstrIPCclientURL
     //, std::string & r_stdstrMessage
     ) ;
-  //Created an object of subclass of I_CPUacces for CPU and PCIconfig etc.
-  //access .
-  inline void CreateHardwareAccessObject() ;
+//  //Created an object of subclass of I_CPUacces for CPU and PCIconfig etc.
+//  //access .
+//  inline void CreateHardwareAccessObject() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
   void DeleteCPUcontroller() ;
   void DynVoltnFreqScalingEnabled() ;

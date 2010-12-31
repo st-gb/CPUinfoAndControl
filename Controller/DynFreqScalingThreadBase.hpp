@@ -82,13 +82,14 @@ public:
   }
   inline void CalcDiffBetweenCurrentAndPreviousTemperature() ;
   ExitCode Entry() ;
+  BYTE GetCPUcoreWithHighestLoad( float & fHighestCPUcoreLoadInPercent) ;
+  virtual void HandleCPUnotTooHot() {}
   inline void HandleCPUtooHotDVFS() ;
   void HandleSameCPUcoreVoltageForAllCPUcores() ;
   //implement in the API of the concrete thread class.
   virtual bool IsRunning() const { return false ; }
   //"virtual" because it may be overwritten.
   virtual bool IsStopped() ; //{} ;
-  BYTE GetCPUcoreWithHighestLoad( float & fHighestCPUcoreLoadInPercent) ;
   inline void SafePreviousTemperatures() ;
   void SignalCPUdataCanBeSafelyRead() ;
   void SetLowerFrequencyFromAvailableMultipliers(

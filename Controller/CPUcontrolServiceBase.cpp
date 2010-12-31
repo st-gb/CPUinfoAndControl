@@ -9,6 +9,7 @@
 #endif
 
 #include <Controller/CPUcontrolServiceBase.hpp>
+#include <Controller/CPUcoreLoadBasedDynVoltnFreqScaling.hpp>
 //namespace DynFreqScalingThreadBase::ThreadFunc
 #include <Controller/DynFreqScalingThreadBase.hpp>
 //GetErrorMessageFromErrorCodeA(...)
@@ -32,8 +33,9 @@
 
 extern CPUcontrolBase * gp_cpucontrolbase ;
 
-//Needed for the exported functions.
-I_CPUaccess * g_p_cpuaccess ;
+////Needed for the exported functions.
+//I_CPUaccess * g_p_cpuaccess ;
+extern I_CPUaccess * g_p_cpuaccess ;
 
 CPUcontrolServiceBase::CPUcontrolServiceBase(UserInterface * p_userinterface)
   :
@@ -53,26 +55,44 @@ CPUcontrolServiceBase::~CPUcontrolServiceBase()
 
 void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline()
 {
-  LOGN("creating the DVFS thread object")
+  LOGN("creating the DVFS thread object--pointer to CPU core usage getter"
+      "object:" << mp_cpucoreusagegetter )
   //Windows_API::DynFreqScalingThread dynfreqscalingthread(
-  mp_dynfreqscalingthreadbase =
   #ifdef USE_WINDOWS_THREAD
+    mp_dynfreqscalingthreadbase =
     new Windows_API::DynFreqScalingThread(
       * this
+      , m_model.m_cpucoredata
+      ) ;
   #else //USE_WINDOWS_THREAD
     //This variant of starting the DVFS thread did not work with the Windows
     //and Linux service(?) .
   //    new wxWidgets::DynFreqScalingThread(
 //      * this
-
+  if( mp_cpucoreusagegetter )
+  {
+    LOGN("Creating a CPUcoreLoadBasedDynVoltnFreqScaling object.")
+    mp_dynfreqscalingthreadbase =
+    //This is the Linux/ Unix variant of starting the DVFS thread (did not
+    //work with wxThread/ wxWidgets::DynFreqScalingThread on Windows or Linux).
+    new CPUcoreLoadBasedDynVoltnFreqScaling(
+      * gp_cpucontrolbase
+      , m_model.m_cpucoredata
+      ) ;
+  }
+  else
+  {
+    LOGN("Creating a DynFreqScalingThreadBase object.")
+    mp_dynfreqscalingthreadbase =
     //This is the Linux/ Unix variant of starting the DVFS thread (did not
     //work with wxThread/ wxWidgets::DynFreqScalingThread on Windows or Linux).
     new DynFreqScalingThreadBase(
       * gp_cpucontrolbase
-  #endif //USE_WINDOWS_THREAD
-    , m_model.m_cpucoredata
+      , m_model.m_cpucoredata
   //    , wxTHREAD_JOINABLE //wxThread::Wait() only works for detached threads.
-    ) ;
+      ) ;
+  }
+  #endif //USE_WINDOWS_THREAD
 }
 
 //@return 0=success
@@ -108,6 +128,16 @@ bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread()
 #endif
   return 1 ;
 }
+
+//bool CPUcontrolServiceBase::HandleStartGetCPUcoreInformationThread()
+//{
+//  LOGN("service HandleStartGetCPUcoreInformationThread--CPU controller: "
+//    << mp_cpucontroller
+//    << "CPU usage getter: " << mp_cpucoreusagegetter )
+//  bool bContinue = false ;
+//  StartGetCPUcoreInformationThread_Inline(bContinue) ;
+//  return 1 ;
+//}
 
 //Pass ERROR_SUCCESS (0L) or NO_ERROR (0L) if no error
 // Stub initialization function.
@@ -236,8 +266,8 @@ DWORD CPUcontrolServiceBase::Initialize(
       }
       if( ! mp_cpucoreusagegetter )
       {
-        LOGN("no CPU core usage getter->should exit");
-        return 1 ;
+//        LOGN("no CPU core usage getter->should exit");
+//        return 1 ;
       }
       SetCPUcontroller(mp_cpucontroller) ;
 //      mp_cpucontroller->SetCmdLineArgs(
@@ -342,3 +372,23 @@ void CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(bool & bContinue)
   }
 //  return bContinue ;
 }
+
+//void StartGetCPUcoreInformationThread_Inline()
+//{
+//  DWORD dwRet = m_x86iandc_thread_typeDVFSthread.start(
+//    GetCPUcoreInformationNameSpace::ThreadFunction,
+//    0 ) ;
+//  if( dwRet ==  EXIT_SUCCESS )
+//  {
+//    LOGN( "Successfully started the Dynamic Voltage and Frequency Scaling "
+//        "thread.")
+//    bContinue = true ;
+//  }
+//  else
+//  {
+//    LOGN( "Error starting Dynamic Voltage and Frequency Scaling thread :"
+//  //        << LocalLanguageMessageFromErrorCodeA(dwRet)
+//      << GetErrorMessageFromErrorCodeA(dwRet)
+//      )
+//  }
+//}

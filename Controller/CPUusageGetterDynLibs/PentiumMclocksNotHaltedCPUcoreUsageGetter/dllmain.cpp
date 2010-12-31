@@ -3,7 +3,7 @@
 
 //#include <Controller\I_CPUaccess.hpp>
 //#include <Controller/ExportedExeFunctionsCPUaccess.hpp>
-#include <iostream> //for cout
+#include <iostream> //for std::cout
 #ifdef _DEBUG
   #include <Controller/Logger.hpp>
   #include <Controller/character_string/stdtstr.hpp> //GetStdString()
