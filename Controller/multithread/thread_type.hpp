@@ -10,24 +10,29 @@
 
 #define USE_PTHREAD
 
+#define NAMESPACE_X86IANDC(x) namespace x86IandC{ x }
+
 #if defined(__linux__) && defined(USE_PTHREAD)
-  //class phreadBasedI_Thread
-  #include <Linux/multithread/pthreadBasedI_Thread.hpp>
-  typedef Linux::pthreadBasedI_Thread thread_type ;
+//  typedef Linux::pthreadBasedI_Thread thread_type ;
 #else
-  //class wxThreadBasedI_Thread ;
-  #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
   //#include <wx/thread.h> //class wxCriticalSectionLocker
 #endif
 
-namespace x86IandC
-{
 #if defined(__linux__) && defined(USE_PTHREAD)
-  typedef Linux::pthreadBasedI_Thread thread_type ;
+  //class phreadBasedI_Thread
+  #include <Linux/multithread/pthreadBasedI_Thread.hpp>
+  namespace x86IandC { typedef Linux::pthreadBasedI_Thread thread_type ; }
 #else
-  typedef wxThreadBasedI_Thread thread_type ;
+  #ifdef _WIN32 //Defined for 32 and 64 bit Windows on MinGW/ MSVC.
+    #include <Windows/multithread/Thread.hpp> //class Windows_API::Thread
+    namespace x86IandC{ typedef Windows_API::Thread thread_type ; }
+//    NAMESPACE_X86IANDC(typedef Windows_API::Thread thread_type ;)
+  #else
+    //class wxThreadBasedI_Thread ;
+    #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+    namespace x86IandC { typedef wxThreadBasedI_Thread thread_type ; }
+  #endif
 #endif
   //typedef critical_section_locker_type wxCriticalSectionLocker ;
-}
 
 #endif /* THREAD_TYPE_HPP_ */

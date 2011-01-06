@@ -247,5 +247,8 @@ public :
   static void StartwxSocketServerThread() ;
   void StartService() ;
   inline void WakeUpCreateIPCdataThread() ;
+
+//  //For receiving wxWidgets (socket) events.
+//  DECLARE_EVENT_TABLE()
 };
 #endif //#ifndef CPUCONTROLSERVICE_HPP_

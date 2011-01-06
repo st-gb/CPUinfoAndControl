@@ -63,6 +63,7 @@ public:
     , float fMultiplier
     , WORD byCoreID
     ) ;
+  inline void GetCurrentReferenceClock();
   BYTE GetCurrentVoltageAndFrequency(
     float & r_fVoltageInVolt
     , float & fMultiplier

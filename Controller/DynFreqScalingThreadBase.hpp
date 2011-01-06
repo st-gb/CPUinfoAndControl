@@ -83,7 +83,8 @@ public:
   inline void CalcDiffBetweenCurrentAndPreviousTemperature() ;
   ExitCode Entry() ;
   BYTE GetCPUcoreWithHighestLoad( float & fHighestCPUcoreLoadInPercent) ;
-  virtual void HandleCPUnotTooHot() {}
+  //Must be virtual in order to be called in subclasses if this class.
+  virtual void HandleCPUnotTooHot() ;//{}
   inline void HandleCPUtooHotDVFS() ;
   void HandleSameCPUcoreVoltageForAllCPUcores() ;
   //implement in the API of the concrete thread class.

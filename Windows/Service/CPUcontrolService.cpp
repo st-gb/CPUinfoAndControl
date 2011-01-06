@@ -1293,6 +1293,7 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
     LOG("argument " << (WORD) byArgIndex << ": " << argv[byArgIndex] <<
       "\n" );
 
+//  BYTE byVoltageAndFrequencyScalingType;
   // Initialization code goes here.
   //"After these calls[...,ServiceStatus()], the function should complete the
   //initialization of the service."
@@ -1301,8 +1302,10 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
     (CPUcontrolServiceBase *) msp_cpucontrolservice)->Initialize(
     argc
     , argv //&specificError
+    , msp_cpucontrolservice->m_byVoltageAndFrequencyScalingType
     );
-
+  LOGN("Should use DVFS type:" << (WORD) msp_cpucontrolservice->
+    m_byVoltageAndFrequencyScalingType)
   msp_cpucontrolservice->HandleInitServiceFailed(dwStatus ) ;
   if( dwStatus != NO_ERROR )
   {
@@ -1326,7 +1329,11 @@ void WINAPI CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   LOGN("service main--CPU controller: "
     << msp_cpucontrolservice->mp_cpucontroller
     << "CPU usage getter: " << msp_cpucontrolservice->mp_cpucoreusagegetter )
-  if( ! msp_cpucontrolservice->HandleStartDynVoltAndFreqScalingThread() )
+  if( msp_cpucontrolservice->HandleStartDynVoltAndFreqScalingThread(
+      //byVoltageAndFrequencyScalingType
+      ) ==
+      EXIT_SUCCESS
+    )
   {
     LOGN("Waiting for the stop service condition to become true")
     LOGN("service main--current thread ID:" << ::GetCurrentThreadId() )

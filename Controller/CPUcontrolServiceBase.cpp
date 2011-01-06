@@ -5,7 +5,7 @@
  *      Author: Stefan
  */
 #ifdef _WIN32
-  #define USE_WINDOWS_THREAD
+//  #define USE_WINDOWS_THREAD
 #endif
 
 #include <Controller/CPUcontrolServiceBase.hpp>
@@ -53,7 +53,9 @@ CPUcontrolServiceBase::~CPUcontrolServiceBase()
   // TODO Auto-generated destructor stub
 }
 
-void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline()
+void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline(
+  //BYTE byVoltageAndFrequencyScalingType
+  )
 {
   LOGN("creating the DVFS thread object--pointer to CPU core usage getter"
       "object:" << mp_cpucoreusagegetter )
@@ -69,7 +71,8 @@ void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline()
     //and Linux service(?) .
   //    new wxWidgets::DynFreqScalingThread(
 //      * this
-  if( mp_cpucoreusagegetter )
+  if( //mp_cpucoreusagegetter
+    m_byVoltageAndFrequencyScalingType == CPUcontrolBase::LoadBased )
   {
     LOGN("Creating a CPUcoreLoadBasedDynVoltnFreqScaling object.")
     mp_dynfreqscalingthreadbase =
@@ -80,7 +83,8 @@ void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline()
       , m_model.m_cpucoredata
       ) ;
   }
-  else
+  else if( m_byVoltageAndFrequencyScalingType ==
+      CPUcontrolBase::TemperatureBased )
   {
     LOGN("Creating a DynFreqScalingThreadBase object.")
     mp_dynfreqscalingthreadbase =
@@ -96,15 +100,18 @@ void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline()
 }
 
 //@return 0=success
-bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread()
+bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread(
+  //BYTE byVoltageAndFrequencyScalingType
+  )
 {
   DisableOtherVoltageOrFrequencyChange() ;
   LOGN("service HandleStartDynVoltAndFreqScalingThread--CPU controller: "
     << mp_cpucontroller
     << "CPU usage getter: " << mp_cpucoreusagegetter )
-#ifdef __linux__
-  CreateDVFSthreadObject_Inline() ;
-  bool bContinue = false ;
+//#ifdef __linux__
+  CreateDVFSthreadObject_Inline(//byVoltageAndFrequencyScalingType
+    ) ;
+//  bool bContinue = false ;
 #ifdef USE_WINDOWS_THREAD
   StartDynamicVoltageAndFrequencyScaling() ;
 #else
@@ -112,20 +119,21 @@ bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread()
       //to create a separate thread object.
       mp_dynfreqscalingthreadbase )
   {
-    StartDVFSviaThreadType_Inline(bContinue) ;
+    return StartDVFSviaThreadType_Inline(//bContinue
+      ) ;
   }
   else
     LOGN("Failed to create the Dynamic Voltage and Frequency Scaling thread "
       "object/ the class instance is NULL" )
 #endif
-#else
-  CreateDVFSthreadObject_Inline() ;
-//  return mp_dynfreqscalingthreadbase ;
-//  StartDynVoltnFreqScaling() ;
-  LOGN("mp_dynfreqscalingthreadbase:" << mp_dynfreqscalingthreadbase )
-  if( mp_dynfreqscalingthreadbase )
-    return mp_dynfreqscalingthreadbase->Start() ;
-#endif
+//#else
+//  CreateDVFSthreadObject_Inline() ;
+////  return mp_dynfreqscalingthreadbase ;
+////  StartDynVoltnFreqScaling() ;
+//  LOGN("mp_dynfreqscalingthreadbase:" << mp_dynfreqscalingthreadbase )
+//  if( mp_dynfreqscalingthreadbase )
+//    return mp_dynfreqscalingthreadbase->Start() ;
+//#endif
   return 1 ;
 }
 
@@ -144,9 +152,12 @@ bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread()
 DWORD CPUcontrolServiceBase::Initialize(
   DWORD   argc,
 //  LPTSTR  * argv
-  CPU_CONTROL_SERVICE_BASE_STRING_POINTER_TYPE * argv
+  CPU_CONTROL_SERVICE_BASE_STRING_POINTER_TYPE * argv,
+  BYTE & r_byVoltageAndFrequencyScalingType
   )
 {
+  //Initialize the variable.
+  r_byVoltageAndFrequencyScalingType = CPUcontrolBase::none;
   //DWORD dwReturnValue = ERROR_SUCCESS ;
   DWORD dwReturnValue = ! NO_ERROR ;
   //argv;
@@ -229,20 +240,6 @@ DWORD CPUcontrolServiceBase::Initialize(
         //  tstr ) ;
 //        byRet = 1 ;
       }
-      if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0
-        //mp_stdsetvoltageandfreqDefault->size() == 0
-        )
-      {
-        LOGN("no default voltages specified->no overvoltage protection->exiting");
-        return 1 ;
-      }
-      if( m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.size() == 0
-        //mp_stdsetvoltageandfreqWanted->size() == 0
-        )
-      {
-        LOGN("no preferred voltages specified->exiting");
-        return 1 ;
-      }
       //if( !
         m_maincontroller.
         //Creates e.g. an AMD Griffin oder Intel Pentium M controller
@@ -251,24 +248,9 @@ DWORD CPUcontrolServiceBase::Initialize(
           , mp_cpucoreusagegetter
           ) ;
         //)
-      if( ! mp_cpucontroller )
-      {
-        if( ! mp_cpucoreusagegetter )
-        {
-          LOGN("no CPU controller and no usage getter->should exit");
-          return 1 ;
-        }
-        else
-        {
-          LOGN("no CPU controller->should exit");
-          return 1 ;
-        }
-      }
-      if( ! mp_cpucoreusagegetter )
-      {
-//        LOGN("no CPU core usage getter->should exit");
-//        return 1 ;
-      }
+      SetDynVoltnFreqScalingType_Inline();
+      if( m_byVoltageAndFrequencyScalingType == CPUcontrolBase::none )
+        return 1;
       SetCPUcontroller(mp_cpucontroller) ;
 //      mp_cpucontroller->SetCmdLineArgs(
 //        NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS,
@@ -344,7 +326,9 @@ bool CPUcontrolServiceBase::StartDynVoltnFreqScaling()
 }
 
 //bool
-void CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(bool & bContinue)
+//void
+DWORD CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(//bool & bContinue
+  )
 {
 //  bool bContinue = false ;
   LOGN("Trying to start the Dynamic Voltage and Frequency Scaling thread.")
@@ -361,7 +345,7 @@ void CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(bool & bContinue)
   {
     LOGN( "Successfully started the Dynamic Voltage and Frequency Scaling "
         "thread.")
-    bContinue = true ;
+//    bContinue = true ;
   }
   else
   {
@@ -371,6 +355,7 @@ void CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(bool & bContinue)
       )
   }
 //  return bContinue ;
+  return dwRet;
 }
 
 //void StartGetCPUcoreInformationThread_Inline()
