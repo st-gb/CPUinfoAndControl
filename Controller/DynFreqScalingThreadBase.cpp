@@ -280,6 +280,11 @@ BYTE DynFreqScalingThreadBase::GetCPUcoreWithHighestLoad(
   return byCPUcoreWithHighestLoad ;
 }
 
+void DynFreqScalingThreadBase::HandleCPUnotTooHot()
+{
+  LOGN("DynFreqScalingThreadBase::HandleCPUnotTooHot()")
+}
+
 ExitCode DynFreqScalingThreadBase::Entry()
 {
   m_vbDVFSthreadStopped = false ;

@@ -48,19 +48,24 @@ public:
     UserInterface * p_userinterface);
   virtual
   ~CPUcontrolServiceBase();
-  inline void CreateDVFSthreadObject_Inline() ;
+  inline void CreateDVFSthreadObject_Inline(
+    //BYTE byVoltageAndFrequencyScalingType
+    ) ;
   //"virtual" because it should be overwritten in derivative classes.
   virtual void CreateHardwareAccessObject() {}
   virtual void DisableOtherVoltageOrFrequencyChange() {}
   //inline bool HandleStartDynVoltAndFreqScalingThread() ;
   //Must not be inline (else "undefined reference to ")
-  bool HandleStartDynVoltAndFreqScalingThread() ;
+  bool HandleStartDynVoltAndFreqScalingThread(
+    //BYTE byVoltageAndFrequencyScalingType
+    ) ;
 //  bool HandleStartGetCPUcoreInformationThread() ;
 //static
   DWORD Initialize(
     DWORD dwArgumentCount,
     //LPTSTR * argv
-    CPU_CONTROL_SERVICE_BASE_STRING_POINTER_TYPE * pp_Arguments
+    CPU_CONTROL_SERVICE_BASE_STRING_POINTER_TYPE * pp_Arguments,
+    BYTE & r_byVoltageAndFrequencyScalingType
     ) ;
   //"virtual" because it should be overwritten in derivative classes.
   inline virtual void ShowMessage( const std::string & cr_stdstrMessage ) {}
@@ -68,7 +73,8 @@ public:
 //  inline bool StartDynVoltnFreqScaling() ;
   bool StartDynVoltnFreqScaling() ;
   inline //bool
-    void StartDVFSviaThreadType_Inline(bool &) ;
+    DWORD StartDVFSviaThreadType_Inline(//bool &
+      ) ;
 };
 
 #endif /* CPUCONTROLSERVICEBASE_HPP_ */

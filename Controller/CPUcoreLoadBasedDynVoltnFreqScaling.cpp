@@ -6,6 +6,7 @@
  */
 
 #include "CPUcoreLoadBasedDynVoltnFreqScaling.hpp"
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
 CPUcoreLoadBasedDynVoltnFreqScaling::CPUcoreLoadBasedDynVoltnFreqScaling(
   CPUcontrolBase & r_cpucontrolbase

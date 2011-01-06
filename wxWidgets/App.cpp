@@ -105,8 +105,8 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   //m_ipcclient( m_model ) ,
   m_p_i_ipcclient(NULL) ,
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  m_maincontroller( this )
-  , m_vbRetrieveCPUcoreData( true)
+//  m_maincontroller( this ),
+  m_vbRetrieveCPUcoreData( true)
   , m_vbGotCPUcoreData (true)
   //Must explicitely init m_wxmutexIPCthread and m_wxconditionIPCthread
   // in this order here (condition need mutex in c'tor, so init mutex before)?!

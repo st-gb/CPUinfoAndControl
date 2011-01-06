@@ -1,7 +1,9 @@
 #include "CPUcoreData.hpp"
 //Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
 //"undefined reference".
-#include <algorithms/binary_search/binary_search.cpp> //GetArrayIndexForClosestValue(...)
+//GetArrayIndexForClosestValue(...)
+#include <algorithms/binary_search/binary_search.cpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
@@ -196,6 +198,64 @@ void CPUcoreData::Init()
   //mp_stdsetvoltageandfreqDefault = new std::set<VoltageAndFreq> () ;
 }
 
+void CPUcoreData::InterpolateDefaultVoltages()
+{
+  LOGN("CPUcoreData::InterpolateDefaultVoltages begin--CPU controller:"
+    << mp_cpucontroller)
+  if( mp_cpucontroller && m_arfAvailableMultipliers)
+  {
+    std::set<VoltageAndFreq>::const_iterator c_iter =
+      m_stdsetvoltageandfreqDefault.begin() ;
+    if( c_iter != m_stdsetvoltageandfreqDefault.end() )
+    {
+      std::set<VoltageAndFreq>::const_iterator c_iterPrev = c_iter;
+      std::set<VoltageAndFreq> stdsetvoltageandfreqDefault;
+      ++ c_iter;
+      float fReferenceClockInMHz = mp_cpucontroller->m_fReferenceClockInMHz ;
+      float fFreqInMHz;
+      float fFreqInMHzPrev;
+  //      float fFreqInMHzDiff;
+      float fFreqInMHzRatio;
+      float fVoltageInVolt;
+      LOGN("ref clock i MHz:" << fReferenceClockInMHz)
+      WORD wArraySize = m_stdset_floatAvailableMultipliers.size();
+      WORD wMultiplier;
+      for( ; c_iter != m_stdsetvoltageandfreqDefault.end() ; ++ c_iter )
+      {
+//        if(  )
+        {
+          fFreqInMHzPrev = c_iterPrev->m_wFreqInMHz;
+          LOGN("Current prev p-state:" << fFreqInMHzPrev << " Volt @ "
+            << c_iterPrev->m_fVoltageInVolt << " MHz.")
+          for( WORD wArrayIndex = 0 ; wArrayIndex < wArraySize ;
+              ++ wArrayIndex )
+          {
+            wMultiplier = m_arfAvailableMultipliers[ wArrayIndex ];
+            fFreqInMHz = wMultiplier * fReferenceClockInMHz;
+            LOGN("CPUcoreData::InterpolateDefaultVoltages begin"
+              "--" << fFreqInMHz << "in ]" << fFreqInMHzPrev << ";"
+              << c_iter->m_wFreqInMHz << "[ ?")
+            if( fFreqInMHz > fFreqInMHzPrev && fFreqInMHz <
+              c_iter->m_wFreqInMHz )
+            {
+              fFreqInMHzRatio = fFreqInMHz / fFreqInMHzPrev ; //-> >= 1.0
+              fVoltageInVolt = c_iterPrev->m_fVoltageInVolt * fFreqInMHzRatio;
+              LOGN("Adding " << fVoltageInVolt << " Volt @ " << fFreqInMHz <<
+                " MHz to default voltages.")
+              stdsetvoltageandfreqDefault.insert(
+                VoltageAndFreq(fVoltageInVolt,fFreqInMHz)
+                ) ;
+            }
+          }
+        }
+        c_iterPrev = c_iter;
+      }
+      m_stdsetvoltageandfreqDefault.insert(stdsetvoltageandfreqDefault.begin(),
+        stdsetvoltageandfreqDefault.end() -- ) ;
+    }
+  }
+  LOGN("CPUcoreData::InterpolateDefaultVoltages end")
+}
 //float CPUcoreData::GetLowerMultiplier( float fMulti )
 //{
 //  m_stdset_floatAvailableMultipliers.f

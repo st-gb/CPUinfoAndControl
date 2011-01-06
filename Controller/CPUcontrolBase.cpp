@@ -176,7 +176,9 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 #else //Use runtime dynamic linking because no import library is available for
   //MinGW.
   mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
-    this ) ;
+//    this
+    mp_userinterface
+    ) ;
 #endif
   //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
   //  mp_i_cpuaccess ) ;
@@ -398,6 +400,89 @@ void CPUcontrolBase::PossiblyDeleteCPUcoreUsageGetter()
       //E.g. do stuff like disable "unload dyn lib CPU controller" in menu.
       mp_userinterface->CPUcoreUsageGetterDeleted() ;
   }
+}
+
+void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
+{
+  LOGN("SetDynVoltnFreqScalingType_Inline begin")
+  m_byVoltageAndFrequencyScalingType = CPUcontrolBase::none ;
+  if( ! mp_cpucontroller )
+  {
+    if( ! mp_cpucoreusagegetter )
+    {
+      LOGN("No CPU controller and no usage getter->should exit.");
+//      return 1 ;
+    }
+    else
+    {
+      LOGN("No CPU controller->should exit.");
+    }
+    //Without getting the CPU usage no CPU _load_ based scaling is
+    //possible.
+    m_byVoltageAndFrequencyScalingType = CPUcontrolBase::none ;
+  }
+  else
+  {
+    if( mp_cpucoreusagegetter )
+    {
+      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::LoadBased ;
+      LOGN("CPU core usage getter AND CPU controller->at this point: use CPU "
+        "core load based Dynamic Voltage and Frequency Scaling");
+    }
+    else
+    {
+      LOGN("No CPU core usage getter->only temperature based Dynamic Voltage "
+        "and Frequency Scaling");
+  //        return 1 ;
+      //Without getting the CPU usage no CPU _load_ based scaling is
+      //possible.
+      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
+    }
+  }
+  if( m_byVoltageAndFrequencyScalingType == CPUcontrolBase::LoadBased )
+  {
+    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0
+      //mp_stdsetvoltageandfreqDefault->size() == 0
+      )
+    {
+      LOGN("No default voltages specified->no overvoltage protection"
+        "->only temperature based Dynamic Voltage and Frequency Scaling"
+        );
+    //        return CPUcontrolBase::no_default_voltages_specified ;
+//      dwReturnValue = CPUcontrolBase::no_default_voltages_specified ;
+      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
+    }
+    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.size() == 0
+      //mp_stdsetvoltageandfreqWanted->size() == 0
+      )
+    {
+      LOGN("No preferred voltages specified.");
+      if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault//.empty()
+          .size() < 2
+        )
+      {
+        LOGN("# of default voltages < 2"
+          "->only temperature based Dynamic Voltage and Frequency Scaling"
+          );
+    //        return CPUcontrolBase::no_preferred_voltages_specified ;
+//      dwReturnValue = CPUcontrolBase::no_preferred_voltages_specified ;
+        m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
+      }
+      else
+      {
+        LOGN("Using default voltages as preferred voltages.");
+        m_model.m_cpucoredata.CopyDefaultVoltageToPreferredVoltages();
+      }
+    }
+    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0
+      && m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0 )
+    {
+      LOGN("No preferred voltages AND no default voltages specified.");
+      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
+    }
+  }
+  LOGN("SetDynVoltnFreqScalingType_Inline end--DVFS type:" <<
+    (WORD) m_byVoltageAndFrequencyScalingType )
 }
 
 void CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling()

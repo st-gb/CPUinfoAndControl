@@ -23,7 +23,8 @@ public:
   virtual
   ~CPUcoreLoadBasedDynVoltnFreqScaling();
   //Must be virtual in order to be called in subclasses if this class.
-  virtual void HandleCPUnotTooHot() ;
+  //virtual
+  void HandleCPUnotTooHot() ;
 };
 
 #endif /* CPUCORELOADBASEDDYNVOLTNFREQSCALING_HPP_ */

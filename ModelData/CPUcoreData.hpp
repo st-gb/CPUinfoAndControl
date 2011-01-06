@@ -110,6 +110,17 @@ public:
   void AvailableMultipliersToArray() ;
   void AvailableVoltagesToArray() ;
   void ClearCPUcontrollerSpecificAtts() ;
+  void CopyDefaultVoltageToPreferredVoltages()
+  {
+    for( std::set<VoltageAndFreq>::const_iterator c_iter =
+        m_stdsetvoltageandfreqDefault.begin() ;
+        c_iter != m_stdsetvoltageandfreqDefault.end() ;
+        ++ c_iter
+       )
+    {
+      m_stdsetvoltageandfreqWanted.insert( * c_iter ) ;
+    }
+  }
   CPUcoreData() ;
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
@@ -128,6 +139,7 @@ public:
   float GetVoltageInVolt(WORD wVoltageInVoltIndex) ;
   void PossiblyReleaseMemForCoreNumAffectedData() ;
   void Init() ;
+  void InterpolateDefaultVoltages();
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
   {
     mp_cpucontroller = p_cpucontroller ;

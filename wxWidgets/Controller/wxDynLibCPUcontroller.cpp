@@ -25,6 +25,19 @@
   #include <limits> //float>::min()
 #endif
 
+void wxDynLibCPUcontroller::GetCurrentReferenceClock()
+{
+  //Get the reference clock at first for being able to interpolate default
+  //voltages.
+  float fDummy;
+  LOGN("Before calling wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency "
+    "for getting current reference clock.")
+  GetCurrentVoltageAndFrequency( fDummy, fDummy, m_fReferenceClockInMHz, 0);
+  LOGN("After calling wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency "
+    "for getting current reference clock:" << m_fReferenceClockInMHz
+    << " MHz")
+}
+
 wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   wxString & r_wxstrFilePath 
   , I_CPUaccess * p_cpuaccess 
@@ -70,13 +83,14 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
         << ::GetStdString( wxstrFuncName )
         )
+      LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
+      LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)
+
       LOGN("Dyn Lib before calling "
         //Convert to std::string, else g++ linker error:
         //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
         << ::GetStdString( wxstrFuncName )
         )
-      DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
-
 //      //TODO
 //      p_cpuaccess->mp_cpucontroller = NULL ;
       //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
@@ -88,17 +102,35 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 //        , & ::ReadMSR
 //        )
         ) ;
+      LOGN("Dyn Lib after calling "
+        //Convert to std::string, else g++ linker error:
+        //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
+        << ::GetStdString( wxstrFuncName )
+        )
+      LOGN("# of available default voltages:" << p_cpuaccess->mp_model->
+        m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
+      std::set<VoltageAndFreq> & r_stdset =  p_cpuaccess->mp_model->
+        m_cpucoredata.m_stdsetvoltageandfreqDefault;
+      std::set<VoltageAndFreq>::const_iterator c_iter = r_stdset.begin();
+      WORD wIndex = 0 ;
+      while( c_iter != r_stdset.end() )
+      {
+        LOGN("Default voltages #" << wIndex ++ << ":"
+          << c_iter->m_fVoltageInVolt << " Volt for " << c_iter->m_wFreqInMHz
+          << " MHz.")
+        ++ c_iter;
+      }
     }
 //#endif
 //      wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
-      LOGN("Dyn Lib assigned fct ptr to symbol " <<
-        //else g++: "undefined reference to `operator<<(std::ostream&,
-        //wxString const&)'"
-        GetStdString( wxstrFuncName) )
-      LOGN("Dyn Lib before calling " <<
-        //else g++: "undefined reference to `operator<<(std::ostream&,
-        //wxString const&)'"
-        GetStdString( wxstrFuncName ) )
+//      LOGN("Dyn Lib assigned fct ptr to symbol " <<
+//        //else g++: "undefined reference to `operator<<(std::ostream&,
+//        //wxString const&)'"
+//        GetStdString( wxstrFuncName) )
+//      LOGN("Dyn Lib before calling " <<
+//        //else g++: "undefined reference to `operator<<(std::ostream&,
+//        //wxString const&)'"
+//        GetStdString( wxstrFuncName ) )
       DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
 
 #ifdef _DEBUG
@@ -168,6 +200,8 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         //  how-to-print-function-pointers-with-cout:
         // cast to (void*), else either 1 or 0 is outputted.
         << (void*) m_pfnGetCurrentVoltageAndFrequency )
+
+      GetCurrentReferenceClock();
 
       //wxDYNLIB_FUNCTION(dll_SetCurrentPstate_type, SetCurrentPstate,
       //  m_wxdynamiclibraryCPUctl) ;

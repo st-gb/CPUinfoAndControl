@@ -878,6 +878,7 @@
   BYTE * XercesConfigurationHandler::SerializeConfigToMemoryBuffer(
     DWORD & r_dwByteSize )
   {
+    LOGN("XercesConfigurationHandler::SerializeConfigToMemoryBuffer")
     BYTE * ar_by = NULL ;
     mp_dom_implementation = XERCES_CPP_NAMESPACE::DOMImplementationRegistry::
       //"Return the first registered implementation that has the desired features,

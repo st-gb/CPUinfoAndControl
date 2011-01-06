@@ -14,6 +14,9 @@
 //For GetCurrentReferenceClock(...)
 #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 #include <Controller/CPU-related/Intel/Intel_registers.h>
+//A I_CPUaccess pointer is passed as parameter in Init(...)
+#include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+
 //Used by "Nehalem.hpp". The alternative would be:
 // -in "Nehalem.hpp" that may be used in both I_CPUcontroller-derived class and
 // this DLL source code would need to include the appropriate version of
@@ -21,7 +24,7 @@
 // -or: include <inline_register_access_functions.hpp> and set include path
 // for DLL to "-I Windows/AssignPointersToExportedExeFunctions/\_
 // inline_register_access_functions.hpp", for I_CPUcontgroller-derived to
-// "-I Conroller/.../_
+// "-I Controller/.../_
 // inline_register_access_functions.hpp"
 
 //#include <Windows/AssignPointersToExportedExeFunctions/\_
@@ -63,12 +66,18 @@ AssignPointersToExportedExeMSRfunctions.h>
   Logger g_loggerDynLib ;
 #endif
 
+#define INSERT_DEFAULT_P_STATES
+#ifdef INSERT_DEFAULT_P_STATES
+  #include <ModelData/ModelData.hpp>
+#endif
+
 //defined in "/Windows/AssignPointersToExportedExeFunctions/
 // AssignPointersToExportedExeMSRfunctions.cpp
 extern ReadMSR_func_type g_pfnreadmsr ;
 extern WriteMSR_func_type g_pfn_write_msr ;
 //  extern float g_fReferenceClockInMHz ;
-float g_fReferenceClockInMHz ;
+//Init to the default reference clock in MHz.
+float g_fReferenceClockInMHz = 133.3 ;
 static float gs_fTimeStampCounterMultiplier = 0.0 ;
 
 //Use global vars instead of allocating them for each function call (->faster)
@@ -149,16 +158,16 @@ bool InitWindows()
   g_dwPreviousTickCountInMilliseconds
     //->time diff gets > max. time diff, so it calcs a ref clock.
     -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
-  //The reference clock is needed for setting the current frequency. So it
-  //must be determined prior to any call of this function.
-  GetCurrentReferenceClock(
-    //12.0,
-    gs_fTimeStampCounterMultiplier ,
-    g_fReferenceClockInMHz ,
-    1000 ,
-    MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-  DEBUGN("first calculated reference clock in MHz: "
-    << g_fReferenceClockInMHz )
+//  //The reference clock is needed for setting the current frequency. So it
+//  //must be determined prior to any call of this function.
+//  GetCurrentReferenceClock(
+//    //12.0,
+//    gs_fTimeStampCounterMultiplier ,
+//    g_fReferenceClockInMHz ,
+//    1000 ,
+//    MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
+//  DEBUGN("first calculated reference clock in MHz: "
+//    << g_fReferenceClockInMHz )
   return TRUE ;
 }
 #endif //#ifdef _WIN32
@@ -215,11 +224,13 @@ float *
   //The reference clock might change, also during runtime.
   //This is why it is a good idea to get the possible multipliers.
   GetAvailableMultipliers(
-    WORD wCoreID
-    , WORD * p_wNumberOfArrayElements )
+  WORD wCoreID
+  , WORD * p_wNumberOfArrayElements
+  )
 {
+  static BYTE byMaxMulti = 0;
 //    BYTE byMaxMultiplier = 0 ;
-  DWORD dwLowmostBits , dwHighmostBits ;
+//  DWORD dwLowmostBits , dwHighmostBits ;
 //  #ifdef _DEBUG
   //MSC-generated version has no problems
 //#ifndef _MSC_VER
@@ -232,26 +243,20 @@ float *
 //  //<MaximumTurboRatioLimit4C startbit="24" bitlength="8"/>
 //  #endif
    //g_pi_cpuaccess->RdmsrEx(
-  g_byValue1 = (*g_pfnreadmsr) (
-    MSR_TURBO_RATIO_LIMIT ,
-    & dwLowmostBits,// bit  0-31 (register "EAX")
-    & dwHighmostBits,
-    1 << wCoreID //m_dwAffinityMask
-    ) ;
+
+  g_byValue1 = GetMaximumMultiplier_Nehalem(wCoreID, byMaxMulti);
   DEBUGN("Dyn Lib--return value of Exe's ReadMSR:" << (WORD) g_byValue1)
   if( g_byValue1 ) //successfully read from MSR
   {
-    //Maximum  multiplier
-    g_byValue1 = (BYTE) ( dwLowmostBits & 255 ) ;
-    DEBUGN("Dyn Lib--max mulit:" << (WORD) g_byValue1)
-    BYTE byNumMultis = g_byValue1 -
+    DEBUGN("Dyn Lib--max multi:" << (WORD) byMaxMulti)
+    BYTE byNumMultis = byMaxMulti -
       //min. multi - 1
       6 ;
     float * ar_f = new float[byNumMultis] ;
     //If allocating the array on the heap succeeded.
     if( ar_f )
     {
-      *p_wNumberOfArrayElements = byNumMultis ;
+      * p_wNumberOfArrayElements = byNumMultis ;
       float fMulti = 7.0 ; //The minimum multiplier for Nehalem is 7.
 //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
       for( BYTE by = 0 ; by < byNumMultis ; ++ by )
@@ -449,13 +454,34 @@ void
   NEHALEM_DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
   //CPUaccess object inside the exe.
-//  I_CPUaccess * pi_cpuaccess
-  void * p_v
+  I_CPUaccess * pi_cpuaccess
+//  void * p_v
 //  , ReadMSR_func_type pfnreadmsr
   //BYTE by
   )
 {
 //  InitOtherOSthanWindows() ;
+#ifdef INSERT_DEFAULT_P_STATES
+  BYTE byMaxMulti;
+  float fVoltageInVolt = 0.65;
+  float fFrequencyInMHz = 7 * 133.3 ;
+
+  DEBUGN("adding default voltage " << fVoltageInVolt << " V for "
+    << (WORD) fFrequencyInMHz << " MHz" )
+  pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+    AddDefaultVoltageForFreq( fVoltageInVolt,
+      (WORD) ( fFrequencyInMHz )
+      ) ;
+  fVoltageInVolt = 0.9;
+  g_byValue1 = GetMaximumMultiplier_Nehalem(0,byMaxMulti);
+  fFrequencyInMHz = byMaxMulti * 133.3 ;
+  DEBUGN("adding default voltage " << fVoltageInVolt << " for "
+    << (WORD) fFrequencyInMHz << "MHz" )
+  pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+    AddDefaultVoltageForFreq( fVoltageInVolt,
+      (WORD) ( fFrequencyInMHz )
+      ) ;
+#endif //INSERT_DEFAULT_P_STATES
 }
 
 //  extern "C" __declspec(dllexport)

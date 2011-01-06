@@ -43,7 +43,7 @@ namespace wxWidgets
     virtual bool OnInit();
   };
 
-    DECLARE_APP(x86IandCservice)
+  DECLARE_APP(x86IandCservice)
 
 }
 

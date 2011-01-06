@@ -36,6 +36,19 @@ class UserInterface ;
 class CPUcontrolBase
 {
 public:
+  enum
+  {
+    success = 0,
+    no_default_voltages_specified,
+    no_preferred_voltages_specified
+  };
+  enum DynVoltnFreqScalingType
+  {
+    none,
+    LoadBased,
+    TemperatureBased
+  };
+  BYTE m_byVoltageAndFrequencyScalingType;
   //Additional controller Dyn libs to reflect whether there are dyn lib
   // controller dyn libs available. An alternative would be to use RunTime
   // Type Information (RTTI); i.e. "if ( typeid(mp_cpucontroller) ==
@@ -165,6 +178,8 @@ public:
 
   I_CPUaccess * GetCPUaccess() { return mp_i_cpuaccess ; }
   virtual void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) {}
+  //inline
+    void SetDynVoltnFreqScalingType_Inline();
   virtual void StartDynamicVoltageAndFrequencyScaling() ;
 } ;
 

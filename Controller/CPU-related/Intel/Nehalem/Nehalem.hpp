@@ -12,6 +12,24 @@
 
   extern DWORD g_dwValue1, g_dwValue2 ;
 
+  //Name Nehalem-specific functions "...Nehalem", also because more than 1
+  //(e.g. Intel Core, Nehalem) CPU header file may be included, so 1 name like
+  //"GetMaximumMultiplier()" in both files could be misleading.
+
+  inline BOOL GetMaximumMultiplier_Nehalem(WORD wCoreID, BYTE & byMaxMulti)
+  {
+    static BOOL boolReturnValue = FALSE;
+    boolReturnValue = ReadMSR(
+      MSR_TURBO_RATIO_LIMIT ,
+      & g_dwValue1,// bit  0-31 (register "EAX")
+      & g_dwValue2,
+      1 << wCoreID //m_dwAffinityMask
+      ) ;
+    //Maximum  multiplier
+    byMaxMulti = (BYTE) ( g_dwValue1 & 255 ) ;
+    return boolReturnValue;
+  }
+
   inline float GetTimeStampCounterMultiplier()
   {
     //see Intel document "Intel(R) 64 and IA-32 Architectures Software

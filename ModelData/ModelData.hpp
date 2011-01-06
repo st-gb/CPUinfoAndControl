@@ -55,7 +55,10 @@ public:
 #ifdef COMPILE_AS_SERVICE
   ServiceAttributes m_serviceattributes ;
 #endif //#ifdef COMPILE_AS_SERVICE
+
+#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   Attributes::UserInterfaceAttributes m_userinterfaceattributes ;
+#endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   ValueTables m_valuetables ;
   Model( ) ;
 
