@@ -33,10 +33,10 @@ public:
   //In order for destructorts of subclasses to be called
   virtual ~UserInterface() {}
   //Make it pure ("= 0") virtual so that it needs to be implemented by subclasses.
-  virtual bool Confirm(const std::string & str) = 0//{return true;}
+  virtual bool Confirm(const std::string & cr_stdstr) = 0//{return true;}
     ;
   //wstring version e.g. for chinese filenames.
-  virtual bool Confirm(const std::wstring & str) = 0//{return true;}
+  virtual bool Confirm(const std::wstring & cr_stdwstr) = 0//{return true;}
     ;
 //  virtual bool Confirm(
 //    //http://fara.cs.uni-potsdam.de/~kaufmann/?page=GenCppFaqs&faq=IntToString#Answ:
@@ -58,6 +58,10 @@ public:
   virtual void CPUcoreUsageGetterDeleted() {} ;
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
   virtual void DynVoltnFreqScalingEnabled() {}
+  //The following function are for ease to not need to create the time stamp
+  //string on our own in order to display it.
+  virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr) {}
+  virtual void MessageWithTimeStamp(const wchar_t * cp_wch) {}
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};
   virtual void RedrawEverything() {} ;

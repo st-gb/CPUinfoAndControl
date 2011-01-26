@@ -28,7 +28,7 @@
 #include <iostream> //std::cout
 
 //Needed for the exported functions.
-I_CPUaccess * g_p_cpuaccess ;
+I_CPUaccess * g_p_cpuaccess = NULL;
 
 void RemoveCarriageReturn(std::string & r_stdstr )
 {
@@ -206,6 +206,11 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   {
     LOGN("caught a CPUaccessException:"
       << r_cpuaccessexception.m_stdstrErrorMessage )
+    LOGN("mp_i_cpuaccess:" << mp_i_cpuaccess)
+    g_p_cpuaccess = NULL;
+    //Important: show the message to the user so that he knows that there is
+    //a problem.
+    mp_userinterface->Confirm(r_cpuaccessexception.m_stdstrErrorMessage);
     //We may continue to use this program: e.g. for testing usage getter
     //DLLs or for showing the usage etc. via IPC.
     //If the construction of a I_CPUaccess object failed the pointer should

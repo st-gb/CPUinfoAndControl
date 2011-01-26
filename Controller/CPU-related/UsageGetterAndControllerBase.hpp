@@ -16,12 +16,15 @@
 #endif //#ifdef _WIN32
 
 class I_CPUaccess ;
+//TODO comment out because this class is not being used
+class Model;
 
 //Contains the member that may be needed by each usage getter and controller.
 class CPUcoreUsageGetterAndControllerBase
 {
 //protected:
 public:
+//  Model * mp_model ;
   //The CPU access should be protected against direct access by
   //not inherited classes because writing to an MSR may damage the CPU.
   //A good place for direct write to MSR is the concrete CPU controller

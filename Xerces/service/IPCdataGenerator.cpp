@@ -10,12 +10,15 @@
 #include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
 //format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
+#include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 //#include <global.h> //LOGN
 #include <ModelData/ModelData.hpp> //class ModelData
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN
 #include <Xerces/XercesHelper.hpp> //x86InfoAndControl::InitializeXerces()
 #include <Xerces/XercesString.hpp> //for "XERCES_STRING_FROM_ANSI_STRING" macro
+
+#include <wx/stopwatch.h> //::wxGetLocalTimeMillis()
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/MemBufFormatTarget.hpp>
@@ -34,7 +37,7 @@ namespace Xerces
       p_dom_document->getDocumentElement();
     WORD wNumCPUcores = mr_model.m_cpucoredata.m_byNumberOfCPUCores ;
     PerCPUcoreAttributes * arp_percpucoreattributes =
-        mr_model.m_cpucoredata.m_arp_percpucoreattributes ;
+      mr_model.m_cpucoredata.m_arp_percpucoreattributes ;
     XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementCore ;
     for( WORD wCPUcoreIndex = 0 ; wCPUcoreIndex < wNumCPUcores ;
       ++ wCPUcoreIndex )
@@ -97,14 +100,28 @@ namespace Xerces
 
       p_dom_elementRoot->appendChild(p_dom_elementCore);
     }
-    if( mr_model.m_cpucoredata.m_bTooHot )
+//    if( mr_model.m_cpucoredata.m_bTooHot )
     {
       //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMDocument.html
       // #f5e93a6b757adb2544b3f6dffb4b461a:
       // throws DOMException
       p_dom_elementCore = p_dom_document->createElement(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
-        (const XMLCh *) L"core" );
+        (const XMLCh *) L"too_hot" );
+
+      stdstr = to_stdstring<wxLongLong_t>( //::wxNow()
+//        ::wxGetLocalTimeMillis().GetValue()
+         //mr_model.m_cpucoredata.m_llLastTimeTooHot
+         m_p_i_cpucontroller->m_llLastTimeTooHot
+         ) ;
+      //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMElement.html
+      // #1a607d8c619c4aa4a59bc1a7bc5d4692:
+      // exception DOMException
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"last_time_too_hot" ,
+        XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
+
       p_dom_elementRoot->appendChild( p_dom_elementCore ) ;
     }
   }
@@ -114,6 +131,7 @@ namespace Xerces
 //    m_bThreadSafe ( true) ,
     m_dwByteSize(0) ,
     m_arbyData ( NULL ) ,
+    m_p_i_cpucontroller(NULL) ,
     mr_model (r_model )
   {
     //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"

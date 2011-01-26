@@ -37,9 +37,10 @@ namespace Linux
 
   bool CPUcontrolDaemon::Start()
   {
+    BYTE byVoltageAndFrequencyScalingType;
     if( Initialize(
       //dummy parameter values.
-      0, NULL) == EXIT_SUCCESS
+      0, NULL, byVoltageAndFrequencyScalingType) == EXIT_SUCCESS
       )
     {
 //      if( mp_cpucoreusagegetter )

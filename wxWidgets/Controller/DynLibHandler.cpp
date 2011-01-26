@@ -57,7 +57,7 @@ namespace wxWidgets
       {
         mr_cpucontrolbase.m_model.m_cpucoredata.mp_cpucontroller =
           mr_cpucontrolbase.m_p_cpucontrollerDynLib;
-        mr_cpucontrolbase.m_model.m_cpucoredata.InterpolateDefaultVoltages();
+//        mr_cpucontrolbase.m_model.m_cpucoredata.InterpolateDefaultVoltages();
       }
       bSuccess = true ;
   //        LOGN("before DLL::GetAvailableMultipliers")

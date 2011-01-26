@@ -38,7 +38,9 @@
   class Model ;
   class VoltageAndFreq ;
 
-  class XercesConfigurationHandler
+namespace Xerces
+{
+  class VoltageForFrequencyConfiguration
     //: public I_ConfigurationHandler
   {
   private:
@@ -104,8 +106,8 @@
       ) ;
   public:
     bool IsConfigurationChanged(std::string & r_strPstateSettingsFileName ) ;
-    XercesConfigurationHandler(Model * p_model ) ;
-    ~XercesConfigurationHandler() ;
+    VoltageForFrequencyConfiguration(Model * p_model ) ;
+    ~VoltageForFrequencyConfiguration() ;
     BYTE //mergeXMLfileDOM(
       MergeWithExistingConfigFile(
       const char * p_chFullXMLFilePath
@@ -124,5 +126,6 @@
       bool bTest
       ) ;
   } ;
+}//namespace Xerces
 
 #endif /* PSTATECONFIG_HPP_ */

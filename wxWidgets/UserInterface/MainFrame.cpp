@@ -17,7 +17,7 @@
 #include <wx/defs.h> //for wxBG_STYLE_CUSTOM
 #include <wx/dcbuffer.h> //for class wxBufferedPaintDC
 #include <wx/dynlib.h> //wxDynamicLibrary::GetDllExt()
-#include <wx/filename.h> //wxFileName::GetPathSeparator(...)
+//#include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 #include "wx/frame.h" //for base class wxFrame
 //#include <wx/icon.h> //for class wxIcon
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
@@ -38,7 +38,9 @@
 //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
-#include <Controller/FileSystem/GetFilenameWithoutExtension.hpp>
+////GetFilenameWithoutExtension(const std::string &)
+//#include <Controller/FileSystem/GetFilenameWithoutExtension/\
+//GetFilenameWithoutExtension.hpp>
 ////for ::GetErrorMessageFromLastErrorCodeA(...)
 //#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp>
@@ -155,6 +157,8 @@ enum
 float * MainFrame::s_arfTemperatureInDegreesCelsius = NULL ;
 wxIcon MainFrame::s_wxiconTemperature ;
 wxString MainFrame::s_wxstrHighestCPUcoreTemperative ;
+wxString MainFrame::s_wxstrTaskBarIconToolTip =
+  wxT("x86IandC--highest CPU core temperature [°C]") ;
 
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   //http://www.informit.com/articles/article.aspx?p=405047:
@@ -192,7 +196,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU( ID_SetCPUcontrollerDynLibForThisCPU ,
     MainFrame::OnSaveAsCPUcontrollerDynLibForThisCPU )
   EVT_MENU( ID_SaveAsDefaultPstates ,
-    MainFrame::OnSaveAsDefaultPStates )
+    MainFrame::OnSaveVoltageForFrequencySettings )
   EVT_MENU( ID_FindDifferentPstates ,
     MainFrame::OnFindDifferentPstates )
   EVT_MENU( ID_Collect_As_Default_Voltage_PerfStates ,
@@ -380,12 +384,15 @@ MainFrame::MainFrame(
   , mp_wxbitmap(NULL)
   , mp_wxbitmapStatic (NULL)
   , mp_wxbufferedpaintdcStatic( NULL)
+//  , m_wxicon_drawer(16,16//,8
+////    ,wxBITMAP_SCREEN_DEPTH
+//    )
   //, mp_wxdynlibcpucontroller ( NULL )
   //, mp_wxdynlibcpucoreusagegetter ( NULL )
   , m_wxstrTitle(cr_wxstrTitle)
   , m_wxtimer(this)
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
-  , m_xercesconfigurationhandler( p_model )
+//  , m_xerces_voltage_for_frequency_configuration( p_model )
 {
   LOG("begin of main frame creation"//\n"
     )
@@ -1106,6 +1113,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
   //Stop the timer (indirectly calls OnPaint()-> so another IPC thread could
   //be spawned).
   m_wxtimer.Stop() ;
+  LOGN("Stopped the \"update view\" timer")
 //  m_p_wxtimer->Stop() ;
   mp_wxx86infoandcontrolapp->EndGetCPUcoreDataViaIPCthread() ;
   //May be NULL at startup.
@@ -1124,47 +1132,24 @@ void MainFrame::OnClose(wxCloseEvent & event )
       p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
     }
   }
-  std::string strCPUtypeRelativeDirPath ;
-  std::string strPstateSettingsFileName ;
-  if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
-    mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
-      strCPUtypeRelativeDirPath ) 
-    && //wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
-    mp_wxx86infoandcontrolapp->m_maincontroller.GetPstateSettingsFileName( 
-      strPstateSettingsFileName )
-    )
-  {
-    std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/"
-      + strPstateSettingsFileName ;
-    LOGN("before checking for a changed p-states config ")
-    //TODO uncomment
-    if( m_xercesconfigurationhandler.IsConfigurationChanged(//strPstateSettingsFileName
-      stdstrCPUtypeRelativeFilePath ) )
-    {
-      int nReturn = ::wxMessageBox(
-        wxT("The performance state configuration has changed.\n")
-        wxT("Save changes?")
-        , wxGetApp().m_stdtstrProgramName
-        , wxYES | wxNO );
-      if( nReturn == wxYES )
-      {
-        wxCommandEvent evt ;
-        OnSaveAsDefaultPStates( evt) ;
-      }
-    }
-  }
+  mp_wxx86infoandcontrolapp->CheckForChangedVoltageForFrequencyConfiguration();
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
   {
-    LOGN("before removing the system tray icon")
+//    mp_wxx86infoandcontrolapp->mp_taskbaricon->RemoveIcon() ;
+    //Must free the dependant bitmaps BEFORE calling "RemoveIcon()"?
+//    mp_wxx86infoandcontrolapp->mp_taskbaricon->FreeRessources();
+
     //Removing the icon is neccessary to exit the app/
     //else the icon may not be hidden after exit.
-//    mp_wxx86infoandcontrolapp->m_taskbaricon.RemoveIcon() ;
+    LOGN("before removing the system tray icon")
     mp_wxx86infoandcontrolapp->mp_taskbaricon->RemoveIcon() ;
     LOGN("after removing the system tray icon")
+
     //Also deleted in the wxWidgets "tbtest" sample (not automatically
     //deleted?!).
     delete mp_wxx86infoandcontrolapp->mp_taskbaricon;
+    LOGN("after deleting the system tray icon")
     mp_wxx86infoandcontrolapp->mp_taskbaricon = NULL ;
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
@@ -1615,6 +1600,8 @@ void MainFrame::CPUcontrollerDynLibAttached(const wxString & wxstrFilePath )
       //library is removed from the memory(?)
       "unload"
       " CPU controller ") + wxstrFilePath ) ;
+
+  mp_wxmenuFile->Enable( ID_SetCPUcontrollerDynLibForThisCPU, true ) ;
 
   //If both CPU controller and the CPU usage getter exist, DVFS is possible.
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
@@ -2422,7 +2409,7 @@ void MainFrame::DrawCurrentPstateInfo(
         ) ;
 //      float fHighestTemperature = GetHighestTemperature(
 //        s_arfTemperatureInDegreesCelsius) ;
-      ShowHighestCPUcoreTemperatureInTaskBar() ;
+      ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
       LOGN("DrawCurrentCPUcoreData after StoreCurrentVoltageAndFreqInArray" )
     }
     else
@@ -3644,125 +3631,15 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
 ////  Refresh() ;
 //}
 
-void MainFrame::OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event))
+void MainFrame::OnSaveVoltageForFrequencySettings(wxCommandEvent & WXUNUSED(event) )
 {
-  std::string strCPUtypeRelativeDirPath ;
-  std::string strPstateSettingsFileName ;
-  if( wxGetApp().m_maincontroller.GetPstatesDirPath( 
-    strCPUtypeRelativeDirPath ) 
-    && wxGetApp().m_maincontroller.GetPstateSettingsFileName( 
-    strPstateSettingsFileName )
-    )
-  {
-    //If the program is executed (->current working dir is elsewhere)
-    //in another path than where it is stored then THIS (current working dir)
-    //path should be used for storing files.
-    wxString wxstrCurrentWorkingDir = ::wxGetCwd() ;
-    LOGN( "current working dir path:" << GetStdString( wxstrCurrentWorkingDir ) )
-    LOGN( "for file dialog: relative dir path=" << strCPUtypeRelativeDirPath )
-    wxString wxstrFullPstateFileDirPath =
-      wxstrCurrentWorkingDir
-      + wxFileName::GetPathSeparator()
-      + Getstdtstring( strCPUtypeRelativeDirPath ).c_str()
-      ;
-    if( ! ::wxDirExists(wxstrFullPstateFileDirPath.c_str() ) )
-    {
-      if( ::wxMessageBox(
-        wxT("The service/ daemon and Graphical User Interface expect the "
-          "performance state/ \"voltage for frequency\" settings file in the "
-          "subdirectory \"") + getwxString( strCPUtypeRelativeDirPath )
-          + wxT("\" relative to its (current) working directory.\n"
-          "But the directory \"") + wxstrFullPstateFileDirPath
-        + wxT("\" does not exist\n"
-          "Should the path be created now?")
-        , wxT("Question")
-        , wxICON_QUESTION | wxYES_NO
-          )
-          == wxYES
-        )
-      {
-        if( //::wxMkdir( wxstrFullPstateFileDirPath )
-          //from http://groups.google.com/group/wx-users/browse_thread/thread/
-          // 9f211a3f06e44233:
-            wxFileName::Mkdir(wxstrFullPstateFileDirPath,0777,
-          //http://docs.wxwidgets.org/stable/wx_wxfilename.html#wxfilenamemkdir:
-          //"if the flags contain wxPATH_MKDIR_FULL flag, try to create each
-          //directory in the path and also don't return an error if the target
-          //directory already exists."
-              wxPATH_MKDIR_FULL
-              )
-          )
-        {
-          LOGN("Successfully created directory \""
-            << GetStdString(wxstrFullPstateFileDirPath) << "\"." )
-        }
-        else
-        {
-          LOGN("Failed to create directory \""
-            << GetStdString(wxstrFullPstateFileDirPath) << "\"." )
-          ::wxMessageBox(wxT("Failed to create directory " +
-            wxstrFullPstateFileDirPath
-            + wxT("\nYou may/ should create the directory manually."))
-            ) ;
-        }
-      }
-    }
-    wxString wxstrFilePath = ::wxFileSelector( 
-      wxT("Select file path") 
-      , wxstrFullPstateFileDirPath
-      , Getstdtstring( strPstateSettingsFileName ) .c_str()
-      , wxT("xml")
-      , wxT("*.*")
-      , wxFD_SAVE
-      ) ;
-    if ( ! wxstrFilePath.empty() )
-    {
-        // work with the file
-        //...
-      //readXMLfileDOM( wxstrFilePath.c_str() ) ;
-      //mergeXMLfileDOM( 
-      //mp_configurationHandler->
-
-      //The check whether the DOM tree differs from program data should be
-      //redone because in the meantime between asking "save changes" other
-      //file modifications could have been done.
-      //TODO uncomment
-      m_xercesconfigurationhandler.MergeWithExistingConfigFile(
-        GetStdString( std::tstring( wxstrFilePath.c_str() ) ).c_str()
-        , * mp_model ,
-        strPstateSettingsFileName ) ;
-    }
-    //mp_configfileaccess->
-  }
+  mp_wxx86infoandcontrolapp->SaveVoltageForFrequencySettings();
 }
 
 void MainFrame::OnSaveAsCPUcontrollerDynLibForThisCPU(
   wxCommandEvent & WXUNUSED(event) )
 {
-  std::string stdstrCPUtypeRelativeDirPath ;
-  if( wxGetApp().m_maincontroller.GetPstatesDirPath(
-      stdstrCPUtypeRelativeDirPath )
-    )
-  {
-    stdstrCPUtypeRelativeDirPath += "/" ;
-    std::string stdstrCPUcontrollerConfigFilePath =
-      wxGetApp().GetCPUcontrollerConfigFilePath(
-        stdstrCPUtypeRelativeDirPath ) ;
-    LOGN("CPU controller dyn lib config file path: " <<
-      stdstrCPUcontrollerConfigFilePath )
-    std::string stdstrCPUcontrollerDynLibFilePath =
-        GetStdString( wxGetApp().m_wxstrCPUcontrollerDynLibFilePath ) ;
-    LOGN("CPU controller dyn lib file path: " <<
-      stdstrCPUcontrollerDynLibFilePath )
-    std::string stdstrFilenameWithoutExtension = GetFilenameWithoutExtension(
-      stdstrCPUcontrollerDynLibFilePath ) ;
-    LOGN("File name w/out extension: " << stdstrFilenameWithoutExtension )
-    WriteFileContent(
-//      stdstrCPUtypeRelativeDirPath,
-      stdstrCPUcontrollerConfigFilePath ,
-      stdstrFilenameWithoutExtension
-      ) ;
-  }
+  mp_wxx86infoandcontrolapp->SaveAsCPUcontrollerDynLibForThisCPU();
 }
 
 void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
@@ -3863,7 +3740,7 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
           LOGN("DrawCurrentCPUcoreData leaving IPC 2 in-program data crit sec")
           mp_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
           LOGN("DrawCurrentCPUcoreData after leaving IPC 2 in-program data crit sec")
-          ShowHighestCPUcoreTemperatureInTaskBar() ;
+          ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
         }
       }
       else
@@ -4231,25 +4108,63 @@ void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
   m_wMaxTemperatureTextWidth = 0 ;
 }
 
-void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar()
+void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
+  I_CPUcontroller * p_i_cpucontroller)
 {
-  //Adapted from http://www.cppreference.com/wiki/valarray/max:
-  std::valarray<float> stdvalarray_float(s_arfTemperatureInDegreesCelsius,
-    mp_cpucoredata->m_byNumberOfCPUCores);
-  float fHighestTemperature = stdvalarray_float.max() ;
-  //E.g. the Pentium M has no temperature sensor.
-  if( fHighestTemperature > 0.0f )
+  LOGN("MainFrame::ShowHighestCPUcoreTemperatureInTaskBar--mp_taskbaricon:"
+    << mp_wxx86infoandcontrolapp->mp_taskbaricon)
+  if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
   {
-    s_wxstrHighestCPUcoreTemperative = wxString::Format( wxT("%u") ,
-      (WORD) fHighestTemperature
-      ) ;
-    CreateTextIcon( s_wxiconTemperature, s_wxstrHighestCPUcoreTemperative ) ;
-    if( ! mp_wxx86infoandcontrolapp->mp_taskbaricon->SetIcon(
-      s_wxiconTemperature, wxT("x86IandC--highest CPU core temperature [°C]") )
-      )
-      //::wxMessageBox( wxT("Could not set task bar icon."),
-      //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
-      LOGN("Could not set task bar icon.")
+    //Adapted from http://www.cppreference.com/wiki/valarray/max:
+    std::valarray<float> stdvalarray_float(s_arfTemperatureInDegreesCelsius,
+      mp_cpucoredata->m_byNumberOfCPUCores);
+    float fHighestTemperature = stdvalarray_float.max() ;
+    //E.g. the Pentium M has no temperature sensor.
+    if( fHighestTemperature > 0.0f )
+    {
+      s_wxstrHighestCPUcoreTemperative = wxString::Format( wxT("%u") ,
+        (WORD) fHighestTemperature
+        ) ;
+
+      wxLongLong_t wxlonglong_tLocalTimeMillis = ::wxGetLocalTimeMillis().
+        GetValue();
+      long long llDiffInMillis = wxlonglong_tLocalTimeMillis -
+  //      mp_cpucoredata->m_llLastTimeTooHot;
+        p_i_cpucontroller->m_llLastTimeTooHot;
+      LOGN("diff between current time and last time too hot="
+        << wxlonglong_tLocalTimeMillis << "-"
+        <<  p_i_cpucontroller->m_llLastTimeTooHot << "="
+        << llDiffInMillis
+        )
+  //    m_wxicon_drawer.Create(16,16);
+  //    LOGN("m_wxicon_drawer.m_bOk:" << m_wxicon_drawer.m_bOk)
+      if( llDiffInMillis < 5000 )
+        mp_wxx86infoandcontrolapp->mp_taskbaricon->//m_wxicon_drawer.DrawText(
+          DrawText(
+          s_wxiconTemperature,
+          s_wxstrHighestCPUcoreTemperative,
+  //        wxT("H"),
+          wxRED//,
+//          wxBLUE
+          //wxWHITE
+          );
+      else
+  //      CreateTextIcon( s_wxiconTemperature, s_wxstrHighestCPUcoreTemperative ) ;
+        mp_wxx86infoandcontrolapp->mp_taskbaricon->//m_wxicon_drawer.DrawText(
+          DrawText(
+          s_wxiconTemperature,
+          s_wxstrHighestCPUcoreTemperative,
+          wxBLACK//,
+  //        wxWHITE
+//          wxBLACK
+          );
+      if( ! mp_wxx86infoandcontrolapp->mp_taskbaricon->SetIcon(
+          s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
+        )
+        //::wxMessageBox( wxT("Could not set task bar icon."),
+        //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
+        LOGN("Could not set task bar icon.")
+    }
   }
 }
 

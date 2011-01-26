@@ -13,6 +13,7 @@
 
 //Forward declarations
 class CPUcoreData ;
+class I_CPUcontroller;
 class Model ;
 namespace XERCES_CPP_NAMESPACE
 {
@@ -33,6 +34,7 @@ namespace Xerces
 //    bool m_bThreadSafe ;
     DWORD m_dwByteSize ;
     BYTE * m_arbyData ;
+    I_CPUcontroller * m_p_i_cpucontroller;
     Model & mr_model ;
 
     inline void CreateXMLdocumentChildren(

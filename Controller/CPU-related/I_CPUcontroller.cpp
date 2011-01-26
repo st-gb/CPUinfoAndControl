@@ -26,6 +26,7 @@ I_CPUcontroller::I_CPUcontroller()
   m_fReferenceClockInMHz(0)
   //1 power plane for all CPU cores is usual->set as default.
   , m_b1CPUcorePowerPlane( true )
+  , m_llLastTimeTooHot(0)
 //  , mp_cpuaccess (NULL)
   , mp_userinterface (NULL)
   , mp_model (NULL)

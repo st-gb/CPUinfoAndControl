@@ -468,6 +468,11 @@ void
 
   DEBUGN("adding default voltage " << fVoltageInVolt << " V for "
     << (WORD) fFrequencyInMHz << " MHz" )
+  //IMPORTANT: the Model class should have the same structure as in the
+  //executable, else the executable may malfunction:
+  //it happened that the executable ran into an endless loop after a member
+  //was added to CPUcoreData class whose instance is a member of ModelData
+  //and only the executable included this change.
   pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
     AddDefaultVoltageForFreq( fVoltageInVolt,
       (WORD) ( fFrequencyInMHz )

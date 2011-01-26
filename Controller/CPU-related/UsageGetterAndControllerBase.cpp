@@ -9,7 +9,9 @@
 #include <Controller/I_CPUaccess.hpp>
 
 CPUcoreUsageGetterAndControllerBase::CPUcoreUsageGetterAndControllerBase()
-  : mp_cpuaccess (NULL)
+  :
+  mp_cpuaccess (NULL)//,
+//  mp_model(NULL)
 {
   // TODO Auto-generated constructor stub
 
