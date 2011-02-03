@@ -184,6 +184,7 @@ void CPUcoreData::Init()
   //Important to set to NULL when the CPU controller is NULL. 
   //(creation of menus per CPU core )
   m_byNumberOfCPUCores = 0 ;
+//  m_llLastTimeTooHot = 0;
   m_wMaxFreqInMHz = 0 ;
   m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased = 5000 ; //5 seconds.
   m_arp_percpucoreattributes = NULL ;
@@ -219,7 +220,7 @@ void CPUcoreData::InterpolateDefaultVoltages()
       float fVoltageInVolt;
       LOGN("ref clock i MHz:" << fReferenceClockInMHz)
       WORD wArraySize = m_stdset_floatAvailableMultipliers.size();
-      WORD wMultiplier;
+      float fMultiplier;
       for( ; c_iter != m_stdsetvoltageandfreqDefault.end() ; ++ c_iter )
       {
 //        if(  )
@@ -230,8 +231,8 @@ void CPUcoreData::InterpolateDefaultVoltages()
           for( WORD wArrayIndex = 0 ; wArrayIndex < wArraySize ;
               ++ wArrayIndex )
           {
-            wMultiplier = m_arfAvailableMultipliers[ wArrayIndex ];
-            fFreqInMHz = wMultiplier * fReferenceClockInMHz;
+            fMultiplier = m_arfAvailableMultipliers[ wArrayIndex ];
+            fFreqInMHz = fMultiplier * fReferenceClockInMHz;
             LOGN("CPUcoreData::InterpolateDefaultVoltages begin"
               "--" << fFreqInMHz << "in ]" << fFreqInMHzPrev << ";"
               << c_iter->m_wFreqInMHz << "[ ?")
@@ -242,6 +243,9 @@ void CPUcoreData::InterpolateDefaultVoltages()
               fVoltageInVolt = c_iterPrev->m_fVoltageInVolt * fFreqInMHzRatio;
               LOGN("Adding " << fVoltageInVolt << " Volt @ " << fFreqInMHz <<
                 " MHz to default voltages.")
+              //Warning: if the reference clock is not fixed then it may vary
+              //, i.e. more and more frequency-voltage pairs are inserted
+              //because the frequency depends on the reference clock.
               stdsetvoltageandfreqDefault.insert(
                 VoltageAndFreq(fVoltageInVolt,fFreqInMHz)
                 ) ;

@@ -669,8 +669,9 @@ DWORD CPUcontrolService::IPC_Message(
   case get_configuration_data:
   {
     LOGN("IPC: get_configuration_data")
-    XercesConfigurationHandler xercesconfigurationhandler( & m_model ) ;
-    r_arbyPipeDataToSend = xercesconfigurationhandler.
+    Xerces::VoltageForFrequencyConfiguration
+      xerces_voltage_for_frequency_configuration( & m_model ) ;
+    r_arbyPipeDataToSend = xerces_voltage_for_frequency_configuration.
       SerializeConfigToMemoryBuffer(dwByteSize) ;
     LOGN("IPC: get_configuration_data end")
   }
@@ -1581,6 +1582,8 @@ bool CPUcontrolService::ShouldStopService(
 void CPUcontrolService::StartIPCserverThread()
 {
   DWORD dwThreadId ;
+  msp_cpucontrolservice->m_ipc_datahandler.m_p_i_cpucontroller =
+    msp_cpucontrolservice->mp_cpucontroller;
   //IPC_servers wait for client and are often BLOCKING, so THIS
   //block would not continue execution->start client
   //connection listening in dedicated thread.

@@ -18,6 +18,7 @@
 #endif
 #include "wx/wx.h" //for wxMessageBox(...) (,etc.)
 //#include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
+#include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 
 #include "App.hpp"
 
@@ -29,6 +30,10 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
+//GetFilenameWithoutExtension(const std::string &)
+#include <Controller/FileSystem/GetFilenameWithoutExtension/\
+GetFilenameWithoutExtension.hpp>
+#include <InputOutput/WriteFileContent/WriteFileContent.hpp>
 #include <Controller/IPC/I_IPC.hpp> //for "get_current_CPU_data"
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess, CPUaccessException
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
@@ -76,7 +81,7 @@ wxServiceSocketClient.hpp>
 FILE * fileDebug ; //for debug logging.
 //This global (important for using preprocessor macros) object is used for 
 //easy logging.
-Logger g_logger ;
+//Logger g_logger ;
 CPUcontrolBase * gp_cpucontrolbase ;
 ////Needed for the exported functions.
 //I_CPUaccess * g_p_cpuaccess ;
@@ -93,6 +98,9 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //      mp_cpucontroller(NULL)
 //    ,
   CPUcontrolBase(this) ,
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+//  m_sax2_ipc_current_cpu_data_handler(m_model),
+#endif
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   mp_taskbaricon( NULL)
 //  , m_wxthreadIPC( )
@@ -113,6 +121,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   , m_wxmutexIPCthread(wxMUTEX_DEFAULT)
 //  , m_wxconditionIPCthread( m_wxmutexIPCthread )
   , m_x86iandc_threadIPC(I_Thread::joinable)
+  , m_xerces_voltage_for_frequency_configuration( & m_model )
 {
 #ifdef COMPILE_WITH_DEBUG
 //For g++ the std::string object passed to Logger::OpenFile(std::string & )
@@ -126,7 +135,54 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
   LOGN("begin of app's destructor")
   LOGN("app's destructor: before leaving IPC2InProgramData crit sec ")
   m_model.m_cpucoredata.wxconditionIPC2InProgramData.Leave() ;
+  LOGN("app's destructor: before freeing taskbar object")
+  if( mp_taskbaricon)
+    delete mp_taskbaricon;
   LOGN("end of app's destructor")
+}
+
+void wxX86InfoAndControlApp::CheckForChangedVoltageForFrequencyConfiguration()
+{
+  LOGN("wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
+    "Configuration() begin");
+  std::string strCPUtypeRelativeDirPath ;
+  std::string strPstateSettingsFileName ;
+  if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
+    //mp_wxx86infoandcontrolapp->
+      m_maincontroller.GetPstatesDirPath(
+      strCPUtypeRelativeDirPath )
+    && //wxGetApp().m_maincontroller.GetPstateSettingsFileName(
+    //mp_wxx86infoandcontrolapp->m_maincontroller.GetPstateSettingsFileName(
+    m_maincontroller.GetPstateSettingsFileName(
+      strPstateSettingsFileName )
+    )
+  {
+    std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/"
+      + strPstateSettingsFileName ;
+    LOGN("before checking for a changed p-states config ")
+    //TODO uncomment
+    if( //mp_frame->
+      m_xerces_voltage_for_frequency_configuration.IsConfigurationChanged(
+      //strPstateSettingsFileName
+      stdstrCPUtypeRelativeFilePath ) )
+    {
+      int nReturn = ::wxMessageBox(
+        wxT("The performance state configuration has changed.\n")
+        wxT("Save changes?"),
+        //wxGetApp().m_stdtstrProgramName
+        m_stdtstrProgramName
+        , wxYES | wxNO
+        );
+      if( nReturn == wxYES )
+      {
+//        wxCommandEvent evt ;
+//        mp_frame->OnSaveVoltageForFrequencySettings( evt) ;
+        SaveVoltageForFrequencySettings();
+      }
+    }
+  }
+  LOGN("wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
+    "Configuration() end");
 }
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
@@ -425,8 +481,8 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
         << "\" does not match \""
         << GetStdString( wxstrPipeName ) << "\"-> trying to connect via socket" )
       //mp_wxx86infoandcontrolapp->
-        m_p_i_ipcclient = new
-        NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
+//        m_p_i_ipcclient = new
+//        NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
     }
     //mp_wxx86infoandcontrolapp->
     m_wxstrDataProviderURL = cr_wxstrIPCclientURL ;
@@ -445,17 +501,21 @@ bool wxX86InfoAndControlApp::ConnectToDataProviderAndShowResult()
     IPCclientConnectToDataProvider(
       stdstrMessage ) ;
   if( bConnected )
-    ::wxMessageBox( wxT("connected to the service now")
-      ) ;
+  {
+    //When connected then this is already shown in the main frame's title bar.
+//    ::wxMessageBox( wxT("connected to the service now")
+//      ) ;
+  }
   else
-    ::wxMessageBox( wxT("Could not connect to the service") +
-        ( stdstrMessage.empty() ? //wxT("")
-          wxString( wxT("") )
-          : //wxT(":\n")
-          //+ wxString( wxT(":\n") ) + getwxString(stdstrMessage) )
-          getwxString( ":\n" + stdstrMessage )
-        )
-      );
+    MessageWithTimeStamp( L"Could not connect to the service" +
+      ( stdstrMessage.empty() ? //wxT("")
+//          GetStdWstring( L("") )
+        std::wstring( L"" )
+        : //wxT(":\n")
+        //+ wxString( wxT(":\n") ) + getwxString(stdstrMessage) )
+        GetStdWstring( ":\n" + stdstrMessage )
+      )
+    );
   return bConnected ;
 }
 
@@ -1030,6 +1090,24 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
   return 0 ;
 }
 
+void wxX86InfoAndControlApp::MessageWithTimeStamp(
+  const LPWSTR cp_lpwstrMessage)
+{
+  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
+    ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
+     getwxString(m_stdtstrProgramName)
+     );
+}
+
+void wxX86InfoAndControlApp::MessageWithTimeStamp(
+  const std::wstring & cr_stdwstrMessage)
+{
+  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
+    ::wxNow() + wxT(" ") + getwxString( cr_stdwstrMessage),
+     getwxString(m_stdtstrProgramName)
+     );
+}
+
 bool wxX86InfoAndControlApp::OnInit()
 {
   //Init to NULL for "CPUcontrollerChanged()"
@@ -1103,6 +1181,7 @@ bool wxX86InfoAndControlApp::OnInit()
     LOGN("process ID of this process:" << dwProcID )
     m_maincontroller.ReadMainConfig( //m_modelData
       * mp_modelData, this );
+    LOGN("address of attribute data:" << & m_model)
 
     //Initialize to be valid.
     m_arartchCmdLineArgument[ 0 ] =
@@ -1429,6 +1508,231 @@ void wxX86InfoAndControlApp::RedrawEverything()
   mp_frame->RedrawEverything() ;
 }
 
+//bool wxX86InfoAndControlApp::GetRelativeCPUspecificDirPathAndCurrentWorkDir(
+//  )
+//{
+//
+//}
+
+bool wxX86InfoAndControlApp::AbsoluteCPUspecificDirPathExists(
+  wxString & wxstrAbsoluteCPUspecificDirPath)
+{
+  std::string strCPUtypeRelativeDirPath ;
+  if( m_maincontroller.GetPstatesDirPath(strCPUtypeRelativeDirPath ) )
+  {
+    //If the program is executed (->current working dir is elsewhere)
+    //in another path than where it is stored then THIS (current working dir)
+    //path should be used for storing files.
+    wxString wxstrCurrentWorkingDir = ::wxGetCwd() ;
+    return ::wxDirExists(wxstrCurrentWorkingDir.c_str() );
+  }
+  return false;
+}
+
+wxString wxX86InfoAndControlApp::GetAbsoluteCPUspecificDirPath(
+  const std::string & cr_strCPUtypeRelativeDirPath,
+  wxString & r_wxstrCurrentWorkingDir
+  )
+{
+  if( r_wxstrCurrentWorkingDir.empty() )
+  {
+    r_wxstrCurrentWorkingDir = ::wxGetCwd() ;
+  }
+  LOGN( "current working dir path:" << GetStdString( r_wxstrCurrentWorkingDir ) )
+  LOGN( "for file dialog: relative dir path=" << cr_strCPUtypeRelativeDirPath )
+  wxString wxstrAbsoluteCPUspecificDirPath =
+    r_wxstrCurrentWorkingDir
+    + wxFileName::GetPathSeparator()
+    + Getstdtstring( cr_strCPUtypeRelativeDirPath ).c_str()
+    ;
+  return wxstrAbsoluteCPUspecificDirPath;
+}
+
+void wxX86InfoAndControlApp::SaveAsCPUcontrollerDynLibForThisCPU()
+{
+  std::string stdstrCPUtypeRelativeDirPath ;
+  if( m_maincontroller.GetPstatesDirPath(stdstrCPUtypeRelativeDirPath ) )
+  {
+    wxString wxstrCurrentWorkingDir;
+    wxString wxstrAbsoluteCPUspecificDirPath = GetAbsoluteCPUspecificDirPath(
+      stdstrCPUtypeRelativeDirPath,
+      wxstrCurrentWorkingDir );
+    //  //If the program is executed (->current working dir is elsewhere)
+    //  //in another path than where it is stored then THIS (current working dir)
+    //  //path should be used for storing files.
+    //  wxString wxstrCurrentWorkingDir = ::wxGetCwd() ;
+    if( ! ::wxDirExists(wxstrAbsoluteCPUspecificDirPath.c_str() ) )
+    {
+      if( ::wxMessageBox(
+        wxT("The service/ daemon and Graphical User Interface expect the "
+          "CPU controller configuration/ settings file in the "
+          "subdirectory \n\"") + getwxString( stdstrCPUtypeRelativeDirPath )
+        + wxT("\"\n relative to its (current) working directory:\n\"")
+        + wxstrCurrentWorkingDir +
+        wxT("\"\nBut the directory \"") + wxstrAbsoluteCPUspecificDirPath
+        + wxT("\" does not exist\n"
+          "Should the path be created now?")
+        , wxT("Question")
+        , wxICON_QUESTION | wxYES_NO
+          )
+          == wxYES
+        )
+      {
+        if( //::wxMkdir( wxstrFullPstateFileDirPath )
+          //from http://groups.google.com/group/wx-users/browse_thread/thread/
+          // 9f211a3f06e44233:
+            wxFileName::Mkdir(wxstrAbsoluteCPUspecificDirPath,0777,
+          //http://docs.wxwidgets.org/stable/wx_wxfilename.html#wxfilenamemkdir:
+          //"if the flags contain wxPATH_MKDIR_FULL flag, try to create each
+          //directory in the path and also don't return an error if the target
+          //directory already exists."
+              wxPATH_MKDIR_FULL
+              )
+          )
+        {
+          LOGN("Successfully created directory \""
+            << GetStdString(wxstrAbsoluteCPUspecificDirPath) << "\"." )
+        }
+        else
+        {
+          LOGN("Failed to create directory \""
+            << GetStdString(wxstrAbsoluteCPUspecificDirPath) << "\"." )
+          ::wxMessageBox(wxT("Failed to create directory " +
+            wxstrAbsoluteCPUspecificDirPath
+            + wxT("\nYou may/ should create the directory manually."))
+            ) ;
+        }
+      }
+    }
+    if( ::wxDirExists(wxstrAbsoluteCPUspecificDirPath.c_str() ) )
+    {
+//      if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
+//          m_maincontroller.GetPstatesDirPath(
+//          stdstrCPUtypeRelativeDirPath )
+//        )
+
+      stdstrCPUtypeRelativeDirPath += "/" ;
+      std::string stdstrCPUcontrollerConfigFilePath =
+        //wxGetApp().GetCPUcontrollerConfigFilePath(
+        GetCPUcontrollerConfigFilePath(
+          stdstrCPUtypeRelativeDirPath ) ;
+      LOGN("CPU controller dyn lib config file path: " <<
+        stdstrCPUcontrollerConfigFilePath )
+      std::string stdstrCPUcontrollerDynLibFilePath =
+        GetStdString( //wxGetApp().m_wxstrCPUcontrollerDynLibFilePath
+          m_wxstrCPUcontrollerDynLibFilePath) ;
+      LOGN("CPU controller dyn lib file path: " <<
+        stdstrCPUcontrollerDynLibFilePath )
+      std::string stdstrFilenameWithoutExtension = GetFilenameWithoutExtension(
+        stdstrCPUcontrollerDynLibFilePath ) ;
+      LOGN("File name w/out extension: " << stdstrFilenameWithoutExtension )
+      if( ! WriteFileContent(
+  //      stdstrCPUtypeRelativeDirPath,
+          stdstrCPUcontrollerConfigFilePath ,
+          stdstrFilenameWithoutExtension
+          )
+        )
+      {
+        ::wxMessageBox( wxT("Successfully wrote to file \"") +
+          GetwxString_Inline(stdstrCPUcontrollerConfigFilePath.c_str() ) +
+          wxT("\"") );
+      }
+      else
+        ::wxMessageBox( wxT("Failed to write to file \"") +
+          GetwxString_Inline(stdstrCPUcontrollerConfigFilePath.c_str() ) +
+          wxT("\"") );
+    }
+  }
+}
+
+void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings()
+{
+  std::string strPstateSettingsFileName, stdstrCPUtypeRelativeDirPath ;
+  wxString wxstrCurrentWorkingDir;
+  wxString wxstrAbsoluteCPUspecificDirPath = GetAbsoluteCPUspecificDirPath(
+    stdstrCPUtypeRelativeDirPath,
+    wxstrCurrentWorkingDir );
+  if( //GetAbsoluteCPUspecificDirPath() &&
+      m_maincontroller.GetPstateSettingsFileName(
+    strPstateSettingsFileName )
+    )
+  {
+    if( ! //AbsoluteCPUspecificDirPathExists(wxstrAbsoluteCPUspecificDirPath)
+        ::wxDirExists(wxstrAbsoluteCPUspecificDirPath.c_str() )
+      )
+    {
+      if( ::wxMessageBox(
+        wxT("The service/ daemon and Graphical User Interface expect the "
+          "performance state/ \"voltage for frequency\" settings file in the "
+          "subdirectory \"") + getwxString( stdstrCPUtypeRelativeDirPath )
+          + wxT("\" relative to its (current) working directory.\n"
+          "But the directory \"") + wxstrAbsoluteCPUspecificDirPath
+        + wxT("\" does not exist\n"
+          "Should the path be created now?")
+        , wxT("Question")
+        , wxICON_QUESTION | wxYES_NO
+          )
+          == wxYES
+        )
+      {
+        if( //::wxMkdir( wxstrFullPstateFileDirPath )
+          //from http://groups.google.com/group/wx-users/browse_thread/thread/
+          // 9f211a3f06e44233:
+            wxFileName::Mkdir(wxstrAbsoluteCPUspecificDirPath,0777,
+          //http://docs.wxwidgets.org/stable/wx_wxfilename.html#wxfilenamemkdir:
+          //"if the flags contain wxPATH_MKDIR_FULL flag, try to create each
+          //directory in the path and also don't return an error if the target
+          //directory already exists."
+              wxPATH_MKDIR_FULL
+              )
+          )
+        {
+          LOGN("Successfully created directory \""
+            << GetStdString(wxstrAbsoluteCPUspecificDirPath) << "\"." )
+        }
+        else
+        {
+          LOGN("Failed to create directory \""
+            << GetStdString(wxstrAbsoluteCPUspecificDirPath) << "\"." )
+          ::wxMessageBox(wxT("Failed to create directory " +
+            wxstrAbsoluteCPUspecificDirPath
+            + wxT("\nYou may/ should create the directory manually."))
+            ) ;
+        }
+      }
+    }
+    wxString wxstrFilePath = ::wxFileSelector(
+      wxT("Select file path")
+      , //wxstrFullPstateFileDirPath
+      wxstrAbsoluteCPUspecificDirPath
+      , Getstdtstring( strPstateSettingsFileName ) .c_str()
+      , wxT("xml")
+      , wxT("*.*")
+      , wxFD_SAVE
+      ) ;
+    if ( ! wxstrFilePath.empty() )
+    {
+        // work with the file
+        //...
+      //readXMLfileDOM( wxstrFilePath.c_str() ) ;
+      //mergeXMLfileDOM(
+      //mp_configurationHandler->
+
+      //The check whether the DOM tree differs from program data should be
+      //redone because in the meantime between asking "save changes" other
+      //file modifications could have been done.
+      //TODO uncomment
+      m_xerces_voltage_for_frequency_configuration.
+        MergeWithExistingConfigFile(
+        GetStdString( std::tstring( wxstrFilePath.c_str() ) ).c_str(),
+//        * mp_model ,
+        m_model ,
+        strPstateSettingsFileName ) ;
+    }
+    //mp_configfileaccess->
+  }
+}
+
 void wxX86InfoAndControlApp::SetCPUcontroller( 
   I_CPUcontroller * p_cpucontrollerNew )
 {
@@ -1506,8 +1810,9 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
           return true ;
         }
         else
-          ::wxMessageBox(wxT("Could not set task bar icon."),
-              getwxString(m_stdtstrProgramName) );
+//          ::wxMessageBox(wxT("Could not set task bar icon."),
+//            getwxString(m_stdtstrProgramName) );
+          MessageWithTimeStamp( L"Could not set task bar icon." );
       }
     }
   }

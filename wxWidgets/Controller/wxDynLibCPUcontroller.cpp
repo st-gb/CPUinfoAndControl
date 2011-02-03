@@ -17,6 +17,7 @@
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
+#include <wx/stopwatch.h> //::wxGetLocalTimeMillis()
 //GetClosestLessOrEqual(...), GetClosestGreaterOrEqual(...)
 #include <algorithms/binary_search/binary_search.cpp>
 #ifdef _MSC_VER
@@ -82,6 +83,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         //Convert to std::string, else g++ linker error:
         //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
         << ::GetStdString( wxstrFuncName )
+        << " address of function:" << (void *) pfnInit;
         )
       LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
       LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)
@@ -94,7 +96,18 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 //      //TODO
 //      p_cpuaccess->mp_cpucontroller = NULL ;
       //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
-      (*pfnInit)( //wxGetApp().mp_i_cpuaccess
+
+      //IMPORTANT: the class "Model" should have the same structure as in the
+      //dynamic (link) library, else the executable file (i.e. GUI or service)
+      //may malfunction:
+      //it happened that the executable ran into an endless loop
+      //(e.g. because the instruction pointer pointed to wrong data or the data
+      //pointer for an operator for an operation pointed to a wrong address)
+      //after a member
+      //was added to class "CPUcoreData" whose instance is a member of class
+      //"ModelData" and only the executable (and not the dynamic library)
+      //included this change.
+      ( * pfnInit)( //wxGetApp().mp_i_cpuaccess
         //Pass pointer to I_CPUaccess in order for the DLL to be able to
         // access the model via "p_cpuaccess->model"
         p_cpuaccess
@@ -878,11 +891,16 @@ BYTE wxDynLibCPUcontroller::TooHot()
       )
     {
       by = 1 ;
+//      mp_model->m_cpucoredata.m_llLastTimeTooHot =
+//        ::wxGetLocalTimeMillis().GetValue();
+      m_llLastTimeTooHot = ::wxGetLocalTimeMillis().GetValue();
       DEBUGN("temperature of CPU core " << wCPUcoreIdx << ":"
         << fTemperatureInCelsius
         << "is > throttle temp:"
         << mp_model->m_cpucoredata.m_fThrottleTempInDegCelsius )
-//      break ; //at least 1 core too hot->break loop.
+#ifndef _DEBUG
+      break ; //at least 1 core too hot->break loop.
+#endif
     }
   }
   return by ;

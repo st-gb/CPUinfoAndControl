@@ -55,6 +55,7 @@ public:
   float m_fCPUcoreFreqIncreaseFactor ;
   float m_fVoltageForMaxCPUcoreFreq ;
   float m_fThrottleTempInDegCelsius ;
+//  long long m_llLastTimeTooHot;
   I_CPUcontroller * mp_cpucontroller ;
   std::map<float,VoltageAndFreq> m_stdmap_fMultiplier2voltageandfreq ;
   std::set<float> m_stdset_floatAvailableMultipliers ;

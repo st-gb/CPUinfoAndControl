@@ -50,6 +50,8 @@
 //  #include <global.h> //for LOGN()
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
+#include <iomanip> //setprecision ( int n );
+
 #define MAKE_WCHAR_STRING(string) L##string
 #define FREQ_AND_VOLTAGE_LITERAL "freq_and_voltage"
 #define FREQ_AND_VOLTAGE_WCHAR_LITERAL L"freq_and_voltage"
@@ -68,10 +70,12 @@
 //  Do not do "using namespace xercesc..." because so it is clearer that the
   // class names belong to _Xerces_
 
+namespace Xerces
+{
   //void
   //std::map<WORD,WORD>::const_iterator
   XERCES_CPP_NAMESPACE::DOMElement *
-    XercesConfigurationHandler::AddFrequencyToDOMtree(WORD wFreq)
+    VoltageForFrequencyConfiguration::AddFrequencyToDOMtree(WORD wFreq)
   {
     std::map<WORD,WORD>::const_iterator c_iterFrequenciesStoredInFile ;
     //DOMElement * p_dom_elementFreqnVolt ;
@@ -153,7 +157,7 @@
       mp_dom_elementFreqnVolt ;
   }
 
-  XERCES_CPP_NAMESPACE::DOMXPathNSResolver * XercesConfigurationHandler::
+  XERCES_CPP_NAMESPACE::DOMXPathNSResolver * VoltageForFrequencyConfiguration::
     BuildStdmapFreqInMHzInDOMtree2DOMindex(
 //    std::map<WORD,WORD> & r_stdmapFreqInMHzInDOMtree2DOMindex
     )
@@ -285,7 +289,7 @@
     return p_dom_xpath_ns_resolver ;
   }
 
-  bool XercesConfigurationHandler::IsConfigurationChanged(
+  bool VoltageForFrequencyConfiguration::IsConfigurationChanged(
     std::string & r_strPstateSettingsFileName )
   {
     bool bIsConfigurationChanged = false ;
@@ -375,7 +379,7 @@
     }
     return bIsConfigurationChanged ;
   }
-  //XercesConfigurationHandler::AppendDefaultVoltages( //Model & r_model
+  //VoltageForFrequencyConfiguration::AppendDefaultVoltages( //Model & r_model
   //  )
   //{
   //  float fVoltage ;
@@ -412,7 +416,7 @@
   //  }
   //}
 
-  void XercesConfigurationHandler::GetDOM_XPathResultForFrequencies()
+  void VoltageForFrequencyConfiguration::GetDOM_XPathResultForFrequencies()
   {
     BYTE retval ;
     // "/*": the root element independent of the name
@@ -470,7 +474,7 @@
     //mp_domxpathresult->release();
   }
 
-  void XercesConfigurationHandler::GetFreqnVoltDOMelement(
+  void VoltageForFrequencyConfiguration::GetFreqnVoltDOMelement(
     WORD wFreqInMHz
     , XERCES_CPP_NAMESPACE::DOMElement * & rp_dom_element
     )
@@ -600,7 +604,7 @@
 //    mp_domxpathresult->release();
   }
 
-  bool XercesConfigurationHandler::PossiblyAddOrModifyVoltages(
+  bool VoltageForFrequencyConfiguration::PossiblyAddOrModifyVoltages(
     const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
     , //e.g. "max_voltage_in_Volt"
     const char * const cpc_XMLAttrName
@@ -618,11 +622,11 @@
     XERCES_CPP_NAMESPACE::DOMNamedNodeMap * p_dom_namednodemap ;
     XERCES_CPP_NAMESPACE::DOMNode * p_domnodeAttribute ;
     mp_dom_elementFreqnVolt = NULL ;
-    float fVoltageFromFile ;
+    float fVoltageFromDOMtree ;
     std::map<WORD,WORD>::const_iterator c_iterFrequenciesStoredInDOMtree ;
     std::set<VoltageAndFreq>::const_iterator citer_stdset_voltageandfreq =
       r_stdsetvoltageandfreq.begin() ;
-    std::string stdstr ;
+    std::string stdstrVoltageInVoltFromDOMtree ;
     WORD wFreq ;
     const XMLCh * cp_xmlchAttrName ;
     //While the iterator is valid.
@@ -695,29 +699,34 @@
                 )
               {
                 float fVoltageFromProgramMemory = citer_stdset_voltageandfreq->
-                    m_fVoltageInVolt ;
-                stdstr = //XercesHelper::ToStdString(
+                  m_fVoltageInVolt ;
+                stdstrVoltageInVoltFromDOMtree = //XercesHelper::ToStdString(
                   //p_domnodeAttribute->getNodeValue() ) ;
-                Xerces::ToStdString(p_domnodeAttribute->getNodeValue() ) ;
-                from_stdstring<float>( fVoltageFromFile ,
-                  stdstr
+                  Xerces::ToStdString(p_domnodeAttribute->getNodeValue() ) ;
+                from_stdstring<float>( fVoltageFromDOMtree ,
+                  stdstrVoltageInVoltFromDOMtree
                   //, & fVoltage
                   ) ;
                 LOGN("attribute \"" << cpc_XMLAttrName << "\" with value \""
-                  << fVoltageFromFile << "\" exists for freq "
+                  << fVoltageFromDOMtree << "\" exists for freq "
                   << wFreq << " in DOM tree")
 //                float fVoltageFromFile ;
                 //DOMElement * p_dom_elementFreqnVolt =
                 mp_dom_elementFreqnVolt =
                   (XERCES_CPP_NAMESPACE::DOMElement *) mp_domxpathresult->
                   getNodeValue() ;
-                if( fVoltageFromFile != fVoltageFromProgramMemory )
+                if( fVoltageFromDOMtree != fVoltageFromProgramMemory )
                 {
                   m_bDOMtreeDiffersOrDifferedFromModelData = true ;
                   LOGN("for attribute  \"" << cpc_XMLAttrName
-                    << "\": value from program memory: \"" <<
-                    fVoltageFromProgramMemory
-                    << "\" does not match value from DOM tree" )
+                    << "\": value from program memory: \""
+                    //Must set the precision higher than the default (6 digits
+                    //after floating point?) else no difference between the 2
+                    //numbers may be visible.
+                    << std::setprecision(14)
+                    << fVoltageFromProgramMemory
+                    << "\" does not match value \""
+                    << fVoltageFromDOMtree << "\" from DOM tree" )
                   SetVoltageFromIandCModelData(
                     cpc_XMLAttrName,
                     bDOMtreeDifferedFromModelData ,
@@ -777,7 +786,7 @@
     return bDOMtreeDifferedFromModelData ;
   }
 
-  void XercesConfigurationHandler::PossiblyReleaseDOM_XPathResult()
+  void VoltageForFrequencyConfiguration::PossiblyReleaseDOM_XPathResult()
   {
     if( mp_domxpathresult )
     {
@@ -787,7 +796,7 @@
     }
   }
 
-  BYTE XercesConfigurationHandler::readXMLfileDOM(
+  BYTE VoltageForFrequencyConfiguration::readXMLfileDOM(
 //    const char * p_chFullXMLFilePath
 //    , DOMDocument * & p_dom_document
 //    , DOMLSParser * & rp_dom_ls_parser
@@ -875,7 +884,7 @@
     return byRet;
   }
 
-  BYTE * XercesConfigurationHandler::SerializeConfigToMemoryBuffer(
+  BYTE * VoltageForFrequencyConfiguration::SerializeConfigToMemoryBuffer(
     DWORD & r_dwByteSize )
   {
     LOGN("XercesConfigurationHandler::SerializeConfigToMemoryBuffer")
@@ -923,7 +932,7 @@
     return ar_by ;
   }
 
-  void XercesConfigurationHandler::SetVoltageFromIandCModelData(
+  void VoltageForFrequencyConfiguration::SetVoltageFromIandCModelData(
     const char * const cpc_XMLAttrName ,
     bool & bDOMtreeModified ,
     float fVoltageFromModelData
@@ -972,7 +981,7 @@
     }
   }
 
-  short XercesConfigurationHandler::WriteDOM(
+  short VoltageForFrequencyConfiguration::WriteDOM(
     XERCES_CPP_NAMESPACE::DOMNode * p_dom_node
 //    , const char * const cpc_chFilePath
     //For creating a DOMLSOutput instance via createLSOutput().
@@ -1049,13 +1058,13 @@
 
   //Put the "test for change" and the "change" code into the same function
   //because both depends (exactly) on the same attributes.
-  bool XercesConfigurationHandler::TestIfCfgIsChangedOrChangeCfg(
+  bool VoltageForFrequencyConfiguration::TestIfCfgIsChangedOrChangeCfg(
     //true: do not change, only test if it would be changed.
     bool bTest
     )
   {
     //Reset because this method may be called more than once for the same
-    // XercesConfigurationHandler object.
+    // VoltageForFrequencyConfiguration object.
     bool bDOMtreeModified = false ;
     m_bAtLeast1FailedDOMtreeModification = false ;
     m_bAtLeast1SuccessfullDOMtreeModification = false ;
@@ -1146,7 +1155,7 @@
   //their changes. This is good if something is changed (e.g. if attributes
   //are added/ removed)
   //So it can be done central (do not repeat principle)
-  bool XercesConfigurationHandler::PossiblyAddVoltages(
+  bool VoltageForFrequencyConfiguration::PossiblyAddVoltages(
     //true: do not change, only test if it would be changed.
     bool bTest
     )
@@ -1155,9 +1164,11 @@
     m_bOnlySimulate = bTest ;
     LOGN("begin of PossiblyAddVoltages")
     PossiblyReleaseDOM_XPathResult() ;
+
     //A DOM tree may already exist( if read from an XML file). So build a map
     //for this case.
     BuildStdmapFreqInMHzInDOMtree2DOMindex() ;
+
     //Prevent insertions or deletions while accessing the STL container
     //for voltages.
     mp_model->m_cpucoredata.m_wxcriticalsection.Enter() ;
@@ -1192,7 +1203,7 @@
     return bDOMtreeModified ;
   }
 
-  BYTE XercesConfigurationHandler::CreateDOMtree()
+  BYTE VoltageForFrequencyConfiguration::CreateDOMtree()
   {
     try //DOMException by createDocument(...)
     {
@@ -1243,7 +1254,7 @@
     return 0 ;
   }
 
-  BYTE XercesConfigurationHandler:://mergeXMLfileDOM(
+  BYTE VoltageForFrequencyConfiguration:://mergeXMLfileDOM(
     MergeWithExistingConfigFile(
     const char * p_chFullXMLFilePath
     , Model & model
@@ -1328,7 +1339,7 @@
     return retval ;
   }
 
-  XercesConfigurationHandler::XercesConfigurationHandler(
+  VoltageForFrequencyConfiguration::VoltageForFrequencyConfiguration(
     Model * p_model )
     //E.g. for getting an array of all "freq_and_voltage" XML elements.
     :
@@ -1346,7 +1357,7 @@
     mp_model = p_model ;
   }
 
-  XercesConfigurationHandler::~XercesConfigurationHandler()
+  VoltageForFrequencyConfiguration::~VoltageForFrequencyConfiguration()
   {
     LOGN("~XercesConfigurationHandler")
 //    if( mp_dom_ls_parser )
@@ -1380,3 +1391,4 @@
     LOGN("~XercesConfigurationHandler end")
 //    x86InfoAndControl::TerminateXerces() ;
   }
+}//namespace Xerces

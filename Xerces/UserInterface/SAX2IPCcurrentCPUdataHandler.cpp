@@ -5,10 +5,15 @@
  *      Author: Stefan
  */
 #include "SAX2IPCcurrentCPUdataHandler.hpp"
-#include <ModelData/CPUcoreData.hpp>
+#include <ModelData/CPUcoreData.hpp> //class CPUcoreData
+#include <ModelData/ModelData.hpp> //class ModelData
+#include <Xerces/XercesString.hpp> //Xerces::ansi_or_wchar_string_compare(...)
+//ConvertXercesAttributesValue(...)
 #include <Xerces/XercesAttributesHelper.hpp>
 
 #include <xercesc/sax2/Attributes.hpp>
+#include <wx/defs.h> //wxLongLong_t
+#include <wx/stopwatch.h> //::wxGetLocalTimeMillis()
 #include <wx/thread.h> //for class wxCriticalSectionLocker
 
 //void SAX2IPCcurrentCPUdataHandler::Parse( BYTE arby [] , DWORD dwSizeInBytes)
@@ -120,6 +125,114 @@ float SAX2IPCcurrentCPUdataHandler::GetTemperatureInCelsius( WORD wCoreID )
   return __FLT_MIN__ ;
 }
 
+inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
+  const XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes
+  )
+{
+  float fValue ;
+  WORD wValue ;
+  if( ConvertXercesAttributesValue<WORD>(
+      cr_xerces_attributes
+      , wValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"number" )
+    )
+  {
+    //While modifying the map prevent the concurrent reading of the map.
+  //      wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
+    LOGN("SAX2IPCcurrentCPUdataHandler startElement before entering "
+      "critical section")
+    m_wxcriticalsection.Enter() ;
+    LOGN("SAX2IPCcurrentCPUdataHandler startElement after entering "
+      "critical section")
+
+    LOGN("SAX2IPCcurrentCPUdataHandler core"
+  #ifdef _DEBUG
+      ":" << wValue
+  #endif
+      )
+    if( ConvertXercesAttributesValue<float>(
+      cr_xerces_attributes
+      , fValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"load" )
+      )
+    {
+  //        m_stdset_fUsage.insert( fValue ) ;
+      m_stdmap_wCoreNumber2fUsage.insert( std::pair<WORD,float> (
+          wValue, fValue ) ) ;
+    }
+    if( ConvertXercesAttributesValue<float>(
+      cr_xerces_attributes
+      , fValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"temp_in_deg_Celsius" )
+      )
+    {
+      m_stdmap_wCoreNumber2fTempInDegCelsius.insert( std::pair<WORD,float> (
+          wValue, fValue ) ) ;
+    }
+    VoltageAndMultiAndRefClock voltageandmultiandrefclock ;
+    if( ConvertXercesAttributesValue<float>(
+      cr_xerces_attributes
+      , fValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"multiplier" )
+      )
+    {
+  //          m_stdmap_wCoreNumber2fMultiplier.insert( std::pair<WORD,float> (
+  //              wValue, fValue ) ) ;
+      voltageandmultiandrefclock.m_fMultiplier = fValue ;
+    }
+    if( ConvertXercesAttributesValue<float>(
+      cr_xerces_attributes
+      , fValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"reference_clock_in_MHz" )
+      )
+    {
+      LOGN("SAX2IPCcurrentCPUdataHandler reference_clock_in_MHz attribute"
+  #ifdef _DEBUG
+        ":" << fValue
+  #endif
+        )
+  //          m_stdmap_wCoreNumber2fReferenceClock.insert( std::pair<WORD,float> (
+  //              wValue, fValue ) ) ;
+      voltageandmultiandrefclock.m_fReferenceClock = fValue ;
+    }
+    if( ConvertXercesAttributesValue<float>(
+      cr_xerces_attributes
+      , fValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"voltage_in_Volt" )
+      )
+    {
+      LOGN("SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute")
+  //          m_stdmap_wCoreNumber2fVoltageInVolt.insert( std::pair<WORD,float> (
+  //              wValue, fValue ) ) ;
+      voltageandmultiandrefclock.m_fVoltageInVolt = fValue ;
+    }
+    LOGN("SAX2IPCcurrentCPUdataHandler before inserting into container")
+    m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.insert(
+      std::pair<WORD,VoltageAndMultiAndRefClock>( wValue ,
+          voltageandmultiandrefclock )
+      ) ;
+    LOGN("SAX2IPCcurrentCPUdataHandler startElement before leaving "
+      "critical section")
+    m_wxcriticalsection.Leave() ;
+    LOGN("SAX2IPCcurrentCPUdataHandler startElement after leaving "
+      "critical section")
+  }
+  //      if( ConvertXercesAttributesValue<float>(
+  //          cr_xerces_attributes
+  //          , fValue
+  //          , L"voltage" )
+  //        )
+  //      {
+  //        m_stdset_fUsage.insert( fVoltage ) ;
+  //      }
+}
+
 SAX2IPCcurrentCPUdataHandler::~SAX2IPCcurrentCPUdataHandler()
 {
   LOGN("~SAX2IPCcurrentCPUdataHandler")
@@ -146,119 +259,78 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
 
   void SAX2IPCcurrentCPUdataHandler::startElement
     (
-      const   XMLCh * const    cp_xmlchURI,
-      const   XMLCh * const    cp_xmlchLocalName,
-      const   XMLCh * const    cp_xmlchQualifiedName,
-      const   XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes
+      const XMLCh * const cp_xmlchURI,
+      const XMLCh * const cp_xmlchLocalName,
+      const XMLCh * const cp_xmlchQualifiedName,
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes
     )
   {
     if( //If strings equal.
-      ! wcscmp(
-      //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
-      (wchar_t *) cp_xmlchLocalName, L"core" )
+        ! Xerces::ansi_or_wchar_string_compare(
+        //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+        //(wchar_t *)
+          cp_xmlchLocalName, ANSI_OR_WCHAR("core")
+        )
       )
     {
-      float fValue ;
-      WORD wValue ;
-      if( ConvertXercesAttributesValue<WORD>(
+      HandleCoreXMLelement_Inline(cr_xerces_attributes);
+    }
+    if( //If strings equal.
+        ! Xerces::ansi_or_wchar_string_compare(
+        //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+        //(wchar_t *)
+          cp_xmlchLocalName, ANSI_OR_WCHAR("too_hot")
+        )
+      )
+    {
+      LOGN("\"too hot\" XML element")
+      wxCriticalSectionLocker wxcriticalsectionlocker(m_wxcriticalsection) ;
+      wxLongLong_t wxlonglong_t;
+      if( ConvertXercesAttributesValue<wxLongLong_t>(
           cr_xerces_attributes
-          , wValue
+          //This value is the last timecode of the last overheat at the time
+          //on the machine with the service.
+          , wxlonglong_t
           , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
-          (const XMLCh *) L"number" )
+          (const XMLCh *) L"last_time_too_hot" )
         )
       {
-        //While modifying the map prevent the concurrent reading of the map.
-  //      wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-        LOGN("SAX2IPCcurrentCPUdataHandler startElement before entering "
-          "critical section")
-        m_wxcriticalsection.Enter() ;
-        LOGN("SAX2IPCcurrentCPUdataHandler startElement after entering "
-          "critical section")
+        LOGN("Attribute value for \"last_time_too_hot\":" << wxlonglong_t)
+//        if( wxlonglong_t )
+//        {
+//          if( m_wxlonglong_tLastTimeTooHot )
+//          {
+//            if( wxlonglong_t - m_wxlonglong_tLastTimeTooHotInMillis < 1000 )
+//              m_bTooHotLastTime = true;
+//            else
+//              m_bTooHotLastTime = false;
+//          }
+//          else
+//            m_bTooHotLastTime = false;
+//          m_wxlonglong_tLastTimeTooHotInMillis = wxlonglong_t;
+//        }
+//        else
+//          m_bTooHotLastTime = false;
 
-        LOGN("SAX2IPCcurrentCPUdataHandler core"
-#ifdef _DEBUG
-          ":" << wValue
-#endif
-          )
-        if( ConvertXercesAttributesValue<float>(
-          cr_xerces_attributes
-          , fValue
-          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
-          (const XMLCh *) L"load" )
-          )
+        //Must specify 1 of the base classes where "mp_model" is declared
+        //because g++ error: "error: reference to `mp_model' is ambiguous"
+//        I_CPUcontroller::mp_model->m_cpucoredata.m_llLastTimeTooHot =
+//          wxlonglong_t;
+
+        if( m_wxlonglong_tLastTimeTooHotFromFromIPC)
         {
-  //        m_stdset_fUsage.insert( fValue ) ;
-          m_stdmap_wCoreNumber2fUsage.insert( std::pair<WORD,float> (
-              wValue, fValue ) ) ;
+          if( m_wxlonglong_tLastTimeTooHotFromFromIPC < wxlonglong_t)
+          {
+            //The host where the data comes from may significantly differ in its
+            //time. So get the current time for this machine.
+            m_llLastTimeTooHot = //wxlonglong_t;
+              ::wxGetLocalTimeMillis().GetValue();
+            m_wxlonglong_tLastTimeTooHotFromFromIPC = wxlonglong_t;
+          }
         }
-        if( ConvertXercesAttributesValue<float>(
-          cr_xerces_attributes
-          , fValue
-          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
-          (const XMLCh *) L"temp_in_deg_Celsius" )
-          )
-        {
-          m_stdmap_wCoreNumber2fTempInDegCelsius.insert( std::pair<WORD,float> (
-              wValue, fValue ) ) ;
-        }
-        VoltageAndMultiAndRefClock voltageandmultiandrefclock ;
-        if( ConvertXercesAttributesValue<float>(
-          cr_xerces_attributes
-          , fValue
-          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
-          (const XMLCh *) L"multiplier" )
-          )
-        {
-//          m_stdmap_wCoreNumber2fMultiplier.insert( std::pair<WORD,float> (
-//              wValue, fValue ) ) ;
-          voltageandmultiandrefclock.m_fMultiplier = fValue ;
-        }
-        if( ConvertXercesAttributesValue<float>(
-          cr_xerces_attributes
-          , fValue
-          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
-          (const XMLCh *) L"reference_clock_in_MHz" )
-          )
-        {
-          LOGN("SAX2IPCcurrentCPUdataHandler reference_clock_in_MHz attribute"
-#ifdef _DEBUG
-            ":" << fValue
-#endif
-            )
-//          m_stdmap_wCoreNumber2fReferenceClock.insert( std::pair<WORD,float> (
-//              wValue, fValue ) ) ;
-          voltageandmultiandrefclock.m_fReferenceClock = fValue ;
-        }
-        if( ConvertXercesAttributesValue<float>(
-          cr_xerces_attributes
-          , fValue
-          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
-          (const XMLCh *) L"voltage_in_Volt" )
-          )
-        {
-          LOGN("SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute")
-//          m_stdmap_wCoreNumber2fVoltageInVolt.insert( std::pair<WORD,float> (
-//              wValue, fValue ) ) ;
-          voltageandmultiandrefclock.m_fVoltageInVolt = fValue ;
-        }
-        LOGN("SAX2IPCcurrentCPUdataHandler before inserting into container")
-        m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.insert(
-          std::pair<WORD,VoltageAndMultiAndRefClock>( wValue ,
-              voltageandmultiandrefclock )
-          ) ;
-        LOGN("SAX2IPCcurrentCPUdataHandler startElement before leaving "
-          "critical section")
-        m_wxcriticalsection.Leave() ;
-        LOGN("SAX2IPCcurrentCPUdataHandler startElement after leaving "
-          "critical section")
+        else //=0 <=> Not assigned yet.
+          m_wxlonglong_tLastTimeTooHotFromFromIPC = wxlonglong_t;
       }
-//      if( ConvertXercesAttributesValue<float>(
-//          cr_xerces_attributes
-//          , fValue
-//          , L"voltage" )
-//        )
-//      {
-//        m_stdset_fUsage.insert( fVoltage ) ;
-//      }
+//      m_bTooHotLastTime = true;
     }
   }

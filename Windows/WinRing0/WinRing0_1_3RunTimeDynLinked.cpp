@@ -287,7 +287,12 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
            //TODO Mysterious g++ error
            //"error: `ostrstreamErrorDesc' was not declared in this scope"
            //ostrstreamErrorDesc.str()
-           "other error initializing WinRing0"
+           "Other error initializing the CPU/hardware access library "
+           "\"WinRing0\":\n this may be due to "
+           "insufficient rights, so running this program as administrator "
+           "may help\nIf you do not run this program elevated then it could/"
+           "should not work properly, especially when it is not connected to"
+           " the service."
            ) ;
     }
     else

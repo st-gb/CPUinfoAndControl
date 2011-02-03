@@ -20,6 +20,7 @@
   #define __INSIDE_CYGWIN__
 #endif
 #include "wx/socket.h"
+#include "wx/string.h" //wxStringBase::npos
 #include "wx/url.h"
 #include "wx/wfstream.h"
 

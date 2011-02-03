@@ -13,6 +13,25 @@
 #include <wx/textctrl.h> //class wxTextCtrl
 #include <wx/string.h> //class wxString
 
+//Lebensweisheiten:
+wxString g_ar_wxstrWorldlyWisdom [] = {
+  wxT("Happiness is only real when shared--Alexander Supertramp") ,
+  wxT("People (even criminal) usually are the result of the interaction "
+    "between them and their environment")
+};
+WORD g_wNumberOfWorldlyWisdomStrings = 2;
+
+wxString GetRandomWorldlyWisdom()
+{
+  //from http://www.cplusplus.com/reference/clibrary/cstdlib/rand/:
+  /* initialize random seed: */
+  srand ( time(NULL) );
+
+  /* generate secret number: */
+  int nRandomNumber = rand() % g_wNumberOfWorldlyWisdomStrings;
+  return g_ar_wxstrWorldlyWisdom[nRandomNumber];
+}
+
 void GetAboutMessage(wxString & wxstrMessage)
 {
   std::tstring stdtstr ;
@@ -52,6 +71,8 @@ void GetAboutMessage(wxString & wxstrMessage)
     //" -when switching from power supply operation to battery,\n"
     //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
     _T("Licence/ info: http://www.trilobyte-se.de/x86iandc")
+    wxT("\n\n")
+    + GetRandomWorldlyWisdom()
     ;
 }
 

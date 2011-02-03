@@ -35,8 +35,10 @@
 //#include <Controller/ICalculationThread.hpp> //for "started", "ended"
 //#include <ModelData/ModelData.hpp>
 //#include <UserInterface/UserInterface.hpp> //for abstract class UserInterface
-#include <Xerces/PStateConfig.hpp> //class XercesConfigurationHandler
+//#include <Xerces/PStateConfig.hpp> //class VoltageForFrequencyConfiguration
+#include <wxWidgets/icon/IconDrawer.hpp>
 //#include "FreqAndVoltageSettingDlg.hpp"
+#include <map> //class std::map
 #include <vector> //for std::vector
 
 //forward declarations (faster than an #include)
@@ -51,6 +53,7 @@ class I_CPUcontrollerAction ;
 class I_CPUcontroller ;
 class ICPUcoreUsageGetter ;
 class SpecificCPUcoreActionAttributes ;
+class VoltageAndFreq;
 class wxX86InfoAndControlApp ;
 class wxDynLibCPUcontroller ;
 class wxDynLibCPUcoreUsageGetter ;
@@ -141,6 +144,7 @@ private:
   //wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
   static wxIcon s_wxiconTemperature ;
+//  wxIconDrawer m_wxicon_drawer;
   //http://docs.wxwidgets.org/2.6/wx_windowdeletionoverview.html#windowdeletionoverview:
   //"When a wxWindow is destroyed, it automatically deletes all its children. 
   //These children are all the objects that received the window as the 
@@ -161,6 +165,7 @@ private:
   wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
   wxString m_wxstrTitle ;
   static wxString s_wxstrHighestCPUcoreTemperative ;
+  static wxString s_wxstrTaskBarIconToolTip;
 public:
   wxTimer m_wxtimer;
 //  wxTimer * m_p_wxtimer;
@@ -170,7 +175,8 @@ private:
   WORD m_wMinYcoordInDiagram ;
   WORD m_wDiagramWidth ;
   WORD m_wDiagramHeight ;
-  XercesConfigurationHandler m_xercesconfigurationhandler ;
+//  Xerces::VoltageForFrequencyConfiguration
+//    m_xerces_voltage_for_frequency_configuration ;
 
   //std::vector<//use wxString because it need's to be a subclass of wxObject 
   //  wxString> m_vecwxstring ;
@@ -343,7 +349,7 @@ public:
     wxCommandEvent & WXUNUSED(event) ) ;
   void OnSize(wxSizeEvent & WXUNUSED(event)) ;
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));
-  void OnSaveAsDefaultPStates(wxCommandEvent & WXUNUSED(event));
+  void OnSaveVoltageForFrequencySettings(wxCommandEvent & WXUNUSED(event));
 
   void OnConnectToService( wxCommandEvent & WXUNUSED(event) ) ;
   void OnConnectToOrDisconnectFromService(wxCommandEvent & WXUNUSED(event) ) ;
@@ -381,7 +387,8 @@ public:
   void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
-  inline void ShowHighestCPUcoreTemperatureInTaskBar() ;
+  inline void ShowHighestCPUcoreTemperatureInTaskBar(
+    I_CPUcontroller * p_i_cpucontroller) ;
   void StoreCurrentVoltageAndFreqInArray(
     wxDC & r_wxdc
   //  VoltageAndFreq * & r_ar_voltageandfreq

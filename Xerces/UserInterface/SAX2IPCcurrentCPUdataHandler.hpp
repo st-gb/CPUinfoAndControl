@@ -35,8 +35,10 @@ class SAX2IPCcurrentCPUdataHandler
 {
 //  const CPUcoreData * const m_cpc_cpucoredata ;
 public:
+//  bool m_bTooHotLastTime;
   CPUcoreData * m_cpc_cpucoredata ;
   wxCriticalSection m_wxcriticalsection ;
+  wxLongLong_t m_wxlonglong_tLastTimeTooHotFromFromIPC;
   void endDocument() ;
   BYTE GetCurrentVoltageAndFrequency(
     float & r_fVoltageInVolt
@@ -56,7 +58,18 @@ public:
   std::map<WORD,VoltageAndMultiAndRefClock>
     m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock ;
   float GetTemperatureInCelsius( WORD wCoreID ) ;
+  inline void HandleCoreXMLelement_Inline(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes);
   void startDocument();
+  SAX2IPCcurrentCPUdataHandler(//Model & r_model
+    )
+    :
+//    I_CPUcontroller::mp_model(& r_model)
+//    mp_model(& r_model)
+    m_wxlonglong_tLastTimeTooHotFromFromIPC(0)
+  {
+//    m_bTooHotLastTime = false;
+  }
   ~SAX2IPCcurrentCPUdataHandler() ;
   void startElement(
       const   XMLCh* const    uri,

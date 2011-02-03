@@ -1,5 +1,8 @@
 #pragma once //incl. guard
 //#include <global.h>
+
+////class CPUcoreUsageGetterAndControllerBase
+//#include <Controller/CPU-related/UsageGetterAndControllerBase.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
 #include <windef.h> //for BYTE, WORD
 //#include "I_CPUcontroller.hpp"
@@ -10,6 +13,8 @@ class Model ;
 //This interface exists because there are many possib. to
 //get the CPU core usage.
 class ICPUcoreUsageGetter
+//  :
+//  public CPUcoreUsageGetterAndControllerBase
 {
 public:
   //Must be a pointer because this is the base class,

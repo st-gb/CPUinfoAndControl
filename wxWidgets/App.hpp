@@ -27,6 +27,8 @@
   //class SAX2IPCcurrentCPUdataHandler
   #include <Xerces/UserInterface/SAX2IPCcurrentCPUdataHandler.hpp>
 #endif
+//class Xerces::VoltageForFrequencyConfiguration
+#include <Xerces/PStateConfig.hpp>
 //for x86IandC::thread_type
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
@@ -114,7 +116,12 @@ private:
   //Model m_modelData ;
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
 
+  bool AbsoluteCPUspecificDirPathExists(
+    wxString & wxstrAbsoluteCPUspecificDirPath);
   inline void CreateAndShowMainFrame() ;
+  wxString GetAbsoluteCPUspecificDirPath(
+    const std::string & cr_strCPUtypeRelativeDirPath,
+    wxString & r_wxstrCurrentWorkingDir );
   void InitSharedMemory() ;
   //WinRing0_1_3RunTimeDynLinked m_winring0dynlinked ;
 
@@ -158,6 +165,8 @@ public:
 //  x86IandC::native_API_event_type
   condition_type m_condition_type_eventIPCthread ;
   x86IandC::thread_type m_x86iandc_threadIPC ;
+  Xerces::VoltageForFrequencyConfiguration
+    m_xerces_voltage_for_frequency_configuration ;
 #ifdef COMPILE_WITH_CPU_SCALING
   //wxDynFreqScalingTimer * mp_wxdynfreqscalingtimer ;
   //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
@@ -176,6 +185,7 @@ public:
   //the time OnExit finishes.
   //In particular, do not destroy them from application class' destructor!"
   ~wxX86InfoAndControlApp() ;
+  void CheckForChangedVoltageForFrequencyConfiguration();
   bool Confirm(const std::string & str) ;
   bool Confirm(const std::wstring & str) ;
 //  bool Confirm(std::ostrstream & r_ostrstream ) ;
@@ -217,6 +227,8 @@ public:
   bool IPC_ClientIsConnected() ;
   inline bool IPC_ClientIsConnected_Inline() ;
   inline BYTE IPC_ClientSendCommandAndGetResponse_Inline( BYTE byCommand ) ;
+  void MessageWithTimeStamp(const std::wstring & cr_stdwstr);
+  void MessageWithTimeStamp(const LPWSTR cp_lpwstrMessage);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;
@@ -225,6 +237,8 @@ public:
   void PossiblyAskForOSdynFreqScalingDisabling() ;
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void RedrawEverything() ;
+  void SaveAsCPUcontrollerDynLibForThisCPU();
+  void SaveVoltageForFrequencySettings();
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
   void StartService() ;

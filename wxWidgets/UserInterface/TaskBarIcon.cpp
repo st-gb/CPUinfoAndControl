@@ -152,6 +152,18 @@ void TaskBarIcon::CreatePowerSchemesMenu()
 #endif //#ifdef _WIN32
 }
 
+void TaskBarIcon::FreeRessources()
+{
+  LOGN("TaskBarIcon::FreeRessources() begin--m_p_wxicon_drawer:"
+    << m_p_wxicon_drawer)
+  if( m_p_wxicon_drawer )
+  {
+//    delete m_p_wxicon_drawer;
+//    m_p_wxicon_drawer = NULL;
+  }
+  LOGN("TaskBarIcon::FreeRessources() end")
+}
+
 void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -214,6 +226,13 @@ void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 //  mp_mainframe->Maximize(true ) ;
 }
 
+TaskBarIcon::~TaskBarIcon()
+{
+  LOGN("~TaskBarIcon() begin")
+  //  m_wxicon_drawer.ReleaseRessources();
+  FreeRessources();
+  LOGN("~TaskBarIcon() end")
+}
 //void TaskBarIcon::SetMainFrame(MainFrame * p_mf )
 //{
 //  mp_mainframe = p_mf ;

@@ -87,6 +87,8 @@ public:
   };
   float m_fReferenceClockInMHz ;
   bool m_b1CPUcorePowerPlane ;
+  //For notifying via user interface if the CPU is too hot/ being throttled.
+  long long m_llLastTimeTooHot;
   int m_byNumberOfCmdLineArgs;
   TCHAR ** m_arartcharCmdLineArg ;
   //std::vector<std::string> m_stdvecstdstringCmdLineArg ;

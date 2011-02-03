@@ -30,9 +30,10 @@ static void child_handler(int nSignalNumber)
   case SIGCONT:
     LOGN("received CONT signal")
     { //This block is needed for the local variable.
-      bool bContinue = false;
+//      bool bContinue = false;
       ( (CPUcontrolServiceBase *) gp_cpucontrolbase)->
-        StartDVFSviaThreadType_Inline(bContinue) ;
+        StartDVFSviaThreadType_Inline(//bContinue
+          ) ;
     }
     break;
   case SIGTERM:
