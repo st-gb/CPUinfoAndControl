@@ -602,7 +602,8 @@ MainFrame::MainFrame(
     mp_model->m_stdstrCPUcontrollerDynLibPath.c_str(), wxConvUTF8 );
 #if wxUSE_UNICODE == 1
     DEBUGWN_WSPRINTF(L"CPU controller path as wide string:%ls",
-      wxstrCPUcontrollerDynLibPath.c_str() ) ;
+      //wxstrCPUcontrollerDynLibPath.c_str()
+      wxstrCPUcontrollerDynLibPath.wc_str() ) ;
 #endif
     CPUcontrollerDynLibAttached(wxstrCPUcontrollerDynLibPath) ;
   }

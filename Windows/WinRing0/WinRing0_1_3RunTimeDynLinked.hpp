@@ -95,7 +95,7 @@ public:
     , DWORD dwRegAddress
     , PDWORD p_dwValue
     );
-  BOOL ReadTSC(DWORD & r_dw , DWORD & r_dw ) ;
+  BOOL ReadTSC(DWORD & r_dwLowEAX , DWORD & r_dwHighEDX ) ;
   BOOL ReadTSCinOrder(
     DWORD & r_dwLowEAX ,
     DWORD & r_dwHighEDX ,

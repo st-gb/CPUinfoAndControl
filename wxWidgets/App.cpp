@@ -81,7 +81,7 @@ wxServiceSocketClient.hpp>
 FILE * fileDebug ; //for debug logging.
 //This global (important for using preprocessor macros) object is used for 
 //easy logging.
-Logger g_logger ;
+//Logger g_logger ;
 CPUcontrolBase * gp_cpucontrolbase ;
 ////Needed for the exported functions.
 //I_CPUaccess * g_p_cpuaccess ;

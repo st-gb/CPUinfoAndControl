@@ -7,6 +7,7 @@ ANSI DLL Release version:
 (can be done with cygwin's "sh")
 sh ../configure -LDFLAGS=-no-undefined --build=x86-winnt-mingw32 --with-extra-cflags=-mno-cygwin -–with-extra-cxxflags=-mno-cygwin
 
+if creating via cygwin (instead of using the better/ correct way via MSYS console):
 -add "-D_SYS_SELECT_H" as "CPPFLAGS" in the "Makefile" (because else a conflict/ compile error: duplicate function "int select ..."
 
 -use MinGW's "mingw32-make" for the created "Makefile"

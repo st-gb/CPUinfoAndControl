@@ -49,7 +49,8 @@ AssignPointersToExportedExeMSRfunctions.h>
 
 //_WIN32: Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 #if defined(_DEBUG) && defined(_WIN32)
-  #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/\
+GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 
 #include <float.h> //for FLT_MIN
@@ -118,7 +119,7 @@ void InitOtherOSthanWindows()
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;
-  DEBUGN("g_pfnreadmsr:" << g_pfnreadmsr
+  DEBUGN_LOGGER_NAME(g_loggerDynLib, "g_pfnreadmsr:" << g_pfnreadmsr
       << "g_pfn_write_msr:" << g_pfn_write_msr)
   gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
 }
@@ -127,11 +128,12 @@ void InitOtherOSthanWindows()
 bool InitWindows()
 {
   #ifdef _DEBUG
-  std::string strExeFileNameWithoutDirs = GetStdString( GetExeFileNameWithoutDirs() ) ;
+  std::string strExeFileNameWithoutDirs = GetStdString(
+    ::GetExeFileNameWithoutDirs() ) ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
   ("NehalemControllerDLL_log.txt") ;
   g_loggerDynLib.OpenFile2( stdstrFilename ) ;
-  DEBUGN("this Log file is open")
+  DEBUGN_LOGGER_NAME(g_loggerDynLib, "this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif
   //gp_nehalem_clocksnothaltedcpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
@@ -257,7 +259,11 @@ float *
     if( ar_f )
     {
       * p_wNumberOfArrayElements = byNumMultis ;
+#ifdef WESTMERE
+      float fMulti = 9.0 ; //The minimum multiplier for Westmere is 9.
+#else
       float fMulti = 7.0 ; //The minimum multiplier for Nehalem is 7.
+#endif
 //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
       for( BYTE by = 0 ; by < byNumMultis ; ++ by )
       {
@@ -464,7 +470,11 @@ void
 #ifdef INSERT_DEFAULT_P_STATES
   BYTE byMaxMulti;
   float fVoltageInVolt = 0.65;
-  float fFrequencyInMHz = 7 * 133.3 ;
+#ifdef WESTMERE
+  float fFrequencyInMHz = 9 * 133.0 ;
+#else
+  float fFrequencyInMHz = 7 * 133.0 ;
+#endif
 
   DEBUGN("adding default voltage " << fVoltageInVolt << " V for "
     << (WORD) fFrequencyInMHz << " MHz" )
@@ -477,7 +487,7 @@ void
     AddDefaultVoltageForFreq( fVoltageInVolt,
       (WORD) ( fFrequencyInMHz )
       ) ;
-  fVoltageInVolt = 0.9;
+  fVoltageInVolt = 1.1;
   g_byValue1 = GetMaximumMultiplier_Nehalem(0,byMaxMulti);
   fFrequencyInMHz = byMaxMulti * 133.3 ;
   DEBUGN("adding default voltage " << fVoltageInVolt << " for "
