@@ -1,3 +1,21 @@
+mit lesen aus 2 kleinen (35000 Elemente) double-Arrays konnte ich viele L2 Cache 
+Hits erreichen.
+
+ -Array benutzen, das größer als der L2-Cache ist. aus dem Array
+  auslesen 
+  siehe http://de.wikipedia.org/wiki/Cache#Cachegr.C3.B6.C3.9Fe: 
+   "Beobachtet man beispielsweise die Aktivität eines laufenden Programms 
+   auf einer Prozessor über ein kurzes Zeitintervall, so stellt man fest, 
+   dass wiederholt auf wenige kleine Speicherbereiche (z. B. Code innerhalb 
+   Schleifen, Steuervariablen, lokale Variablen und Prozedurparameter) 
+   zugegriffen wird."
+   demzufolge muss sich das Zugriffmuster bzw. die Adressen der Operanden ändern:
+   z.B. durch "if( ArrayTest[i] / 1 != Array[vorberechnet] )" -> "Rechenfehler"
+   
+-Dr. Pohl 25.03.2011:
+ -_Gleitkomma_-Berechnungen: Sinus, Cosinus, E-Funktion?, Logarithmus?
+  (da Cosinus und Sinus auch in FFT-Berechnungen vorkommen)
+
 -Idee: Problematische Unterspannungen kann man schon durch Rechenfehler 
  erkennen (Prime95 bringt dann Fehler und bricht den Rechen-Thread mit 
  dem fehlerhaften Ergebnis ab) schon vor einem Freeze.

@@ -5,6 +5,8 @@
 #include <Controller/character_string/format_as_string.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+//GetErrorMessageFromLastErrorCodeA()
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <sstream> //class std::ostringstream
 //including specstrings.h lead to error messages for std::string include files?!
 //#include <specstrings.h> //for __out
@@ -281,6 +283,13 @@ BOOL NamedPipeClient::Read(
     lpNumberOfBytesRead,
     lpOverlapped
     ) ;
+  if( m_bool)
+    if( nNumberOfBytesToRead != * lpNumberOfBytesRead)
+    {
+      LOGN("NamedPipeClient::Read(...)--# of bytes to read <> # of bytes that "
+        "were read.")
+      m_bool = FALSE;
+    }
   m_vbIsReadingOrWriting = false ;
 
 //  if( m_bool )
@@ -356,48 +365,130 @@ BOOL NamedPipeClient::Read(
 //       dwNumBytesRead > 0 );  // repeat loop if ERROR_MORE_DATA
 //}
 
+//BYTE NamedPipeClient::SendCommandAndGetResponse(IPC_data & ipc_data)
+//{
+//  LOGN("SendCommandAndGetResponse(IPC_data &) begin")
+//
+//}
+
+inline BYTE NamedPipeClient::WriteDataSizeInByte(IPC_data & r_ipc_data)
+{
+  LOGN("WriteDataSizeInByte begin--command: "
+    << (WORD) r_ipc_data.m_byCommand )
+  switch( //byCommand
+    r_ipc_data.m_byCommand )
+  {
+  case setCPUcoreThrottleTemperature:
+    LOGN("SendCommandAndGetResponse--setCPUcoreThrottleTemperature")
+    if( SendDataSizeInByte(
+        //& m_r_model.m_cpucoredata.m_fThrottleTempInDegCelsius,
+        //Temperature as float value + command as byte value.
+        sizeof(float) + 1
+        )
+      )
+      return WritingIPCdataSucceeded;
+    break;
+  default:
+    if( SendDataSizeInByte(
+        //& m_r_model.m_cpucoredata.m_fThrottleTempInDegCelsius,
+        //Command as byte value.
+        1
+        )
+      )
+      return WritingIPCdataSucceeded;
+  }
+  return WritingIPCdataFailed;
+}
+
+inline BYTE NamedPipeClient::WriteCommand(BYTE byCommand)
+{
+  static DWORD dwNumberOfBytesWritten;
+  LOGN("before write message to pipe "
+  #ifdef _DEBUG //because the own logger can only filter strings that match
+    //full log messages
+    << m_handleClientPipe
+  #endif
+    )
+  // Send a message to the pipe server.
+  BOOL fSuccess = //::WriteFile(
+  //    m_handleClientPipe        // pipe handle
+    Write(
+    //lpvMessage,             // message
+    //stop_service
+    & byCommand
+    // (lstrlen(lpvMessage)+1)*sizeof(TCHAR), // message length
+    , 1
+    , & dwNumberOfBytesWritten   // bytes written
+    , NULL );                  // not overlapped
+  if ( ! fSuccess )
+  {
+    m_vbIsGettingCPUcoreData = false ;
+#ifdef COMPILE_WITH_LOG
+    DWORD dwLastError = ::GetLastError() ;
+#endif //#ifdef COMPILE_WITH_LOG
+    //http://msdn.microsoft.com/en-us/library/aa365747%28VS.85%29.aspx:
+    //"To get extended error information, call the GetLastError function."
+    LOGN("WriteFile failed:" << LocalLanguageMessageFromErrorCodeA(
+      dwLastError) );
+    m_bConnected = false ;
+    return WritingIPCdataFailed;
+  }
+  if( dwNumberOfBytesWritten != 1)
+    return WritingIPCdataFailed;
+  return WritingIPCdataSucceeded;
+}
+
+inline BYTE NamedPipeClient::WriteDataBelongingToCommand(IPC_data & r_ipc_data)
+{
+  LOGN("WriteDataBelongingToCommand begin")
+  DWORD dwNumberOfBytesWritten;
+#ifdef COMPILE_WITH_LOG
+  std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
+    = format_output_data( r_ipc_data.m_ar_byDataToSend,
+      r_ipc_data.m_wDataToWriteSizeInByte, 100) ;
+  LOGN("Writing data to pipe:" << stdstrBytes)
+#endif
+  if( ! Write(r_ipc_data.m_ar_byDataToSend,
+    r_ipc_data.m_wDataToWriteSizeInByte,
+    & dwNumberOfBytesWritten,
+    NULL)
+    )
+    return WritingIPCdataFailed;
+  LOGN("WriteDataBelongingToCommand end")
+  return WritingIPCdataSucceeded;
+}
+
 //As seen in a log file: while a thread called ::ReadFile() on the pipe handle
 // another thread can NOT write concurrently to the same pipe.
-BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
+BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
+  IPC_data & r_ipc_data)
 {
-  LOGN("SendCommandAndGetResponse begin")
-  DWORD dwNumberOfBytesWritten ;
+  LOGN("SendCommandAndGetResponse(...) begin")
+  static BOOL fSuccess;
+//  DWORD dwNumberOfBytesWritten ;
   DWORD dwNumBytesRead ;
 //  DWORD dwNumberOfBytes ;
 //  std::wstring stdwstrMessage ;
 //  wchar_t wch ;
   //clear before every pipe write.
   m_stdwstrMessage = L"" ;
-  LOGN("before write message to pipe "
-#ifdef _DEBUG //because the own logger can only filter strings that matcb
-    //full log messages
-    << m_handleClientPipe
-#endif
-    )
-  // Send a message to the pipe server.
-  BOOL fSuccess = //::WriteFile(
-//    m_handleClientPipe        // pipe handle
-    Write(
-    //lpvMessage,             // message
-    //stop_service
-    & byMessage
-    // (lstrlen(lpvMessage)+1)*sizeof(TCHAR), // message length
-    , 1
-    , & dwNumberOfBytesWritten   // bytes written
-    , NULL );                  // not overlapped
-   if ( ! fSuccess )
-   {
-     m_vbIsGettingCPUcoreData = false ;
-#ifdef COMPILE_WITH_LOG
-     DWORD dwLastError = ::GetLastError() ;
-#endif //#ifdef COMPILE_WITH_LOG
-     //http://msdn.microsoft.com/en-us/library/aa365747%28VS.85%29.aspx:
-     //"To get extended error information, call the GetLastError function."
-      LOGN("WriteFile failed:" << LocalLanguageMessageFromErrorCodeA(
-        dwLastError) );
-      m_bConnected = false ;
-      return 0;
-   }
+  if( WriteDataSizeInByte(r_ipc_data) == WritingIPCdataFailed)
+  {
+    LOGN("WriteDataSizeInByte failed")
+    return WritingIPCdataFailed;
+  }
+  LOGN("size in byte of data to write:" << r_ipc_data.m_wDataToWriteSizeInByte )
+  if( r_ipc_data.m_wDataToWriteSizeInByte > 0)
+  {
+    if( WriteCommand(r_ipc_data.m_byCommand) == WritingIPCdataFailed)
+    {
+      LOGN("WriteCommand failed.")
+      return WritingIPCdataFailed;
+    }
+    if( r_ipc_data.m_wDataToWriteSizeInByte > 1)
+      if( WriteDataBelongingToCommand(r_ipc_data) == WritingIPCdataFailed)
+        return WritingIPCdataFailed;
+  }
    //TODO Maybe use asynchronous read or write to a avoid blocking thread while
    // waiting for reading from or writing to the pipe
 
@@ -418,6 +509,11 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
      & dwNumBytesRead,  // number of bytes read
      NULL // NULL = not overlapped
      );
+   if( ! fSuccess )
+   {
+     LOGN("Failed to read the data size in bytes of possibly following data "
+       "to read:" << ::GetErrorMessageFromLastErrorCodeA() )
+   }
    LOGN( (fSuccess ? "successfully got " : "failed to read ")
 #ifdef _DEBUG //because the own logger can only filter strings that matcb
      //full log messages
@@ -493,6 +589,42 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(BYTE byMessage)
    return 1 ;
 }
 
+inline DWORD NamedPipeClient::SendDataSizeInByte(
+//  BYTE * ar_byData,
+  DWORD dwByteSize
+  )
+{
+  LOGN("SendDataSizeInByte(" << dwByteSize << ")--begin")
+  DWORD dwNumberOfBytesWritten;
+  BOOL fSuccess = //::WriteFile(
+//    m_handleClientPipe        // pipe handle
+    Write(
+    //lpvMessage,             // message
+    //stop_service
+    & dwByteSize
+    // (lstrlen(lpvMessage)+1)*sizeof(TCHAR), // message length
+    , 4
+    , & dwNumberOfBytesWritten   // bytes written
+    , NULL // not overlapped
+    );
+  if ( ! fSuccess )
+  {
+    m_vbIsGettingCPUcoreData = false ;
+#ifdef COMPILE_WITH_LOG
+    DWORD dwLastError = ::GetLastError() ;
+#endif //#ifdef COMPILE_WITH_LOG
+    //http://msdn.microsoft.com/en-us/library/aa365747%28VS.85%29.aspx:
+    //"To get extended error information, call the GetLastError function."
+    LOGN("WriteFile failed:" << LocalLanguageMessageFromErrorCodeA(
+      dwLastError) );
+    m_bConnected = false ;
+    return 0;
+  }
+  LOGN("SendDataSizeInByte(" << dwByteSize << ")--return " <<
+      dwNumberOfBytesWritten)
+  return dwNumberOfBytesWritten;
+}
+
 BOOL NamedPipeClient::Write(
   LPCVOID lpBuffer,
   //__in
@@ -507,6 +639,8 @@ BOOL NamedPipeClient::Write(
   m_criticalsection_typeIOandIsconnected.Enter() ;
   m_vbIsReadingOrWriting = true ;
   m_criticalsection_typeIOandIsconnected.Leave() ;
+  LOGN("NamedPipeClient::Write(...)--before ::WriteFile(...," << lpBuffer
+    << "," << nNumberOfBytesToWrite << ",..)")
   m_bool =
   ::WriteFile(
     m_handleClientPipe ,

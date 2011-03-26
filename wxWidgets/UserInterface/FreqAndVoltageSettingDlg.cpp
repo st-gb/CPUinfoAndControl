@@ -14,6 +14,10 @@
 #include <windef.h> //for BYTE
 #include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
 #include <Controller/CPU-related/I_CPUcontroller.hpp>//class I_CPUcontroller
+//DISable warning, from
+//http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
+// : "I believe passing -Wno-write-strings to gcc will suppress this warning."
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 #include <images/decrease16x16.xpm>
 #include <images/increase16x16.xpm>
 //#include <images/pause16x16.xpm>
@@ -22,6 +26,8 @@
 #include <images/set_as_desired_voltage16x16.xpm>
 #include <images/set_as_minimal_voltage16x16.xpm>
 #include <images/stabilize_voltage.xpm>
+//ENable warning
+#pragma GCC diagnostic warning "-Wwrite-strings"
 #include <ModelData/CPUcoreData.hpp> //class CPUcoreData
 //#include <ModelData/ModelData.hpp> //class Model
 #include <wxWidgets/App.hpp> //for wxGetApp()

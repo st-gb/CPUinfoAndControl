@@ -43,6 +43,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   wxString & r_wxstrFilePath 
   , I_CPUaccess * p_cpuaccess 
   , UserInterface * p_userinterface
+  , Model * p_model
   )
   :
 //  m_fReferenceClockInMHz(0.0) ,
@@ -50,7 +51,8 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   , m_wNumberOfLogicalCPUcores ( 1 )
 {
   //TODO crashes here if the CPU access initialization failed.
-  mp_model = p_cpuaccess->mp_model ;
+//  mp_model = p_cpuaccess->mp_model ;
+  mp_model = p_model ;
   //m_wxdynamiclibraryCPUctl ;
 
   //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html
@@ -880,6 +882,12 @@ BYTE wxDynLibCPUcontroller::TooHot()
   m_wNumberOfLogicalCPUcores = mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
   PerCPUcoreAttributes * arp_percpucoreattributes =
       mp_model->m_cpucoredata.m_arp_percpucoreattributes ;
+
+  //mp_model->m_cpucoredata.m_critical_section_typeAllData.
+  //Lock for concurrent write when the throttle temp should be changed in
+  //another thread.
+  wxCriticalSectionLocker cs_locker(mp_model->m_cpucoredata.
+      m_wxcriticalsectionIPCdata);
   for( WORD wCPUcoreIdx = 0 ; wCPUcoreIdx < m_wNumberOfLogicalCPUcores ; 
     ++ wCPUcoreIdx )
   {

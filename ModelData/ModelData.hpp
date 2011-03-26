@@ -1,9 +1,9 @@
 #pragma once //include guard
 
-#include <map> //for std::map
-#include <set> //for std::set
-#include <string>
-#include <vector> //for std::vector
+#include <map> //for class std::map
+#include <set> //for class std::set
+#include <string> //class std::string
+#include <vector> //for class std::vector
 
 #include "CPUcoreData.hpp"
 //because vector needs to know class MSRdata (else: build error)

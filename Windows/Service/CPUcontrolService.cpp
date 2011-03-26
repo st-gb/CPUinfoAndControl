@@ -188,6 +188,8 @@ CPUcontrolService::CPUcontrolService(
 //    , m_stdtstrProgramName ( r_stdtstrProgramName)
   , m_x86iandc_threadGetCurrentCPUcoreData( I_Thread::joinable )
 {
+  LOGN(//"CPUcontrolService::CPUcontrolService()"
+      FULL_FUNC_NAME << "--begin")
   m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
   InitializeMemberVariables() ;
 }
@@ -217,6 +219,8 @@ CPUcontrolService::CPUcontrolService(
   , m_powerprofdynlinked ( r_stdwstrProgramName )
   , m_x86iandc_threadGetCurrentCPUcoreData(I_Thread::joinable)
 {
+//  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
+  LOGN( FULL_FUNC_NAME << "--begin")
   m_stdtstrProgramName = Getstdtstring( r_stdwstrProgramName) ;
     //Calling the ctor inside another ctor created the object 2 times!
     //CPUcontrolService() ;
@@ -228,6 +232,20 @@ CPUcontrolService::~CPUcontrolService()
   LOGN("~CPUcontrolService() begin")
   //Already called in ~CPUcontrolBase()
 //  FreeRessources() ;
+  if( m_p_ptstrArgument)
+  {
+    WORD wNumberOfStrings = m_dwArgCount;
+    LOGN("Freeing memory for array of copied or converted program arguments")
+    for( //e.g. for 2 elements: max. index is 1
+      -- wNumberOfStrings; wNumberOfStrings < //(WORD) -1
+      65535 ; -- wNumberOfStrings )
+    {
+       LOGN("Freeing memory for " << GetStdString_Inline(
+         m_p_ptstrArgument[wNumberOfStrings]) )
+      delete [] m_p_ptstrArgument[wNumberOfStrings];
+    }
+    delete [] m_p_ptstrArgument;
+  }
   EndAlterCurrentCPUcoreIPCdata() ;
   LOGN("~CPUcontrolService() end")
 }
@@ -269,6 +287,9 @@ void CPUcontrolService::CreateHardwareAccessObject()
 
 void CPUcontrolService::CreateService( const TCHAR * const cpc_tchServiceName)
 {
+  LOGN("CPUcontrolService::CreateService(" <<
+    GetStdString_Inline(cpc_tchServiceName)
+    << ")--begin" )
   try
   {
     BYTE by ;
@@ -310,11 +331,12 @@ void CPUcontrolService::CreateService( const TCHAR * const cpc_tchServiceName)
   {
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("") ;
   }
+  LOGN("CPUcontrolService::CreateService(...)--end")
 }
 
 void CPUcontrolService::DeleteService(
   const TCHAR * cp_tchServiceName
-  , const std::string & stdtstrProgramName
+  , const std::tstring & cr_std_tstrProgramName
   )
 {
   DWORD dwErrorCodeFor1stError ;
@@ -383,12 +405,12 @@ void CPUcontrolService::DeleteService(
   }
   else
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
-      << cp_tchServiceName
+      << GetStdString_Inline(cp_tchServiceName)
       << "\" succeeded." )
-  std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
+  std::wstring stdwstr = GetStdWstring( cr_std_tstrProgramName ) ;
   PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
     stdwstr ) ;
-  powerprofdynlinked.DeletePowerScheme( stdtstrProgramName ) ;
+  powerprofdynlinked.DeletePowerScheme( cr_std_tstrProgramName ) ;
   powerprofdynlinked.OutputAllPowerSchemes() ;
 }
 
@@ -554,6 +576,7 @@ void CPUcontrolService::HandlePowerEvent(DWORD dwEventType )
 //This method should be called by each constructor.
 void CPUcontrolService::InitializeMemberVariables()
 {
+  LOGN("CPUcontrolServiceBase::InitializeMemberVariables()--begin")
   m_vbAlterCPUcoreDataForIPC = true ;
   m_vbServiceInitialized = false ;
   m_bProcess = true ;
@@ -579,7 +602,7 @@ void CPUcontrolService::InitializeMemberVariables()
     NULL,         // default security attributes
     TRUE,         // manual-reset event
     FALSE,         // initial state is non-signaled
-    "EndEvent"  // object name
+    _T("EndEvent")  // object name
     );
   //This method is form: http://msdn.microsoft.com/en-us/library/ms810429.aspx
   // Copy the address of the current object so we can access it from
@@ -603,6 +626,46 @@ void CPUcontrolService::FillCmdLineOptionsList()
     m_vecstrCmdLineOptions.push_back("-i >>service name<< Install "
         "this Windows service as name >>service name<<");
   }
+}
+
+inline BYTE * CPUcontrolService::GetCurrentCPUcoreData_Inline(
+  DWORD & dwByteSize)
+{
+  BYTE * ar_byPipeDataToSend = NULL;
+  LOGN("IPC: get_current_CPU_data--mp_dynfreqscalingthreadbase:"
+    << mp_dynfreqscalingthreadbase )
+  if( mp_dynfreqscalingthreadbase && mp_dynfreqscalingthreadbase->
+    IsStopped()
+    )
+  {
+  //      r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
+  //      dwByteSize = 0 ;
+    m_criticalsection_typeCPUcoreData.Enter() ;
+    GetUsageAndVoltageAndFrequencyForAllCores(
+      m_model.m_cpucoredata.m_arfCPUcoreLoadInPercent
+      , m_model.m_cpucoredata.GetNumberOfCPUcores() ) ;
+    //r_arbyPipeDataToSend =
+      m_ipc_datahandler.
+        GetCurrentCPUcoreAttributeValues( dwByteSize , false ) ;
+    ar_byPipeDataToSend = GetIPCdataThreadSafe(dwByteSize) ;
+    m_criticalsection_typeCPUcoreData.Leave() ;
+  }
+  else
+  {
+  //    InterlockedIncrement()
+  //TODO
+  //    IncrementNumberOfClientsWantingCPUcoreDataThreadSafe() ;
+  //TODO needs to be done only once for all client threads wanting CPU core
+  //data.
+  //    r_arbyPipeDataToSend = m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
+  //      dwByteSize ) ;
+  //    m_condition_typeGetCurrentCPUcoreData.
+
+    WakeUpCreateIPCdataThread() ;
+    ar_byPipeDataToSend = GetIPCdataThreadSafe(dwByteSize) ;
+  //      dwByteSize = m_ipc_datahandler.m_dwByteSize ;
+  }
+  return ar_byPipeDataToSend;
 }
 
 //Use inline->faster
@@ -654,62 +717,35 @@ inline BYTE * CPUcontrolService::GetIPCdataThreadSafe(DWORD & r_dwByteSize )
 
 #ifdef COMPILE_WITH_IPC
 DWORD CPUcontrolService::IPC_Message(
-  BYTE byCommand
-//  std::wstring & stdwstrMessage
-  , BYTE * & r_arbyPipeDataToSend
+//  BYTE byCommand
+////  std::wstring & stdwstrMessage
+//  , BYTE * & r_arbyPipeDataToSend
+  IPC_data & r_ipc_data
  )
 {
   DWORD dwByteSize = 0 ;
+  LOGN("CPUcontrolService::IPC_Message(...)--size of data to read in byte:"
+    << r_ipc_data.m_wPipeDataReadSizeInByte )
+
 //  LOGN("IPC message: " << (WORD) byCommand )
   //wide string because the power scheme may need it (e.g. for Chinese power
   // scheme names with > 256 chars in charset)
   std::wstring stdwstrMessage ;
-  switch(byCommand)
+  switch(r_ipc_data.m_byCommand)
   {
   case get_configuration_data:
-  {
+  { //Use a block here, else gcc 4.52: "error: jump to case label"
     LOGN("IPC: get_configuration_data")
     Xerces::VoltageForFrequencyConfiguration
       xerces_voltage_for_frequency_configuration( & m_model ) ;
-    r_arbyPipeDataToSend = xerces_voltage_for_frequency_configuration.
-      SerializeConfigToMemoryBuffer(dwByteSize) ;
+    r_ipc_data.m_ar_byDataToSend =
+      xerces_voltage_for_frequency_configuration.SerializeConfigToMemoryBuffer(
+        dwByteSize) ;
     LOGN("IPC: get_configuration_data end")
   }
     break ;
   case get_current_CPU_data :
-    LOGN("IPC: get_current_CPU_data--mp_dynfreqscalingthreadbase:"
-      << mp_dynfreqscalingthreadbase )
-    if( mp_dynfreqscalingthreadbase && mp_dynfreqscalingthreadbase->
-      IsStopped()
-      )
-    {
-//      r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
-//      dwByteSize = 0 ;
-      m_criticalsection_typeCPUcoreData.Enter() ;
-      GetUsageAndVoltageAndFrequencyForAllCores(
-        m_model.m_cpucoredata.m_arfCPUcoreLoadInPercent
-        , m_model.m_cpucoredata.GetNumberOfCPUcores() ) ;
-      //r_arbyPipeDataToSend =
-        m_ipc_datahandler.
-          GetCurrentCPUcoreAttributeValues( dwByteSize , false ) ;
-      r_arbyPipeDataToSend = GetIPCdataThreadSafe(dwByteSize) ;
-      m_criticalsection_typeCPUcoreData.Leave() ;
-    }
-    else
-    {
-//    InterlockedIncrement()
-    //TODO
-//    IncrementNumberOfClientsWantingCPUcoreDataThreadSafe() ;
-    //TODO needs to be done only once for all client threads wanting CPU core
-    //data.
-//    r_arbyPipeDataToSend = m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
-//      dwByteSize ) ;
-//    m_condition_typeGetCurrentCPUcoreData.
-
-      WakeUpCreateIPCdataThread() ;
-      r_arbyPipeDataToSend = GetIPCdataThreadSafe(dwByteSize) ;
-//      dwByteSize = m_ipc_datahandler.m_dwByteSize ;
-    }
+    r_ipc_data.m_ar_byDataToSend = GetCurrentCPUcoreData_Inline(dwByteSize);
     break ;
   case stop_service:
     LOGN("IPC requested to stop the service")
@@ -720,6 +756,7 @@ DWORD CPUcontrolService::IPC_Message(
     Stop() ;
     break ;
   case pause_service:
+   { //Use a block here, else gcc 4.52: "error: jump to case label"
     LOGN("IPC requested to pause the service")
     bool bAlreadyPaused = Pause() ;
     if( bAlreadyPaused )
@@ -730,10 +767,15 @@ DWORD CPUcontrolService::IPC_Message(
         "stopped" ;
     LOGWN_WSPRINTF(stdwstrMessage.c_str() )
     dwByteSize = stdwstrMessage.size() * 2 ;
-    r_arbyPipeDataToSend = new BYTE [ dwByteSize ] ;
-    memcpy( r_arbyPipeDataToSend, stdwstrMessage.data(), dwByteSize ) ;
+//    r_arbyPipeDataToSend = new BYTE [ dwByteSize ] ;
+//    memcpy( r_arbyPipeDataToSend, stdwstrMessage.data(), dwByteSize ) ;
+    r_ipc_data.m_ar_byDataToSend = new BYTE [ dwByteSize ] ;
+    memcpy( r_ipc_data.m_ar_byDataToSend, stdwstrMessage.data(),
+      dwByteSize ) ;
+   }
     break;
   case continue_service:
+    {  //Use a block here, else gcc 4.52: "error: jump to case label"
     LOGN("IPC requested to continue the service")
     bool bAlreadContinued = Continue() ;
     if( bAlreadContinued )
@@ -744,9 +786,13 @@ DWORD CPUcontrolService::IPC_Message(
         "running" ;
     LOGWN_WSPRINTF(stdwstrMessage.c_str() )
     dwByteSize = stdwstrMessage.size() * 2 ;
-    r_arbyPipeDataToSend = new BYTE [ dwByteSize ] ;
-    memcpy( r_arbyPipeDataToSend, stdwstrMessage.data(), dwByteSize ) ;
+//    r_arbyPipeDataToSend = new BYTE [ dwByteSize ] ;
+//    memcpy( r_arbyPipeDataToSend, stdwstrMessage.data(), dwByteSize ) ;
+    r_ipc_data.m_ar_byDataToSend = new BYTE [ dwByteSize ] ;
+    memcpy( r_ipc_data.m_ar_byDataToSend, stdwstrMessage.data(),
+      dwByteSize ) ;
     break;
+    }
   case stop_DVFS:
     //if( mp_dynfreqscalingthreadbase ) 
     //   mp_dynfreqscalingthreadbase->Stop() ;
@@ -755,6 +801,25 @@ DWORD CPUcontrolService::IPC_Message(
   case start_DVFS:
     StartDynVoltnFreqScaling() ;
     break ;
+  case setCPUcoreThrottleTemperature:
+  { //Use a block here, else gcc 4.52: "error: jump to case label"
+    LOGN("IPC: setCPUcoreThrottleTemperature begin")
+//    r_arbyPipeDataToSend = (dwByteSize) ;
+    wxCriticalSectionLocker cs_locker(m_model.m_cpucoredata.
+        m_wxcriticalsectionIPCdata);
+    if( r_ipc_data.m_wPipeDataReadSizeInByte >= sizeof(float) )
+    {
+      LOGN( "size of data to read >=" << sizeof(float) )
+      m_model.m_cpucoredata.m_fThrottleTempInDegCelsius =
+        * ( (float * ) r_ipc_data.m_ar_byPipeDataRead);
+      LOGN( "IPC: setCPUcoreThrottleTemperature after setting the CPU core "
+        "throttle temperature to "
+        << m_model.m_cpucoredata.m_fThrottleTempInDegCelsius
+        << " degrees Celsius")
+    }
+    LOGN("IPC: setCPUcoreThrottleTemperature end")
+  }
+  break;
   case setVoltageAndFrequency:
     //Setting the voltage and frequency means that it should not change. If
     //the DVFS thread would run it would surely be changed afterwards.
@@ -769,6 +834,7 @@ DWORD CPUcontrolService::IPC_Message(
     break ;
   }
 //  m_ipc_datahandler.GetResponse( byCommand ) ;
+  r_ipc_data.m_wDataToWriteSizeInByte = dwByteSize;
   return dwByteSize ;
 }
 #endif //#ifdef COMPILE_WITH_IPC
@@ -1007,7 +1073,8 @@ std::string CPUcontrolService::GetValueIfHasPrefix(
 
 std::string CPUcontrolService::GetLogFilePath()
 {
-  return GetValueIfHasPrefix( _T("log_file_path=") ) ;
+  return GetValueIfHasPrefix( //_T("log_file_path=")
+    "log_file_path=" );
 
   //The log file path may contain spaces. So it is easier to pass the
   //log file path as a separate command line argument (e.g. as
@@ -1156,7 +1223,7 @@ bool CPUcontrolService::Pause()
 int CPUcontrolService::requestOption(
     //Make as parameter as reference: more ressource-saving than
     //to return (=a copy).
-    std::vector<std::string> & r_vecstdstrParams 
+    std::vector<std::string> & r_vec_std_strParams 
     , std::tstring & r_tstrProgName )
 {
     bool bContinue = false ;
@@ -1184,7 +1251,8 @@ int CPUcontrolService::requestOption(
           "Input no text to choose the default name \"" << 
           stdstrDefaultProcessName << 
           "\"\nPress ENTER/ Return to finish.\n" ;
-        r_vecstdstrParams.push_back(_T("-i") );
+        r_vec_std_strParams.push_back( //_T("-i")
+          "-i" );
         //Valid input char->continue.
         bContinue = true ;
         break ;
@@ -1194,7 +1262,8 @@ int CPUcontrolService::requestOption(
           "Input no text to choose the default name \"" << 
           stdstrDefaultProcessName << 
           "\"\nPress ENTER/ Return to finish.\n" ;
-        r_vecstdstrParams.push_back(_T("-d") );
+        r_vec_std_strParams.push_back( //_T("-d")
+          "-d" );
         //Valid input char->continue.
         bContinue = true ;
         break ;
@@ -1205,7 +1274,8 @@ int CPUcontrolService::requestOption(
         "Input no text to choose the default name \"" <<
         stdstrDefaultProcessName <<
         "\"\nPress ENTER/ Return to finish.\n" ;
-      r_vecstdstrParams.push_back(_T("-d") );
+      r_vec_std_strParams.push_back( //_T("-d")
+        "-d" );
       //Valid input char->continue.
       bContinue = true ;
       break ;
@@ -1215,7 +1285,8 @@ int CPUcontrolService::requestOption(
         "Input no text to choose the default name \"" <<
         stdstrDefaultProcessName <<
         "\"\nPress ENTER/ Return to finish.\n" ;
-      r_vecstdstrParams.push_back(_T("-s") );
+      r_vec_std_strParams.push_back( //_T("-s")
+        "-s" );
       bContinue = true ;
       break ;
     case 'P':
@@ -1224,7 +1295,8 @@ int CPUcontrolService::requestOption(
         "Input no text to choose the default name \"" <<
         stdstrDefaultProcessName <<
         "\"\nPress ENTER/ Return to finish.\n" ;
-      r_vecstdstrParams.push_back(_T("-p") );
+      r_vec_std_strParams.push_back( //_T("-p")
+        "-p" );
       bContinue = true ;
       break ;
     //Just for exclusion of the "default" switch.
@@ -1246,11 +1318,12 @@ int CPUcontrolService::requestOption(
 //            r_vecstdstrParams.push_back( stdstrInput ) ;
         std::string & r_stdstrServiceName = stdstrInput.empty() ?
           stdstrDefaultProcessName : stdstrInput ;
-        r_vecstdstrParams.push_back( r_stdstrServiceName ) ;
+        r_vec_std_strParams.push_back( r_stdstrServiceName ) ;
         if ( toupper(nChar) == 'R' )
         {
-          r_vecstdstrParams.push_back( _T("-i") ) ;
-          r_vecstdstrParams.push_back( r_stdstrServiceName ) ;
+          r_vec_std_strParams.push_back( //_T("-i")
+            "-i" ) ;
+          r_vec_std_strParams.push_back( r_stdstrServiceName ) ;
         }
     }
     //ReadOptionsAsStringLine() ;
@@ -1843,12 +1916,12 @@ DWORD WINAPI CPUcontrolService::ServiceCtrlHandlerEx (
     return ERROR_CALL_NOT_IMPLEMENTED ;
 }
 
-void CPUcontrolService::ShowMessage( const std::string & cr_stdstrMessage )
+void CPUcontrolService::ShowMessage( const std::tstring & cr_std_tstrMessage )
 {
   ::MessageBox(
     //If this parameter is NULL, the message box has no owner window.
     NULL
-    , cr_stdstrMessage.c_str()
+    , cr_std_tstrMessage.c_str()
     //title bar
     //, "error initializing the CPU access"
     //, strProgramName.c_str()

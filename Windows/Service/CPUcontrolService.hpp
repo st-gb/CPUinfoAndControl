@@ -173,10 +173,11 @@ public :
     std::vector<std::string> & vecstdstrParams
     ) ;
   static void DeleteService(const TCHAR * cp_tchServiceName
-    , const std::string & stdtstrProgramName ) ;
+    , const std::tstring & cr_std_tstrProgramName ) ;
   void DisableOtherVoltageOrFrequencyChange() ;
   void EndAlterCurrentCPUcoreIPCdata() ;
   static void FillCmdLineOptionsList() ;
+  inline BYTE * GetCurrentCPUcoreData_Inline(DWORD & dwByteSize);
   inline BYTE * GetIPCdataThreadSafe(DWORD & r_dwByteSize) ;
   std::string GetLogFilePath() ;
   std::string GetValueIfHasPrefix(
@@ -188,11 +189,12 @@ public :
   void InitializeMemberVariables() ;
 #ifdef COMPILE_WITH_IPC
   DWORD IPC_Message(
-    BYTE byCommand
-//      //wide string because the string may be a chinese string for a power
-//      scheme
-//      , std::wstring & stdwstrMessage
-    , BYTE * & r_arbyPipeDataToSend
+//    BYTE byCommand
+////      //wide string because the string may be a chinese string for a power
+////      scheme
+////      , std::wstring & stdwstrMessage
+//    , BYTE * & r_arbyPipeDataToSend
+    IPC_data & r_ipc_data
     ) ;
 #endif //#ifdef COMPILE_WITH_IPC
   ////static
@@ -236,7 +238,7 @@ public :
   static bool ShouldStopService(
     const std::vector<std::string> & cr_vecstdstrParams );
   static VOID SvcDebugOut(LPSTR String, DWORD Status);
-  inline void ShowMessage( const std::string & cr_stdstrMessage ) ;
+  inline void ShowMessage( const std::tstring & cr_std_tstrMessage ) ;
   void Stop() ;
   //Must be "static" because no "this" (would be class-specific) pointer is
   //allowed(?).

@@ -41,7 +41,11 @@ namespace Xerces
     HandleDynamicVoltageAndFrequencyScalingXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
-    char * p_chXMLattributeName = "start_at_startup" ;
+    char * p_chXMLattributeName =
+      //Cast to avoid g++ (version 4.5.2) warning
+      //"deprecated conversion from string constant to 'char*' "
+      (char *)
+      "start_at_startup" ;
 //    bool bStartDVFSatStartup ;
     if( XercesAttributesHelper::GetAttributeValue(
       cr_xercesc_attributes
@@ -67,7 +71,11 @@ namespace Xerces
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
 //    bool bAppendProcessID ;
-    char * p_chXMLattributeName = "append_process_ID" ;
+    char * p_chXMLattributeName =
+      //Cast to avoid g++ (version 4.5.2) warning
+      //"deprecated conversion from string constant to 'char*' "
+      (char *)
+      "append_process_ID" ;
     if( //ConvertXercesAttributesValue<bool>(
       XercesAttributesHelper::GetAttributeValue(
       cr_xercesc_attributes

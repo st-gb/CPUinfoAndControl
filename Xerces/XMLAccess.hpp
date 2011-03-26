@@ -4,6 +4,7 @@
 
 //#ifdef COMPILE_WITH_XERCES
 
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //#include "../UserInterface.hpp"
 #include <ModelData/ModelData.hpp> //class Model
 //#include <xercesc/dom/DOMElement.hpp>

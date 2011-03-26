@@ -29,6 +29,12 @@
 
 //Needed for the exported functions.
 I_CPUaccess * g_p_cpuaccess = NULL;
+UserInterface * g_p_user_interface = NULL;
+
+//static
+I_CPUaccess * CPUcontrolBase::s_p_hardware_access = NULL;
+//static
+UserInterface * CPUcontrolBase::s_p_userinterface = NULL;
 
 void RemoveCarriageReturn(std::string & r_stdstr )
 {
@@ -62,10 +68,13 @@ CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
     (UserInterface *)
     cpc_userinterface )
 {
-  LOGN("CPUcontrolBase()")
+  LOGN(//"CPUcontrolBase()"
+    FULL_FUNC_NAME << "--begin")
+  g_p_user_interface = (UserInterface *) cpc_userinterface;
   InitMemberVariables() ;
   m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
-  LOGN("CPUcontrolBase() end")
+  LOGN(//"CPUcontrolBase() end"
+    FULL_FUNC_NAME << "--end")
 }
 
 CPUcontrolBase::~CPUcontrolBase()
@@ -74,14 +83,7 @@ CPUcontrolBase::~CPUcontrolBase()
   FreeRessources() ;
   if( m_bXercesSuccessfullyInitialized )
   {
-    //http://xerces.apache.org/xerces-c/program-3.html:
-    //"Independent of the API you want to use, DOM, SAX, or SAX2, your
-    //application must [...] and terminate it after you are done.
-    //When Terminate() was called in another block (even if in a function that
-    //is called in the same block) than program crash.
-    XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate();
-    LOG( "Xerces access terminated"//"\n"
-      ) ;
+    x86InfoAndControl::TerminateXerces();
   }
   LOGN("~CPUcontrolBase() end")
 }
@@ -195,6 +197,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     //Assign to the global variable so that the functions (ReadMSR(...) etc.)
     //that are exported by this executable can access the CPU registers.
     g_p_cpuaccess = mp_i_cpuaccess ;
+    s_p_hardware_access = mp_i_cpuaccess;
     //the main controller needs CPUID (I_CPUaccess class ) access in order to
     //retrieve the CPU by model, family etc.
     m_maincontroller.SetCPUaccess( mp_i_cpuaccess );
@@ -406,6 +409,196 @@ void CPUcontrolBase::PossiblyDeleteCPUcoreUsageGetter()
       mp_userinterface->CPUcoreUsageGetterDeleted() ;
   }
 }
+
+//from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
+//("Calling an Exported Function in an EXE from Within a DLL"):
+// Do exactly as you would export a DLL...
+#ifdef  __cplusplus
+extern "C"
+{
+#endif //#ifdef __cplusplus
+
+//see http://en.wikipedia.org/wiki/PCI_configuration_space:
+//static
+  CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
+  BOOL CPUcontrolBase::ReadPCIconfigSpace(
+  BYTE byPCIbus , //"8-bit PCI bus",
+  BYTE byDeviceAndFunction ,//"5-bit device, and 3-bit function"
+  DWORD dwRegisterAddress ,
+  PDWORD p_dwValue
+  )
+{
+//    LOGN("ReadPCIconfigSpace")
+//    BOOL boolRet = FALSE ;
+  //http://en.wikipedia.org/wiki/Static_variable:
+  //"Static local variables: variables declared as static inside a function
+  // are statically allocated while having the same scope as automatic local
+  // variables. Hence whatever values the function puts into its static
+  //local variables during one call will still be present when the function
+  //is called again."
+  //By using static: not created on stack (->faster)
+  static BOOL boolRet ;
+  boolRet = FALSE ;
+//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
+//    I_CPUaccess * p_cpuaccess = //wxGetApp().
+//      gp_cpucontrolbase->
+//      GetCPUaccess() ;
+  //May be NULL if CPUaccess' init failed
+  if( //p_cpuaccess
+      //g_p_cpuaccess
+      //mp_i_cpuaccess
+      s_p_hardware_access
+      )
+  {
+    boolRet = //p_cpuaccess->RdmsrEx(
+      g_p_cpuaccess->ReadPciConfigDwordEx(
+        ( byPCIbus << 8 ) | byDeviceAndFunction ,
+        dwRegisterAddress,
+        p_dwValue
+        ) ;
+  }
+  else
+    s_p_userinterface->MessageWithTimeStamp( L"the hardware /CPU access is "
+      "not initalized yet.");
+//    mp_userinterface->MessageWithTimeStamp("the hardware /CPU access is not "
+//      "initalized yet.");
+  #ifdef _DEBUG
+  //if( dwIndex == 0x1AD )
+//      DEBUG_COUT( "exe::ReadMSR(Index,affinityMask): "
+//        << dwIndex << " "
+//        << *p_dweax << " "
+//        << *p_dwedx << " "
+//        << affinityMask
+//        << "\n" )
+  #endif
+  return boolRet ;
+}
+
+//EXPORT
+//static
+  CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
+  BOOL CPUcontrolBase::ReadMSR(
+  DWORD dwIndex,    // MSR index
+  PDWORD p_dweax,     // bit  0-31
+  PDWORD p_dwedx,     // bit 32-63
+  DWORD_PTR affinityMask  // Thread Affinity Mask
+  )
+{
+//    LOGN("ReadMSR")
+//    BOOL boolRet = FALSE ;
+  //http://en.wikipedia.org/wiki/Static_variable:
+  //"Static local variables: variables declared as static inside a function
+  // are statically allocated while having the same scope as automatic local
+  // variables. Hence whatever values the function puts into its static
+  //local variables during one call will still be present when the function
+  //is called again."
+  //By using static: not created on stack (->faster)
+  static BOOL boolRet ;
+  boolRet = FALSE ;
+//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
+//    I_CPUaccess * p_cpuaccess = //wxGetApp().
+//      gp_cpucontrolbase->
+//      GetCPUaccess() ;
+  DEBUGN("Exe's exported ReadMSR("
+    << "MSR index:" << dwIndex
+    << " " << p_dweax
+    << " " << p_dwedx
+    << " Aff mask:" << affinityMask
+    << ")"
+    << " g_p_cpuaccess:" << g_p_cpuaccess
+    )
+  //May be NULL if CPUaccess' init failed
+  if( //p_cpuaccess
+    g_p_cpuaccess )
+  {
+    boolRet = //p_cpuaccess->RdmsrEx(
+      g_p_cpuaccess->RdmsrEx(
+      dwIndex,
+      p_dweax,// bit  0-31 (register "EAX")
+      p_dwedx,
+      //m_dwAffinityMask
+      affinityMask
+      ) ;
+    DEBUGN( "exe::ReadMSR after g_p_cpuaccess->RdmsrEx(Index,affinityMask): "
+      << dwIndex << " "
+      << * p_dweax << " "
+      << * p_dwedx << " "
+      << affinityMask
+      << "\n" )
+  }
+  #ifdef _DEBUG
+  //if( dwIndex == 0x1AD )
+  #endif
+  return boolRet ;
+}
+
+//static
+  CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
+  BOOL CPUcontrolBase::WriteMSR(
+  DWORD dwIndex,    // MSR index
+  DWORD dwEAX,     // bit  0-31
+  DWORD dwEDX,     // bit 32-63
+  DWORD_PTR affinityMask  // Thread Affinity Mask
+  )
+{
+//    BOOL boolRet = FALSE ;
+  //http://en.wikipedia.org/wiki/Static_variable:
+  //"Static local variables: variables declared as static inside a function
+  // are statically allocated while having the same scope as automatic local
+  // variables. Hence whatever values the function puts into its static
+  //local variables during one call will still be present when the function
+  //is called again."
+  //By using static: not created on stack (->faster)
+  static BOOL boolRet ;
+  boolRet = FALSE ;
+//    LOGN("WriteMSR")
+  DEBUGN("::WriteMSR(" << dwIndex
+    << "," << dwEAX
+    << "," << dwEDX
+    << "," << affinityMask
+    << ")")
+//    MessageBox(NULL,"exe::ReadMSR","From Exe",MB_OK);
+//    I_CPUaccess * p_cpuaccess = //wxGetApp().
+//      gp_cpucontrolbase->
+//      GetCPUaccess() ;
+  DEBUGN("::WriteMSR(...)--CPUaccess pointer:" << //p_cpuaccess
+    g_p_cpuaccess
+//    s_p_cpuaccess
+    )
+  //May be NULL if CPUaccess' init failed
+  if( //p_cpuaccess
+      g_p_cpuaccess )
+  {
+    boolRet = //p_cpuaccess->WrmsrEx(
+      g_p_cpuaccess->WrmsrEx(
+      dwIndex,
+      dwEAX,// bit  0-31 (register "EAX")
+      dwEDX,
+      //m_dwAffinityMask
+      affinityMask
+      ) ;
+  }
+  else
+    s_p_userinterface->MessageWithTimeStamp(L"the hardware /CPU access is not "
+      "initalized yet.");
+//    mp_userinterface->MessageWithTimeStamp("the hardware /CPU access is not "
+//      "initalized yet.");
+  DEBUGN("::WriteMSR(...) after p_cpuaccess->WrmsrEx(...)")
+  #ifdef _DEBUG
+  //if( dwIndex == 0x1AD )
+//      DEBUG_COUT( "exe::WriteMSR(Index,affinityMask): "
+//        << dwIndex << " "
+//        << dwEAX << " "
+//        << dwEDX << " "
+//        << affinityMask
+//        << "\n" )
+  #endif
+  return boolRet ;
+}
+
+#ifdef __cplusplus
+}
+#endif //#ifdef __cplusplus
 
 void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
 {

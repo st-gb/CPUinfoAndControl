@@ -31,6 +31,14 @@ class ICPUcoreUsageGetter ;
 class UserInterface ;
 
 //#define NULL 0
+//from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  //For "storage class" see
+  //  http://msdn.microsoft.com/en-us/library/dabb5z75%28v=vs.80%29.aspx
+  #define CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS //__declspec(dllexport)
+#else
+  #define CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS //__attribute__ ((visibility("default")))
+#endif // _WIN32
 
 //Base class for the service and the GUI.
 class CPUcontrolBase
@@ -67,9 +75,11 @@ protected:
 public:
   dynlibhandler_type m_dynlibhandler ;
   I_CPUaccess * mp_i_cpuaccess ;
+  static I_CPUaccess * s_p_hardware_access;
   MainController m_maincontroller ;
   Model m_model ;
   UserInterface * mp_userinterface ;
+  static UserInterface * s_p_userinterface;
 public:
 //  CPUcontrolBase() ;
   CPUcontrolBase(const UserInterface * const cpc_userinterface ) ;
@@ -88,7 +98,8 @@ public:
     ) ;
   //Created an object of subclass of I_CPUacces for CPU and PCIconfig etc.
   //access .
-  inline virtual void CreateHardwareAccessObject() ;
+  //inline
+    virtual void CreateHardwareAccessObject() ;
   inline bool GetUsageAndVoltageAndFrequencyForAllCores(
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores
@@ -97,12 +108,16 @@ public:
     LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores(...,"
       << wNumCPUcores << ")--before GetPercentalUsageForAllCores" )
     //TODO exit thread when getting CPU core load fails?
-    if( ! mp_cpucoreusagegetter || mp_cpucoreusagegetter &&
-        //mp_icpu->//GetPercentalUsageForBothCores
-        mp_cpucoreusagegetter->
-        GetPercentalUsageForAllCores( //mp_cpucoredata->
-        //m_arfCPUcoreLoadInPercent
-        ar_fCPUcoreLoadInPercent
+    if( ! mp_cpucoreusagegetter ||
+        //Use brackets to avoid g++ warning
+        //  "suggest parentheses around '&&' within '||'"
+        ( mp_cpucoreusagegetter &&
+          //mp_icpu->//GetPercentalUsageForBothCores
+          mp_cpucoreusagegetter->
+          GetPercentalUsageForAllCores( //mp_cpucoredata->
+          //m_arfCPUcoreLoadInPercent
+          ar_fCPUcoreLoadInPercent
+          )
         )
       )
     {
@@ -177,6 +192,29 @@ public:
   void PossiblyDeleteCPUcoreUsageGetter() ;
 
   I_CPUaccess * GetCPUaccess() { return mp_i_cpuaccess ; }
+
+  static CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
+  BOOL ReadPCIconfigSpace(
+    BYTE byPCIbus , //"8-bit PCI bus",
+    BYTE byDeviceAndFunction ,//"5-bit device, and 3-bit function"
+    DWORD dwRegisterAddress ,
+    PDWORD p_dwValue
+    );
+  static CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
+    BOOL ReadMSR(
+    DWORD dwIndex,    // MSR index
+    PDWORD p_dweax,     // bit  0-31
+    PDWORD p_dwedx,     // bit 32-63
+    DWORD_PTR affinityMask  // Thread Affinity Mask
+    );
+  static CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
+    BOOL WriteMSR(
+    DWORD dwIndex,    // MSR index
+    DWORD dwEAX,     // bit  0-31
+    DWORD dwEDX,     // bit 32-63
+    DWORD_PTR affinityMask  // Thread Affinity Mask
+    );
+
   virtual void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) {}
   //inline
     void SetDynVoltnFreqScalingType_Inline();

@@ -35,6 +35,7 @@
 GetFilenameWithoutExtension.hpp>
 #include <InputOutput/WriteFileContent/WriteFileContent.hpp>
 #include <Controller/IPC/I_IPC.hpp> //for "get_current_CPU_data"
+#include <Controller/IPC/IPC_data.hpp> //class IPC_data
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess, CPUaccessException
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
 #include <Controller/Logger/Logger.hpp> //class Logger
@@ -136,8 +137,9 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
   LOGN("app's destructor: before leaving IPC2InProgramData crit sec ")
   m_model.m_cpucoredata.wxconditionIPC2InProgramData.Leave() ;
   LOGN("app's destructor: before freeing taskbar object")
-  if( mp_taskbaricon)
-    delete mp_taskbaricon;
+//  if( mp_taskbaricon)
+//    delete mp_taskbaricon;
+  DeleteTaskBarIcon();
   LOGN("end of app's destructor")
 }
 
@@ -606,8 +608,11 @@ int wxX86InfoAndControlApp::OnExit()
 //  else the icon may not be hidden after exit.
     mp_taskbaricon->RemoveIcon() ;
     LOGN("after removing the system tray icon")
-    //Also deleted in the tbtest sample (not automatically deleted?!).
-    delete mp_taskbaricon;
+
+//    //Also deleted in the tbtest sample (not automatically deleted?!).
+//    delete mp_taskbaricon;
+    DeleteTaskBarIcon();
+
     LOGN("OnExit() after deleting the system tray icon")
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
@@ -658,10 +663,13 @@ void //wxX86InfoAndControlApp::
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCobject ) ;
   IPC_Client * p_i_ipcclient = p_wxx86infoandcontrolapp->m_p_i_ipcclient ;
+  p_wxx86infoandcontrolapp->s_ipc_data.m_byCommand = get_current_CPU_data;
+  p_wxx86infoandcontrolapp->s_ipc_data.m_wDataToWriteSizeInByte = 1;
   if( p_i_ipcclient &&
       //sending command succeeded
 //    r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) &&
-      p_i_ipcclient->SendCommandAndGetResponse(get_current_CPU_data) &&
+      p_i_ipcclient->SendCommandAndGetResponse(//get_current_CPU_data
+        p_wxx86infoandcontrolapp->s_ipc_data) &&
   //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
 //  if(
 //    r_namedpipeclient.m_arbyIPCdata &&
@@ -689,7 +697,7 @@ void //wxX86InfoAndControlApp::
         p_i_ipcclient->m_arbyIPCdata ,
 //        r_namedpipeclient.m_dwIPCdataSizeInByte ,
         p_i_ipcclient->m_dwIPCdataSizeInByte ,
-        L"IPC_buffer" ,
+        (WCHAR * ) L"IPC_buffer" ,
         p_wxx86infoandcontrolapp->m_model ,
         p_wxx86infoandcontrolapp ,
         p_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler
@@ -1008,7 +1016,8 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
       m_p_i_ipcclient->m_arbyIPCdata ,
       //m_ipcclient.m_dwIPCdataSizeInByte ,
       m_p_i_ipcclient->m_dwIPCdataSizeInByte ,
-      L"IPC_buffer" ,
+      //Avoid g++ warning "deprecated conversion from string constant to 'WCHAR*'"
+      (WCHAR *) L"IPC_buffer" ,
       m_model ,
       this ,
 //      m_sax2_ipc_current_cpu_data_handler
@@ -1078,15 +1087,43 @@ inline bool wxX86InfoAndControlApp::IPC_ClientIsConnected_Inline()
     && m_p_i_ipcclient->IsConnected() ;
 }
 
-inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
-  BYTE byCommand )
+BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse(
+  BYTE byCommand,
+  DWORD dwSizeOfDataToSendInBytes /* = 1 */,
+  BYTE ar_byDataToSend [] /* = NULL */
+  )
 {
+  return IPC_ClientSendCommandAndGetResponse_Inline(
+    byCommand,
+    dwSizeOfDataToSendInBytes,
+    ar_byDataToSend);
+}
+
+inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
+  BYTE byCommand,
+  DWORD dwSizeOfDataToSendInBytes /* = 1 */,
+  BYTE ar_byDataToSend [] /* = NULL */
+  )
+{
+  LOGN("IPC_ClientSendCommandAndGetResponse_Inline(" << (WORD) byCommand
+    << "," << dwSizeOfDataToSendInBytes << "," << ar_byDataToSend
+    << ") begin")
   //Lock concurrent access to p_i_ipcclient from another thread.
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     m_wxcriticalsectionIPCobject ) ;
   if( //Must be the 1st evaluation: check whether pointer is NULL
     m_p_i_ipcclient )
-    return m_p_i_ipcclient->SendCommandAndGetResponse( byCommand ) ;
+  {
+    IPC_data ipc_data;
+    ipc_data.m_byCommand = byCommand;
+    ipc_data.m_ar_byDataToSend = ar_byDataToSend;
+    ipc_data.m_wDataToWriteSizeInByte = dwSizeOfDataToSendInBytes
+//      //for the command byte
+//      + 1
+      ;
+    return m_p_i_ipcclient->SendCommandAndGetResponse( //byCommand
+      ipc_data) ;
+  }
   return 0 ;
 }
 
@@ -1764,83 +1801,6 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
     mp_frame->RedrawEverything() ;
     LOGN("after redraweverything")
   }
-}
-
-bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
-{
-//      m_systemtray_icon_notification_window = mp_frame->GetHandle() ;
-#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
-  mp_frame = p_mf ;
-      //from wxWidgets sample tbtest.cpp
-      // Created:     01/02/97
-      // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
-  if( ! mp_taskbaricon )
-  {
-    mp_taskbaricon = new TaskBarIcon(mp_frame);
-//      m_taskbaricon.SetMainFrame(mp_frame) ;
-    if( mp_taskbaricon )
-    {
-//    #if defined(__WXCOCOA__)
-//      m_dockIcon = new TaskBarIcon(wxTaskBarIcon::DOCK);
-//    #endif
-//      wxIcon wxicon(
-//        //Use wxT() macro to enable to compile with both unicode and ANSI.
-//        wxT("x86IandC.ico") ,
-//        wxBITMAP_TYPE_ICO
-//        ) ;
-//      if( wxicon.IsOk() )
-      wxIcon wxicon ;
-      if( //http://docs.wxwidgets.org/stable/wx_wxicon.html:
-          //"true if the operation succeeded, false otherwise."
-        wxicon.LoadFile(
-        //Use wxT() macro to enable to compile with both unicode and ANSI.
-        wxT("x86IandC.ico") ,
-        wxBITMAP_TYPE_ICO
-        )
-        )
-      {
-        if( mp_taskbaricon->SetIcon( //wxICON(sample),
-            //m_taskbaricon.SetIcon(
-            wxicon ,
-            mp_modelData->m_stdtstrProgramName
-            )
-          )
-        {
-          LOGN("set system tray icon")
-          return true ;
-        }
-        else
-//          ::wxMessageBox(wxT("Could not set task bar icon."),
-//            getwxString(m_stdtstrProgramName) );
-          MessageWithTimeStamp( L"Could not set task bar icon." );
-      }
-    }
-  }
-#endif //#ifdef COMPILE_WITH_TASKBAR
-
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
-      HICON hicon = (HICON) ::LoadImage(
-           //http://msdn.microsoft.com/en-us/library/ms648045%28v=VS.85%29.aspx:
-           //"To load a stand-alone resource (icon, cursor, or bitmap file)�for
-      //     example, c:\myimage.bmp�set this parameter to NULL."
-           NULL ,//__in  HINSTANCE hinst,
-      //     __in  LPCTSTR lpszName,
-           "x86IandC.ico" ,
-           IMAGE_ICON ,//__in  UINT uType,
-      //     0 ,//__in  int cxDesired,
-      //     0, //__in  int cyDesired,
-           16,
-           16,
-           LR_LOADFROMFILE //__in  UINT fuLoad
-         );
-//      std::cout << "wndproc hicon:" << hicon << "\n" ;
-      m_systemtrayaccess.m_hwndReceiveIconNotifications =
-          (HWND) m_systemtray_icon_notification_window ;
-      m_systemtrayaccess.ShowIconInSystemTray(hicon,"x86Info&Control") ;
-  #endif //  #ifdef USE_WINDOWA_API_SYSTEM_TRAY_ICON
-#endif
-  return false ;
 }
 
 void wxX86InfoAndControlApp::StartService()

@@ -115,7 +115,9 @@ private:
   I_CPUcontroller * mp_i_cpucontroller ;
   int m_nLowestIDForSetVIDnFIDnDID ;
   int m_nNumberOfMenuIDsPerCPUcore ;
+public:
   Model * mp_model ;
+private:
   std::map<WORD, I_CPUcontrollerAction *> m_stdmapwmenuid2i_cpucontrolleraction ;
   std::map<//classes derived from wxObject
     WORD, //wxObject *
@@ -341,7 +343,7 @@ public:
     //wxevent 
     ) ;
   void OnPaint(wxPaintEvent & event) ;
-  void OnPstateDialog( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnVoltageAndFrequencySettingsDialog( wxCommandEvent & WXUNUSED(event) ) ;
   void OnMSR( wxCommandEvent & WXUNUSED(event) ) ;
   void OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) ) ;
   void OnDynamicallyCreatedUIcontrol(wxCommandEvent & event);
@@ -355,6 +357,7 @@ public:
   void OnConnectToOrDisconnectFromService(wxCommandEvent & WXUNUSED(event) ) ;
   void OnContinueService(wxCommandEvent & WXUNUSED(event));
   void OnPauseService(wxCommandEvent & WXUNUSED(event));
+//  void OnShowVoltageAndFrequencySettingsDialog(wxCommandEvent & );
   void OnStartService(wxCommandEvent & WXUNUSED(event));
   void OnStopService(wxCommandEvent & WXUNUSED(event));
   void OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event));
@@ -387,6 +390,7 @@ public:
   void RecreateDisplayBuffers() ;
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
+  inline void Show1VoltnFreqSettingsDialogForEveryCPUcore(wxCommandEvent &);
   inline void ShowHighestCPUcoreTemperatureInTaskBar(
     I_CPUcontroller * p_i_cpucontroller) ;
   void StoreCurrentVoltageAndFreqInArray(

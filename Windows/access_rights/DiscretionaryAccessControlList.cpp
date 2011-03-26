@@ -348,17 +348,34 @@ BYTE CreateSecAttributes(
     PACL pACL = NULL;
     PSECURITY_DESCRIPTOR pSD = NULL;
     EXPLICIT_ACCESS ea[2];
-    SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-    SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+    SID_IDENTIFIER_AUTHORITY SIDAuthWorld =
+      //Begin of braces for struct. (Avoid g++ warning "missing braces
+      //around initializer for 'BYTE [6]'")
+      { SECURITY_WORLD_SID_AUTHORITY
+      //End of braces for struct.
+      };
+//    SID_IDENTIFIER_AUTHORITY * p_sid_identifier_authorityWorld =
+//      & SECURITY_WORLD_SID_AUTHORITY;
+    SID_IDENTIFIER_AUTHORITY SIDAuthNT =
+      //Begin of braces for struct. (Avoid g++ warning "missing braces
+      //around initializer for 'BYTE [6]'")
+      {
+      SECURITY_NT_AUTHORITY
+      //End of braces for struct.
+      };
     //SECURITY_ATTRIBUTES sa;
 //    LONG lRes;
     HKEY hkSub = NULL;
 
     // Create a well-known SID for the Everyone group.
-    if(!AllocateAndInitializeSid(&SIDAuthWorld, 1,
-                     SECURITY_WORLD_RID,
-                     0, 0, 0, 0, 0, 0, 0,
-                     &pEveryoneSID))
+    if( ! AllocateAndInitializeSid(
+        & SIDAuthWorld,
+//        & SECURITY_WORLD_SID_AUTHORITY ,
+        1,
+         SECURITY_WORLD_RID,
+         0, 0, 0, 0, 0, 0, 0,
+         & pEveryoneSID
+         ))
     {
         printf("AllocateAndInitializeSid Error %lu\n", GetLastError());
         goto Cleanup;

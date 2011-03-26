@@ -15,6 +15,7 @@
 //#include <Controller/multithread/native_API_event_type.hpp>
 #include <Controller/multithread/condition_type.hpp>
 #include <Controller/multithread/thread_type.hpp>
+#include <Controller/IPC/IPC_data.hpp> //class IPC_data
 //#include <Controller/MainController.hpp> //class MainController
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/UserInterface.hpp>//base class UserInterface
@@ -106,6 +107,7 @@ private:
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
 public:
+  IPC_data s_ipc_data;
   wxString m_wxstrCPUcontrollerDynLibFilePath ;
 private:
 #ifdef COMPILE_WITH_SHARED_MEMORY
@@ -210,6 +212,7 @@ public:
   {
     return mp_cpucontroller ;
   }
+  void DeleteTaskBarIcon();
   I_CPUaccess * GetCPUaccess()
   {
     return mp_i_cpuaccess ;
@@ -226,7 +229,18 @@ public:
   inline bool IPCclientConnect_Inline(std::string & r_stdstrMessage) ;
   bool IPC_ClientIsConnected() ;
   inline bool IPC_ClientIsConnected_Inline() ;
-  inline BYTE IPC_ClientSendCommandAndGetResponse_Inline( BYTE byCommand ) ;
+  inline BYTE IPC_ClientSendCommandAndGetResponse_Inline(
+    BYTE byCommand,
+    DWORD dwSizeOfDataToSendInBytes =
+      //A command usually needs 1 byte
+      1,
+    BYTE ar_byDataToSend [] = NULL) ;
+  BYTE IPC_ClientSendCommandAndGetResponse(
+    BYTE byCommand,
+    DWORD dwSizeOfDataToSendInBytes =
+      //A command usually needs 1 byte
+      1,
+    BYTE ar_byDataToSend [] = NULL);
   void MessageWithTimeStamp(const std::wstring & cr_stdwstr);
   void MessageWithTimeStamp(const LPWSTR cp_lpwstrMessage);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
@@ -241,6 +255,8 @@ public:
   void SaveVoltageForFrequencySettings();
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
+  inline void ShowTaskBarIconViaWindowsAPI();
+  inline bool ShowTaskBarIconUsingwxWidgets();
   void StartService() ;
   void StopService() ;
 };

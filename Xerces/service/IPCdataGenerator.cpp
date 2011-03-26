@@ -134,11 +134,13 @@ namespace Xerces
     m_p_i_cpucontroller(NULL) ,
     mr_model (r_model )
   {
+    LOGN( FULL_FUNC_NAME << "--begin")
     //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"
     //: program crash if more than 1 thread entered
     //"GetCurrentCPUcoreAttributeValues" and so more than 1 time Initalize() was
     // called.
     m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
+    LOGN( FULL_FUNC_NAME << "--end")
   }
 
   IPCdataHandler::~IPCdataHandler()
@@ -146,9 +148,7 @@ namespace Xerces
   //  if( m_arbyData )
   //    delete [] m_arbyData ;
     PossiblyReleaseMemoryThreadSafe() ;
-    LOGN("BEFORE terminating Xerces") ;
-    XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate();
-    LOGN("after terminating Xerces") ;
+    x86InfoAndControl::TerminateXerces();
   }
 
   inline void IPCdataHandler::EnterReadByIPCthreadCriticalSection()

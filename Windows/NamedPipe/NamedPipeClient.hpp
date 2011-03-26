@@ -62,7 +62,12 @@ public:
     //__inout_opt
     LPOVERLAPPED lpOverlapped
     ) ;
-  BYTE SendCommandAndGetResponse(BYTE byMessage) ;
+//  BYTE SendCommandAndGetResponse(BYTE byMessage) ;
+  BYTE SendCommandAndGetResponse(IPC_data & ipc_data);
+  inline DWORD SendDataSizeInByte(
+    //  BYTE * ar_byData,
+    DWORD dwByteSize
+    );
   inline BOOL Write(
     LPCVOID lpBuffer,
     //__in
@@ -72,6 +77,9 @@ public:
     //__inout_opt
     LPOVERLAPPED lpOverlapped
     ) ;
+  inline BYTE WriteCommand(BYTE byCommand);
+  inline BYTE WriteDataSizeInByte(IPC_data & r_ipc_data);
+  inline BYTE WriteDataBelongingToCommand(IPC_data & r_ipc_data);
   NamedPipeClient(Model & r_model ) ;
   ~NamedPipeClient() ;
 };

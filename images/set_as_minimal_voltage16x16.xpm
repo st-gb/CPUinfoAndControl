@@ -1,5 +1,8 @@
 /* XPM */
-static char * set_as_minimal_voltage16x16_xpm[] = {
+static char * set_as_minimal_voltage16x16_xpm[] = 
+//avoid g++ warning: deprecated conversion from string constant to 'char*'
+//(char * [] ) 
+{
 "16 16 4 1",
 " 	c None",
 ".	c #FFFFFF",

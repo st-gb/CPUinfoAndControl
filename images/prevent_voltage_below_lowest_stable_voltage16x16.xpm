@@ -1,5 +1,8 @@
 /* XPM */
-static char * prevent_voltage_below_lowest_stable_voltage16x16_xpm[] = {
+static char * prevent_voltage_below_lowest_stable_voltage16x16_xpm[] = 
+//avoid g++ warning: deprecated conversion from string constant to 'char*'
+//(char * [] ) 
+{
 "16 16 5 1",
 " 	c None",
 ".	c #FF0000",

@@ -11,11 +11,14 @@
 #include "stdafx.h"
 #endif
 
+//for CALLING_CONVENTION
+#include <Controller/CPUcontrollerDynLib/calling_convention.h>
 //For GetCurrentReferenceClock(...)
 #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 #include <Controller/CPU-related/Intel/Intel_registers.h>
 //A I_CPUaccess pointer is passed as parameter in Init(...)
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+#include <preprocessor_macros/show_via_GUI.h> //SHOW_VIA_GUI(...)
 
 //Used by "Nehalem.hpp". The alternative would be:
 // -in "Nehalem.hpp" that may be used in both I_CPUcontroller-derived class and
@@ -64,10 +67,10 @@ GetCurrentProcessExeFileNameWithoutDirs.hpp>
   //This logger variable _must_ have another name than in the executable this
   //dynamic library is attached to under _Linux_ . Else when this dyn lib is
   //unloaded the exe's logger destructor is called.
-  Logger g_loggerDynLib ;
+//  Logger g_loggerDynLib ;
 #endif
 
-#define INSERT_DEFAULT_P_STATES
+//#define INSERT_DEFAULT_P_STATES
 #ifdef INSERT_DEFAULT_P_STATES
   #include <ModelData/ModelData.hpp>
 #endif
@@ -111,29 +114,47 @@ void InitOtherOSthanWindows()
     //GetStdString( GetExeFileNameWithoutDirs() ) ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
     ("NehalemControllerDLL_log.txt") ;
-  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
-  DEBUGN_LOGGER_NAME(g_loggerDynLib,"this Log file is open")
+//  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
+  g_logger.OpenFile2( stdstrFilename ) ;
+  DEBUGN_LOGGER_NAME(//g_loggerDynLib,
+    g_logger, "this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif //#ifdef _DEBUG
   AssignPointersToExportedExeMSRfunctions(
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;
-  DEBUGN_LOGGER_NAME(g_loggerDynLib, "g_pfnreadmsr:" << g_pfnreadmsr
-      << "g_pfn_write_msr:" << g_pfn_write_msr)
+  DEBUGN_LOGGER_NAME(//g_loggerDynLib,
+    g_logger, "g_pfnreadmsr:" << g_pfnreadmsr
+    << "g_pfn_write_msr:" << g_pfn_write_msr)
   gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
 }
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 bool InitWindows()
 {
+#ifdef _TEST_VERSION
+//  MessageBox(
+//    NULL,
+//    _T("InitWindows"),
+//    _T("error"),
+//    MB_OK
+//    );
+#endif
   #ifdef _DEBUG
   std::string strExeFileNameWithoutDirs = GetStdString(
     ::GetExeFileNameWithoutDirs() ) ;
+#ifdef WESTMERE
   std::string stdstrFilename = strExeFileNameWithoutDirs +
-  ("NehalemControllerDLL_log.txt") ;
-  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
-  DEBUGN_LOGGER_NAME(g_loggerDynLib, "this Log file is open")
+    ("WestmereControllerDLL_log.txt") ;
+#else
+  std::string stdstrFilename = strExeFileNameWithoutDirs +
+    ("NehalemControllerDLL_log.txt") ;
+#endif
+//  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
+  g_logger.OpenFile2( stdstrFilename ) ;
+  DEBUGN_LOGGER_NAME(//g_loggerDynLib
+    g_logger , "Windows version--this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif
   //gp_nehalem_clocksnothaltedcpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
@@ -335,7 +356,10 @@ float *
 
 EXPORT
   BYTE
-  NEHALEM_DLL_CALLING_CONVENTION
+  //NEHALEM_DLL_CALLING_CONVENTION
+//  _stdcall
+//  _cdecl
+  CALLING_CONVENTION
   GetCurrentVoltageAndFrequency(
     float * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -347,15 +371,21 @@ EXPORT
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
+  static float fReferenceClockInMHz = 0.0;
+
+//  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency begin") )
+
 //  //Intel: 198H 408 IA32_PERF_STATUS
   g_byValue1 =
 //    g_pi_cpuaccess->RdmsrEx(
-    (*g_pfnreadmsr) (
+    (* g_pfnreadmsr) (
     IA32_PERF_STATUS,
     & g_dwValue1,// lowmost bit 0-31 (register "EAX")
     & g_dwValue2, //highmost bit 32-63
     1 << wCoreID //m_dwAffinityMask
     ) ;
+//  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after rdmsr") )
+
   if( g_byValue1 )
   {
     * p_fVoltageInVolt = 0 ;
@@ -368,6 +398,9 @@ EXPORT
 #ifdef STATIC_133MHZ_REFERENCE_CLOCK
     * p_fReferenceClockInMHz = 133.3 ;
 #else
+//    SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency before "
+//      "GetCurrentReferenceClock") )
+
     //This call sets g_fReferenceClockInMHz to the current reference clock.
     //This update of the value would be senseful for setting the CPU core
     //via "frequency" as parameter value the next time.
@@ -375,22 +408,30 @@ EXPORT
       ////720qm has 1,600 M TSC clockticks/s for multiplier 12 -> ": 12"
 //      12.0 ,
       gs_fTimeStampCounterMultiplier ,
-      * p_fReferenceClockInMHz ,
+//      * p_fReferenceClockInMHz ,
+      fReferenceClockInMHz,
       1000 , //min. timespan in ms
       10000 ) ;
-#endif
+//    SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after "
+//      "GetCurrentReferenceClock") )
+    * p_fReferenceClockInMHz = fReferenceClockInMHz;
+//    * p_fReferenceClockInMHz = 133.0;
+#endif //#ifdef STATIC_133MHZ_REFERENCE_CLOCK
     DEBUGN("dyn lib GetCurrentVoltageAndFrequency--ref clock:"
       << * p_fReferenceClockInMHz )
+
     //Timespan too high or too low.
     if( * p_fReferenceClockInMHz == 0.0 )
       * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
     else
       g_fReferenceClockInMHz = * p_fReferenceClockInMHz ;
+
     DEBUGN("for core " << wCoreID << ": calculated reference clock in MHz: "
       << //g_fReferenceClockInMHz
       * p_fReferenceClockInMHz )
 //      * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
   }
+//  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency end") )
   return g_byValue1 ;
 }
 

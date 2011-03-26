@@ -2,6 +2,7 @@
 #include <Controller/CPUcontrolBase.hpp>
 #include <Controller/exported_functions.h> //for AM_LIB_EXPORT
 #include <Controller/I_CPUaccess.hpp>
+#include <UserInterface/UserInterface.hpp> //class UserInterface
 #include "exported_functions.h"
 //#include <windef.h>
 //#include <Windows_compatible_typedefs.h> //DWORD etc.
@@ -12,6 +13,7 @@
 
 //extern CPUcontrolBase * gp_cpucontrolbase ;
 extern I_CPUaccess * g_p_cpuaccess ;
+extern UserInterface * g_p_user_interface;
 
 ////from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
 //#ifdef _WIN32
@@ -62,6 +64,9 @@ extern "C"
           p_dwValue
           ) ;
     }
+    else
+      g_p_user_interface->MessageWithTimeStamp(L"the hardware /CPU access is "
+        "not initalized yet.");
     #ifdef _DEBUG
     //if( dwIndex == 0x1AD )
 //      DEBUG_COUT( "exe::ReadMSR(Index,affinityMask): "
@@ -124,6 +129,9 @@ extern "C"
         << affinityMask
         << "\n" )
     }
+    else
+      g_p_user_interface->MessageWithTimeStamp(L"the hardware /CPU access is "
+        "not initalized yet.");
     #ifdef _DEBUG
     //if( dwIndex == 0x1AD )
     #endif
@@ -172,6 +180,9 @@ extern "C"
         affinityMask
         ) ;
     }
+    else
+      g_p_user_interface->MessageWithTimeStamp(L"the hardware /CPU access is "
+        "not initalized yet.");
     DEBUGN("::WriteMSR(...) after p_cpuaccess->WrmsrEx(...)")
     #ifdef _DEBUG
     //if( dwIndex == 0x1AD )

@@ -41,6 +41,7 @@ public:
     wxString & r_wxstrFilePath 
     , I_CPUaccess * p_cpuaccess 
     , UserInterface * p_userinterface
+    , Model * p_model
     ) ;
   ~wxDynLibCPUcontroller() ;
   void DecreaseVoltageBy1Step(float & r_fVoltage) ;

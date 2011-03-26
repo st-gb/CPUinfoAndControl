@@ -186,10 +186,17 @@ void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
       unsigned char c;
       p_wxsocketbase->Read( & c, 1 );
       BYTE * arbyIPCdataToSend ;
+      IPC_data ipc_data;
       DWORD dwNumberOfBytes = m_p_serverprocess->IPC_Message(
-        c, arbyIPCdataToSend) ;
-      p_wxsocketbase->Write(arbyIPCdataToSend, dwNumberOfBytes) ;
-      delete [] arbyIPCdataToSend ;
+//        c,
+//        arbyIPCdataToSend
+        ipc_data
+        ) ;
+      p_wxsocketbase->Write(//arbyIPCdataToSend
+        ipc_data.m_ar_byDataToSend
+        , dwNumberOfBytes) ;
+//      delete [] arbyIPCdataToSend ;
+      delete [] ipc_data.m_ar_byDataToSend;
 
 //      switch (c)
 //      {

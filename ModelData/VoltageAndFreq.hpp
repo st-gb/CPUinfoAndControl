@@ -1,6 +1,7 @@
 #pragma once //include guard
 
-#include "../global.h" //for BYTE, WORD
+//#include "../global.h" //for BYTE, WORD
+#include <windef.h> //for BYTE, WORD
 
 class VoltageAndFreq
 {

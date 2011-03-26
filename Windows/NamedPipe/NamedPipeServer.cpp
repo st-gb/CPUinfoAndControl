@@ -5,6 +5,8 @@
 #include <Controller/character_string/format_as_string.hpp>
 #include <Windows/access_rights/DiscretionaryAccessControlList.h>
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+//For "::GetErrorMessageFromLastErrorCodeA()"
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #ifdef __CYGWIN__
   #include <mingw/tchar.h> //for _T(...)
 #else
@@ -35,154 +37,457 @@ public:
   }
 };
 
+inline BYTE ReadAndHandleNumberOfBytesToRead(
+  HANDLE handlePipe // handle to pipe
+  //chRequest,    // buffer to receive data
+  , DWORD & dwNumberOfBytesToRead
+  )
+{
+  static BOOL fSuccess;
+  static DWORD dwBytesRead;
+  LOGN("waiting blocked for reading from pipe client"
+    //" with handle " << hPipe
+    )
+  // Read client requests from the pipe.
+  fSuccess = ::ReadFile(
+    handlePipe        // handle to pipe
+    //chRequest,    // buffer to receive data
+    , & dwNumberOfBytesToRead
+    //PIPE_BUFFER_SIZE * sizeof(TCHAR), // size of buffer
+    , 4
+    , & dwBytesRead, // number of bytes read
+    NULL // not overlapped I/O
+    );
+  if( ! fSuccess )
+  {
+    DWORD dwLastError = ::GetLastError() ;
+    LOGN("ReadPipeData(...)--Reading \"the # of bytes to read\" failed:"
+      << ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
+    return ReadingIPCdataFailed;
+  }
+  LOGN("ReadPipeData(...)--Reading \"the # of bytes to read\" succeeded." )
+  if( dwBytesRead != 4 )
+  {
+    LOGN("ReadPipeData(...)--Read " << dwBytesRead << " instead of 4 bytes "
+      "for \"the # of bytes to read\" failed:" )
+    return ReadingIPCdataFailed;
+  }
+  LOGN("ReadPipeData(...)--success: read " << dwBytesRead << " bytes "
+    "for \"the # of bytes to read\" ." )
+  if( dwNumberOfBytesToRead < 1)
+  {
+    LOGN("ReadPipeData(...)--error: \"the # of bytes to read\" is < 1" )
+    return ReadingIPCdataFailed;
+  }
+  LOGN("ReadPipeData(...)--Reading \"the # of bytes to read\" succeeded:"
+    " should read " << dwNumberOfBytesToRead << " bytes." )
+  return ReadingIPCdataSucceeded;
+}
+
+inline BYTE ReadAndHandleCommand(
+  HANDLE handlePipe,
+  IPC_data & r_ipc_data)
+{
+  static BOOL fSuccess;
+  DWORD dwBytesRead;
+  // Read client requests from the pipe.
+  fSuccess = ::ReadFile(
+     handlePipe // handle to pipe
+     //chRequest,    // buffer to receive data
+  //       , & byCommand
+     , & r_ipc_data.m_byCommand
+     //PIPE_BUFFER_SIZE * sizeof(TCHAR), // size of buffer
+     , 1
+     , & dwBytesRead, // number of bytes read
+     NULL);        // not overlapped I/O
+  //OutputPipeInfo();
+  if (! fSuccess //|| dwBytesRead == 0
+      )
+  {
+    DWORD dwLastError = ::GetLastError() ;
+    LOGN("ReadPipeData(...)--Reading the command from pipe failed: " <<
+      ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
+  //      break;
+    return //ar_byPipeDataRead;
+      ReadingIPCdataFailed;
+  }
+  LOGN("ReadPipeData(...)--Reading the command from pipe succeeded.")
+  if( dwBytesRead != 1)
+  {
+    LOGN("ReadPipeData(...)--Read <> 1 byte.")
+    return ReadingIPCdataFailed;
+  }
+  LOGN("ReadPipeData(...)--Reading 1 byte for command from pipe succeeded.")
+  return ReadingIPCdataSucceeded;
+}
+
+inline BYTE ReadDataBelongingToTheCommand(
+  HANDLE handlePipe,
+  DWORD dwNumberOfBytesToRead,
+  IPC_data & r_ipc_data
+  )
+{
+  LOGN("ReadDataBelongingToTheCommand(...," << dwNumberOfBytesToRead
+    << ",...)--begin")
+//  static BYTE * ar_byPipeDataRead = NULL;
+//  r_ipc_data.m_wPipeDataReadSizeInByte = NULL;
+  if( dwNumberOfBytesToRead > 1 ) //Read data additionally to the command.
+  {
+    LOGN("ReadDataBelongingToTheCommand(...)--Should read data belonging to "
+      "the command.")
+    //1 byte (for the command) read yet.
+    -- dwNumberOfBytesToRead;
+//    ar_byPipeDataRead = new BYTE[dwNumberOfBytesToRead];
+    r_ipc_data.m_ar_byPipeDataRead = new BYTE[dwNumberOfBytesToRead];
+    if( //ar_byPipeDataRead
+        r_ipc_data.m_ar_byPipeDataRead )
+    {
+      LOGN("ReadDataBelongingToTheCommand(...)--Allocating the byte array "
+        "of size" << dwNumberOfBytesToRead << " for reading into succeeded.")
+      static BOOL fSuccess;
+      DWORD dwBytesRead;
+      // Read client requests from the pipe.
+      fSuccess = ::ReadFile(
+         handlePipe        // handle to pipe
+         //chRequest,    // buffer to receive data
+         , //ar_byPipeDataRead
+         r_ipc_data.m_ar_byPipeDataRead
+         //PIPE_BUFFER_SIZE * sizeof(TCHAR), // size of buffer
+         , dwNumberOfBytesToRead
+         , & dwBytesRead, // number of bytes read
+         NULL);        // not overlapped I/O
+      LOGN("ReadDataBelongingToTheCommand(...)--after reading from pipe--"
+          "# bytes read:" << dwBytesRead)
+      //Assign for
+//      r_ipc_data.m_ar_byPipeDataRead = ar_byPipeDataRead;
+      LOGN("ReadDataBelongingToTheCommand(...)--success: " << fSuccess );
+      //OutputPipeInfo();
+      if (! fSuccess || dwBytesRead == 0)
+      {
+        DWORD dwLastError = ::GetLastError() ;
+        LOGN("ReadPipeData(...)--reading the data belonging to the "
+          "command from pipe failed: "
+          << ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
+  //      break;
+        return //ar_byPipeDataRead;
+          ReadingIPCdataFailed;
+      }
+#ifdef COMPILE_WITH_LOG
+      std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
+        = format_output_data( r_ipc_data.m_ar_byPipeDataRead, dwBytesRead, 100) ;
+      LOGN("Data belonging to the command read:" << stdstrBytes)
+#endif
+      r_ipc_data.m_wPipeDataReadSizeInByte = dwBytesRead;
+      LOGN("ReadDataBelongingToTheCommand(...)--return " <<
+        ReadingIPCdataSucceeded );
+      return ReadingIPCdataSucceeded;
+    }
+    else
+    {
+      LOGN("Allocating an array with size of " << dwNumberOfBytesToRead
+          << " failed:" << ::GetErrorMessageFromLastErrorCodeA() )
+      return ReadingIPCdataFailed;
+    }
+  }
+  else
+  {
+    LOGN("ReadDataBelongingToTheCommand(...)--Should NOT read data belonging"
+      " to the command.")
+    return ReadingIPCdataSucceeded;
+  }
+  return ReadingIPCdataFailed;
+}
+
+inline //BYTE *
+  BYTE ReadPipeData(
+  HANDLE handlePipe,
+////  BYTE * & r_ar_byPipeDataRead,
+//  DWORD & dwBytesRead,
+//  BYTE byCommand
+  IPC_data & r_ipc_data
+  )
+{
+//  static BYTE * ar_byPipeDataRead = NULL;
+//  static DWORD dwBytesRead;
+  r_ipc_data.m_ar_byPipeDataRead = NULL;
+  static BYTE byReturnValue;
+  static DWORD dwNumberOfBytesToRead = 0;
+//  static DWORD dwBytesRead = 0;
+
+  byReturnValue = ReadAndHandleNumberOfBytesToRead(
+    handlePipe        // handle to pipe
+    //chRequest,    // buffer to receive data
+    , dwNumberOfBytesToRead
+    );
+  if( byReturnValue == ReadingIPCdataFailed )
+    return ReadingIPCdataFailed;
+//  if( //fSuccess &&
+//      dwBytesRead == 4 && dwNumberOfBytesToRead > 0
+//    )
+  {
+    byReturnValue = ReadAndHandleCommand(
+      handlePipe,
+//      & r_ipc_data.m_byCommand
+      r_ipc_data
+      );
+    if( byReturnValue == ReadingIPCdataFailed )
+      return ReadingIPCdataFailed;
+
+    byReturnValue = ReadDataBelongingToTheCommand(
+      handlePipe,
+      dwNumberOfBytesToRead,
+      r_ipc_data
+      );
+    if( byReturnValue == ReadingIPCdataFailed )
+    {
+      return ReadingIPCdataFailed;
+    }
+//    LOGN("read message from pipe " //<< hPipe
+//      )
+  }
+  LOGN("ReadPipeData--return" << ReadingIPCdataSucceeded)
+  return //ar_byPipeDataRead;
+    ReadingIPCdataSucceeded;
+//    ReadingIPCdataFailed;
+}
+
+inline BYTE WriteSizeInByte(
+  HANDLE handlePipe,
+  DWORD dwByteSize
+  )
+{
+  static bool fSuccess;
+  static DWORD dwNumBytesWritten = 0;
+  //        DEBUGN("before write 4 bytes to pipe")
+  LOGN("before write the size(4 bytes) "
+//  #ifdef _DEBUG
+//    << dwByteSize <<
+//  #endif
+    "to pipe "// << hPipe
+    "size in byte:" << dwByteSize
+    )
+  // Write the reply to the pipe.
+  fSuccess = ::WriteFile(
+    handlePipe,        // handle to pipe
+    & dwByteSize , //chReply,      // buffer to write from
+    4 ,//cbReplyBytes, // number of bytes to write
+    & dwNumBytesWritten,   // number of bytes written
+   NULL // not overlapped I/O
+   );
+  ::FlushFileBuffers(handlePipe);
+  //        DEBUGN( dwNumBytesWritten << " bytes written to pipe " << hPipe )
+  LOGN( dwNumBytesWritten << " bytes written to pipe " //<< hPipe
+    )
+  //  if( fSuccess )
+  //    DEBUGN( " successfully written to pipe")
+  //  else
+  //    DEBUGN( "error writing to pipe")
+  if (! fSuccess )
+  {
+    DWORD dwLastError = ::GetLastError() ;
+    LOGN("WriteDataToPipe(...)--error writing \"the size of data to write\" "
+      "to the pipe:" << ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
+  //          delete [] arbyPipeDataToSend ;
+  //    break;
+  //    return;
+    return WritingIPCdataFailed;
+  }
+  LOGN("WriteDataToPipe(...)--writing \"the size of data to write\" succeeded")
+  if( dwNumBytesWritten != 4)
+  {
+    LOGN("WriteDataToPipe(...)--error: did not write 4 bytes to the pipe")
+    return WritingIPCdataFailed;
+  }
+  return WritingIPCdataSucceeded;
+}
+
+inline BYTE WriteAndHandleCommandData(
+  HANDLE handlePipe,
+  BYTE ar_byPipeDataToSend [],
+  DWORD dwByteSize
+  )
+{
+  if( ! dwByteSize )
+  {
+    LOGN("WriteAndHandleCommandData--not writing data because size in byte is 0")
+    return WritingIPCdataSucceeded;
+  }
+  if( ! ar_byPipeDataToSend )
+  {
+    LOGN("WriteAndHandleCommandData--not writing data because pointer to "
+      "data is 0")
+    return WritingIPCdataSucceeded;
+  }
+
+//  if( //> 0 bytes, array <> NULL
+//    dwByteSize && ar_byPipeDataToSend )
+  {
+  //          DEBUGN("before write " << dwByteSize << " bytes to pipe")
+    LOGN("before writing the actual data to the pipe " //<< hPipe
+  #ifdef _DEBUG
+      "( " << dwByteSize << "byte) "
+  #endif
+      )
+  #ifdef COMPILE_WITH_LOG
+    std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
+      = format_output_data( ar_byPipeDataToSend, dwByteSize, 100) ;
+  #endif
+    LOGN("send data to pipe:" << stdstrBytes ) ;
+    static bool fSuccess;
+    static DWORD dwNumBytesWritten = 0;
+    fSuccess = ::WriteFile(
+       handlePipe,        // handle to pipe
+       ar_byPipeDataToSend , //chReply,      // buffer to write from
+       dwByteSize ,//cbReplyBytes, // number of bytes to write
+       & dwNumBytesWritten,   // number of bytes written
+       NULL // not overlapped I/O
+       );
+    ::FlushFileBuffers(handlePipe);
+    //The array is copied for every pipe client--delete it after sending
+    //now.
+    delete [] ar_byPipeDataToSend ;
+  //          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
+    LOGN( //dwNumBytesWritten <<
+      " bytes written to pipe " //<< hPipe
+      )
+    if( fSuccess )
+      //DEBUGN( " successfully written to pipe")
+      LOGN( "successfully written data to pipe")
+    else
+    {
+      DWORD dwLastError = ::GetLastError() ;
+  //            DEBUGN( "error writing to pipe")
+      LOGN("WriteDataToPipe(...)--error writing \"the data belonging to "
+        "the command\" to the pipe:"
+        << LocalLanguageMessageFromErrorCodeA(dwLastError) )
+      return WritingIPCdataFailed;
+    }
+    if (//! fSuccess ||
+        dwByteSize != dwNumBytesWritten )
+    {
+      LOGN("WriteDataToPipe(...)--the number of data to send is <> the "
+        "number of data written.")
+  //            delete [] arbyPipeDataToSend ;
+  //        break;
+  //        return;
+      return WritingIPCdataFailed;
+    }
+    return WritingIPCdataSucceeded;
+  }
+  return WritingIPCdataFailed;
+}
+
+inline //void
+  BYTE WriteDataToPipe(
+  HANDLE handlePipe,
+  BYTE ar_byPipeDataToSend [],
+  DWORD dwByteSize
+//  IPC_data & r_ipc_data
+  )
+{
+  static BYTE byReturnValue;
+  byReturnValue = WriteSizeInByte(
+    handlePipe,
+    dwByteSize
+    );
+  if( byReturnValue == WritingIPCdataFailed )
+    return WritingIPCdataFailed;
+//  if( fSuccess )
+  {
+    byReturnValue = WriteAndHandleCommandData(
+      handlePipe,
+      ar_byPipeDataToSend,
+      dwByteSize
+      );
+    if( byReturnValue == WritingIPCdataFailed )
+      return WritingIPCdataFailed;
+  }
+  return WritingIPCdataSucceeded;
+}
+
 VOID PipeClientThread(LPVOID lpvParam) 
 { 
-   //TCHAR chRequest[PIPE_BUFFER_SIZE]; 
-   //TCHAR chReply[PIPE_BUFFER_SIZE]; 
+  //TCHAR chRequest[PIPE_BUFFER_SIZE];
+  //TCHAR chReply[PIPE_BUFFER_SIZE];
 //   DWORD cbBytesRead, cbReplyBytes, cbWritten;
-   LOGN("pipe thread for client")
+  LOGN("pipe thread for client")
  
-   // The thread's parameter is a handle to a pipe instance. 
-   //hPipe = (HANDLE) lpvParam; 
+  // The thread's parameter is a handle to a pipe instance.
+  //hPipe = (HANDLE) lpvParam;
 //   NamedPipeServer * p_namedpipeserver = (NamedPipeServer *) lpvParam ;
-   PipeClientThreadAttributes * p_pipeclientthreadattributes =
+  PipeClientThreadAttributes * p_pipeclientthreadattributes =
      (PipeClientThreadAttributes * ) lpvParam ;
 //   DEBUGN("p_namedpipeserver: " << p_namedpipeserver)
-   DEBUGN("p_pipeclientthreadattributes: " << p_pipeclientthreadattributes)
-   if( //p_namedpipeserver
-       p_pipeclientthreadattributes )
-   {
-     BOOL fSuccess;
-     BYTE * arbyPipeDataToSend ;
-     BYTE byCommand ;
-     DWORD dwBytesRead ;
-     DWORD dwByteSize ;
-     DWORD dwNumBytesWritten ;
-     HANDLE hPipe;
-     NamedPipeServer * p_namedpipeserver =
-         p_pipeclientthreadattributes->mp_namedpipeserver ;
+  DEBUGN("p_pipeclientthreadattributes: " << p_pipeclientthreadattributes)
+  if( //p_namedpipeserver
+    p_pipeclientthreadattributes )
+  {
+//    BOOL fSuccess;
+//    BYTE * ar_byPipeDataToSend ;
+//    BYTE * ar_byPipeDataRead ;
+//    BYTE byCommand ;
+//    DWORD dwBytesRead ;
+//    DWORD dwByteSize ;
+//    DWORD dwNumBytesWritten ;
+    HANDLE handlePipe;
+    NamedPipeServer * p_namedpipeserver =
+      p_pipeclientthreadattributes->mp_namedpipeserver ;
 //     std::wstring stdwstrMessage ;
 //     hPipe = p_namedpipeserver->m_handlePipe ;
-     hPipe = p_pipeclientthreadattributes->m_handlePipe ;
-     DEBUGN("pipe handle: " << hPipe )
-     while (1) 
-     { 
-        LOGN("waiting blocked for reading from pipe client"
-          //" with handle " << hPipe
-          )
-       // Read client requests from the pipe. 
-        fSuccess = ::ReadFile(
-           hPipe        // handle to pipe 
-           //chRequest,    // buffer to receive data 
-           , & byCommand
-           //PIPE_BUFFER_SIZE * sizeof(TCHAR), // size of buffer 
-           , 1
-           , & dwBytesRead, // number of bytes read
-           NULL);        // not overlapped I/O 
-        //OutputPipeInfo();
-        if (! fSuccess || dwBytesRead == 0)
-        {
-          DWORD dw = ::GetLastError() ;
-          LOGN("reading from pipe failed: " <<
-            LocalLanguageMessageFromErrorCodeA(dw))
-          break;
-        }
-        LOGN("read message from pipe " //<< hPipe
-          )
-        //switch( byCommand )
-        //{
-        //  case stop_service:
-        //}
-        //}
+    handlePipe = p_pipeclientthreadattributes->m_handlePipe ;
+    DEBUGN("pipe handle: " << handlePipe )
+    IPC_data ipc_data;
+    BYTE byReadOrWritePipeReturnCode;
+    //while (1)
+    do
+    {
+      //ar_byPipeDataRead = ReadPipeData(
+      byReadOrWritePipeReturnCode = ReadPipeData(
+        handlePipe, //ar_byPipeDataRead,
+//        dwBytesRead,
+//        byCommand
+        ipc_data
+        );
+      if( byReadOrWritePipeReturnCode == ReadingIPCdataFailed)
+      {
+        LOGN("PipeClientThread(...)--Reading data size, the command or "
+          "data belonging to command from pipe failed.")
+        if( ipc_data.m_ar_byPipeDataRead )
+          delete [] ipc_data.m_ar_byPipeDataRead;
+        break;
+      }
+      //switch( byCommand )
+      //{
+      //  case stop_service:
+      //}
+      //}
 //        LOGN("received client command: " << (WORD) byCommand )
-        dwByteSize =
-        p_namedpipeserver->mp_serverprocess->IPC_Message(
-          byCommand ,
-//          stdwstrMessage
-          arbyPipeDataToSend
-          ) ;
+      p_namedpipeserver->mp_serverprocess->IPC_Message(
+//        byCommand ,
+//        ar_byPipeDataRead,
+////          stdwstrMessage
+//        ar_byPipeDataToSend
+        ipc_data
+        ) ;
+      if( ipc_data.m_ar_byPipeDataRead )
+      {
+        //Free memory for data after processing the data.
+        delete [] ipc_data.m_ar_byPipeDataRead;
+        //Mark as empty.
+        ipc_data.m_ar_byPipeDataRead = NULL;
+      }
 //        DWORD dwByteSize = p_namedpipeserver->mr_ipc_datahandler.GetResponse(
 //          byCommand ,
 //          arbyPipeDataToSend
 //          ) ;
-        //GetAnswerToRequest(chRequest, chReply, &cbReplyBytes); 
-   
-//        DEBUGN("before write 4 bytes to pipe")
-        LOGN("before write the size(4 bytes) "
-#ifdef _DEBUG
-          << dwByteSize <<
-#endif
-          "to pipe "// << hPipe
-          )
-     // Write the reply to the pipe.
-        fSuccess = ::WriteFile(
-                   hPipe,        // handle to pipe
-                   & dwByteSize , //chReply,      // buffer to write from
-                   4 ,//cbReplyBytes, // number of bytes to write
-                   & dwNumBytesWritten,   // number of bytes written
-                   NULL // not overlapped I/O
-                   );
-        ::FlushFileBuffers(hPipe);
-//        DEBUGN( dwNumBytesWritten << " bytes written to pipe " << hPipe )
-        LOGN( dwNumBytesWritten << " bytes written to pipe " //<< hPipe
-          )
-        if( fSuccess )
-          DEBUGN( " successfully written to pipe")
-        else
-          DEBUGN( "error writing to pipe")
-        if (! fSuccess )
-        {
-          DWORD dw = ::GetLastError() ;
-          LOGN("error writing to pipe:"
-            << LocalLanguageMessageFromErrorCodeA(dw) )
-//          delete [] arbyPipeDataToSend ;
-          break;
-        }
-        if( fSuccess  )
-        {
-          if( //> 0 bytes, array <> NULL
-            dwByteSize && arbyPipeDataToSend )
-          {
-  //          DEBUGN("before write " << dwByteSize << " bytes to pipe")
-            LOGN("before writing the actual data to the pipe " //<< hPipe
-#ifdef _DEBUG
-              "( " << dwByteSize << "byte) "
-#endif
-              )
-            std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
-              = format_output_data( arbyPipeDataToSend, dwByteSize, 100) ;
-            DEBUGN("send data to pipe:" << stdstrBytes ) ;
-            fSuccess = ::WriteFile(
-               hPipe,        // handle to pipe
-               arbyPipeDataToSend , //chReply,      // buffer to write from
-               dwByteSize ,//cbReplyBytes, // number of bytes to write
-               & dwNumBytesWritten,   // number of bytes written
-               NULL // not overlapped I/O
-               );
-            ::FlushFileBuffers(hPipe);
-            //The array is copied for every pipe client--delete it after sending
-            //now.
-            delete [] arbyPipeDataToSend ;
-//          DEBUGN(dwNumBytesWritten << " bytes written to pipe")
-            LOGN( //dwNumBytesWritten <<
-              " bytes written to pipe " //<< hPipe
-              )
-            if( fSuccess )
-              //DEBUGN( " successfully written to pipe")
-              LOGN( "successfully written data to pipe")
-            else
-  //            DEBUGN( "error writing to pipe")
-              LOGN( "error writing to pipe")
-            if (! fSuccess || dwByteSize != dwNumBytesWritten )
-            {
-              DWORD dw = ::GetLastError() ;
-              LOGN("error writing to pipe:"
-                << LocalLanguageMessageFromErrorCodeA(dw) )
-  //            delete [] arbyPipeDataToSend ;
-              break;
-            }
-          }
-        }
+      //GetAnswerToRequest(chRequest, chReply, &cbReplyBytes);
+
+      byReadOrWritePipeReturnCode = WriteDataToPipe(
+        handlePipe,
+        ipc_data.m_ar_byDataToSend,
+        ipc_data.m_wDataToWriteSizeInByte
+        );
+
 //        delete [] arbyPipeDataToSend ;
 //        //Writing 0 bytes signals the end of the data
 //        ::WriteFile(
@@ -192,16 +497,19 @@ VOID PipeClientThread(LPVOID lpvParam)
 //           & dwNumBytesWritten,   // number of bytes written
 //           NULL
 //           );
-    } //while
-     //was created on heap by thread for "create pipe client thread "
-     delete p_pipeclientthreadattributes ;
+    } while( byReadOrWritePipeReturnCode == WritingIPCdataSucceeded );
+    if( byReadOrWritePipeReturnCode == WritingIPCdataFailed )
+      LOGN("PipeClientThread(...)--Writing data size, the command and "
+        "data belonging to command from pipe failed.")
+    //was created on heap by thread for "create pipe client thread "
+    delete p_pipeclientthreadattributes ;
   // Flush the pipe to allow the client to read the pipe's contents 
   // before disconnecting. Then disconnect the pipe, and close the 
   // handle to this pipe instance. 
    
-     ::FlushFileBuffers(hPipe); 
-     ::DisconnectNamedPipe(hPipe); 
-     ::CloseHandle(hPipe); 
+     ::FlushFileBuffers(handlePipe); 
+     ::DisconnectNamedPipe(handlePipe); 
+     ::CloseHandle(handlePipe); 
    }
    LOGN("end of pipe client thread with thread ID:" << ::GetCurrentThreadId() )
 //   criticalsection_locker_type csl(

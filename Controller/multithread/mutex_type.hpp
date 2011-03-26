@@ -8,7 +8,13 @@
 #ifdef _MSC_VER //Microsoft compiler
 #include <wx/msw/winundef.h>
 #endif
-#include <wx/thread.h> //for class wxCriticalSection
+
+//gc++ error: "C:\Libraries\wxWidgets-2.9.1\include/wx/thread.h:463:12:
+// error: declaration does not declare anything"
+//( at line "    static void Yield();" )
+//#include <wx/thread.h> //for class wxCriticalSection
+
+class wxMutex;
 
 typedef wxMutex mutex_type ;
 
