@@ -1,5 +1,8 @@
 /* XPM */
-static char * increase16x16_xpm[] = {
+static char * increase16x16_xpm[] = 
+//avoid g++ warning: deprecated conversion from string constant to 'char*'
+//(char * [] ) 
+{
 "16 16 2 1",
 " 	c #FFFFFF",
 ".	c #000000",

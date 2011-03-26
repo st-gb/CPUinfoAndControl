@@ -1,4 +1,6 @@
 #pragma once //include guard
+#ifndef WX_DYN_LIB_CPU_CORE_USAGE_GETTER_HPP
+#define WX_DYN_LIB_CPU_CORE_USAGE_GETTER_HPP
 
 #include <wx/dynlib.h> //for wxDynamicLibrary
 #include <ModelData/CPUcoreData.hpp>
@@ -55,3 +57,4 @@ public:
   BYTE Init() { return 0 ; }
 
 };
+#endif //#ifndef WX_DYN_LIB_CPU_CORE_USAGE_GETTER_HPP

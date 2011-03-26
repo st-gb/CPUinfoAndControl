@@ -62,13 +62,16 @@ namespace x86InfoAndControl
   bool InitializeXerces() ;
   inline void TerminateXerces()
   {
+    LOGN("BEFORE terminating Apache Xerces") ;
     //http://xerces.apache.org/xerces-c/program-3.html:
     //"Independent of the API you want to use, DOM, SAX, or SAX2, your
-    //application must [...] and terminate it after you are done.
+    //application must
+    //   initialize the Xerces system before using the API, and
+    //terminate it after you are done.
     //When Terminate() was called in another block (even if in a function that
-    //is called in the same block) than program crash.
+    //is called in the same block) then program crash.
     XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate();
-    LOGN("Xerces access terminated")
+    LOGN("Apache Xerces access terminated")
   }
 }
 

@@ -287,6 +287,9 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
            //TODO Mysterious g++ error
            //"error: `ostrstreamErrorDesc' was not declared in this scope"
            //ostrstreamErrorDesc.str()
+           //Avoid g++ warning "deprecated conversion from string constant to
+           //'char*'"
+           (char *)
            "Other error initializing the CPU/hardware access library "
            "\"WinRing0\":\n this may be due to "
            "insufficient rights, so running this program as administrator "

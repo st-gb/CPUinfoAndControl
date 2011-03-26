@@ -8,6 +8,9 @@
 #ifndef CPUCONTROLLERDYNLIB_FUNCTION_DEFINITIONS_H_
 #define CPUCONTROLLERDYNLIB_FUNCTION_DEFINITIONS_H_
 
+//CALLING_CONVENTION
+#include <Controller/CPUcontrollerDynLib/calling_convention.h>
+
 //typedef unsigned char BYTE ;
 typedef unsigned short WORD;
 ////typedef WORD near * PWORD;
@@ -21,12 +24,7 @@ typedef WORD * PWORD;
 //-and also by the CPU controller DLL source code.
 
 //( * dll_GetCurrentPstate_type)
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #define CALLING_CONVENTION _cdecl
-#else
-  #define CALLING_CONVENTION /* ->empty */
-#endif
-//#define CALLING_CONVENTION __stdcall
+
 
 //name_or_func_ptr may be
 //-"(*pfn)" for function pointer declarations or

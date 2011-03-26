@@ -839,7 +839,13 @@ namespace Xerces
           //"DOMException", "DOMLSException"
           parseURI( //p_chFullXMLFilePath
             mpc_chFullXMLFilePath );
-        LOGN( "File \"" << mpc_chFullXMLFilePath << "\" successfully parsed.")
+        if( mp_dom_document )
+          LOGN( FULL_FUNC_NAME //__FUNCTION__ //<< __func__
+            << ": File \"" << mpc_chFullXMLFilePath << "\" "
+            "successfully parsed.")
+        else
+          LOGN( __FUNCTION__ << ": Failed to parse file \""
+              << mpc_chFullXMLFilePath << "\".")
         //If parseURI throws an exception this instruction is not executed.
         byRet = 1 ;
       }
@@ -852,6 +858,10 @@ namespace Xerces
         XERCES_CPP_NAMESPACE::XMLString::release(&message);
 //          return FAILURE ;
       }
+      //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMLSParser.html
+      // #9fa70302351aecdabddb71c4dfd0d626:
+      //"PARSE_ERR: Starting from Xerces-C++ 4.0.0 this exception is raised
+      //if the DOMLSParser was unable to load the XML document."
       catch(const XERCES_CPP_NAMESPACE::DOMLSException &
         cr_xercesc_domls_exception )
       {

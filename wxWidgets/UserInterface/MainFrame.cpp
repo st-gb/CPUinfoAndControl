@@ -39,7 +39,7 @@
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 ////GetFilenameWithoutExtension(const std::string &)
-//#include <Controller/FileSystem/GetFilenameWithoutExtension/\
+//#include <Controller/FileSystem/GetFilenameWithoutExtension/\_
 //GetFilenameWithoutExtension.hpp>
 ////for ::GetErrorMessageFromLastErrorCodeA(...)
 //#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
@@ -106,12 +106,14 @@ enum
 {
   ID_Quit = 1
   , ID_About
-  , ID_Attach_CPU_controller_DLL
+  , ID_AttachCPUcontrollerDynLib
   , ID_DetachCPUcontrollerDynamicLibrary
   , ID_SetCPUcontrollerDynLibForThisCPU
+
   , ID_AttachCPUusageGetterDynLib
   , ID_DetachCPUusageGetterDynLib
   , ID_SetCPUusageGetterDynLibForThisCPU
+
   , ID_MinimizeToSystemTray
 //#ifdef COMPILE_WITH_MSR_EXAMINATION
   , ID_MSR
@@ -138,6 +140,7 @@ enum
   , ID_SaveAsDefaultPstates
   , ID_Collect_As_Default_Voltage_PerfStates
   , ID_FindDifferentPstates
+  , ID_ShowVoltageAndFrequencySettingsDialog
 //#endif
   , TIMER_ID
 //#ifdef _WINDOWS
@@ -150,7 +153,7 @@ enum
   ,ID_IncreaseVoltageForCurrentPstate
 #endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
   ,
-  ID_LastStaticID
+  ID_LastStaticEventID
 };
 
 //Static class variables must (also) be declared/ defined in the source file.
@@ -171,7 +174,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_ERASE_BACKGROUND(MainFrame::OnEraseBackground)
   EVT_MENU(ID_Quit, MainFrame::OnQuit)
   EVT_MENU(ID_About, MainFrame::OnAbout)
-  EVT_MENU(ID_Attach_CPU_controller_DLL, MainFrame::OnAttachCPUcontrollerDLL)
+  EVT_MENU(ID_AttachCPUcontrollerDynLib, MainFrame::OnAttachCPUcontrollerDLL)
   EVT_MENU(ID_DetachCPUcontrollerDynamicLibrary, MainFrame::OnDetachCPUcontrollerDLL)
   EVT_MENU(ID_AttachCPUusageGetterDynLib, MainFrame::OnAttachCPUcoreUsageGetterDLL)
   EVT_MENU(ID_DetachCPUusageGetterDynLib, MainFrame::OnDetachCPUcoreUsageGetterDLL)
@@ -200,7 +203,10 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU( ID_FindDifferentPstates ,
     MainFrame::OnFindDifferentPstates )
   EVT_MENU( ID_Collect_As_Default_Voltage_PerfStates ,
-    MainFrame::OnCollectAsDefaultVoltagePerfStates ) 
+    MainFrame::OnCollectAsDefaultVoltagePerfStates )
+  EVT_MENU( ID_ShowVoltageAndFrequencySettingsDialog ,
+    MainFrame:://OnShowVoltageAndFrequencySettingsDialog
+    OnVoltageAndFrequencySettingsDialog)
 
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   EVT_MENU( ID_ContinueService ,
@@ -264,12 +270,13 @@ _T("Detach CPU usage getter dynamic library")
 
 inline void MainFrame::CreateFileMenu()
 {
+  LOGN("CreateFileMenu() begin")
   wxMenuItem * p_wxmenuitem ;
   mp_wxmenuFile = new wxMenu;
   //wxMenu * p_wxmenuCore1 = new wxMenu;
 //  wxMenu * p_wxmenuNorthBridge = new wxMenu;
   mp_wxmenuFile->Append( ID_About, _T("&About...") );
-  p_wxmenuitem = mp_wxmenuFile->Append( ID_Attach_CPU_controller_DLL,
+  p_wxmenuitem = mp_wxmenuFile->Append( ID_AttachCPUcontrollerDynLib,
     ATTACH_CPU_CONTROLLER_DYNAMIC_LIBRARY_T_STRING );
   if( ! mp_wxx86infoandcontrolapp->GetCPUaccess() )
     p_wxmenuitem->SetHelp (
@@ -628,6 +635,7 @@ MainFrame::MainFrame(
 
 MainFrame::~MainFrame()
 {
+  LOGN("Begin of main frame's destructor")
   //TODO Error here.the problem was with destructor of wxMenuBar.->create 
   //wxMenuBar via "new"?
   //for(BYTE byCoreID = 0 ; byCoreID < //m_byCoreNumber
@@ -644,13 +652,17 @@ MainFrame::~MainFrame()
   if( mp_calculationthread )
     delete mp_calculationthread ;
 	#endif
+  //Only terminates correctly when deleted from here (is also deleted in
+  //the wxTopLevelWindow's (wxDialog's) destructor in wxWidgets' "tbtest.cpp"
+  //from the "taskbar" sample.
+  mp_wxx86infoandcontrolapp->DeleteTaskBarIcon();
   LOGN("end of main frame's destructor")
 }
 
 //void MyFrame::AddMenu()
 //{
 //  //wxEventTableEntry(type, winid, idLast, fn, obj)
-//  EVT_MENU(ID_LastStaticID+1,MyFrame::OnDynamicMenu);
+//  EVT_MENU(ID_LastStaticEventID+1,MyFrame::OnDynamicMenu);
 //}
 //
 //void MyFrame::OnDynamicMenu(wxCommandEvent &event)
@@ -868,24 +880,28 @@ void MainFrame::Create1DialogAndMenuForAllCores()
   p_wxmenuCore = new wxMenu;
   if( p_wxmenuCore )
   {
-    p_wxmenuCore->Append(ID_LastStaticID, _T("set frequency and voltage ") );
+    p_wxmenuCore->Append(//ID_LastStaticEventID
+      ID_ShowVoltageAndFrequencySettingsDialog,
+      _T("set frequency and voltage ") );
     mp_wxmenubar->Append(
       p_wxmenuCore,
       //We need a wxT() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
       wxT("core(s)")
       );
-    Connect( ID_LastStaticID, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
-      wxCommandEventHandler(
-        MainFrame::OnPstateDialog )
-      );
+//    Connect( ID_LastStaticEventID, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
+//      wxCommandEventHandler(
+//        MainFrame::OnVoltageAndFrequencySettingsDialog )
+//      );
+//    LOGN("Connected event ID" << ID_LastStaticEventID << " to" <<
+//      "MainFrame::OnPstateDialog.")
   }
 }
 
 void MainFrame::CreateDialogAndMenuForEveryCore()
 {
 //  BYTE byReturnValue ;
-  WORD wMenuID = ID_LastStaticID;
+  WORD wMenuID = ID_LastStaticEventID;
   wxMenu * p_wxmenuCore ;
   m_arp_freqandvoltagesettingdlg = new FreqAndVoltageSettingDlg * [
     mp_cpucoredata->m_byNumberOfCPUCores];
@@ -942,18 +958,22 @@ void MainFrame::CreateDialogAndMenuForEveryCore()
       //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
       //  m_stdmapwxuicontroldata.find( wMenuID )->second ;
   #endif
-      Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(
-          //MainFrame::OnDynamicallyCreatedUIcontrol
-          MainFrame::OnPstateDialog )//, & m_vecwxstring.back()
-        //new wx
-        //, & m_stdvectorwxuicontroldata.back()
-        );
+//      Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
+//        wxCommandEventHandler(
+//          //MainFrame::OnDynamicallyCreatedUIcontrol
+//          MainFrame::OnVoltageAndFrequencySettingsDialog )//, & m_vecwxstring.back()
+//        //new wx
+//        //, & m_stdvectorwxuicontroldata.back()
+//        );
+//      LOGN("connected event ID" << wMenuID - 1 << " to" <<
+//        "MainFrame::OnPstateDialog")
       p_wxmenuCore->Append(wMenuID, _T("find different p-states") );
       Connect( wMenuID ++, wxID_ANY, wxEVT_COMMAND_MENU_SELECTED,
         wxCommandEventHandler(
         MainFrame::OnFindDifferentPstates )
         );
+      LOGN("connected event ID" << wMenuID - 1 << " to" <<
+        "MainFrame::OnFindDifferentPstates")
       #ifdef COMPILE_WITH_CALC_THREAD
       marp_wxmenuItemHighLoadThread[byCoreID] = AddDynamicallyCreatedMenu(
         p_wxmenuCore,
@@ -1029,7 +1049,7 @@ void MainFrame::CreateDialogAndMenuForEveryCore()
       {
         if( byCoreID == 0 )
         {
-          m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticID ;
+          m_nNumberOfMenuIDsPerCPUcore = wMenuID - ID_LastStaticEventID ;
           //For removing per-core menus after unloading a CPU controller.
           m_byIndexOf1stCPUcontrollerRelatedMenu = mp_wxmenubar->GetMenuCount()
             ;
@@ -1063,7 +1083,7 @@ BYTE MainFrame::CreateDynamicMenus()
   BYTE byReturnValue =
       //Needs to be TRUE for the 1st loop condition evaluation.
       TRUE ;
-//  WORD wMenuID = ID_LastStaticID;
+//  WORD wMenuID = ID_LastStaticEventID;
   //m_vecwxstring.push_back(wxString)
 //  wxMenu * p_wxmenuCore ;
   LOGN("CPU core menu creation--number of CPU cores: " <<
@@ -1147,11 +1167,11 @@ void MainFrame::OnClose(wxCloseEvent & event )
     mp_wxx86infoandcontrolapp->mp_taskbaricon->RemoveIcon() ;
     LOGN("after removing the system tray icon")
 
-    //Also deleted in the wxWidgets "tbtest" sample (not automatically
-    //deleted?!).
-    delete mp_wxx86infoandcontrolapp->mp_taskbaricon;
-    LOGN("after deleting the system tray icon")
-    mp_wxx86infoandcontrolapp->mp_taskbaricon = NULL ;
+    //This program does not terminate correctly (does not reach
+    //MainController's destructor when a dynamically created.
+    //taskbar icon is not deleted.
+//    mp_wxx86infoandcontrolapp->DeleteTaskBarIcon();
+    mp_wxx86infoandcontrolapp->mp_taskbaricon->DisconnectEventHandlers();
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
   LOGN("before destroying the mainframe")
@@ -1410,6 +1430,12 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
   mp_wxx86infoandcontrolapp->PauseService() ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
+
+//void MainFrame::OnShowVoltageAndFrequencySettingsDialog(
+//    wxCommandEvent & WXUNUSED(event) )
+//{
+//
+//}
 
 void MainFrame::OnStartService(wxCommandEvent & WXUNUSED(event))
 {
@@ -1687,51 +1713,58 @@ void MainFrame::OnOwnDynFreqScaling( wxCommandEvent & //WXUNUSED(wxevent)
   mp_wxx86infoandcontrolapp->StartDynamicVoltageAndFrequencyScaling() ;
 }
 
-void MainFrame::OnPstateDialog( wxCommandEvent & //WXUNUSED(event)
+void MainFrame::Show1VoltnFreqSettingsDialogForEveryCPUcore(wxCommandEvent &
   wxevent )
 {
-  LOGN("OnPstateDialog")
+  WORD wEventID = wxevent.GetId() ;
+  //wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
+  //  & m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
+  //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
+  //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
+  //const wxObject & wxobj = //wxevent.m_callbackUserData ;
+  //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
+  //wxCPUcoreID & r_wxcpucoreid2 = (wxCPUcoreID &) wxobj ;
+  //const wxCPUcoreID * p_wxcpucoreid2 = (const wxCPUcoreID *) & wxobj ;
+  //std::map <WORD, wxObject> :: iterator iter =
+  //  m_stdmapwxuicontroldata.find( wxevent.GetId() ) ;
+  //wxCPUcoreID wxcpucoreid = (wxCPUcoreID ) iter->second ;
+  //  wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
+  //    //&
+  //    m_stdmapwxuicontroldata.find( wEventID )->second ;
+  SpecificCPUcoreActionAttributes * p = (SpecificCPUcoreActionAttributes *)
+    m_stdmapwxuicontroldata.find( wEventID )->second ;
+
+  BYTE byCoreID = //p_wxcpucoreid->m_byID
+    p->m_byCoreID ;
+  //BYTE byCoreID = 0 ;
+  if( m_arp_freqandvoltagesettingdlg[byCoreID] )
+    m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
+  else
+  {
+    //If created as local vaiable on stack the dialog would disappear
+    //immediately.
+    m_arp_freqandvoltagesettingdlg[byCoreID] = new
+      FreqAndVoltageSettingDlg(
+      this
+      ,  mp_i_cpucontroller
+      , byCoreID
+      );
+    //Allocating succeeded.
+    if( m_arp_freqandvoltagesettingdlg[byCoreID] )
+      m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
+  }
+}
+
+void MainFrame::OnVoltageAndFrequencySettingsDialog( wxCommandEvent &
+  //WXUNUSED(event)
+  wxevent )
+{
+  LOGN("OnVoltageAndFrequencySettingsDialog")
   //May be NULL at startup.
   if( mp_i_cpucontroller )
   {
 #ifdef ONE_P_STATE_DIALOG_FOR_EVERY_CPU_CORE
-    WORD wEventID = wxevent.GetId() ;
-    //wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
-    //  & m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
-    //wxCPUcoreID & r_wxcpucoreid = (wxCPUcoreID &) //wxevent.m_callbackUserData ;
-    //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
-    //const wxObject & wxobj = //wxevent.m_callbackUserData ;
-    //  m_stdmapwxuicontroldata.find( wxevent.GetId() )->second ;
-    //wxCPUcoreID & r_wxcpucoreid2 = (wxCPUcoreID &) wxobj ;
-    //const wxCPUcoreID * p_wxcpucoreid2 = (const wxCPUcoreID *) & wxobj ;
-    //std::map <WORD, wxObject> :: iterator iter =
-    //  m_stdmapwxuicontroldata.find( wxevent.GetId() ) ;
-    //wxCPUcoreID wxcpucoreid = (wxCPUcoreID ) iter->second ;
-  //  wxCPUcoreID * p_wxcpucoreid = (wxCPUcoreID *) //wxevent.m_callbackUserData ;
-  //    //&
-  //    m_stdmapwxuicontroldata.find( wEventID )->second ;
-    SpecificCPUcoreActionAttributes * p = (SpecificCPUcoreActionAttributes *)
-      m_stdmapwxuicontroldata.find( wEventID )->second ;
-
-    BYTE byCoreID = //p_wxcpucoreid->m_byID
-      p->m_byCoreID ;
-    //BYTE byCoreID = 0 ;
-    if( m_arp_freqandvoltagesettingdlg[byCoreID] )
-      m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
-    else
-    {
-      //If created as local vaiable on stack the dialog would disappear 
-      //immediately.
-      m_arp_freqandvoltagesettingdlg[byCoreID] = new 
-        FreqAndVoltageSettingDlg( 
-        this 
-        ,  mp_i_cpucontroller
-        , byCoreID 
-        );
-      //Allocating succeeded.
-      if( m_arp_freqandvoltagesettingdlg[byCoreID] )
-        m_arp_freqandvoltagesettingdlg[byCoreID]->Show(true);
-    }
+    Show1VoltnFreqSettingsDialogForEveryCPUcore();
 #else
     FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg = new
       FreqAndVoltageSettingDlg(
@@ -1859,7 +1892,9 @@ void MainFrame::DrawDiagramScale(
   wxCoord wxcoordHeight = 0 ;
   WORD wLeftEndOfCurrFreqText = 0 ;
   WORD wXcoordinate ;
-  WORD wYcoordinate ;
+  //Initialize to avoid g++ warning
+  //"'wYcoordinate' may be used uninitialized in this function"
+  WORD wYcoordinate = 0;
   std::map<WORD,WORD>::iterator
     r_iterstdmapYcoord2RightEndOfFreqString ;
   std::map<WORD,WORD> stdmapYcoord2RightEndOfFreqString ;
@@ -2920,11 +2955,11 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
   //  wxfont.
   //  LOGN("DrawCurrentPstateInfo")
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  #ifdef _DEBUG
-    bool bIsGettingCPUcoreData = mp_wxx86infoandcontrolapp->m_ipcclient.
-      m_vbIsGettingCPUcoreData ;
-    SUPPRESS_UNUSED_VARIABLE_WARNING(bIsGettingCPUcoreData)
-  #endif
+//  #ifdef _DEBUG
+//    bool bIsGettingCPUcoreData = mp_wxx86infoandcontrolapp->m_ipcclient.
+//      m_vbIsGettingCPUcoreData ;
+//    SUPPRESS_UNUSED_VARIABLE_WARNING(bIsGettingCPUcoreData)
+//  #endif
   if( //::wxGetApp().m_ipcclient.IsConnected()
       mp_wxx86infoandcontrolapp->IPC_ClientIsConnected()
     //This flag should be (set to) "true" as long as writing and reading data

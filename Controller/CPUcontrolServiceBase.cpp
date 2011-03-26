@@ -46,6 +46,7 @@ CPUcontrolServiceBase::CPUcontrolServiceBase(UserInterface * p_userinterface)
 //    //wxThread::Wait() only works for joinable threads
 //    I_Thread::joinable)
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
 }
 
 CPUcontrolServiceBase::~CPUcontrolServiceBase()

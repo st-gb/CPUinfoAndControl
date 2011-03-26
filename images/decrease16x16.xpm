@@ -1,21 +1,24 @@
 /* XPM */
-static char * decrease16x16_xpm[] = {
-"16 16 2 1",
-" 	c #FFFFFF",
-".	c #000000",
-"                ",
-"                ",
-"                ",
-"                ",
-"                ",
-"                ",
-"                ",
-"................",
-"................",
-"                ",
-"                ",
-"                ",
-"                ",
-"                ",
-"                ",
-"                "};
+static char * decrease16x16_xpm[] = 
+//avoid g++ warning: deprecated conversion from string constant to 'char*'
+//(char * [] ) 
+{
+(char *) "16 16 2 1",
+(char *) " 	c #FFFFFF",
+(char *) ".	c #000000",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "................",
+(char *) "................",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                ",
+(char *) "                "};

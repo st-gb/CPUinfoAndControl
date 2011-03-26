@@ -1,24 +1,30 @@
+-"__PRETTY_FUNCTION__" Preprozessor-Makro benutzen für logging
+-wenn (bestimmten) Fehlern in einer XML-Datei die Ausführung des gesamten Programmes beenden?:
+ -wenn z.B. Fehler bei "logging exclusion" Filter wird sonst die Verarbeitung (durch Apache Xerces?) abgebrochen
+  und so die nachfolgenden "logging exclusion" Filter nicht mehr hinzugefügt und es wird dann zu viel geloggt
+
+beim Beenden Fehler in wxWidgets /src/common/wincmn.cpp, Zeile 334: (Event-) handler ist nicht mehr da:
+ -die GUI belegt 700 MB Speicher nach wenigen Sekunden/ Minuten: 
+  erledigt?! durch Zestörung im TopLevelWindow (MainFrame) in Anlehnung an wxWdigets' "tbtest" sample
+
 1. wenn neue p-states entdeckt werden, muss neugezeichnet werden
 2. ordentliche Fehlermeldung: "erst default p-states hinzufügen, bevor man weitere Einstellungen vornehmen kann", 
    wenn man keine Spannung und Taktfreq einstellen kann (und noch keine performance state-Konfig-Daten vorhanden sind)
 
-Als der Dienst nicht installiert war, und die Option "deinstallieren" gewählt wurde,
+-Als der Dienst nicht installiert war, und die Option "deinstallieren" gewählt wurde,
 wurde nicht angezeigt, dass der Dienst gar deinstalliert werden kann, da er nicht 
 installiert war.
 Lösungsmöglichkeit anbieten, wenn "Zugriff verweigert" beim Installieren des Dienstes.
 
-Bilder (betrifft den service) sind nicht verknüpt in den downloadbaren HTML-Dateien.
-->erledigt
+-Bilder (betrifft den service) sind nicht verknüpt in den downloadbaren HTML-Dateien.
+ ->erledigt
 
 P-states müssen in der GUI beginnend von der HOECHSTEN Taktfrequenz ABSTEIGEND 
 sortiert sein. Das ist der Standard/ so ist die Vereinbarung, bei Intel und AMD ist das so.
 ->erledigt
 
-mit lesen aus 2 kleinen (35000 Elemenete) double-Arrays konnte ich viele L2 Cache 
-Hits erreichen.
-
-was passiert, wenn die Mesagebox vom Dienst vor der Anmeldng angezeigt wird?
-Dann wird hoffentlich nichts blockiert.
+was passiert, wenn die Messagebox vom Dienst vor der Anmeldung angezeigt wird?
+Dann wird hoffentlich nichts (des Windows-Betriebssystems) blockiert.
 ->wird auch nicht
 
 bei logging: Zeitstempel in Ordnung bringen (nicht die aktuelle Zeit, sondern 2 h früher).
@@ -27,36 +33,25 @@ bei logging: Zeitstempel in Ordnung bringen (nicht die aktuelle Zeit, sondern 2 
 Beim Einlesen der Konfig. zusätzlich nach der Revision gehen.
 Wenn die Konfig-Datei nicht da ist, als Messagebox ausgeben.
 
-"ohne Visual Studio C++ 2005 SP1 Redistributable Package" lief das Prog 
+-"ohne Visual Studio C++ 2005 SP1 Redistributable Package" lief das Prog 
 nicht auf einem neuen Rechner.
 
-"waitung for input in order to be readable" nach der Installation ist verwirrrend.
+-"waiting for input in order to be readable" nach der Installation ist verwirrrend.
 Fehlercode 1 wenn Dienst ohne Winring 0.DLL gestartet wird.
 
-passenderen Fehlercode als Fehlercode 1 (z.B. DLL_NOT_LOADED) wenn CPU Zugriff Fehlschlug
+-passenderen Fehlercode als Fehlercode 1 (z.B. DLL_NOT_LOADED) wenn CPU Zugriff Fehlschlug
 
 -wichtige Meldungen in Windows-Oberlfläche (z.B. Messagebox, wenn nicht dem 
 GUI-Prozess verbunden) anzeigen 
 
 -www.samblackburn.com/wfc
 
-nach dem Beenden vom Dienst sollte er das Hwardwareprofil von vor dem Start zurücksetzen
+-nach dem Beenden vom Dienst sollte er das Hwardwareprofil von vor dem Start zurücksetzen
 
-Datei schliessen, damit die Inhalte ( letzte probierte Spannung) auch wirklich geschrieben werden.
+-Datei schliessen, damit die Inhalte ( letzte probierte Spannung) auch wirklich geschrieben werden.
 
--wenn es einen XML.fehler der Datei für die max-, min- und preferred-Werte gibt, darf
+-wenn es einen XML-Fehler der Datei für die max-, min- und preferred-Werte gibt, darf
  nicht ins Frequenz-Spannungs-Register geschrieben werden
  
- -Array benutzen, das größer als der L2-Cache ist. aus dem Array
-  auslesen 
-  siehe http://de.wikipedia.org/wiki/Cache#Cachegr.C3.B6.C3.9Fe: 
-   "Beobachtet man beispielsweise die Aktivität eines laufenden Programms 
-   auf einer Prozessor über ein kurzes Zeitintervall, so stellt man fest, 
-   dass wiederholt auf wenige kleine Speicherbereiche (z. B. Code innerhalb 
-   Schleifen, Steuervariablen, lokale Variablen und Prozedurparameter) 
-   zugegriffen wird."
-   demzufolge muss sich das Zugriffmuster bzw. die Adressen der Operanden ändern:
-   z.B. durch "if( ArrayTest[i] / 1 != Array[vorberechnet] )" -> "Rechenfehler"
-   
 -es soll nicht mehr das mit AMD family 17 CPUs stehen bei der Pentium M-Version
 ->erledigt?!

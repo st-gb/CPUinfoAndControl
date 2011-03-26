@@ -17,6 +17,11 @@ class TaskBarIcon
   : public wxTaskBarIcon
 {
 private:
+  WORD m_1stThrottleCPUcoreTemperatureEventID;
+  WORD m_1stSelectPowerSchemeMenuEventID;
+  WORD m_wAfterLastSelectPowerSchemeMenuEventID;
+  WORD m_wAfterLastThrottleCPUcoreTemperatureEventID;
+  static WORD s_wEventID;
 #ifdef __WXMSW__
   std::map<WORD,std::wstring> m_stdmap_eventid2powerschemename ;
 #endif //#ifdef __WXMSW__
@@ -32,6 +37,7 @@ public:
   wxIconDrawer * m_p_wxicon_drawer;
 private:
   wxMenu * p_wxmenu ;
+  wxMenu * m_p_wxmenuThrottleTemperatures;
 public:
 #if defined(__WXCOCOA__)
     TaskBarIcon(wxTaskBarIconType iconType = DEFAULT_TYPE)
@@ -39,21 +45,30 @@ public:
 #else
     TaskBarIcon(MainFrame * p_mainframe)
       :
+      m_1stThrottleCPUcoreTemperatureEventID(0),
+      m_1stSelectPowerSchemeMenuEventID(0),
       m_wxicon_drawer(16, 16//,8
     //    ,wxBITMAP_SCREEN_DEPTH
         )
+      , m_p_wxmenuThrottleTemperatures(NULL)
 #endif
     {
+      LOGN("TaskBarIcon() begin")
 //      m_p_wxicon_drawer = new wxIconDrawer(16, 16//,8
 //        //,wxBITMAP_SCREEN_DEPTH
 //        );
       m_p_wxicon_drawer = & m_wxicon_drawer;
       mp_mainframe = p_mainframe ;
+      LOGN("TaskBarIcon() end")
     }
     ~TaskBarIcon() ;
 
     virtual wxMenu * CreatePopupMenu();
-    void CreatePowerSchemesMenu() ;
+    wxMenu * CreatePowerSchemesMenu() ;
+    wxMenu * CreateSetThrottleTemperatureMenu();
+    void DisconnectEventHandlers();
+    void DisconnectSelectPowerSchemeEventHandlers();
+    void DisconnectOnSetThrottleTemperatureEventHandlers();
     void DrawText(
       wxIcon & r_wxicon,
       const wxString & cr_wxstrText,
@@ -72,6 +87,7 @@ public:
 //    void OnMenuSub(wxCommandEvent&);
 //    void SetMainFrame(MainFrame * ) ;
     void OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent) ;
+    void OnSetThrottleTemperature(wxCommandEvent & wxevent) ;
     DECLARE_EVENT_TABLE()
 };
 

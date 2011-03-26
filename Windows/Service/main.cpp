@@ -10,6 +10,9 @@
 #include <Controller/Logger/Logger.hpp>
 //#include <Controller/Logger/log4cplus/log4cplus_Logger.hpp>
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+#define wxCHECK_W32API_VERSION(maj, min) (0) //for "StartDoc" in "winundef.h"
+#include <wx/msw/winundef.h> // undefine "CreateServiceA" etc. for the
+// CPUcontrolService class
 #include "Windows/Service/CPUcontrolService.hpp"
 #include "Windows/Service/ServiceBase.hpp"
 #include <Windows/SetExePathAsCurrentDir/SetExePathAsCurrentDir.h> // for SetExePathAsCurrentDir()
@@ -24,16 +27,17 @@
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
-Logger g_logger ;
+//Logger g_logger ;
 
 CPUcontrolBase * gp_cpucontrolbase ;
 
-bool IsWithinCmdLineArgs( int argc, char *  argv[], LPCTSTR p_tstr )
+bool IsWithinCmdLineArgs( int argc, char *  argv[], //LPCTSTR p_tstr
+  LPCSTR pc_chCompareTo )
 {
     bool bIsWithinCmdLineArgs = false ;
     BYTE byIndex = 1 ;
     for( ; byIndex < argc ; ++ byIndex )
-        if ( strcmp(argv[byIndex], p_tstr) == 0 )
+        if ( strcmp(argv[byIndex], pc_chCompareTo) == 0 )
         {
             bIsWithinCmdLineArgs = true ;
             break ;
@@ -84,36 +88,44 @@ void HandleErrorPlace(BYTE by, const std::string & cr_stdstr )
 }
 
 void HandleProgramOptions(
-  const std::vector<std::string> & vecstdstrParams ,
-  const std::tstring & stdtstrProgramName
+  const std::vector<std::string> & std_vec_std_strParams ,
+  const std::tstring & cr_std_tstrProgramName
   )
 {
   try//ConnectToSCMerror
   {
-    if( CPUcontrolService::ShouldDeleteService(vecstdstrParams) )
+    if( CPUcontrolService::ShouldDeleteService(std_vec_std_strParams) )
     {
-      if( vecstdstrParams.size() > 1 )
+      if( std_vec_std_strParams.size() > 1 )
       {
-        CPUcontrolService::DeleteService( vecstdstrParams.at(1).c_str(),
-          stdtstrProgramName ) ;
+        std::tstring std_tstrServiceName = GetStdTstring_Inline(
+          std_vec_std_strParams.at(1) );
+        CPUcontrolService::DeleteService(
+          //std_vec_std_strParams.at(1).c_str(),
+          std_tstrServiceName.c_str(),
+          cr_std_tstrProgramName
+          ) ;
       }
 //      bStartServiceWithinThisProcess = false ;
     }
-    if( CPUcontrolService::ShouldCreateService(vecstdstrParams) )
+    if( CPUcontrolService::ShouldCreateService(std_vec_std_strParams) )
     {
-      if( vecstdstrParams.size() > 1 )
+      LOGN("Should create the service")
+      if( std_vec_std_strParams.size() > 1 )
       {
-        CPUcontrolService::CreateService( vecstdstrParams.at(1).c_str() ) ;
+        CPUcontrolService::CreateService( //std_vec_std_strParams.at(1).c_str()
+          GetStdTstring_Inline( std_vec_std_strParams.at(1) ).c_str()
+          ) ;
       }
 //      bStartServiceWithinThisProcess = false ;
     }
-    if( CPUcontrolService::ShouldStartService(vecstdstrParams) )
+    if( CPUcontrolService::ShouldStartService(std_vec_std_strParams) )
     {
-      if( vecstdstrParams.size() > 1 )
+      if( std_vec_std_strParams.size() > 1 )
       {
         //CPUcontrolService::StartService( vecstdstrParams.at(1).c_str() ) ;
         if( ServiceBase::StartService( GetStdTstring_Inline(
-          vecstdstrParams.at(1) ).c_str() ) == ERROR_SUCCESS )
+          std_vec_std_strParams.at(1) ).c_str() ) == ERROR_SUCCESS )
           WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
             "Starting the service succeeded.")
         else
@@ -124,12 +136,12 @@ void HandleProgramOptions(
       }
 //      bStartServiceWithinThisProcess = false ;
     }
-    if( CPUcontrolService::ShouldStopService(vecstdstrParams) )
+    if( CPUcontrolService::ShouldStopService(std_vec_std_strParams) )
     {
-      if( vecstdstrParams.size() > 1 )
+      if( std_vec_std_strParams.size() > 1 )
       {
         if( ServiceBase::StopService( GetStdTstring_Inline(
-          vecstdstrParams.at(1) ).c_str() ) == ERROR_SUCCESS )
+          std_vec_std_strParams.at(1) ).c_str() ) == ERROR_SUCCESS )
           WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
             "Stopping the service succeeded.")
         else
@@ -153,15 +165,18 @@ void HandleProgramOptions(
 
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
-int main( int argc, char *  argv[] )
+int main( int argc, char * argv[]
+  //TCHAR *  argv[]
+  )
 {
   LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
   //LPTSTR ptstrProgramArg = _T("-config=GriffinControl_config.xml") ;
   std::tstring stdtstrProgramName(ptstrProgramName) ;
-  std::tstring stdtstrProgramArg = std::tstring("-config=") + ptstrProgramName + 
-    std::tstring("_config.xml") ;
+  std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
+    + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
   //std::string stdstrLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
-  std::string stdstrLogFileName = std::string(argv[0]) + std::tstring("_log.txt") ;
+  std::string stdstrLogFileName = std::string( argv[0]) +
+    std::string("_log.txt") ;
   try
   {
     if( ! SetExePathAsCurrentDir() )
@@ -172,7 +187,7 @@ int main( int argc, char *  argv[] )
 #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
 #endif
-    g_logger.OpenFile( stdstrLogFileName ) ;
+    g_logger.OpenFile2( stdstrLogFileName ) ;
     DEBUG("Begin of main program entry point\n");
 //    LOGN( "stdin:" << stdin << " stdout:" << stdout << " argc:" << argc )
 //    if( stdin )
@@ -231,10 +246,11 @@ int main( int argc, char *  argv[] )
       #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
       if( bStartServiceWithinThisProcess )
       {
+         LOGN("Starting service inside _this_ process.")
          std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
           CPUcontrolService cpucontrolservice(
             argc,
-            argv,
+            GetTCHARarray_Inline( (const char **) argv, argc),
 //            stdtstrProgramName
             stdwstr
 //            , xerces_ipc_data_handler
@@ -250,8 +266,8 @@ int main( int argc, char *  argv[] )
         if( ShouldDeleteService(argc, argv) && argc > 2 )
         {
           DWORD dwErrorCodeFor1stError ;
-            ServiceBase::DeleteService(
-              argv[2]
+            ServiceBase::DeleteService( //argv[2]
+              GetStdTstring_Inline( argv[2]).c_str()
               , dwErrorCodeFor1stError
               ) ;
         }
@@ -261,7 +277,8 @@ int main( int argc, char *  argv[] )
         //    CreateService(
         //if( //::AfxMessageBox("Should the undervolting service be installed now?",
         //    //IDYES | IDNO ) == IDYES  )
-          ServiceBase::CreateService( argv[2], by ) ;
+          ServiceBase::CreateService( //argv[2]
+            GetStdTstring_Inline( argv[2]).c_str(), by ) ;
         }
         else
             std::cout << "\nNOT installing the service\n" ;

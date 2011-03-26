@@ -52,6 +52,7 @@ namespace wxWidgets
         , mr_cpucontrolbase.mp_i_cpuaccess
 //        , mp_userinterface
         , mr_cpucontrolbase.mp_userinterface
+        , & mr_cpucontrolbase.m_model
         ) ;
       if( mr_cpucontrolbase.m_p_cpucontrollerDynLib )
       {

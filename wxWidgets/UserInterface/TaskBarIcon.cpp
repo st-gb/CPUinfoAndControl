@@ -23,6 +23,8 @@
 #include "TaskBarIcon.hpp"
 
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
+//format_output_data(...)
+#include <Controller/character_string/format_as_string.hpp>
 #ifdef __WXMSW__
   #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
@@ -39,9 +41,12 @@ enum {
 //    PU_CHECKMARK,
 //    PU_SUB1,
 //    PU_SUB2,
+    SELECT_CPU_THROTTLE_TEMPERATURE,
     SELECT_POWER_SCHEME ,
-    LAST_ID
+    lastStaticEventID
 };
+
+WORD TaskBarIcon::s_wEventID = lastStaticEventID ;
 
 BEGIN_EVENT_TABLE(TaskBarIcon, wxTaskBarIcon)
     EVT_MENU(PU_RESTORE, TaskBarIcon::OnMenuRestore)
@@ -84,20 +89,85 @@ void TaskBarIcon::OnMenuExit(wxCommandEvent& )
 //    wxMessageBox(wxT("You clicked on a submenu!"));
 //}
 
+wxMenu * TaskBarIcon::CreateSetThrottleTemperatureMenu()
+{
+  LOGN("CreateSetThrottleTemperatureMenu begin")
+  bool bSetCheckMarkForTemperature = false;
+//  wxMenu * m_p_wxmenuThrottleTemperatures = new wxMenu();
+//  if( ! m_p_wxmenuThrottleTemperatures )
+    m_p_wxmenuThrottleTemperatures = new wxMenu();
+  wxString wx_str;
+
+  if( ! m_1stThrottleCPUcoreTemperatureEventID )
+    m_1stThrottleCPUcoreTemperatureEventID = s_wEventID;
+  else
+    s_wEventID = m_1stThrottleCPUcoreTemperatureEventID;
+  LOGN("1st CPU core throttle temperature event ID: " <<
+      m_1stThrottleCPUcoreTemperatureEventID )
+  for(BYTE byTemperature = 40; byTemperature < 100; byTemperature += 2)
+  {
+    wx_str = wxString::Format("%u", byTemperature);
+    m_p_wxmenuThrottleTemperatures->AppendRadioItem( s_wEventID , wx_str );
+
+    //Set mark if >= because (and not simply "==") the temperature is as
+    //integer here and might be configured as floating point value.
+    if( ! bSetCheckMarkForTemperature && (float) byTemperature >=
+        wxGetApp().m_model.m_cpucoredata.m_fThrottleTempInDegCelsius
+       )
+    {
+      m_p_wxmenuThrottleTemperatures->Check( s_wEventID, true );
+      bSetCheckMarkForTemperature = true;
+    }
+//    m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
+//      (wEventID, * std_set_std_wstr_c_iterPowerSchemeName) ) ;
+
+    Connect( //s_wEventID ++
+        s_wEventID , //wxID_ANY,
+      wxEVT_COMMAND_MENU_SELECTED ,
+      wxCommandEventHandler(TaskBarIcon::OnSetThrottleTemperature)
+      );
+    LOGN("Connected event ID " << s_wEventID << " to "
+      "\"OnSetThrottleTemperature\"")
+    ++ s_wEventID;
+  }
+  m_wAfterLastThrottleCPUcoreTemperatureEventID = s_wEventID;
+  LOGN("Event ID after last CPU core throttle temperature event ID: " <<
+      m_wAfterLastThrottleCPUcoreTemperatureEventID )
+  return m_p_wxmenuThrottleTemperatures;
+}
+
 // Overridables
 //http://docs.wxwidgets.org/stable/wx_wxtaskbaricon.html#wxtaskbariconpopupmenu:
 //"This method is called by the library when the user requests popup menu (on
 //Windows and Unix platforms, this is when the user right-clicks the icon).
 //Override this function in order to provide popup menu associated with the
 //icon"
+
+//If CreatePopupMenu returns NULL (this happens by default), no menu is shown,
+//otherwise the menu is displayed and then deleted by the library as soon as
+//the user dismisses it. The events can be handled by a class derived from
+//wxTaskBarIcon.
 wxMenu * TaskBarIcon::CreatePopupMenu()
 {
+  LOGN("TaskBarIcon::CreatePopupMenu() begin")
   // Try creating menus different ways
   // TODO: Probably try calling SetBitmap with some XPMs here
+
+  //The menus need to be created each time this function is called because
+  //http://docs.wxwidgets.org/2.8/wx_wxtaskbaricon.html#wxtaskbariconcreatepopupmenu:
+  //"the menu is displayed and then deleted by the library as soon as
+    //the user dismisses it."
   //wxMenu * p_wxmenu = new wxMenu;
   p_wxmenu = new wxMenu;
   p_wxmenu->Append(PU_RESTORE, _T("&show window"));
   p_wxmenu->AppendSeparator();
+//  if( ! m_p_wxmenuThrottleTemperatures )
+    CreateSetThrottleTemperatureMenu();
+  LOGN("TaskBarIcon::CreatePopupMenu()--before appending the throttle menu "
+    << m_p_wxmenuThrottleTemperatures << " to the root menu")
+  p_wxmenu->Append(SELECT_CPU_THROTTLE_TEMPERATURE,
+    wxT("select CPU core throttle temperature"),
+    m_p_wxmenuThrottleTemperatures);
 //    menu->Append(PU_CHECKMARK, _T("Checkmark"),wxT(""), wxITEM_CHECK);
 //    menu->AppendSeparator();
 //    wxMenu * wxmenuProfiles = new wxMenu;
@@ -106,49 +176,70 @@ wxMenu * TaskBarIcon::CreatePopupMenu()
 //    wxmenuProfiles->Append(PU_SUB2, _T("Another submenu"));
 //    menu->Append(SELECT_POWER_SCHEME, _T("select profile"), wxmenuProfiles);
 #ifdef __WXMSW__
-    CreatePowerSchemesMenu() ;
+  wxMenu * p_wxmenuPowerSchemes = CreatePowerSchemesMenu() ;
+  p_wxmenu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
+    p_wxmenuPowerSchemes);
 #endif //#ifdef __WXMSW__
 #ifndef __WXMAC_OSX__ /*Mac has built-in quit menu*/
     p_wxmenu->AppendSeparator();
     p_wxmenu->Append(PU_EXIT,    _T("E&xit"));
 #endif
-    return p_wxmenu;
+  LOGN("TaskBarIcon::CreatePopupMenu() end")
+  return p_wxmenu;
 }
 
-void TaskBarIcon::CreatePowerSchemesMenu()
+wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
 {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  WORD wEventID = LAST_ID ;
-  wxMenu * wxmenuPowerSchemes = new wxMenu;
-  std::set<std::wstring> set_wstr ;
+  LOGN("TaskBarIcon::CreatePowerSchemesMenu() begin")
+  wxMenu * p_wxmenuPowerSchemes = new wxMenu;
+  std::set<std::wstring> stdset_std_wstrPowerSchemeName ;
   std::wstring wstrActivePowerScheme ;
   PowerProfDynLinked * p_powerprofdynlinked =
    (PowerProfDynLinked * ) wxGetApp().mp_dynfreqscalingaccess ;
-  p_powerprofdynlinked->GetAllPowerSchemeNames(set_wstr) ;
+  p_powerprofdynlinked->GetAllPowerSchemeNames(stdset_std_wstrPowerSchemeName) ;
   p_powerprofdynlinked->GetActivePowerSchemeName(wstrActivePowerScheme) ;
   LOGWN_WSPRINTF(L"active power scheme name:%ls",
     wstrActivePowerScheme.c_str() )
-  for( std::set<std::wstring>::const_iterator stdset_c_iter = set_wstr.begin() ;
-      stdset_c_iter != set_wstr.end() ; ++ stdset_c_iter
+
+  if( ! m_1stSelectPowerSchemeMenuEventID )
+    m_1stSelectPowerSchemeMenuEventID = s_wEventID;
+  else
+    s_wEventID = m_1stSelectPowerSchemeMenuEventID;
+  LOGN("1st select power scheme event ID: " <<
+      m_1stThrottleCPUcoreTemperatureEventID )
+  for( std::set<std::wstring>::const_iterator
+      std_set_std_wstr_c_iterPowerSchemeName =
+      stdset_std_wstrPowerSchemeName.begin() ;
+      std_set_std_wstr_c_iterPowerSchemeName !=
+      stdset_std_wstrPowerSchemeName.end() ;
+      ++ std_set_std_wstr_c_iterPowerSchemeName
     )
   {
     //TODO wxString should be unicode for e.g. Chinese language (more than 255
     // characters)
-    wxString wxstr( getwxString(*stdset_c_iter) ) ;
+    wxString wxstrPowerSchemeName( getwxString(
+      * std_set_std_wstr_c_iterPowerSchemeName) ) ;
 //    wxmenuPowerSchemes->Append( wEventID , wxstr );
-    wxmenuPowerSchemes->AppendRadioItem( wEventID , wxstr );
-    if( wstrActivePowerScheme == *stdset_c_iter )
-      wxmenuPowerSchemes->Check( wEventID, true ) ;
+    p_wxmenuPowerSchemes->AppendRadioItem( s_wEventID , wxstrPowerSchemeName );
+    if( wstrActivePowerScheme == * std_set_std_wstr_c_iterPowerSchemeName )
+      p_wxmenuPowerSchemes->Check( s_wEventID, true ) ;
     m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
-      (wEventID,*stdset_c_iter) ) ;
-    Connect( wEventID ++ , //wxID_ANY,
+      (s_wEventID, * std_set_std_wstr_c_iterPowerSchemeName) ) ;
+    LOGN("TaskBarIcon::CreatePowerSchemesMenu()--adding event with event ID "
+      << s_wEventID )
+    Connect( s_wEventID ++ , //wxID_ANY,
       wxEVT_COMMAND_MENU_SELECTED ,
       wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
       );
   }
-  p_wxmenu->Append(SELECT_POWER_SCHEME, _T("select Windows &power scheme"),
-    wxmenuPowerSchemes);
-//  wxmenuPowerSchemes->Check( LAST_ID , true ) ;
+  m_wAfterLastSelectPowerSchemeMenuEventID = s_wEventID;
+  LOGN("TaskBarIcon::CreatePowerSchemesMenu() --return " <<
+    p_wxmenuPowerSchemes )
+//  wxmenuPowerSchemes->Check( lastStaticEventID , true ) ;
+  return p_wxmenuPowerSchemes;
+#else //#ifdef _WIN32
+  return NULL;
 #endif //#ifdef _WIN32
 }
 
@@ -162,6 +253,29 @@ void TaskBarIcon::FreeRessources()
 //    m_p_wxicon_drawer = NULL;
   }
   LOGN("TaskBarIcon::FreeRessources() end")
+}
+
+void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
+{
+  int nEventID = wxevent.GetId() ;
+  wxString wxstrMenuLabel = m_p_wxmenuThrottleTemperatures->
+    //see http://docs.wxwidgets.org/trunk/classwx_menu.html#e912f9dec96a0bd585fe562938447d7d
+    GetLabel(nEventID);
+  LOGN("taskbar icon--requested to set CPU core throttle temperature of "
+    << GetStdString( wxstrMenuLabel) << " degrees Celsius"
+    )
+  double dTemperatureInDegC;
+  wxstrMenuLabel.ToDouble( & dTemperatureInDegC);
+  float fTemperatureInDegC = (float) dTemperatureInDegC;
+  std::string std_str = format_output_data( (BYTE *) & fTemperatureInDegC, 4,
+    80);
+  LOGN("TaskBarIcon::OnSetThrottleTemperature--data to send to the service:"
+    << std_str)
+  wxGetApp().IPC_ClientSendCommandAndGetResponse(
+    setCPUcoreThrottleTemperature, 4, (BYTE *) & fTemperatureInDegC
+    );
+  wxGetApp().m_model.m_cpucoredata.m_fThrottleTempInDegCelsius =
+    fTemperatureInDegC;
 }
 
 void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
@@ -226,9 +340,83 @@ void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 //  mp_mainframe->Maximize(true ) ;
 }
 
+// wxWidgets' src/common/wincmn.cpp, Zeile 334:
+// "Any additional event handlers should be popped before the window is
+// deleted as otherwise the last handler will be left with a dangling
+// pointer to this window result in a difficult to diagnose crash later on."
+void TaskBarIcon::DisconnectEventHandlers()
+{
+  LOGN("TaskBarIcon::DisconnectEventHandlers() begin")
+  DisconnectSelectPowerSchemeEventHandlers();
+  DisconnectOnSetThrottleTemperatureEventHandlers();
+  LOGN("TaskBarIcon::DisconnectEventHandlers() end")
+}
+
+void TaskBarIcon::DisconnectSelectPowerSchemeEventHandlers()
+{
+  if( Disconnect( //s_wEventID ++ , //wxID_ANY,
+      wxEVT_COMMAND_MENU_SELECTED ,
+      wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
+      )
+    )
+    LOGN("OnDynamicallyCreatedUIcontrol() has been removed as event handler.")
+  else
+    LOGN("Failed to remove \"OnDynamicallyCreatedUIcontrol()\" as event "
+      "handler.")
+  //If the 1st event ID was set.
+  if( m_1stThrottleCPUcoreTemperatureEventID )
+  {
+    for(WORD wEventID = m_1stSelectPowerSchemeMenuEventID;
+        wEventID < m_wAfterLastSelectPowerSchemeMenuEventID; ++ wEventID)
+    {
+      if( Disconnect(wEventID) )
+        LOGN("\"OnDynamicallyCreatedUIcontrol\" has been removed as event "
+          "handler for event ID \"" << wEventID << "\"" )
+      else
+        LOGN("Failed to remove \"OnDynamicallyCreatedUIcontrol\" as event "
+          "handler for event ID \"" << wEventID << "\"" )
+    }
+  }
+}
+
+void TaskBarIcon::DisconnectOnSetThrottleTemperatureEventHandlers()
+{
+  LOGN("DisconnectOnSetThrottleTemperatureEventHandlers begin")
+  if( Disconnect( //s_wEventID ++ , //wxID_ANY,
+      wxEVT_COMMAND_MENU_SELECTED ,
+      wxCommandEventHandler(TaskBarIcon::OnSetThrottleTemperature)
+      )
+    )
+    LOGN("\"OnSetThrottleTemperature\" has been removed as event handler.")
+  else
+    LOGN("Failed to remove \"OnSetThrottleTemperature\" as event handler.")
+  //If the 1st event ID was set.
+  if( m_1stThrottleCPUcoreTemperatureEventID )
+  {
+    for(WORD wEventID = m_1stThrottleCPUcoreTemperatureEventID;
+        wEventID < m_wAfterLastThrottleCPUcoreTemperatureEventID; ++ wEventID)
+    {
+      if( Disconnect(wEventID) )
+        LOGN("\"OnSetThrottleTemperature\" has been removed as event handler "
+          "for event ID \"" << wEventID << "\"" )
+      else
+        LOGN("Failed to remove \"OnSetThrottleTemperature\" as event handler "
+          "for event ID \"" << wEventID << "\"" )
+
+    }
+  }
+  LOGN("DisconnectOnSetThrottleTemperatureEventHandlers end")
+}
+
 TaskBarIcon::~TaskBarIcon()
 {
-  LOGN("~TaskBarIcon() begin")
+  LOGN("~TaskBarIcon() (" << this << ") begin")
+  //Disconnect event handlers to avoid a program crash:
+  // when exiting in wxWidgets' /src/common/wincmn.cpp, Zeile 334:
+     //(Event-) handler ist nicht mehr da:
+  // ->die GUI belegt 700 MB Speicher nach wenigen Sekunden/ Minuten
+
+  DisconnectEventHandlers();
   //  m_wxicon_drawer.ReleaseRessources();
   FreeRessources();
   LOGN("~TaskBarIcon() end")
