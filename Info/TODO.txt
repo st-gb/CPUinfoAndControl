@@ -1,3 +1,5 @@
+-ServiceBase::GetPossibleSolution erzeugt statt Dienst-Namen einen String mit dessen Adresse
+
 -"__PRETTY_FUNCTION__" Preprozessor-Makro benutzen für logging
 -wenn (bestimmten) Fehlern in einer XML-Datei die Ausführung des gesamten Programmes beenden?:
  -wenn z.B. Fehler bei "logging exclusion" Filter wird sonst die Verarbeitung (durch Apache Xerces?) abgebrochen

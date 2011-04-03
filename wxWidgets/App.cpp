@@ -147,21 +147,28 @@ void wxX86InfoAndControlApp::CheckForChangedVoltageForFrequencyConfiguration()
 {
   LOGN("wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
     "Configuration() begin");
-  std::string strCPUtypeRelativeDirPath ;
+  std::string std_strCPUtypeRelativeDirPath ;
   std::string strPstateSettingsFileName ;
   if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
     //mp_wxx86infoandcontrolapp->
       m_maincontroller.GetPstatesDirPath(
-      strCPUtypeRelativeDirPath )
+      std_strCPUtypeRelativeDirPath )
     && //wxGetApp().m_maincontroller.GetPstateSettingsFileName(
     //mp_wxx86infoandcontrolapp->m_maincontroller.GetPstateSettingsFileName(
     m_maincontroller.GetPstateSettingsFileName(
       strPstateSettingsFileName )
     )
   {
-    std::string stdstrCPUtypeRelativeFilePath = strCPUtypeRelativeDirPath + "/"
+    std::string stdstrCPUtypeRelativeFilePath = std_strCPUtypeRelativeDirPath + "/"
       + strPstateSettingsFileName ;
-    LOGN("before checking for a changed p-states config ")
+    LOGN("Before checking for a changed p-states configuration in file \""
+      << stdstrCPUtypeRelativeFilePath << ", current working dir: \""
+      <<
+      //If the program is executed (->current working dir is elsewhere)
+      //in another path than where it is stored then THIS (current working dir)
+      //path should be used for storing files.
+      GetStdString(::wxGetCwd() ) << "\""
+      )
     //TODO uncomment
     if( //mp_frame->
       m_xerces_voltage_for_frequency_configuration.IsConfigurationChanged(
@@ -179,7 +186,7 @@ void wxX86InfoAndControlApp::CheckForChangedVoltageForFrequencyConfiguration()
       {
 //        wxCommandEvent evt ;
 //        mp_frame->OnSaveVoltageForFrequencySettings( evt) ;
-        SaveVoltageForFrequencySettings();
+        SaveVoltageForFrequencySettings(std_strCPUtypeRelativeDirPath);
       }
     }
   }
@@ -1682,12 +1689,13 @@ void wxX86InfoAndControlApp::SaveAsCPUcontrollerDynLibForThisCPU()
   }
 }
 
-void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings()
+void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings(
+  const std::string & cr_std_strCPUtypeRelativeDirPath)
 {
-  std::string strPstateSettingsFileName, stdstrCPUtypeRelativeDirPath ;
+  std::string strPstateSettingsFileName;//, stdstrCPUtypeRelativeDirPath ;
   wxString wxstrCurrentWorkingDir;
   wxString wxstrAbsoluteCPUspecificDirPath = GetAbsoluteCPUspecificDirPath(
-    stdstrCPUtypeRelativeDirPath,
+    cr_std_strCPUtypeRelativeDirPath,
     wxstrCurrentWorkingDir );
   if( //GetAbsoluteCPUspecificDirPath() &&
       m_maincontroller.GetPstateSettingsFileName(
@@ -1701,7 +1709,7 @@ void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings()
       if( ::wxMessageBox(
         wxT("The service/ daemon and Graphical User Interface expect the "
           "performance state/ \"voltage for frequency\" settings file in the "
-          "subdirectory \"") + getwxString( stdstrCPUtypeRelativeDirPath )
+          "subdirectory \"") + getwxString( cr_std_strCPUtypeRelativeDirPath )
           + wxT("\" relative to its (current) working directory.\n"
           "But the directory \"") + wxstrAbsoluteCPUspecificDirPath
         + wxT("\" does not exist\n"

@@ -55,6 +55,33 @@
     //p_cpucontroller = p_cpucontroller ;
 	}
 
+//	void SAX2ServiceConfigHandler::HandleDelayTimeXMLelement(
+//    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
+//    )
+//  {
+//    if( m_strElementName == "delay_time_in_milliseconds" )
+//    {
+//        std::string stdstrAttributeName = "current_dir_for_GUI" ;
+//        LOGN("trying to get XML attribute value for \"" <<
+//          stdstrAttributeName << "\"")
+//    //      xercesc_3_1:: Get
+//        if( XercesAttributesHelper::GetAttributeValue
+//            (
+//              cr_xercesc_attributes,//"processor_name"
+//    //            archAttributeName ,
+//              stdstrAttributeName.c_str() ,
+//              stdwstrValue
+//            )
+//          )
+//        {
+//          LOGN("XML attribute \"" << stdstrAttributeName << "\" exists")
+//          LOGWN_WSPRINTF(L"Before setting current dir for GUI to %ls" ,
+//            stdwstrValue.c_str()
+//            )
+//        }
+//    }
+//  }
+
 	void SAX2ServiceConfigHandler::HandleGUIpathesXMLelement(
 	  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
 	{
@@ -122,6 +149,35 @@
         LOGWN_WSPRINTF(L"set path to GUI exe to %ls" , //stdwstrValue.c_str()
           m_p_model->m_serviceattributes.m_stdwstrPathToGUIexe.c_str() )
       }
+      stdstrAttributeName = "startup_wait_time_in_ms" ;
+      LOGN("trying to get XML attribute value for \"" <<
+        stdstrAttributeName << "\"")
+      DWORD dwDelayTimeInMillis;
+      if( //XercesAttributesHelper::GetAttributeValue
+//          (
+//            cr_xercesc_attributes,//"processor_name"
+//  //                archAttributeName ,
+//            stdstrAttributeName.c_str() ,
+//            dwDelayTimeInMillis
+//          ) == SUCCESS
+          ConvertXercesAttributesValue<DWORD>(
+            cr_xercesc_attributes, //const XERCES_CPP_NAMESPACE::Attributes & ,
+            stdstrAttributeName,//const XMLCh * const cpc_xmlchAttributeName
+            dwDelayTimeInMillis // T & r_templateType,
+            )
+        )
+      {
+        m_p_model->m_serviceattributes.m_dwDelayTimeInMillis =
+          dwDelayTimeInMillis ;
+        //Use wide string because the character set for the language may
+        //need more than 256 characters.
+        LOGN( "set \"" << stdstrAttributeName
+          << "\" to " << m_p_model->m_serviceattributes.m_dwDelayTimeInMillis
+          //stdwstrValue.c_str()
+          )
+      }
+      else
+        LOGN("Failed to get attribute value \"" << stdstrAttributeName << "\"")
     }
   }
 
@@ -145,7 +201,10 @@
         )
         ;
       else
-        HandleGUIpathesXMLelement(cr_xercesc_attributes) ;
+//        if(HandleDelayTimeXMLelement(cr_xercesc_attributes) )
+//          ;
+//        else
+          HandleGUIpathesXMLelement(cr_xercesc_attributes) ;
       //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
       // << endl );
 

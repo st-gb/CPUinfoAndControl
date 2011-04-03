@@ -9,10 +9,12 @@
 #define SERVICEATTRIBUTES_H_
 
 #include <string> //std::wstring
+typedef unsigned long DWORD;
 
 class ServiceAttributes
 {
 public:
+  DWORD m_dwDelayTimeInMillis;
 //  std::string m_stdstrPathToGUIexe ;
   //Use std::wstring because there may be cases where the character set > 1 byte
   std::wstring m_stdwstrPathToGUIexe ;

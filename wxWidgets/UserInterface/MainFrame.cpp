@@ -3669,7 +3669,13 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
 
 void MainFrame::OnSaveVoltageForFrequencySettings(wxCommandEvent & WXUNUSED(event) )
 {
-  mp_wxx86infoandcontrolapp->SaveVoltageForFrequencySettings();
+  std::string std_strCPUtypeRelativeDirPath;
+  if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
+      mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
+      std_strCPUtypeRelativeDirPath )
+    )
+    mp_wxx86infoandcontrolapp->SaveVoltageForFrequencySettings(
+      std_strCPUtypeRelativeDirPath);
 }
 
 void MainFrame::OnSaveAsCPUcontrollerDynLibForThisCPU(
