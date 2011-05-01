@@ -255,7 +255,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
         }
         //When throwing an exception by creating the exception object on the
         //stack VS 2005 reported an "stack buffer error"?.
-        //Oh, that was rather because the exception was not catched.
+        //Oh, that was rather because the exception was not caught.
        throw //new
          CPUaccessException(
              //TODO Mysterious g++ error

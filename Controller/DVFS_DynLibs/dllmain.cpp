@@ -10,7 +10,7 @@
 //EXPORT
 //void
 BYTE Init( const DynLibCPUcontroller * p_dynlibcpucontroller ,
-  const DynLibCPUcoreUsageGettter * p_dynlibcpucoreusagegettter
+  const DynLibCPUcoreUsageGetter * p_dynlibcpucoreusagegetter
 //  WORD wNumLogicalCPUcores
   )
 {

@@ -220,6 +220,7 @@ public:
   BYTE GetConfigDataViaInterProcessCommunication() ;
   void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
   void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;
+  bool GetX86IandCiconFromFile(wxIcon & r_wxicon );
   Model * GetModel()
   {
     return mp_modelData ;
@@ -252,7 +253,8 @@ public:
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void RedrawEverything() ;
   void SaveAsCPUcontrollerDynLibForThisCPU();
-  void SaveVoltageForFrequencySettings();
+  void SaveVoltageForFrequencySettings(
+      const std::string & cr_std_strCPUtypeRelativeDirPath);
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
   inline void ShowTaskBarIconViaWindowsAPI();

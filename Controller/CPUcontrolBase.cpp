@@ -22,6 +22,7 @@
 //ReadFileContent(std::string & )
 #include <InputOutput/ReadFileContent/ReadFileContent.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <UserInterface/UserInterface.hpp>
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
 
@@ -354,7 +355,8 @@ void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
 {
   //I_CPUcontroller * i_cpucontrollerDynLib =
     //m_dynlibhandler.GetDynLibCPUcontroller() ;
-  LOGN("PossiblyDeleteCPUcontroller cpu controller:" << mp_cpucontroller
+  LOGN( //"PossiblyDeleteCPUcontroller"
+      FULL_FUNC_NAME << " begin--cpu controller:" << mp_cpucontroller
     << "dyn lib controller:" << //i_cpucontrollerDynLib
     m_p_cpucontrollerDynLib )
   if( //This may either point to a built-in CPU controller or to a dyn lib
@@ -378,7 +380,8 @@ void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
       //E.g. do stuff like disable "unload dyn lib CPU controller" in menu.
       mp_userinterface->CPUcontrollerDeleted() ;
   }
-  LOGN("CPUcontrolBase::PossiblyDeleteCPUcontroller() end" )
+  LOGN(//"CPUcontrolBase::PossiblyDeleteCPUcontroller()
+      FULL_FUNC_NAME << "end" )
 }
 
 //TODO delete CPU controller _dynlib_ or CPU controller?

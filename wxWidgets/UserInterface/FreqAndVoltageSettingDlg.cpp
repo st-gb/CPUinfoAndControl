@@ -1293,6 +1293,9 @@ void FreqAndVoltageSettingDlg::CreateSliders()
     //Initial position for the slider.
     , //1 
     byPstateIDtoShowSettingsFor
+    //see
+    //http://en.wikipedia.org/wiki/Advanced_Configuration_and_Power_Interface
+    // #Performance_states: "[...]P0 max power and frequency"
     //Slider minimum value.
     , 0 
     //Slider maximum value. If e.g. 2 p-states: 1st is "0", 2nd & last is "1"
