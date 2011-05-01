@@ -9,7 +9,7 @@
   #include <Windows/DLLloadError.hpp>
 #endif //#ifdef _WIN32
 #include <string>
-#include <global.h>
+//#include <global.h>
 
 wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   //std::string & strDLLname 

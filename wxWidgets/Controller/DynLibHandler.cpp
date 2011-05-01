@@ -39,6 +39,7 @@ namespace wxWidgets
 //    I_UserInterface * mp_userinterface
     )
   {
+    LOGN( FULL_FUNC_NAME << "--begin")
     bool bSuccess = false ;
     wxString wxstrFilePath = getwxString( r_stdstrDynLibFilePath );
     try
@@ -89,6 +90,10 @@ namespace wxWidgets
         mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
           GetNumberOfLogicalCPUcores() ;
     }
+//    catch(CPUaccessException & r_cpuaccessexception)
+//    {
+//
+//    }
     //Catch because: if executed from GUI it can continue.
     catch( ... )
     {
@@ -97,6 +102,7 @@ namespace wxWidgets
         << mr_cpucontrolbase.m_p_cpucontrollerDynLib )
 //      r_p_cpucontroller = NULL ;
     }
+    LOGN( FULL_FUNC_NAME << "--return" << bSuccess)
     return bSuccess ;
   }
 

@@ -182,7 +182,7 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
         default:      stdstrMessage += "Unknown error.\n"; break;
       }
       LOGN(stdstrMessage)
-      UIconfirm( stdstrMessage ) ;
+//      UIconfirm( stdstrMessage ) ;
       throw CPUaccessException(stdstrMessage) ;
     }
     else

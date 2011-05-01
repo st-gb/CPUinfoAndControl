@@ -220,6 +220,7 @@ public:
   BYTE GetConfigDataViaInterProcessCommunication() ;
   void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
   void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;
+  bool GetX86IandCiconFromFile(wxIcon & r_wxicon );
   Model * GetModel()
   {
     return mp_modelData ;

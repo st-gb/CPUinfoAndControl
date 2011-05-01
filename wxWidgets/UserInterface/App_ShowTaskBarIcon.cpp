@@ -10,8 +10,11 @@
 #include "wx/wx.h" //for wxMessageBox(...) (,etc.)
 //#include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
+//#include <wx/bitmap.h> //wxBITMAP_DEFAULT_TYPE
 
 #include <wxWidgets/App.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <wxWidgets/UserInterface/TaskBarIcon.hpp>//class TaskBarIcon
 
 bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
 {
@@ -95,14 +98,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
   //        ) ;
   //      if( wxicon.IsOk() )
       wxIcon wxicon ;
-      if( //http://docs.wxwidgets.org/stable/wx_wxicon.html:
-          //"true if the operation succeeded, false otherwise."
-        wxicon.LoadFile(
-        //Use wxT() macro to enable to compile with both unicode and ANSI.
-        wxT("x86IandC.ico") ,
-        wxBITMAP_TYPE_ICO
-        )
-        )
+      if( GetX86IandCiconFromFile(wxicon) )
       {
         if( mp_taskbaricon->SetIcon( //wxICON(sample),
             //m_taskbaricon.SetIcon(

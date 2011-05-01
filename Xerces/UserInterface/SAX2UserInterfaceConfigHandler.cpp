@@ -142,10 +142,12 @@ namespace Xerces
     std::wstring stdwstr //= Xerces::ConvertXercesStringToStdWstring(
       //cr_xercesc_attributes.getLocalName() ) ;
       ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
     if( XercesAttributesHelper::GetAttributeValue(
         cr_xercesc_attributes
          , stdstrAttributeName.c_str()
-         , m_p_model->m_stdwstrPipeName ) == SUCCESS
+         , m_p_model->m_stdwstrPipeName ) == //SUCCESS
+           XercesAttributesHelper::getting_attribute_value_succeeded
       )
     {
       LOGN("Getting attribute value for \"" << stdstrAttributeName
@@ -156,6 +158,7 @@ namespace Xerces
       LOGN("Getting attribute value for \"" << stdstrAttributeName
         << "\" failed")
     }
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   }
 
   inline void SAX2UserInterfaceConfigHandler::HandleToolTipXMLelement(

@@ -455,7 +455,7 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
     wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
       //mp_wxx86infoandcontrolapp->
       m_wxcriticalsectionIPCobject ) ;
-
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
     if( //mp_wxx86infoandcontrolapp->
         m_p_i_ipcclient )
       delete //mp_wxx86infoandcontrolapp->
@@ -493,6 +493,7 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
 //        m_p_i_ipcclient = new
 //        NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
     }
+#endif //#ifdef _WIN32
     //mp_wxx86infoandcontrolapp->
     m_wxstrDataProviderURL = cr_wxstrIPCclientURL ;
     //ConnectToDataProvider_Inline() ;
@@ -896,6 +897,31 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread(
 //  x86IandC::thread_type::start( GetCurrentCPUcoreDataViaIPCthreadFunc , this ) ;
 }
 
+bool wxX86InfoAndControlApp::GetX86IandCiconFromFile(wxIcon & r_wxicon )
+{
+  return //http://docs.wxwidgets.org/stable/wx_wxicon.html:
+      //"true if the operation succeeded, false otherwise."
+    r_wxicon.LoadFile(
+  //http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
+  //"wxMSW supports BMP and ICO files, BMP and ICO resources;
+  // wxGTK supports XPM files;"
+  #ifdef _WIN32
+    //Use wxT() macro to enable to compile with both unicode and ANSI.
+    wxT("x86IandC.ico") ,
+    wxBITMAP_TYPE_ICO
+  #endif
+  #ifdef __linux__
+    //Use wxT() macro to enable to compile with both unicode and ANSI.
+    wxT("x86IandC.xpm") //,
+  //        wxBITMAP_TYPE_XBM
+    //"Note that the wxBITMAP_DEFAULT_TYPE constant has different value
+    //under different wxWidgets ports. See the bitmap.h header for the
+    //value it takes for a specific port."
+    //wxBITMAP_DEFAULT_TYPE
+  #endif
+    )
+    ;
+}
 //Getting the CPU core data (->depends on the implementation) can take many
 //milliseconds, especially via IPC. So start a thread for this.
 void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
@@ -1051,9 +1077,11 @@ void wxX86InfoAndControlApp::IPCclientDisconnect()
 {
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     m_wxcriticalsectionIPCobject ) ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   if( //Must be the 1st evaluation: check whether pointer is NULL
     m_p_i_ipcclient )
     return m_p_i_ipcclient->Disconnect() ;
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 }
 
 bool wxX86InfoAndControlApp::IPCclientConnectToDataProvider(
@@ -1068,9 +1096,11 @@ inline bool wxX86InfoAndControlApp::IPCclientConnect_Inline(
   //Lock concurrent access to p_i_ipcclient from another thread.
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     m_wxcriticalsectionIPCobject ) ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   if( //Must be the 1st evaluation: check whether pointer is NULL
     m_p_i_ipcclient )
     return m_p_i_ipcclient->ConnectToDataProvider(r_stdstrMessage) ;
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   return false ;
 }
 
@@ -1087,11 +1117,15 @@ inline bool wxX86InfoAndControlApp::IPC_ClientIsConnected_Inline()
 //    mp_wxx86infoandcontrolapp->m_criticalsection_typeIPCobject ) ;
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     m_wxcriticalsectionIPCobject ) ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 //  IPC_Client * p_i_ipc_client = mp_wxx86infoandcontrolapp->m_p_i_ipcclient ;
   return
     //Must be the 1st evaluation: check whether pointer is NULL
     m_p_i_ipcclient
     && m_p_i_ipcclient->IsConnected() ;
+#else
+  return true;
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 }
 
 BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse(
@@ -1118,6 +1152,7 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
   //Lock concurrent access to p_i_ipcclient from another thread.
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     m_wxcriticalsectionIPCobject ) ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   if( //Must be the 1st evaluation: check whether pointer is NULL
     m_p_i_ipcclient )
   {
@@ -1131,6 +1166,7 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
     return m_p_i_ipcclient->SendCommandAndGetResponse( //byCommand
       ipc_data) ;
   }
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   return 0 ;
 }
 
@@ -1207,8 +1243,10 @@ bool wxX86InfoAndControlApp::OnInit()
         )
       )
       Confirm( "loading UserInterface.xml failed" ) ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
     else
       m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
     DWORD dwProcID = wxGetProcessId() ;
     if( mp_modelData->m_bAppendProcessID )
     {
@@ -1341,12 +1379,14 @@ bool wxX86InfoAndControlApp::OnInit()
 //        mp_cpucontroller = & m_sax2_ipc_current_cpu_data_handler ;
         //For getting the reference clock.
         ::FetchCPUcoreDataFromIPC( this ) ;
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
         if( m_sax2_ipc_current_cpu_data_handler.
           m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.size() > 0 )
           m_sax2_ipc_current_cpu_data_handler.m_fReferenceClockInMHz =
             m_sax2_ipc_current_cpu_data_handler.
             m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.begin()->second.
             m_fReferenceClock ;
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windowss
       }
 
       CreateAndShowMainFrame() ;
@@ -1813,6 +1853,7 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
 
 void wxX86InfoAndControlApp::StartService()
 {
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   try
   {
     if( ! ServiceBase::StartService( //mp_model->m_strServiceName.c_str()
@@ -1836,10 +1877,12 @@ void wxX86InfoAndControlApp::StartService()
   {
     ::wxMessageBox( wxT("error connecting to the service control manager") ) ;
   }
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 }
 
 void wxX86InfoAndControlApp::StopService()
 {
+#ifdef _WIN32 //pre-defined preprocessor macro for (also 64 bit) Windows
   try
   {
     if( ! ServiceBase::StopService( //mp_model->m_strServiceName.c_str()
@@ -1863,4 +1906,5 @@ void wxX86InfoAndControlApp::StopService()
   {
     ::wxMessageBox( wxT("error connecting to the service control manager") ) ;
   }
+#endif //#ifdef _WIN32
 }

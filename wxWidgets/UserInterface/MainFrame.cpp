@@ -51,11 +51,13 @@
 #include <Controller/I_CPUcontrollerAction.hpp>//class I_CPUcontrollerAction
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
 #include <Controller/character_string/stdtstr.hpp> //Getstdtstring(...)
+#include <images/x86IandC.xpm>
 #include <ModelData/ModelData.hpp> //class CPUcoreData
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <ModelData/RegisterData.hpp>
 //#include <ModelData/HighLoadThreadAttributes.hpp>
 #include <ModelData/SpecificCPUcoreActionAttributes.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
 #include <preprocessor_macros/suppress_unused_variable.h>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
@@ -78,6 +80,7 @@ wxServiceSocketClient.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/icon/CreateTextIcon.hpp> //CreateTextIcon(...)
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
+#include <wxWidgets/UserInterface/TaskBarIcon.hpp>//class TaskBarIcon
 #include <wxWidgets/UserInterface/AboutDialog.hpp> //class AboutDialog
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
 #include <Xerces/XMLAccess.hpp>
@@ -403,6 +406,20 @@ MainFrame::MainFrame(
 {
   LOG("begin of main frame creation"//\n"
     )
+  wxIcon wxicon;
+  if( p_wxx86infoandcontrolapp->GetX86IandCiconFromFile(wxicon) )
+  {
+    SetIcon( wxicon);
+  }
+  else
+  {
+//    p_wxx86infoandcontrolapp->MessageWithTimeStamp(
+//      GetStdWstring( wxT("setting icon for the main frame failed") )
+//        );
+    LOGN("setting icon from file for the main frame failed")
+    wxIcon wxiconThisDialog( x86IandC_xpm ) ;
+    SetIcon(x86IandC_xpm);
+  }
   LOGN("# CPU cores: " << (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores)
 //  m_p_wxtimer = new wxTimer( this ) ;
   mp_ar_voltage_and_multi = new VoltageAndMulti[

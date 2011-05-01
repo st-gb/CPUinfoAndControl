@@ -10,6 +10,7 @@
 
 //CALLING_CONVENTION
 #include <Controller/CPUcontrollerDynLib/calling_convention.h>
+#include <windef.h> //BOOL
 
 //typedef unsigned char BYTE ;
 typedef unsigned short WORD;

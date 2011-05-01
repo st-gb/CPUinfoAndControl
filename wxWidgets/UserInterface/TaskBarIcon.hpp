@@ -79,6 +79,10 @@ public:
         m_p_wxicon_drawer->DrawText(r_wxicon, cr_wxstrText, cp_wxcolourText);
     }
     void FreeRessources();
+    float GetTemperatureViaMenuLabel(
+      int nEventID//, //wxString & r_wxstrMenuLabel
+    //    fTemperatureInDegC
+      );
     void OnLeftButtonClick(wxTaskBarIconEvent&);
     void OnMenuRestore(wxCommandEvent&);
     void OnMenuExit(wxCommandEvent&);

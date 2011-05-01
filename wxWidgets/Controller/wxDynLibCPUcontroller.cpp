@@ -50,6 +50,13 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   mp_userinterface (p_userinterface)
   , m_wNumberOfLogicalCPUcores ( 1 )
 {
+  if( ! p_cpuaccess )
+  {
+    std::string std_str = "can't create CPU controller because the hardware/ "
+      "CPU access not initialized/ the pointer is NULL";
+    p_userinterface->Confirm(std_str);
+    throw new CPUaccessException(std_str);
+  }
   //TODO crashes here if the CPU access initialization failed.
 //  mp_model = p_cpuaccess->mp_model ;
   mp_model = p_model ;

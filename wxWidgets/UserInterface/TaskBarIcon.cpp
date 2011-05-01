@@ -20,6 +20,7 @@
 #endif
 
 #include "wx/taskbar.h"
+//#include <wx/string.h> //wxString::Format(...)
 #include "TaskBarIcon.hpp"
 
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for LOGN(...)
@@ -28,11 +29,13 @@
 #ifdef __WXMSW__
   #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
+#endif //#ifdef __WXMSW__
   #include <wxWidgets/App.hpp> //wxGetApp()
   //getwxString(...)
   #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
-#endif
 #include <wxWidgets/UserInterface/MainFrame.hpp>
+
+#define FIRST_CPU_CORE_THROTTLE_TEMPERATURE 40
 
 enum {
     PU_RESTORE = //10001,
@@ -104,9 +107,10 @@ wxMenu * TaskBarIcon::CreateSetThrottleTemperatureMenu()
     s_wEventID = m_1stThrottleCPUcoreTemperatureEventID;
   LOGN("1st CPU core throttle temperature event ID: " <<
       m_1stThrottleCPUcoreTemperatureEventID )
-  for(BYTE byTemperature = 40; byTemperature < 100; byTemperature += 2)
+  for(BYTE byTemperature = //40
+      FIRST_CPU_CORE_THROTTLE_TEMPERATURE; byTemperature < 100; byTemperature += 2)
   {
-    wx_str = wxString::Format("%u", byTemperature);
+    wx_str = wxString::Format( wxT("%u"), byTemperature);
     m_p_wxmenuThrottleTemperatures->AppendRadioItem( s_wEventID , wx_str );
 
     //Set mark if >= because (and not simply "==") the temperature is as
@@ -255,10 +259,18 @@ void TaskBarIcon::FreeRessources()
   LOGN("TaskBarIcon::FreeRessources() end")
 }
 
-void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
+float TaskBarIcon::GetTemperatureViaMenuLabel(
+    int nEventID//, //wxString & r_wxstrMenuLabel
+//    fTemperatureInDegC
+    )
 {
-  int nEventID = wxevent.GetId() ;
-  wxString wxstrMenuLabel = m_p_wxmenuThrottleTemperatures->
+  wxString wxstrMenuLabel;
+  // in "src/common/menucmn.cpp", line 612:
+  //GetLabel() failed at once in wxString wxMenuBase::GetLabel( int id ) const:,
+  // because the context menu is destroyed immediately after its creation?
+  //Afterwards the taskbar icon context menu popped up no more.
+//  r_wxstrMenuLabel
+  wxstrMenuLabel = m_p_wxmenuThrottleTemperatures->
     //see http://docs.wxwidgets.org/trunk/classwx_menu.html#e912f9dec96a0bd585fe562938447d7d
     GetLabel(nEventID);
   LOGN("taskbar icon--requested to set CPU core throttle temperature of "
@@ -267,6 +279,23 @@ void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
   double dTemperatureInDegC;
   wxstrMenuLabel.ToDouble( & dTemperatureInDegC);
   float fTemperatureInDegC = (float) dTemperatureInDegC;
+  return fTemperatureInDegC;
+}
+
+void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
+{
+  int nEventID = wxevent.GetId() ;
+  LOGN( FULL_FUNC_NAME << " event ID:" << nEventID)
+//  wxString wxstrMenuLabel;
+//  GetTemperatureViaMenuLabel(nEventID, wxstrMenuLabel);
+
+//  m_1stThrottleCPUcoreTemperatureEventID
+  float fTemperatureInDegC = //(float) dTemperatureInDegC;
+    FIRST_CPU_CORE_THROTTLE_TEMPERATURE + ( nEventID -
+      m_1stThrottleCPUcoreTemperatureEventID ) * 2;
+  LOGN("taskbar icon--requested to set CPU core throttle temperature of "
+    << fTemperatureInDegC << " degrees Celsius"
+    )
   std::string std_str = format_output_data( (BYTE *) & fTemperatureInDegC, 4,
     80);
   LOGN("TaskBarIcon::OnSetThrottleTemperature--data to send to the service:"
@@ -335,6 +364,22 @@ void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
   if( mp_mainframe )
   {
     mp_mainframe->Show(true);
+    //from http://stackoverflow.com/questions/2550660/how-can-i-ensure-that-a-wxframe-is-brought-to-the-foreground:
+    mp_mainframe->
+      //http://docs.wxwidgets.org/trunk/classwx_window.html#54808c933f22a891c5db646f6209fa4d:
+      //"Notice that this function only requests the window manager to raise
+      //this window to the top of Z-order. Depending on its configuration,
+      //the window manager may raise the window, not do it at all or indicate
+      //that a window requested to be raised in some other way, e.g. by
+      //flashing its icon if it is minimized."
+      Raise();
+    mp_mainframe->Maximize(
+      //bool maximize=true
+      //"If true, maximizes the window, otherwise it restores it."
+      false //->"restore the window (window size ia < maximized size)
+      );
+    mp_mainframe->RequestUserAttention (//int flags=wxUSER_ATTENTION_INFO
+      );
     LOGN("after calling to show the main frame")
   }
 //  mp_mainframe->Maximize(true ) ;
