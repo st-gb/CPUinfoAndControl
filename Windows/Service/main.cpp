@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //Else: "fatal error C1189: #error :  Building MFC application with /MD[d]
 // (CRT dll version) requires MFC shared dll version. Please #define _AFXDLL or
 // do not use /MD[d]"
@@ -342,7 +349,8 @@ int main( int argc, char * argv[]
          std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
           CPUcontrolService cpucontrolservice(
             argc,
-            GetTCHARarray_Inline( (const char **) argv, argc),
+            //GetTCHARarray_Inline
+            Get_wchar_t_Array_Inline( (const char **) argv, argc),
 //            stdtstrProgramName
             stdwstr
 //            , xerces_ipc_data_handler

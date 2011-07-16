@@ -402,7 +402,7 @@ BOOL // TRUE: success, FALSE: failure
       {
       case ERROR_GEN_FAILURE:
         stdstrAdditionalInfo = "This error code could mean that MSR address \"" + 
-          to_stdstring<DWORD>(dwIndex) + "\" is not avaiable on the CPU" ;
+        convertToStdString<DWORD>(dwIndex) + "\" is not avaiable on the CPU" ;
           break ;
       }
         //Show the detailed error message here because the details 
@@ -411,7 +411,7 @@ BOOL // TRUE: success, FALSE: failure
       UIconfirm(
         "Reading from MSR failed. "
         "\nerror message: \"" + strErrorMessage + "\"(error code: " 
-        + to_stdstring<DWORD>( //(WORD) byModel 
+        + convertToStdString<DWORD>( //(WORD) byModel
           dwErrorCode //, std::hex
           )
         + ")\n"

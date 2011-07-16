@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   MSRdeviceFile.cpp
  * Author: sgebauer
@@ -12,7 +19,8 @@
 // other include files before.
 //for GetErrorMessageFromLastErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
-#include <Controller/character_string/stdstring_format.hpp> //to_stdstring(T )
+//convertToStdString(T )
+#include <Controller/character_string/stdstring_format.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUG()
 //#include <preprocessor_macros/bitmasks.h>
@@ -351,7 +359,7 @@ BOOL // TRUE: success, FALSE: failure
 //  UIconfirm(
 //    "Reading from MSR failed. "
 //    "\nerror message: \"" + strErrorMessage + "\"(error code: "
-//    + to_stdstring<DWORD>( //(WORD) byModel
+//    + convertToStdString<DWORD>( //(WORD) byModel
 //      dwErrorCode //, std::hex
 //      )
 //    + ")\n"
@@ -382,7 +390,7 @@ BOOL // TRUE: success, FALSE: failure
   {
     std::string stdstrErrMsg = ("Seeking failed in file ") + getMSRdeviceFilePath(
       m_byCoreID) //+ std::string("\n")
-      + "to offset" + to_stdstring(dwIndex) + ":"
+      + "to offset" + convertToStdString(dwIndex) + ":"
       + GetErrorMessageFromLastErrorCodeA() ;
     LOGN(stdstrErrMsg)
 //    UIconfirm( stdstrErrMsg );

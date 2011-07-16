@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * IPCdataHandler.cpp
  *
@@ -7,7 +14,7 @@
 
 #include "IPCdataGenerator.hpp"
 #include <Controller/IPC/I_IPC.hpp> //for enum value "get_current_CPU_data"
-#include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
+#include <Controller/character_string/stdstring_format.hpp> //convertToStdString()
 //format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
@@ -53,7 +60,7 @@ namespace Xerces
       // Exceptions: DOMException
       p_dom_elementRoot->appendChild(p_dom_elementCore);
 
-      stdstr = to_stdstring<WORD>( wCPUcoreIndex ) ;
+      stdstr = convertToStdString<WORD>( wCPUcoreIndex ) ;
       //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMElement.html
       // #1a607d8c619c4aa4a59bc1a7bc5d4692:
       // exception DOMException
@@ -63,35 +70,35 @@ namespace Xerces
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
   //             GetStdWstring( stdstr ).c_str() );
 
-      stdstr = to_stdstring<float>(
+      stdstr = convertToStdString<float>(
         mr_model.m_cpucoredata.m_arfCPUcoreLoadInPercent[wCPUcoreIndex] ) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
         (const XMLCh *) L"load" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
-      stdstr = to_stdstring<float>(
+      stdstr = convertToStdString<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fVoltageInVolt ) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
         (const XMLCh *) L"voltage_in_Volt" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
-      stdstr = to_stdstring<float>(
+      stdstr = convertToStdString<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fMultiplier ) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
         (const XMLCh *) L"multiplier" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
-      stdstr = to_stdstring<float>(
+      stdstr = convertToStdString<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fReferenceClockInMhz ) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
         (const XMLCh *) L"reference_clock_in_MHz" ,
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
-      stdstr = to_stdstring<float>(
+      stdstr = convertToStdString<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fTempInDegCelsius) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
@@ -109,7 +116,7 @@ namespace Xerces
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
         (const XMLCh *) L"too_hot" );
 
-      stdstr = to_stdstring<wxLongLong_t>( //::wxNow()
+      stdstr = convertToStdString<wxLongLong_t>( //::wxNow()
 //        ::wxGetLocalTimeMillis().GetValue()
          //mr_model.m_cpucoredata.m_llLastTimeTooHot
          m_p_i_cpucontroller->m_llLastTimeTooHot

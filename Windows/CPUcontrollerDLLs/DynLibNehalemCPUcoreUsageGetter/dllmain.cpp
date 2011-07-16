@@ -1,4 +1,4 @@
-// dllmain.cpp : Definiert den Einstiegspunkt für die DLL-Anwendung.
+// dllmain.cpp : Definiert den Einstiegspunkt fï¿½r die DLL-Anwendung.
 #include "stdafx.h"
 
 #include <Controller\I_CPUaccess.hpp>
@@ -68,8 +68,11 @@ void Init( //I_CPUcontroller * pi_cpu
   )
 {
 //  g_pi_cpuaccess = pi_cpuaccess ;
-//  //from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-//  //("Calling an Exported Function in an EXE from Within a DLL"):
+  //see http://groups.google.com/group/comp.programming/browse_thread/thread/
+  //  4275d11ee0c2e4c7/3e571b1c164d0261?
+  //  hl=en&ie=UTF-8&q=export+function+executable#3e571b1c164d0261
+  //: "and then the dynamic library can use
+  //  GetProcAddress(GetModuleHandle(NULL),"name_of_exported_function") ."
 //  g_pfnreadmsr = (ReadMSR_func_type)::GetProcAddress(
 //    GetModuleHandle(NULL),
 //    "ReadMSR");

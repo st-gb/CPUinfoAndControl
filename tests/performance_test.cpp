@@ -36,10 +36,10 @@ int main(int argc, char * argv[] )
   DWORD dwNumTimes = 1000000000 ;
   if( argc > 1 )
   {
-    std::stringstream stdstrstream ;
-    stdstrstream << argv[1] ;
-    //from http://www.codeguru.com/forum/showthread.php?t=231054
-    if( sscanf(argv[1], "%ul", & dwNumTimes ) == EOF )
+    std::stringstream std_strstream ;
+    std_strstream << argv[1] ;
+    std_strstream >> dwNumTimes;
+    if( std_strstream.bad() )
     {
       std::cout <<  "could not convert \"" << argv[1] << "\" to a number\n" ;
     }

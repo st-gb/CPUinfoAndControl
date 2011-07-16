@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "wxDynLibCPUcontroller.hpp"
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
 //GetErrorMessageFromErrorCodeA(...)
@@ -92,7 +99,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
         //Convert to std::string, else g++ linker error:
         //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
         << ::GetStdString( wxstrFuncName )
-        << " address of function:" << (void *) pfnInit;
+        << " address of function:" << (void *) pfnInit
         )
       LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
       LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)

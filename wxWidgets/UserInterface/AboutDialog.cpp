@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * AboutDialog.cpp
  *
@@ -8,10 +15,20 @@
 #include <Controller/MainController.hpp>//MainController::GetSupportedCPUs(...)
 #include <preprocessor_macros/BuildTimeString.h> //BUILT_TIME
 #include <wxWidgets/UserInterface/AboutDialog.hpp>
+#include <wx/bitmap.h> //class wxBitmap
 //#include <wx/dialog.h> //for base class wxDialog
 //#include <wx/stattext.h> //class wxStaticText
 #include <wx/textctrl.h> //class wxTextCtrl
+#include <wx/statbmp.h> //class wxStaticBitmap
 #include <wx/string.h> //class wxString
+#include <wx/sizer.h> //class wxBoxSizer
+//DISable warning, from
+//http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
+// : "I believe passing -Wno-write-strings to gcc will suppress this warning."
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#include <images/street_lamp_80x321_256_indexed_colors.xpm>
+//ENable warning
+#pragma GCC diagnostic warning "-Wwrite-strings"
 
 //Lebensweisheiten:
 wxString g_ar_wxstrWorldlyWisdom [] = {
@@ -80,30 +97,57 @@ AboutDialog::AboutDialog(const wxString & cr_wxstrProgramName )
   : wxDialog(
     NULL,
     wxID_ANY ,
-    _T("About ") + cr_wxstrProgramName
+    _T("About ") + cr_wxstrProgramName,
+    wxDefaultPosition,
+//    wxDefaultSize,
+    wxSize(600, 400),
+    wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
     )
 {
   wxString wxstrMessage ;
   GetAboutMessage(wxstrMessage) ;
-  AddChild( new //wxStaticText(
-    wxTextCtrl(
-    this,
-    wxID_ANY,
-    wxstrMessage ,
-    wxDefaultPosition,
-    wxDefaultSize
-#ifdef __WXGTK___
-    //http://docs.wxwidgets.org/trunk/classwx_static_text.html
-    // #fcba401f2915146b1ce25b90c9499ccb:
-    //"This function allows to set decorated static label text, when the
-    //wxST_MARKUP style is used, on those platforms which support it
-    //(currently only GTK+ 2). For the other platforms or when wxST_MARKUP is
-    //not used, the markup is ignored"
-    ,wxST_MARKUP // to allow to select and copy text.
-#endif
-    , wxTE_READONLY | wxTE_MULTILINE
-    )
-    ) ;
+
+  wxBoxSizer * p_wxboxsizer = new wxBoxSizer(wxHORIZONTAL) ;
+
+  wxTextCtrl * p_wxtextctrl = new //wxStaticText(
+      wxTextCtrl(
+      this,
+//      NULL,
+      wxID_ANY,
+      wxstrMessage ,
+      wxDefaultPosition,
+      wxDefaultSize
+  #ifdef __WXGTK___
+      //http://docs.wxwidgets.org/trunk/classwx_static_text.html
+      // #fcba401f2915146b1ce25b90c9499ccb:
+      //"This function allows to set decorated static label text, when the
+      //wxST_MARKUP style is used, on those platforms which support it
+      //(currently only GTK+ 2). For the other platforms or when wxST_MARKUP is
+      //not used, the markup is ignored"
+      ,wxST_MARKUP // to allow to select and copy text.
+  #endif
+      ,
+      //prevent editing the text
+      wxTE_READONLY
+      | wxTE_MULTILINE
+    );
+//  AddChild( p_wxtextctrl) ;
+  p_wxboxsizer->Add(p_wxtextctrl,
+    1 //1=the control should take more space if the sizer is enlarged
+    , wxEXPAND
+    );
+  wxBitmap wxbitmapStreetLamp(street_lamp_80x321_256_indexed_colors_xpm);
+//  wxPanel * p_wxpanel = new wxPanel();
+//  p_wxpanel->SetB
+  //from http://ubuntuforums.org/archive/index.php/t-1486783.html
+  wxStaticBitmap * p_wxstaticbitmap = new wxStaticBitmap//();
+      (this, wxID_ANY, wxbitmapStreetLamp);
+  p_wxstaticbitmap->SetToolTip( wxT("a street lamp from former GDR "
+    "symbolizing East Berlin"));
+//  p_wxstaticbitmap->SetBitmap(wxbitmapStreetLamp);
+  p_wxboxsizer->Add( p_wxstaticbitmap);
+  SetSizer(p_wxboxsizer);
+//  AddChild(p_wxstaticbitmap);
 //  SetSizeHints(this);
 //  Fit(this);
   //Force the neighbour controls of "voltage in volt" to be resized.

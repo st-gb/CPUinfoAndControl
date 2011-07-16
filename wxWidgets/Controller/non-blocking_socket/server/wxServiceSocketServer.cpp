@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "wxServiceSocketServer.hpp"
 
 #include <Controller/I_ServerProcess.hpp> //class I_ServerProcess
@@ -185,7 +192,7 @@ void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
       // Which test are we going to run?
       unsigned char c;
       p_wxsocketbase->Read( & c, 1 );
-      BYTE * arbyIPCdataToSend ;
+//      BYTE * arbyIPCdataToSend ;
       IPC_data ipc_data;
       DWORD dwNumberOfBytes = m_p_serverprocess->IPC_Message(
 //        c,

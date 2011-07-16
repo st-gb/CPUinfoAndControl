@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #define _AFXDLL
 
 //return values for start or stop high load thread.
@@ -79,6 +86,59 @@ class MainFrame
   //, public wxTimer 
 {
 public:
+    enum
+    {
+      ID_Quit = 1
+      , ID_About
+      , ID_AttachCPUcontrollerDynLib
+      , ID_DetachCPUcontrollerDynamicLibrary
+      , ID_SetCPUcontrollerDynLibForThisCPU
+
+      , ID_AttachCPUusageGetterDynLib
+      , ID_DetachCPUusageGetterDynLib
+      , ID_SetCPUusageGetterDynLibForThisCPU
+
+      , ID_MinimizeToSystemTray
+    //#ifdef COMPILE_WITH_MSR_EXAMINATION
+      , ID_MSR
+      , ID_WriteToMSRdialog
+      //, ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq //,
+      //This means to disable e.g.:
+      //-Windows' scaling (by ACPI objects?)
+      //-WRITE to performance state MSR registers by programs like RMclock
+      , ID_DisableOtherVoltageOrFrequencyAccess
+      , ID_EnableOtherVoltageOrFrequencyAccess
+      , ID_EnableOrDisableOwnDVFS //,
+
+    #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
+      , ID_ContinueService
+      , ID_PauseService
+      , ID_StartService
+      , ID_StopService
+      , ID_ConnectToService
+      , ID_ConnectToOrDisconnectFromService
+      , ID_DisconnectFromService
+    #endif
+
+      , ID_UpdateViewInterval
+      , ID_SaveAsDefaultPstates
+      , ID_Collect_As_Default_Voltage_PerfStates
+      , ID_FindDifferentPstates
+      , ID_ShowVoltageAndFrequencySettingsDialog
+    //#endif
+      , TIMER_ID
+    //#ifdef _WINDOWS
+    #ifdef COMPILE_WITH_SERVICE_CAPABILITY
+      , ID_Service
+    #endif
+    //  ID_SetPstate3ForCore0,
+    //  ID_FindLowestOperatingVoltage
+    #ifdef PRIVATE_RELEASE //hide the other possibilities
+      ,ID_IncreaseVoltageForCurrentPstate
+    #endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
+      ,
+      ID_LastStaticEventID
+    }; //event IDs enum
   void Notify() ; //overrides wxTimer::Notify()
 private: 
   bool m_bAllowCPUcontrollerAccess ;
@@ -158,7 +218,9 @@ private:
   wxMemoryDC m_wxmemorydcStatic ;
   wxMenuBar * mp_wxmenubar ;
   wxMenu * p_wxmenuExtras ;
+public:
   wxMenu * mp_wxmenuFile ;
+private:
   wxMenu * p_wxmenuService ;
 //  wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;

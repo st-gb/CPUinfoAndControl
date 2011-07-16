@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //#ifdef COMPILE_WITH_XERCES
 //If not included: compiler error "C1010" with MSVC++.
 #include "../stdafx.h"
@@ -6,7 +13,8 @@
 #include <global.h> //for SUCCESS, FAILURE
 //#include <winnt.h> //for LPWSTR
 #include <Controller/Logger/Logger.hpp>
-#include <Controller/character_string/stdstring_format.hpp> //for to_strstring()
+//for std::string convertToStdString(typename )
+#include <Controller/character_string/stdstring_format.hpp>
 #include <Controller/character_string/stdtstr.hpp>//for GetStdString(...)
 #include <ModelData/ModelData.hpp>
 #include <UserInterface/UserInterface.hpp>
@@ -35,7 +43,9 @@ char ReadXMLfileInitAndTermXerces(
   XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
   )
 {
-  LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
+//  LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("read XML configuration--filename: \""
+    << cp_chXMLfilePath << "\"" )
   bool bXercesSuccessfullyInitialized = false ;
   //from http://xerces.apache.org/xerces-c/program-sax2-3.html:
   try
@@ -242,14 +252,14 @@ char ReadXMLdocumentInitAndTermXerces(
 //            (wchar_t *) r_inputsource.getSystemId() )
           + stdwstrInputSourceName
           + L"\"\n"
-//          + "\", line " + to_stdstring( cr_saxparseexception.getLineNumber() )
-//          + ", column " + to_stdstring( cr_saxparseexception.getColumnNumber() )
-          L"in line " + GetStdWstring( to_stdstring(
+//          + "\", line " + convertToStdString( cr_saxparseexception.getLineNumber() )
+//          + ", column " + convertToStdString( cr_saxparseexception.getColumnNumber() )
+          L"in line " + GetStdWstring( convertToStdString(
             xmlfilelocLineNumber ) )
-          + L", column " + GetStdWstring( to_stdstring(
+          + L", column " + GetStdWstring( convertToStdString(
             xmlfilelocColumnNumber ) )
-//          + "\", line " + to_stdstring( cr_saxexception.getLineNumber() )
-//          + ", column " + to_stdstring( cr_saxexception.getColumnNumber() )
+//          + "\", line " + convertToStdString( cr_saxexception.getLineNumber() )
+//          + ", column " + convertToStdString( cr_saxexception.getColumnNumber() )
           + L":\n\"" +
 //          //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
 //          (wchar_t *) cr_saxparseexception.getMessage()
@@ -275,6 +285,8 @@ char ReadXMLdocumentInitAndTermXerces(
         //not to recognize the character encoding of the log file.
 //        LOGWN_WSPRINTF(L"%ls", stdwstrMessage.c_str() )
         LOGN( GetStdString_Inline( stdwstrMessage ) )
+//        p_userinterface->Confirm();
+        p_userinterface->MessageWithTimeStamp( stdwstrMessage);
       }
       catch( const SAXException & cr_saxexception )
       {
@@ -291,14 +303,14 @@ char ReadXMLdocumentInitAndTermXerces(
             //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
             (wchar_t *) r_inputsource.getSystemId() ) +
           L"\" :"
-//          + "\", line " + to_stdstring( r_saxparseexception.getLineNumber() )
-//          + ", column " + to_stdstring( r_saxparseexception.getColumnNumber() )
-//          + L"\", line " + GetStdWstring( to_stdstring(
+//          + "\", line " + convertToStdString( r_saxparseexception.getLineNumber() )
+//          + ", column " + convertToStdString( r_saxparseexception.getColumnNumber() )
+//          + L"\", line " + GetStdWstring( convertToStdString(
 //              r_saxparseexception.getLineNumber() ) )
-//          + L", column " + GetStdWstring( to_stdstring(
+//          + L", column " + GetStdWstring( convertToStdString(
 //            r_saxparseexception.getColumnNumber() ) )
-//          + "\", line " + to_stdstring( r_saxexception.getLineNumber() )
-//          + ", column " + to_stdstring( r_saxexception.getColumnNumber() )
+//          + "\", line " + convertToStdString( r_saxexception.getLineNumber() )
+//          + ", column " + convertToStdString( r_saxexception.getColumnNumber() )
 //          + L": " + r_saxparseexception.getMessage()
           +
           //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.

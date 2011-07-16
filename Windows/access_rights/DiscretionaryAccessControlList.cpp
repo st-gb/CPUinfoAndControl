@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 
 //for ConvertStringSecurityDescriptorToSecurityDescriptorA in sddl.h
 #define _WIN32_WINNT 0x0500
@@ -39,7 +46,7 @@
 //from http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx
 // community content
 
-//    Permissions necessary to open a named pipe
+//"    Permissions necessary to open a named pipe
 //    It appears that in order for a client (running under lower privilege rights) to open a named pipe, they must have FILE_READ_ATTRIBUTES and SYNCHRONIZE access, so be sure to grant this access to any users you want to be able to connect.
 //
 //    Here's some code (C++) on how to do this:
@@ -105,7 +112,10 @@ void AddLowPrivilegedACE( HANDLE & r_handle )
 //    changes to grfAccessMode and grfAccessPermissions.
 //
 //    Code on this post is added by Sanje2v. Original post and/or last editor
-//    was Joseph Galbraith.
+//    was Joseph Galbraith."
+
+//  END from http://msdn.microsoft.com/en-us/library/aa365150%28VS.85%29.aspx
+  // community content
 }
 
 //from MS platform SDK v6.1\Samples\WinBase\Service:
@@ -133,6 +143,7 @@ BOOL DowngradeDACL(SECURITY_ATTRIBUTES * p_security_attributes)
   PSECURITY_DESCRIPTOR p_security_descriptor = ( (PSECURITY_DESCRIPTOR)
     p_security_attributes->lpSecurityDescriptor ) ;
 
+  //from http://msdn.microsoft.com/en-us/library/ms717798%28v=vs.85%29.aspx:
 //  // Define the SDDL for the DACL.
 //  // Modify these values as needed to generate the proper
 //  // DACL for your application.
@@ -142,6 +153,7 @@ BOOL DowngradeDACL(SECURITY_ATTRIBUTES * p_security_attributes)
 //    _T("D;OICI;GA;;;AN)")     // Deny all access to Anonymous Logon
 //    _T("A;OICI;GRGWGX;;;AU)") // Allow read/write/execute to Authenticated Users
 //    _T("A;OICI;GA;;;BA)") ;  // Allow full control to Administrators
+  //end from http://msdn.microsoft.com/en-us/library/ms717798%28v=vs.85%29.aspx:
 
   //http://msdn.microsoft.com/en-us/library/aa379561%28v=VS.85%29.aspx:
   //"Because the internal format of a security descriptor can vary, we
@@ -212,6 +224,7 @@ BYTE CreateSecAttributes(
   SECURITY_ATTRIBUTES & sa )
 {
   BYTE byReturn = 0 ;
+  //from http://msdn.microsoft.com/en-us/library/aa446595%28v=vs.85%29.aspx:
 //  DWORD dwRes, dwDisposition;
 //  PSID pEveryoneSID = NULL , pAdminSID = NULL;
 //  PACL pACL = NULL;
@@ -340,8 +353,11 @@ BYTE CreateSecAttributes(
 //        LocalFree(pSD);
 //    if (hkSub)
 //        RegCloseKey(hkSub);
+  // end from: http://msdn.microsoft.com/en-us/library/aa446595%28v=vs.85%29.aspx
+
 //    LOGN("CreateSecAttributes return: " << (WORD) byReturn )
 
+    //from http://msdn.microsoft.com/en-us/library/aa446595%28v=vs.85%29.aspx
     DWORD dwRes;
 //    DWORD dwDisposition;
     PSID pEveryoneSID = NULL, pAdminSID = NULL;
@@ -481,6 +497,6 @@ Cleanup:
         LocalFree(pSD);
     if (hkSub)
         RegCloseKey(hkSub);
-
+    //end from http://msdn.microsoft.com/en-us/library/aa446595%28v=vs.85%29.aspx
     return byReturn ;
 }

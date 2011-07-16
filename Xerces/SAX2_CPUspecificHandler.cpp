@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   SAX2_CPUspecificHandler.cpp
  * Author: Stefan
@@ -421,7 +428,15 @@ void SAX2_CPUspecificHandler::startElement
   char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
     cpc_xmlchLocalName);
   std::string strValue ;
-  LOG( "XML element: " << pchXMLelementName << std::endl );
+  // g++ error:
+  //"no match for 'operator<<' in
+  // '(+(&stringstream)->css::basic_stringstream<_CharT>::operator<<
+  // [with _CharT = wchar_t](((const char*)"XML element: ")))->
+  // css::basic_stringstream<_CharT>::operator<<
+  // [with _ValueT = char*, _CharT = wchar_t](pchXMLelementName)
+  // << std::endl' "
+//  LOG( "XML element: " << pchXMLelementName << std::endl );
+  LOGN( "XML element: " << std::string(pchXMLelementName) );
   m_strElementName = std::string(pchXMLelementName) ;
   //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname << endl );
   //if( strcmp(pchXMLelementName, "CPU") == 0 )

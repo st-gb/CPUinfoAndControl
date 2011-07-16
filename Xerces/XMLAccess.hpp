@@ -1,4 +1,12 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //include guard
+
 #ifndef _XMLACCESS_HPP
   #define _XMLACCESS_HPP
 
@@ -103,7 +111,9 @@
     )
   {
     BYTE byReturn = 1 ;
-    LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
+//    LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" )
     //  XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
     //    XERCES_STRING_FROM_ANSI_STRING(cp_chXMLfilePath) ) ;
     XMLCh * p_xmlchXMLfilePath = XERCES_CPP_NAMESPACE::XMLString::transcode(
