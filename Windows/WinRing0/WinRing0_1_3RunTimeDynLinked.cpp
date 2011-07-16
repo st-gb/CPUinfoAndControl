@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "WinRing0_1_3RunTimeDynLinked.hpp"
 //#include <winbase.h> //for ::GetProcAddress()
 #include <Windows.h> //for ::GetProcAddress(), ::GetCurrentDirectory
@@ -12,7 +19,8 @@
 //for BITMASK_FOR_LOWMOST_7BIT
 #include <preprocessor_macros/bitmasks.h>
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
-#include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
+ //convertToStdString(typename )
+#include <Controller/character_string/stdstring_format.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //GetCharPointer(...)
 #include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 #include <Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
@@ -461,7 +469,7 @@ BOOL // TRUE: success, FALSE: failure
       "Reading from MSR failed. "
       "\nerror message: \"" + strErrorMessage +
 //      "\"(error code: "
-//      + to_stdstring<DWORD>( //(WORD) byModel
+//      + convertToStdString<DWORD>( //(WORD) byModel
 //        dwErrorCode //, std::hex
 //        )
       + ")\n"
@@ -525,16 +533,16 @@ BOOL WinRing0_1_3RunTimeDynLinked::ReadPciConfigDwordEx(
     //bit description
 //    16-31 Reserved
     UIconfirm("Reading from the PCI configuration space at\nPCI bus "
-      + to_stdstring<WORD>(
+      + convertToStdString<WORD>(
       //WinRing0: "8-15 PCI Bus Number"
       (dwPCIaddress >> 8 ) & BITMASK_FOR_LOWMOST_8BIT )
-      + "\n, device " + to_stdstring<WORD>(
+      + "\n, device " + convertToStdString<WORD>(
       //WinRing0: "3- 7 Device Number"
       (dwPCIaddress >> 3 ) & BITMASK_FOR_LOWMOST_5BIT ) +
-      + "\n, function " + to_stdstring<WORD>(
+      + "\n, function " + convertToStdString<WORD>(
       //WinRing0: "0- 2 Function Number"
       dwPCIaddress & BITMASK_FOR_LOWMOST_3BIT )
-      + "\n, register address " + to_stdstring<WORD>( dwRegAddress )
+      + "\n, register address " + convertToStdString<WORD>( dwRegAddress )
       + "\nfailed.\n"
       + strErrorMessage
       + "possible causes:\n"

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "CPUcontrolService.hpp"
 #include <conio.h> //for getche()
 #include <iostream> //for std::cout, std::cin
@@ -705,10 +712,12 @@ CPUcontrolService::InitializeMemberVariables()
       FALSE, // initial state is non-signaled
       _T("EndEvent") // object name
       );
-  //This method is form: http://msdn.microsoft.com/en-us/library/ms810429.aspx
-  // Copy the address of the current object so we can access it from
-  // the static member callback functions.
-  // WARNING: This limits the application to only one CNTService object. 
+  //This method (Windows service as an class / object and using a non-instance
+  //(static) pointer to the object) is from(?):
+  // http://msdn.microsoft.com/en-us/library/ms810429.aspx ?
+  // now (22.06.2011 here:
+  // http://code.msdn.microsoft.com/CppWindowsService-cacf4948/sourcecode?
+  //  fileId=21604&pathId=2131191824
   msp_cpucontrolservice = this;
   //m_winring0dynlinked.SetUserInterface(&m_dummyuserinterface);
   //DEBUG("end of constructor of service object\n");

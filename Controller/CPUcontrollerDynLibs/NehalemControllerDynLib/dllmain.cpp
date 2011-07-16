@@ -1,5 +1,5 @@
 //This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
-//Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany.
+//Copyright 2010-2011 by Trilobyte Software Engineering GmbH, Berlin, Germany.
 //It must not be used commercially without the permission of Trilobyte
 //SE GmbH, Berlin, Germany.
 //It may be used for educational / academic purposes for free.
@@ -359,7 +359,7 @@ EXPORT
   //NEHALEM_DLL_CALLING_CONVENTION
 //  _stdcall
 //  _cdecl
-  CALLING_CONVENTION
+//  CALLING_CONVENTION
   GetCurrentVoltageAndFrequency(
     float * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -412,13 +412,16 @@ EXPORT
       fReferenceClockInMHz,
       1000 , //min. timespan in ms
       10000 ) ;
-//    SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after "
-//      "GetCurrentReferenceClock") )
+    SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after "
+      "GetCurrentReferenceClock") )
     * p_fReferenceClockInMHz = fReferenceClockInMHz;
 //    * p_fReferenceClockInMHz = 133.0;
 #endif //#ifdef STATIC_133MHZ_REFERENCE_CLOCK
-    DEBUGN("dyn lib GetCurrentVoltageAndFrequency--ref clock:"
-      << * p_fReferenceClockInMHz )
+    std::stringstream std_strstream;
+    std_strstream << "dyn lib GetCurrentVoltageAndFrequency--ref clock:"
+        << * p_fReferenceClockInMHz;
+    DEBUGN( std_strstream.str() )
+    SHOW_VIA_GUI( std_strstream.str().c_str() )
 
     //Timespan too high or too low.
     if( * p_fReferenceClockInMHz == 0.0 )
@@ -431,7 +434,7 @@ EXPORT
       * p_fReferenceClockInMHz )
 //      * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
   }
-//  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency end") )
+  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency end") )
   return g_byValue1 ;
 }
 

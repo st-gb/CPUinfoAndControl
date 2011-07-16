@@ -1,5 +1,11 @@
-/*
- * PStateConfig.cpp
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
+/* PStateConfig.cpp
  *
  *  Created on: Jun 15, 2010
  *      Author: Stefan
@@ -40,7 +46,7 @@
 #include <xercesc/util/XMLString.hpp> //Class XERCES_CPP_NAMESPACE::XMLString
 //  //XERCES_CPP_NAMESPACE::XMLPlatformUtils::Terminate()
 //  #include <xercesc/util/PlatformUtils.hpp>
-//for to_stdstring()
+//for convertToStdString()
 #include <Controller/character_string/stdstring_format.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 //Class XercesAttributesHelper
@@ -113,7 +119,7 @@ namespace Xerces
         (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL //attribute name
         ,
         //attribute value
-        XERCES_STRING_FROM_ANSI_STRING( to_stdstring<WORD>(wFreq).c_str() )
+        XERCES_STRING_FROM_ANSI_STRING( convertToStdString<WORD>(wFreq).c_str() )
         );
       LOGN("Successfully set attribute value " << wFreq << " for "
         FREQUENCY_IN_MHZ_ANSI_LITERAL )
@@ -257,7 +263,7 @@ namespace Xerces
             << ": " << stdstr )
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
 //            xerces_attributes_helper.ToDWORD( stdstr , & dwValue ) ;
-          from_stdstring<DWORD>( dwValue, stdstr ) ;
+          ConvertStdStringToTypename<DWORD>( dwValue, stdstr ) ;
           m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
             std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
         }
@@ -399,11 +405,11 @@ namespace Xerces
   //    mp_dom_elementRoot->appendChild(p_dom_elementFreqnVolt);
   //    p_dom_elementFreqnVolt->setAttribute(
   //      XERCES_STRING_FROM_ANSI_STRING("frequency_in_MHz") , //attribute name
-  //      XERCES_STRING_FROM_ANSI_STRING( to_stdstring<WORD>(wFreq).c_str() ) //attribute value
+  //      XERCES_STRING_FROM_ANSI_STRING( convertToStdString<WORD>(wFreq).c_str() ) //attribute value
   //      );
   //    p_dom_elementFreqnVolt->setAttribute(
   //      XERCES_STRING_FROM_ANSI_STRING("max_voltage_in_Volt") , //attribute name
-  //      XERCES_STRING_FROM_ANSI_STRING( to_stdstring<float>(fVoltage).c_str() ) //attribute value
+  //      XERCES_STRING_FROM_ANSI_STRING( convertToStdString<float>(fVoltage).c_str() ) //attribute value
   //      );
   //    //if( stdsetFrequenciesStoredInFile.find(wFreq ) !=
   //    //  stdsetFrequenciesStoredInFile.end()
@@ -703,7 +709,7 @@ namespace Xerces
                 stdstrVoltageInVoltFromDOMtree = //XercesHelper::ToStdString(
                   //p_domnodeAttribute->getNodeValue() ) ;
                   Xerces::ToStdString(p_domnodeAttribute->getNodeValue() ) ;
-                from_stdstring<float>( fVoltageFromDOMtree ,
+                ConvertStdStringToTypename<float>( fVoltageFromDOMtree ,
                   stdstrVoltageInVoltFromDOMtree
                   //, & fVoltage
                   ) ;
@@ -769,7 +775,7 @@ namespace Xerces
 //              //cp_xmlchAttrName , //attribute name
 //              XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ,
 //              //attribute value
-//              XERCES_STRING_FROM_ANSI_STRING( to_stdstring<float>(
+//              XERCES_STRING_FROM_ANSI_STRING( convertToStdString<float>(
 //                citer_stdset_voltageandfreq->m_fVoltageInVolt ).c_str() )
 //              );
 //          }
@@ -967,7 +973,7 @@ namespace Xerces
           //cp_xmlchAttrName , //attribute name
           XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ,
           //attribute value
-          XERCES_STRING_FROM_ANSI_STRING( to_stdstring<float>(
+          XERCES_STRING_FROM_ANSI_STRING( convertToStdString<float>(
             fVoltageFromModelData ).c_str() )
           );
         LOGN("setting attribute value "

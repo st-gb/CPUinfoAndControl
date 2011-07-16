@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #define _AFXDLL
 
 #ifdef USE_VISUAL_LEAK_DETECTOR
@@ -29,7 +36,7 @@
 #include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
-#include <Controller/character_string/stdstring_format.hpp> //to_stdstring()
+#include <Controller/character_string/stdstring_format.hpp> //convertToStdString()
 //GetFilenameWithoutExtension(const std::string &)
 #include <Controller/FileSystem/GetFilenameWithoutExtension/\
 GetFilenameWithoutExtension.hpp>
@@ -1216,6 +1223,7 @@ bool wxX86InfoAndControlApp::OnInit()
   //If allocation succeeded.
   if( m_arartchCmdLineArgument && mp_modelData )
   {
+    const char c_ar_chXMLfileName [] = "UserInterface.xml";
     //ISpecificController
     //MyFrame * p_frame ;
     std::tstring stdtstrLogFilePath ;
@@ -1234,36 +1242,56 @@ bool wxX86InfoAndControlApp::OnInit()
     Xerces::SAX2UserInterfaceConfigHandler sax2userinterfaceconfighandler(
       m_model , this
       ) ;
+//    LOGN("Before reading file\"" << c_ar_chXMLfileName << "\"")
+//    OUTPUT_TO_LOGFILE_AND_STD_OUT_LN();
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Before reading file\""
+        << c_ar_chXMLfileName << "\"")
     if( //return value: 0 = success
       ReadXMLfileWithoutInitAndTermXercesInline(
-        "UserInterface.xml" ,
+        //"UserInterface.xml" ,
+        c_ar_chXMLfileName,
 //        m_model ,
         this,
         sax2userinterfaceconfighandler
         )
       )
-      Confirm( "loading UserInterface.xml failed" ) ;
+    {
+//      Confirm( "loading UserInterface.xml failed" ) ;
+      MessageWithTimeStamp(L"loading UserInterface.xml failed" ) ;
+      LOGN("loading UserInterface.xml failed")
+//      OUTPUT_WITH_TIMESTAMP
+    }
 #ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
     else
+    {
       m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
+    }
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("After reading file\""
+        << c_ar_chXMLfileName << "\"")
     DWORD dwProcID = wxGetProcessId() ;
     if( mp_modelData->m_bAppendProcessID )
     {
       //Because more than 1 GUI is possible at a time: append a process ID.
       //So the log files are not overwritten by the GUI instances.
-      stdtstrLogFilePath += Getstdtstring( to_stdstring<DWORD>(dwProcID) ) ;
+      stdtstrLogFilePath += Getstdtstring( convertToStdString<DWORD>(dwProcID) ) ;
     }
     stdtstrLogFilePath += _T("_log.txt") ;
 
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
+        stdtstrLogFilePath << "\"")
     //Maybe it's better to use a file name for the log file that is derived 
     //from THIS executable's file name: e.g. so different log files for the 
     //x86I&C service and the x86I&C GUI are possible.
     g_logger.OpenFile( stdtstrLogFilePath ) ;
-    LOGN("process ID of this process:" << dwProcID )
+//    LOGN("process ID of this process:" << dwProcID )
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("process ID of this process:"
+        << dwProcID)
     m_maincontroller.ReadMainConfig( //m_modelData
       * mp_modelData, this );
-    LOGN("address of attribute data:" << & m_model)
+//    LOGN("address of attribute data:" << & m_model)
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("address of attribute data:"
+        << & m_model)
 
     //Initialize to be valid.
     m_arartchCmdLineArgument[ 0 ] =

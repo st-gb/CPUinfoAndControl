@@ -70,7 +70,7 @@ BEGIN
             VALUE "FileDescription", FILE_DESCRIPTION
             VALUE "FileVersion",    "0,0,0,0"
             VALUE "InternalName",   "CPU info & control"
-            VALUE "LegalCopyright",  "Copyright (C) 2010"
+            VALUE "LegalCopyright",  "Copyright (C) 2011"
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
             VALUE "ProductVersion",  "0,0,0,0"

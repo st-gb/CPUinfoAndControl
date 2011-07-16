@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   MainController.cpp
  * Author: Stefan
@@ -8,7 +15,8 @@
 #include "MainController.hpp"
 //GetStdString(const std::wstring & cr_wstr )
 #include <Controller/character_string/stdtstr.hpp>
-#include <Controller/character_string/stdstring_format.hpp> //to_stdstring(...)
+//for convertToStdString(...)
+#include <Controller/character_string/stdstring_format.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 #include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
@@ -248,10 +256,10 @@ BYTE MainController::GetPstatesDirPath(
         + strVendorID 
         + "/" 
         + //strFamily 
-        to_stdstring<WORD>( wFamily //, std::hex
+        convertToStdString<WORD>( wFamily //, std::hex
           ) 
         + "/" +
-        to_stdstring<WORD>( //(WORD) byModel 
+        convertToStdString<WORD>( //(WORD) byModel 
           wModel //, std::hex
           ) 
         + "/" +
@@ -259,7 +267,7 @@ BYTE MainController::GetPstatesDirPath(
         //in Stepping C2 and  C3--the C3 has lower voltages, so the
         //"default_voltage_in_Volt"
         //attribute values are lower than the ones of the C2 stepping.
-        to_stdstring<WORD>( //(WORD) byModel 
+        convertToStdString<WORD>( //(WORD) byModel 
           wStepping //, std::hex
           ) 
         ;
@@ -320,9 +328,9 @@ BYTE MainController::ReadPstateConfig(
       mp_model->m_strProcessorName = strProcessorName ;
     std::string strProcessorFilePath = //"configuration/" + strVendorID + "/" 
       //+ //strFamily 
-      //to_stdstring<WORD>( wFamily //, std::hex
+      //convertToStdString<WORD>( wFamily //, std::hex
       //  ) + "/" + //strModel 
-      //to_stdstring<WORD>( //(WORD) byModel 
+      //convertToStdString<WORD>( //(WORD) byModel 
       //  wModel //, std::hex
       //  ) 
       strCPUtypeRelativeDirPath
@@ -388,6 +396,8 @@ void MainController::ReadMainConfig(
 {
   std::string stdstrMainConfigFileName = GetStdString( model.
     m_stdtstrProgramName ) + "_config.xml" ;
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Reading main config file \"" <<
+      stdstrMainConfigFileName << "\"" )
   //The main cfg also contains the exclusion log message filter--load it in any
   //case.
   SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );

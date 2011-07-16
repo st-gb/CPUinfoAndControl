@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * CPUcontrolBase.cpp
  *
@@ -413,9 +420,7 @@ void CPUcontrolBase::PossiblyDeleteCPUcoreUsageGetter()
   }
 }
 
-//from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-//("Calling an Exported Function in an EXE from Within a DLL"):
-// Do exactly as you would export a DLL...
+//see http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function
 #ifdef  __cplusplus
 extern "C"
 {

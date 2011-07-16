@@ -1,10 +1,16 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   CPUregisterWriteDialog.cpp
  * Author: Stefan
  * 
  * Created on 2. März 2010, 14:45
  */
-
 #include "CPUregisterWriteDialog.hpp"
 #include <wx/button.h>
 #include <wx/stattext.h> //for wxStaticText
@@ -13,7 +19,8 @@
 
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 #include <Controller/I_CPUaccess.hpp>
-#include <Controller/character_string/stdstring_format.hpp> //from_stdstring()
+//ConvertStdStringToTypename(...)
+#include <Controller/character_string/stdstring_format.hpp>
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
 //std::string GetStdString(wxString & wxstr), getwxString(...) etc.
@@ -258,7 +265,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 //        ToULongLong( & ullFromChangedTextCtrl )
 //        )
       std::string stdstrFromTextControl = GetStdString(wxstrChanged ) ;
-      from_stdstring<ULONGLONG>( ullFromChangedTextCtrl,
+      ConvertStdTStringToTypename<ULONGLONG>( ullFromChangedTextCtrl,
           stdstrFromTextControl) ;
       {
         BYTE byAffectedAttrValueEndBit ;
@@ -305,7 +312,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 //                ToULongLong( & ullFromTextCtrlToChange )
 //                )
               std::string stdstrValueToModify = GetStdString(wxstrValueToModify) ;
-              from_stdstring<ULONGLONG>( ullFromTextCtrlToChange,
+              ConvertStdTStringToTypename<ULONGLONG>( ullFromTextCtrlToChange,
                   stdstrValueToModify) ;
               {
                 //adopt the start bit:
@@ -523,7 +530,8 @@ void CPUregisterWriteDialog::OnWriteToMSR(
             //ToULongLong() always returned false with MinGW (+ unicode)
 //          ToULongLong(&ullFromTextCtrl)
 //          )
-        from_stdstring<ULONGLONG>(ullFromTextCtrl, stdstrFromTextControl) ;
+        ConvertStdTStringToTypename<ULONGLONG>(ullFromTextCtrl,
+          stdstrFromTextControl) ;
         {
           //Prevent bit shift of "1" 64 bits: this would lead to a zero ("0") .
           if( br.m_byBitLength < 64 )

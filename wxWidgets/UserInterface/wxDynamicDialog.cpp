@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "wxDynamicDialog.hpp"
 #include <wx/button.h>
 #include <wx/checkbox.h>
@@ -423,7 +430,9 @@ void wxDynamicDialog::DisplayTSCvalues()
     )
   {
 //    DWORD dwHigh, dwLow ;
-    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf (Copyright (c) Intel Corporation 1997. )
+    //  "Using the RDTSC Instruction for Performance Monitoring"
+    // (formerly on http://developer.intel.com/drg/pentiumII/appnotes/RDTSCPM1.HTM?):
     //"force all previous instructions to complete"
 //    mp_cpuaccess->CpuidEx( 1, & m_dwEAX, & m_dwEBX, & m_dwECX, & m_dwEDX, 1 ) ;
 //    mp_cpuaccess->ReadTSC(m_dwEAX,m_dwEDX) ;

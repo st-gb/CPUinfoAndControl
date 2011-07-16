@@ -1,5 +1,11 @@
-/*
- * TaskBarIcon.cpp
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
+/* TaskBarIcon.cpp
  *
  *  Created on: Apr 26, 2010
  *      Author: Stefan
@@ -66,8 +72,9 @@ END_EVENT_TABLE()
 
 void TaskBarIcon::OnMenuRestore(wxCommandEvent& )
 {
-  if( mp_mainframe )
-    mp_mainframe->Show(true);
+//  if( mp_mainframe )
+//    mp_mainframe->Show(true);
+  ShowMainFrame();
 }
 
 void TaskBarIcon::OnMenuExit(wxCommandEvent& )
@@ -163,7 +170,7 @@ wxMenu * TaskBarIcon::CreatePopupMenu()
     //the user dismisses it."
   //wxMenu * p_wxmenu = new wxMenu;
   p_wxmenu = new wxMenu;
-  p_wxmenu->Append(PU_RESTORE, _T("&show window"));
+  p_wxmenu->Append(PU_RESTORE, _T("&show main window"));
   p_wxmenu->AppendSeparator();
 //  if( ! m_p_wxmenuThrottleTemperatures )
     CreateSetThrottleTemperatureMenu();
@@ -361,28 +368,7 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 {
   LOGN("left mouse click on system tray icon")
-  if( mp_mainframe )
-  {
-    mp_mainframe->Show(true);
-    //from http://stackoverflow.com/questions/2550660/how-can-i-ensure-that-a-wxframe-is-brought-to-the-foreground:
-    mp_mainframe->
-      //http://docs.wxwidgets.org/trunk/classwx_window.html#54808c933f22a891c5db646f6209fa4d:
-      //"Notice that this function only requests the window manager to raise
-      //this window to the top of Z-order. Depending on its configuration,
-      //the window manager may raise the window, not do it at all or indicate
-      //that a window requested to be raised in some other way, e.g. by
-      //flashing its icon if it is minimized."
-      Raise();
-    mp_mainframe->Maximize(
-      //bool maximize=true
-      //"If true, maximizes the window, otherwise it restores it."
-      false //->"restore the window (window size ia < maximized size)
-      );
-    mp_mainframe->RequestUserAttention (//int flags=wxUSER_ATTENTION_INFO
-      );
-    LOGN("after calling to show the main frame")
-  }
-//  mp_mainframe->Maximize(true ) ;
+  ShowMainFrame();
 }
 
 // wxWidgets' src/common/wincmn.cpp, Zeile 334:
@@ -451,6 +437,32 @@ void TaskBarIcon::DisconnectOnSetThrottleTemperatureEventHandlers()
     }
   }
   LOGN("DisconnectOnSetThrottleTemperatureEventHandlers end")
+}
+
+void TaskBarIcon::ShowMainFrame()
+{
+  if( mp_mainframe )
+  {
+    mp_mainframe->Show(true);
+    //from http://stackoverflow.com/questions/2550660/how-can-i-ensure-that-a-wxframe-is-brought-to-the-foreground:
+    mp_mainframe->
+      //http://docs.wxwidgets.org/trunk/classwx_window.html#54808c933f22a891c5db646f6209fa4d:
+      //"Notice that this function only requests the window manager to raise
+      //this window to the top of Z-order. Depending on its configuration,
+      //the window manager may raise the window, not do it at all or indicate
+      //that a window requested to be raised in some other way, e.g. by
+      //flashing its icon if it is minimized."
+      Raise();
+    mp_mainframe->Maximize(
+      //bool maximize=true
+      //"If true, maximizes the window, otherwise it restores it."
+      false //->"restore the window (window size is < maximized size(?) )
+      );
+  //    mp_mainframe->RequestUserAttention (//int flags=wxUSER_ATTENTION_INFO
+  //      );
+    LOGN("after calling to show the main frame")
+  }
+  //  mp_mainframe->Maximize(true ) ;
 }
 
 TaskBarIcon::~TaskBarIcon()

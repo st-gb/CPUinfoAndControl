@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "NamedPipeServer.hpp"
 //#include <aclapi.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //for DEBUGN(...)
@@ -620,22 +627,13 @@ BYTE NamedPipeServer::Init(
   //  0, 0, 0, 0, 0, 0, 0,     
   //  & pSidLocal ) 
   //  )
-//http://www.codeproject.com/KB/vista-security/interaction-in-vista.aspx
+//maybe see
+  //  http://www.codeproject.com/KB/vista-security/interaction-in-vista.aspx
   //{    break;}
   //if( CreateSecAttributes( sa )
   //  )
-  ////http://www.codeguru.com/forum/archive/index.php/t-301326.html:
-  //SECURITY_ATTRIBUTES sa;
-  //SECURITY_DESCRIPTOR sd;
-
-  //InitializeSecurityDescriptor(&sd,SECURITY_DESCRIPTOR_REVISION);
-  //SetSecurityDescriptorDacl(&sd,TRUE,NULL,FALSE);
-  //SetSecurityDescriptorGroup(&sd,NULL, FALSE ); 
-  //SetSecurityDescriptorSacl(&sd, FALSE, NULL, FALSE );
-
-  //sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-  //sa.lpSecurityDescriptor = &sd;
-  //sa.bInheritHandle = TRUE;
+    //maybe also see here:
+  //  http://www.codeguru.com/forum/archive/index.php/t-301326.html:
 
     //from MS platform SDK v6.1\Samples\WinBase\Service:
    // create a security descriptor that allows anyone to write to
@@ -679,7 +677,7 @@ BYTE NamedPipeServer::Init(
       do
       {
         CreateDownPrivilegedPipe() ;
-        //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/
+        //TODO ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/secauthz/
         //  security/impersonatenamedpipeclient.htm:
         //ImpersonateNamedPipeClient
 

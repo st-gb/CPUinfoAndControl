@@ -1,4 +1,12 @@
-// For compilers that support precompilation, includes "wx/wx.h".
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
+
+//"For compilers that support precompilation, includes "wx/wx.h"."
 #include "wx/wxprec.h"
 
 #ifdef __BORLANDC__
@@ -51,7 +59,14 @@
 #include <Controller/I_CPUcontrollerAction.hpp>//class I_CPUcontrollerAction
 #include <Controller/IPC/I_IPC.hpp> //enum IPCcontrolCodes
 #include <Controller/character_string/stdtstr.hpp> //Getstdtstring(...)
-#include <images/x86IandC.xpm>
+//DISable g++ "deprecated conversion from string constant to 'char*'" warning,
+//from
+//http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
+// : "I believe passing -Wno-write-strings to gcc will suppress this warning."
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+  #include <images/x86IandC.xpm>
+//ENable g++ "deprecated conversion from string constant to 'char*'" warning
+#pragma GCC diagnostic warning "-Wwrite-strings"
 #include <ModelData/ModelData.hpp> //class CPUcoreData
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <ModelData/RegisterData.hpp>
@@ -104,60 +119,6 @@ wxServiceSocketClient.hpp>
 class wxObject ;
 
 extern CPUcontrolBase * gp_cpucontrolbase ;
-
-enum
-{
-  ID_Quit = 1
-  , ID_About
-  , ID_AttachCPUcontrollerDynLib
-  , ID_DetachCPUcontrollerDynamicLibrary
-  , ID_SetCPUcontrollerDynLibForThisCPU
-
-  , ID_AttachCPUusageGetterDynLib
-  , ID_DetachCPUusageGetterDynLib
-  , ID_SetCPUusageGetterDynLibForThisCPU
-
-  , ID_MinimizeToSystemTray
-//#ifdef COMPILE_WITH_MSR_EXAMINATION
-  , ID_MSR
-  , ID_WriteToMSRdialog
-  //, ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq //,
-  //This means to disable e.g.:
-  //-Windows' scaling (by ACPI objects?)
-  //-WRITE to performance state MSR registers by programs like RMclock
-  , ID_DisableOtherVoltageOrFrequencyAccess
-  , ID_EnableOtherVoltageOrFrequencyAccess
-  , ID_EnableOrDisableOwnDVFS //,
-
-#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
-  , ID_ContinueService
-  , ID_PauseService
-  , ID_StartService
-  , ID_StopService
-  , ID_ConnectToService
-  , ID_ConnectToOrDisconnectFromService
-  , ID_DisconnectFromService
-#endif
-
-  , ID_UpdateViewInterval
-  , ID_SaveAsDefaultPstates
-  , ID_Collect_As_Default_Voltage_PerfStates
-  , ID_FindDifferentPstates
-  , ID_ShowVoltageAndFrequencySettingsDialog
-//#endif
-  , TIMER_ID
-//#ifdef _WINDOWS
-#ifdef COMPILE_WITH_SERVICE_CAPABILITY
-  , ID_Service
-#endif
-//  ID_SetPstate3ForCore0,
-//  ID_FindLowestOperatingVoltage
-#ifdef PRIVATE_RELEASE //hide the other possibilities
-  ,ID_IncreaseVoltageForCurrentPstate
-#endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
-  ,
-  ID_LastStaticEventID
-};
 
 //Static class variables must (also) be declared/ defined in the source file.
 float * MainFrame::s_arfTemperatureInDegreesCelsius = NULL ;
@@ -279,6 +240,7 @@ inline void MainFrame::CreateFileMenu()
   //wxMenu * p_wxmenuCore1 = new wxMenu;
 //  wxMenu * p_wxmenuNorthBridge = new wxMenu;
   mp_wxmenuFile->Append( ID_About, _T("&About...") );
+  mp_wxmenuFile->AppendSeparator();
   p_wxmenuitem = mp_wxmenuFile->Append( ID_AttachCPUcontrollerDynLib,
     ATTACH_CPU_CONTROLLER_DYNAMIC_LIBRARY_T_STRING );
   if( ! mp_wxx86infoandcontrolapp->GetCPUaccess() )
@@ -304,6 +266,7 @@ inline void MainFrame::CreateFileMenu()
     mp_wxmenuFile->Enable( ID_SetCPUcontrollerDynLibForThisCPU, false ) ;
     mp_wxmenuFile->Enable( ID_DetachCPUcontrollerDynamicLibrary, false ) ;
   }
+  mp_wxmenuFile->AppendSeparator();
   p_wxmenuitem = mp_wxmenuFile->Append( ID_AttachCPUusageGetterDynLib,
     ATTACH_CPU_CORE_USAGE_GETTER_DYNAMIC_LIBRARY_T_STRING );
   if( ! mp_wxx86infoandcontrolapp->GetCPUaccess() )
@@ -316,6 +279,7 @@ inline void MainFrame::CreateFileMenu()
     mp_wxx86infoandcontrolapp->m_p_cpucoreusagegetterDynLib
     )
     mp_wxmenuFile->Enable( ID_DetachCPUusageGetterDynLib, false ) ;
+  mp_wxmenuFile->AppendSeparator();
   mp_wxmenuFile->Append( ID_SaveAsDefaultPstates,
     _T("Save &performance states settings...") );
   //Only add menu item if creating the system tray icon succeeded: else one
@@ -323,9 +287,12 @@ inline void MainFrame::CreateFileMenu()
   //elevated one can't even close it!
   if( mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) )
   {
+    mp_wxmenuFile->AppendSeparator();
 //    mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
     mp_wxmenuFile->Append( ID_MinimizeToSystemTray,
-      _T("minimize this window to the system tray") );
+      _T("minimize this window to the "
+          //"system tray"
+          "task bar") );
   }
 //#endif //COMPILE_WITH_TASKBAR
   mp_wxmenuFile->AppendSeparator();
@@ -534,7 +501,7 @@ MainFrame::MainFrame(
   //  )
   {
     if( ! p_wxmenuExtras )
-      p_wxmenuExtras = new wxMenu;
+      p_wxmenuExtras = new wxMenu;//(wxT("Graphical User Interface"));
     stdstr = "enable own Dynamic Voltage and Frequency Scaling" ;
     LOGN("before appending menu item " << stdstr )
     mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
@@ -564,7 +531,8 @@ MainFrame::MainFrame(
   if( p_wxmenuExtras )
   {
     LOGN("before adding menu Extras")
-    mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
+    mp_wxmenubar->Append(p_wxmenuExtras, //_T("E&xtras")
+       wxT("&GUI"));
   }
   if( mp_i_cpucontroller != NULL )
   {
@@ -1477,21 +1445,22 @@ void MainFrame::OnSysTrayIconClick(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
-  wxString wxstrMessage ;
-  GetAboutMessage(wxstrMessage) ;
-  ::wxMessageBox(
-    wxstrMessage ,
-    _T("About ") //_T(PROGRAM_NAME)
-    //+ mp_i_cpucontroller->mp_model->m_stdtstrProgramName
-    + mp_model->m_stdtstrProgramName
-    ,
-    wxOK | wxICON_INFORMATION //,
-//    this
-    );
-//  AboutDialog * p_aboutdialog = new AboutDialog( getwxString( mp_model->
-//    m_stdtstrProgramName) ) ;
-//  p_aboutdialog->Show() ;
-//  p_aboutdialog->Destroy() ;
+//  wxString wxstrMessage ;
+//  GetAboutMessage(wxstrMessage) ;
+//  ::wxMessageBox(
+//    wxstrMessage ,
+//    _T("About ") //_T(PROGRAM_NAME)
+//    //+ mp_i_cpucontroller->mp_model->m_stdtstrProgramName
+//    + mp_model->m_stdtstrProgramName
+//    ,
+//    wxOK | wxICON_INFORMATION //,
+////    this
+//    );
+  AboutDialog * p_aboutdialog = new AboutDialog( getwxString( mp_model->
+    m_stdtstrProgramName) ) ;
+  p_aboutdialog->//Show() ;
+    ShowModal();
+  p_aboutdialog->Destroy() ;
 }
 
 void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
@@ -4217,12 +4186,23 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
   //        wxWHITE
 //          wxBLACK
           );
-      if( ! mp_wxx86infoandcontrolapp->mp_taskbaricon->SetIcon(
+      if( mp_wxx86infoandcontrolapp->mp_taskbaricon->SetIcon(
           s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
         )
+      {
+//        if( ! mp_wxmenuFile->IsEnabled() )
+          //The menu item may be disabled if setting the icon failed for the
+          //1st time (if started via the service on logon and the the task bar
+          //was not ready).
+          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
+      }
+      else
+      {
         //::wxMessageBox( wxT("Could not set task bar icon."),
         //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
         LOGN("Could not set task bar icon.")
+        mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
+      }
     }
   }
 }

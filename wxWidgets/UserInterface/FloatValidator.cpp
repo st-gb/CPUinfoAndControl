@@ -1,7 +1,15 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"
 //#include <Controller/character_string/tchar_conversion.h> //GetCharPointer()
-#include <Controller/character_string/stdstring_format.hpp> //from_stdstring(...)
+//for ConvertStdStringToTypename(...)
+#include <Controller/character_string/stdstring_format.hpp>
 //GetStdString(wxString & )
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 // for all others, include the necessary headers (this file is usually all you
@@ -73,7 +81,7 @@ bool CfloatValidator::TransferFromWindow()
 
   std::string stdstr = GetStdString(wxstr) ;
 
-  bSuccess = from_stdstring<double>( dNumber, stdstr ) ;
+  bSuccess = ConvertStdStringToTypename<double>( dNumber, stdstr ) ;
 
   if ( bSuccess )
   {
@@ -113,7 +121,7 @@ bool CfloatValidator::Validate(wxWindow * parent)
 
   std::string stdstr = GetStdString(wxstr) ;
 
-  ret = ( from_stdstring<double>( dNumber, stdstr ) &&
+  ret = ( ConvertStdStringToTypename<double>( dNumber, stdstr ) &&
     ( dNumber >= m_lBound ) && ( dNumber <= m_hBound ) ) ;
 
   if ( ! ret )

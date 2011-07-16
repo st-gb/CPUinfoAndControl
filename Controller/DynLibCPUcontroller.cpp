@@ -16,9 +16,7 @@
 //
 ////used by the GUI and the service
 //
-////from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-////("Calling an Exported Function in an EXE from Within a DLL"):
-//// Do exactly as you would export a DLL...
+////see http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function
 //extern "C"
 //{
 //

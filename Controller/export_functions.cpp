@@ -1,6 +1,13 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //#include <wxWidgets/App.hpp>
 #include <Controller/CPUcontrolBase.hpp>
-#include <Controller/exported_functions.h> //for AM_LIB_EXPORT
+#include <Controller/exported_functions.h> //for EXECUTABLE_EXPORT_DEFINITION
 #include <Controller/I_CPUaccess.hpp>
 #include <UserInterface/UserInterface.hpp> //class UserInterface
 #include "exported_functions.h"
@@ -17,21 +24,19 @@ extern UserInterface * g_p_user_interface;
 
 ////from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
 //#ifdef _WIN32
-//  #define AM_LIB_EXPORT __declspec(dllexport)
+//  #define EXECUTABLE_EXPORT_DEFINITION __declspec(dllexport)
 //#else
-//  #define AM_LIB_EXPORT __attribute__ ((visibility("default")))
+//  #define EXECUTABLE_EXPORT_DEFINITION __attribute__ ((visibility("default")))
 //#endif // _WIN32
 
-//from http://www.codeguru.com/cpp/w-p/dll/article.php/c3649
-//("Calling an Exported Function in an EXE from Within a DLL"):
-// Do exactly as you would export a DLL...
+//http://groups.google.com/group/comp.programming/browse_thread/thread/4275d11ee0c2e4c7/3e571b1c164d0261?hl=en&ie=UTF-8&q=export+function+executable#3e571b1c164d0261
 #ifdef  __cplusplus
 extern "C"
 {
 #endif //#ifdef __cplusplus
 
   //see http://en.wikipedia.org/wiki/PCI_configuration_space:
-  AM_LIB_EXPORT BOOL ReadPCIconfigSpace(
+  EXECUTABLE_EXPORT_DEFINITION BOOL ReadPCIconfigSpace(
     BYTE byPCIbus , //"8-bit PCI bus",
     BYTE byDeviceAndFunction ,//"5-bit device, and 3-bit function"
     DWORD dwRegisterAddress ,
@@ -80,7 +85,7 @@ extern "C"
   }
 
   //EXPORT
-  AM_LIB_EXPORT BOOL ReadMSR(
+  EXECUTABLE_EXPORT_DEFINITION BOOL ReadMSR(
     DWORD dwIndex,    // MSR index
     PDWORD p_dweax,     // bit  0-31
     PDWORD p_dwedx,     // bit 32-63
@@ -138,7 +143,7 @@ extern "C"
     return boolRet ;
   }
 
-  AM_LIB_EXPORT BOOL WriteMSR(
+  EXECUTABLE_EXPORT_DEFINITION BOOL WriteMSR(
     DWORD dwIndex,    // MSR index
     DWORD dwEAX,     // bit  0-31
     DWORD dwEDX,     // bit 32-63

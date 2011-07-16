@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   exported_functions.h
  * Author: Stefan
@@ -19,13 +26,13 @@ extern "C" {
 
 //from http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function:
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #define AM_LIB_EXPORT __declspec(dllexport)
+  #define EXECUTABLE_EXPORT_DEFINITION __declspec(dllexport)
 #else
-  #define AM_LIB_EXPORT //__attribute__ ((visibility("default")))
+  #define EXECUTABLE_EXPORT_DEFINITION //__attribute__ ((visibility("default")))
 #endif // _WIN32
 
 //EXPORT
-AM_LIB_EXPORT BOOL ReadMSR(
+EXECUTABLE_EXPORT_DEFINITION BOOL ReadMSR(
   DWORD dwIndex,		// MSR index
   PDWORD p_dweax,			// bit  0-31
   PDWORD p_dwedx,			// bit 32-63

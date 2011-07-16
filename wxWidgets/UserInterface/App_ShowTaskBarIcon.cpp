@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * App_ShowTaskBarIcon.cpp
  *
@@ -14,6 +21,7 @@
 
 #include <wxWidgets/App.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <wxWidgets/UserInterface/MainFrame.hpp>//class MainFrame
 #include <wxWidgets/UserInterface/TaskBarIcon.hpp>//class TaskBarIcon
 
 bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
@@ -113,10 +121,12 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
         else
   //          ::wxMessageBox(wxT("Could not set task bar icon."),
   //            getwxString(m_stdtstrProgramName) );
-          MessageWithTimeStamp(
-            //Avoid g++ warning "deprecated conversion from string constant to 'WCHAR*'
-            (WCHAR *)
-            L"Could not set task bar icon." );
+//          MessageWithTimeStamp(
+//            //Avoid g++ warning "deprecated conversion from string constant to 'WCHAR*'
+//            (WCHAR *)
+//            L"Could not set task bar icon." );
+          mp_frame->mp_wxmenuFile->Enable(MainFrame::ID_MinimizeToSystemTray,
+              false);
       }
     }
   }
