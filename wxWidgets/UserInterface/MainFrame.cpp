@@ -525,8 +525,10 @@ MainFrame::MainFrame(
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   if( ! p_wxmenuExtras )
     p_wxmenuExtras = new wxMenu;
-  p_wxmenuExtras->Append(ID_MSR, _T("&MSR...") );
-  p_wxmenuExtras->Append(ID_WriteToMSRdialog, _T("write to MSR dialog") );
+  p_wxmenuExtras->Append(ID_MSR, wxT("e&xamine CPUID and MSR CPU registers...")
+      );
+  p_wxmenuExtras->Append(ID_WriteToMSRdialog,
+      wxT("read from and write to MSR dialog...") );
 #endif
   if( p_wxmenuExtras )
   {
@@ -4139,6 +4141,7 @@ void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
 void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
   I_CPUcontroller * p_i_cpucontroller)
 {
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   LOGN("MainFrame::ShowHighestCPUcoreTemperatureInTaskBar--mp_taskbaricon:"
     << mp_wxx86infoandcontrolapp->mp_taskbaricon)
   if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
@@ -4205,6 +4208,7 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
       }
     }
   }
+#endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 }
 
 //void MainFrame::UpdatePowerSettings(

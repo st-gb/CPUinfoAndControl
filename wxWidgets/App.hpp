@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
@@ -144,8 +151,10 @@ public:
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   SAX2IPCcurrentCPUdataHandler m_sax2_ipc_current_cpu_data_handler ;
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   //Must be created on heap, else left mouse clicks were not processed?
   TaskBarIcon * mp_taskbaricon ;
+#endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 //  TaskBarIcon m_taskbaricon ;
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
     //NamedPipeClient m_ipcclient ;

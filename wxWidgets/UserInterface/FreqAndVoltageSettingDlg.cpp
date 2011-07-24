@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"
 
@@ -387,7 +394,8 @@ void FreqAndVoltageSettingDlg::AddDecreaseVoltageButton( wxSizer * p_wxsizer )
   //  p_wxbuttonDecBy1VoltageStep = new wxButton(
   //Avoid to show up an error dialog under _Windows_ if the image file could not
   //be load.
-  #ifdef _WIN32
+  //#ifdef _WIN32
+  #ifndef USE_EXTERNAL_ICONS
   wxBitmap wxbitmapDecreaseVoltage( decrease16x16_xpm ) ;
   #else
   wxBitmap wxbitmapDecreaseVoltage ( m_wxstrIconFilesPrefix +
@@ -435,7 +443,8 @@ void FreqAndVoltageSettingDlg::AddIncreaseVoltageButton( wxSizer * p_wxsizer )
   wxBitmap wxbitmapIncreaseVoltage ;
 //Avoid to show up an error dialog under _Windows_ if the image file could not
 //be load.
-#ifndef _WIN32
+//#ifndef _WIN32
+#ifdef USE_EXTERNAL_ICONS
    if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
        // #b825460a217d250db53df0c9ca293068:
        // "Returns true if bitmap data is present."
@@ -640,7 +649,8 @@ void FreqAndVoltageSettingDlg::AddSetAsDesiredVoltageButton(
   wxBitmap wxbitmapSetAsDesiredVoltage ;
 //Avoid to show up an error dialog under _Windows_ if the image file could not
 //be load.
-#ifndef _WIN32
+//#ifndef _WIN32
+#ifdef USE_EXTERNAL_ICONS
    if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
        // #b825460a217d250db53df0c9ca293068:
        // "Returns true if bitmap data is present."
@@ -688,7 +698,8 @@ void FreqAndVoltageSettingDlg::AddSetAsMinVoltageButton( wxSizer * p_wxsizer )
   wxBitmap wxbitmapSetAsMinVoltage ;
 //Avoid to show up an error dialog under _Windows_ if the image file could not
 //be load.
-#ifndef _WIN32
+//#ifndef _WIN32
+#ifdef USE_EXTERNAL_ICONS
    if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
        // #b825460a217d250db53df0c9ca293068:
        // "Returns true if bitmap data is present."
@@ -902,7 +913,8 @@ void FreqAndVoltageSettingDlg::AddStabilizeVoltageButton( wxSizer * p_wxsizer )
   //  wxButton * p_wxbutton = new wxButton(
   //Avoid to show up an error dialog under _Windows_ if the image file could not
   //be load.
-  #ifdef _WIN32
+//  #ifdef _WIN32
+#ifndef USE_EXTERNAL_ICONS
   wxBitmap wxbitmapStabilizeVoltage( stabilize_voltage_xpm ) ;
 #else
   wxBitmap wxbitmapStabilizeVoltage( m_wxstrIconFilesPrefix +

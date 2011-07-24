@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   MSRdeviceFile.h
  * Author: sgebauer
@@ -12,6 +19,7 @@
 //#include <Windows_compatible_typedefs.h>
 
 #include <fstream>
+#include <sched.h> //CPU_ZERO(...), ...
 
 //Exception class. If caught: don't continue (with assigning function
 //pointers to DLL functions etc.).
@@ -96,6 +104,40 @@ public:
 	  PDWORD edx,			// bit 32-63
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   );
+
+  //overrides base class' implem.
+  BYTE SetThreadAffinityMask(DWORD dwThreadAffinityMask)
+  {
+    //http://www.kernel.org/doc/man-pages/online/pages/man3/pthread_setaffinity_np.3.html:
+
+    //http://www.kernel.org/doc/man-pages/online/pages/man3/CPU_SET.3.html:
+    cpu_set_t cpu_set;
+
+    CPU_ZERO(//cpu_set_t *set
+      & cpu_set);
+    for( BYTE byCPUcoreIndex = 0; byCPUcoreIndex < 32; ++ byCPUcoreIndex)
+    {
+      if( dwThreadAffinityMask & ( 1 << byCPUcoreIndex) )
+        CPU_SET( byCPUcoreIndex, & cpu_set);        //Add CPU cpu to set.
+    }
+    //http://www.kernel.org/doc/man-pages/online/pages/man2/sched_setaffinity.2.html:
+    int nRetVal = ::sched_setaffinity(
+        //pid_t pid
+        //"Specifying pid as 0 will set the attribute for the calling thread"
+        0
+        , //size_t cpusetsize
+        //"Normally this argument would be specified as sizeof(cpu_set_t)"
+        sizeof(cpu_set_t)
+        ,
+        //cpu_set_t * mask
+        & cpu_set
+        );
+    //"On success, sched_setaffinity() and sched_getaffinity() return 0."
+//    return ! nRetVal; // 0 -> 1    <> 0 -> 1
+    if(nRetVal == 0)
+      return 1;
+    return 0;
+  }
   void Init(UserInterface * pui) ;
   void InitPerCPUcoreAccess(BYTE byNumCPUcores) ;
   BOOL ReadPciConfigDwordEx(

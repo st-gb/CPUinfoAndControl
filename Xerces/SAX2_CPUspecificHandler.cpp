@@ -367,16 +367,24 @@ void SAX2_CPUspecificHandler::HandleMSRelement(
   char archAttributeName [] = "index" ;
   char archCoreIDattributeName [] = "core" ;
 //    std::string stdstrAttributeName = "MSR" ;
-  if( ConvertXercesAttributesValue<DWORD>
-      (
-      r_xercesc_attributes,//"processor_name"
-      dwIndex ,
-      archAttributeName
-      //* StdStringToDWORD::Convert ,
-      //m_xerceshelper.ToDWORD
-      //strValue
-      )
-    == SUCCESS
+  XercesAttributesHelper xercesattributeshelper;
+  if( //template method can't get hexadecimal numbers:
+//    ConvertXercesAttributesValue<DWORD>
+//      (
+//      r_xercesc_attributes,//"processor_name"
+//      dwIndex ,
+//      archAttributeName
+//      //* StdStringToDWORD::Convert ,
+//      //m_xerceshelper.ToDWORD
+//      //strValue
+//      )
+//    == SUCCESS
+    //Can get dec or hex numbers;
+    xercesattributeshelper.GetAttributeValue(
+      r_xercesc_attributes, //const XERCES_CPP_NAMESPACE::Attributes & attrs,
+      archAttributeName, //const char * lpctstrAttrName,
+      dwIndex //DWORD & r_dwValue
+      ) == XercesAttributesHelper::getting_attribute_value_succeeded
     )
   {
     m_bInsideValidMSRelement = true ;
@@ -393,7 +401,8 @@ void SAX2_CPUspecificHandler::HandleMSRelement(
         //strValue
         stdstrRegisterName
         )
-      == SUCCESS
+      == //SUCCESS
+        XercesAttributesHelper::getting_attribute_value_succeeded
       && stdstrRegisterName != ""
       )
     {
