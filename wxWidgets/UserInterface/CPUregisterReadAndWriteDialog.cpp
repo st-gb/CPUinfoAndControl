@@ -11,7 +11,7 @@
  * 
  * Created on 2. März 2010, 14:45
  */
-#include "CPUregisterWriteDialog.hpp"
+#include "CPUregisterReadAndWriteDialog.hpp"
 #include <wx/button.h>
 #include <wx/stattext.h> //for wxStaticText
 #include <wx/sizer.h> //wxBoxSizer
@@ -21,6 +21,9 @@
 #include <Controller/I_CPUaccess.hpp>
 //ConvertStdStringToTypename(...)
 #include <Controller/character_string/stdstring_format.hpp>
+//getBinaryRepresentation(...)
+#include <Controller/character_string/format_as_string.hpp>
+#include <Controller/character_string/stdtstr.hpp>
 #include <ModelData/ModelData.hpp>
 #include <ModelData/RegisterData.hpp>
 //std::string GetStdString(wxString & wxstr), getwxString(...) etc.
@@ -402,8 +405,8 @@ void CPUregisterWriteDialog::OnRegisterListBoxSelection(
   wxCommandEvent & evt )
 {
   wxArrayInt wxarrintSelections ;
-//  int nNumberOfSelections =
-//      p_wxlistbox->GetSelections(wxarrintSelections) ;
+  int nNumberOfSelections =
+      p_wxlistbox->GetSelections(wxarrintSelections) ;
   if( wxarrintSelections.GetCount () > 0 )
   {
     int nIndex = wxarrintSelections.Last () ;
@@ -475,7 +478,8 @@ void CPUregisterWriteDialog::OnReadFromMSR(
           //Bring value to least significant bit
           >> ( 64 - br.m_byBitLength ) ;
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
-        #ifdef __CYGWIN__
+        //#ifdef __CYGWIN__
+        #ifndef _WIN32 //Linux, MinGW, Cygwin (, ...)
         wxstrULL = wxString::Format( wxString( wxT("%llu") ), ullValue) ;
         #else
         wxstrULL = wxString::Format( wxString( wxT("%I64u") ), ullValue) ;
@@ -566,12 +570,27 @@ void CPUregisterWriteDialog::OnWriteToMSR(
   #endif
     DWORD dwHigh = ullWriteToMSR >> 32 ;
     DWORD dwLow = ullWriteToMSR ;
-    if( wxMessageBox( wxstrAllValues +
+    std::string std_strLowBytes = getBinaryRepresentation(dwLow);
+    std::string std_strHighBytes = getBinaryRepresentation(dwHigh);
+    //Because wxString::Format "%s" needs wchar_t if Unicode und "char" if ANSI?!
+    std::tstring std_tstrLowBytes = Getstdtstring(std_strLowBytes);
+    std::tstring std_tstrHighBytes = Getstdtstring(std_strHighBytes);
+    if( wxMessageBox( //wxstrAllValues +
       wxString::Format(
-        wxT("writing low bytes %lu and high bytes %lu to MSR index %lu to "
-          "core %u")
-        , dwLow,
-        dwHigh ,
+        wxT(//"writing "
+            "Should write "
+            "low bytes "
+            //"%lu"
+            "\n\"%s\" (binary)\n"
+            " and high bytes "
+            //"%lu"
+            "\n\"%s\" (binary)\n"
+            " to MSR index %lu to "
+          "core %u ?") ,
+//        , dwLow
+        std_tstrLowBytes.c_str(),
+        //dwHigh ,
+        std_tstrHighBytes.c_str(),
         mp_msrdata->m_dwIndex ,
         mp_msrdata->m_byCoreID
         )

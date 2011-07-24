@@ -5,7 +5,7 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-#include "wxDynamicDialog.hpp"
+#include "wxExamineCPUregistersDialog.hpp"
 #include <wx/button.h>
 #include <wx/checkbox.h>
 //#include <wx/dialog.h>
@@ -129,6 +129,9 @@ inline void wxDynamicDialog::AddStatictext( const wxString & cr_wxstr )
   wxpoint = mp_sizerLeftColumn->GetPosition() ;
   wxsize = mp_sizerLeftColumn->GetSize() ;
   wxsize = mp_sizerLeftColumn->GetMinSize() ;
+
+  wxSize wxsizeOptionsSizer = p_wxboxsizerOptions->GetMinSize();
+  wxSize wxsizeLeftColumnSizer = mp_sizerLeftColumn->GetMinSize();
   wxrect = GetClientRect() ;
 //  if( //mp_wxstatictext->GetRect().GetBottom()
 //      mp_sizerLeftColumn->GetMinSize().GetHeight() > GetClientRect().height )
@@ -136,7 +139,8 @@ inline void wxDynamicDialog::AddStatictext( const wxString & cr_wxstr )
 //      "GetClientRect().height") ) ;
 #endif
   if( p_wxboxsizerOptions->GetMinSize().GetHeight() +
-      mp_sizerLeftColumn->GetMinSize().GetHeight() + wxrect.height
+      mp_sizerLeftColumn->GetMinSize().GetHeight() + //wxrect.height
+      mp_wxstatictext->GetRect().height
       > GetClientRect().height )
   {
     mp_sizerLeftColumn = new wxBoxSizer(wxVERTICAL);
@@ -182,6 +186,7 @@ inline void wxDynamicDialog::AddStatictext( const wxString & cr_wxstr )
      //The label and the adjustable value should be at the same vertical
      //position, so place at the top.
      wxALIGN_TOP
+     | wxALIGN_LEFT
    //Determines the border width, if the flag  parameter is set to include
    //any border flag.
    , 2
@@ -279,20 +284,20 @@ void wxDynamicDialog::BuildGUI()
     //any border flag.
     2
     );
-  mp_wxcheckboxRebuildGUIonResize = new wxCheckBox(
-    this
-//    , ID_RebuildGUIonResizeCheckbox
-    , wxID_ANY
-    , _T("RebuildGUIonResize")
-    ) ;
-  p_wxboxsizerOptions->Add(
-    mp_wxcheckboxRebuildGUIonResize
-    , 0
-    , wxFIXED_MINSIZE,
-    //Determines the border width, if the flag  parameter is set to include
-    //any border flag.
-    2
-    );
+//  mp_wxcheckboxRebuildGUIonResize = new wxCheckBox(
+//    this
+////    , ID_RebuildGUIonResizeCheckbox
+//    , wxID_ANY
+//    , _T("RebuildGUIonResize")
+//    ) ;
+//  p_wxboxsizerOptions->Add(
+//    mp_wxcheckboxRebuildGUIonResize
+//    , 0
+//    , wxFIXED_MINSIZE,
+//    //Determines the border width, if the flag  parameter is set to include
+//    //any border flag.
+//    2
+//    );
 //  mp_sizerLeftColumn->Add(
 //    p_wxbuttonMSR
 //    , 0
@@ -436,18 +441,23 @@ void wxDynamicDialog::DisplayTSCvalues()
     //"force all previous instructions to complete"
 //    mp_cpuaccess->CpuidEx( 1, & m_dwEAX, & m_dwEBX, & m_dwECX, & m_dwEDX, 1 ) ;
 //    mp_cpuaccess->ReadTSC(m_dwEAX,m_dwEDX) ;
-    mp_cpuaccess->ReadTSCinOrder(m_dwEAX,m_dwEDX,1) ;
-    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
-    //"force all previous instructions to complete"
-//    mp_cpuaccess->CpuidEx( 1, m_dwEAX, m_dwEBX, m_dwECX, m_dwEDX, 1 ) ;
-    m_ullValue = m_dwEDX ;
-    m_ullValue <<= 32 ;
-    m_ullValue |= m_dwEAX ;
-#ifdef __CYGWIN__
-    m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue) ;
-#else
-    m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue) ;
+    if( mp_cpuaccess->ReadTSCinOrder(m_dwEAX,m_dwEDX,1) )
+    {
+      //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
+      //"force all previous instructions to complete"
+  //    mp_cpuaccess->CpuidEx( 1, m_dwEAX, m_dwEBX, m_dwECX, m_dwEDX, 1 ) ;
+      m_ullValue = m_dwEDX ;
+      m_ullValue <<= 32 ;
+      m_ullValue |= m_dwEAX ;
+  //#ifdef __CYGWIN__
+  #ifndef _WIN32
+      m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue) ;
+  #else
+      m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue) ;
 #endif
+    }
+    else
+      m_wxstrULL = wxT("failed to read TSC");
   #ifdef _DEBUG
     //wxstrULL = wxString::Format("%x", *m_stdvector_p_wxstatictextiter );
     //(*m_stdvector_p_wxstatictextiter)->SetLabel() ;
@@ -693,20 +703,8 @@ void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
   int nControlID = wxevent.GetId() ;
   if( nControlID == ID_IntervalCheckbox )
   {
-    if( mp_wxcheckboxInterval->GetValue() )
-    {
-      DWORD dw ;
-      if( mp_wxtextctrlUpdateIntervalInMs->GetValue().ToULong( &dw, 10) )
-      {
-        mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("") ) ;
-        m_wxtimer.Start(dw) ;
-      }
-      else
-      {
-        mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("not a number") ) ;
-        m_wxtimer.Start(1000) ;
-      }
-    }
+    if( StartTimerWithIntervalTime() )
+      ;
     else
       m_wxtimer.Stop() ;
   }
@@ -776,8 +774,17 @@ void wxDynamicDialog::OnSize( wxSizeEvent & //WXUNUSED(
   sizeevent//)
   )
 {
-  if( mp_wxcheckboxRebuildGUIonResize->IsChecked() )
-    ReBuildGUI() ;
+//  if( mp_wxcheckboxRebuildGUIonResize->IsChecked() )
+//  {
+//    m_wxtimer.Stop();
+//    ReBuildGUI() ;
+//    StartTimerWithIntervalTime();
+//  }
+
+  mp_wxboxsizerOutmost->SetSizeHints(this);
+  mp_wxboxsizerOutmost->Fit(this);
+//  Validate();
+  Layout() ;
 }
 
 void wxDynamicDialog::OnTimerEvent(wxTimerEvent &event)
@@ -839,4 +846,24 @@ inline void wxDynamicDialog::ReloadCPUregisterToReadConfig()
       mp_wxx86infoandcontrolapp ) ;
   }
   ReBuildGUI() ;
+}
+
+bool wxDynamicDialog::StartTimerWithIntervalTime()
+{
+  if( mp_wxcheckboxInterval->GetValue() )
+  {
+    DWORD dw ;
+    if( mp_wxtextctrlUpdateIntervalInMs->GetValue().ToULong( &dw, 10) )
+    {
+      mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("") ) ;
+      m_wxtimer.Start(dw) ;
+    }
+    else
+    {
+      mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("not a number") ) ;
+      m_wxtimer.Start(1000) ;
+    }
+    return true;
+  }
+  return false;
 }

@@ -19,6 +19,13 @@
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 //#include <wx/bitmap.h> //wxBITMAP_DEFAULT_TYPE
 
+//http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
+// : "I believe passing -Wno-write-strings to gcc will suppress this warning."
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+  #include <images/x86IandC.xpm>
+//ENable g++ "deprecated conversion from string constant to 'char*'" warning
+#pragma GCC diagnostic warning "-Wwrite-strings"
+
 #include <wxWidgets/App.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <wxWidgets/UserInterface/MainFrame.hpp>//class MainFrame
@@ -44,6 +51,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
 //inline
 void wxX86InfoAndControlApp::DeleteTaskBarIcon()
 {
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   LOGN("wxX86InfoAndControlApp::DeleteTaskBarIcon() begin")
   if( mp_taskbaricon )
   {
@@ -57,6 +65,7 @@ void wxX86InfoAndControlApp::DeleteTaskBarIcon()
     mp_taskbaricon = NULL;
   }
   LOGN("wxX86InfoAndControlApp::DeleteTaskBarIcon() end")
+#endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 }
 
 void wxX86InfoAndControlApp::ShowTaskBarIconViaWindowsAPI()
@@ -87,9 +96,11 @@ void wxX86InfoAndControlApp::ShowTaskBarIconViaWindowsAPI()
 //return : true: setting the task bar icon succeeded.
 bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
 {
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   //from wxWidgets sample tbtest.cpp
   // Created:     01/02/97
   // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
+  LOGN( FULL_FUNC_NAME << "begin" )
   if( ! mp_taskbaricon )
   {
     mp_taskbaricon = new TaskBarIcon(mp_frame);
@@ -105,17 +116,31 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
   //        wxBITMAP_TYPE_ICO
   //        ) ;
   //      if( wxicon.IsOk() )
+      bool bSetIcon = true;
+#ifdef __linux__
+      wxIcon wxicon( x86IandC_xpm ) ;
+#else
       wxIcon wxicon ;
-      if( GetX86IandCiconFromFile(wxicon) )
+      if( ! GetX86IandCiconFromFile(wxicon) )
+      {
+        wxicon = wxIcon ( x86IandC_xpm );
+//        bSetIcon = false;
+      }
+#endif
+      if( bSetIcon )
       {
         if( mp_taskbaricon->SetIcon( //wxICON(sample),
             //m_taskbaricon.SetIcon(
             wxicon ,
+#ifdef __linux__
+            wxT("bla")
+#else
             mp_modelData->m_stdtstrProgramName
+#endif
             )
           )
         {
-          LOGN("set system tray icon")
+          LOGN(FULL_FUNC_NAME << "--successfully set system tray icon.")
           return true ;
         }
         else
@@ -128,7 +153,13 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
           mp_frame->mp_wxmenuFile->Enable(MainFrame::ID_MinimizeToSystemTray,
               false);
       }
+//      else
+//      {
+//      }
     }
+    else
+      LOGN( FULL_FUNC_NAME << "--failed to create task bar icon object")
   }
+#endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   return false;
 }

@@ -1,3 +1,13 @@
+
+ -Pentium M bei 1.0 Ghz:
+  -der (m)prime Small FFTs test findet Fehler bei der höchsten Spannung (->am ehesten/ frühsten):
+   -ca. 17.700.000 L2 data loads/s (Perf MC event # 29hex/ 41, unit mask 0xF/ 15)
+  -der Large FFTs test :
+   -ca. 15.500.000 L2 data loads/s (Perf MC event # 29hex/ 41, unit mask 0xF/ 15)
+   
+  -(Perf MC event # 12hex/ 18dec, unit mask 0x0):
+   kleinere Array (1000 double-Elemente: 29,5 Mio float Multipl./s) bringen mehr flops/s ?!
+   großes array (ca. 200 000 Elemente): 5 Mio float Multipl./s
 mit lesen aus 2 kleinen (35000 Elemente) double-Arrays konnte ich viele L2 Cache 
 Hits erreichen.
 

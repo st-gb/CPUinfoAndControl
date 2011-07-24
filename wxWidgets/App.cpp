@@ -906,7 +906,8 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread(
 
 bool wxX86InfoAndControlApp::GetX86IandCiconFromFile(wxIcon & r_wxicon )
 {
-  return //http://docs.wxwidgets.org/stable/wx_wxicon.html:
+  bool bLoadFileRetVal =
+    //http://docs.wxwidgets.org/stable/wx_wxicon.html:
       //"true if the operation succeeded, false otherwise."
     r_wxicon.LoadFile(
   //http://docs.wxwidgets.org/trunk/classwx_bitmap.html:
@@ -926,8 +927,10 @@ bool wxX86InfoAndControlApp::GetX86IandCiconFromFile(wxIcon & r_wxicon )
     //value it takes for a specific port."
     //wxBITMAP_DEFAULT_TYPE
   #endif
-    )
-    ;
+    );
+  LOGN( FULL_FUNC_NAME << "--loading icon from file " << (bLoadFileRetVal ?
+      " succeeded" : "failed") )
+  return bLoadFileRetVal;
 }
 //Getting the CPU core data (->depends on the implementation) can take many
 //milliseconds, especially via IPC. So start a thread for this.
@@ -1279,7 +1282,8 @@ bool wxX86InfoAndControlApp::OnInit()
     stdtstrLogFilePath += _T("_log.txt") ;
 
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
-        stdtstrLogFilePath << "\"")
+        //stdtstrLogFilePath
+      GetStdString(stdtstrLogFilePath) << "\"")
     //Maybe it's better to use a file name for the log file that is derived 
     //from THIS executable's file name: e.g. so different log files for the 
     //x86I&C service and the x86I&C GUI are possible.
