@@ -99,9 +99,9 @@ wxServiceSocketClient.hpp>
 #include <wxWidgets/UserInterface/AboutDialog.hpp> //class AboutDialog
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
 #include <Xerces/XMLAccess.hpp>
-#include "wxDynamicDialog.hpp"
+#include "wxExamineCPUregistersDialog.hpp"
 #ifdef COMPILE_WITH_MSR_EXAMINATION
-  #include "CPUregisterWriteDialog.hpp"
+  #include "CPUregisterReadAndWriteDialog.hpp"
 #endif //COMPILE_WITH_MSR_EXAMINATION
 //#include <limits.h>
 #ifndef MAXWORD
@@ -3408,7 +3408,7 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
     ////May be NULL at startup.
     //if( mp_i_cpucontroller )
     //{
-     wxDynamicDialog * p_wxdlg = new wxDynamicDialog(
+     wxExamineCPUregistersDialog * p_wxdlg = new wxExamineCPUregistersDialog(
        this , 
        //msrdata 
        //*mp_i_cpucontroller->mp_model,
@@ -3899,7 +3899,8 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
     if( mp_i_cpucontroller )
     {
 #ifdef COMPILE_WITH_MSR_EXAMINATION
-     CPUregisterWriteDialog * p_wxdlg = new CPUregisterWriteDialog(
+     CPUregisterReadAndWriteDialog * p_wxdlg = new
+       CPUregisterReadAndWriteDialog(
        this ,
        //msrdata
        //*mp_i_cpucontroller->mp_model,

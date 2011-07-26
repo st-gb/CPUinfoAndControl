@@ -6,7 +6,7 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 /* 
- * File:   CPUregisterWriteDialog.cpp
+ * File:   CPUregisterReadAndWriteDialog.cpp
  * Author: Stefan
  * 
  * Created on 2. März 2010, 14:45
@@ -39,15 +39,15 @@ enum
   , ID_LastStaticWindowID
 };
 
-BEGIN_EVENT_TABLE(CPUregisterWriteDialog, wxDialog)
-  EVT_LISTBOX(ID_RegisterListBox,CPUregisterWriteDialog::
+BEGIN_EVENT_TABLE(CPUregisterReadAndWriteDialog, wxDialog)
+  EVT_LISTBOX(ID_RegisterListBox,CPUregisterReadAndWriteDialog::
     OnRegisterListBoxSelection)
-  EVT_BUTTON(ID_WriteToMSR,CPUregisterWriteDialog::OnWriteToMSR)
-  EVT_BUTTON(ID_ReadFromMSR,CPUregisterWriteDialog::OnReadFromMSR)
-  EVT_BUTTON(ID_PreparePMC,CPUregisterWriteDialog::OnPreparePMC)
+  EVT_BUTTON(ID_WriteToMSR,CPUregisterReadAndWriteDialog::OnWriteToMSR)
+  EVT_BUTTON(ID_ReadFromMSR,CPUregisterReadAndWriteDialog::OnReadFromMSR)
+  EVT_BUTTON(ID_PreparePMC,CPUregisterReadAndWriteDialog::OnPreparePMC)
 END_EVENT_TABLE()
 
-CPUregisterWriteDialog::CPUregisterWriteDialog(
+CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
   wxWindow * parent ,
     //MSRdata & r_regdata ,
     Model & r_modeldata ,
@@ -161,12 +161,12 @@ CPUregisterWriteDialog::CPUregisterWriteDialog(
   //mp_sizerTop->Fit(this);
 }
 
-CPUregisterWriteDialog::CPUregisterWriteDialog(
-  const CPUregisterWriteDialog& orig)
+CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
+  const CPUregisterReadAndWriteDialog& orig)
 {
 }
 
-void CPUregisterWriteDialog::ShowRegisterAttributes( //const
+void CPUregisterReadAndWriteDialog::ShowRegisterAttributes( //const
   MSRdata & r_msrdata )
 {
   std::vector<RegisterData>::iterator iter_registerdata =
@@ -221,7 +221,7 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
     //EVT_TEXT(id, func)
     Connect( m_wWindowID ++ , //wxID_ANY,
       wxEVT_COMMAND_TEXT_UPDATED ,
-      wxCommandEventHandler(CPUregisterWriteDialog::OnChangedText)
+      wxCommandEventHandler(CPUregisterReadAndWriteDialog::OnChangedText)
       );
    
     //mp_sizerRightColumn->Add(
@@ -234,10 +234,10 @@ void CPUregisterWriteDialog::ShowRegisterAttributes( //const
   }
 }
 
-CPUregisterWriteDialog::~CPUregisterWriteDialog() {
+CPUregisterReadAndWriteDialog::~CPUregisterReadAndWriteDialog() {
 }
 
-void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
+void CPUregisterReadAndWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 {
   if( m_wNumIgnoreChanges )
     -- m_wNumIgnoreChanges ;
@@ -401,7 +401,7 @@ void CPUregisterWriteDialog::OnChangedText(wxCommandEvent & wxevent )
   }
 }
 
-void CPUregisterWriteDialog::OnRegisterListBoxSelection(
+void CPUregisterReadAndWriteDialog::OnRegisterListBoxSelection(
   wxCommandEvent & evt )
 {
   wxArrayInt wxarrintSelections ;
@@ -438,14 +438,14 @@ void CPUregisterWriteDialog::OnRegisterListBoxSelection(
   }
 }
 
-void CPUregisterWriteDialog::OnPreparePMC(
+void CPUregisterReadAndWriteDialog::OnPreparePMC(
   wxCommandEvent & evt )
 {
   mp_cpucontroller->PrepareForNextPerformanceCounting(
     1 , 0 ) ;
 }
 
-void CPUregisterWriteDialog::OnReadFromMSR(
+void CPUregisterReadAndWriteDialog::OnReadFromMSR(
   wxCommandEvent & evt )
 {
   if( mp_msrdata )
@@ -497,7 +497,7 @@ void CPUregisterWriteDialog::OnReadFromMSR(
   }  
 }
 
-void CPUregisterWriteDialog::OnWriteToMSR(
+void CPUregisterReadAndWriteDialog::OnWriteToMSR(
   wxCommandEvent & evt )
 {
   if( mp_msrdata )

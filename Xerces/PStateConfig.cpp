@@ -49,6 +49,7 @@
 //for convertToStdString()
 #include <Controller/character_string/stdstring_format.hpp>
 #include <ModelData/ModelData.hpp> //class Model
+#include <UserInterface/UserInterface.hpp> //class UserInterface
 //Class XercesAttributesHelper
 #include <Xerces/XercesAttributesHelper.hpp>
 //#include <Xerces/XercesHelper.hpp> //for XERCES_STRING_FROM_ANSI_STRING()
@@ -212,7 +213,7 @@ namespace Xerces
         //"XPathException   TYPE_ERR: raised if resultType is not
         //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
         mp_domxpathresult->getSnapshotLength();
-      LOGN("number of " << //archXPath
+      LOGN("Number of " << //archXPath
         XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << " elements: "
         << nDOMqueryResultsetLength )
 //      //Use "[]" rather than "char *" to avoid g++ Linux compiler warning
@@ -258,14 +259,17 @@ namespace Xerces
           cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
           std::string stdstr = //XercesHelper::ToStdString(cp_xmlchAttrValue) ;
             Xerces::ToStdString(cp_xmlchAttrValue) ;
-          LOGN("attribute name for " << //arp_chAttributeName
+          LOGN("Attribute value for " << //arp_chAttributeName
             FREQUENCY_IN_MHZ_ANSI_LITERAL
             << ": " << stdstr )
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
 //            xerces_attributes_helper.ToDWORD( stdstr , & dwValue ) ;
-          ConvertStdStringToTypename<DWORD>( dwValue, stdstr ) ;
-          m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
-            std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
+          if( ConvertStdStringToTypename<DWORD>( dwValue, stdstr ) )
+            m_stdmapFreqInMHzInDOMtree2DOMindex.insert(
+              std::pair<WORD,WORD> ( (WORD) dwValue, wResultSetIndex ) ) ;
+          else
+            m_p_userinterface->MessageWithTimeStamp(
+              L"error converting string to integer ");
         }
         //}
 //        }
@@ -332,10 +336,11 @@ namespace Xerces
             //DOMElement * p_dom_elementRoot = p_dom_document->getDocumentElement();
             //mp_dom_elementRoot = p_dom_document->getDocumentElement();
 
-            bIsConfigurationChanged = TestIfCfgIsChangedOrChangeCfg(
+            TestIfCfgIsChangedOrChangeCfg(
               //true: do not change, only test if it would be changed.
               true
               ) ;
+            bIsConfigurationChanged = m_bDOMtreeDiffersOrDifferedFromModelData;
             mp_dom_document->release() ;
             mp_dom_document = NULL ;
             //XMLString::release(&p_xmlchXpath);
@@ -674,7 +679,7 @@ namespace Xerces
 //        const XMLCh * cp_xmlchAttrName ;
         if( citer_stdset_voltageandfreq->m_fVoltageInVolt != 0.0 )
         {
-          LOGN("voltage <> 0")
+          LOGN("voltage from main memory <> 0")
           //If config. file already exists.
           if( mp_domxpathresult )
           {
@@ -709,10 +714,24 @@ namespace Xerces
                 stdstrVoltageInVoltFromDOMtree = //XercesHelper::ToStdString(
                   //p_domnodeAttribute->getNodeValue() ) ;
                   Xerces::ToStdString(p_domnodeAttribute->getNodeValue() ) ;
-                ConvertStdStringToTypename<float>( fVoltageFromDOMtree ,
-                  stdstrVoltageInVoltFromDOMtree
-                  //, & fVoltage
-                  ) ;
+                LOGN("voltage as character string: \"" <<
+                    stdstrVoltageInVoltFromDOMtree << "\"" )
+                if( ! ConvertStdStringToTypename<float>( fVoltageFromDOMtree ,
+                    stdstrVoltageInVoltFromDOMtree
+                    //, & fVoltage
+                    )
+                  )
+                {
+                  std::wstring std_wstr(L"failed to convert string \"");
+//                      std_wstr += GetStdw
+                  m_p_userinterface->MessageWithTimeStamp(
+                       //"to float"
+                       std_wstr);
+                }
+//                fVoltageFromDOMtree = atof(stdstrVoltageInVoltFromDOMtree.
+//                  c_str() );
+//                else
+//                {
                 LOGN("attribute \"" << cpc_XMLAttrName << "\" with value \""
                   << fVoltageFromDOMtree << "\" exists for freq "
                   << wFreq << " in DOM tree")
@@ -997,7 +1016,7 @@ namespace Xerces
     }
   }
 
-  short VoltageForFrequencyConfiguration::WriteDOM(
+  BYTE VoltageForFrequencyConfiguration::WriteDOM(
     XERCES_CPP_NAMESPACE::DOMNode * p_dom_node
 //    , const char * const cpc_chFilePath
     //For creating a DOMLSOutput instance via createLSOutput().
@@ -1006,14 +1025,18 @@ namespace Xerces
     , XERCES_CPP_NAMESPACE::XMLFormatTarget & r_xmlformattarget
     )
   {
-    LOGN("WriteDOM")
+    BYTE byReturnValue = 255;
+    LOGN( //"WriteDOM"
+        FULL_FUNC_NAME << "--begin" )
     if( mp_dom_implementation )
     {
       XERCES_CPP_NAMESPACE::DOMLSSerializer * p_dom_ls_serializer =
         ( ( XERCES_CPP_NAMESPACE::DOMImplementationLS *)
         mp_dom_implementation )->createLSSerializer();
+
       XERCES_CPP_NAMESPACE::DOMConfiguration * p_dom_configuration =
         p_dom_ls_serializer->getDomConfig();
+
       //See http://www.mail-archive.com/c-users@xerces.apache.org/msg03106.html:
       if( p_dom_configuration->canSetParameter(
         XERCES_CPP_NAMESPACE::XMLUni::fgDOMWRTFormatPrettyPrint, //true
@@ -1037,31 +1060,40 @@ namespace Xerces
       {
           // do the serialization through DOMLSSerializer::write();
           p_dom_ls_serializer->write(p_dom_node, p_domls_output);
+          byReturnValue = successfullyWroteXML_DOM;
       }
       catch (const XERCES_CPP_NAMESPACE::XMLException &
         cr_xercesc_xml_exception)
       {
-        char * message = XERCES_CPP_NAMESPACE::XMLString::transcode(
+        char * p_chMessage = XERCES_CPP_NAMESPACE::XMLString::transcode(
           cr_xercesc_xml_exception.getMessage());
         LOGN(  "XMLException Exception message is: \n"
-             << message << "\n" )
-        XERCES_CPP_NAMESPACE::XMLString::release(&message);
-        return -1;
+             << p_chMessage << "\n" )
+        m_p_userinterface->MessageWithTimeStamp(
+          (wchar_t *) cr_xercesc_xml_exception.getMessage() );
+        XERCES_CPP_NAMESPACE::XMLString::release(& p_chMessage);
+        byReturnValue = XercesExceptionWritingDOM;
       }
       catch (const XERCES_CPP_NAMESPACE::DOMException &
         cr_xercesc_dom_exception)
       {
-        char * message = XERCES_CPP_NAMESPACE::XMLString::transcode(
+        char * p_chMessage = XERCES_CPP_NAMESPACE::XMLString::transcode(
           cr_xercesc_dom_exception.msg);
         LOGN( "DOMException Exception message is: \n"
-             << message << "\n" )
-        XERCES_CPP_NAMESPACE::XMLString::release(&message);
-        return -1;
+             << p_chMessage << "\n" )
+
+        m_p_userinterface->MessageWithTimeStamp(
+          (wchar_t *) cr_xercesc_dom_exception.getMessage() );
+
+        XERCES_CPP_NAMESPACE::XMLString::release(& p_chMessage);
+        byReturnValue = XercesExceptionWritingDOM;
       }
       catch (...)
       {
-        LOGN ( "Unexpected Exception \n"  )
-        return -1;
+        LOGN ( "Unexpected exception \n"  )
+          m_p_userinterface->MessageWithTimeStamp(
+              L"Unexpected/ other exception wrtiting the XML DOM tree" );
+        byReturnValue = OtherExceptionWritingDOM;
       }
       p_domls_output->release();
       p_dom_ls_serializer->release();
@@ -1069,19 +1101,22 @@ namespace Xerces
       //delete myFilter;
 //      delete p_xml_format_targetFile;
     }
-    return 1 ;
+    return byReturnValue ;
   }
 
   //Put the "test for change" and the "change" code into the same function
   //because both depends (exactly) on the same attributes.
-  bool VoltageForFrequencyConfiguration::TestIfCfgIsChangedOrChangeCfg(
+//  bool
+  BYTE VoltageForFrequencyConfiguration::TestIfCfgIsChangedOrChangeCfg(
     //true: do not change, only test if it would be changed.
     bool bTest
     )
   {
     //Reset because this method may be called more than once for the same
     // VoltageForFrequencyConfiguration object.
-    bool bDOMtreeModified = false ;
+//    bool bDOMtreeModified = false ;
+    BYTE byReturnValue = default_value;
+
     m_bAtLeast1FailedDOMtreeModification = false ;
     m_bAtLeast1SuccessfullDOMtreeModification = false ;
     m_bDOMtreeDiffersOrDifferedFromModelData = false ;
@@ -1112,7 +1147,9 @@ namespace Xerces
         //  bDOMtreeModified = true ;
         //if( PossiblyAddWantedVoltages() )
         //  bDOMtreeModified = true ;
-        bDOMtreeModified = PossiblyAddVoltages( bTest ) ;
+
+//        bDOMtreeModified = PossiblyAddVoltages( bTest ) ;
+
         if( //bDOMtreeModified
           m_bDOMtreeDiffersOrDifferedFromModelData )
         {
@@ -1123,7 +1160,7 @@ namespace Xerces
             XERCES_CPP_NAMESPACE::LocalFileFormatTarget localfileformattarget(
               mpc_chFullXMLFilePath
               );
-            WriteDOM(
+            byReturnValue = WriteDOM(
               mp_dom_elementRoot
   //            , p_chFullXMLFilePath
   //            , p_dom_implementation
@@ -1133,7 +1170,10 @@ namespace Xerces
         }
         else
         {
-
+//          m_p_userinterface->MessageWithTimeStamp( L"XML DOM tree not "
+//              L"modified (->did not write config file)" );
+          LOGN("XML DOM tree not modified (->did not write config file)")
+          byReturnValue = DidNotWriteAnythingBecauseNothingWasChanged;
         }
       }
 //      mp_dom_document->release();
@@ -1164,7 +1204,8 @@ namespace Xerces
 //        retval = 4;
     }
     return //bDOMtreeModified ;
-      m_bDOMtreeDiffersOrDifferedFromModelData ;
+      //m_bDOMtreeDiffersOrDifferedFromModelData ;
+      byReturnValue;
   }
 
   //Purpose: this should called by all fcts that change the voltage or test for
@@ -1184,6 +1225,12 @@ namespace Xerces
     //A DOM tree may already exist( if read from an XML file). So build a map
     //for this case.
     BuildStdmapFreqInMHzInDOMtree2DOMindex() ;
+    LOGN("All XML DOM tree frequencies:")
+
+    for(std::map<WORD,WORD>::const_iterator ci =
+        m_stdmapFreqInMHzInDOMtree2DOMindex.begin(); ci !=
+      m_stdmapFreqInMHzInDOMtree2DOMindex.end() ; ++ ci)
+      LOGN(ci->first << " MHz")
 
     //Prevent insertions or deletions while accessing the STL container
     //for voltages.
@@ -1252,10 +1299,20 @@ namespace Xerces
         //  bDOMtreeModified = true ;
         //if( PossiblyAddWantedVoltages() )
         //  bDOMtreeModified = true ;
-        PossiblyAddVoltages(
+        bool bDOMtreeModified = PossiblyAddVoltages(
           //if true: do not change, only test if it would be changed.
           false
           ) ;
+        if( ! bDOMtreeModified)
+        {
+          LOGN("The XML DOM tree has not been modified (voltage values have "
+              "not been changed/ no new voltages)")
+//          m_p_userinterface->MessageWithTimeStamp(
+//            L"The XML DOM tree has not been modified (voltage values have "
+//            "not been changed/ no new voltages) -> nothing should be written"
+//            );
+          return 2;
+        }
       }
     }
     catch( const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception)
@@ -1278,7 +1335,7 @@ namespace Xerces
     )
   {
     //Initialize just to avoid (g++) compiler warning.
-    BYTE retval = 0 ;
+    BYTE byReturnValue = default_value ;
 //    if( m_bXercesSuccessfullyInitialzed )
     {
       //setting/ assigning the value is Important: for readXMLfileDOM() and
@@ -1300,7 +1357,7 @@ namespace Xerces
         //The XML file could be read.
         if( mp_dom_document )
         {
-          TestIfCfgIsChangedOrChangeCfg(false) ;
+          byReturnValue = TestIfCfgIsChangedOrChangeCfg(false) ;
           mp_dom_document->release() ;
           mp_dom_document = NULL ;
           //XMLString::release(&p_xmlchXpath);
@@ -1323,7 +1380,7 @@ namespace Xerces
                 mpc_chFullXMLFilePath
                 );
               //Write the whole XML tree.
-              WriteDOM(
+              byReturnValue =  WriteDOM(
                 mp_dom_elementRoot
     //            , p_chFullXMLFilePath
     //            , p_dom_implementation
@@ -1343,7 +1400,7 @@ namespace Xerces
             Xerces::ToStdString( cr_xercesc_xml_exception.getMessage() )
             //<< "\n"
           )
-        return 1;
+//        return 1;
       }
     }
     ////Delete the parser itself. Must be done prior to calling Terminate, below.
@@ -1352,16 +1409,19 @@ namespace Xerces
     //  Delete the parser itself.  Must be done prior to calling Terminate, below.
     //
     //delete p_dom_ls_parser;
-    return retval ;
+    return byReturnValue ;
   }
 
   VoltageForFrequencyConfiguration::VoltageForFrequencyConfiguration(
-    Model * p_model )
+    Model * p_model,
+    UserInterface * p_userinterface
+    )
     //E.g. for getting an array of all "freq_and_voltage" XML elements.
     :
     m_bAtLeast1SuccessfullDOMtreeModification (false),
     m_bAtLeast1FailedDOMtreeModification(false) ,
     m_bXercesSuccessfullyInitialzed (false) ,
+    m_p_userinterface(p_userinterface),
     mp_dom_document( NULL)
     , mp_dom_implementation( NULL)
     , mp_dom_ls_parser (NULL)

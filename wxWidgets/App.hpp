@@ -252,7 +252,8 @@ public:
       1,
     BYTE ar_byDataToSend [] = NULL);
   void MessageWithTimeStamp(const std::wstring & cr_stdwstr);
-  void MessageWithTimeStamp(const LPWSTR cp_lpwstrMessage);
+  void MessageWithTimeStamp(//const LPWSTR
+      const wchar_t * cp_lpwstrMessage);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;

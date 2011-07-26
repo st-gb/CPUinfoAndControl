@@ -40,7 +40,7 @@ class wxTimer ;
 class I_CPUaccess ;
 class wxX86InfoAndControlApp ;
 
-class wxDynamicDialog
+class wxExamineCPUregistersDialog
   : public wxDialog 
 {
   unsigned short m_wControlID ;
@@ -83,7 +83,7 @@ class wxDynamicDialog
   void DisplayRegisterData(MSRdata & r_msrdata);
   void DisplayTSCvalues() ;
 public:
-  wxDynamicDialog(//RegisterData 
+  wxExamineCPUregistersDialog(//RegisterData 
     wxWindow * parent ,
     //MSRdata & r_regdata,
     //Model & modeldata ,
@@ -95,7 +95,7 @@ public:
     //, 
     wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
     ) ;
-  ~wxDynamicDialog() ;
+  ~wxExamineCPUregistersDialog() ;
   inline void AddStatictext( const wxString & cr_wxstr ) ;
   void BuildCPUregisterControls() ;
   void BuildGUI(MSRdata & r_msrdata ) ;

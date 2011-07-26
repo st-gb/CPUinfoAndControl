@@ -6,7 +6,7 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 /* 
- * File:   CPUregisterWriteDialog.hpp
+ * File:   CPUregisterReadAndWriteDialog.hpp
  * Author: Stefan
  *
  * Created on 2. März 2010, 14:45
@@ -36,7 +36,7 @@ class Model ;
 class I_CPUcontroller ;
 class MSRdata ;
 
-class CPUregisterWriteDialog
+class CPUregisterReadAndWriteDialog
   : public wxDialog
 {
 private:
@@ -53,15 +53,15 @@ private:
   std::vector<wxTextCtrl * > m_stdvec_p_wxtextctrl ;
   unsigned long m_wNumIgnoreChanges ;
 public:
-  CPUregisterWriteDialog(
+  CPUregisterReadAndWriteDialog(
     wxWindow * parent ,
     //MSRdata & r_regdata ,
     Model & r_modeldata ,
     I_CPUcontroller * p_cpucontroller
     //I_CPUaccess * i_cpuaccess 
     );
-  CPUregisterWriteDialog(const CPUregisterWriteDialog& orig);
-  virtual ~CPUregisterWriteDialog();
+  CPUregisterReadAndWriteDialog(const CPUregisterReadAndWriteDialog& orig);
+  virtual ~CPUregisterReadAndWriteDialog();
   void ShowRegisterAttributes( //const
     MSRdata & r_msrdata ) ;
 private:
