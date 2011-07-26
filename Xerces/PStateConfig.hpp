@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * PStateConfig.hpp
  *
@@ -18,6 +25,7 @@
 //  XERCES_CPP_NAMESPACE_USE
 
   //Forward declarations (faster than #include)
+  class UserInterface;
   XERCES_CPP_NAMESPACE_BEGIN
   class //XERCES_CPP_NAMESPACE::
     DOMDocument ;
@@ -43,6 +51,15 @@ namespace Xerces
   class VoltageForFrequencyConfiguration
     //: public I_ConfigurationHandler
   {
+  public:
+    enum
+    {
+      default_value = 0,
+      successfullyWroteXML_DOM,
+      XercesExceptionWritingDOM,
+      OtherExceptionWritingDOM,
+      DidNotWriteAnythingBecauseNothingWasChanged
+    };
   private:
     bool m_bAtLeast1SuccessfullDOMtreeModification ;
     bool m_bAtLeast1FailedDOMtreeModification ;
@@ -51,6 +68,7 @@ namespace Xerces
     bool m_bXercesSuccessfullyInitialzed ;
     const char * mpc_chFullXMLFilePath ;
     std::map<WORD,WORD> m_stdmapFreqInMHzInDOMtree2DOMindex ;
+    UserInterface * m_p_userinterface;
     XERCES_CPP_NAMESPACE::DOMDocument * mp_dom_document ;
     XERCES_CPP_NAMESPACE::DOMElement * mp_dom_elementRoot ;
     XERCES_CPP_NAMESPACE::DOMElement * mp_dom_elementFreqnVolt ;
@@ -95,7 +113,7 @@ namespace Xerces
       bool & bDOMtreeModified ,
       float fVoltageFromDOMtree
       ) ;
-    short WriteDOM(
+    BYTE WriteDOM(
       XERCES_CPP_NAMESPACE::DOMNode * p_dom_node
 //        , const char * const cpc_chFilePath
         //For creating a DOMLSOutput instance via createLSOutput().
@@ -106,7 +124,10 @@ namespace Xerces
       ) ;
   public:
     bool IsConfigurationChanged(std::string & r_strPstateSettingsFileName ) ;
-    VoltageForFrequencyConfiguration(Model * p_model ) ;
+    VoltageForFrequencyConfiguration(
+      Model * p_model,
+      UserInterface * p_userinterface
+      );
     ~VoltageForFrequencyConfiguration() ;
     BYTE //mergeXMLfileDOM(
       MergeWithExistingConfigFile(
@@ -121,7 +142,8 @@ namespace Xerces
 //      , XERCES_CPP_NAMESPACE::DOMImplementation * & p_dom_implementation
       ) ;
     BYTE * SerializeConfigToMemoryBuffer( DWORD & r_dwByteSize ) ;
-    bool TestIfCfgIsChangedOrChangeCfg(
+//    bool
+    BYTE TestIfCfgIsChangedOrChangeCfg(
       //true: do not change, only test if it would be changed.
       bool bTest
       ) ;

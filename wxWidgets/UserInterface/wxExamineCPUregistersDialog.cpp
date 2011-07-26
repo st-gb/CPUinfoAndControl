@@ -48,15 +48,15 @@ enum
 //
 //DEFINE_EVENT_TYPE(wxEVT_MY_CUSTOM_COMMAND)
 //
-BEGIN_EVENT_TABLE(wxDynamicDialog, wxDialog)
-//    EVT_MY_CUSTOM_COMMAND(wxID_ANY, wxDynamicDialog::OnRuntimeCreatedControls)
-  EVT_TIMER(ID_Timer,wxDynamicDialog::OnTimerEvent)
-  EVT_SIZE(wxDynamicDialog::OnSize)
+BEGIN_EVENT_TABLE(wxExamineCPUregistersDialog, wxDialog)
+//    EVT_MY_CUSTOM_COMMAND(wxID_ANY, wxExamineCPUregistersDialog::OnRuntimeCreatedControls)
+  EVT_TIMER(ID_Timer,wxExamineCPUregistersDialog::OnTimerEvent)
+  EVT_SIZE(wxExamineCPUregistersDialog::OnSize)
   EVT_BUTTON(ID_ReloadCPUregisterToReadConfig,
-    wxDynamicDialog::OnReloadCPUregisterToReadConfig )
+    wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig )
 END_EVENT_TABLE()
 
-wxDynamicDialog::wxDynamicDialog(//RegisterData 
+wxExamineCPUregistersDialog::wxExamineCPUregistersDialog(//RegisterData 
   wxWindow * parent ,
   //MSRdata & r_regdata ,
   //Model & r_modeldata ,
@@ -94,23 +94,23 @@ wxDynamicDialog::wxDynamicDialog(//RegisterData
 //    //,
 //    wxID_ANY,
 //    wxEVT_COMMAND_BUTTON_CLICKED,
-//    wxCommandEventHandler(wxDynamicDialog::OnRuntimeCreatedControls)
+//    wxCommandEventHandler(wxExamineCPUregistersDialog::OnRuntimeCreatedControls)
 //    );
   Connect( 
     ID_IntervalCheckbox ,
     wxEVT_COMMAND_CHECKBOX_CLICKED, 
-    wxCommandEventHandler(wxDynamicDialog::OnRuntimeCreatedControls) 
+    wxCommandEventHandler(wxExamineCPUregistersDialog::OnRuntimeCreatedControls) 
     );
 }
 
-wxDynamicDialog::~wxDynamicDialog()
+wxExamineCPUregistersDialog::~wxExamineCPUregistersDialog()
 {
   //TODO prog crash in wxSizerItem::~wxSizerItem() (a children of a sizer
   //at "delete m_sizer" m_sizer.m_containingWindow  is 0xfeeefeee
   LOGN("wxDynamicDialog's d'tor")
 }
 
-inline void wxDynamicDialog::AddStatictext( const wxString & cr_wxstr )
+inline void wxExamineCPUregistersDialog::AddStatictext( const wxString & cr_wxstr )
 {
 //  wxStaticText *
   mp_wxstatictext = new wxStaticText(
@@ -193,7 +193,7 @@ inline void wxDynamicDialog::AddStatictext( const wxString & cr_wxstr )
    );
 }
 
-void wxDynamicDialog::BuildCPUregisterControls()
+void wxExamineCPUregistersDialog::BuildCPUregisterControls()
 {
   std::vector<MSRdata>::iterator itermsrdata =
     mp_modeldata->m_stdvector_msrdata.begin() ;
@@ -220,7 +220,7 @@ void wxDynamicDialog::BuildCPUregisterControls()
   }
 }
 
-void wxDynamicDialog::BuildGUI()
+void wxExamineCPUregistersDialog::BuildGUI()
 {
   mp_wxboxsizerOutmost = new wxBoxSizer( wxVERTICAL ) ;
 //  wxWrapSizer * p_wxwrapsizer = new wxWrapSizer() ;
@@ -359,7 +359,7 @@ void wxDynamicDialog::BuildGUI()
 //  mp_wxboxsizerOutmost->Fit(this);
 }
 
-void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
+void wxExamineCPUregistersDialog::BuildGUI(MSRdata & r_msrdata )
 {
   //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
   std::vector<RegisterData>::iterator iter_registerdata = 
@@ -411,7 +411,7 @@ void wxDynamicDialog::BuildGUI(MSRdata & r_msrdata )
    //p_wxdlg->Add(new wxStaticText(p_wxdlg, wxID_ANY, _T("sdsd") ) );
 }
 
-void wxDynamicDialog::BuildGUI(CPUIDdata & r_cpuiddata )
+void wxExamineCPUregistersDialog::BuildGUI(CPUIDdata & r_cpuiddata )
 {
   //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
   wxString wxstrDataName ;
@@ -429,7 +429,7 @@ void wxDynamicDialog::BuildGUI(CPUIDdata & r_cpuiddata )
   }
 }
 
-void wxDynamicDialog::DisplayTSCvalues()
+void wxExamineCPUregistersDialog::DisplayTSCvalues()
 {
   if( m_stdvector_p_wxstatictextiter != m_stdvector_p_wxstatictext.end()
     )
@@ -480,7 +480,7 @@ void wxDynamicDialog::DisplayTSCvalues()
   }
 }
 
-void wxDynamicDialog::DisplayRegisterData()
+void wxExamineCPUregistersDialog::DisplayRegisterData()
 {
   m_stdvector_p_wxstatictextiter = m_stdvector_p_wxstatictext.begin() ;
   std::vector<MSRdata>::iterator itermsrdata = 
@@ -502,7 +502,7 @@ void wxDynamicDialog::DisplayRegisterData()
   }
 }
 
-void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
+void wxExamineCPUregistersDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
 {
   std::vector<RegisterData>::iterator iter_registerdata = 
     r_cpuiddata.m_stdvec_registerdata.begin() ;
@@ -615,7 +615,7 @@ void wxDynamicDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
   }
 }
 
-void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
+void wxExamineCPUregistersDialog::DisplayRegisterData(MSRdata & r_msrdata)
 {
   std::vector<RegisterData>::iterator iter_registerdata = 
     r_msrdata.m_stdvec_registerdata.begin() ;
@@ -692,13 +692,13 @@ void wxDynamicDialog::DisplayRegisterData(MSRdata & r_msrdata)
   }
 }
 
-void wxDynamicDialog::OnReloadCPUregisterToReadConfig(
+void wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig(
   wxCommandEvent & r_wxcommandevent )
 {
   ReloadCPUregisterToReadConfig() ;
 }
 
-void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
+void wxExamineCPUregistersDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
 {
   int nControlID = wxevent.GetId() ;
   if( nControlID == ID_IntervalCheckbox )
@@ -770,7 +770,7 @@ void wxDynamicDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
 //  DisplayRegisterData() ;
 }
 
-void wxDynamicDialog::OnSize( wxSizeEvent & //WXUNUSED(
+void wxExamineCPUregistersDialog::OnSize( wxSizeEvent & //WXUNUSED(
   sizeevent//)
   )
 {
@@ -787,12 +787,12 @@ void wxDynamicDialog::OnSize( wxSizeEvent & //WXUNUSED(
   Layout() ;
 }
 
-void wxDynamicDialog::OnTimerEvent(wxTimerEvent &event)
+void wxExamineCPUregistersDialog::OnTimerEvent(wxTimerEvent &event)
 {
   DisplayRegisterData() ;
 }
 
-inline void wxDynamicDialog::ReBuildGUI()
+inline void wxExamineCPUregistersDialog::ReBuildGUI()
 {
   //delete all contained UI controls.
   //delete mp_sizerTop ;
@@ -823,7 +823,7 @@ inline void wxDynamicDialog::ReBuildGUI()
   mp_wxboxsizerOutmost->Layout() ;
 }
 
-inline void wxDynamicDialog::ReloadCPUregisterToReadConfig()
+inline void wxExamineCPUregistersDialog::ReloadCPUregisterToReadConfig()
 {
   m_stdvector_p_wxstatictext.//empty()
     clear() ;
@@ -848,7 +848,7 @@ inline void wxDynamicDialog::ReloadCPUregisterToReadConfig()
   ReBuildGUI() ;
 }
 
-bool wxDynamicDialog::StartTimerWithIntervalTime()
+bool wxExamineCPUregistersDialog::StartTimerWithIntervalTime()
 {
   if( mp_wxcheckboxInterval->GetValue() )
   {

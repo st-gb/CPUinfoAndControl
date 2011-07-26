@@ -86,7 +86,8 @@ wxServiceSocketClient.hpp>
 
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
-FILE * fileDebug ; //for debug logging.
+//FILE * fileDebug ; //for debug logging.
+
 //This global (important for using preprocessor macros) object is used for 
 //easy logging.
 //Logger g_logger ;
@@ -129,7 +130,9 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   , m_wxmutexIPCthread(wxMUTEX_DEFAULT)
 //  , m_wxconditionIPCthread( m_wxmutexIPCthread )
   , m_x86iandc_threadIPC(I_Thread::joinable)
-  , m_xerces_voltage_for_frequency_configuration( & m_model )
+  , m_xerces_voltage_for_frequency_configuration(
+      & m_model,
+      this)
 {
 #ifdef COMPILE_WITH_DEBUG
 //For g++ the std::string object passed to Logger::OpenFile(std::string & )
@@ -1181,7 +1184,8 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
 }
 
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
-  const LPWSTR cp_lpwstrMessage)
+  //const LPWSTR
+  const wchar_t * cp_lpwstrMessage)
 {
   ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
     ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
@@ -1839,12 +1843,17 @@ void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings(
       //redone because in the meantime between asking "save changes" other
       //file modifications could have been done.
       //TODO uncomment
-      m_xerces_voltage_for_frequency_configuration.
+      BYTE byReturnValue = m_xerces_voltage_for_frequency_configuration.
         MergeWithExistingConfigFile(
         GetStdString( std::tstring( wxstrFilePath.c_str() ) ).c_str(),
 //        * mp_model ,
         m_model ,
         strPstateSettingsFileName ) ;
+      if( byReturnValue == Xerces::VoltageForFrequencyConfiguration::
+          successfullyWroteXML_DOM )
+      {
+        MessageWithTimeStamp(L"successfully wrote XML DOM tree.");
+      }
     }
     //mp_configfileaccess->
   }
