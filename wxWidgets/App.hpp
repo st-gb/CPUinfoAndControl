@@ -13,6 +13,8 @@
   #define _COMPILE_WITH_CALC_THREAD
 #endif
 
+#include <wx/app.h> //class wxApp
+
 #include <Controller/CPUcontrolBase.hpp> //base class CPUcontrolBase
 #include <Controller/IPC/I_IPC.hpp> //class IPC_Client
 //#include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
@@ -201,6 +203,7 @@ public:
   bool Confirm(const std::wstring & str) ;
 //  bool Confirm(std::ostrstream & r_ostrstream ) ;
   bool Confirm( std::ostringstream & r_stdostringstream ) ;
+  bool ContinueServiceViaIPC(wxString & r_wxstrMessage);
   void CPUcontrollerChanged() ;
   void CPUcontrollerDeleted() ;
   void CPUcoreUsageGetterDeleted() ;

@@ -56,7 +56,7 @@ char ReadXMLfileInitAndTermXerces(
     //Initialize() must be called _before_ any Xerces function call, else SIGSEV
     // /program crash.
     XMLPlatformUtils::Initialize();
-    LOG( "Xerces access successfully initialized"//"\n"
+    LOGN( "Xerces access successfully initialized"//"\n"
       )
     bXercesSuccessfullyInitialized = true ;
   }
@@ -130,7 +130,7 @@ char ReadXMLdocumentInitAndTermXerces(
     // /program crash.
     XMLPlatformUtils::Initialize();
     bXercesSuccessfullyInitialized = true ;
-    LOG( "Xerces access successfully initialized"//\n"
+    LOGN( "Xerces access successfully initialized"//\n"
       )
   }
   catch (const XMLException & toCatch )

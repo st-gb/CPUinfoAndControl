@@ -532,7 +532,8 @@ extern "C"
       << * p_dweax << " "
       << * p_dwedx << " "
       << affinityMask
-      << "\n" )
+      //<< "\n"
+      )
   }
   #ifdef _DEBUG
   //if( dwIndex == 0x1AD )

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * Nehalem.hpp
  *
@@ -10,7 +17,11 @@
 
   #include <preprocessor_macros/bitmasks.h>
 
-  extern DWORD g_dwValue1, g_dwValue2 ;
+//  extern DWORD g_dwValue1, g_dwValue2 ;
+//from http://stackoverflow.com/questions/911035/uint32-int16-and-the-like-are-they-standard-c:
+#include <stdint.h>
+  //Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
+  extern uint32_t g_dwValue1, g_ui32Value2 ;
 
   //Name Nehalem-specific functions "...Nehalem", also because more than 1
   //(e.g. Intel Core, Nehalem) CPU header file may be included, so 1 name like
@@ -22,7 +33,7 @@
     boolReturnValue = ReadMSR(
       MSR_TURBO_RATIO_LIMIT ,
       & g_dwValue1,// bit  0-31 (register "EAX")
-      & g_dwValue2,
+      & g_ui32Value2,
       1 << wCoreID //m_dwAffinityMask
       ) ;
     //Maximum  multiplier
@@ -32,6 +43,7 @@
 
   inline float GetTimeStampCounterMultiplier()
   {
+    static uint32_t ui32Value = 0;
     //see Intel document "Intel(R) 64 and IA-32 Architectures Software
     //Developer's Manual, Volume 3B: System Programming Guide, Part 2"
     //"Order Number: 253669-032US" from "September 2009"
@@ -40,7 +52,8 @@
     if( ReadMSR(
       0xCE, //MSR_PLATFORM_INFO
       & g_dwValue1,
-      & g_dwValue2,
+      & //g_ui32Value2
+      ui32Value,
       1 //scope: package
       )
       )

@@ -8,7 +8,40 @@
   -(Perf MC event # 12hex/ 18dec, unit mask 0x0):
    kleinere Array (1000 double-Elemente: 29,5 Mio float Multipl./s) bringen mehr flops/s ?!
    großes array (ca. 200 000 Elemente): 5 Mio float Multipl./s
-mit lesen aus 2 kleinen (35000 Elemente) double-Arrays konnte ich viele L2 Cache 
+
+-Pentium M bei 700 MHz:
+ -L2 data loads (0x29 (41 dec), Umask 15 dec)
+  -with loop while(g_vbContinue) { 1 float variable "f", f *= 1.333; }: 
+   ca. 300.000 /s - 1.700.000/s
+  -with executing "./mprime":
+   ca. 400.000/s - 2.800.000/s
+ -0x10 (16 dec): FP_COMP_OPS_EXE fpops executed (counter 0 only);
+  -with executing "./mprime":
+   ca. 137.000.000/s 
+  -with loop while(g_vbContinue) { 1 float variable "f", f *= 1.333; }: 
+   ca. 3.600.000/s 
+ 
+ -0x11 (18 dec): mults:
+  -double array with 1000 elements, index = array[ index % 1000] * 1.333; :
+   20.000.000/
+  -4 double arrays with each 1000 elements;
+   array2[ index % 1000] = array1[ index % 1000] * 1.333; :
+   array3[ index % 1000] = array2[ index % 1000] * 1.333; :
+   array4[ index % 1000] = array3[ ++ index % 1000] * 1.333; :
+   116.000.000/s
+  -1 double array with 1000 or 10000 elements;
+   array2[ index % 1000] = array1[ index % 1000] * 1.333 * 0.98 :
+   142.000.000/s
+  -less multips./s when index was incremented
+  -more multips./s when more factors in term: 
+   "array1[ index % 1000] * 1.333 * 0.98 * 0.55" more multips./s than
+   "array1[ index % 1000] * 1.333 * 0.98" : more multips./s than
+   "array1[ index % 1000] * 1.333"
+ -0x2 : data TLB misses (Pentium events; Table A-20)?!
+  Prime95 small FFTs: 6.9 -8.5 Mio/s
+  
+  
+-mit lesen aus 2 kleinen (35000 Elemente) double-Arrays konnte ich viele L2 Cache 
 Hits erreichen.
 
  -Array benutzen, das größer als der L2-Cache ist. aus dem Array

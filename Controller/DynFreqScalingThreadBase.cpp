@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include <Controller/time/GetTickCount.hpp> //DWORD ::GetTickCount()
 
 #include "DynFreqScalingThreadBase.hpp"
@@ -158,22 +165,23 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //      float fVoltage ;
 //      WORD wFreqInMHz ;
 //      mp_cpucontroller->GetCurrentPstate(
-//        wFreqInMHz
+//        m_fCPUcoreFreqInMHz
 //        , fVoltage
 //        , byCoreID
 //        ) ;
 //      mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
 //        byCoreID
 //        ) ;
-      wFreqInMHz = //"(WORD)" to avoid g++ compiler warning
+      m_fCPUcoreFreqInMHz = //"(WORD)" to avoid g++ compiler warning
           //"converting to `WORD' from `float'"
-          (WORD) mp_cpucoredata->m_arp_percpucoreattributes[byCoreID].
+          //(WORD)
+          mp_cpucoredata->m_arp_percpucoreattributes[byCoreID].
           GetFreqInMHz() ;
       DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad("
         << (WORD) byCoreID << ","
         << fLoad << ") "
         "before mp_cpucontroller->SetFreqAndVoltageFromFreq("
-        << wFreqInMHz * mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor
+        << m_fCPUcoreFreqInMHz * mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor
         << (WORD) byCoreID << ")" )
 
 //      float m_fCPUcoreFrequencyFactor ;
@@ -184,12 +192,23 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //      else
 //        m_fCPUcoreFrequencyFactor = mp_cpucoredata->
 //          m_fCPUcoreFreqIncreaseFactor ;
+
+      float fFreqInMHz = m_fCPUcoreFreqInMHz * //m_fCPUcoreFrequencyFactor
+        mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor;
+      float fCPUcoreMultiplierToUse = fFreqInMHz / mp_cpucoredata->
+          m_arp_percpucoreattributes[byCoreID].m_fReferenceClockInMhz;
+      if( fCPUcoreMultiplierToUse > mp_cpucoredata->m_fMaximumCPUcoreMultiplier)
+      {
+        fCPUcoreMultiplierToUse = mp_cpucoredata->m_fMaximumCPUcoreMultiplier;
+        fFreqInMHz = fCPUcoreMultiplierToUse *
+          m_arp_percpucoreattributes[byCoreID].m_fReferenceClockInMhz;
+      }
+
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
         //Explicit cast to avoid (g++) compiler warning.
         (WORD)
-          ( wFreqInMHz * //m_fCPUcoreFrequencyFactor
-            mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor
+          ( fFreqInMHz
           )
         , byCoreID
         );
@@ -197,13 +216,13 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
         << (WORD) byCoreID << ","
         << fLoad << ") "
         "after mp_cpucontroller->SetFreqAndVoltageFromFreq("
-        << wFreqInMHz * mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor << ","
+        << m_fCPUcoreFreqInMHz * mp_cpucoredata->m_fCPUcoreFreqIncreaseFactor << ","
         << (WORD) byCoreID << ")" )
     }
     else
     {
 //      float fVoltage ;
-//      WORD wFreqInMHz ;
+//      WORD m_fCPUcoreFreqInMHz ;
 //      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
 //        "load <= threshold for increase")
       //m_fPreviousCPUusage 
@@ -214,37 +233,48 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
 //        "before mp_cpucontroller->GetCurrentPstate")
 //      mp_cpucontroller->GetCurrentPstate(
-//        wFreqInMHz
+//        m_fCPUcoreFreqInMHz
 //        , fVoltage
 //        , byCoreID
 //        ) ;
 //      mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
 //        byCoreID
 //        ) ;
-      wFreqInMHz =
+      m_fCPUcoreFreqInMHz =
         //Avoid g++ compiler warning "converting to `WORD' from `float'"
         (WORD) mp_cpucoredata->m_arp_percpucoreattributes[byCoreID].
         GetFreqInMHz() ;
+
+      float fFreqInMHz = m_fCPUcoreFreqInMHz * fLoad;
+      float fCPUcoreMultiplierToUse = fFreqInMHz / mp_cpucoredata->
+          m_arp_percpucoreattributes[byCoreID].m_fReferenceClockInMhz;
+      if( fCPUcoreMultiplierToUse > mp_cpucoredata->m_fMaximumCPUcoreMultiplier)
+      {
+        fCPUcoreMultiplierToUse = mp_cpucoredata->m_fMaximumCPUcoreMultiplier;
+        fFreqInMHz = fCPUcoreMultiplierToUse *
+          m_arp_percpucoreattributes[byCoreID].m_fReferenceClockInMhz;
+      }
+
 //      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
 //        "before mp_cpucontroller->SetFreqAndVoltageFromFreq")
       DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad("
         << (WORD) byCoreID << ","
         << fLoad << ") "
         "before mp_cpucontroller->SetFreqAndVoltageFromFreq("
-        << wFreqInMHz * fLoad << ","
+        << m_fCPUcoreFreqInMHz * fLoad << ","
         << (WORD) byCoreID << ")" )
       mp_cpucontroller->SetFreqAndVoltageFromFreq(
         //r_cpucoredata.m_arp_percpucoreattributes[byCoreID] 
         //Explicit cast to avoid (g++) compiler warning.
         (WORD)
-          ( wFreqInMHz * fLoad )
+          ( fFreqInMHz )
         , byCoreID
         );
       DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad("
         << (WORD) byCoreID << ","
         << fLoad << ") "
         "after mp_cpucontroller->SetFreqAndVoltageFromFreq("
-        << wFreqInMHz * fLoad << ","
+        << m_fCPUcoreFreqInMHz * fLoad << ","
         << (WORD) byCoreID << ")" )
 //      DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad: "
 //        "after mp_cpucontroller->SetFreqAndVoltageFromFreq")
@@ -455,7 +485,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
 //  if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >=
 //  //                  (float) mp_cpucoredata->m_wMaxFreqInMHz /
 //  //                  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
-//  //                  wFreqInMHz >=
+//  //                  m_fCPUcoreFreqInMHz >=
 //  //                  //50% of max. freq
 //  //                  0.5f
 //    //&& fTempInDegCelsius > 90.0f
@@ -585,27 +615,27 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
                 fHighestCPUcoreLoadInPercent ) ;
             LOGN("CPU core with highest load:" <<
               (WORD) byCPUcoreWithHighestLoad )
-        //              mp_cpucontroller->GetCurrentPstate( wFreqInMHz, fVolt,
+        //              mp_cpucontroller->GetCurrentPstate( m_fCPUcoreFreqInMHz, fVolt,
         //                //0
         //                byCPUcoreWithHighestLoad ) ;
-//            wFreqInMHz =
+//            m_fCPUcoreFreqInMHz =
 //              //"(WORD)" to avoid g++ compiler warning "converting to `WORD'
 //              //from `float'"
 //              (WORD) arp_percpucoreattributes[ byCPUcoreWithHighestLoad ].
 //              GetFreqInMHz() ;
-//            LOGN("freq of CPU core with highest load:" << wFreqInMHz )
+//            LOGN("freq of CPU core with highest load:" << m_fCPUcoreFreqInMHz )
 //            //std::set<VoltageAndFreq> stdsetvoltageandfreq ;
 //            //mp_cpucontroller->GetAllPossibleFrequencies(stdsetvoltageandfreq) ;
 //
 //            //Reduce the freq because because the CPU is too hot.
 //            WORD wNewFreqInMHz = mp_cpucontroller->
-//              GetNearestLowerPossibleFreqInMHz( wFreqInMHz ) ;
+//              GetNearestLowerPossibleFreqInMHz( m_fCPUcoreFreqInMHz ) ;
 //            LOGN("nearest lower freq:" << wNewFreqInMHz )
 //            WORD wNewFreqFromLoad = (WORD) (
 //              fHighestCPUcoreLoadInPercent *
 //        //                mp_cpucoredata->m_arfCPUcoreLoadInPercent[
 //        //                 byCPUcoreWithHighestLoad ] *
-//              (float) wFreqInMHz ) ;
+//              (float) m_fCPUcoreFreqInMHz ) ;
 //            if( wNewFreqInMHz != 0 &&
 //              wNewFreqFromLoad > wNewFreqInMHz )
 //            {
@@ -618,7 +648,7 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
 //            //if( //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID] >=
 //            //  (float) mp_cpucoredata->m_wMaxFreqInMHz /
 //            //  //(float) mp_i_cpucontroller->GetFrequencyInMHz(byCoreID)
-//            //  wFreqInMHz >=
+//            //  m_fCPUcoreFreqInMHz >=
 //            //  //50% of max. freq
 //            //  0.5f
 //            //  //&& fTempInDegCelsius > 90.0f
@@ -658,7 +688,7 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
 //              ) ;
             for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
             {
-  //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
+  //                mp_cpucontroller->GetCurrentPstate(m_fCPUcoreFreqInMHz, fVolt, byCoreID) ;
   //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
               SetLowerFrequencyFromAvailableMultipliers(
                 byCoreID ,
@@ -772,7 +802,7 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
           "increased more time passed than to wait for cooldown for core "
           << (WORD) byCoreID
           )
-  //                mp_cpucontroller->GetCurrentPstate(wFreqInMHz, fVolt, byCoreID) ;
+  //                mp_cpucontroller->GetCurrentPstate(m_fCPUcoreFreqInMHz, fVolt, byCoreID) ;
   //                mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
         SetLowerFrequencyFromAvailableMultipliers(
           byCoreID ,
@@ -874,6 +904,7 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
     << "multi(" << arp_percpucoreattributes[ byCoreID].m_fMultiplier
     << ")*load(" << ar_fCPUcoreLoadInPercent[byCoreID]
     << ")=" << fNextMultiplierCalculatedFromCurrentLoad )
+  float fCPUcoreMultiplierToUse;
   if(   //                    fFreqInMHz * ar_fCPUcoreLoadInPercent[byCoreID] <
       fNextMultiplierCalculatedFromCurrentLoad
          <
@@ -881,40 +912,27 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
       fLowerMultiplier
     )
   {
-    fFreqInMHz = //arp_percpucoreattributes[ byCoreID].GetFreqInMHz() ;
-      fNextMultiplierCalculatedFromCurrentLoad *
-      arp_percpucoreattributes[ byCoreID].m_fReferenceClockInMhz ;
-//    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
-//      "multi from load<lower multi ->setting freq" << fFreqInMHz )
-    //mp_cpucontroller->SetFrequencyInMHz(
-    mp_cpucontroller->SetFreqAndVoltageFromFreq(
-      //Set half of max. freq because the CPU is too hot
-  //                    mp_cpucoredata->m_wMaxFreqInMHz / 2 //) ;
-      //"(WORD)" to avoid
-      //"passing `float' for converting 1 of `virtual BYTE
-      // I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, BYTE)'"
-      (WORD) fFreqInMHz
-      , byCoreID ) ;
+    fCPUcoreMultiplierToUse = fNextMultiplierCalculatedFromCurrentLoad;
   }
   else
   {
-  //                  ChangeOperatingPointByLoad( byCoreID ,
-  //                    //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID]
-  //                    //mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
-  //                    ar_fCPUcoreLoadInPercent[byCoreID]
-  //                    ) ;
-    fFreqInMHz = fLowerMultiplier *
-        arp_percpucoreattributes[ byCoreID].m_fReferenceClockInMhz ;
+    fCPUcoreMultiplierToUse = fLowerMultiplier;
+  }
+  if( fCPUcoreMultiplierToUse > mp_cpucoredata->m_fMaximumCPUcoreMultiplier)
+    fCPUcoreMultiplierToUse = mp_cpucoredata->m_fMaximumCPUcoreMultiplier;
+  fFreqInMHz = fCPUcoreMultiplierToUse *
+      arp_percpucoreattributes[ byCoreID].m_fReferenceClockInMhz ;
 //    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
 //        "lower multi >= multi from load  ->setting freq" << fFreqInMHz )
-    mp_cpucontroller->SetFreqAndVoltageFromFreq(
-      //"(WORD)" to avoid
-      //"passing `float' for converting 1 of `virtual BYTE
-      // I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, BYTE)'"
-      (WORD) ( fFreqInMHz )
-      , byCoreID
-      ) ;
-  }
+  mp_cpucontroller->SetFreqAndVoltageFromFreq(
+    //"(WORD)" to avoid
+    //"passing `float' for converting 1 of `virtual BYTE
+    // I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, BYTE)'"
+    (WORD) ( fFreqInMHz )
+    , byCoreID
+    ) ;
+//    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
+//      "multi from load<lower multi ->setting freq" << fFreqInMHz )
 }
 
 inline void DynFreqScalingThreadBase::SignalCPUdataCanBeSafelyRead()

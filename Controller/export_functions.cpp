@@ -132,7 +132,8 @@ extern "C"
         << * p_dweax << " "
         << * p_dwedx << " "
         << affinityMask
-        << "\n" )
+        //<< "\n"
+        )
     }
     else
       g_p_user_interface->MessageWithTimeStamp(L"the hardware /CPU access is "

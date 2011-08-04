@@ -1,4 +1,12 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //Include guard.
+
 #ifndef DYNFREQSCALINGTHREADBASE_HPP
   #define DYNFREQSCALINGTHREADBASE_HPP
 
@@ -41,7 +49,7 @@ protected:
   PerCPUcoreAttributes * m_arp_percpucoreattributes ;
 //  bool m_bCalledInit ;
   //DWORD m_dwMSRLow,m_dwMSRHigh ;
-  WORD wFreqInMHz ;
+  WORD m_fCPUcoreFreqInMHz ;
   WORD m_wMilliSecondsPassed ;
   WORD m_wMilliSecondsToWaitForCoolDown ;
 //  WORD m_wMilliSecondsToWait ;
