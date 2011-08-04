@@ -382,7 +382,8 @@ CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
   std::wstring stdwstr = GetStdWstring(cr_std_tstrProgramName);
   PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
       stdwstr);
-  powerprofdynlinked.DeletePowerScheme(cr_std_tstrProgramName);
+  powerprofdynlinked.DeletePowerScheme(//cr_std_tstrProgramName
+      stdwstr);
   powerprofdynlinked.OutputAllPowerSchemes();
 }
 
@@ -846,7 +847,7 @@ CPUcontrolService::IPC_Message(
     { //Use a block here, else gcc 4.52: "error: jump to case label"
       LOGN("IPC: get_configuration_data")
       Xerces::VoltageForFrequencyConfiguration
-          xerces_voltage_for_frequency_configuration(&m_model);
+          xerces_voltage_for_frequency_configuration( & m_model, mp_userinterface);
       r_ipc_data.m_ar_byDataToSend
           = xerces_voltage_for_frequency_configuration.SerializeConfigToMemoryBuffer(
               dwByteSize);
@@ -911,6 +912,26 @@ CPUcontrolService::IPC_Message(
     break;
   case start_DVFS:
     StartDynVoltnFreqScaling();
+    break;
+  case setMaximumCPUcoreMultplier:
+    { //Use a block here, else gcc 4.52: "error: jump to case label"
+      LOGN("IPC: setMaximumCPUcoreMultplier begin")
+      //    r_arbyPipeDataToSend = (dwByteSize) ;
+      wxCriticalSectionLocker cs_locker(
+          m_model.m_cpucoredata. m_wxcriticalsectionIPCdata);
+      LOGN( "size of data to read: " << r_ipc_data.m_wPipeDataReadSizeInByte )
+      if (r_ipc_data.m_wPipeDataReadSizeInByte >= sizeof(float))
+        {
+          LOGN( "size of data to read >=" << sizeof(float) )
+          m_model.m_cpucoredata.m_fMaximumCPUcoreMultiplier
+              = *((float *) r_ipc_data.m_ar_byPipeDataRead);
+          LOGN( "IPC: setCPUcoreThrottleTemperature after setting the max. "
+              "CPU core multiplier to "
+              << m_model.m_cpucoredata.m_fMaximumCPUcoreMultiplier
+              )
+        }
+      LOGN("IPC: setMaximumCPUcoreMultplier end")
+    }
     break;
   case setCPUcoreThrottleTemperature:
     { //Use a block here, else gcc 4.52: "error: jump to case label"

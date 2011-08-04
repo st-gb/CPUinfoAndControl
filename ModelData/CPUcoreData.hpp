@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //include guard
 
 //#include <global.h> //for BYTE, WORD
@@ -53,6 +60,7 @@ public:
   float m_fCPUcoreLoadThresholdForIncreaseInPercent;
   float m_fCPUcoreFreqFactor ;
   float m_fCPUcoreFreqIncreaseFactor ;
+  float m_fMaximumCPUcoreMultiplier;
   float m_fVoltageForMaxCPUcoreFreq ;
   float m_fThrottleTempInDegCelsius ;
 //  long long m_llLastTimeTooHot;

@@ -24,6 +24,7 @@ class TaskBarIcon
   : public wxTaskBarIcon
 {
 private:
+  WORD m_1stSetMaximumCPUcoreMultiplierEventID;
   WORD m_1stThrottleCPUcoreTemperatureEventID;
   WORD m_1stSelectPowerSchemeMenuEventID;
   WORD m_wAfterLastSelectPowerSchemeMenuEventID;
@@ -44,6 +45,7 @@ public:
   wxIconDrawer * m_p_wxicon_drawer;
 private:
   wxMenu * p_wxmenu ;
+  wxMenu * m_p_wxmenuCPUcoreMultipliers;
   wxMenu * m_p_wxmenuThrottleTemperatures;
 public:
 #if defined(__WXCOCOA__)
@@ -52,11 +54,13 @@ public:
 #else
     TaskBarIcon(MainFrame * p_mainframe)
       :
+      m_1stSetMaximumCPUcoreMultiplierEventID(0),
       m_1stThrottleCPUcoreTemperatureEventID(0),
       m_1stSelectPowerSchemeMenuEventID(0),
       m_wxicon_drawer(16, 16//,8
     //    ,wxBITMAP_SCREEN_DEPTH
         )
+      , m_p_wxmenuCPUcoreMultipliers(NULL)
       , m_p_wxmenuThrottleTemperatures(NULL)
 #endif
     {
@@ -72,6 +76,7 @@ public:
 
     virtual wxMenu * CreatePopupMenu();
     wxMenu * CreatePowerSchemesMenu() ;
+    wxMenu * CreateSetMaximumCPUcoreMultiplierMenu();
     wxMenu * CreateSetThrottleTemperatureMenu();
     void DisconnectEventHandlers();
     void DisconnectSelectPowerSchemeEventHandlers();
@@ -98,6 +103,7 @@ public:
 //    void OnMenuSub(wxCommandEvent&);
 //    void SetMainFrame(MainFrame * ) ;
     void OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent) ;
+    void OnSetMaximumCPUcoreMultiplier(wxCommandEvent & wxevent) ;
     void OnSetThrottleTemperature(wxCommandEvent & wxevent) ;
     void ShowMainFrame();
     DECLARE_EVENT_TABLE()

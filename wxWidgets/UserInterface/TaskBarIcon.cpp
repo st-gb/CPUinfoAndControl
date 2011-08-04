@@ -51,6 +51,7 @@ enum {
 //    PU_SUB1,
 //    PU_SUB2,
     SELECT_CPU_THROTTLE_TEMPERATURE,
+    SELECT_MAXIMUM_CPU_CORE_MULTIPLIER,
     SELECT_POWER_SCHEME ,
     lastStaticEventID
 };
@@ -147,6 +148,54 @@ wxMenu * TaskBarIcon::CreateSetThrottleTemperatureMenu()
   return m_p_wxmenuThrottleTemperatures;
 }
 
+wxMenu * TaskBarIcon::CreateSetMaximumCPUcoreMultiplierMenu()
+{
+  LOGN("CreateSetMaximumCPUcoreMultiplierMenu begin")
+//  bool bSetCheckMarkForCPUcoreMultiplier = false;
+//  wxMenu * m_p_wxmenuThrottleTemperatures = new wxMenu();
+//  if( ! m_p_wxmenuThrottleTemperatures )
+    m_p_wxmenuCPUcoreMultipliers = new wxMenu();
+  wxString wx_strContextMenuLabel;
+
+  if( ! m_1stSetMaximumCPUcoreMultiplierEventID )
+    m_1stSetMaximumCPUcoreMultiplierEventID = s_wEventID;
+  else
+    s_wEventID = m_1stSetMaximumCPUcoreMultiplierEventID;
+  LOGN("1st CPU core throttle temperature event ID: " <<
+      m_1stSetMaximumCPUcoreMultiplierEventID )
+  std::set<float> & r_std_set_floatAvailableMultipliers = wxGetApp().m_model.
+    m_cpucoredata.m_stdset_floatAvailableMultipliers;
+  for(std::set<float>::const_iterator c_iter =
+      r_std_set_floatAvailableMultipliers.begin(); c_iter !=
+          r_std_set_floatAvailableMultipliers.end(); ++ c_iter
+     )
+  {
+    wx_strContextMenuLabel = wxString::Format( wxT("%f"), * c_iter);
+    m_p_wxmenuCPUcoreMultipliers->AppendRadioItem( s_wEventID ,
+      wx_strContextMenuLabel );
+
+    //Set mark if >= because (and not simply "==") the temperature is as
+    //integer here and might be configured as floating point value.
+    if( * c_iter == wxGetApp().m_model.m_cpucoredata.m_fMaximumCPUcoreMultiplier
+       )
+    {
+      m_p_wxmenuCPUcoreMultipliers->Check( s_wEventID, true );
+    }
+    Connect( //s_wEventID ++
+        s_wEventID , //wxID_ANY,
+      wxEVT_COMMAND_MENU_SELECTED ,
+      wxCommandEventHandler(TaskBarIcon::OnSetMaximumCPUcoreMultiplier)
+      );
+    LOGN("Connected event ID " << s_wEventID << " to "
+      "\"OnSetMaximumCPUcoreMultiplier\"")
+    ++ s_wEventID;
+  }
+//  m_wAfterLastThrottleCPUcoreTemperatureEventID = s_wEventID;
+//  LOGN("Event ID after last CPU core throttle temperature event ID: " <<
+//      m_wAfterLastThrottleCPUcoreTemperatureEventID )
+  return m_p_wxmenuCPUcoreMultipliers;
+}
+
 // Overridables
 //http://docs.wxwidgets.org/stable/wx_wxtaskbaricon.html#wxtaskbariconpopupmenu:
 //"This method is called by the library when the user requests popup menu (on
@@ -179,6 +228,12 @@ wxMenu * TaskBarIcon::CreatePopupMenu()
   p_wxmenu->Append(SELECT_CPU_THROTTLE_TEMPERATURE,
     wxT("select CPU core throttle temperature"),
     m_p_wxmenuThrottleTemperatures);
+
+  CreateSetMaximumCPUcoreMultiplierMenu();
+  p_wxmenu->Append(SELECT_MAXIMUM_CPU_CORE_MULTIPLIER,
+    wxT("select maximum CPU core multiplier"),
+    m_p_wxmenuCPUcoreMultipliers);
+
 //    menu->Append(PU_CHECKMARK, _T("Checkmark"),wxT(""), wxITEM_CHECK);
 //    menu->AppendSeparator();
 //    wxMenu * wxmenuProfiles = new wxMenu;
@@ -287,6 +342,32 @@ float TaskBarIcon::GetTemperatureViaMenuLabel(
   wxstrMenuLabel.ToDouble( & dTemperatureInDegC);
   float fTemperatureInDegC = (float) dTemperatureInDegC;
   return fTemperatureInDegC;
+}
+
+void TaskBarIcon::OnSetMaximumCPUcoreMultiplier(wxCommandEvent & wxevent)
+{
+  int nEventID = wxevent.GetId() ;
+  LOGN( FULL_FUNC_NAME << " event ID:" << nEventID)
+//  wxString wxstrMenuLabel;
+//  GetTemperatureViaMenuLabel(nEventID, wxstrMenuLabel);
+
+//  m_1stThrottleCPUcoreTemperatureEventID
+  float fMaximumCPUcoreMultiplier = wxGetApp().m_model.m_cpucoredata.
+    m_arfAvailableMultipliers[nEventID -
+                              m_1stSetMaximumCPUcoreMultiplierEventID];
+  LOGN( FULL_FUNC_NAME << "--requested to set maximum CPU core multiplier to "
+    << fMaximumCPUcoreMultiplier )
+  std::string std_str = format_output_data(
+    (BYTE *) & fMaximumCPUcoreMultiplier, sizeof(fMaximumCPUcoreMultiplier),
+    80);
+  LOGN( FULL_FUNC_NAME << "--data to send to the service:" << std_str)
+  wxGetApp().IPC_ClientSendCommandAndGetResponse(
+    setMaximumCPUcoreMultplier, 4
+    //sizeof(fMaximumCPUcoreMultiplier)
+    , (BYTE *) & fMaximumCPUcoreMultiplier
+    );
+  wxGetApp().m_model.m_cpucoredata.m_fMaximumCPUcoreMultiplier =
+    fMaximumCPUcoreMultiplier;
 }
 
 void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)

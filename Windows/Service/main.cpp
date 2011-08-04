@@ -349,8 +349,8 @@ int main( int argc, char * argv[]
          std::wstring stdwstr = GetStdWstring( stdtstrProgramName ) ;
           CPUcontrolService cpucontrolservice(
             argc,
-            //GetTCHARarray_Inline
-            Get_wchar_t_Array_Inline( (const char **) argv, argc),
+            GetTCHARarray_Inline( (const char **) argv, argc),
+//            Get_wchar_t_Array_Inline( (const char **) argv, argc),
 //            stdtstrProgramName
             stdwstr
 //            , xerces_ipc_data_handler

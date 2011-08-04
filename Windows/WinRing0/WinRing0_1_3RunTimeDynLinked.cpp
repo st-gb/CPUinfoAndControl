@@ -105,7 +105,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
     dwValue = GetDllStatus() ;
     if( dwValue == OLS_DLL_NO_ERROR )
     {
-       LOG("WinRing0 successfully initialized"//\n"
+       LOGN("WinRing0 successfully initialized"//\n"
          )
        //UIconfirm("WinRing0 successfully initialized") ;
     }

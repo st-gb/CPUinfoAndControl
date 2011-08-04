@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * ExportedExeFunctions.h
  *
@@ -11,22 +18,25 @@
 
 //#ifndef _MSC_VER
 #include <windef.h> //for BOOL etc.
+
+//from http://stackoverflow.com/questions/911035/uint32-int16-and-the-like-are-they-standard-c:
+#include <stdint.h>
 //#endif
 
   typedef BOOL (//WINAPI
     * ReadMSR_func_type)
      (
       DWORD dwIndex,    // MSR index
-      PDWORD p_dweax,     // bit  0-31
-      PDWORD p_dwedx,     // bit 32-63
+      uint32_t * p_dweax,     // bit  0-31
+      uint32_t * p_dwedx,     // bit 32-63
       DWORD_PTR affinityMask  // Thread Affinity Mask
     ) ;
   typedef BOOL (//WINAPI
     * WriteMSR_func_type)
      (
       DWORD dwIndex,    // MSR index
-      DWORD dwEAX,      // bit  0-31
-      DWORD dwEDX,      // bit 32-63
+      uint32_t dwEAX,      // bit  0-31
+      uint32_t dwEDX,      // bit 32-63
       DWORD_PTR affinityMask  // Thread Affinity Mask
     ) ;
   typedef BOOL ( * ReadPCIconfigSpace_func_type)

@@ -1220,34 +1220,14 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
   //ServiceBase::ContinueService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  std::string stdstrMessage ;
-  //Lock concurrent access to p_i_ipcclient from another thread.
-  wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
-    mp_wxx86infoandcontrolapp->m_wxcriticalsectionIPCobject ) ;
-  if( //! ::wxGetApp().m_ipcclient.IsConnected()
-      ! mp_wxx86infoandcontrolapp->IPC_ClientIsConnected()
+  wxString wxstrMessageFromDataProvider;
+  if( mp_wxx86infoandcontrolapp->
+      ContinueServiceViaIPC(wxstrMessageFromDataProvider)
     )
-    //::wxGetApp().m_ipcclient.Init() ;
-    mp_wxx86infoandcontrolapp->m_p_i_ipcclient->ConnectToDataProvider(
-      stdstrMessage ) ;
-  if( //::wxGetApp().m_ipcclient.IsConnected()
-      mp_wxx86infoandcontrolapp->IPC_ClientIsConnected()
-    )
-  {
-//    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(continue_service) ;
-//    wxString wxstr = getwxString( ::wxGetApp().m_ipcclient.m_stdwstrMessage ) ;
-//    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
-    if( mp_wxx86infoandcontrolapp->m_p_i_ipcclient )
-    {
-      mp_wxx86infoandcontrolapp->m_p_i_ipcclient->SendCommandAndGetResponse(
-        continue_service) ;
-      wxString wxstr = getwxString( mp_wxx86infoandcontrolapp->
-        m_p_i_ipcclient->m_stdwstrMessage ) ;
-      ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
-    }
-  }
+    ::wxMessageBox( wxT("message from the service:\n") +
+        wxstrMessageFromDataProvider ) ;
   else
-    wxMessageBox(
+    ::wxMessageBox(
       //Use wxT() to enable to compile with both unicode and ANSI.
       wxT("could not continue because not connected to the service")
       ) ;

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "CPUcoreData.hpp"
 //Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
 //"undefined reference".
@@ -51,13 +58,17 @@ void CPUcoreData::AvailableMultipliersToArray()
     if( m_arfAvailableMultipliers )
     {
       WORD wArrayIndex = 0 ;
-      for( std::set<float>::const_iterator c_iter =
+      std::set<float>::const_iterator c_iter_std_set_float;
+      for( c_iter_std_set_float =
           m_stdset_floatAvailableMultipliers.begin() ;
-          c_iter != m_stdset_floatAvailableMultipliers.end() ;
-          ++ c_iter , ++ wArrayIndex )
+          c_iter_std_set_float != m_stdset_floatAvailableMultipliers.end() ;
+          ++ c_iter_std_set_float , ++ wArrayIndex )
       {
-        m_arfAvailableMultipliers[ wArrayIndex ] = *c_iter ;
+        m_arfAvailableMultipliers[ wArrayIndex ] = *c_iter_std_set_float ;
       }
+      m_fMaximumCPUcoreMultiplier =
+        //Highest multiplier.
+        * (-- c_iter_std_set_float);
     }
   }
 }

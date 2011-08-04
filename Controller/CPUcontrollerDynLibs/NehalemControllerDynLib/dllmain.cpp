@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
 //Copyright 2010-2011 by Trilobyte Software Engineering GmbH, Berlin, Germany.
 //It must not be used commercially without the permission of Trilobyte
@@ -86,7 +93,8 @@ static float gs_fTimeStampCounterMultiplier = 0.0 ;
 
 //Use global vars instead of allocating them for each function call (->faster)
 BYTE g_byValue1 , g_byValue2 ;
-DWORD g_dwValue1 , g_dwValue2 ;
+//Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
+uint32_t g_dwValue1 , g_ui32Value2 ;
 
 #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
@@ -372,6 +380,7 @@ EXPORT
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
   static float fReferenceClockInMHz = 0.0;
+  static uint32_t ui32Value = 0;
 
 //  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency begin") )
 
@@ -381,7 +390,7 @@ EXPORT
     (* g_pfnreadmsr) (
     IA32_PERF_STATUS,
     & g_dwValue1,// lowmost bit 0-31 (register "EAX")
-    & g_dwValue2, //highmost bit 32-63
+    & ui32Value, //highmost bit 32-63
     1 << wCoreID //m_dwAffinityMask
     ) ;
 //  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after rdmsr") )
@@ -457,6 +466,7 @@ float
   GetTemperatureInCelsius ( WORD wCoreID
   )
 {
+  static uint32_t ui32Value = 0;
 //    BYTE byDigitalReadout ;
 //    BYTE byTempInDegCelsius ;
 //    BYTE byTempTarget;
@@ -478,7 +488,8 @@ float
   g_byValue1 = (*g_pfnreadmsr) (
      IA32_THERM_STATUS , //Address: 1A2H
      & g_dwValue1, // bits 0-31 (register "EAX")
-     & g_dwValue2,
+     & //g_ui32Value2,
+     ui32Value,
      //m_dwAffinityMask
      1 << wCoreID
      ) ;
@@ -603,6 +614,7 @@ EXPORT
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
+  static uint32_t ui32Value = 0;
 //    std::stringstream ss ;
 //    ss << "multiplier to set: " << fMultiplier << "lowmost bits:"
 //        << g_dwValue1 ;
@@ -619,7 +631,9 @@ EXPORT
     //  "63:33 Reserved"
     IA32_PERF_CTL,
     (BYTE) fMultiplier , // bits 0-31 (register "EAX")
-    g_dwValue2, //bits 0-31 (register "EDX")
+    //bits 0-31 (register "EDX")
+    //g_ui32Value2,
+    ui32Value,
     //m_dwAffinityMask
     1 << wCoreID
     ) ;
