@@ -382,29 +382,34 @@ inline BYTE NamedPipeClient::WriteDataSizeInByte(IPC_data & r_ipc_data)
 {
   LOGN("WriteDataSizeInByte begin--command: "
     << (WORD) r_ipc_data.m_byCommand )
-  switch( //byCommand
-    r_ipc_data.m_byCommand )
-  {
-  case setCPUcoreThrottleTemperature:
-  case setMaximumCPUcoreMultplier:
-    LOGN("SendCommandAndGetResponse--setCPUcoreThrottleTemperature")
-    if( SendDataSizeInByte(
-        //& m_r_model.m_cpucoredata.m_fThrottleTempInDegCelsius,
-        //Temperature as float value + command as byte value.
-        sizeof(float) + 1
-        )
-      )
-      return WritingIPCdataSucceeded;
-    break;
-  default:
-    if( SendDataSizeInByte(
-        //& m_r_model.m_cpucoredata.m_fThrottleTempInDegCelsius,
-        //Command as byte value.
-        1
-        )
-      )
-      return WritingIPCdataSucceeded;
-  }
+//  switch( //byCommand
+//    r_ipc_data.m_byCommand )
+//  {
+//  case setCPUcoreThrottleTemperature:
+//  case setMaximumCPUcoreMultplier:
+//    LOGN("SendCommandAndGetResponse--setCPUcoreThrottleTemperature")
+//    if( SendDataSizeInByte(
+//        //& m_r_model.m_cpucoredata.m_fThrottleTempInDegCelsius,
+//        //Temperature as float value + command as byte value.
+//        sizeof(float) + 1
+//        )
+//      )
+//      return WritingIPCdataSucceeded;
+//    break;
+//  default:
+//    if( SendDataSizeInByte(
+//        //& m_r_model.m_cpucoredata.m_fThrottleTempInDegCelsius,
+//        //Command as byte value.
+//        1
+//        )
+//      )
+//      return WritingIPCdataSucceeded;
+//  }
+  if( SendDataSizeInByte(
+       r_ipc_data.m_wDataToWriteSizeInByte
+       )
+     )
+     return WritingIPCdataSucceeded;
   return WritingIPCdataFailed;
 }
 

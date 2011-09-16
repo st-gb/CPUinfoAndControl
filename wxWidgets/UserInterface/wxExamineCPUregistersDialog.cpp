@@ -435,10 +435,11 @@ void wxExamineCPUregistersDialog::DisplayTSCvalues()
     )
   {
 //    DWORD dwHigh, dwLow ;
-    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf (Copyright (c) Intel Corporation 1997. )
+    //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf
+    // (Copyright (c) Intel Corporation 1997. )
     //  "Using the RDTSC Instruction for Performance Monitoring"
     // (formerly on http://developer.intel.com/drg/pentiumII/appnotes/RDTSCPM1.HTM?):
-    //"force all previous instructions to complete"
+    // "force all previous instructions to complete"
 //    mp_cpuaccess->CpuidEx( 1, & m_dwEAX, & m_dwEBX, & m_dwECX, & m_dwEDX, 1 ) ;
 //    mp_cpuaccess->ReadTSC(m_dwEAX,m_dwEDX) ;
     if( mp_cpuaccess->ReadTSCinOrder(m_dwEAX,m_dwEDX,1) )

@@ -128,13 +128,18 @@ wxString MainFrame::s_wxstrTaskBarIconToolTip =
   wxT("x86IandC--highest CPU core temperature [°C]") ;
 
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
-  //http://www.informit.com/articles/article.aspx?p=405047:
-  //[...]another thing you can do to make drawing smoother (particularly
-  //when resizing) is to paint the background in your paint handler, and
-  //not in an erase background handler. All the painting will then be
-  //done in your buffered paint handler, so you don't see the background
-  //being erased before the paint handler is called. Add an empty erase
-  //background handler[...]
+  //"Cross-Platform GUI Programming with wxWidgets"
+  // (Copyright © 2006 Pearson Education, Inc.)
+  // ISBN 0-13-147381-6  "First printing, July 2005"
+  //"CHAPTER 5 Drawing and Printing" ->
+  //"UNDERSTANDING DEVICE CONTEXTS" -> "Drawing on Windows with wxPaintDC" :
+//  "[...] another thing you can do to make
+//  drawing smoother (particularly when resizing) is to paint the background in
+//  your paint handler, and not in an erase background handler. All the painting
+//  will then be done in your buffered paint handler, so you don’t see the back-
+//  ground being erased before the paint handler is called. Add an empty erase
+//  background handler, and call  SetBackgroundStyle with  wxBG_STYLE_CUSTOM to
+//  hint to some systems not to clear the background automatically."
   EVT_ERASE_BACKGROUND(MainFrame::OnEraseBackground)
   EVT_MENU(ID_Quit, MainFrame::OnQuit)
   EVT_MENU(ID_About, MainFrame::OnAbout)
@@ -371,7 +376,7 @@ MainFrame::MainFrame(
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
 //  , m_xerces_voltage_for_frequency_configuration( p_model )
 {
-  LOG("begin of main frame creation"//\n"
+  LOGN("begin of main frame creation"//\n"
     )
   wxIcon wxicon;
   if( p_wxx86infoandcontrolapp->GetX86IandCiconFromFile(wxicon) )
@@ -392,9 +397,13 @@ MainFrame::MainFrame(
   mp_ar_voltage_and_multi = new VoltageAndMulti[
     mp_model->m_cpucoredata.m_byNumberOfCPUCores ] ;
 
-  //http://www.informit.com/articles/article.aspx?p=405047:
-  //[...]call SetBackgroundStyle with wxBG_STYLE_CUSTOM to hint to some
-  //systems not to clear the background automatically
+  //"Cross-Platform GUI Programming with wxWidgets"
+  // (Copyright © 2006 Pearson Education, Inc.)
+  // ISBN 0-13-147381-6  "First printing, July 2005"
+  //"CHAPTER 5 Drawing and Printing" ->
+  //"UNDERSTANDING DEVICE CONTEXTS" -> "Drawing on Windows with wxPaintDC" :
+  //"[...] call  SetBackgroundStyle with  wxBG_STYLE_CUSTOM to
+  //  hint to some systems not to clear the background automatically."
   SetBackgroundStyle(wxBG_STYLE_CUSTOM );
 //  m_bConfirmedYet = true ;
   mp_wxmenubar = new wxMenuBar;
@@ -613,7 +622,7 @@ MainFrame::MainFrame(
     CPUcoreUsageGetterAttached(wxstrCPUcoreUsageGetterDynLibPath) ;
   }
 //  mp_wxx86infoandcontrolapp->ShowTaskBarIcon(this) ;
-  LOG("end of main frame creation"//\n"
+  LOGN("end of main frame creation"//\n"
     )
 //  RedrawEverything() ;
 //  Refresh() ;
@@ -1216,7 +1225,8 @@ void MainFrame::OnConnectToOrDisconnectFromService(
 
 void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
 {
-  LOGN("OnContinueService")
+  LOGN(//"OnContinueService"
+      FULL_FUNC_NAME << "--begin")
   //ServiceBase::ContinueService( //mp_model->m_strServiceName.c_str() 
   //  "CPUcontrolService" );
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
@@ -3071,13 +3081,18 @@ WORD MainFrame::GetXcoordinateForFrequency(WORD wFrequencyInMHz)
   ) ;
 }
 
-//http://www.informit.com/articles/article.aspx?p=405047:
-//[...]another thing you can do to make drawing smoother (particularly 
-//when resizing) is to paint the background in your paint handler, and 
-//not in an erase background handler. All the painting will then be 
-//done in your buffered paint handler, so you don't see the background 
-//being erased before the paint handler is called. Add an empty erase 
-//background handler[...]
+//"Cross-Platform GUI Programming with wxWidgets"
+// (Copyright © 2006 Pearson Education, Inc.)
+// ISBN 0-13-147381-6  "First printing, July 2005"
+//"CHAPTER 5 Drawing and Printing" ->
+//"UNDERSTANDING DEVICE CONTEXTS" -> "Drawing on Windows with wxPaintDC" :
+//  "[...] another thing you can do to make
+//  drawing smoother (particularly when resizing) is to paint the background in
+//  your paint handler, and not in an erase background handler. All the painting
+//  will then be done in your buffered paint handler, so you don’t see the back-
+//  ground being erased before the paint handler is called.
+
+//  Add an empty erase background handler [...]"
 // ->Empty implementation, to prevent flicker
 void MainFrame::OnEraseBackground(wxEraseEvent& event)
 {
@@ -3132,9 +3147,13 @@ void MainFrame::OnPaint(wxPaintEvent & r_wx_paint_event)
       , *mp_wxbitmap
       ) ;
 
-    //http://www.informit.com/articles/article.aspx?p=405047:
-    // Shifts the device origin so we don't have to worry
-    // about the current scroll position ourselves
+    //"Cross-Platform GUI Programming with wxWidgets"
+    // (Copyright © 2006 Pearson Education, Inc.)
+    // ISBN 0-13-147381-6  "First printing, July 2005"
+    //"CHAPTER 5 Drawing and Printing" ->
+    //"UNDERSTANDING DEVICE CONTEXTS" -> "Drawing on Windows with wxPaintDC" :
+    // "Shifts the device origin so we don’t have to worry
+    // about the current scroll position ourselves"
     PrepareDC(wxmemorydc);
 
     //http://docs.wxwidgets.org/stable/wx_wxmemorydc.html#wxmemorydc:

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 // dllmain.cpp : Definiert den Einstiegspunkt für die DLL-Anwendung.
 #ifdef _MSC_VER //MS compiler
 #include "stdafx.h"
@@ -25,7 +32,7 @@ inline_register_access_functions.hpp>
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
 #ifdef _DEBUG
-  #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 
 #include <tchar.h> //_T()
@@ -38,15 +45,16 @@ extern WriteMSR_func_type g_pfn_write_msr ;
 //extern float g_fReferenceClockInMHz ;
 
 bool gs_b2ndTimeOrLaterReadTSCandFIDchange ;
-DWORD g_dwLowmostBits ;
-DWORD g_dwHighmostBits ;
+uint32_t g_ui32LowmostBits ;
+uint32_t g_ui32HighmostBits ;
 //ULONGLONG g_ullPerformanceEventCounterNumberOfFIDchange ;
 
 //PentiumM_Controller g_pentium_m_controller ;
 //ExportedExeFunctionsCPUaccess g_exportedexefunctionscpuaccess ;
 
 #ifdef _DEBUG
-Logger g_logger ;
+//Logger g_logger ;
+Logger g_loggerDynLib ;
 #endif
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -54,7 +62,7 @@ bool InitWindows()
 {
   #ifdef _DEBUG
   std::string strExeFileNameWithoutDirs = GetStdString(
-    GetExeFileNameWithoutDirs() ) ;
+    ::GetExeFileNameWithoutDirs() ) ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
     ("PentiumM_DLL_log.txt") ;
   g_loggerDynLib.OpenFile2( stdstrFilename ) ;
@@ -96,15 +104,9 @@ BOOL APIENTRY DllMain(
   switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
+	  //According to Dr. Pohl the DllMain while execution this function is
+	  //blocked for other processes. So execute initializations in Init(...).
   {
-    InitWindows() ;
-#else
-    //for g_pfnreadmsr etc.
-    AssignPointersToExportedExeMSRfunctions(
-      g_pfnreadmsr , g_pfn_write_msr ) ;
-#endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-    GetReferenceClockAccordingToStepping() ;
-#ifdef _DEBUG
 //    std::string strExeFileNameWithoutDirs = GetStdString(
 //      GetExeFileNameWithoutDirs() ) ;
 #endif
@@ -152,6 +154,16 @@ void
   //BYTE by
   )
 {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  InitWindows() ;
+#else
+  //for g_pfnreadmsr etc.
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr , g_pfn_write_msr ) ;
+#endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+  GetReferenceClockAccordingToStepping() ;
+//#endif
+//#ifdef _DEBUG
 //  g_pi_cpuaccess = pi_cpuaccess ;
   AssignPointersToExportedExeMSRfunctions(
     g_pfnreadmsr , g_pfn_write_msr ) ;
@@ -246,7 +258,7 @@ float *
     , WORD * p_wNum )
 {
   BYTE byMaxMultiplier = 0 ;
-  DWORD dwLowmostBits , dwHighmostBits ;
+  uint32_t ui32LowmostBits , ui32HighmostBits ;
 //  #ifdef _DEBUG
   //MSC-generated version has no problems
 //#ifndef _MSC_VER
@@ -257,24 +269,24 @@ float *
 //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
 //  #endif
    //g_pi_cpuaccess->RdmsrEx(
-  (*g_pfnreadmsr) (
+  ( * g_pfnreadmsr) (
     //MIN_AND_MAX_FID ,
     //According to the MSR walker of CrystalCPUID:
     //for Pentium M reg. addr. 0x198:
     //Bit 24-32 showed hex "0E" for a max. multipl. "14" for 1.86 133 MHz FSB.
     //Bit 24-32 showed hex "0C" for a max. multipl. "12" for 1.6 133 MHz FSB.
     IA32_PERF_STATUS ,
-    & dwLowmostBits,// bit  0-31 (register "EAX")
-    & dwHighmostBits,
+    & ui32LowmostBits,// bit  0-31 (register "EAX")
+    & ui32HighmostBits,
     //m_dwAffinityMask
     1 << wCoreID
     ) ;
-   byMaxMultiplier = //(BYTE) ( dwLowmostBits & 255 ) ;
-     ( dwHighmostBits >> 8 ) & 255 ;
+   byMaxMultiplier = //(BYTE) ( ui32LowmostBits & 255 ) ;
+     ( ui32HighmostBits >> 8 ) & 255 ;
    //According to the MSR walker of CrystalCPUID the min. multi is at the
    //highmost byte: was "06" for every tested CPU (1.6GHz FSB133,
    // 1.86 GHz FSB 133, 1.8GHz FSB 100)
-   BYTE byMinMultiplier = (BYTE) ( dwHighmostBits >> 24 ) & 255 ;
+   BYTE byMinMultiplier = (BYTE) ( ui32HighmostBits >> 24 ) & 255 ;
    BYTE byNumMultis = byMaxMultiplier - byMinMultiplier
        //add "+1" : if min and max identical, the array size must be "1"
        + 1 ;
@@ -318,7 +330,7 @@ float *
     , WORD * p_wNum )
 {
   BYTE byMaxVoltageID = 0 ;
-  DWORD dwLowmostBits , dwHighmostBits ;
+  uint32_t ui32LowmostBits , ui32HighmostBits ;
 //  #ifdef _DEBUG
   //MSC-gerated version has no problems
 //#ifndef _MSC_VER
@@ -329,21 +341,21 @@ float *
 //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
 //  #endif
   if(
-  (*g_pfnreadmsr) (
-    //MIN_AND_MAX_FID ,
-    //According to the MSR walker of CrystalCPUID:
-    //for Pentium M reg. addr. 0x198:
-    //Bit 16-24 showed hex "29" for a max. 1.356 V for 1.86 133 MHz FSB.
-    //Bit 16-24 showed hex "26" for a max. 1.308 V for 1.6 133 MHz FSB.
-    IA32_PERF_STATUS ,
-    & dwLowmostBits,// bit  0-31 (register "EAX")
-    & dwHighmostBits,
-    //m_dwAffinityMask
-    1 << wCoreID
-    )
+    ( * g_pfnreadmsr) (
+      //MIN_AND_MAX_FID ,
+      //According to the MSR walker of CrystalCPUID:
+      //for Pentium M reg. addr. 0x198:
+      //Bit 16-24 showed hex "29" for a max. 1.356 V for 1.86 133 MHz FSB.
+      //Bit 16-24 showed hex "26" for a max. 1.308 V for 1.6 133 MHz FSB.
+      IA32_PERF_STATUS ,
+      & ui32LowmostBits,// bit  0-31 (register "EAX")
+      & ui32HighmostBits,
+      //m_dwAffinityMask
+      1 << wCoreID
+      )
     )
   {
-    byMaxVoltageID = ( dwHighmostBits & 255 ) ;
+    byMaxVoltageID = ( ui32HighmostBits & 255 ) ;
      BYTE byNumVoltages = //(1.340 - 0.7 / 0.016) = 0.64 / 0.016 = 40
          //if e.g. only 1 voltage: 0.7-0.7/0.016 = 0, so add "1"
          byMaxVoltageID

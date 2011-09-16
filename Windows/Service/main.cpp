@@ -173,93 +173,6 @@ void HandleProgramOptions(
   }
 }
 
-//from http://stackoverflow.com/questions/185254/how-can-a-win32-process-get-the-pid-of-its-parent:
-// / see http://msdn.microsoft.com/en-us/library/ms684280%28v=vs.85%29.aspx:
-ULONG_PTR GetParentProcessIDviaNtQueryInformationProcess()
-{
-  ULONG_PTR pbi[6];
-  ULONG ulSize = 0;
-  LONG (WINAPI *NtQueryInformationProcess)(HANDLE ProcessHandle, ULONG ProcessInformationClass,
-   PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
-  *(FARPROC *)&NtQueryInformationProcess =
-   GetProcAddress(LoadLibraryA("NTDLL.DLL"), "NtQueryInformationProcess");
-  if(NtQueryInformationProcess)
-  {
-   if(NtQueryInformationProcess(
-       GetCurrentProcess(),
-       0, //0ProcessBasicInformation
-       &pbi,
-       sizeof(pbi),
-       &ulSize) >= 0 && ulSize == sizeof(pbi))
-      return pbi[5];
-  }
-  return (ULONG_PTR)-1;
-}
-
-//DWORD GetParentProcessIDviaProcess32First()
-//{
-//  HANDLE h = CreateToolhelp32Snapshot(
-//    TH32CS_SNAPPROCESS, //__in  DWORD dwFlags,
-//    0 //__in  DWORD th32ProcessID
-//  );
-//  if( h != INVALID_HANDLE_VALUE )
-//  {
-//    PROCESSENTRY32 pe32;
-//    ::Process32First( h);
-//    ::Process32Nex(h, & pe32);
-//  }
-//}
-
-DWORD GetParentProcessId() // By Napalm @ NetCore2K
-{
-  //http://msdn.microsoft.com/en-us/library/ms684868%28v=vs.85%29.aspx:
-  // "A process can use the Process32First function to obtain the process identifier of its parent process."
-//  return GetParentProcessIDviaProcess32First
-  return GetParentProcessIDviaNtQueryInformationProcess();
-}
-
-bool IsStartedAsService()
-{
-  ULONG_PTR dwParentProcessID = GetParentProcessId();
-  LOGN("parent PID:" << dwParentProcessID)
-  if( dwParentProcessID != (ULONG_PTR)-1 )
-  {
-      HANDLE handleProcess =//WINAPI
-       ::OpenProcess(
-           //PROCESS_QUERY_LIMITED_INFORMATION
-        0x1000, //__in  DWORD dwDesiredAccess,
-        FALSE, //__in  BOOL bInheritHandle,
-        dwParentProcessID //__in  DWORD dwProcessId
-      );
-      //http://msdn.microsoft.com/en-us/library/ms684320(v=vs.85).aspx:
-      //"If the function fails, the return value is NULL."
-      if( handleProcess)
-      {
-        TCHAR lpFilename [MAX_PATH];
-        char ar_chFilename [MAX_PATH];
-        DWORD dw =//WINAPI
-          ::GetModuleFileNameA(
-          (HMODULE) handleProcess, //__in_opt  HMODULE hModule,
-//          lpFilename, //__out     LPTSTR lpFilename,
-          ar_chFilename,
-          MAX_PATH //__in      DWORD nSize
-        );
-        if( dw )
-          LOGN( "file name for PID:" << ar_chFilename)
-        else
-          LOGN( //::GetErrorMessageFromLastErrorCodeA()
-              "GetModuleFileNameA failed:" <<
-              LocalLanguageMessageFromErrorCodeA( ::GetLastError() )
-              )
-        //QueryFullProcessImageName
-      }
-      else
-        LOGN( //::GetErrorMessageFromLastErrorCodeA()
-            LocalLanguageMessageFromErrorCodeA( ::GetLastError() )
-            )
-  }
-}
-
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
 int main( int argc, char * argv[]
@@ -272,10 +185,19 @@ int main( int argc, char * argv[]
   std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
     + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
 
-  IsStartedAsService();
-  //std::string stdstrLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
-  std::string stdstrLogFileName = std::string( argv[0]) +
+  std::string stdstrLogFileName;
+#if defined(__GNUC__) && __GNUC__ > 3 //GCC 3.4.5 does not have "psapi.a" lib.
+  if( ServiceBase::IsStartedAsService() )
+    //std::string stdstrLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
+    stdstrLogFileName = std::string( argv[0]) +
+      std::string("_log.txt") ;
+  else
+    stdstrLogFileName = std::string( argv[0]) +
+      std::string("_execute_actions_log.txt") ;
+#else
+  stdstrLogFileName = std::string( argv[0]) +
     std::string("_log.txt") ;
+#endif
   try
   {
     if( ! SetExePathAsCurrentDir() )

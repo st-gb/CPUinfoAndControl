@@ -79,7 +79,7 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
 //  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
 //  // the mutex should be initially locked
 //  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
-  LOGN("dyn freq scaling thread base--"
+  LOGN( FULL_FUNC_NAME << "--"
     << "CPU control base: " << & r_cpucontrolbase
     << "CPU controller:" << r_cpucontrolbase.mp_cpucontroller
     << "CPU usage getter: " << r_cpucontrolbase.mp_cpucoreusagegetter )
@@ -838,6 +838,8 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
 
 bool DynFreqScalingThreadBase::IsStopped()
 {
+  LOGN( FULL_FUNC_NAME << "--DVFS is stopped?: " << (m_vbDVFSthreadStopped ?
+    "yes" : "no") )
   return m_vbDVFSthreadStopped ;
 }
 

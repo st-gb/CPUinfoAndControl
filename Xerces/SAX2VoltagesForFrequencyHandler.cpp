@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //#ifdef COMPILE_WITH_XERCES
 #include "../stdafx.h"
 //#include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
@@ -143,6 +150,21 @@
 	    //<< endl );
       if( m_strElementName == "freq_and_voltage" )
 	      handleFreqAndVoltageElement(cr_xercesc_attributes) ;
+      else if( m_strElementName == "maximum_CPU_core_multiplier" )
+      {
+          LOGN( FULL_FUNC_NAME << "--maximum_CPU_core_multiplier element")
+        float fValue;
+        const char * c_p_chAttributeName = "value";
+        if( XercesAttributesHelper::GetAttributeValue(
+            cr_xercesc_attributes,
+            c_p_chAttributeName, fValue)
+           )
+         {
+           LOGN( FULL_FUNC_NAME << "--getting attribute value for \"" <<
+               c_p_chAttributeName << "\" succeeded.")
+           m_p_model->m_cpucoredata.m_fMaximumCPUcoreMultiplier = fValue;
+         }
+      }
 	    //Release memory AFTER comparing.
       XERCES_CPP_NAMESPACE::XMLString::release(&pchXMLelementName);
     }

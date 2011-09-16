@@ -76,6 +76,10 @@ public:
 
     virtual wxMenu * CreatePopupMenu();
     wxMenu * CreatePowerSchemesMenu() ;
+    void CreatePowerSchemeMenuByNamesFromMemory(
+      wxMenu * p_wxmenuPowerSchemes);
+    void CreatePowerSchemeMenuByRetrieving(
+      wxMenu * p_wxmenuPowerSchemes);
     wxMenu * CreateSetMaximumCPUcoreMultiplierMenu();
     wxMenu * CreateSetThrottleTemperatureMenu();
     void DisconnectEventHandlers();

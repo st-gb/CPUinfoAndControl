@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 #include <map>
@@ -25,7 +32,7 @@ public:
   RegisterValueTableRow(
     std::map<std::string, std::string> & r_stdmap_stdstringName2Value ) ;
   bool operator < ( const RegisterValueTableRow & second ) const ;
-  //Adapted from
+  //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
   RegisterValueTableRow & operator = (const RegisterValueTableRow & cr_msrdata ) ;
 };
@@ -85,7 +92,7 @@ public:
     std::string & //r_strResultingAttributeName
       r_strResultingAttributeValue
     ) ;
-  //Adapted from
+  //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
   ValueTable & operator = (const ValueTable & cr_msrdata ) ;
 };
@@ -101,7 +108,7 @@ public:
     //std::string & r_strResultingAttributeName
     std::string ar_strResultingAttributeNameAndValue []
     ) ;
-  //Adapted from
+  //AAssignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
   ValueTables & operator = (const ValueTables & cr_msrdata ) ;
 } ;

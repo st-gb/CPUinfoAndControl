@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
@@ -6,12 +13,18 @@
 
 //#define IA32_APERF 0xE8 //dec. 232
 
-//http://www.meisterkuehler.de/cms/cpu_verlustleistung.html
+//maybe see http://www.meisterkuehler.de/cms/cpu_verlustleistung.html
 
 //some measurement values for trying to compute the Watts:
 //measured with the "EKM" meas. device: 100% Load for every core :
-//prime 95 8 cores at 1600 MHz: 76 W   P=V^2*1600M*100%
+//prime 95 8 cores at 1600 MHz: 76 W   P=V^2*1600MHz*100%
 //prime 95 8 cores at 1330 MHz: 66 W
+  // 66W=V^2*1330MHz*100%  | : 1330 MHz   V^2=66W / 1330 MHz
+//  V^2 = 66W / (1 330 000 000/s) = 66 W * s / 1 300 000 000
+//  V^2 = 0,0496240601503759 Ws/1000 000  = 0,0496240601503759
+ //  | sqrt
+//  V= (66W / 1330 MHz)^(0.5) = 0,0496240601503759 W/MHz
+// V = 2,253202848596432e-4 Ws = 0.0002253202848596432 Ws
 //prime 95 8 cores at 931 MHz: 51 W
 //
 //P=V^2*f*load

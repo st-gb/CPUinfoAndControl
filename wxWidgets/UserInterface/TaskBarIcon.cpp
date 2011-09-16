@@ -258,7 +258,89 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
 {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   LOGN("TaskBarIcon::CreatePowerSchemesMenu() begin")
+
   wxMenu * p_wxmenuPowerSchemes = new wxMenu;
+
+  if( ! m_1stSelectPowerSchemeMenuEventID )
+    m_1stSelectPowerSchemeMenuEventID = s_wEventID;
+  else
+    s_wEventID = m_1stSelectPowerSchemeMenuEventID;
+  LOGN("1st select power scheme event ID: " <<
+      m_1stThrottleCPUcoreTemperatureEventID )
+
+  wxX86InfoAndControlApp & r_wxx86infoandcontrolapp = wxGetApp();
+  int nNumPowerSchemeNamesFromMemory = r_wxx86infoandcontrolapp.
+    m_std_vec_std_wstrPowerSchemeName.size();
+  LOGN( FULL_FUNC_NAME << "--# power scheme names from memory: " <<
+    nNumPowerSchemeNamesFromMemory)
+  if( nNumPowerSchemeNamesFromMemory > 0)
+  {
+    CreatePowerSchemeMenuByNamesFromMemory(p_wxmenuPowerSchemes);
+  }
+  else
+    CreatePowerSchemeMenuByRetrieving(p_wxmenuPowerSchemes);
+
+  m_wAfterLastSelectPowerSchemeMenuEventID = s_wEventID;
+  LOGN("TaskBarIcon::CreatePowerSchemesMenu() --return " <<
+    p_wxmenuPowerSchemes )
+//  wxmenuPowerSchemes->Check( lastStaticEventID , true ) ;
+  return p_wxmenuPowerSchemes;
+#else //#ifdef _WIN32
+  return NULL;
+#endif //#ifdef _WIN32
+}
+
+void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
+  wxMenu * p_wxmenuPowerSchemes)
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+  wxX86InfoAndControlApp & r_wxx86infoandcontrolapp = wxGetApp();
+
+  std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName =
+    r_wxx86infoandcontrolapp.m_std_vec_std_wstrPowerSchemeName;
+
+  r_wxx86infoandcontrolapp.GetAvailablePowerSchemesViaIPC(
+      r_std_vec_std_wstrPowerSchemeName,
+      r_wxx86infoandcontrolapp.m_ui16ActivePowerSchemeIndex);
+
+  std::vector<std::wstring>::const_iterator
+    c_iter_std_wstr_c_iterPowerSchemeName =
+    r_std_vec_std_wstrPowerSchemeName.begin();
+  uint16_t ui16Index = 0;
+  LOGN( FULL_FUNC_NAME << "--active power scheme index:" <<
+      r_wxx86infoandcontrolapp.m_ui16ActivePowerSchemeIndex)
+//  std::wstring * p_wstrActivePowerScheme = NULL;
+  while( c_iter_std_wstr_c_iterPowerSchemeName !=
+      r_std_vec_std_wstrPowerSchemeName.end() )
+  {
+    wxString wxstrPowerSchemeName( getwxString(
+      * c_iter_std_wstr_c_iterPowerSchemeName) ) ;
+//    wxmenuPowerSchemes->Append( wEventID , wxstr );
+    p_wxmenuPowerSchemes->AppendRadioItem( s_wEventID , wxstrPowerSchemeName );
+
+    if( ui16Index == r_wxx86infoandcontrolapp.m_ui16ActivePowerSchemeIndex)
+//        p_wstrActivePowerScheme = & *c_iter_std_wstr_c_iterPowerSchemeName;
+      p_wxmenuPowerSchemes->Check( s_wEventID, true ) ;
+
+    m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
+      (s_wEventID, * c_iter_std_wstr_c_iterPowerSchemeName) ) ;
+    LOGN("TaskBarIcon::CreatePowerSchemesMenu()--adding event with event ID "
+      << s_wEventID )
+    Connect( s_wEventID ++ , //wxID_ANY,
+      wxEVT_COMMAND_MENU_SELECTED ,
+      wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
+      );
+
+    ++ ui16Index;
+    ++ c_iter_std_wstr_c_iterPowerSchemeName;
+  }
+  LOGN( FULL_FUNC_NAME << "--end")
+}
+
+void TaskBarIcon::CreatePowerSchemeMenuByRetrieving(
+    wxMenu * p_wxmenuPowerSchemes)
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
   std::set<std::wstring> stdset_std_wstrPowerSchemeName ;
   std::wstring wstrActivePowerScheme ;
   PowerProfDynLinked * p_powerprofdynlinked =
@@ -268,30 +350,24 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
   LOGWN_WSPRINTF(L"active power scheme name:%ls",
     wstrActivePowerScheme.c_str() )
 
-  if( ! m_1stSelectPowerSchemeMenuEventID )
-    m_1stSelectPowerSchemeMenuEventID = s_wEventID;
-  else
-    s_wEventID = m_1stSelectPowerSchemeMenuEventID;
-  LOGN("1st select power scheme event ID: " <<
-      m_1stThrottleCPUcoreTemperatureEventID )
   for( std::set<std::wstring>::const_iterator
-      std_set_std_wstr_c_iterPowerSchemeName =
+      c_iter_std_set_std_wstr_c_iterPowerSchemeName =
       stdset_std_wstrPowerSchemeName.begin() ;
-      std_set_std_wstr_c_iterPowerSchemeName !=
+      c_iter_std_set_std_wstr_c_iterPowerSchemeName !=
       stdset_std_wstrPowerSchemeName.end() ;
-      ++ std_set_std_wstr_c_iterPowerSchemeName
+      ++ c_iter_std_set_std_wstr_c_iterPowerSchemeName
     )
   {
     //TODO wxString should be unicode for e.g. Chinese language (more than 255
     // characters)
     wxString wxstrPowerSchemeName( getwxString(
-      * std_set_std_wstr_c_iterPowerSchemeName) ) ;
+      * c_iter_std_set_std_wstr_c_iterPowerSchemeName) ) ;
 //    wxmenuPowerSchemes->Append( wEventID , wxstr );
     p_wxmenuPowerSchemes->AppendRadioItem( s_wEventID , wxstrPowerSchemeName );
-    if( wstrActivePowerScheme == * std_set_std_wstr_c_iterPowerSchemeName )
+    if( wstrActivePowerScheme == * c_iter_std_set_std_wstr_c_iterPowerSchemeName )
       p_wxmenuPowerSchemes->Check( s_wEventID, true ) ;
     m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
-      (s_wEventID, * std_set_std_wstr_c_iterPowerSchemeName) ) ;
+      (s_wEventID, * c_iter_std_set_std_wstr_c_iterPowerSchemeName) ) ;
     LOGN("TaskBarIcon::CreatePowerSchemesMenu()--adding event with event ID "
       << s_wEventID )
     Connect( s_wEventID ++ , //wxID_ANY,
@@ -299,14 +375,7 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
       wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
       );
   }
-  m_wAfterLastSelectPowerSchemeMenuEventID = s_wEventID;
-  LOGN("TaskBarIcon::CreatePowerSchemesMenu() --return " <<
-    p_wxmenuPowerSchemes )
-//  wxmenuPowerSchemes->Check( lastStaticEventID , true ) ;
-  return p_wxmenuPowerSchemes;
-#else //#ifdef _WIN32
-  return NULL;
-#endif //#ifdef _WIN32
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void TaskBarIcon::FreeRessources()
@@ -362,7 +431,9 @@ void TaskBarIcon::OnSetMaximumCPUcoreMultiplier(wxCommandEvent & wxevent)
     80);
   LOGN( FULL_FUNC_NAME << "--data to send to the service:" << std_str)
   wxGetApp().IPC_ClientSendCommandAndGetResponse(
-    setMaximumCPUcoreMultplier, 4
+    setMaximumCPUcoreMultplier, //4
+    //size of float(4 byte) + command byte
+    5
     //sizeof(fMaximumCPUcoreMultiplier)
     , (BYTE *) & fMaximumCPUcoreMultiplier
     );
@@ -389,7 +460,10 @@ void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
   LOGN("TaskBarIcon::OnSetThrottleTemperature--data to send to the service:"
     << std_str)
   wxGetApp().IPC_ClientSendCommandAndGetResponse(
-    setCPUcoreThrottleTemperature, 4, (BYTE *) & fTemperatureInDegC
+    setCPUcoreThrottleTemperature, //4,
+    //size of float(4 byte) + command byte
+    5,
+    (BYTE *) & fTemperatureInDegC
     );
   wxGetApp().m_model.m_cpucoredata.m_fThrottleTempInDegCelsius =
     fTemperatureInDegC;
@@ -400,19 +474,15 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   int nEventID = wxevent.GetId() ;
   LOGN( "taskbar icon event proc " )
-  PowerProfDynLinked * p_powerprofdynlinked =
-   (PowerProfDynLinked * ) wxGetApp().mp_dynfreqscalingaccess ;
-  if( p_powerprofdynlinked )
+
+  std::map<WORD,std::wstring>::const_iterator c_iter =
+    m_stdmap_eventid2powerschemename.find(nEventID) ;
+  if( c_iter != m_stdmap_eventid2powerschemename.end() )
   {
-    LOGN( "valid pointer to power prof access class instance" )
-    std::map<WORD,std::wstring>::const_iterator c_iter =
-      m_stdmap_eventid2powerschemename.find(nEventID) ;
-    if( c_iter != m_stdmap_eventid2powerschemename.end() )
-    {
-      LOGN( "setting power scheme" )
+//    LOGN( "setting power scheme" << c_iter->second)
 //      LOGWN( L"before setting power scheme with name \"" << c_iter->second
 //        L"\" as active scheme" )
-      //TODO if own DVFS in GUI or service running: ask for pausing/ ending it
+    //TODO if own DVFS in GUI or service running: ask for pausing/ ending it
 //      wxGetApp().PossiblyAskForOSdynFreqScalingDisabling() ;
 //      PerCPUcoreAttributes * p_percpucoreattributes = & mp_cpucoredata->
 //        m_arp_percpucoreattributes[ //p_atts->m_byCoreID
@@ -421,24 +491,38 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 //      if ( p_percpucoreattributes->mp_dynfreqscalingthread )
 //        mp_mainframe->EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
 
-      //BYTE by
-      DWORD dw = p_powerprofdynlinked->SetActivePowerScheme(c_iter->second) ;
-      LOGN( "result of setting power scheme:" << //(WORD) by
-        dw )
-      if( //by == 1
-        dw == 0 )
+    if( wxGetApp().m_std_vec_std_wstrPowerSchemeName.size() > 0 )
+    {
+      wxGetApp().SetPowerSchemeViaIPC(c_iter->second);
+    }
+    else
+    {
+//      SetPowerSchemeDirectly();
+      PowerProfDynLinked * p_powerprofdynlinked =
+       (PowerProfDynLinked * ) wxGetApp().mp_dynfreqscalingaccess ;
+      if( p_powerprofdynlinked )
       {
-        LOGN( "setting power scheme succeeded" )
-      }
-      else
-      {
-        // error message for error number 65535 causes an exception?!
-        if( dw != 65535 )
+        LOGN( "valid pointer to power prof access class instance" )
+
+        //BYTE by
+        DWORD dw = p_powerprofdynlinked->SetActivePowerScheme(c_iter->second) ;
+        LOGN( "result of setting power scheme:" << //(WORD) by
+          dw )
+        if( //by == 1
+          dw == 0 )
         {
-          std::string stdstr = ::LocalLanguageMessageFromErrorCodeA( dw ) ;
-          ::wxMessageBox( wxT("setting power scheme failed: ")
-            + getwxString(stdstr ) ) ;
-          LOGN( "setting power scheme failed" )
+          LOGN( "setting power scheme succeeded" )
+        }
+        else
+        {
+          // error message for error number 65535 causes an exception?!
+          if( dw != 65535 )
+          {
+            std::string stdstr = ::LocalLanguageMessageFromErrorCodeA( dw ) ;
+            ::wxMessageBox( wxT("setting power scheme failed: ")
+              + getwxString(stdstr ) ) ;
+            LOGN( "setting power scheme failed" )
+          }
         }
       }
     }
@@ -449,7 +533,10 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 {
   LOGN("left mouse click on system tray icon")
-  ShowMainFrame();
+  if( mp_mainframe->IsVisible() )
+    mp_mainframe->Hide();
+  else
+    ShowMainFrame();
 }
 
 // wxWidgets' src/common/wincmn.cpp, Zeile 334:
