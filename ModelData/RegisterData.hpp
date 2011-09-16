@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 #include <string>
@@ -40,7 +47,7 @@ public:
   {
       m_stdvec_bitrange.push_back(BitRange(byStartBit, byBitLength)) ;
   }
-  //Adapted from
+  //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
 //  RegisterData & operator = (const RegisterData & cr_registerdataToCopyFrom )
 //  {
@@ -126,7 +133,8 @@ public:
   //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
   // stl_uninitialized.h:82:
   // warning: '__cur' might be used uninitialized in this function
-  //Adapted from
+
+  //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
   CPUIDdata & operator = (const CPUIDdata & cr_cpuiddata )
   {
@@ -172,7 +180,8 @@ class MSRdata
   //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
   // stl_uninitialized.h:82:
   // warning: '__cur' might be used uninitialized in this function
-  //Adapted from
+
+  //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
   MSRdata & operator = (const MSRdata & cr_msrdata ) ;
 

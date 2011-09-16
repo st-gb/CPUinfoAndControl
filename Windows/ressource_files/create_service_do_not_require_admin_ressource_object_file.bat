@@ -12,10 +12,13 @@ set current_date=%date:~0%
 set current_year=%current_date:~-4%
 set current_month=%current_date:~3,2%
 set current_day=%current_date:~0,2%
+
+REM set COMPILER_VERSION=g++ -dumpversion
+
 @echo %current_date%  
 @echo %current_year%
 @echo %current_day%
 
-windres.exe -D	VER_FILEVERSION=%current_year%,%current_month%,%current_day%,0 all_ressources_do_not_require_admin_manifest_service.rc all_ressources_do_not_require_admin_service.o 
+windres.exe -D	VER_FILEVERSION=%current_year%,%current_month%,%current_day%,0 -D COMPILER_VERSION= all_ressources_do_not_require_admin_manifest_service.rc all_ressources_do_not_require_admin_service.o 
 
 pause

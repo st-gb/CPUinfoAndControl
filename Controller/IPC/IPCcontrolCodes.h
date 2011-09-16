@@ -40,6 +40,8 @@ enum IPCcontrolCodes
   , get_configuration_data
   , setCPUcoreThrottleTemperature
   , setMaximumCPUcoreMultplier
+  , getAvailablePowerSchemeNames
+  , setActivePowerScheme
 };
 
 #endif /* IPCCONTROLCODES_H_ */

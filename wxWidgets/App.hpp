@@ -97,7 +97,11 @@ private:
   void * m_systemtray_icon_notification_window ;
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
+public:
+  std::vector<std::wstring> m_std_vec_std_wstrPowerSchemeName;
+  uint16_t m_ui16ActivePowerSchemeIndex;
 #endif
+private:
 //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
   //PowerProfDynLinked m_powerprofdynlinked ;
@@ -229,6 +233,12 @@ public:
   {
     return mp_i_cpuaccess ;
   }
+  bool GetAvailablePowerSchemesViaIPC(
+    std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName,
+    uint16_t & r_ui16ActivePowerSchemeIndex
+    );
+  bool SetPowerSchemeViaIPC(
+    const std::wstring & r_std_wstrPowerSchemeName);
   BYTE GetConfigDataViaInterProcessCommunication() ;
   void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
   void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;

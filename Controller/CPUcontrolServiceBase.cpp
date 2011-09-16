@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * CPUcontrolServiceBase.cpp
  *
@@ -58,7 +65,7 @@ void CPUcontrolServiceBase::CreateDVFSthreadObject_Inline(
   //BYTE byVoltageAndFrequencyScalingType
   )
 {
-  LOGN("creating the DVFS thread object--pointer to CPU core usage getter"
+  LOGN("creating the DVFS thread object--pointer to CPU core usage getter "
       "object:" << mp_cpucoreusagegetter )
   //Windows_API::DynFreqScalingThread dynfreqscalingthread(
   #ifdef USE_WINDOWS_THREAD
@@ -193,7 +200,7 @@ DWORD CPUcontrolServiceBase::Initialize(
     //LOG here because:
     //A user sent me a log file because the service crashed around this
     //place.
-    LOG("Before initializing the CPU access"//\n"
+    LOGN("Before initializing the CPU access"//\n"
       )
 //    SetInitHardwareAccessWaitHint() ;
     CreateHardwareAccessObject() ;
@@ -318,10 +325,15 @@ bool CPUcontrolServiceBase::StartDynVoltnFreqScaling()
   //If allocating memory succeeded.
   if( mp_dynfreqscalingthreadbase )
   {
+    LOGN( FULL_FUNC_NAME << "--already running: " <<
+      (mp_dynfreqscalingthreadbase->m_vbRun ? "yes" : "no") )
     if( mp_dynfreqscalingthreadbase->m_vbRun )
       bAlreadyContinued = true ;
     else
-      mp_dynfreqscalingthreadbase->Start() ;
+//      mp_dynfreqscalingthreadbase->Start() ;
+      StartDVFSviaThreadType_Inline(//bContinue
+        ) ;
+
   }
   return bAlreadyContinued ;
 }

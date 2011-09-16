@@ -1270,7 +1270,8 @@ namespace Xerces
   {
     try //DOMException by createDocument(...)
     {
-      //http://www.w3.org/TR/1998/REC-xml-19980210#NT-Nmtoken:
+      //http://www.w3.org/TR/1998/REC-xml-19980210#NT-Nmtoken
+      // (valid characters for name tokens):
       //remove invalid tokens like "("
       //std::string str = RemoveInvalidTokens(
       //  r_strPstateSettingsFileName.c_str() ) ;

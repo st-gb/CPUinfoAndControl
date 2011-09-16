@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 ////#ifdef WIN32 //with Linux I can't compile with xerces yet.
 //#ifdef _WINDOWS //with Linux I can't compile with xerces yet.
 //  #define COMPILE_WITH_XERCES
@@ -124,7 +131,7 @@
           stdwstrValue ;
         //Use wide string because the character set for the language may
         //need more than 256 characters.
-        LOGWN_WSPRINTF(L"set current dir for GUI to %ls" ,
+        LOGWN_WSPRINTF(L"set current dir for GUI to \"%ls\"" ,
           //stdwstrValue.c_str()
           m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo.
           c_str()
@@ -146,7 +153,7 @@
           stdwstrValue ;
         //Use wide string because the character set for the language may
         //need more than 256 characters.
-        LOGWN_WSPRINTF(L"set path to GUI exe to %ls" , //stdwstrValue.c_str()
+        LOGWN_WSPRINTF(L"set path to GUI exe to \"%ls\"" , //stdwstrValue.c_str()
           m_p_model->m_serviceattributes.m_stdwstrPathToGUIexe.c_str() )
       }
       stdstrAttributeName = "startup_wait_time_in_ms" ;

@@ -41,6 +41,12 @@ class PerCPUcoreAttributes ;
 
 //The member variables can be shared through the subclass of 
 //ICPUcoreUsageGetter and the user interface class.
+//Add new member variables _after_ the last member variable, else
+//software using this class may have incongruent declarations of this class:
+//a compiled CPU controller dyn lib may have a previous declaration, the GUI
+//a newer one. Then when the CPU controller dyn lib tries to write to a member
+//variable it may write to the wrong member and the executable the CPU controller
+//dyn lib is attached to crashes.
 class CPUcoreData
 {
 private:
@@ -60,7 +66,6 @@ public:
   float m_fCPUcoreLoadThresholdForIncreaseInPercent;
   float m_fCPUcoreFreqFactor ;
   float m_fCPUcoreFreqIncreaseFactor ;
-  float m_fMaximumCPUcoreMultiplier;
   float m_fVoltageForMaxCPUcoreFreq ;
   float m_fThrottleTempInDegCelsius ;
 //  long long m_llLastTimeTooHot;
@@ -112,6 +117,9 @@ public:
   //  float * m_arfCPUusage ;
   //  DynFreqScalingThread * m_ardynfreqscalingthread ;
   PerCPUcoreAttributes * m_arp_percpucoreattributes ;
+
+  float m_fMaximumCPUcoreMultiplier;
+
   bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   //void AddFreqAndLowestStableVoltage(float fValue,WORD wFreqInMHz) ;

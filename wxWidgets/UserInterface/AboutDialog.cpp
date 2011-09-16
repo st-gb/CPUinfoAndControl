@@ -140,6 +140,7 @@ AboutDialog::AboutDialog(const wxString & cr_wxstrProgramName )
 //  wxPanel * p_wxpanel = new wxPanel();
 //  p_wxpanel->SetB
   //from http://ubuntuforums.org/archive/index.php/t-1486783.html
+  //("[SOLVED] [C++/wx] wxStaticBitmap->SetBitmap(wxBitmap) = "Segmentation fault")
   wxStaticBitmap * p_wxstaticbitmap = new wxStaticBitmap//();
       (this, wxID_ANY, wxbitmapStreetLamp);
   p_wxstaticbitmap->SetToolTip( wxT("a street lamp from former GDR "

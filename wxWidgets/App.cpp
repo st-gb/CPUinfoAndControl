@@ -1404,6 +1404,10 @@ bool wxX86InfoAndControlApp::OnInit()
         //#endif
         CPUcontrollerChanged() ;
       }
+      GetAvailablePowerSchemesViaIPC(
+        m_std_vec_std_wstrPowerSchemeName,
+        m_ui16ActivePowerSchemeIndex
+        );
       //Get the default, min and max voltages.
       BYTE byGetConfigDataViaInterProcessCommunicationReturnValue =
         GetConfigDataViaInterProcessCommunication() ;

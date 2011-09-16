@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //Include guard
 #ifndef CPUCONTROLSERVICE_HPP_ //Include guard
 #define CPUCONTROLSERVICE_HPP_
@@ -115,7 +122,7 @@ public:
   //This method (C++ class for a service) is from:
   //http://msdn.microsoft.com/en-us/library/ms810429.aspx
   static
-    CPUcontrolService * msp_cpucontrolservice; // nasty hack to get object ptr
+    CPUcontrolService * s_p_cpucontrolservice; // nasty hack to get object ptr
   //static
      SERVICE_STATUS m_servicestatus;
   //static
@@ -123,7 +130,7 @@ public:
 //     Model * mp_modelData ;
   //static
    //Windows_API::DynFreqScalingAccess m_dynfreqscalingaccess;
-   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
+//   IDynFreqScalingAccess * mp_dynfreqscalingaccess ;
 #ifdef COMPILE_WITH_IPC
   //For sending data to clients like a graphical user interface.
   NamedPipeServer m_ipcserver ;

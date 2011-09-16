@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * GetReferenceClockViaTSCdiffDivMultiIfNoFiDchange.hpp
  *
@@ -228,6 +235,44 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
 //  m_ullNumberOfFIDchangePrevious =
 //      m_ullPerformanceEventCounterNumberOfFIDchange ;
 //}
+
+//inline void GetBaseClockViaTSCdiffdivMuliplierIfNoFIDchange()
+//{
+//  //Workaround for unabilility to detect ACPI resume (from standy, hibernation)
+//  //e.g. by wxWidgets if not on Windows.
+//  #ifndef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+//  ReadMSR(
+//    // MSR index
+//    IA32_PERFEVTSEL0 ,
+//    & g_ui32LowmostBits ,//eax,     // bit  0-31
+//    & g_ui32HighmostBits , //edx,     // bit 32-63
+//    1 // Thread Affinity Mask
+//    ) ;
+//  BYTE byPerfEvtSelect = g_ui32LowmostBits & BITMASK_FOR_LOWMOST_8BIT ;
+//  //After an ACPI resume the performance event select it is set to 0.
+//  if( //dwLow & BITMASK_FOR_LOWMOST_8BIT
+//    byPerfEvtSelect == EMON_EST_TRANS )
+//  {
+//    ReadMSR(
+//      // MSR index
+//      PERFORMANCE_COUNTER_FOR_FID_CHANGE ,
+//      & g_ui32LowmostBits ,//eax,     // bit  0-31
+//      & g_ui32HighmostBits , //edx,     // bit 32-63
+//      1 // Thread Affinity Mask
+//      ) ;
+//  }
+//  else
+//  {
+//    //TODO the performance counter value is reset to zero after standy/
+//    //hibernate? then the following assignment is needed for the next
+//    //difference to be correct.
+//    gs_b2ndTimeOrLaterReadTSCandFIDchange = false ;
+//    SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent(//1
+//      ) ;
+//  }
+//  #endif //#ifndef _WIN32
+//}
+
 #endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
 
 #endif /* GETREFERENCECLOCKVIATSCDIFFDIVMULTIIFNOFIDCHANGE_HPP_ */

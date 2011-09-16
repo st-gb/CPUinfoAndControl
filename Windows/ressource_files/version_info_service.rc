@@ -16,6 +16,10 @@
 #define VER_FILEVERSION     0,0,0,0
 #endif
 
+#ifndef COMPILER_VERSION
+	#define COMPILER_VERSION ""
+#endif
+	
 #ifndef FILE_DESCRIPTION
   #define FILE_DESCRIPTION "x86 CPU information & control program--service"
 #endif
@@ -66,11 +70,12 @@ BEGIN
     /* Block language charset is U.S. English, Unicode */
         BLOCK "040904B0"
         BEGIN
+            VALUE "built with",    COMPILER_VERSION
             VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
             VALUE "FileDescription", FILE_DESCRIPTION
             VALUE "FileVersion",    "0,0,0,0"
             VALUE "InternalName",   "CPU info & control"
-            VALUE "LegalCopyright",  "Copyright (C) 2010"
+            VALUE "LegalCopyright",  "Copyright (C) 2011"
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
             VALUE "ProductVersion",  "0,0,0,0"
