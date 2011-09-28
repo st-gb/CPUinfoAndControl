@@ -84,6 +84,23 @@ class DynFreqScalingThread ;
 class ICPUcoreUsageGetter ;
 class I_CPUcontroller ;
 
+//To avoid replacing "StartService" to "StartServiceA" / "StartServiceW" in
+//"winsvc.h"
+#ifdef StartService
+  #undef StartService
+#endif
+
+typedef void (* voidFunctionPointer)();
+
+typedef voidFunctionPointer StopTortureTestFunctionPointer;
+
+struct external_caller
+{
+  voidFunctionPointer m_pfnVoltageTooLow;
+};
+
+typedef void (* StartTortureTestFunctionPointer)(unsigned char, struct external_caller *);
+
 class wxX86InfoAndControlApp
   : public wxApp
   , public UserInterface
@@ -112,6 +129,18 @@ private:
 //  UserInterface * mp_userinterface ;
   #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
+public:
+  HMODULE m_hmodulePrime95DynLib;
+  StartTortureTestFunctionPointer m_pfnStartTortureTest;
+  StopTortureTestFunctionPointer m_pfnStopTortureTest;
+  struct external_caller m_external_caller;
+  //http://forums.wxwidgets.org/viewtopic.php?t=4824:
+  wxMutex m_wxmutexFindLowestStableVoltage;
+  wxCondition m_wxconditionFindLowestStableVoltage;
+  condition_type m_conditionFindLowestStableVoltage;
+  volatile bool m_vbExitFindLowestStableVoltage;
+  x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage; ;
+private:
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
@@ -224,6 +253,7 @@ public:
   void DynVoltnFreqScalingEnabled() ;
   void EndDVFS() ;
   void EndGetCPUcoreDataViaIPCthread() ;
+  void ExitFindLowestStableVoltageThread();
   I_CPUcontroller * GetCPUcontroller()
   {
     return mp_cpucontroller ;
@@ -237,6 +267,7 @@ public:
     std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName,
     uint16_t & r_ui16ActivePowerSchemeIndex
     );
+  void InitPrime95DynLibAccess();
   bool SetPowerSchemeViaIPC(
     const std::wstring & r_std_wstrPowerSchemeName);
   BYTE GetConfigDataViaInterProcessCommunication() ;
@@ -278,10 +309,13 @@ public:
   void SaveAsCPUcontrollerDynLibForThisCPU();
   void SaveVoltageForFrequencySettings(
       const std::string & cr_std_strCPUtypeRelativeDirPath);
+  void SetAsMinimumVoltage(float fVoltage, WORD wFrequencyInMHz);
+  void SetAsWantedVoltage(float fVoltage, WORD wFrequencyInMHz);
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller ) ;
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
   inline void ShowTaskBarIconViaWindowsAPI();
   inline bool ShowTaskBarIconUsingwxWidgets();
+  void StabilizeVoltage(float & fVoltageInVolt, float & fMultiplier);
   void StartService() ;
   void StopService() ;
 };

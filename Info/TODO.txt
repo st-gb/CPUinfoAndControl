@@ -1,3 +1,14 @@
+Doku:
+ -screenshots sind veraltet
+ -bei Punkt 5 schreiben, dass man mit einer funktionierenden/der Standard-Spannung 
+(die man im Hauptfenster sieht) beginnen soll.
+ -den Text, dass man die Häkchen der safe ranges entfernen soll, hinein in die Doku
+ -in Doku: man sollte alle Kern auswählen beim Finden der niedrigsten Spannung?!
+ -12.1 -Zeile ist doppelt
+  "= 0.148" -> "= 1.148"
+ -12. 3 statt "redo": "redo beginning step 5"
+ -13. statt "at last" -> "after testing the voltages for (different) multiplier(s)"
+
 -ServiceBase::GetPossibleSolution erzeugt statt Dienst-Namen einen String mit dessen Adresse
 
 -"__PRETTY_FUNCTION__" Preprozessor-Makro benutzen für logging

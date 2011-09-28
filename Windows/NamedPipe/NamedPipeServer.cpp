@@ -70,25 +70,25 @@ inline BYTE ReadAndHandleNumberOfBytesToRead(
     DWORD dwLastError = ::GetLastError() ;
     LOGN("ReadPipeData(...)--Reading \"the # of bytes to read\" failed:"
       << ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
-    return ReadingIPCdataFailed;
+    return I_IPC_Server::ReadingIPCdataFailed;
   }
   LOGN("ReadPipeData(...)--Reading \"the # of bytes to read\" succeeded." )
   if( dwBytesRead != 4 )
   {
     LOGN("ReadPipeData(...)--Read " << dwBytesRead << " instead of 4 bytes "
       "for \"the # of bytes to read\" failed:" )
-    return ReadingIPCdataFailed;
+    return I_IPC_Server::ReadingIPCdataFailed;
   }
   LOGN("ReadPipeData(...)--success: read " << dwBytesRead << " bytes "
     "for \"the # of bytes to read\" ." )
   if( dwNumberOfBytesToRead < 1)
   {
     LOGN("ReadPipeData(...)--error: \"the # of bytes to read\" is < 1" )
-    return ReadingIPCdataFailed;
+    return I_IPC_Server::ReadingIPCdataFailed;
   }
   LOGN("ReadPipeData(...)--Reading \"the # of bytes to read\" succeeded:"
     " should read " << dwNumberOfBytesToRead << " bytes." )
-  return ReadingIPCdataSucceeded;
+  return I_IPC_Server::ReadingIPCdataSucceeded;
 }
 
 inline BYTE ReadAndHandleCommand(
@@ -116,16 +116,16 @@ inline BYTE ReadAndHandleCommand(
       ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
   //      break;
     return //ar_byPipeDataRead;
-      ReadingIPCdataFailed;
+        I_IPC_Server::ReadingIPCdataFailed;
   }
   LOGN("ReadPipeData(...)--Reading the command from pipe succeeded.")
   if( dwBytesRead != 1)
   {
     LOGN("ReadPipeData(...)--Read <> 1 byte.")
-    return ReadingIPCdataFailed;
+    return I_IPC_Server::ReadingIPCdataFailed;
   }
   LOGN("ReadPipeData(...)--Reading 1 byte for command from pipe succeeded.")
-  return ReadingIPCdataSucceeded;
+  return I_IPC_Server::ReadingIPCdataSucceeded;
 }
 
 inline BYTE ReadDataBelongingToTheCommand(
@@ -177,7 +177,7 @@ inline BYTE ReadDataBelongingToTheCommand(
           << ::LocalLanguageMessageFromErrorCodeA(dwLastError) )
   //      break;
         return //ar_byPipeDataRead;
-          ReadingIPCdataFailed;
+            I_IPC_Server::ReadingIPCdataFailed;
       }
 #ifdef COMPILE_WITH_LOG
       std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
@@ -185,24 +185,24 @@ inline BYTE ReadDataBelongingToTheCommand(
       LOGN("Data belonging to the command read:" << stdstrBytes)
 #endif
       r_ipc_data.m_wPipeDataReadSizeInByte = dwBytesRead;
-      LOGN("ReadDataBelongingToTheCommand(...)--return " <<
-        ReadingIPCdataSucceeded );
-      return ReadingIPCdataSucceeded;
+      LOGN("ReadDataBelongingToTheCommand(...)--return " << (WORD)
+          I_IPC_Server::ReadingIPCdataSucceeded );
+      return I_IPC_Server::ReadingIPCdataSucceeded;
     }
     else
     {
       LOGN("Allocating an array with size of " << dwNumberOfBytesToRead
           << " failed:" << ::GetErrorMessageFromLastErrorCodeA() )
-      return ReadingIPCdataFailed;
+      return I_IPC_Server::ReadingIPCdataFailed;
     }
   }
   else
   {
     LOGN("ReadDataBelongingToTheCommand(...)--Should NOT read data belonging"
       " to the command.")
-    return ReadingIPCdataSucceeded;
+    return I_IPC_Server::ReadingIPCdataSucceeded;
   }
-  return ReadingIPCdataFailed;
+  return I_IPC_Server::ReadingIPCdataFailed;
 }
 
 inline //BYTE *
@@ -226,8 +226,8 @@ inline //BYTE *
     //chRequest,    // buffer to receive data
     , dwNumberOfBytesToRead
     );
-  if( byReturnValue == ReadingIPCdataFailed )
-    return ReadingIPCdataFailed;
+  if( byReturnValue == I_IPC_Server::ReadingIPCdataFailed )
+    return I_IPC_Server::ReadingIPCdataFailed;
 //  if( //fSuccess &&
 //      dwBytesRead == 4 && dwNumberOfBytesToRead > 0
 //    )
@@ -237,24 +237,24 @@ inline //BYTE *
 //      & r_ipc_data.m_byCommand
       r_ipc_data
       );
-    if( byReturnValue == ReadingIPCdataFailed )
-      return ReadingIPCdataFailed;
+    if( byReturnValue == I_IPC_Server::ReadingIPCdataFailed )
+      return I_IPC_Server::ReadingIPCdataFailed;
 
     byReturnValue = ReadDataBelongingToTheCommand(
       handlePipe,
       dwNumberOfBytesToRead,
       r_ipc_data
       );
-    if( byReturnValue == ReadingIPCdataFailed )
+    if( byReturnValue == I_IPC_Server::ReadingIPCdataFailed )
     {
-      return ReadingIPCdataFailed;
+      return I_IPC_Server::ReadingIPCdataFailed;
     }
 //    LOGN("read message from pipe " //<< hPipe
 //      )
   }
-  LOGN("ReadPipeData--return" << ReadingIPCdataSucceeded)
+  LOGN("ReadPipeData--return" << (WORD) I_IPC_Server::ReadingIPCdataSucceeded)
   return //ar_byPipeDataRead;
-    ReadingIPCdataSucceeded;
+      I_IPC_Server::ReadingIPCdataSucceeded;
 //    ReadingIPCdataFailed;
 }
 
@@ -297,15 +297,15 @@ inline BYTE WriteSizeInByte(
   //          delete [] arbyPipeDataToSend ;
   //    break;
   //    return;
-    return WritingIPCdataFailed;
+    return I_IPC_Server::WritingIPCdataFailed;
   }
   LOGN("WriteDataToPipe(...)--writing \"the size of data to write\" succeeded")
   if( dwNumBytesWritten != 4)
   {
     LOGN("WriteDataToPipe(...)--error: did not write 4 bytes to the pipe")
-    return WritingIPCdataFailed;
+    return I_IPC_Server::WritingIPCdataFailed;
   }
-  return WritingIPCdataSucceeded;
+  return I_IPC_Server::WritingIPCdataSucceeded;
 }
 
 inline BYTE WriteAndHandleCommandData(
@@ -317,13 +317,13 @@ inline BYTE WriteAndHandleCommandData(
   if( ! dwByteSize )
   {
     LOGN("WriteAndHandleCommandData--not writing data because size in byte is 0")
-    return WritingIPCdataSucceeded;
+    return I_IPC_Server::WritingIPCdataSucceeded;
   }
   if( ! ar_byPipeDataToSend )
   {
     LOGN("WriteAndHandleCommandData--not writing data because pointer to "
       "data is 0")
-    return WritingIPCdataSucceeded;
+    return I_IPC_Server::WritingIPCdataSucceeded;
   }
 
 //  if( //> 0 bytes, array <> NULL
@@ -367,7 +367,7 @@ inline BYTE WriteAndHandleCommandData(
       LOGN("WriteDataToPipe(...)--error writing \"the data belonging to "
         "the command\" to the pipe:"
         << LocalLanguageMessageFromErrorCodeA(dwLastError) )
-      return WritingIPCdataFailed;
+      return I_IPC_Server::WritingIPCdataFailed;
     }
     if (//! fSuccess ||
         dwByteSize != dwNumBytesWritten )
@@ -377,11 +377,11 @@ inline BYTE WriteAndHandleCommandData(
   //            delete [] arbyPipeDataToSend ;
   //        break;
   //        return;
-      return WritingIPCdataFailed;
+      return I_IPC_Server::WritingIPCdataFailed;
     }
-    return WritingIPCdataSucceeded;
+    return I_IPC_Server::WritingIPCdataSucceeded;
   }
-  return WritingIPCdataFailed;
+  return I_IPC_Server::WritingIPCdataFailed;
 }
 
 inline //void
@@ -397,8 +397,8 @@ inline //void
     handlePipe,
     dwByteSize
     );
-  if( byReturnValue == WritingIPCdataFailed )
-    return WritingIPCdataFailed;
+  if( byReturnValue == I_IPC_Server::WritingIPCdataFailed )
+    return I_IPC_Server::WritingIPCdataFailed;
 //  if( fSuccess )
   {
     byReturnValue = WriteAndHandleCommandData(
@@ -406,10 +406,10 @@ inline //void
       ar_byPipeDataToSend,
       dwByteSize
       );
-    if( byReturnValue == WritingIPCdataFailed )
-      return WritingIPCdataFailed;
+    if( byReturnValue == I_IPC_Server::WritingIPCdataFailed )
+      return I_IPC_Server::WritingIPCdataFailed;
   }
-  return WritingIPCdataSucceeded;
+  return I_IPC_Server::WritingIPCdataSucceeded;
 }
 
 VOID PipeClientThread(LPVOID lpvParam) 
@@ -455,7 +455,7 @@ VOID PipeClientThread(LPVOID lpvParam)
 //        byCommand
         ipc_data
         );
-      if( byReadOrWritePipeReturnCode == ReadingIPCdataFailed)
+      if( byReadOrWritePipeReturnCode == I_IPC_Server::ReadingIPCdataFailed)
       {
         LOGN("PipeClientThread(...)--Reading data size, the command or "
           "data belonging to command from pipe failed.")
@@ -504,8 +504,8 @@ VOID PipeClientThread(LPVOID lpvParam)
 //           & dwNumBytesWritten,   // number of bytes written
 //           NULL
 //           );
-    } while( byReadOrWritePipeReturnCode == WritingIPCdataSucceeded );
-    if( byReadOrWritePipeReturnCode == WritingIPCdataFailed )
+    } while( byReadOrWritePipeReturnCode == I_IPC_Server::WritingIPCdataSucceeded );
+    if( byReadOrWritePipeReturnCode == I_IPC_Server::WritingIPCdataFailed )
       LOGN("PipeClientThread(...)--Writing data size, the command and "
         "data belonging to command from pipe failed.")
     //was created on heap by thread for "create pipe client thread "

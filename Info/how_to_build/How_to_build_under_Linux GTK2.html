@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head>
+
+
+
+
+
+	<meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8"><title>How to build under Windows</title>
+	
+	<meta name="GENERATOR" content="OpenOffice.org 3.1  (Unix)">
+	<meta name="AUTHOR" content="Stefan Gebauer">
+	<meta name="CREATED" content="20091116;21084500">
+	<meta name="CHANGEDBY" content="Stefan Gebauer">
+	<meta name="CHANGED" content="20091229;16241300">
+	<style type="text/css">
+	<!--
+		@page { margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		A:link { so-language: zxx }
+	-->
+	</style></head><body dir="ltr" lang="de-DE">
+<h1>Build x86Info&amp;control GUI under Linux GTK2</h1>
+<p style="margin-bottom: 0in;">Build the GUI Debug-Version of X86info&amp;ctrl
+for <span style="font-weight: bold;">GNOME</span></p>
+<ol>
+	<li><p style="margin-bottom: 0in;">install NetBeans IDE  (e.g. via
+	package manager);<br>
+install eclipse<br>
+ 
+	</p>
+</li></ol>
+<ul>
+	<li><p style="margin-bottom: 0in;"><a name="DDE_LINK8"></a>C++
+	-plugin for NetBeans installieren (menu „Tools“-&gt;plugins-&gt;tab
+	“available plugins“ name: „C/C++“<br>
+eclipse: Help-&gt;Install new software-&gt;Programming languages-&gt;Eclipse C/C++Development tools
+	-plugin for<br>
+</p>
+</li></ul>
+<ol start="2">
+
+	<li><p style="margin-bottom: 0in;">install the C++ -compiler (g++) (e.g.
+	via package manager)</p>
+	</li>
+  <li>
+    <p style="margin-bottom: 0in;"><a name="DDE_LINK6"></a>install <span style="font-weight: bold;">wxWidgets</span> libraries&nbsp; (e.g. via package manager)</p>
+
+  </li>
+</ol>
+
+<ul>
+	
+  <li><p style="margin-bottom: 0in;">wx<i>&gt;&gt;version&lt;&lt;</i>-headers</p>
+	</li>
+  <li><p style="margin-bottom: 0in;">Desktop-specific package (e.g. for
+	GNOME:GTK -&gt; libwxgtk2.8-0)</p>
+	</li>
+<li><p style="margin-bottom: 0in;"><a name="DDE_LINK10"></a>a dir
+	like /usr/lib/wx/include/base-unicode-release-2.8 must exist (for
+	„#include wx/setup.h“</p>
+</li></ul>
+<ol start="4">
+
+	
+  <li>
+    <p style="margin-bottom: 0in;">install the <span style="font-weight: bold;">Xerces</span> libraries<br>
+    </p>
+
+  </li>
+</ol>
+
+<ul>
+	
+  <ul>
+    <li><p style="margin-bottom: 0in;">libxerces-c-dev</p></li>
+    <li>libxerces-c3.0</li>
+  </ul>
+</ul>
+<ul>
+	<li>eclipse:</li>
+  <ul>
+    <li>project-&gt;properties:</li>
+    <ul>
+      <li>"C/C++ Build": change tool chain editor to "Linux GCC", else warning <br>
+"the configuration support is not installed on the system"</li>
+      <li>"C/C++ general" -&gt;"Indexer":<br>
+Set "Build configuration for the indexer" to <br>
+"Use active build configuration" in order to use the built-in include dirs<br>
+(verify in the&nbsp; "project explorer" under "<span style="font-style: italic;">Project name</span>-&gt;Includes")<br>
+ </li>
+    </ul>
+  </ul>
+  <li>
+    <p style="margin-bottom: 0in;">Preprocessor.:</p>
+
+	</li>
+
+  <ul>
+    <li><p style="margin-bottom: 0in;"><a name="DDE_LINK9"></a><a name="DDE_LINK1"></a>
+	__WXGTK__</p></li>
+    <li><a name="DDE_LINK2"></a>_DEBUG
+	(wenn nicht: Laufzeitfehler, dass wxWidgets und das Programm
+	unterschiedliche erstellt wurden)</li>
+    <li>
+	<a name="DDE_LINK3"></a>COMPILE_WITH_XERCES</li>
+    <li>
+	_GLIBCXX_DEBUG_ (anscheinend
+	unnötig)</li>
+    <li>
+	_UNICODE (if wxWidgets also has
+	UNICODE-&gt;see wxUSE_UNICODE / wxchar.h)</li>
+  </ul>
+<li>
+	Include-dirs:</li>
+  <ul>
+    <li>
+	/home/sgebauer/SourceCodeManagement/X86Info_and_Control
+	(da sich die #include-Anweisungen in den Quelldateien auf diesen
+	Pfad beziehen)</li>
+  </ul>
+  <ul>
+    <li>
+	<a name="DDE_LINK4"></a>/usr/include/wx-2.8</li>
+    <li>
+	<a name="DDE_LINK5"></a>/usr/lib/wx/include/gtk2-unicode-debug-2.8
+	(für <span style="font-weight: bold;">wx/setup.h</span>)</li>
+    <li>
+	../../SourceCodeManagement/X86Info_and_Control/Controller/MSVC_adaption</li>
+    <li>
+	<a name="DDE_LINK7"></a>/usr/include
+	(für <span style="font-weight: bold;">Xerces</span> include files (#include &lt;xercesc/...&gt; )</li>
+  </ul>
+<li>
+	<span style="font-weight: bold;">Linker</span>-Libs (/usr/lib)</li>
+  <ul>
+    <li>
+	<span style="font-weight: bold;">xerces-c</span> (; statische Lib/ „*.a“): /usr/lib/libxerces-c.a<br>
+    </li>
+  </ul>
+  <ul>
+    <li>
+	<a name="DDE_LINK"></a>wx_gtk2ud_core-2.8
+	(.so-Datei)</li>
+    <li>
+	wx_baseud-2.8 (.so-Datei)</li>
+    <li>
+	wx_gtk2ud_adv-2.8 (.so-Datei)</li>
+  </ul>
+<li>
+	<br>
+</li><li><p style="margin-bottom: 0in;">ausführen</p>
+	</li><li><p style="margin-bottom: 0in;">„run&gt;run directory“:
+	Verzeichnis, dass „configuration“-Verz beinhaltet</p>
+</li></ul>
+</body></html>

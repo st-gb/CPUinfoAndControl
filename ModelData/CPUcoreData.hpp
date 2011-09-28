@@ -145,6 +145,7 @@ public:
   WORD GetIndexForClosestMultiplier(float fMultiplier) ;
   BYTE GetIndexForClosestVoltage(float) ;
   float GetLowerMultiplier( float fMulti ) ;
+  float GetNextVoltageAbove(float fVoltageInVolt);
   BYTE GetNumberOfCPUcores() ;
   //Can't be inline, else g++ warning
   // "undefined reference to `CPUcoreData::GetMaximumMultiplier()'"

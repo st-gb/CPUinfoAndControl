@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 //#include <Controller/I_ServerProcess.hpp> //class I_ServerProcess
@@ -65,12 +72,18 @@ public:
 //      return loop.Run();
 //
 //  }
+  //from / see wxWidgets "sockets" sample
   void OnServerEvent(wxSocketEvent & event) ;
   void OnSocketEvent(wxSocketEvent & event);
   bool IsConnected() ;
   void SetServerPortNumber( unsigned short usServerPortNumber)
   {
     m_usServerPortNumber = usServerPortNumber ;
+  }
+  BYTE SetServerPortNumberAndInit(unsigned short usServerPortNumber)
+  {
+    SetServerPortNumber(usServerPortNumber);
+    return Init();
   }
   wxServiceSocketServer( //WORD wPortNumber ,
     I_ServerProcess * p_serverprocess

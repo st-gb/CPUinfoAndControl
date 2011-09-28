@@ -9,6 +9,7 @@
 
 #include <Controller/I_ServerProcess.hpp> //class I_ServerProcess
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+//#include <Windows/Service/CPUcontrolService.hpp> //class CPUcontrolService
 
 //Sourcecode adapted from wxWidgets sockets sample's "server.cpp" .
 
@@ -19,7 +20,7 @@
   //   in cygwin/.../w32api/winsock.h -> no errors
   #define __INSIDE_CYGWIN__
 #endif
-#include "wx/socket.h"
+#include <wx/socket.h>
 //#include <Controller/IPC/I_IPC.hpp>
 
 // IDs for the controls and the menu commands
@@ -53,8 +54,12 @@ struct SocketClientThreadProcStruct
 //}
 
 BEGIN_EVENT_TABLE(wxServiceSocketServer, wxEvtHandler)
-  EVT_SOCKET(SERVER_ID,  wxServiceSocketServer::OnServerEvent)
-  EVT_SOCKET(SOCKET_ID,  wxServiceSocketServer::OnSocketEvent)
+  EVT_SOCKET(SERVER_ID,  wxServiceSocketServer::OnServerEvent
+//      CPUcontrolService::OnServerEvent
+      )
+  EVT_SOCKET(SOCKET_ID,  wxServiceSocketServer::OnSocketEvent
+//      CPUcontrolService::OnSocketEvent
+      )
 END_EVENT_TABLE()
 
 wxServiceSocketServer::wxServiceSocketServer(
@@ -65,11 +70,13 @@ wxServiceSocketServer::wxServiceSocketServer(
   , m_p_serverprocess( p_serverprocess)
   , m_p_wxsocketserver(NULL)
 {
+  LOGN( FULL_FUNC_NAME)
   //m_usServerPortNumber = wPortNumber ;
 }
 
 wxServiceSocketServer::~wxServiceSocketServer()
 {
+  LOGN( FULL_FUNC_NAME)
   if( m_p_wxsocketserver )
     delete m_p_wxsocketserver;
 }
@@ -78,6 +85,8 @@ BYTE wxServiceSocketServer::Init()
 {
   // Create the address - defaults to localhost:0 initially
   wxIPV4address wxipv4address;
+  LOGN( FULL_FUNC_NAME << "--begin")
+
   //http://docs.wxwidgets.org/trunk/classwx_i_p_v4address.html
   // #3833c1ce1a49de08c5a906410a8bb4e3:
   //"Set the port to that corresponding to the specified service. "
@@ -105,31 +114,43 @@ BYTE wxServiceSocketServer::Init()
     // Setup the event handler and subscribe to connection events
     m_p_wxsocketserver->SetEventHandler( * this, SERVER_ID);
     m_p_wxsocketserver->SetNotify(wxSOCKET_CONNECTION_FLAG);
+    //http://docs.wxwidgets.org/2.9.2/classwx_socket_base.html#cfaca539bd0fe0e9c0b1018c77e6701c:
+    //"If notify is true, the events configured with SetNotify() will be sent
+    //to the application. If notify is false; no events will be sent. "
     m_p_wxsocketserver->Notify(true);
     LOGN("End of socket server initialisation.")
 //    wxAppConsole::OnRun() ;
 //    OnRun() ;
 //    LOGN("After OnRun().")
+    bool bwxWidgetsMainLoopRunning = wxAppConsole::IsMainLoopRunning();
     LOGN("wxAppConsole::IsMainLoopRunning():"
-      << wxAppConsole::IsMainLoopRunning() )
+      << bwxWidgetsMainLoopRunning )
+    LOGN( FULL_FUNC_NAME << "--return 0")
     return 0 ;
   }
+  LOGN( FULL_FUNC_NAME << "--return 3")
   return 3 ;
 }
 
-void wxServiceSocketServer::OnServerEvent(wxSocketEvent& event)
+void wxServiceSocketServer::OnServerEvent(wxSocketEvent & event)
 {
-  LOGN("wxServiceSocketServer::OnServerEvent begin")
+//  LOGN("wxServiceSocketServer::OnServerEvent begin")
+  LOGN( FULL_FUNC_NAME << "--begin")
+
   //wxString s = _("OnServerEvent: ");
   wxSocketBase * p_wxsocketbase ;
 
-  switch( event.GetSocketEvent() )
+//  BYTE bySocketEvent =
+  enum wxSocketNotify e_wxsocketnotify = event.GetSocketEvent();
+  switch( //bySocketEvent
+      e_wxsocketnotify )
   {
     case wxSOCKET_CONNECTION :
-      LOGN( "wxSOCKET_CONNECTION\n" );
+      LOGN( "wxSOCKET_CONNECTION" )
+      DEBUG_COUTN( "wxSOCKET_CONNECTION")
       break;
     default :
-      LOGN( "Unexpected event !\n" );
+      LOGN( "Unexpected event !\n" )
       break;
   }
 
@@ -146,8 +167,13 @@ void wxServiceSocketServer::OnServerEvent(wxSocketEvent& event)
   {
     LOGN( "New socket client connection accepted." )
     p_wxsocketbase->SetEventHandler( * this, SOCKET_ID);
-    p_wxsocketbase->SetNotify(wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
+    p_wxsocketbase->SetNotify( wxSOCKET_INPUT_FLAG | wxSOCKET_LOST_FLAG);
+    //"If notify is true, the events configured with SetNotify() will be sent
+    //to the application. If notify is false; no events will be sent."
     p_wxsocketbase->Notify(true);
+    p_wxsocketbase->SetTimeout(
+        //seconds
+        10);
 //    DWORD dwThreadId ;
 //    HANDLE hThread = ::CreateThread(
 //      NULL,              // no security attribute
@@ -175,16 +201,27 @@ void wxServiceSocketServer::OnServerEvent(wxSocketEvent& event)
 
 void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
 {
-  LOGN("wxServiceSocketServer::OnSocketEvent begin")
+//  LOGN("wxServiceSocketServer::OnSocketEventt begin")
+  LOGN( FULL_FUNC_NAME << "--begin")
+  DEBUG_COUTN( FULL_FUNC_NAME << "--begin")
+
   //wxString s = _("OnSocketEvent: ");
   wxSocketBase * p_wxsocketbase = r_wxsocket_event.GetSocket();
+//  p_wxsocketbase->SetTimeout(
+//    //seconds
+//    10);
 
+  DEBUG_COUTN( FULL_FUNC_NAME << "--from ")
   // Now we process the event
-  switch( r_wxsocket_event.GetSocketEvent() )
+//  BYTE bySocketEvent = r_wxsocket_event.GetSocketEvent();
+  enum wxSocketNotify e_wxsocketnotify = r_wxsocket_event.GetSocketEvent();
+  switch( //bySocketEvent
+      e_wxsocketnotify )
   {
     case wxSOCKET_INPUT:
     {
       LOGN( "wxSOCKET_INPUT." )
+      DEBUG_COUTN( "wxSOCKET_INPUT.")
 //      // We disable input events, so that the test doesn't trigger
 //      // wxSocketEvent again.
 //      p_wxsocketbase->SetNotify(wxSOCKET_LOST_FLAG);
@@ -194,11 +231,14 @@ void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
       p_wxsocketbase->Read( & c, 1 );
 //      BYTE * arbyIPCdataToSend ;
       IPC_data ipc_data;
+      ipc_data.m_byCommand = c;
       DWORD dwNumberOfBytes = m_p_serverprocess->IPC_Message(
 //        c,
 //        arbyIPCdataToSend
         ipc_data
         ) ;
+      p_wxsocketbase->Write(//arbyIPCdataToSend
+        & dwNumberOfBytes, 4) ;
       p_wxsocketbase->Write(//arbyIPCdataToSend
         ipc_data.m_ar_byDataToSend
         , dwNumberOfBytes) ;
@@ -225,6 +265,7 @@ void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
     case wxSOCKET_LOST:
     {
       LOGN("wxSOCKET_LOST")
+      DEBUG_COUTN( "wxSOCKET_LOST")
       m_wNumberOfClients -- ;
 
       // Destroy() should be used instead of delete wherever possible,

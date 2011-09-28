@@ -590,6 +590,8 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
          //n  characters in the array of characters pointed by s."
          , m_dwIPCdataSizeInByte / 2
          ) ;
+       return IPC_Client:://GetsResponseNonBlocking;
+           GotResponse;
 //       DEBUGWN_WSPRINTF(L"got message from pipe:%ls", m_stdwstrMessage.c_str() )
      }
      else
@@ -599,7 +601,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
    else
      m_vbIsGettingCPUcoreData = false ;
    LOGN("SendCommandAndGetResponse end")
-   return 1 ;
+   return IPC_Client::FailedToGetResponse ;
 }
 
 inline DWORD NamedPipeClient::SendDataSizeInByte(

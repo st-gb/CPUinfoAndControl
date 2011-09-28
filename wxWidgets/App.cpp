@@ -14,11 +14,7 @@
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #define THREAD_PROC_CALLING_CONVENTION WINAPI
-#else
-  #define THREAD_PROC_CALLING_CONVENTION /* -> empty string */
-#endif
+#include <preprocessor_macros/thread_proc_calling_convention.h>
 
 #ifndef WX_PRECOMP
   #include "wx/app.h"
@@ -98,6 +94,21 @@ CPUcontrolBase * gp_cpucontrolbase ;
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
 
+void VoltageTooLow()
+{
+  LOGN( FULL_FUNC_NAME << "--called by Dyn lib")
+  float fVoltageInVolt;
+  float fMultiplier;
+  wxGetApp().StabilizeVoltage(fVoltageInVolt, fMultiplier);
+  //Important: else instable voltage can not be detected after Prime95 torture
+  //test ended.
+  wxGetApp().ExitFindLowestStableVoltageThread();
+  ::wxMessageBox( wxString::Format( wxT("Highest unstable voltage: %f Volt found for "
+      "multiplier %f"), fVoltageInVolt, fMultiplier
+      )
+    );
+}
+
 wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   //C++ style inits:
   //#ifdef COMPILE_WITH_CPU_SCALING
@@ -107,6 +118,10 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //      mp_cpucontroller(NULL)
 //    ,
   CPUcontrolBase(this) ,
+  m_hmodulePrime95DynLib(NULL),
+  m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
+  m_vbExitFindLowestStableVoltage(false),
+  m_x86iandc_threadFindLowestStableVoltage(I_Thread::detached),
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 //  m_sax2_ipc_current_cpu_data_handler(m_model),
 #endif
@@ -139,6 +154,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //has to be declared before. the call
 //    ( error if  "logger.OpenFile( std::string("bla");"  )
 #endif
+  m_external_caller.m_pfnVoltageTooLow = & VoltageTooLow;
 }
 
 wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
@@ -470,6 +486,8 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
         m_p_i_ipcclient )
       delete //mp_wxx86infoandcontrolapp->
       m_p_i_ipcclient ;
+    //Important step:
+    m_p_i_ipcclient = NULL;
     //see http://msdn.microsoft.com/en-us/library/aa365783%28v=VS.85%29.aspx:
     //valid pipe names:
     // "\\ServerName\pipe\PipeName"
@@ -500,8 +518,8 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
         << "\" does not match \""
         << GetStdString( wxstrPipeName ) << "\"-> trying to connect via socket" )
       //mp_wxx86infoandcontrolapp->
-//        m_p_i_ipcclient = new
-//        NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
+      m_p_i_ipcclient = new
+        NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
     }
 #endif //#ifdef _WIN32
     //mp_wxx86infoandcontrolapp->
@@ -683,11 +701,17 @@ void //wxX86InfoAndControlApp::
   IPC_Client * p_i_ipcclient = p_wxx86infoandcontrolapp->m_p_i_ipcclient ;
   p_wxx86infoandcontrolapp->s_ipc_data.m_byCommand = get_current_CPU_data;
   p_wxx86infoandcontrolapp->s_ipc_data.m_wDataToWriteSizeInByte = 1;
-  if( p_i_ipcclient &&
+
+  if( p_i_ipcclient)
+  {
+//    p_i_ipcclient->m_crit_secIPCdata.Enter();
+    if(
       //sending command succeeded
 //    r_namedpipeclient.SendCommandAndGetResponse(get_current_CPU_data) &&
       p_i_ipcclient->SendCommandAndGetResponse(//get_current_CPU_data
-        p_wxx86infoandcontrolapp->s_ipc_data) &&
+        p_wxx86infoandcontrolapp->s_ipc_data) == IPC_Client::
+        //GetsResponseNonBlocking;
+        GotResponse &&
   //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
 //  if(
 //    r_namedpipeclient.m_arbyIPCdata &&
@@ -695,8 +719,8 @@ void //wxX86InfoAndControlApp::
     // > 0 bytes
 //    r_namedpipeclient.m_dwIPCdataSizeInByte
       p_i_ipcclient->m_dwIPCdataSizeInByte
-    )
-  {
+      )
+    {
 //      mp_wxx86infoandcontrolapp->m_ipc_current_cpu_data_handler
 //      mp_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler.
 //        Parse( r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwIPCdataSizeInByte ) ;
@@ -705,9 +729,32 @@ void //wxX86InfoAndControlApp::
 ////        dwSizeInBytes ,
 //        r_ipcclient.m_arbyIPCdata , r_ipcclient.m_dwIPCdataSizeInByte ,
 //        L"IPC_buffer" ) ;
-    {
 //      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
 //        m_wxcriticalsection ) ;
+      p_i_ipcclient->m_crit_secIPCdata.Enter();
+      p_i_ipcclient->m_bProcessingIPCdata = //true;
+        IPC_Client::ProcessingIPCdata;
+      p_i_ipcclient->m_crit_secIPCdata.Leave();
+
+//      std::wstring std_wstrXML = L
+//      std::string std_strXML =
+//        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
+//          "<CPU_core_data>\n"
+//          "<core "
+//          "load=\"0.5\" "
+//          "multiplier=\"9\" "
+//          "number=\"0\" "
+//          "reference_clock_in_MHz=\"133.3\" "
+//          "temp_in_deg_Celsius=\"40\" "
+//          "voltage_in_Volt=\"0\" "
+//          "/>"
+//          //"</core>"
+//        "</CPU_core_data>";
+//      p_i_ipcclient->m_arbyIPCdata = (BYTE *) //std_wstrXML.c_str();
+//        std_strXML.c_str();
+//      p_i_ipcclient->m_dwIPCdataSizeInByte = //std_wstrXML.length() * 2;
+//          std_strXML.length();
+
 //      ReadXMLdocumentInitAndTermXerces(
       if( ReadXMLdocumentWithoutInitAndTermXerces(
   //        membufinputsource,
@@ -729,6 +776,12 @@ void //wxX86InfoAndControlApp::
           wxconditionIPC2InProgramData.Leave() ;
         LOGN("after wxconditionIPC2InProgramData.Leave")
       }
+      p_i_ipcclient->m_crit_secIPCdata.Enter();
+      p_i_ipcclient->m_bProcessingIPCdata = //false;
+        IPC_Client:://IPCdataProcessed;
+        ReadNextIPCdata;
+      p_i_ipcclient->m_crit_secIPCdata.Leave();
+      p_wxx86infoandcontrolapp->m_vbGotCPUcoreData = true ;
     }
 //      p_cpucontroller = & p_wxx86infoandcontrolapp->
 //          m_sax2_ipc_current_cpu_data_handler ;
@@ -739,7 +792,6 @@ void //wxX86InfoAndControlApp::
 //      if( wNumCPUcores < mp_cpucoredata->m_byNumberOfCPUCores )
 //        mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
   }
-  p_wxx86infoandcontrolapp->m_vbGotCPUcoreData = true ;
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE_
 }
 
@@ -895,6 +947,16 @@ void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
   //object yourself"
   m_x86iandc_threadIPC.Delete() ;
   LOGN("After possibly freeing \"get CPU core data via IPC\" thread ressources")
+}
+
+void wxX86InfoAndControlApp::ExitFindLowestStableVoltageThread()
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+  //Exit the "find lowest stable voltage" thread.
+  wxGetApp().m_vbExitFindLowestStableVoltage = true;
+//          wxGetApp().m_wxconditionFindLowestStableVoltage.Signal();
+  wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 //Getting the CPU core data (->depends on the implementation) can take many
@@ -1084,6 +1146,81 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   LOGN("GetConfigDataViaInterProcessCommunication return 2")
   return 2 ;
+}
+
+void wxX86InfoAndControlApp::StabilizeVoltage(
+  float & fVoltageInVolt,
+  float & fMultiplier
+  )
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+  //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+//  float fMultiplier;
+  float fReferenceClockInMHz;
+//  WORD wCoreID;
+  mp_cpucontroller->GetCurrentVoltageAndFrequency(
+    fVoltageInVolt,
+    fMultiplier, fReferenceClockInMHz, 0);
+
+  float fLowestStableVoltageInVolt = m_model.m_cpucoredata.
+    GetNextVoltageAbove(fVoltageInVolt);
+
+  float fStableVoltageInVolt = //fVoltageInVolt
+    fLowestStableVoltageInVolt + m_model.
+    m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt;
+
+  LOGN( FULL_FUNC_NAME << "--setting " << fStableVoltageInVolt << " Volt,"
+    << fMultiplier << " as stable p-state")
+//  mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(0);
+  mp_cpucontroller->SetCurrentVoltageAndMultiplier(
+    //fVoltageInVolt
+    fStableVoltageInVolt, fMultiplier, 0);
+
+  WORD wFrequencyInMHz = (WORD)(fMultiplier * fReferenceClockInMHz);
+
+  LOGN( FULL_FUNC_NAME << "--setting " << //fVoltageInVolt
+    fLowestStableVoltageInVolt << " Volt,"
+    << wFrequencyInMHz << " MHz for minimum voltage")
+  SetAsMinimumVoltage(//fVoltageInVolt
+    fLowestStableVoltageInVolt, wFrequencyInMHz);
+
+//  if( mp_wxcheckboxAlsoSetWantedVoltage->IsChecked() )
+  {
+    LOGN( FULL_FUNC_NAME << "--setting " << fStableVoltageInVolt << " Volt,"
+      << wFrequencyInMHz << " MHz for wanted voltage")
+    SetAsWantedVoltage( fStableVoltageInVolt, wFrequencyInMHz) ;
+  }
+
+}
+
+void wxX86InfoAndControlApp::InitPrime95DynLibAccess()
+{
+  LOGN( FULL_FUNC_NAME << " --begin")
+  if(m_hmodulePrime95DynLib == NULL)
+    m_hmodulePrime95DynLib = ::LoadLibrary( _T("Prime95.DLL") );
+  if( m_hmodulePrime95DynLib != NULL)
+  {
+    LOGN(FULL_FUNC_NAME << "--Successfully loaded Prime95 DLL")
+
+    m_pfnStartTortureTest =
+      (StartTortureTestFunctionPointer)
+      ::GetProcAddress(
+        m_hmodulePrime95DynLib, //_T(
+        "TortureTest"
+        //)
+        );
+    LOGN( FULL_FUNC_NAME <<  "--StartTortureTest function pointer: "
+      << (void *) m_pfnStartTortureTest)
+    m_pfnStopTortureTest =
+      (StopTortureTestFunctionPointer) ::GetProcAddress(
+        m_hmodulePrime95DynLib, //_T(
+        "StopTortureTest"//)
+        );
+    LOGN(FULL_FUNC_NAME << "--StopTortureTest function pointer: "
+      << (void *) m_pfnStopTortureTest )
+  }
+  else
+    LOGN(FULL_FUNC_NAME << "--Failed to load Prime95 DLL")
 }
 
 void wxX86InfoAndControlApp::IPCclientDisconnect()
@@ -1863,6 +2000,65 @@ void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings(
   }
 }
 
+void wxX86InfoAndControlApp::SetAsMinimumVoltage(
+    float fVoltageInVolt, WORD wFrequencyInMHz)
+{
+  //  float fVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(
+  //     ) ;
+  //  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
+  //  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.
+  //    insert(
+  //      VoltageAndFreq( fVoltageInVolt
+  //        , wFreq
+  //        )
+  //    ) ;
+  VoltageAndFreq voltageandfreq( fVoltageInVolt , wFrequencyInMHz) ;
+  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
+    m_model.m_cpucoredata.m_stdsetvoltageandfreqLowestStable ;
+  std::set<VoltageAndFreq>::iterator iter =
+      r_stdsetvoltageandfreq.find( voltageandfreq ) ;
+  //VoltageAndFreq exists in set yet.
+  if( iter != r_stdsetvoltageandfreq.end() )
+    r_stdsetvoltageandfreq.erase(iter) ;
+//    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
+    r_stdsetvoltageandfreq.
+      insert(
+//          VoltageAndFreq( fVoltageInVolt
+//            , wFreq
+//            )
+        voltageandfreq
+      ) ;
+}
+
+void wxX86InfoAndControlApp::SetAsWantedVoltage(
+    float fVoltageInVolt, WORD wFrequencyInMHz)
+{
+  //    mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
+  //      insert(
+  //        VoltageAndFreq( m_fWantedVoltageInVolt
+  //          , wFrequencyInMHz
+  //          )
+  //      ) ;
+  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
+      m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted ;
+
+  VoltageAndFreq voltageandfreq( fVoltageInVolt , wFrequencyInMHz) ;
+
+  std::set<VoltageAndFreq>::iterator iter =
+      r_stdsetvoltageandfreq.find( voltageandfreq ) ;
+  //VoltageAndFreq exists in set yet.
+  if( iter != r_stdsetvoltageandfreq.end() )
+    r_stdsetvoltageandfreq.erase(iter) ;
+//    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
+    r_stdsetvoltageandfreq.
+      insert(
+//            VoltageAndFreq( fVoltageInVolt
+//              , wFrequencyInMHz
+//              )
+        voltageandfreq
+      ) ;
+}
+
 void wxX86InfoAndControlApp::SetCPUcontroller( 
   I_CPUcontroller * p_cpucontrollerNew )
 {
@@ -1901,7 +2097,7 @@ void wxX86InfoAndControlApp::StartService()
 #ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   try
   {
-    if( ! ServiceBase::StartService( //mp_model->m_strServiceName.c_str()
+    if( ! ServiceBase::Start( //mp_model->m_strServiceName.c_str()
       //We need a _T() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
   //    _T("CPUcontrolService"
@@ -1927,10 +2123,39 @@ void wxX86InfoAndControlApp::StartService()
 
 void wxX86InfoAndControlApp::StopService()
 {
+  LOGN(FULL_FUNC_NAME << "--begin")
 #ifdef _WIN32 //pre-defined preprocessor macro for (also 64 bit) Windows
+  //The connection may have broken after it was established, so check it here.
+  if( ! //::wxGetApp().
+      //m_ipcclient.IsConnected()
+      IPC_ClientIsConnected_Inline()
+    )
+  {
+    LOGN("not connected to the service")
+    std::string stdstrMessage ;
+//    if( ! //::wxGetApp().
+        //m_ipcclient.Init()
+      IPCclientConnect_Inline(stdstrMessage)
+//      && bTryToPauseViaServiceControlManagerIfViaIPCfails
+//      )
+//      bTryToPauseViaServiceControlManager = true ;
+        ;
+  }
+  if( //::wxGetApp().
+      //m_ipcclient.IsConnected()
+      IPC_ClientIsConnected_Inline()
+    )
+  {
+    LOGN(FULL_FUNC_NAME << "--connected to the service")
+    //TODO possibly make IPC communication into a separate thread because it
+    // may freeze the whole GUI.
+    //::wxGetApp().
+    //m_ipcclient.SendCommandAndGetResponse(pause_service) ;
+    IPC_ClientSendCommandAndGetResponse_Inline(stop_service) ;
+  }
   try
   {
-    if( ! ServiceBase::StopService( //mp_model->m_strServiceName.c_str()
+    if( ! ServiceBase::Stop( //mp_model->m_strServiceName.c_str()
       //We need a _T() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
   //    _T("CPUcontrolService"
