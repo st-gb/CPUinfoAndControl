@@ -1,0 +1,462 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head>
+  
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=UTF-8">
+  <title>Build x86Info&amp;Control under Windows</title>
+
+  
+  
+  <meta name="CREATED" content="0;0">
+
+  
+  <meta name="CHANGED" content="20100111;22532500">
+
+</head><body dir="ltr" lang="de-DE">
+<h1>Build x86 info &amp; control (with MinGW) under Windows</h1>
+
+<h2>Table of Contents</h2>
+
+<ul>
+
+  <li><a href="#Build_or_download_required_libraries">1. Build/
+download
+required libraries</a></li>
+  <li><a href="#build_the_x86IandC_GUI_or_service">2. build the
+x86I&amp;C
+GUI or
+service</a></li>
+  <ul>
+    <li><a href="#use_the_included_eclipse_C-Development_Tooling_project_files">use
+the included <span style="font-weight: bold;">eclipse</span>
+C/C++-Development Tooling <span style="font-weight: bold;">project
+files</span></a></li>
+    <ul>
+      <li><a href="#why_MinGW_and_eclipse_CDT">why MinGW &amp; </a><span style="font-weight: bold;"><a href="#why_MinGW_and_eclipse_CDT">eclipse
+CDT</a><br>
+        </span></li>
+    </ul>
+    <li><a href="#create_own_project_or_make_files">create own project/
+make files</a> (e.g. if not using eclipse CDT)</li>
+    <ul>
+      <li><a href="#preprocessor_definitions">(add) preprocessor
+definitions (to project)</a></li>
+      <li><a href="#add_include_directories">add include directories</a></li>
+      <ul>
+        <li><a href="How_to_buid_with_MinGW_under_Windows.html#needed_include_paths">needed
+include paths</a></li>
+      </ul>
+      <li><a href="#add_needed_libraries">add needed (import) libraries</a></li>
+      <ul>
+        <li><a href="#needed_library_paths">needed libray paths</a></li>
+        <li><a href="#needed_libraries">needed libraries</a></li>
+      </ul>
+    </ul>
+  </ul>
+</ul>
+
+<h2>General</h2>
+
+<ul>
+
+  <li>
+    <p>avoid pathes with spaces (g++ has problems else)</p>
+  </li>
+</ul>
+
+<ol>
+
+  <li>
+    <h2><a name="Build_or_download_required_libraries"></a>Build/
+download required libraries </h2>
+    to get needed import library files
+either:<br>
+    <ul>
+      <li><span style="font-weight: bold;">build</span> (If you do not
+trust the downloadable libraries; building
+the libraries requires some extra knowledge):</li>
+      <ul>
+        <li>wxWidgets 2.8.10 (cross-plattform GUI etc. framework)</li>
+        <li>Apache Xerces 3.1.1 (for XML access)<br>
+        </li>
+      </ul>
+      <li><span style="font-weight: bold;">dowload</span> (If you trust
+the
+downloadable libraries; easier than
+building them yourself) :</li>
+      <ul>
+        <li><a href="http://www.trilobyte-se.de/x86iandc/download/wxWidgets2.8.10_MinGW_GCC3.4.5-unicode-release-static.zip">wxWidgets
+2.8.10 unicode release static library (*.a) built
+with MinGW GCC 3.4.5 32bit</a> (contains only the wxWidgets library [*.a] files that are
+needed)<a href="http://www.trilobyte-se.de/x86iandc/download/wxWidgets2.8.10_MinGW_GCC3.4.5-unicode-release-static.zip"><br>
+          </a></li>
+        <li><a href="http://www.trilobyte-se.de/x86iandc/download/Apache_Xerces3.1.1_MinGW_GCC3.4.5_Makefile--LDFLAGS_-no-undefined,without_debug_info,no_symbolic_info.zip">Apache
+Xerces 3.1.1 built with MinGW GCC 3.4.5 32 bit</a> (DLL and import
+libraries) <br>
+</li>
+        <li><a href="http://www.trilobyte-se.de/x86iandc/download/WinRing0_1_3_1b.zip">WinRing0 version 1.3.1b</a><br>
+        </li>
+
+      </ul>
+    </ul>
+  </li>
+  <li>
+    <h2><a name="build_the_x86IandC_GUI_or_service"></a>build the
+x86I&amp;C GUI/ service</h2>
+note<br>
+    <ul>
+      <li>The compiler (version, architecture [32 or 64 bit] ) should
+be
+the same as the one for the created needed libraries, else you may get
+lnker errors.</li>
+      <li>caution: there must be no spaces in path
+name for include or library paths<br>
+      </li>
+      <li>Linker:&nbsp;</li>
+      <ul>
+        <li>there should be no (visible) unneccessary ".cpp" files be
+added to the project: else it is tried
+to compile them and you unneccessarily get build errors<br>
+        </li>
+      </ul>
+    </ul>
+to build either<br>
+    <ul>
+      <li>
+        <h3><a name="use_the_included_eclipse_C-Development_Tooling_project_files"></a>use
+the included <span style="font-weight: bold;">eclipse</span> <a href="http://www.eclipse.org/cdt/">C/C++-Development Tooling</a> <span style="font-weight: bold;">project files</span></h3>
+      </li>
+      <ul>
+        <li><a name="why_MinGW_and_eclipse_CDT"></a>why MinGW &amp; <span style="font-weight: bold;">eclipse</span> <a href="http://www.eclipse.org/cdt/">C/C++-Development Tooling</a> (CDT)
+? :<br>
+MinGW &amp; <span style="font-weight: bold;">eclipse</span> <a href="http://www.eclipse.org/cdt/">C/C++-Development Tooling</a> (CDT)
+is the choice because:</li>
+        <ul>
+          <li>eclipse CDT allows refactoring free of charge in contrast
+to Visual Studio (where there are payable plugins)<br>
+          </li>
+          <li>MinGW uses GCC/ g++ which is&nbsp; related&nbsp; to
+Linux'
+GCC/ g++ compiler what allows an easier Linux build as if the Windows
+version would be (accidentally) build with MS specifica <br>
+          </li>
+        </ul>
+        <li>where to get MinGW 3.4.5, MSYS and eclipse CDT:</li>
+        <ul>
+          <li><span style="font-weight: bold;">MinGW</span> 3.4.5:</li>
+          <ul>
+            <li><a href="http://wiki.codeblocks.org/index.php?title=MinGW_installation#GCC_3.4.5_manual_install">instructions
+from CodeBlocks wiki</a><br>
+            </li>
+          </ul>
+          <li><a style="font-weight: bold;" href="http://www.mingw.org/wiki/msys">MSYS</a> (dunno if needed at all)<br>
+          </li>
+          <li><span style="font-weight: bold;">eclipse CDT</span>:</li>
+          <ul>
+            <li style="text-align: justify;"><a href="http://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers-includes-incubating-components/indigor">general
+download page</a><br>
+            </li>
+            <li style="text-align: justify;"><a href="http://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/indigo/R/eclipse-cpp-indigo-incubation-win32.zip">Windows
+              </a><a href="http://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/indigo/R/eclipse-cpp-indigo-incubation-win32.zip">32
+bit download page</a></li>
+            <li style="text-align: justify;"><a href="http://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/indigo/R/eclipse-cpp-indigo-incubation-win32-x86_64.zip">Windows
+64 bit download page</a><br>
+            </li>
+          </ul>
+        </ul>
+        <li>in eclipse add linked ressources for:</li>
+        <ul>
+          <li>x86InfoAndControlRootPath -&gt; point to the topmost x86I&amp;C source folder<br>
+          </li>
+          <li>common_sourcecode -&gt; point to the (topmost) common_sourcecode folder<br>
+          </li>
+        </ul>
+        <li>therefore you have to add the environment variables from</li>
+
+        <ul>
+          <li><a href="#needed_include_paths">needed include paths</a></li>
+          <li><a href="#needed_library_paths">needed library paths</a><br>
+          </li>
+        </ul>
+      </ul>
+      <li>
+        <h3><a name="create_own_project_or_make_files"></a>create own
+project/ make files (e.g. if not using eclipse C/C++-Development
+Tooling)<br>
+        </h3>
+        <ul>
+          <li>
+            <h4><a name="preprocessor_definitions"></a>(add)
+preprocessor
+definitions (to project)</h4>
+          </li>
+        </ul>
+        <ul style="margin-left: 80px;">
+          <li>add to project:</li>
+          <ul>
+            <li>in <span style="font-weight: bold;">eclipse</span> add
+via: <br>
+project-&gt;properties-&gt;C/C++ Build-&gt;Settings-&gt;GCC C++
+Compiler-&gt;Preprocessor<br>
+            </li>
+          </ul>
+        </ul>
+        <ul style="margin-left: 80px;">
+          <li>preprocessor definitions:<br>
+          </li>
+          <ul>
+            <li>for logging:</li>
+            <ul>
+              <li style="font-weight: bold;">COMPILE_WITH_LOG</li>
+              <li><span style="font-weight: bold;">USE_OWN_LOGGER</span>
+to
+use the own "class Logger" from the&nbsp;
+"common_sourcecode" directory<br>
+              </li>
+            </ul>
+            <li>MinGW with std::wstringstream support (16 bit
+characters):<br>
+"<span style="font-weight: bold;">LOGGING_CHARACTER_TYPE_ID=0</span>"
+-&gt; uses std::wstringstream for logging.<br>
+            </li>
+          </ul>
+        </ul>
+        <ul style="margin-left: 80px;">
+          <ul>
+            <li> "<b>NOMINMAX</b>"<br>
+for g++ because of errors in std::min(...) and std::max(...) in
+&lt;bits/stl_algobase.h&gt;: </li>
+            <li> "<b>_DEBUG</b>" <br>
+for/if linking to DEBUG libraries; else an error when starting the
+created ".exe" that the exe is linked to non-debug but the libs are
+debug. </li>
+            <li> for wxWidgets:</li>
+            <ul>
+              <li><b>__WXMSW__</b><br>
+              </li>
+              <li>__WINDOWS__<br>
+              </li>
+            </ul>
+            <li> <b>_GLIBCXX_USE_WCHAR_T</b> or <b>_GLIBCXX_USE_WSTRING</b>
+for <b>std::wstring</b>
+declaration in include\c++\bits/stringfwd.h </li>
+            <li>COMPILE_WITH_NAMED_WINDOWS_PIPE</li>
+            <li>COMPILE_WITH_INTER_PROCESS_COMMUNICATION<br>
+            </li>
+            <li>for power profile access:<br>
+COMPILE_WITH_OTHER_DVFS_ACCESS<br>
+            </li>
+            <li>for unicode character set builds:</li>
+            <ul>
+              <li>_UNICODE</li>
+              <li>UNICODE</li>
+            </ul>
+            <li>for the x86 I&amp;C service:<br>
+COMPILE_AS_SERVICE<br>
+            </li>
+            <li>for the x86 I&amp;C GUI: <br>
+COMPILE_AS_GUI<br>
+            </li>
+          </ul>
+        </ul>
+        <h2 style="margin-left: 40px;"><a name="add_include_directories"></a>add
+include directories</h2>
+        <ul style="margin-left: 40px;">
+          <li>general: <br>
+          </li>
+          <ul>
+            <li>recommendation: <br>
+            </li>
+            <ul>
+              <li>use environment variable names ("WXWIDGETS_2.8.10")
+rather
+than hard coded paths ("C:\Libraries\wxWidgets-2.8.10") :</li>
+              <ul>
+                <li>that makes building easer if e.g. you move the
+library
+files</li>
+                <li>so you have to add these environment variables</li>
+                <li>you may have to restart the program ( console/ IDE)
+if
+you changed an environment variable value, else you may have the
+previous values.<br>
+                </li>
+              </ul>
+            </ul>
+          </ul>
+          <li>how to add includes:</li>
+          <ul>
+            <li>eclipse:</li>
+            <ul>
+              <li>to add environment variables: <span style="font-weight: bold;">"${</span><span style="font-style: italic;">environment
+variable name</span><span style="font-weight: bold;">}"</span>, e.g.
+"${X86IANDC_ROOT_SOURCE_PATH}"<br>
+( &gt;&gt;"&lt;&lt; is part of the entry)<br>
+              </li>
+            </ul>
+          </ul>
+          <li>
+            <h3><a name="needed_include_paths"></a>needed include paths:</h3>
+          </li>
+          <ul>
+            <li><span style="font-style: italic;">wxWidgets root dir</span><span style="font-weight: bold;">\include</span></li>
+            <ul>
+              <li><span style="font-weight: bold;"></span>e.g.
+"WXWIDGETS_2.8.10\include" where WXWIDGETS_2.8.10 is an environment
+variable</li>
+              <li>or a direct path like "C:\Libraries\wxWidgets-2.8.10"<br>
+              </li>
+            </ul>
+            <li><span style="font-weight: bold;">wx</span><span style="font-style: italic;"><span style="font-weight: bold;">Widgets</span>
+dir above the desired's configuration "<span style="font-weight: bold;">setup.h</span>"
+path</span></li>
+            <ul>
+              <li>e.g. use environment variable
+"WX2.8.10_MINGW_GCC3.4.5_UNICODE_RELEASE_STATIC_LIB_PATH" <br>
+              </li>
+              <li>or a direct path like
+"C:\Libraries\wxWidgets-2.8.10\lib\MinGW_GCC3.4.5-unicode-release-static_32bit"<span style="font-style: italic;"><br>
+                </span></li>
+            </ul>
+            <li><span style="font-style: italic;">"COMMON_SOURCECODE"
+root
+path</span><span style="font-weight: bold;"></span></li>
+            <ul>
+              <li><span style="font-weight: bold;"></span>e.g. use
+environment variable "COMMON_SOURCECODE_ROOT_PATH" <br>
+              </li>
+              <li>or a direct path like
+"T:\SourceCodeManagement\common_sourcecode"<br>
+              </li>
+            </ul>
+            <li><span style="font-style: italic;">x86I&amp;C sourcecode
+root directory</span><span style="font-weight: bold;"></span></li>
+            <ul>
+              <li><span style="font-weight: bold;"></span>e.g. use
+environment variable "X86IANDC_ROOT_SOURCE_PATH"</li>
+              <li>or a direct path like
+"T:\SourceCodeManagement\X86Info_and_Control"</li>
+            </ul>
+            <li><span style="font-style: italic;">WinRing0 dir above
+root
+dir</span></li>
+            <ul>
+              <li>e.g. use environment variable <span style="font-style: italic;">"</span>WINRING0_VERSIONS_TOP_DIR"</li>
+              <li>or a direct path like "C:\Libraries"</li>
+            </ul>
+            <li><span style="font-style: italic;">WinRing0 1.3.1b root
+directory</span></li>
+            <ul>
+              <li>e.g. use environment variable
+"WINRING0_1_3_1_SOURCE_PATH" <br>
+              </li>
+              <li>or direct path such as:
+"C:\Libraries\WinRing0_1_3_1b\source\dll"</li>
+            </ul>
+            <li><span style="font-style: italic;">Apache Xerces source
+path<br>
+              </span></li>
+            <ul>
+              <li>e.g. use environment variable "XERCES_SOURCE_PATH"</li>
+              <li>or direct path such as:
+"C:\Libs\Apache_Xerces\xerces-c-3.1.1\src"<span style="font-style: italic;"><br>
+                </span></li>
+            </ul>
+          </ul>
+        </ul>
+        <h2 style="margin-left: 40px;"><a name="add_needed_libraries"></a>add
+needed (import) libraries</h2>
+        <ul style="margin-left: 40px;">
+          <li>
+            <p style="margin-bottom: 0cm;">again: <b>avoid pathes with
+spaces</b>
+(g++ has problems else)</p>
+          </li>
+          <li>
+            <h3><a name="needed_library_paths"></a>needed libray paths:</h3>
+          </li>
+          <ul>
+            <li><span style="font-style: italic;">wxWidgets library path</span></li>
+            <ul>
+              <li>e.g. use environment variable such as
+"WX2.8.10_MINGW_GCC3.4.5_UNICODE_RELEASE_STATIC_LIB_PATH"</li>
+              <li>or direct path such as:
+"C:\Libraries\wxWidgets-2.8.10\lib\MinGW_GCC3.4.5-unicode-release-static"<br>
+              </li>
+            </ul>
+            <li><span style="font-style: italic;">Apache Xerces libray
+path</span><br>
+            </li>
+            <ul>
+              <li>e.g. use environment variable such as
+"XERCES_MINGW_LIB_PATH"</li>
+              <li>or direct path such as:
+"C:\Libs\Apache_Xerces\xerces-c-3.1.1\src"</li>
+            </ul>
+          </ul>
+          <li>
+            <h3><a name="needed_libraries"></a>needed libraries </h3>
+          </li>
+          <ul>
+            <li>note:</li>
+            <ul>
+              <li>the&nbsp;<b>order</b> of the
+libraries <span style="text-decoration: underline;">does matter</span></li>
+            </ul>
+            <li>especially if the linker says
+"undefined reference to ..." :</li>
+            <ul>
+              <li>maybe google for the undefined
+function or etc. name in order to find the appropriate lib name to
+import</li>
+              <li>to find the needed lib search
+for
+the string within the lib dirs of cywin etc. e.g. via the Windows
+explorer to find the lib file for it</li>
+            </ul>
+            <li>add to IDE:</li>
+            <ul>
+              <li>NetBeans: button "Add Library...")</li>
+            </ul>
+            <li>
+              <p>Cygwin and <b>xerces</b>: download
+„libxerces-c-devel“
+via cygwin
+setup. <br>
+(Building the cygwin Xerces libraries from the source did not work)</p>
+            </li>
+            <li>
+              <p>the order that worked (wxWidgets debug libraries
+have a "d" inside the name):</p>
+              <ol>
+                <li>wxWidgets core library (e.g. "wx_msw[d]_core[...]" )<br>
+                </li>
+                <li>wxWidgets base library (e.g. "wx_based" (for
+wxThread, ...) )</li>
+                <li>wxWidgets base library (e.g. "wx_mswd_adv-2.8", for
+GUI? )</li>
+                <li>[wxWidgets expat library; e.g. wxexpatd-2.8]</li>
+                <li>comdlg32</li>
+                <li>gdi32</li>
+                <li>comctl32</li>
+                <li>ole32
+(CoCreateInstance)</li>
+                <li>uuid
+(_IID_PersistFile)</li>
+                <li>oleaut32</li>
+                <li>kernel32 (for "::Sleep(DWORD)" )</li>
+                <li>xerces-c<br>
+                </li>
+              </ol>
+            </li>
+          </ul>
+        </ul>
+        <ul>
+        </ul>
+        <ul style="margin-left: 40px;">
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ol>
+
+</body></html>

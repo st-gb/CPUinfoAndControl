@@ -15,6 +15,8 @@
 #include <Controller/I_ServerProcess.hpp> //Base class I_ServerProcess
 //#include <Controller/IPC/I_IPC_DataHandler.hpp>
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
+//THREAD_FUNCTION_CALLING_CONVENTION
+#include <Controller/multithread/thread_function_calling_convention.h>
 //#include <ModelData/ModelData.hpp>
 //Member variable of class DummyUserInterface
 #include <UserInterface/DummyUserInterface.hpp>
@@ -70,6 +72,12 @@ class WinRing0DynLinked ;
 //  class IPCdataHandler ;
 //}
 
+//#include <wx/msw/winundef.h>
+//To avoid replacing "StartService" to "StartServiceA" / "StartServiceW"
+#ifdef StartService
+  #undef StartService
+#endif
+
 class CPUcontrolService
   :
 #ifdef COMPILE_WITH_IPC
@@ -83,8 +91,10 @@ class CPUcontrolService
   , public wxApp
 {
 public:
+  static std::wstring s_std_wstrProgramName;
   DWORD m_dwArgCount ;
 private :
+  bool m_bStartedAsService;
   //Flag for ServiceCtrlHandlerEx to indicate whether the service is REALLY
   //running (the service report SERVICE_RUNNUNG immediately because the
   //Service Control Manager is blocked for other services until the service
@@ -154,6 +164,7 @@ public:
   Windows_API::Thread m_x86iandc_threadGetCurrentCPUcoreData ;
   volatile bool m_vbAlterCPUcoreDataForIPC ;
 public :
+  CPUcontrolService();
   CPUcontrolService(//const char* szServiceName
     std::wstring & r_stdwstrProgramName
 //      std::tstring & r_stdtstrProgramName
@@ -208,10 +219,10 @@ public :
   //    bool HasLogFilePathOption( int argc, char *  argv[] ) ;
   static void outputUsage();
   //Overwrites wxApp::OnInit() ;
-  bool OnInit()
-  {
-    return true ;
-  }
+  bool OnInit();
+  void OnServerEvent(wxSocketEvent & event);
+  void OnSocketEvent(wxSocketEvent & event);
+
   bool Pause() ;
   SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
   static int requestOption(
@@ -242,6 +253,8 @@ public :
     const std::vector<std::string> & cr_vecstdstrParams );
   static bool ShouldStartService(
     const std::vector<std::string> & cr_vecstdstrParams );
+  static bool ShouldStartAsNormalApp(
+    const std::vector<std::string> & cr_vecstdstrParams );
   static bool ShouldStopService(
     const std::vector<std::string> & cr_vecstdstrParams );
   static VOID SvcDebugOut(LPSTR String, DWORD Status);
@@ -254,10 +267,18 @@ public :
   static void WINAPI ServiceMain(DWORD argc, LPTSTR *argv) ;
   static void StartIPCserverThread() ;
   static void StartwxSocketServerThread() ;
+  void StartAsNonService();
   void StartService() ;
+  void StartServiceCtrlDispatcherInSeparateThread();
+  static DWORD THREAD_FUNCTION_CALLING_CONVENTION
+    StartServiceCtrlDispatcher_static(void * p_v);
   inline void WakeUpCreateIPCdataThread() ;
 
 //  //For receiving wxWidgets (socket) events.
 //  DECLARE_EVENT_TABLE()
 };
+
+//
+//DECLARE_APP(CPUcontrolService)
+
 #endif //#ifndef CPUCONTROLSERVICE_HPP_

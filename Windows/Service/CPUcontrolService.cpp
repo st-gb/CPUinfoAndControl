@@ -26,6 +26,8 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //for LocalLanguageMessageFromErrorCode(...)
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+//for int ::CallFromMainFunction(int argc, char * argv[])
+#include <Windows/Service/CallFromMainFunction.h>
 //class WinRing0_1_3RunTimeDynLinked
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 //class wxThreadBasedI_Thread
@@ -52,8 +54,15 @@
 //#include <Windows/PowerProfFromWin6DynLinked.hpp>
 //#include <Windows/PowerProfUntilWin6DynLinked.hpp>
 //#include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
-//Windows_API::CreateProcess(...)
-#include <Windows/CreateProcess/CreateProcess.hpp>
+
+#include "StartGUI.hpp" //StartGUIprocessDelayedAsync(...)
+
+//#include <wx/msw/winundef.h>
+//To avoid replacing "StartService" to "StartServiceA" / "StartServiceW" in
+//"winsvc.h"
+#ifdef StartService
+  #undef StartService
+#endif
 
 #define NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE 65535
 
@@ -64,6 +73,8 @@
 CPUcontrolService * CPUcontrolService::s_p_cpucontrolservice;
 std::vector<std::string> CPUcontrolService::m_vecstrCmdLineOptions;
 //DummyUserInterface CPUcontrolService::m_dummyuserinterface ;
+
+extern CPUcontrolBase * gp_cpucontrolbase;
 
 //This function should be executed in a separate thread.
 DWORD WINAPI
@@ -132,7 +143,7 @@ GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v)
           //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
           //"it must be locked prior to calling Wait"
           p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock();
-          if (!p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
+          if ( ! p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
             break;
           //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
           LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before Wait()")
@@ -163,6 +174,61 @@ IPC_ServerThread(LPVOID lpParam)
   return 0;
 }
 #endif //#ifdef COMPILE_WITH_IPC
+
+// IDs for the controls and the menu commands
+enum
+{
+  // id for sockets
+  SERVER_ID = 100,
+  SOCKET_ID
+};
+
+#include <wx/socket.h> //EVT_SOCKET
+
+//BEGIN_EVENT_TABLE(CPUcontrolService, wxApp)
+//  EVT_SOCKET(SERVER_ID,
+//      CPUcontrolService::OnServerEvent)
+//  EVT_SOCKET(SOCKET_ID,  //wxServiceSocketServer::
+//      CPUcontrolService::OnSocketEvent)
+//END_EVENT_TABLE()
+
+////Defines "WinMain(...)":
+////Erzeugt ein wxAppConsole-Object auf dem Heap.
+//IMPLEMENT_APP(CPUcontrolService)
+
+//LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
+//LPTSTR ptstrProgramArg = _T("-config=GriffinControl_config.xml") ;
+std::wstring CPUcontrolService::s_std_wstrProgramName(//ptstrProgramName
+  _T("X86_info_and_control") ) ;
+
+CPUcontrolService::CPUcontrolService()
+  //C++ style init.
+  :
+  CPUcontrolServiceBase( & m_dummyuserinterface),
+  m_dwArgCount(argc)
+#ifdef COMPILE_WITH_IPC
+  //  , mr_ipc_datahandler(r_ipc_datahandler)
+  ,
+  m_ipc_datahandler(m_model),
+  m_ipcserver(this),
+  m_wxservicesocketserver(this)
+#endif //#ifdef COMPILE_WITH_IPC
+  //  , m_powerprofdynlinked ( r_stdtstrProgramName )
+  //  , m_stdtstrProgramName ( r_stdtstrProgramName )
+  //  , m_maincontroller( & m_dummyuserinterface )
+  , m_p_ptstrArgument(//argv),
+      NULL),
+  m_powerprofdynlinked(s_std_wstrProgramName),
+  m_x86iandc_threadGetCurrentCPUcoreData(I_Thread::joinable)
+{
+//  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
+  LOGN( FULL_FUNC_NAME << "--begin")
+  m_stdtstrProgramName = Getstdtstring(s_std_wstrProgramName);
+  //Calling the ctor inside another ctor created the object 2 times!
+  //CPUcontrolService() ;
+  InitializeMemberVariables();
+}
+
 CPUcontrolService::CPUcontrolService(
 //const char * szServiceName
     std::wstring & r_stdwstrProgramName
@@ -171,7 +237,7 @@ CPUcontrolService::CPUcontrolService(
 )
 //C++ style inits:
 :
-  CPUcontrolServiceBase(&m_dummyuserinterface),
+  CPUcontrolServiceBase(& m_dummyuserinterface),
   //    m_bSyncGUIshowDataWithService ( false ) ,
 #ifdef COMPILE_WITH_IPC
       //    mr_ipc_datahandler(r_ipc_datahandler) ,
@@ -195,8 +261,10 @@ CPUcontrolService::CPUcontrolService(
   InitializeMemberVariables();
 }
 
-CPUcontrolService::CPUcontrolService(DWORD argc, LPTSTR *argv,
-    std::wstring & r_stdwstrProgramName
+CPUcontrolService::CPUcontrolService(
+  DWORD argc,
+  LPTSTR * argv,
+  std::wstring & r_stdwstrProgramName
 //  std::tstring & r_stdtstrProgramName
 //  , I_IPC_DataHandler & r_ipc_datahandler
 )
@@ -214,7 +282,9 @@ CPUcontrolService::CPUcontrolService(DWORD argc, LPTSTR *argv,
       //  , m_powerprofdynlinked ( r_stdtstrProgramName )
       //  , m_stdtstrProgramName ( r_stdtstrProgramName )
       //  , m_maincontroller( & m_dummyuserinterface )
-      , m_p_ptstrArgument(argv), m_powerprofdynlinked(r_stdwstrProgramName),
+      , m_p_ptstrArgument(//argv),
+          NULL),
+      m_powerprofdynlinked(r_stdwstrProgramName),
       m_x86iandc_threadGetCurrentCPUcoreData(I_Thread::joinable)
 {
   //  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
@@ -230,20 +300,7 @@ CPUcontrolService::~CPUcontrolService()
   LOGN("~CPUcontrolService() begin")
   //Already called in ~CPUcontrolBase()
   //  FreeRessources() ;
-  if (m_p_ptstrArgument)
-    {
-      WORD wNumberOfStrings = m_dwArgCount;
-      LOGN("Freeing memory for array of copied or converted program arguments")
-      for ( //e.g. for 2 elements: max. index is 1
-      --wNumberOfStrings; wNumberOfStrings < //(WORD) -1
-          65535; --wNumberOfStrings)
-        {
-          LOGN("Freeing memory for " << GetStdString_Inline(
-                  m_p_ptstrArgument[wNumberOfStrings]) )
-          delete[] m_p_ptstrArgument[wNumberOfStrings];
-        }
-      delete[] m_p_ptstrArgument;
-    }
+  ::DeleteTCHARarray(m_dwArgCount, m_p_ptstrArgument);
   EndAlterCurrentCPUcoreIPCdata();
   LOGN("~CPUcontrolService() end")
 }
@@ -381,11 +438,11 @@ CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
       WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
       << GetStdString_Inline(cp_tchServiceName)
       << "\" succeeded." )
-  std::wstring stdwstr = GetStdWstring(cr_std_tstrProgramName);
+  std::wstring std_wstrProgramName = GetStdWstring(cr_std_tstrProgramName);
   PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
-      stdwstr);
+      std_wstrProgramName);
   powerprofdynlinked.DeletePowerScheme(//cr_std_tstrProgramName
-      stdwstr);
+      std_wstrProgramName);
   powerprofdynlinked.OutputAllPowerSchemes();
 }
 
@@ -428,7 +485,7 @@ CPUcontrolService::HandleInitServiceFailed(DWORD dwStatus)
   // Handle error condition
   if (dwStatus == NO_ERROR)
     {
-      LOG("The service was successfully initialized"//\n"
+      LOGN("The service was successfully initialized"//\n"
       )
     }
   else
@@ -441,157 +498,12 @@ CPUcontrolService::HandleInitServiceFailed(DWORD dwStatus)
       //    m_servicestatus.dwServiceSpecificExitCode = specificError;
 
 #ifndef EMULATE_EXECUTION_AS_SERVICE
+    if( m_bStartedAsService )
       ::SetServiceStatus(s_p_cpucontrolservice-> m_service_status_handle,
           &s_p_cpucontrolservice-> m_servicestatus);
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
       //DEBUG("error in initialization of the service--returning\n" )
     }
-}
-
-struct CreateProcessAttributesAndDelayTime
-{
-public:
-  Windows_API::CreateProcess * m_p_create_gui_process;
-  DWORD m_dwDelayTimeInMillis;
-  CreateProcessAttributesAndDelayTime(
-    Windows_API::CreateProcess * p_create_gui_process,
-    DWORD dwDelayTimeInMillis)
-  :
-    m_p_create_gui_process(p_create_gui_process),
-    m_dwDelayTimeInMillis(dwDelayTimeInMillis)
-  {
-
-  }
-  CreateProcessAttributesAndDelayTime(
-    Windows_API::CreateProcess & r_create_gui_process,
-      DWORD dwDelayTimeInMillis)
-    :
-    m_dwDelayTimeInMillis(dwDelayTimeInMillis)
-  {
-    m_p_create_gui_process = new Windows_API::CreateProcess(
-      r_create_gui_process);
-
-  }
-  ~CreateProcessAttributesAndDelayTime()
-  {
-    if( m_p_create_gui_process)
-      delete m_p_create_gui_process;
-  }
-};
-
-DWORD
-#ifdef _WIN32 //under Linux g++ error if "__stdcall"
-__stdcall
-#endif
-StartGUIdelayed_ThreadFunc(void * p_v)
-{
-  LOGN( FULL_FUNC_NAME << "--begin" )
-  //  Windows_API::CreateProcess * p_create_gui_process =
-  //    (Windows_API::CreateProcess *) p_v;
-  CreateProcessAttributesAndDelayTime * p_createprocessattributesanddelaytime =
-      (CreateProcessAttributesAndDelayTime *) p_v;
-  if ( //p_create_gui_process
-      p_createprocessattributesanddelaytime)
-    {
-      LOGN( FULL_FUNC_NAME << " before sleeping " <<
-        p_createprocessattributesanddelaytime->m_dwDelayTimeInMillis
-        << " milliseconds" )
-      ::Sleep(//p_create_gui_process->m_
-          p_createprocessattributesanddelaytime->m_dwDelayTimeInMillis);
-      LOGN( FULL_FUNC_NAME << " after sleeping " <<
-        p_createprocessattributesanddelaytime->m_dwDelayTimeInMillis
-        << " milliseconds" )
-      p_createprocessattributesanddelaytime->m_p_create_gui_process->
-        StartProcess(
-        //      pwtssession_notification->dwSessionId
-        );
-      //Was created for this function on heap before calling this function, so
-      //free it now.
-      delete p_createprocessattributesanddelaytime;
-    }
-  return 0;
-}
-
-void
-StartGUIprocessDelayedSynchronous(ServiceAttributes & r_security_attributes,
-    DWORD dwSessionID)
-{
-//  CreateProcessAsUserAttributesW createprocessasuserattributesw;
-//  createprocessasuserattributesw.m_stdwstrCommandLine
-//      = r_security_attributes.m_stdwstrPathToGUIexe;
-//  createprocessasuserattributesw.m_stdwstrCurrentDirectory
-//      = r_security_attributes.m_stdwstrGUICurrentDirFullPathTo;
-//  createprocessasuserattributesw.m_dwSessionID = dwSessionID;
-  CreateProcessAsUserAttributesW createprocessasuserattributesw(
-    r_security_attributes.m_stdwstrPathToGUIexe,
-    r_security_attributes.m_stdwstrGUICurrentDirFullPathTo,
-    createprocessasuserattributesw.m_dwSessionID
-    );
-  Windows_API::CreateProcess create_gui_process(
-    createprocessasuserattributesw);
-  create_gui_process.StartProcess(
-  //    pwtssession_notification->dwSessionId
-  );
-}
-
-void
-StartGUIprocessDelayedAsync(ServiceAttributes & r_service_attributes,
-    DWORD dwSessionID)
-{
-  LOGN( FULL_FUNC_NAME << "--begin" )
-//  CreateProcessAsUserAttributesW * p_createprocessasuserattributesw =
-//    new CreateProcessAsUserAttributesW();
-//  p_createprocessasuserattributesw->m_stdwstrCommandLine
-//      = r_service_attributes.m_stdwstrPathToGUIexe;
-//  p_createprocessasuserattributesw->m_stdwstrCurrentDirectory
-//      = r_service_attributes.m_stdwstrGUICurrentDirFullPathTo;
-//  p_createprocessasuserattributesw->m_dwSessionID = dwSessionID;
-  CreateProcessAsUserAttributesW createprocessasuserattributesw(
-    r_service_attributes.m_stdwstrPathToGUIexe,
-    r_service_attributes.m_stdwstrGUICurrentDirFullPathTo,
-    dwSessionID
-    );
-
-  //Must be created on heap because it should be valid after leaving _this_
-  //block.
-  Windows_API::CreateProcess * p_create_gui_process =
-    new Windows_API::CreateProcess(
-//      * p_createprocessasuserattributesw
-      createprocessasuserattributesw
-      );
-  CreateProcessAttributesAndDelayTime * p_createprocessattributesanddelaytime =
-    new CreateProcessAttributesAndDelayTime(
-      p_create_gui_process,
-      r_service_attributes.m_dwDelayTimeInMillis);
-
-  //http://docs.wxwidgets.org/2.8/wx_wxthread.html#typeswxthread:
-  //"Detached threads delete themselves once they have completed, either by
-  //themselves when they complete processing or through a call to
-  //wxThread::Delete, and thus must be created on the heap"
-//  wxThreadBasedI_Thread * p_wxthreadbasedi_threadStartGUIdelayed = new
-//    wxThreadBasedI_Thread(I_Thread::detached);
-//  p_wxthreadbasedi_threadStartGUIdelayed->start(
-//  wxThreadBasedI_Thread wxthreadbasedi_threadStartGUIdelayed(
-//    I_Thread::detached);
-//  wxthreadbasedi_threadStartGUIdelayed.start(
-//  //create_gui_process.StartProcess,
-//      StartGUIdelayed_ThreadFunc,
-//      //    pwtssession_notification->dwSessionId
-//      //    createprocessasuserattributesw,
-//      //p_create_gui_process
-//      (void *) p_createprocessattributesanddelaytime);
-
-  ::CreateThread(
-    NULL,
-    //"The initial size of the stack, in bytes."
-    //"If this parameter is zero, the new thread uses the default size for
-    //the executable.
-    0,
-    StartGUIdelayed_ThreadFunc,
-    (void *) p_createprocessattributesanddelaytime,
-    0, //dwCreationFlags: 0=The thread runs immediately after creation.
-    NULL //"If this parameter is NULL, the thread identifier is not returned."
-    );
 }
 
 void
@@ -689,6 +601,8 @@ void
 CPUcontrolService::InitializeMemberVariables()
 {
   LOGN("CPUcontrolServiceBase::InitializeMemberVariables()--begin")
+  m_bStartedAsService = false;
+  gp_cpucontrolbase = this;
   m_vbAlterCPUcoreDataForIPC = true;
   m_vbServiceInitialized = false;
   m_bProcess = true;
@@ -1045,6 +959,7 @@ CPUcontrolService::IPC_Message(
   return dwByteSize;
 }
 #endif //#ifdef COMPILE_WITH_IPC
+
 SERVICE_STATUS_HANDLE
 CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
 {
@@ -1312,6 +1227,33 @@ CPUcontrolService::GetLogFilePath()
 //    return bHasPrefix ;
 //}
 
+bool CPUcontrolService::OnInit()
+{
+  LOGN( FULL_FUNC_NAME)
+  std::cout << FULL_FUNC_NAME << "--# prog args:" << argc << "\n";
+//  ::OpenLogFile(argv);
+  std::cout << "after OpenLogFile\n";
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "before CallFromMainFunction")
+
+//  if( CallFromMainFunction(argc,argv, this) == 0)
+  {
+    //OnInit() must return true, else no wxWidgets socket events can be processed?!
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "return true")
+    return true ;
+  }
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "return false")
+  return false ;
+}
+
+void CPUcontrolService::OnServerEvent(wxSocketEvent & event)
+{
+  LOGN( FULL_FUNC_NAME)
+}
+void CPUcontrolService::OnSocketEvent(wxSocketEvent & event)
+{
+  LOGN( FULL_FUNC_NAME)
+}
+
 /**@ return true: already paused*/
 bool
 CPUcontrolService::Pause()
@@ -1433,16 +1375,22 @@ CPUcontrolService::requestOption(
   //std::cout << "You can input your choice (deinstall/ install) now: "
   //    "same format as if command line option:\n" ;
   std::cout << "\nSelect your option now:\n"
+    "Start as normal [a/A]pplication (-> not as service)\n"
     "[i/I]nstall this program as service\n"
     "[d/D]einstall/ [d/D]elete (this) service\n"
     "[r/R]einstall (this) service (delete->install)\n"
     "[s/S]tart (this) service\n"
     "Sto[p/P] (this) service\n"
     "[q/Q]uit\n";
-  int nChar = getche();
+  int nChar = ::getche();
   std::cout << "\n";
-  switch (toupper(nChar))
+  switch ( ::toupper(nChar))
     {
+  case 'A':
+    std::cout << "You chose to start the application as normal program\n";
+    r_vec_std_strParams.push_back( //_T("-i")
+        "-a");
+    break;
   case 'I':
     std::cout << "You chose to install the service\n";
     std::cout << "Now input the name for the service. "
@@ -1530,14 +1478,16 @@ CPUcontrolService::requestOption(
 void WINAPI
 CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   BYTE byArgIndex = 0;
   DWORD dwStatus;
   std::string stdstrErrorDescripition;
   //    DWORD specificError;
 #ifndef EMULATE_EXECUTION_AS_SERVICE
-  if ( //if error occurred
-  !s_p_cpucontrolservice->RegSvcCtrlHandlerAndHandleError())
-    return;
+  if( s_p_cpucontrolservice->m_bStartedAsService )
+    if ( //if error occurred
+        ! s_p_cpucontrolservice->RegSvcCtrlHandlerAndHandleError())
+      return;
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
   //http://msdn.microsoft.com/en-us/library/ms687414%28v=VS.85%29.aspx:
   //  "For best system performance, your application should enter the running
@@ -1566,15 +1516,17 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   //initialization of the service."
   dwStatus = (
   //Tell g++ that CPUcontrolServiceBase's Initialize is meant.
-      (CPUcontrolServiceBase *) s_p_cpucontrolservice)->Initialize(argc, argv //&specificError
-          , s_p_cpucontrolservice->m_byVoltageAndFrequencyScalingType);
+    (CPUcontrolServiceBase *) s_p_cpucontrolservice)->Initialize(
+      argc,
+      argv //&specificError
+      , s_p_cpucontrolservice->m_byVoltageAndFrequencyScalingType);
   LOGN("Should use DVFS type:" << (WORD) s_p_cpucontrolservice->
       m_byVoltageAndFrequencyScalingType)
   s_p_cpucontrolservice->HandleInitServiceFailed(dwStatus);
   if (dwStatus != NO_ERROR)
     {
-      LOG("error in initialization of the service--returning"//\n"
-      )
+      LOGN("error in initialization of the service--returning"//\n"
+        )
       return;
     }
 
@@ -1584,7 +1536,7 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
 #ifdef COMPILE_WITH_IPC
   s_p_cpucontrolservice->m_x86iandc_threadGetCurrentCPUcoreData.start(
       GetCurrentCPUcoreDataInLoopThreadFunc, s_p_cpucontrolservice);
-  StartwxSocketServerThread();
+//  StartwxSocketServerThread();
   StartIPCserverThread();
 #endif
 
@@ -1595,12 +1547,13 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
       //byVoltageAndFrequencyScalingType
       ) == EXIT_SUCCESS)
     {
-      LOGN("Waiting for the stop service condition to become true")
+//      LOGN("Waiting for the stop service condition to become true")
       LOGN("service main--current thread ID:" << ::GetCurrentThreadId() )
       s_p_cpucontrolservice->m_vbServiceInitialized = true;
-      //If not waiting the thread object is destroyed at end of block.
-      ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
-          INFINITE);
+
+//      //If not waiting the thread object is destroyed at end of block.
+//      ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
+//          INFINITE);
       //    WaitForEndOfDVFSthread() ;
     }
 
@@ -1628,8 +1581,9 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   //synchr. with "ServiceCtrlHandlerEx"
   //p_eventStopped.Set();
   //DEBUG("Service main function--end\n",argc)
-  LOG( "Service main function--end"//\n"
+  LOGN( "Service main function--end"//\n"
   )
+  LOGN( FULL_FUNC_NAME << "--return")
   return;
 }
 
@@ -1690,17 +1644,21 @@ void
 CPUcontrolService::SetServiceStatus()
 {
 #ifndef EMULATE_EXECUTION_AS_SERVICE
-  if (!::SetServiceStatus(s_p_cpucontrolservice->
+  if ( m_bStartedAsService && ! ::SetServiceStatus(
+      //s_p_cpucontrolservice->
   //this handle is the return value of "RegisterServiceCtrlHandlerEx()"
-      m_service_status_handle, &s_p_cpucontrolservice->m_servicestatus))
-    {
-      DWORD dwStatus = ::GetLastError();
-      //SvcDebugOut(" [MY_SERVICE] SetServiceStatus error %ld\n",
-      //   status);
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-          "SetServiceStatus error " << dwStatus //<< "\n"
-      );
-    }
+        m_service_status_handle,
+        & //s_p_cpucontrolservice->
+        m_servicestatus)
+      )
+  {
+    DWORD dwStatus = ::GetLastError();
+    //SvcDebugOut(" [MY_SERVICE] SetServiceStatus error %ld\n",
+    //   status);
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+        "SetServiceStatus error " << dwStatus //<< "\n"
+    );
+  }
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
 }
 
@@ -1822,6 +1780,21 @@ CPUcontrolService::ShouldStartService(
 }
 
 bool
+CPUcontrolService::ShouldStartAsNormalApp(
+    const std::vector<std::string> & vecstdstrParams)
+{
+  bool bShouldStartAsNormalApp = false;
+  //if( argc > 1 )
+  //    //if( strcmp(argv[1],"-i") == 0 )
+  //    if( std::string(argv[1]) == "-d" )
+  if (IsWithinStrings(vecstdstrParams, "-a") )
+    bShouldStartAsNormalApp = true;
+
+  LOGN( FULL_FUNC_NAME << "--return" << bShouldStartAsNormalApp )
+  return bShouldStartAsNormalApp;
+}
+
+bool
 CPUcontrolService::ShouldStopService(
     const std::vector<std::string> & vecstdstrParams)
 {
@@ -1847,7 +1820,7 @@ CPUcontrolService::StartIPCserverThread()
   HANDLE handleThread = ::CreateThread(NULL, // default security attributes
       0, // use default stack size
       IPC_ServerThread, // thread function name
-      &s_p_cpucontrolservice->m_ipcserver,// argument to thread function
+      & s_p_cpucontrolservice->m_ipcserver,// argument to thread function
       0, // use default creation flags
       &dwThreadId); // returns the thread identifier
   if (handleThread == NULL)
@@ -1873,17 +1846,21 @@ void
 CPUcontrolService::StartwxSocketServerThread()
 {
   DWORD dwThreadId;
+  LOGN( FULL_FUNC_NAME << "--begin")
   s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
   //  s_p_cpucontrolservice->m_wxservicesocketserver.Init() ;
   //IPC_servers wait for client and are often BLOCKING, so THIS
   //block would not continue execution->start client
   //connection listening in dedicated thread.
-  HANDLE handleThread = ::CreateThread(NULL, // default security attributes
+  HANDLE handleThread = ::CreateThread(
+      NULL, // default security attributes
       0, // use default stack size
       IPC_ServerThread, // thread function name
       // argument to thread function
-      &s_p_cpucontrolservice->m_wxservicesocketserver, 0, // use default creation flags
-      &dwThreadId); // returns the thread identifier
+      & s_p_cpucontrolservice->m_wxservicesocketserver,
+      0, // use default creation flags
+      & dwThreadId // returns the thread identifier
+      );
   if (handleThread == NULL)
     {
       LOGN("creating the IPC server thread failed");
@@ -1909,13 +1886,60 @@ CPUcontrolService::StartwxSocketServerThread()
   //  wxAppTraits::CreateEventLoop() ;
   //The socket events need to be processed in a thread!
   //  wxEventLoopBase * p = wxConsoleAppTraits::CreateEventLoop() ;
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
-void
-CPUcontrolService::StartService()
+void CPUcontrolService::StartAsNonService()
 {
-  DEBUG("begin of starting service\n");
+  LOGN( FULL_FUNC_NAME << "--begin")
 
+#ifdef COMPILE_WITH_IPC
+  s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
+  //wxWidgets seockets must be initialized in the main thread!
+  s_p_cpucontrolservice->m_wxservicesocketserver.Init();
+#endif //#ifdef COMPILE_WITH_IPC
+
+  ServiceMain(
+      //m_dwArgCount,
+      1,
+      //m_p_lptstrArgument
+      argv
+    );
+  LOGN( FULL_FUNC_NAME << "--end")
+}
+
+void CPUcontrolService::StartServiceCtrlDispatcherInSeparateThread()
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+  Windows_API::Thread x86iandc_threadServiceMain;
+  x86iandc_threadServiceMain.start(
+    CPUcontrolService::StartServiceCtrlDispatcher_static, NULL);
+
+#ifdef COMPILE_WITH_IPC
+  s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
+  //wxWidgets seockets must be initialized in the main thread!
+  s_p_cpucontrolservice->m_wxservicesocketserver.Init();
+#endif //#ifdef COMPILE_WITH_IPC
+
+  LOGN( FULL_FUNC_NAME << "--Waiting for the stop service condition to become "
+    "true")
+
+  //http://msdn.microsoft.com/en-us/library/ms686324%28v=VS.85%29.aspx
+  // (StartServiceCtrlDispatcher function):
+  //"Connects the main thread of a service process to the service control
+  //manager, which causes the thread to be the service control dispatcher
+  //thread for the calling process."
+
+  //If not waiting the service control dispatcher thread ends!.
+  ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
+      INFINITE);
+  LOGN( FULL_FUNC_NAME << "--end")
+}
+
+DWORD THREAD_FUNCTION_CALLING_CONVENTION CPUcontrolService::
+  StartServiceCtrlDispatcher_static(void * p_v)
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
   //SERVICE_TABLE_ENTRYA ("char") or SERVICE_TABLE_ENTRYW ( wchar_t )
   SERVICE_TABLE_ENTRY ar_service_table_entry[] =
     {
@@ -1931,7 +1955,7 @@ CPUcontrolService::StartService()
           //m_stdstrServiceName.c_str()
           //"CPUcontrolService"
           //Convert "const char *" -> "char *", "const wchar_t *" -> "wchar_t *".
-          (TCHAR *) m_stdtstrProgramName.
+          (TCHAR *) s_p_cpucontrolservice->m_stdtstrProgramName.
           //returns "const char *" (ANSI) or "const wchar_t *" (wide char)
           c_str()
           //Pointer to a ServiceMain function.
@@ -1963,17 +1987,35 @@ CPUcontrolService::StartService()
   //The main thread of a service process should make this call as soon as
   //possible after it starts up.
   //Starts the "ServiceMain" function in a new thread.
-  if (!::StartServiceCtrlDispatcher(ar_service_table_entry))
+  if ( ! ::StartServiceCtrlDispatcher(ar_service_table_entry))
     {
       DWORD dw = ::GetLastError();
       std::string stdstr;
       LOGN("StartServiceCtrlDispatcher failed:" <<
-          LocalLanguageMessageAndErrorCodeA( dw ) )
+        ::LocalLanguageMessageAndErrorCodeA( dw ) )
       ServiceBase::GetErrorDescriptionFromStartServiceCtrlDispatcherErrCode(dw,
           stdstr);
       LOGN(stdstr)
+      return 1;
     }
 #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
+  LOGN( FULL_FUNC_NAME << "--return 0")
+  return 0;
+}
+
+void CPUcontrolService::StartService()
+{
+  DEBUG("begin of starting service\n");
+  m_bStartedAsService = true;
+
+#ifdef COMPILE_WITH_IPC
+  s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
+  //wxWidgets seockets must be initialized in the main thread!
+  s_p_cpucontrolservice->m_wxservicesocketserver.Init();
+#endif //#ifdef COMPILE_WITH_IPC
+
+  StartServiceCtrlDispatcher_static(NULL);
+
   //The execution continues here if the service was stopped.
   //DEBUG("end of starting service\n");
   LOGN("after starting service ctrl dispatcher--current thread id:" <<

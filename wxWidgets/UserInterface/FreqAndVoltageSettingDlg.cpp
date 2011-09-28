@@ -19,6 +19,9 @@
 #endif
 
 #include <windef.h> //for BYTE
+//GetArrayIndexForClosestGreaterOrEqual(...)
+//#include <algorithms/binary_search/binary_search.h>
+#include <algorithms/binary_search/binary_search.cpp>
 #include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
 #include <Controller/CPU-related/I_CPUcontroller.hpp>//class I_CPUcontroller
 //DISable warning, from
@@ -70,6 +73,7 @@ enum
   , ID_Panel
   , ID_PreventVoltageBelowLowestStableVoltageCheckbox
   , ID_PreventVoltageAboveDefaultVoltageCheckbox
+  , ID_findLowestStableVoltage
 };
 
 #ifndef MAXWORD
@@ -110,6 +114,8 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   EVT_ACTIVATE(FreqAndVoltageSettingDlg::OnActivate) 
   EVT_SCROLL(FreqAndVoltageSettingDlg::OnScroll)
   EVT_BUTTON(wxID_APPLY, FreqAndVoltageSettingDlg::OnApplyButton)
+  EVT_BUTTON(ID_findLowestStableVoltage,
+      FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton)
   EVT_BUTTON(ID_SetAsMinVoltage, 
     FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton)
   EVT_BUTTON(ID_SetAsWantedVoltage, 
@@ -191,6 +197,8 @@ inline void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
 {
   wxBoxSizer * p_wxboxsizerOK_Cancel = new wxBoxSizer(wxHORIZONTAL);
   p_wxboxsizerOK_Cancel->Add( mp_wxbuttonApply ) ;
+  p_wxboxsizerOK_Cancel->Add( m_p_wxbuttonFindLowestStableVoltage ) ;
+
   //  mp_wxcheckboxSetAsCurrentAfterApplying = new wxCheckBox(this, wxID_ANY,
   //      //_T("Set as current after apply") ) ;
   //      _T("Set as current p-state after write") ) ;
@@ -1034,6 +1042,20 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
     this,
     wxID_APPLY,
     wxT("&Write p-state") ,
+    wxDefaultPosition ,
+    wxDefaultSize ,
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    wxWANTS_CHARS
+    ) ;
+  m_p_wxbuttonFindLowestStableVoltage = new wxButton(
+    this,
+    ID_findLowestStableVoltage,
+    wxT("find &lowest stable voltage") ,
     wxDefaultPosition ,
     wxDefaultSize ,
     //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
@@ -2102,7 +2124,7 @@ void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton(
   {
     CPUcoreData & r_cpucoredata = mp_cpucontroller->mp_model->m_cpucoredata ;
     WORD wMultiplierIndex = mp_wxsliderFreqInMHz->GetValue() ;
-    WORD wFreq = //Explicit cast to WORD to avoid g++ warning.
+    WORD wFrequencyInMHz = //Explicit cast to WORD to avoid g++ warning.
      (WORD) ( r_cpucoredata.m_arfAvailableMultipliers[ wMultiplierIndex ] *
       mp_cpucontroller->m_fReferenceClockInMHz ) ;
     WORD wVoltageIndex = mp_wxsliderCPUcoreVoltage->GetValue() ;
@@ -2111,57 +2133,13 @@ void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton(
       r_cpucoredata.m_arfAvailableVoltagesInVolt[ wVoltageIndex ] ;
     r_cpucoredata.m_wxcriticalsection.Enter() ;
 
-//  float fVoltage = mp_cpucontroller->GetVoltageInVolt(
-//     ) ;
-//  WORD wFreq = mp_wxsliderFreqInMHz->GetValue() ;
-//  mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable.
-//    insert(
-//      VoltageAndFreq( fVoltage
-//        , wFreq
-//        )
-//    ) ;
-    VoltageAndFreq voltageandfreq( fVoltage , wFreq) ;
-    std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
-        r_cpucoredata.m_stdsetvoltageandfreqLowestStable ;
-    std::set<VoltageAndFreq>::iterator iter =
-        r_stdsetvoltageandfreq.find( voltageandfreq ) ;
-    //VoltageAndFreq exists in set yet.
-    if( iter != r_stdsetvoltageandfreq.end() )
-      r_stdsetvoltageandfreq.erase(iter) ;
-  //    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
-      r_stdsetvoltageandfreq.
-        insert(
-//          VoltageAndFreq( fVoltage
-//            , wFreq
-//            )
-          voltageandfreq
-        ) ;
+    wxGetApp().SetAsMinimumVoltage(fVoltage, wFrequencyInMHz);
+
     if( mp_wxcheckboxAlsoSetWantedVoltage->IsChecked() )
     {
-  //    mp_cpucontroller->mp_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.
-  //      insert(
-  //        VoltageAndFreq( m_fWantedVoltageInVolt
-  //          , wFreq
-  //          )
-  //      ) ;
-      VoltageAndFreq voltageandfreq( fVoltage + //0.07
+      wxGetApp().SetAsWantedVoltage(fVoltage + //0.07
         mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt ,
-        wFreq) ;
-      std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
-          r_cpucoredata.m_stdsetvoltageandfreqWanted ;
-      std::set<VoltageAndFreq>::iterator iter =
-          r_stdsetvoltageandfreq.find( voltageandfreq ) ;
-      //VoltageAndFreq exists in set yet.
-      if( iter != r_stdsetvoltageandfreq.end() )
-        r_stdsetvoltageandfreq.erase(iter) ;
-    //    std::pair <std::set<VoltageAndFreq>::iterator, bool> stdpair =
-        r_stdsetvoltageandfreq.
-          insert(
-//            VoltageAndFreq( fVoltage
-//              , wFreq
-//              )
-            voltageandfreq
-          ) ;
+        wFrequencyInMHz) ;
     }
     r_cpucoredata.m_wxcriticalsection.Leave() ;
     mp_mainframe->RedrawEverything() ;
@@ -2343,32 +2321,192 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
   //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ; 
 }
 
+#include <preprocessor_macros/thread_proc_calling_convention.h>
+
+DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+  FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
+    (FreqAndVoltageSettingDlg *) p_v;
+  if( p_freqandvoltagesettingdlg)
+  {
+    float fVoltageInVolt = p_freqandvoltagesettingdlg->
+      GetVoltageInVoltFromSliderValue() ;
+    p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS();
+
+    const std::set<float> & c_r_stdset_floatAvailableVoltagesInVolt =
+      p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
+      m_stdset_floatAvailableVoltagesInVolt;
+//    std::set<float>::
+//      //Voltages are sorted ascending, but we want to get decrease the voltage:
+//      //so use a "const_reverse_iterator"
+//      const_reverse_iterator c_rev_iter =
+//      c_r_stdset_floatAvailableVoltagesInVolt.find(fVoltageInVolt);
+
+    WORD wArrayIndex = ::GetArrayIndexForClosestGreaterOrEqual(
+      p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
+        m_arfAvailableVoltagesInVolt,
+      c_r_stdset_floatAvailableVoltagesInVolt.size(),
+      fVoltageInVolt);
+//    while( c_rev_iter != c_r_stdset_floatAvailableVoltagesInVolt.rend() )
+//    {
+//      p_freqandvoltagesettingdlg->PossiblyWriteVoltageAndMultiplier_Inline(
+////        fVoltageInVolt
+//        * c_rev_iter
+//        ) ;
+//    }
+    p_freqandvoltagesettingdlg->m_p_wxbuttonFindLowestStableVoltage->SetLabel(
+      wxT("stop finding the lowest stable voltage") );
+    DWORD dwMilliSecondsToWait = 60000;
+
+//    float fVoltageInVolt;
+//    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+//    float fMultiplier;
+//    float fReferenceClockInMHz;
+//    WORD wCoreID;
+//    p_freqandvoltagesettingdlg->mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//      fVoltageInVolt,
+//      fMultiplier, fReferenceClockInMHz, 0);
+    float fMultiplierFromSliderValue = p_freqandvoltagesettingdlg->
+      GetMultiplierFromSliderValue();
+
+    for( -- wArrayIndex; wArrayIndex != MAXWORD &&
+      ! wxGetApp().m_vbExitFindLowestStableVoltage; -- wArrayIndex )
+    {
+        fVoltageInVolt = p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
+          m_arfAvailableVoltagesInVolt[wArrayIndex];
+
+        LOGN( FULL_FUNC_NAME << "--before setting voltage[Volt] to: "
+            << fVoltageInVolt << " , multi to " << fMultiplierFromSliderValue)
+        p_freqandvoltagesettingdlg->mp_cpucontroller->
+          SetCurrentVoltageAndMultiplier(
+            fVoltageInVolt, //fMultiplier
+            fMultiplierFromSliderValue, 0);
+        //::Sleep(60000);
+
+//        //http://msdn.microsoft.com/en-us/library/ms687025%28v=VS.85%29.aspx:
+//        ::WaitForMultipleObjects(
+//          2 //__in  DWORD nCount
+//          , //__in  const HANDLE *lpHandles,
+//          ,BOOL
+//          //"The time-out interval, in milliseconds."
+//          , 60000 //__in  DWORD dwMilliseconds
+//          );
+        LOGN( FULL_FUNC_NAME << "--waiting max. " << dwMilliSecondsToWait
+          << " milliseconds")
+        ::WaitForSingleObject( wxGetApp().m_conditionFindLowestStableVoltage.
+          m_handleEvent, dwMilliSecondsToWait);
+        wxGetApp().m_conditionFindLowestStableVoltage.ResetEvent();
+
+//        // "Each wxCondition object is associated with a (single) wxMutex object.
+//        // The mutex object MUST be locked before calling Wait()"
+//        wxGetApp().m_wxmutexFindLowestStableVoltage.Lock();
+//        wxGetApp().m_wxconditionFindLowestStableVoltage.
+//          //"exactly as Wait() except that it may also return if the specified
+//          // timeout elapses even if the condition hasn't been signalled: in this
+//          // case, the return value is false, otherwise (i.e. in case of a normal
+//          // return) it is true
+//          WaitTimeout(
+//          // "the timeout parameter specifies an interval that needs to be waited for
+//          // in milliseconds"
+//          60000);
+    }
+    p_freqandvoltagesettingdlg->m_p_wxbuttonFindLowestStableVoltage->SetLabel(
+      wxT("find lowest stable voltage") );
+  }
+  LOGN( FULL_FUNC_NAME << "--return 0")
+  return 0;
+}
+
+void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
+    wxCommandEvent & //WXUNUSED(event)
+    r_wxcommandevent )
+{
+  wxGetApp().InitPrime95DynLibAccess();
+
+  if( wxGetApp().m_hmodulePrime95DynLib )
+  {
+    if( wxGetApp().m_pfnStartTortureTest && wxGetApp().m_pfnStopTortureTest)
+    {
+       DWORD dwExitCode;
+      ::GetExitCodeThread(wxGetApp().m_x86iandc_threadFindLowestStableVoltage.
+        m_handleThread, & dwExitCode ) ;
+      if( //m_p_wxbuttonFindLowestStableVoltage->GetLabel() ==
+        //wxT("stop finding the lowest stable voltage")
+//        ::WaitForSingleObject( wxGetApp().
+//          m_x86iandc_threadFindLowestStableVoltage.m_handleThread,
+//          //wxGetApp().m_x86iandc_threadFindLowestStableVoltage
+//          0)
+//          ==
+          dwExitCode == STILL_ACTIVE
+        )
+      {
+        LOGN( FULL_FUNC_NAME << "--should stop the find lowest stable voltage thread")
+        LOGN( FULL_FUNC_NAME << "--before  calling \"StopTortureTest\"")
+        (* wxGetApp().m_pfnStopTortureTest)();
+        LOGN( FULL_FUNC_NAME << "--after calling \"StopTortureTest\"")
+
+        wxGetApp().ExitFindLowestStableVoltageThread();
+      }
+      else
+      {
+        LOGN( FULL_FUNC_NAME << "--should start the find lowest stable "
+          "voltage thread")
+        wxGetApp().m_vbExitFindLowestStableVoltage = false;
+        (* wxGetApp().m_pfnStartTortureTest)( mp_model->m_cpucoredata.
+            m_byNumberOfCPUCores,
+            & wxGetApp().m_external_caller);
+
+        wxGetApp().m_x86iandc_threadFindLowestStableVoltage.start(
+          FindLowestStableVoltage , this ) ;
+      }
+      //FindLowestStableVoltage();
+      //Sleep(10000);
+      //(* wxGetApp().m_pfnStopTortureTest)();
+    }
+  }
+  else
+  {
+    ::wxMessageBox(wxT("Prime95 DLL acces not inited"));
+  }
+}
+
+void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS()
+{
+  mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  if(
+#ifndef wxUSE_BITMAPTOGGLEBTN
+      mp_wxcheckboxPauseService->IsChecked()
+#else
+      m_p_wxbitmapToggleButtonPause->GetValue ()
+#endif
+      )
+    wxGetApp().PauseService( mp_model->m_userinterfaceattributes.
+      m_bTryToPauseViaServiceControlManagerIfViaIPCfails ) ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+
+}
+
+//Must provide a voltage parameter because this function is called from
+// -OnStabilizeVoltageButton(...)
+// -OnApplyButton(...)
 void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
   float fVoltageInVolt)
 {
 //  float fFreq = GetCPUcoreFrequencyFromSliderValue() ;
+  float fMultiplierFromSliderValue = GetMultiplierFromSliderValue();
 //  if( //fVoltageInVolt > 0.0
   //The voltage check is/ should be done when changing the voltage or
   //(un)checking the check boxes for preventing a voltage outside of the safe
   // range.
 //      VoltageIsWithinValidRange( fVoltageInVolt , fFreq ) )
   {
-    mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
     LOGN("settings dialog--voltage to set:"
       << fVoltageInVolt
-      << "multiplier to set:" << GetMultiplierFromSliderValue()
+      << "multiplier to set:" << fMultiplierFromSliderValue
       )
-  #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
-    if(
-#ifndef wxUSE_BITMAPTOGGLEBTN
-        mp_wxcheckboxPauseService->IsChecked()
-#else
-        m_p_wxbitmapToggleButtonPause->GetValue ()
-#endif
-        )
-      wxGetApp().PauseService( mp_model->m_userinterfaceattributes.
-        m_bTryToPauseViaServiceControlManagerIfViaIPCfails ) ;
-  #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+    DisableOSesDVFSandServiceDVFS();
     WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
     if( wNumCPUcores > 1 )
     {
@@ -2379,14 +2517,14 @@ void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
           //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
           mp_cpucontroller->SetCurrentVoltageAndMultiplier(
             fVoltageInVolt ,
-            GetMultiplierFromSliderValue() ,
+            fMultiplierFromSliderValue ,
             wCPUcore
             ) ;
     }
     else
       mp_cpucontroller->SetCurrentVoltageAndMultiplier(
         fVoltageInVolt ,
-        GetMultiplierFromSliderValue() ,
+        fMultiplierFromSliderValue ,
         //Only 1 logical CPU core-> use CPU core ID "0"
         0
         ) ;

@@ -100,13 +100,14 @@ inline BYTE CPUID(
       << affinityMask
       << ")"
       )
-    return (*g_pfn_write_msr)(
+    BOOL _bool = ( * g_pfn_write_msr)(
       dwRegisterIndex ,
       dwEAX ,
       dwEDX ,
       affinityMask
       ) ;
-      return 1 ;
+    DEBUGN("result of executable's \"WriteMSR\" function:" << _bool )
+    return _bool ;
   }
 
 #endif /* INLINE_REGISTER_ACCESS_FUNCTIONS_H_ */

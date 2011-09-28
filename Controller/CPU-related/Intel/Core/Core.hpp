@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * Core.hpp (".hpp" -> C++ header file because "inline" is used)
  *
@@ -35,7 +42,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //  extern float g_fReferenceClockInMHz ;
   float g_fReferenceClockInMHz ;
 //  DWORD g_dwValue1, g_dwValue2 ;
-  extern DWORD g_dwValue1, g_dwValue2 ;
+  extern uint32_t g_dwValue1, g_dwValue2 ;
   float g_fValue1 ;
 
   inline float GetMultiplierAsEncodedInMSRIntelCore(DWORD dwValue ) ;

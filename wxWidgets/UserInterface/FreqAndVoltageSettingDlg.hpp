@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //include guard
 
 //#include <bits/stl_algobase.h> //for std::max(...). else:522: error:
@@ -30,10 +37,14 @@ private:
   BYTE m_byPstateID ;
   BYTE m_byPreviousMultiplierValue ;
   float m_fWantedVoltageInVolt ;
+public:
   //Needed for setting p-state.
   I_CPUcontroller * mp_cpucontroller ;
+private:
   MainFrame * mp_mainframe ;
+public:
   Model * mp_model ;
+private:
   WORD m_wPreviousFrequencyInMHz ;
   WORD m_wVoltageSliderValue ;
   //http://wiki.wxwidgets.org/Avoiding_Memory_Leaks#Child_windows:
@@ -53,6 +64,9 @@ private:
   wxBoxSizer * p_wxboxsizerCPUcoreFrequencyInMHz ;
   wxBoxSizer * p_wxboxsizerTop ;
   wxButton * mp_wxbuttonApply ;
+public:
+  wxButton * m_p_wxbuttonFindLowestStableVoltage;
+private:
 //  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
@@ -121,6 +135,7 @@ public:
   void ConnectCharEvent( wxWindow * p_wxWindow ) ;
   inline void CPUcoreVoltageChanged() ;
   void CreateSliders();
+  void DisableOSesDVFSandServiceDVFS();
   inline float GetCPUcoreFrequencyFromSliderValue() ;
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   inline float GetMultiplierFromSliderValue() ;
@@ -134,6 +149,7 @@ public:
   void OnChar( wxKeyEvent & event) ;
   void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
   void OnDecVoltage(wxCommandEvent & );
+  void OnFindLowestStableVoltageButton(wxCommandEvent & );
   void OnIncVoltage(wxCommandEvent & );
   void OnPreventVoltageAboveDefaultVoltageCheckbox(wxCommandEvent & ) ;
   void OnPreventVoltageBelowLowestStableVoltageCheckbox(wxCommandEvent & ) ;

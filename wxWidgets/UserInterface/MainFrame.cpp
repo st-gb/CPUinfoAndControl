@@ -753,10 +753,12 @@ void MainFrame::CreateServiceMenuItems()
   if( ServiceBase::CanStartService() )
   {
     p_wxmenuService->Append( ID_StartService , wxT("&start") ) ;
-    //Stopping a service needs the same? rights/ privileges as starting a
-    //service, so display the "stop" menu item, too.
-    p_wxmenuService->Append( ID_StopService , wxT("s&top") ) ;
   }
+  //Stopping a service can be done via Inter Process Communication. (Else if
+  //via Service Control manager then needs the same? rights/ privileges as
+  //starting a service).
+  p_wxmenuService->Append( ID_StopService , wxT("s&top") ) ;
+
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   p_wxmenuService->Append( ID_ConnectToService,
     wxT("connect...") );

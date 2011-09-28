@@ -412,6 +412,19 @@ void CPUcoreData::InterpolateDefaultVoltages()
     return 0.0 ;
   }
 
+  float CPUcoreData::GetNextVoltageAbove(float fVoltageInVolt)
+  {
+    WORD wArrayIndex = ::GetArrayIndexForClosestGreaterOrEqual(
+      m_arfAvailableVoltagesInVolt,
+      m_stdset_floatAvailableVoltagesInVolt.size(),
+      fVoltageInVolt);
+    if( wArrayIndex < m_stdset_floatAvailableVoltagesInVolt.size() - 1)
+    {
+        return m_arfAvailableVoltagesInVolt[wArrayIndex + 1];
+    }
+    return 0.0;
+  }
+
   //Releases memory that has something to do with the number of CPU cores.
   void CPUcoreData::PossiblyReleaseMemForCoreNumAffectedData()
   {

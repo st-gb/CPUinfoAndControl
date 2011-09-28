@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //from wxWidgets socket sample
 // Copyright:   (c) 1999 Guillermo Rodriguez Garcia
 // For compilers that support precompilation, includes "wx/wx.h".
@@ -26,7 +33,7 @@
 
 #include "wxServiceSocketClient.hpp"
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
-//GetStdString(const wxString & )
+//GetStdString(const wxString & ), getwxString(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 
 #ifdef _MSC_VER //if MicroSoft compiler
@@ -58,10 +65,10 @@ bool wxServiceSocketClient::AllBytesRead( void * p_vData, DWORD dwSize)
       p_vData //void * buffer
       , dwSize //wxUint32 nbytes
       ) ;
-    //http://biolpc22.york.ac.uk/wx/docs/html/wx/wx_wxsocketbase.html
-    // #wxsocketbaseread
+    wxUint32 wxui32LastCount = mp_wxsocketclient->LastCount();
+    //http://docs.wxwidgets.org/stable/wx_wxsocketbase.html#wxsocketbaseread:
     // "Use LastCount to verify the number of bytes actually read."
-    if( mp_wxsocketclient->LastCount() == dwSize )
+    if( wxui32LastCount == dwSize )
       return true ;
   }
   return false ;
@@ -69,7 +76,9 @@ bool wxServiceSocketClient::AllBytesRead( void * p_vData, DWORD dwSize)
 
 BYTE wxServiceSocketClient::ConnectToDataProvider(std::string & r_stdstrMessage)
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   wxIPV4address wxipv4addressServer ;
+
   wxipv4addressServer.Hostname(m_wxstrServerHostname);
   wxipv4addressServer.Service(m_usServerPortNumber);
 
@@ -79,18 +88,27 @@ BYTE wxServiceSocketClient::ConnectToDataProvider(std::string & r_stdstrMessage)
   //May be NULL.
   if( mp_wxsocketclient )
   {
+    bool bWait = false;
     if( mp_wxsocketclient->
       //http://docs.wxwidgets.org/trunk/classwx_socket_client.html
       // #581cdb757cce6020c8caac1ddd74a599:
       //"true if the connection is established and no error occurs."
+
+      //"If wait was false, and Connect returns false, you should still be
+      //prepared to handle the completion of this connection request, either
+      //with WaitOnConnect or by watching wxSOCKET_CONNECTION and
+      //wxSOCKET_LOST events.
       Connect(
         wxipv4addressServer ,
         //http://docs.wxwidgets.org/trunk/classwx_socket_client.html
         // #581cdb757cce6020c8caac1ddd74a599:
-        //"If wait is true, Connect() will wait until the connection completes."
+        //"If wait is true, Connect() will wait until the connection completes.
+        //Warning: This will block the GUI."
+
+        //bool wait = true
+        bWait
         //blocking mode == true
-        //false
-        true
+//        true
         )
       )
     {
@@ -98,9 +116,40 @@ BYTE wxServiceSocketClient::ConnectToDataProvider(std::string & r_stdstrMessage)
       return true ;
     }
     else
-      LOGN("The socket connection failed.")
+    {
+      if( bWait == true )
+        LOGN("The socket connection failed.")
+      else
+      {
+        bool bWaitOnConnectResult =
+          mp_wxsocketclient->WaitOnConnect(
+            //http://docs.wxwidgets.org/stable/wx_wxsocketclient.html#wxsocketclientwaitonconnect:
+            //"Number of seconds to wait. If -1, it will wait for the default
+            //timeout, as set with SetTimeout."
+  //          -1
+            10
+            );
+        LOGN( FULL_FUNC_NAME << "--WaitOnConnect(...) returned " <<
+          bWaitOnConnectResult)
+//        bWaitOnConnectResult = false;
+      }
+    }
+    bool bIsConnected = mp_wxsocketclient->IsConnected();
+    if(bIsConnected)
+      mp_wxsocketclient->SetTimeout(
+        //seconds
+        10);
+    return bIsConnected;
   }
-  return 0 ;
+  LOGN( FULL_FUNC_NAME << "--return 0")
+  return //0 ;
+    false;
+}
+
+void wxServiceSocketClient::Disconnect()
+{
+  if(mp_wxsocketclient)
+    mp_wxsocketclient->Close();
 }
 
 bool wxServiceSocketClient::GetResponse()
@@ -108,26 +157,31 @@ bool wxServiceSocketClient::GetResponse()
   LOGN("wxServiceSocketClient::GetResponse begin")
   if( m_arbyIPCdata )
     delete [] m_arbyIPCdata ;
-  m_arbyIPCdata = new BYTE[ m_dwIPCdataSizeInByte ] ;
-  if( m_arbyIPCdata )
-    //s.Append(_("wxSOCKET_INPUT\n"));
-    if( AllBytesRead( & m_dwIPCdataSizeInByte, 4 )
-        && AllBytesRead( & m_arbyIPCdata, m_dwIPCdataSizeInByte )
+  //s.Append(_("wxSOCKET_INPUT\n"));
+  if( AllBytesRead( & m_dwIPCdataSizeInByte, 4 ) )
+  {
+    m_arbyIPCdata = new BYTE[ m_dwIPCdataSizeInByte ] ;
+    if( m_arbyIPCdata && AllBytesRead( & m_arbyIPCdata, m_dwIPCdataSizeInByte )
       )
     {
       return true ;
     }
+  }
   return false ;
 }
 
 BYTE wxServiceSocketClient::Init()
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
 // Create the socket
   mp_wxsocketclient = new wxSocketClient();
 
   if( mp_wxsocketclient )
   {
     LOGN("Successfully created a socket client object.")
+    mp_wxsocketclient->SetTimeout(
+      //int seconds
+      10);
     // Setup the event handler and subscribe to most events
     mp_wxsocketclient->SetEventHandler( * this, SOCKET_ID);
 
@@ -149,27 +203,92 @@ BYTE wxServiceSocketClient::Init()
   //mp_wxsocketclient->WaitOnConnect(10);
 
   //if (mp_wxsocketclient->IsConnected())
+  LOGN( FULL_FUNC_NAME << "--return 1")
   return 1 ;
 }
 
 bool wxServiceSocketClient::IsConnected()
 {
   LOGN("wxServiceSocketClient::IsConnected begin")
+  bool bIsConnected = false;
   //May be NULL.
   if( mp_wxsocketclient )
-    return mp_wxsocketclient->IsConnected() ;
-  return false ;
+  {
+    bIsConnected = mp_wxsocketclient->IsConnected();
+//    return bIsConnected ;
+  }
+//  return false ;
+  LOGN("wxServiceSocketClient::IsConnected return" << bIsConnected)
+  return bIsConnected;
 }
 
 void wxServiceSocketClient::OnSocketEvent(wxSocketEvent & r_wxsocketevent )
 {
   LOGN("wxServiceSocketClient::OnSocketEvent begin")
-  switch( r_wxsocketevent.GetSocketEvent() )
+  enum wxSocketNotify e_wxsocketnotify = r_wxsocketevent.GetSocketEvent();
+  switch( e_wxsocketnotify )
   {
-    case wxSOCKET_INPUT      :
+    case wxSOCKET_INPUT:
+      {
       LOGN("wxSOCKET_INPUT")
-      GetResponse() ;
+//      GetResponse() ;
+      bool bAllBytesRead = false;
+      BYTE bProcessingIPCdata = false;
+
+      m_crit_secIPCdata.Enter();
+      bProcessingIPCdata = m_bProcessingIPCdata;
+//      m_bReadingIPCdata = true;
+      m_crit_secIPCdata.Leave();
+
+      if( bProcessingIPCdata != IPC_Client::ReadNextIPCdata )
+      {
+        DWORD dwIPCdataSizeInByte;
+        BYTE by;
+        bAllBytesRead = AllBytesRead( & dwIPCdataSizeInByte, 4 );
+        while( ! AllBytesRead(& by, 1) );
+      }
+      else
+      {
+        //Prevent accessing the array in another thread at the same time.
+        m_crit_secIPCdata.Enter();
+        if( m_dwIPCdataSizeInByte == 0 || m_bReadIPCdata )
+        {
+          if( m_arbyIPCdata )
+          {
+            delete [] m_arbyIPCdata;
+            m_arbyIPCdata = NULL;
+          }
+          bAllBytesRead = AllBytesRead( & m_dwIPCdataSizeInByte, 4 );
+          if( bAllBytesRead )
+          {
+            if( m_dwIPCdataSizeInByte < 10000 )
+            {
+              m_arbyIPCdata = new BYTE[ m_dwIPCdataSizeInByte ] ;
+              m_bReadIPCdata = false;
+            }
+            else
+            {
+              m_dwIPCdataSizeInByte += 0;
+//              BYTE by;
+//              while( ! AllBytesRead(& by, 1) );
+            }
+          }
+        }
+        else
+        {
+          if( m_arbyIPCdata)
+            bAllBytesRead = AllBytesRead( m_arbyIPCdata,
+              m_dwIPCdataSizeInByte );
+
+          //For the next input.
+  //        m_dwIPCdataSizeInByte = 0;
+          m_bReadIPCdata = true;
+          m_bProcessingIPCdata = IPC_Client::IPCdataNotProcessed;
+        }
+        m_crit_secIPCdata.Leave();
+      }
 //      mp_wxsocketclient->LastCount() ;
+      }
       break;
     case wxSOCKET_LOST       : 
       LOGN("wxSOCKET_LOST")
@@ -194,8 +313,36 @@ BYTE wxServiceSocketClient::SendCommandAndGetResponse(BYTE byMessage)
   {
     mp_wxsocketclient->Write( & byMessage , 1 ) ;
     return GetResponse() ;
+//      if( m_arbyIPCdata )
+//        return IPC
   }
   return 1 ;
+}
+
+BYTE wxServiceSocketClient::SendCommandAndGetResponse(IPC_data & r_ipc_data)
+{
+  if( mp_wxsocketclient && IsConnected() )
+  {
+    BYTE bProcessingIPCdata;
+    m_crit_secIPCdata.Enter();
+    bProcessingIPCdata = m_bProcessingIPCdata;
+    m_crit_secIPCdata.Leave();
+    if( bProcessingIPCdata == IPC_Client:://IPCdataProcessed
+        ReadNextIPCdata)
+      mp_wxsocketclient->Write( & r_ipc_data.m_byCommand, 1 ) ;
+//    return GetResponse() ;
+    if( m_arbyIPCdata && m_bReadIPCdata)
+      return IPC_Client:://GetsResponseNonBlocking;
+        GotResponse;
+  }
+  return IPC_Client::FailedToGetResponse;
+}
+
+void wxServiceSocketClient::SetServerHostname(const char * c_p_ch )
+{
+//  std::string std_strServerHostname(c_p_ch);
+  m_wxstrServerHostname = //getwxString(std_strServerHostname);
+    GetwxString_Inline(c_p_ch);
 }
 
 BYTE wxServiceSocketClient::SendMessage(BYTE by)
@@ -242,6 +389,7 @@ void wxServiceSocketClient::GetServerPathAndPort(
 wxServiceSocketClient::wxServiceSocketClient( const wxString & cr_wxstrURL )
   : mp_wxsocketclient (NULL)
 {
+  InitializeMemberVariables();
   GetServerPathAndPort(cr_wxstrURL) ;
 }
 
@@ -253,6 +401,7 @@ wxServiceSocketClient::wxServiceSocketClient(
   , m_wxstrServerHostname( r_strHostname.c_str() ,wxConvLocal )
 {
   m_usServerPortNumber = wPort ;
+  InitializeMemberVariables();
 }
 
 wxServiceSocketClient::~wxServiceSocketClient()
