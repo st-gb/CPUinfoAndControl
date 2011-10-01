@@ -107,6 +107,9 @@ void VoltageTooLow()
       "multiplier %f"), fVoltageInVolt, fMultiplier
       )
     );
+  wxGetApp().mp_frame->RedrawEverything() ;
+  wxGetApp().mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
+
 }
 
 wxX86InfoAndControlApp::wxX86InfoAndControlApp()
@@ -2013,6 +2016,7 @@ void wxX86InfoAndControlApp::SetAsMinimumVoltage(
   //        )
   //    ) ;
   VoltageAndFreq voltageandfreq( fVoltageInVolt , wFrequencyInMHz) ;
+  m_model.m_cpucoredata.m_wxcriticalsection.Enter();
   std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
     m_model.m_cpucoredata.m_stdsetvoltageandfreqLowestStable ;
   std::set<VoltageAndFreq>::iterator iter =
@@ -2028,6 +2032,7 @@ void wxX86InfoAndControlApp::SetAsMinimumVoltage(
 //            )
         voltageandfreq
       ) ;
+    m_model.m_cpucoredata.m_wxcriticalsection.Leave();
 }
 
 void wxX86InfoAndControlApp::SetAsWantedVoltage(
@@ -2039,11 +2044,11 @@ void wxX86InfoAndControlApp::SetAsWantedVoltage(
   //          , wFrequencyInMHz
   //          )
   //      ) ;
-  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
-      m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted ;
-
   VoltageAndFreq voltageandfreq( fVoltageInVolt , wFrequencyInMHz) ;
 
+  m_model.m_cpucoredata.m_wxcriticalsection.Enter();
+  std::set<VoltageAndFreq> & r_stdsetvoltageandfreq =
+      m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted ;
   std::set<VoltageAndFreq>::iterator iter =
       r_stdsetvoltageandfreq.find( voltageandfreq ) ;
   //VoltageAndFreq exists in set yet.
@@ -2057,6 +2062,7 @@ void wxX86InfoAndControlApp::SetAsWantedVoltage(
 //              )
         voltageandfreq
       ) ;
+  m_model.m_cpucoredata.m_wxcriticalsection.Leave();
 }
 
 void wxX86InfoAndControlApp::SetCPUcontroller( 

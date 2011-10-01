@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * IPC_data.hpp
  *
@@ -7,6 +14,13 @@
 
 #ifndef IPC_DATA_HPP_
 #define IPC_DATA_HPP_
+
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+
+#ifndef NULL
+  #define NULL 0
+#endif
 
 class IPC_data
 {

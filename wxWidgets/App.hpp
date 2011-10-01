@@ -125,7 +125,9 @@ private:
 //#endif //#ifdef COMPILE_WITH_VISTA_POWERPROFILE_ACCESS
   //I_CPUcontroller * mp_cpucontroller ;
   //e.g. point to console or GUI.
+public:
   MainFrame * mp_frame ;
+private:
 //  UserInterface * mp_userinterface ;
   #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;

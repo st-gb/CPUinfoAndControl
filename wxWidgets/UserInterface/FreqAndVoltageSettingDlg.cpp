@@ -1084,12 +1084,14 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   }
   if( bSetToolTip )
   {
-    mp_wxbuttonApply->Enable(false) ;
-    //TODO tooltip is not permanent
-    mp_wxbuttonApply->SetToolTip( m_wxstrWriteVoltageAndMultiplierToolTip ) ;
+    //If disabled then no tooltip is visible.
+    //mp_wxbuttonApply->Enable(false) ;
+
+    DisableWritingVoltageAndMultiplier(m_wxstrWriteVoltageAndMultiplierToolTip);
   }
   else
   {
+    m_bAllowWritingVoltageAndFrequency = true;
     m_wxstrWriteVoltageAndMultiplierToolTip = wxT(">>w<<rite/ set (both) the "
       "configured multiplier/ frequency AND voltage") ;
     mp_wxbuttonApply->SetToolTip( m_wxstrWriteVoltageAndMultiplierToolTip ) ;
@@ -1563,14 +1565,8 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
         RemoveAttention(mp_wxstatictextVoltageInVolt);
         //The button might have been disabled (e.g. because of overvoltage
         //protection) .
-        mp_wxbuttonApply->Enable() ;
-        //Remove a possibble tooltip.
-        mp_wxbuttonApply->SetToolTip(
-          //We need a _T() macro (wide char-> L"", char->"") for EACH
-          //line to make it compatible between char and wide char.
-  //        _T("")
-          m_wxstrWriteVoltageAndMultiplierToolTip
-          );
+        EnableWritingVoltageAndMultiplier(
+          m_wxstrWriteVoltageAndMultiplierToolTip);
 //      }
 //      else
 //      {
@@ -1598,7 +1594,13 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
         "the frequency is 0 (maybe because the reference clock is 0).\n"
         "This may be the case because the GUI is connected to the service.") ;
 //      mp_wxbuttonApply->Enable() ;
-      mp_wxbuttonApply->Enable(false) ;
+
+      //If disabled then no tooltip is visible.
+//      mp_wxbuttonApply->Enable(false) ;
+      DisableWritingVoltageAndMultiplier(
+        //m_wxstrWriteVoltageAndMultiplierToolTip
+        wxstrToolTip);
+
       //Showing a tool tip is not possible while the button is disabled (at least
       //under Windows).
 //      mp_wxbuttonApply->SetToolTip( wxT("This button") + wxstrToolTip) ;
@@ -1614,9 +1616,14 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
       "or uncheck "
       "1 or all checkboxes that prevent the voltage from being outside the "
       "safe range.") ;
+
     //Showing a tool tip is not possible while the button is disabled (at least
     //under Windows).
-    mp_wxbuttonApply->Enable(false) ;
+//    mp_wxbuttonApply->Enable(false) ;
+    DisableWritingVoltageAndMultiplier(
+      //m_wxstrWriteVoltageAndMultiplierToolTip
+      wxstrToolTip);
+
 //    mp_wxbuttonApply->SetToolTip( wxT("This button ") + wxstrToolTip ) ;
     SetAttention( mp_wxstatictextVoltageInVolt , wxT("The \"") +
       mp_wxbuttonApply->GetLabel() + wxT("\" button") +wxstrToolTip );
@@ -2143,7 +2150,7 @@ void FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton(
     }
     r_cpucoredata.m_wxcriticalsection.Leave() ;
     mp_mainframe->RedrawEverything() ;
-    mp_mainframe->Refresh() ;
+    mp_mainframe->Refresh() ; //force paint event/ call of "OnPaint()".
   }
   else
     ::wxMessageBox(wxT("the voltage can not be set because the reference "
@@ -2313,12 +2320,21 @@ void FreqAndVoltageSettingDlg::OnActivate(wxActivateEvent & r_activateevent )
 void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event) 
   r_wxcommandevent )
 {
-//  int i = 0 ;
-//  BYTE byPstateNumber = 0 ;
-//  byPstateNumber = mp_wxsliderCPUcorePstate->GetValue() ;
-  float fVoltageInVolt = GetVoltageInVoltFromSliderValue() ;
-  PossiblyWriteVoltageAndMultiplier_Inline(fVoltageInVolt) ;
-  //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ; 
+  if( m_bAllowWritingVoltageAndFrequency)
+  {
+  //  int i = 0 ;
+  //  BYTE byPstateNumber = 0 ;
+  //  byPstateNumber = mp_wxsliderCPUcorePstate->GetValue() ;
+    float fVoltageInVolt = GetVoltageInVoltFromSliderValue() ;
+    PossiblyWriteVoltageAndMultiplier_Inline(fVoltageInVolt) ;
+    //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ;
+  }
+  else
+  {
+    ::wxMessageBox( wxT("Writing the voltage and/or multiplier is disabled.\n"
+        "To enable it unchecking the "
+        "\"prevent voltage ...\" checkboxes may help") );
+  }
 }
 
 #include <preprocessor_macros/thread_proc_calling_convention.h>
@@ -2370,7 +2386,8 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
     float fMultiplierFromSliderValue = p_freqandvoltagesettingdlg->
       GetMultiplierFromSliderValue();
 
-    for( -- wArrayIndex; wArrayIndex != MAXWORD &&
+    for( //-- wArrayIndex
+      ; wArrayIndex != MAXWORD &&
       ! wxGetApp().m_vbExitFindLowestStableVoltage; -- wArrayIndex )
     {
         fVoltageInVolt = p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
@@ -2467,7 +2484,7 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
   }
   else
   {
-    ::wxMessageBox(wxT("Prime95 DLL acces not inited"));
+    ::wxMessageBox(wxT("Prime95 DLL access not initialized"));
   }
 }
 
@@ -2557,7 +2574,7 @@ void FreqAndVoltageSettingDlg::RemoveAttention(wxWindow * p_wxwindow)
   //p_wxwindow->ClearBackground();
   //p_wxwindow->Refresh();
   //p_wxwindow->Update();
-  p_wxwindow->SetToolTip(_T(""));
+  p_wxwindow->SetToolTip( wxT("") );
 }
 
 void FreqAndVoltageSettingDlg::SetAttention(

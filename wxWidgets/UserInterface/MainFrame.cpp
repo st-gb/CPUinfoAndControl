@@ -4109,7 +4109,16 @@ void MainFrame::RedrawEverything()
 //        DrawAllPossibleOperatingPoints( m_wxmemorydcStatic ) ;
         DrawPerformanceStatesCrosses( m_wxmemorydcStatic , 
           mp_cpucoredata->m_stdsetvoltageandfreqDefault 
+          , wxBLACK ) ;
+        DrawPerformanceStatesCrosses( m_wxmemorydcStatic ,
+          mp_cpucoredata->m_stdsetvoltageandfreqWanted
+          //The wanted voltage may be above the default voltage because the
+          //default voltage may be too low (e.g. for AMD Turion X2 Ultra
+          //2400 MHz)
           , wxGREEN ) ;
+        DrawPerformanceStatesCrosses( m_wxmemorydcStatic ,
+          mp_cpucoredata->m_stdsetvoltageandfreqLowestStable
+          , wxRED ) ;
       }
     } //if( bAllowCPUcontrollerAccess)
     //m_wxcriticalsectionCPUctlAccess.Leave() ;
