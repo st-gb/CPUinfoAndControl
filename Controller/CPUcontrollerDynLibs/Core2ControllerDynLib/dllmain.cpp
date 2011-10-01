@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
 //Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany.
 //It must not be used commercially without the permission of Trilobyte
@@ -20,7 +27,7 @@
 AssignPointersToExportedExeMSRfunctions.h>
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
 #ifdef _DEBUG
-  #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 //#include <Windows/GetNumberOfLogicalCPUs.h>
 //  #include <preprocessor_helper_macros.h>  //for BITMASK_FOR_LOWMOST_5BIT
@@ -40,7 +47,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 //BYTE g_byValue1 ;
 
 #ifdef _DEBUG
-Logger g_logger ;
+//Logger g_logger ;
 #endif
 
 //  #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000

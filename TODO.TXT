@@ -1,6 +1,113 @@
+-beim Suchen der niedrigsten stabilen Spannung sollte darauf geachtet werden, dass der Prime95-thread eine hohe CPU-Auslastung hat. 
+Ansonsten schlägt Prime95 möglicherweise erst zu spät an (bei Pentium M: 1.116V höchste instabile Spannung, als noch ein anderer Prozess es hohe CPU-Last hatte,
+sonst 1.32 V als höchste instabile Spannung.
+
 
 Seide soll Den x86I&C-Sourcecode auf dem Stick loeschen, da unverschlüsselt
 
+-beim Beenden stürzte das Prog ab bei AmD Griffin, keine Konfig-Datei
+-Tooltip auf dem "write p-state" Button anzuzeigen
+-Hilfe-Button anzeigen
+-wenn von GUI aus "start service" : "Error starting the service:" (ohne Ursache als Text)
+
+-Griffin usage getter DLL konnte nicht geladen werden (ist anscheinend Voreinstellung)
+-der Dienst stellte keinen hoeheren Multiplikator ein bei 100% CPU-Last
+ -lag vllt. daran, dass als Spannung 0 Volt war in der Konfig-Datei für mehrere Frequenzen
+ -lag vllt. daran, dass KEIN "voltage_in_Volt"-Attribut für andere Frequenzen existierte
+
+- SIGSEV (probable cause: 
+  because no "m_x86iandc_threadIPC.WaitForTermination()" in 
+   "void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()" 
+   when "COMPILE_WITH_LOG" not defined ) :
+  "Thread [1] (Suspended)	
+	16 std::ostream::sentry::sentry() c:\mingw\include\c++\3.4.5\iostream:77 0x0068f928	
+	15 std::ostream::operator<<() c:\mingw\include\c++\3.4.5\iostream:77 0x0069108c	
+	14 to_stdstring<unsigned short>() T:\SourceCodeManagement\common_sourcecode\Controller\character_string\stdstring_format.hpp:45 0x006228d7	
+	13 MainController::GetPstatesDirPath() T:\SourceCodeManagement\X86Info_and_Control\Controller\MainController.cpp:239 0x004385ce	
+	12 MainFrame::OnClose() T:\SourceCodeManagement\X86Info_and_Control\wxWidgets\UserInterface\MainFrame.cpp:1074 0x0040a2af	
+	11 wxAppConsole::HandleEvent() c:\wxWidgets-2.8.10\src\common\appbase.cpp:322 0x00589f44	
+	10 wxEvtHandler::ProcessEventIfMatches() c:\wxWidgets-2.8.10\src\common\event.cpp:1231 0x00580247	
+	9 wxEventHashTable::HandleEvent() c:\wxWidgets-2.8.10\src\common\event.cpp:906 0x0057eefc	
+	8 wxEvtHandler::ProcessEvent() c:\wxWidgets-2.8.10\src\common\event.cpp:1293 0x00580427	
+	7 wxWindowBase::Close() c:\wxWidgets-2.8.10\src\common\wincmn.cpp:428 0x0045134b	
+	6 wxFrame::MSWWindowProc() c:\wxWidgets-2.8.10\src\msw\frame.cpp:1032 0x004a02b1	
+	5 wxWndProc() c:\wxWidgets-2.8.10\src\msw\window.cpp:2618 0x004690fc	
+	4 <symbol is not available> 0x76556238	
+	3 <symbol is not available> 0x000e1234	
+	2 <symbol is not available> 0x00000010	
+	1 <symbol is not available> 0x00000000	"
+	
+	"Thread [2] (Suspended)	
+	8 <symbol is not available> 0x778c00fd	
+	7 <symbol is not available> 0x778c00fd	
+	6 <symbol is not available> 0x77901dab	
+	5 <symbol is not available> 0x00000003	
+	4 <symbol is not available> 0x03911c78	
+	3 <symbol is not available> 0x00000001	
+	2 <symbol is not available> 0x00000001	
+	1 <symbol is not available> 0x00000000	"
+
+  "Thread [3] (Suspended: Signal 'SIGSEGV' received. Description: Segmentation fault.)	
+	12 <symbol is not available> 0x035438f3	
+	11 <symbol is not available> 0x0635fdb8	
+	10 wxThreadInternal::DoThreadOnExit() c:\wxWidgets-2.8.10\src\msw\thread.cpp:503 0x005813bb	
+	9 wxScopeGuardImpl1<void (*)(wxThread*), wxThread*>::Execute() c:\wxWidgets-2.8.10\include\wx\scopeguard.h:173 0x0064369f	
+	8 wxPrivate::OnScopeExit<wxScopeGuardImpl1<void (*)(wxThread*), wxThread*> >() c:\wxWidgets-2.8.10\include\wx\scopeguard.h:73 0x00666e6e	
+	7 wxScopeGuardImpl1<void (*)(wxThread*), wxThread*>::~wxScopeGuardImpl1() c:\wxWidgets-2.8.10\include\wx\scopeguard.h:171 0x0064373f	
+	6 wxThreadInternal::DoThreadStart() c:\wxWidgets-2.8.10\src\msw\thread.cpp:529 0x005815af	
+	5 wxThreadInternal::WinThreadStart() c:\wxWidgets-2.8.10\src\msw\thread.cpp:552 0x00581646	
+	4 <symbol is not available> 0x76c31287	
+	3 <symbol is not available> 0x035424c8	
+	2 <symbol is not available> 0x58e43800	
+	1 <symbol is not available> 0x00000000	"
+
+- SIGILL (illegal instruction) when closing the GUI:
+  "Thread [6] (Suspended: Signal 'SIGILL' received. Description: Illegal instruction.)	
+    11 <symbol is not available> 0x054d4530	
+    10 wxThreadInternal::DoThreadOnExit() c:\wxWidgets-2.8.10\src\msw\thread.cpp:503 0x005810eb	
+    9 wxScopeGuardImpl1<void (*)(wxThread*), wxThread*>::Execute() c:\wxWidgets-2.8.10\include\wx\scopeguard.h:173 0x006433cf	
+    8 wxPrivate::OnScopeExit<wxScopeGuardImpl1<void (*)(wxThread*), wxThread*> >() c:\wxWidgets-2.8.10\include\wx\scopeguard.h:73 0x00666b9e	
+    7 wxScopeGuardImpl1<void (*)(wxThread*), wxThread*>::~wxScopeGuardImpl1() c:\wxWidgets-2.8.10\include\wx\scopeguard.h:171 0x0064346f	
+    6 wxThreadInternal::DoThreadStart() c:\wxWidgets-2.8.10\src\msw\thread.cpp:529 0x005812df	
+    5 wxThreadInternal::WinThreadStart() c:\wxWidgets-2.8.10\src\msw\thread.cpp:552 0x00581376	
+    4 <symbol is not available> 0x76c31287	
+    3 <symbol is not available> 0x054d45f8	
+    2 <symbol is not available> 0x6c844145	
+    1 <symbol is not available> 0x00000000	"
+    
+    "Thread [1] (Suspended)	
+    15 std::allocator<char>::allocator() c:\mingw\include\c++\3.4.5\iostream:77 0x00688efc	
+    14 I_CPUaccess::GetVendorID() T:\SourceCodeManagement\X86Info_and_Control\Controller\I_CPUaccess.cpp:301 0x00439791	
+    13 MainController::GetPstatesDirPath() T:\SourceCodeManagement\X86Info_and_Control\Controller\MainController.cpp:218 0x00438293	
+    12 MainFrame::OnClose() T:\SourceCodeManagement\X86Info_and_Control\wxWidgets\UserInterface\MainFrame.cpp:1074 0x0040a2af	
+    11 wxAppConsole::HandleEvent() c:\wxWidgets-2.8.10\src\common\appbase.cpp:322 0x00589c74	
+    10 wxEvtHandler::ProcessEventIfMatches() c:\wxWidgets-2.8.10\src\common\event.cpp:1231 0x0057ff77	
+    9 wxEventHashTable::HandleEvent() c:\wxWidgets-2.8.10\src\common\event.cpp:906 0x0057ec2c	
+    8 wxEvtHandler::ProcessEvent() c:\wxWidgets-2.8.10\src\common\event.cpp:1293 0x00580157	
+    7 wxWindowBase::Close() c:\wxWidgets-2.8.10\src\common\wincmn.cpp:428 0x0045107b	
+    6 wxFrame::MSWWindowProc() c:\wxWidgets-2.8.10\src\msw\frame.cpp:1032 0x0049ffe1	
+    5 wxWndProc() c:\wxWidgets-2.8.10\src\msw\window.cpp:2618 0x00468e2c	
+    4 <symbol is not available> 0x76556238	
+    3 <symbol is not available> 0x0010055a	
+    2 <symbol is not available> 0x00000010	
+    1 <symbol is not available> 0x00000000	"
+    
+    "Thread [2] (Suspended)	
+    8 <symbol is not available> 0x778c00fd	
+    7 <symbol is not available> 0x778c00fd	
+    6 <symbol is not available> 0x77901dab	
+    5 <symbol is not available> 0x00000003	
+    4 <symbol is not available> 0x03582558	
+    3 <symbol is not available> 0x00000001	
+    2 <symbol is not available> 0x00000001	
+    1 <symbol is not available> 0x00000000	"
+
+
+
+- when the service is stopped it takes a while until "values from service" is shown
+ no more in the GUI
+- ordentliche Fehlermeldung der Ursache/ Lösungsmöglichkeit wenn nicht mit dem Dienst verbunden werden konnte
+- GUI asks again if a changed p-state config was already written
 - crash of the GUI after resume from standy (the voltage and freq settings dialog was open)
 - bei Pentium M DLL: nur jede 2te Spannung konnte über die GUI eingestellt werden
 - "set as wanted voltage" hat nicht funktioniert -> es stand nichts in der p-state.xml

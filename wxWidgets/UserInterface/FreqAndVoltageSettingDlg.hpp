@@ -32,6 +32,7 @@ class FreqAndVoltageSettingDlg
   : public wxDialog
 {
 private:
+  bool m_bAllowWritingVoltageAndFrequency;
   //The core ID is needed for setting p-state.
   BYTE m_byCoreID ;
   BYTE m_byPstateID ;
@@ -136,6 +137,29 @@ public:
   inline void CPUcoreVoltageChanged() ;
   void CreateSliders();
   void DisableOSesDVFSandServiceDVFS();
+  void DisableWritingVoltageAndMultiplier(const wxString & c_r_wxstrToolTip)
+  {
+    m_bAllowWritingVoltageAndFrequency = false;
+
+    //TODO tooltip is not permanent
+  //    mp_wxbuttonApply->SetToolTip( m_wxstrWriteVoltageAndMultiplierToolTip ) ;
+    SetAttention(mp_wxbuttonApply, c_r_wxstrToolTip);
+  }
+  void EnableWritingVoltageAndMultiplier(const wxString & c_r_wxstrToolTip)
+  {
+    m_bAllowWritingVoltageAndFrequency = true;
+    mp_wxbuttonApply->Enable() ;
+    //TODO tooltip is not permanent
+  //    mp_wxbuttonApply->SetToolTip( m_wxstrWriteVoltageAndMultiplierToolTip ) ;
+    RemoveAttention(mp_wxbuttonApply);
+    //Remove a possible tooltip.
+    mp_wxbuttonApply->SetToolTip(
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+//        _T("")
+        c_r_wxstrToolTip
+      );
+  }
   inline float GetCPUcoreFrequencyFromSliderValue() ;
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   inline float GetMultiplierFromSliderValue() ;
