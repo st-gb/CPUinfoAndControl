@@ -92,14 +92,20 @@ class I_CPUcontroller ;
 
 typedef void (* voidFunctionPointer)();
 
-typedef voidFunctionPointer StopTortureTestFunctionPointer;
+typedef voidFunctionPointer StopInstableVoltageDetectionFunctionPointer;
 
 struct external_caller
 {
   voidFunctionPointer m_pfnVoltageTooLow;
 };
 
-typedef void (* StartTortureTestFunctionPointer)(unsigned char, struct external_caller *);
+typedef void (* StartInstableVoltageDetectionFunctionPointer)(unsigned char,
+    struct external_caller *);
+
+#define START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME \
+  "StartInstableCPUcoreVoltageDetection"
+#define STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME \
+  "StopInstableCPUcoreVoltageDetection"
 
 class wxX86InfoAndControlApp
   : public wxApp
@@ -133,8 +139,8 @@ private:
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
 public:
   HMODULE m_hmodulePrime95DynLib;
-  StartTortureTestFunctionPointer m_pfnStartTortureTest;
-  StopTortureTestFunctionPointer m_pfnStopTortureTest;
+  StartInstableVoltageDetectionFunctionPointer m_pfnStartInstableCPUcoreVoltageDetection;
+  StopInstableVoltageDetectionFunctionPointer m_pfnStopInstableCPUcoreVoltageDetection;
   struct external_caller m_external_caller;
   //http://forums.wxwidgets.org/viewtopic.php?t=4824:
   wxMutex m_wxmutexFindLowestStableVoltage;
@@ -269,7 +275,7 @@ public:
     std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName,
     uint16_t & r_ui16ActivePowerSchemeIndex
     );
-  void InitPrime95DynLibAccess();
+  void InitUnstableVoltageDetectionDynLibAccess();
   bool SetPowerSchemeViaIPC(
     const std::wstring & r_std_wstrPowerSchemeName);
   BYTE GetConfigDataViaInterProcessCommunication() ;

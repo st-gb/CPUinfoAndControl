@@ -24,6 +24,8 @@
 #include <algorithms/binary_search/binary_search.cpp>
 #include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
 #include <Controller/CPU-related/I_CPUcontroller.hpp>//class I_CPUcontroller
+//unsigned long int SetThreadAffinityMask(DWORD dwThreadAffinityMask)
+#include <Controller/SetThreadAffinityMask.h>
 //DISable warning, from
 //http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
 // : "I believe passing -Wno-write-strings to gcc will suppress this warning."
@@ -2339,13 +2341,83 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
 
 #include <preprocessor_macros/thread_proc_calling_convention.h>
 
-DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
+void SetThreadAffinityMask()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+#ifdef _WIN32
+  DWORD dwProcessAffinityMask;
+  DWORD dwSystemAffinityMask;
+  DWORD dwThreadAffinityMask = 1;
+  //http://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx:
+  //"A process affinity mask is a bit vector in which each bit represents the
+  //processors that a process is allowed to run on. A system affinity mask is
+  //a bit vector in which each bit represents the processors that are
+  //configured into a system."
+  ::GetProcessAffinityMask(
+    ::GetCurrentThread(),
+    & dwProcessAffinityMask //_out  PDWORD_PTR lpProcessAffinityMask
+    , & dwSystemAffinityMask // __out  PDWORD_PTR lpSystemAffinityMask
+    );
+#endif
+  for( BYTE byCPUcoreIndex = 0; byCPUcoreIndex < sizeof(DWORD_PTR) * 8 ;
+      ++ byCPUcoreIndex)
+  {
+    //This process may run on core "byCPUcoreIndex".
+    if( ( (dwProcessAffinityMask >> byCPUcoreIndex) & 1) == 1)
+    {
+      dwThreadAffinityMask = (1 << byCPUcoreIndex);
+      break;
+    }
+  }
+  //Must "pin" this thread to a specific CPU core. Else it usally is being
+  //executed on different CPU cores and the CPU load does not reach 100%.
+  //TODO: if this _process_ does not have affinity to core 0 (e.g. when changed
+  //in task manager), the call fails?!
+  ::SetThreadAffinityMask(//1
+      dwThreadAffinityMask);
+}
+
+DWORD THREAD_PROC_CALLING_CONVENTION
+  StartInstableCPUcoreVoltageDetectionInDLL(void * p_v )
+{
   FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
     (FreqAndVoltageSettingDlg *) p_v;
   if( p_freqandvoltagesettingdlg)
   {
+    LOGN( FULL_FUNC_NAME << "--before setting thread affinity mask"
+        //" to CPU core 0"
+        )
+    SetThreadAffinityMask();
+    //GetThreadAffinityMask();
+    LOGN( FULL_FUNC_NAME << "--after setting thread affinity mask"
+        //" to CPU core 0"
+        )
+
+    LOGN( FULL_FUNC_NAME << "--before calling the DynLib's \""
+      << START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME "\" function")
+    (* wxGetApp().m_pfnStartInstableCPUcoreVoltageDetection)(
+      p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.m_byNumberOfCPUCores,
+       & wxGetApp().m_external_caller);
+    LOGN( FULL_FUNC_NAME << "--after calling the DynLib's \""
+      << START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME << "\" function")
+    return 0;
+  }
+  return 1;
+}
+
+DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+
+  FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
+    (FreqAndVoltageSettingDlg *) p_v;
+  if( p_freqandvoltagesettingdlg)
+  {
+    x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage;
+
+    m_x86iandc_threadFindLowestStableVoltage.start(
+        StartInstableCPUcoreVoltageDetectionInDLL ,
+        p_freqandvoltagesettingdlg ) ;
+
     float fVoltageInVolt = p_freqandvoltagesettingdlg->
       GetVoltageInVoltFromSliderValue() ;
     p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS();
@@ -2430,20 +2502,23 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
     }
     p_freqandvoltagesettingdlg->m_p_wxbuttonFindLowestStableVoltage->SetLabel(
       wxT("find lowest stable voltage") );
+    LOGN( FULL_FUNC_NAME << "--return 0")
+    return 0;
   }
-  LOGN( FULL_FUNC_NAME << "--return 0")
-  return 0;
+  LOGN( FULL_FUNC_NAME << "--return 1")
+  return 1;
 }
 
 void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
     wxCommandEvent & //WXUNUSED(event)
     r_wxcommandevent )
 {
-  wxGetApp().InitPrime95DynLibAccess();
+  wxGetApp().InitUnstableVoltageDetectionDynLibAccess();
 
   if( wxGetApp().m_hmodulePrime95DynLib )
   {
-    if( wxGetApp().m_pfnStartTortureTest && wxGetApp().m_pfnStopTortureTest)
+    if( wxGetApp().m_pfnStartInstableCPUcoreVoltageDetection && wxGetApp().
+        m_pfnStopInstableCPUcoreVoltageDetection)
     {
        DWORD dwExitCode;
       ::GetExitCodeThread(wxGetApp().m_x86iandc_threadFindLowestStableVoltage.
@@ -2459,9 +2534,12 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
         )
       {
         LOGN( FULL_FUNC_NAME << "--should stop the find lowest stable voltage thread")
-        LOGN( FULL_FUNC_NAME << "--before  calling \"StopTortureTest\"")
-        (* wxGetApp().m_pfnStopTortureTest)();
-        LOGN( FULL_FUNC_NAME << "--after calling \"StopTortureTest\"")
+
+        LOGN( FULL_FUNC_NAME << "--before  calling \""
+            << STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME << "\"" )
+        (* wxGetApp().m_pfnStopInstableCPUcoreVoltageDetection)();
+        LOGN( FULL_FUNC_NAME << "--after calling \""
+          << STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME << "\"" )
 
         wxGetApp().ExitFindLowestStableVoltageThread();
       }
@@ -2470,21 +2548,18 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
         LOGN( FULL_FUNC_NAME << "--should start the find lowest stable "
           "voltage thread")
         wxGetApp().m_vbExitFindLowestStableVoltage = false;
-        (* wxGetApp().m_pfnStartTortureTest)( mp_model->m_cpucoredata.
-            m_byNumberOfCPUCores,
-            & wxGetApp().m_external_caller);
 
         wxGetApp().m_x86iandc_threadFindLowestStableVoltage.start(
           FindLowestStableVoltage , this ) ;
       }
       //FindLowestStableVoltage();
       //Sleep(10000);
-      //(* wxGetApp().m_pfnStopTortureTest)();
+      //(* wxGetApp().m_pfnStopInstableCPUcoreVoltageDetection)();
     }
   }
   else
   {
-    ::wxMessageBox(wxT("Prime95 DLL access not initialized"));
+    ::wxMessageBox( wxT("unstable volt detect DLL access not initialized") );
   }
 }
 

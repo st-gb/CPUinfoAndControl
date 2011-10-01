@@ -49,6 +49,8 @@ GetFilenameWithoutExtension.hpp>
 //getwxString(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
+//class wxTextControlDialog
+#include <wxWidgets/UserInterface/wxTextControlDialog.hpp>
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
 #endif
@@ -1196,34 +1198,79 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
 
 }
 
-void wxX86InfoAndControlApp::InitPrime95DynLibAccess()
+void wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 {
   LOGN( FULL_FUNC_NAME << " --begin")
+  LPTSTR lptstrUnstableVoltageDetectionDynLib = _T(//"Prime95.DLL"
+    //"UnstableVoltageDetection.dll"
+      "InstableCPUcoreVoltageDetection.dll"
+      );
   if(m_hmodulePrime95DynLib == NULL)
-    m_hmodulePrime95DynLib = ::LoadLibrary( _T("Prime95.DLL") );
+    m_hmodulePrime95DynLib = ::LoadLibrary(
+      lptstrUnstableVoltageDetectionDynLib );
+  std::string std_strUnstableVoltageDetectionDynLib = GetStdString_Inline(
+    GetStdTstring_Inline(lptstrUnstableVoltageDetectionDynLib) );
   if( m_hmodulePrime95DynLib != NULL)
   {
-    LOGN(FULL_FUNC_NAME << "--Successfully loaded Prime95 DLL")
+    LOGN(FULL_FUNC_NAME << "--Successfully loaded \"" <<
+      std_strUnstableVoltageDetectionDynLib << "\"")
 
-    m_pfnStartTortureTest =
-      (StartTortureTestFunctionPointer)
+    m_pfnStartInstableCPUcoreVoltageDetection =
+      (StartInstableVoltageDetectionFunctionPointer)
       ::GetProcAddress(
         m_hmodulePrime95DynLib, //_T(
-        "TortureTest"
+        //"TortureTest"
+        START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
         //)
         );
-    LOGN( FULL_FUNC_NAME <<  "--StartTortureTest function pointer: "
-      << (void *) m_pfnStartTortureTest)
-    m_pfnStopTortureTest =
-      (StopTortureTestFunctionPointer) ::GetProcAddress(
+    if( ! m_pfnStartInstableCPUcoreVoltageDetection)
+    {
+      std::wstring std_wstrMessage = L"assigning function \"";
+      std_wstrMessage +=
+          _T(START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME);
+      std_wstrMessage += L"\" failed.";
+      MessageWithTimeStamp( std_wstrMessage);
+    }
+
+    LOGN( FULL_FUNC_NAME <<  "--\"" <<
+      START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
+      << "\" function pointer: "
+      << (void *) m_pfnStartInstableCPUcoreVoltageDetection)
+    m_pfnStopInstableCPUcoreVoltageDetection =
+      (StopInstableVoltageDetectionFunctionPointer) ::GetProcAddress(
         m_hmodulePrime95DynLib, //_T(
-        "StopTortureTest"//)
+//        "StopTortureTest"//)
+        //"StopInstableVoltageDetection"
+        STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
         );
-    LOGN(FULL_FUNC_NAME << "--StopTortureTest function pointer: "
-      << (void *) m_pfnStopTortureTest )
+    if( ! m_pfnStopInstableCPUcoreVoltageDetection)
+    {
+      std::wstring std_wstrMessage = L"assigning function \"";
+      std_wstrMessage +=
+          _T(STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME);
+      std_wstrMessage += L"\" failed.";
+      MessageWithTimeStamp( std_wstrMessage);
+    }
+    LOGN(FULL_FUNC_NAME << "--\"" <<
+      STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
+      << "\" function pointer: "
+      << (void *) m_pfnStopInstableCPUcoreVoltageDetection )
   }
   else
-    LOGN(FULL_FUNC_NAME << "--Failed to load Prime95 DLL")
+  {
+    LOGN(FULL_FUNC_NAME << "--Failed to load \"" //"Prime95 DLL""
+      << std_strUnstableVoltageDetectionDynLib
+      << "\"" )
+    std::wstring std_wstrMessage = L"Loading unstable voltage detection "
+      "dynamic library \"" ;
+    std_wstrMessage += lptstrUnstableVoltageDetectionDynLib;
+    std_wstrMessage += L"\" failed: ";
+    std::string std_strErrorMessageFromLastErrorCode =
+      ::GetErrorMessageFromLastErrorCodeA();
+    std_wstrMessage += L"\" failed: " + GetStdWstring(
+      std_strErrorMessageFromLastErrorCode);
+    MessageWithTimeStamp( std_wstrMessage);
+  }
 }
 
 void wxX86InfoAndControlApp::IPCclientDisconnect()
@@ -1327,19 +1374,32 @@ void wxX86InfoAndControlApp::MessageWithTimeStamp(
   //const LPWSTR
   const wchar_t * cp_lpwstrMessage)
 {
-  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
-    ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
-     getwxString(m_stdtstrProgramName)
-     );
+//  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
+//    ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
+//     getwxString(m_stdtstrProgramName)
+//     );
+  const std::wstring c_std_wstrMessage(cp_lpwstrMessage);
+  MessageWithTimeStamp(c_std_wstrMessage);
 }
 
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
-  const std::wstring & cr_stdwstrMessage)
+  const std::wstring & c_r_std_wstrMessage)
 {
-  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
-    ::wxNow() + wxT(" ") + getwxString( cr_stdwstrMessage),
-     getwxString(m_stdtstrProgramName)
-     );
+//  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
+//    ::wxNow() + wxT(" ") + getwxString( c_r_std_wstrMessage),
+//     getwxString(m_stdtstrProgramName)
+//     );
+
+  wxString wxstrMessage = ::wxNow() + wxT(" ") + ::getwxString(
+      c_r_std_wstrMessage);
+
+  //Advantage in contrast to a message box: the textual content can be copied
+  //into th clipboard (e.g. for translating it).
+  wxTextControlDialog wxtextcontroldialog(
+    wxstrMessage,
+    wxT("x86I&C message")
+    );
+  wxtextcontroldialog.ShowModal();
 }
 
 bool wxX86InfoAndControlApp::OnInit()
