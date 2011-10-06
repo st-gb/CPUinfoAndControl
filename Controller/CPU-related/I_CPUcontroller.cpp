@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "I_CPUcontroller.hpp"
 //#include <windef.h> //for BYTE
 #include <Controller/CPUindependentHelper.h>
@@ -649,8 +656,12 @@ WORD I_CPUcontroller::GetNumberOfPstates()
   return 0 ;
 }
 
-BYTE I_CPUcontroller::GetPstate(WORD wPstateID, 
-                                    VoltageAndFreq & r_voltageandfreq )
+BYTE I_CPUcontroller::GetPstate(
+  const std::set<VoltageAndFreq> & c_r_std_set_voltages,
+  WORD wPstateID,
+  //TODO maybe use a pointer here to avoid to copy from the std::set item.
+  VoltageAndFreq & r_voltageandfreq
+  )
 {
   BYTE byPstateExists = 0 ;
   //std::set<VoltageAndFreq>::const_iterator iter = 
@@ -658,12 +669,11 @@ BYTE I_CPUcontroller::GetPstate(WORD wPstateID,
   //std::set<VoltageAndFreq>::const_reverse_iterator reverse_iter =
   //Must use "reverse_iterator" for "operator !=" of STLport's "set"
   std::set<VoltageAndFreq>::reverse_iterator reverse_iter =
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin( ) ;
+    c_r_std_set_voltages.rbegin( ) ;
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->begin( ) ;
   WORD wElemenIndex = 0 ;
   while( //iter != 
-    reverse_iter !=
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.
+    reverse_iter != c_r_std_set_voltages.
     //mp_model->m_cpucoredata.mp_stdsetvoltageandfreqDefault->
     //end() 
     rend()

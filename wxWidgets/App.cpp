@@ -14,6 +14,7 @@
   #include <vld.h>
 #endif //#ifdef USE_VISUAL_LEAK_DETECTOR
 
+//for THREAD_PROC_CALLING_CONVENTION
 #include <preprocessor_macros/thread_proc_calling_convention.h>
 
 #ifndef WX_PRECOMP
@@ -27,6 +28,7 @@
 
 //#include "wxDynFreqScalingTimer.hpp"
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
+
 //for ::GetErrorMessageFromErrorCodeA(DWORD)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/GetNumberOfLogicalCPUcores.h>
@@ -123,7 +125,12 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //      mp_cpucontroller(NULL)
 //    ,
   CPUcontrolBase(this) ,
-  m_hmodulePrime95DynLib(NULL),
+  m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib(
+    //For a default value for file seperator.
+    wxEmptyString),
+  m_std_wstrInstableCPUcoreVoltageDynLibPath(
+    L"InstableCPUcoreVoltageDetection.dll"),
+  m_hmoduleUnstableVoltageDetectionDynLib(NULL),
   m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
   m_vbExitFindLowestStableVoltage(false),
   m_x86iandc_threadFindLowestStableVoltage(I_Thread::detached),
@@ -171,6 +178,7 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
 //  if( mp_taskbaricon)
 //    delete mp_taskbaricon;
   DeleteTaskBarIcon();
+  UnloadDetectInstableCPUcoreVoltageDynLib();
   LOGN("end of app's destructor")
 }
 
@@ -1198,81 +1206,6 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
 
 }
 
-void wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
-{
-  LOGN( FULL_FUNC_NAME << " --begin")
-  LPTSTR lptstrUnstableVoltageDetectionDynLib = _T(//"Prime95.DLL"
-    //"UnstableVoltageDetection.dll"
-      "InstableCPUcoreVoltageDetection.dll"
-      );
-  if(m_hmodulePrime95DynLib == NULL)
-    m_hmodulePrime95DynLib = ::LoadLibrary(
-      lptstrUnstableVoltageDetectionDynLib );
-  std::string std_strUnstableVoltageDetectionDynLib = GetStdString_Inline(
-    GetStdTstring_Inline(lptstrUnstableVoltageDetectionDynLib) );
-  if( m_hmodulePrime95DynLib != NULL)
-  {
-    LOGN(FULL_FUNC_NAME << "--Successfully loaded \"" <<
-      std_strUnstableVoltageDetectionDynLib << "\"")
-
-    m_pfnStartInstableCPUcoreVoltageDetection =
-      (StartInstableVoltageDetectionFunctionPointer)
-      ::GetProcAddress(
-        m_hmodulePrime95DynLib, //_T(
-        //"TortureTest"
-        START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
-        //)
-        );
-    if( ! m_pfnStartInstableCPUcoreVoltageDetection)
-    {
-      std::wstring std_wstrMessage = L"assigning function \"";
-      std_wstrMessage +=
-          _T(START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME);
-      std_wstrMessage += L"\" failed.";
-      MessageWithTimeStamp( std_wstrMessage);
-    }
-
-    LOGN( FULL_FUNC_NAME <<  "--\"" <<
-      START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
-      << "\" function pointer: "
-      << (void *) m_pfnStartInstableCPUcoreVoltageDetection)
-    m_pfnStopInstableCPUcoreVoltageDetection =
-      (StopInstableVoltageDetectionFunctionPointer) ::GetProcAddress(
-        m_hmodulePrime95DynLib, //_T(
-//        "StopTortureTest"//)
-        //"StopInstableVoltageDetection"
-        STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
-        );
-    if( ! m_pfnStopInstableCPUcoreVoltageDetection)
-    {
-      std::wstring std_wstrMessage = L"assigning function \"";
-      std_wstrMessage +=
-          _T(STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME);
-      std_wstrMessage += L"\" failed.";
-      MessageWithTimeStamp( std_wstrMessage);
-    }
-    LOGN(FULL_FUNC_NAME << "--\"" <<
-      STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
-      << "\" function pointer: "
-      << (void *) m_pfnStopInstableCPUcoreVoltageDetection )
-  }
-  else
-  {
-    LOGN(FULL_FUNC_NAME << "--Failed to load \"" //"Prime95 DLL""
-      << std_strUnstableVoltageDetectionDynLib
-      << "\"" )
-    std::wstring std_wstrMessage = L"Loading unstable voltage detection "
-      "dynamic library \"" ;
-    std_wstrMessage += lptstrUnstableVoltageDetectionDynLib;
-    std_wstrMessage += L"\" failed: ";
-    std::string std_strErrorMessageFromLastErrorCode =
-      ::GetErrorMessageFromLastErrorCodeA();
-    std_wstrMessage += L"\" failed: " + GetStdWstring(
-      std_strErrorMessageFromLastErrorCode);
-    MessageWithTimeStamp( std_wstrMessage);
-  }
-}
-
 void wxX86InfoAndControlApp::IPCclientDisconnect()
 {
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
@@ -1399,6 +1332,7 @@ void wxX86InfoAndControlApp::MessageWithTimeStamp(
     wxstrMessage,
     wxT("x86I&C message")
     );
+//  wxtextcontroldialog.Layout();
   wxtextcontroldialog.ShowModal();
 }
 

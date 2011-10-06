@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //include guard
 
 //#ifndef __CYGWIN__
@@ -214,7 +221,10 @@ public:
     { return 0 ; }
   virtual WORD GetNearestHigherPossibleFreqInMHz(WORD wFreqInMhzOld) ;
   virtual WORD GetNearestLowerPossibleFreqInMHz(WORD wFreqInMhzOld) ;
-  virtual BYTE GetPstate(WORD wPstateID, VoltageAndFreq & r_voltageandfreq) ;//= 0 ;
+  virtual BYTE GetPstate(
+    const std::set<VoltageAndFreq> & c_r_std_set_voltages,
+    WORD wPstateID,
+    VoltageAndFreq & r_voltageandfreq) ;//= 0 ;
   virtual //bool 
     BYTE GetPstateSafefy(
     WORD wFreqInMHz
