@@ -469,6 +469,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     BYTE byCoreID
     )
   {
+    DEBUGN( FULL_FUNC_NAME << "--begin")
     DWORD dwLowmostBits //, dwHighmostBits = 0
       ;
 //    dwLowmostBits =

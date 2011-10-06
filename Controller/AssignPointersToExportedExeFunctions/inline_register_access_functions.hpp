@@ -74,8 +74,10 @@ inline BYTE CPUID(
    DWORD_PTR affinityMask  // Thread Affinity Mask
     )
   {
-    DEBUGN("inline ReadMSR")
-    return (*g_pfnreadmsr)(
+    DEBUGN( //"inline ReadMSR"
+      FULL_FUNC_NAME
+      )
+    return ( * g_pfnreadmsr)(
       dwRegisterIndex ,
       p_dwEAX ,
       p_dwEDX ,

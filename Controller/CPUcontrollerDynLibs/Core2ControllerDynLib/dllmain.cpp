@@ -88,11 +88,13 @@ bool Init()
   #ifdef _DEBUG
   OpenLogFile() ;
   #endif
-  DEBUGN("after GetMainPllOpFreqIdMax")
   AssignPointersToExportedExeMSRfunctions(
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;
+  DEBUGN( FULL_FUNC_NAME <<  "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
+      << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
+      )
   if( ! g_pfnreadmsr || ! g_pfn_write_msr )
   {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -108,6 +110,8 @@ bool Init()
     return FALSE ;
   }
   GetReferenceClockFromMSR_FSB_FREQ() ;
+  DEBUGN( FULL_FUNC_NAME << "ref. clock in MHz:" << g_fReferenceClockInMHz)
+
   //      //Force the cond. "< min. time diff" to become true.
   //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
   //      g_dwPreviousTickCountInMilliseconds
@@ -133,7 +137,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
   switch (ul_reason_for_call)
   {
   case DLL_PROCESS_ATTACH:
-    return Init() ;
+    //return Init() ;
   case DLL_THREAD_ATTACH:
   case DLL_THREAD_DETACH:
   case DLL_PROCESS_DETACH:
@@ -213,6 +217,7 @@ EXPORT
     , WORD wCoreID
   )
 {
+  DEBUGN( FULL_FUNC_NAME << "--begin")
   return GetCurrentVoltageAndFrequencyIntelCore(
     p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -283,6 +288,7 @@ EXPORT
     , WORD wCoreID
   )
 {
+  DEBUGN( FULL_FUNC_NAME << "--begin")
 //    g_byValue1 = SetCurrentVoltageAndMultiplierIntelCore(
 //      fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
   return //g_byValue1 ;

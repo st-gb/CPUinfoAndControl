@@ -67,6 +67,7 @@
 
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.
+class FreqAndVoltageSettingDlg;
 //class Windows_API::DynFreqScalingAccess ;
 //class Model ;
 class MainFrame ;
@@ -138,7 +139,9 @@ private:
   #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
 public:
-  HMODULE m_hmodulePrime95DynLib;
+  wxString m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib;
+  std::wstring m_std_wstrInstableCPUcoreVoltageDynLibPath;
+  HMODULE m_hmoduleUnstableVoltageDetectionDynLib;
   StartInstableVoltageDetectionFunctionPointer m_pfnStartInstableCPUcoreVoltageDetection;
   StopInstableVoltageDetectionFunctionPointer m_pfnStopInstableCPUcoreVoltageDetection;
   struct external_caller m_external_caller;
@@ -275,7 +278,7 @@ public:
     std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName,
     uint16_t & r_ui16ActivePowerSchemeIndex
     );
-  void InitUnstableVoltageDetectionDynLibAccess();
+  BYTE InitUnstableVoltageDetectionDynLibAccess();
   bool SetPowerSchemeViaIPC(
     const std::wstring & r_std_wstrPowerSchemeName);
   BYTE GetConfigDataViaInterProcessCommunication() ;
@@ -324,8 +327,11 @@ public:
   inline void ShowTaskBarIconViaWindowsAPI();
   inline bool ShowTaskBarIconUsingwxWidgets();
   void StabilizeVoltage(float & fVoltageInVolt, float & fMultiplier);
+  void StartInstableCPUcoreVoltageDetection(const FreqAndVoltageSettingDlg *);
+  void StopInstableCPUcoreVoltageDetection();
   void StartService() ;
   void StopService() ;
+  void UnloadDetectInstableCPUcoreVoltageDynLib();
 };
 
 DECLARE_APP(wxX86InfoAndControlApp)

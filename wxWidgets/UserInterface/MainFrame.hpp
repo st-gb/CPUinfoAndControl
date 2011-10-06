@@ -136,6 +136,8 @@ public:
     #ifdef PRIVATE_RELEASE //hide the other possibilities
       ,ID_IncreaseVoltageForCurrentPstate
     #endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
+      , ID_LoadDetectInstableCPUcoreVoltageDynLib
+      , ID_UnloadDetectInstableCPUcoreVoltageDynLib
       ,
       ID_LastStaticEventID
     }; //event IDs enum
@@ -217,7 +219,7 @@ private:
   //wxMenuBar m_wxmenubar ;
   wxMemoryDC m_wxmemorydcStatic ;
   wxMenuBar * mp_wxmenubar ;
-  wxMenu * p_wxmenuExtras ;
+  wxMenu * m_p_wxmenuGUI ;
 public:
   wxMenu * mp_wxmenuFile ;
 private:
@@ -225,6 +227,9 @@ private:
 //  wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;
+public:
+  wxMenuItem * m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib;
+private:
 //  wxMenuItem ** marp_wxmenuItemHighLoadThread ;
   wxMenuItem * mp_wxmenuitemCollectAsDefaultVoltagePerfStates ;
   wxString m_wxstrTitle ;
@@ -304,6 +309,7 @@ public:
 
   inline void CreateFileMenu() ;
   inline void ConnectToDataProvider_Inline() ;
+  inline void CreateGUImenuItems();
 #ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
   void CreateServiceMenuItems() ;
 #endif //#ifdef COMPILE_WITH_SERVICE_PROCESS_CONTROL
@@ -440,6 +446,8 @@ public:
   void OnAttachCPUcoreUsageGetterDLL(wxCommandEvent & event);
   void OnDetachCPUcontrollerDLL(wxCommandEvent & event);
   void OnDetachCPUcoreUsageGetterDLL(wxCommandEvent & event);
+  void OnLoadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event);
+  void OnUnloadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event);
 //  void OnInitDialog( wxInitDialogEvent & event ) ;
   void PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   void PossiblyAskForOSdynFreqScalingDisabling();

@@ -7,6 +7,7 @@
  */
 #pragma once //include guard
 
+#include <set> //class std::set
 //#include <bits/stl_algobase.h> //for std::max(...). else:522: error:
 // expected unqualified-id before '(' token
 #include <vector> //for std::vector
@@ -19,6 +20,7 @@
 class wxBitmapToggleButton ;
 class wxBoxSizer ;
 class wxCheckBox ;
+class wxChoice;
 class wxControl ;
 class wxDialog ;
 class wxStaticText ;
@@ -27,6 +29,12 @@ class wxSpinEvent ;
 class I_CPUcontroller ;
 class MainFrame ;
 class Model ;
+class VoltageAndFreq;
+//namespace std
+//{
+//  template<typename _Key, typename _Compare = std::less<_Key>,
+//   typename _Alloc = std::allocator<_Key> > class set;
+//}
 
 class FreqAndVoltageSettingDlg
   : public wxDialog
@@ -39,6 +47,12 @@ private:
   BYTE m_byPreviousMultiplierValue ;
   float m_fWantedVoltageInVolt ;
 public:
+  enum voltageTypes
+  {
+    minimum_voltage = 0,
+    wanted_voltage,
+    maximum_voltage
+  };
   //Needed for setting p-state.
   I_CPUcontroller * mp_cpucontroller ;
 private:
@@ -67,7 +81,11 @@ private:
   wxButton * mp_wxbuttonApply ;
 public:
   wxButton * m_p_wxbuttonFindLowestStableVoltage;
+  wxBitmapButton * m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage;
+  wxStaticText * m_p_wxstatictextSecondsUntilNextVoltageDecrease;
+  wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
 private:
+  wxBoxSizer * m_p_wxboxsizerOK_Cancel;
 //  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
@@ -82,6 +100,7 @@ private:
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Array of pointers to checkbox.
   wxCheckBox ** m_ar_p_wxcheckbox ;
+  wxChoice * m_p_wxchoiceVoltageType;
   wxSlider * mp_wxsliderCPUcoreDivisorID ;
   wxSlider * mp_wxsliderCPUcorePstate ;
   wxSlider * mp_wxsliderFreqInMHz ;
@@ -97,6 +116,8 @@ private:
   wxString m_wxstrWriteVoltageAndMultiplierToolTip ;
 //  wxSpinCtrlDouble * mp_wxspinctrldoubleMultiplier ;
 private:
+  inline void AddAlsoSetWantedVoltageControls(
+    wxSizer * p_wxsizerSuperordinate );
   inline void AddApplyOrCancelSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreCheckBoxSizer(
@@ -116,7 +137,7 @@ private:
     wxSizer * p_wxsizer ) ;
   inline void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
-  inline void AddSetAsMinVoltageSizer(
+  inline void AddVoltageSettingsSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddSetAsWantedVoltageSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
@@ -135,6 +156,8 @@ public:
   ~FreqAndVoltageSettingDlg() ;
   void ConnectCharEvent( wxWindow * p_wxWindow ) ;
   inline void CPUcoreVoltageChanged() ;
+  void CreateFindLowestStableCPUcoreVoltageButton();
+  void CreateStopFindingLowestStableCPUcoreVoltageButton();
   void CreateSliders();
   void DisableOSesDVFSandServiceDVFS();
   void DisableWritingVoltageAndMultiplier(const wxString & c_r_wxstrToolTip)
@@ -163,6 +186,7 @@ public:
   inline float GetCPUcoreFrequencyFromSliderValue() ;
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   inline float GetMultiplierFromSliderValue() ;
+  const std::set<VoltageAndFreq> & GetSelectedVoltageTypeStdSet();
   inline float GetVoltageInVoltFromSliderValue() ;
   void HandleCPUcoreFrequencyOrVoltageChanged(wxWindow * r_wxwindow) ;
   inline void HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent) ;
@@ -174,6 +198,7 @@ public:
   void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
   void OnDecVoltage(wxCommandEvent & );
   void OnFindLowestStableVoltageButton(wxCommandEvent & );
+  void OnStopFindingLowestStableCPUcoreVoltageButton(wxCommandEvent & );
   void OnIncVoltage(wxCommandEvent & );
   void OnPreventVoltageAboveDefaultVoltageCheckbox(wxCommandEvent & ) ;
   void OnPreventVoltageBelowLowestStableVoltageCheckbox(wxCommandEvent & ) ;
@@ -183,6 +208,7 @@ public:
 //  void OnSpinVoltageDown(wxSpinEvent & event) ;
 //  void OnSpinVoltageUp(wxSpinEvent & event) ;
   void OnStabilizeVoltageButton(wxCommandEvent & wxcmd ) ;
+  void OnSetVoltageType(wxCommandEvent & wxcmd);
   void OutputFrequencyByControlValues() ;
   void OutputVoltageByControlValues() ;
   inline void PossiblyWriteVoltageAndMultiplier_Inline(
@@ -194,7 +220,9 @@ public:
   //void 
   WORD SetNearestLowerPossibleFreqInMHz(
     WORD wFreqInMHz ) ;
+  void ChangeToStopFindingLowestStableCPUcoreVoltageButton();
   void ChangeVoltageSliderValue(int nNewValue) ;
+  void SetStartFindingLowestStableVoltageButton();
   inline BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
   inline BYTE VoltageIsWithinValidRange(float fVoltageInVolt
     , float fCPUcoreFrequencyinMHz) ;

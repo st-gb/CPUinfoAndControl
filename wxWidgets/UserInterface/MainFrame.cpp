@@ -25,7 +25,7 @@
 #include <wx/defs.h> //for wxBG_STYLE_CUSTOM
 #include <wx/dcbuffer.h> //for class wxBufferedPaintDC
 #include <wx/dynlib.h> //wxDynamicLibrary::GetDllExt()
-//#include <wx/filename.h> //wxFileName::GetPathSeparator(...)
+#include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 #include "wx/frame.h" //for base class wxFrame
 //#include <wx/icon.h> //for class wxIcon
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
@@ -163,6 +163,10 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     MainFrame::OnEnableOtherVoltageOrFrequencyAccess ) 
   EVT_MENU( ID_EnableOrDisableOwnDVFS ,
     MainFrame::OnOwnDynFreqScaling )
+  EVT_MENU( ID_LoadDetectInstableCPUcoreVoltageDynLib,
+    MainFrame::OnLoadDetectInstableCPUcoreVoltageDynLib)
+  EVT_MENU( ID_UnloadDetectInstableCPUcoreVoltageDynLib,
+    MainFrame::OnUnloadDetectInstableCPUcoreVoltageDynLib)
   EVT_MENU( ID_UpdateViewInterval ,
     MainFrame::OnUpdateViewInterval )
     EVT_MENU( ID_SetCPUcontrollerDynLibForThisCPU ,
@@ -311,12 +315,140 @@ inline void MainFrame::CreateFileMenu()
     )
 }
 
+inline void MainFrame::CreateGUImenuItems()
+{
+  m_p_wxmenuGUI = NULL ;
+  //#ifdef COMPILE_WITH_SERVICE_CONTROL
+  #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+    if( ! m_p_wxmenuGUI )
+      m_p_wxmenuGUI = new wxMenu;
+    mp_wxmenuitemOtherDVFS = m_p_wxmenuGUI->Append(
+      //ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq
+      ID_DisableOtherVoltageOrFrequencyAccess
+      //_T("&CPU % min and max.")
+      //_T("enable or disable OS's dynamic frequency scaling")
+      , _T("disable OS's dynamic frequency scaling")
+      );
+    LOGN("after appending menu item \"disable OS's dynamic frequency scaling\"")
+    //If one can not change the power scheme (Windows) etc.
+    if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->
+      mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
+        ChangeOtherDVFSaccessPossible()
+      )
+      LOGN("Changing other DVFS is possible." )
+    else
+    {
+      LOGN("Changing other DVFS is not possible." )
+      mp_wxmenuitemOtherDVFS->Enable(false);
+      mp_wxmenuitemOtherDVFS->SetHelp (
+        wxT("Start e.g. as administrator to gain access") ) ;
+      //mp_wxmenuitemOtherDVFS->SetItemLabel (wxT("dd") ) ;
+      LOGN("changing other DVFS not possible")
+    }
+    if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible()
+      mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->EnablingIsPossible()
+      )
+    {
+      LOGN("enabling other DVFS is possible")
+  //    std::tstring stdtstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
+  //        GetEnableDescription() ;
+      std::wstring stdwstr = mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
+          GetEnableDescription() ;
+      mp_wxmenuitemOtherDVFS = m_p_wxmenuGUI->Append(
+        ID_EnableOtherVoltageOrFrequencyAccess
+        //_T("enable OS's dynamic frequency scaling")
+        //GetDisableDescrpition() under Windows may return "activate 'performance' power scheme ".
+        //Use GetwxString(...) because GetEnableDescription() may return
+        // -std::wstring although wxString uses char strings.
+        // -std::string although wxString uses wchar_t strings.
+        , getwxString(
+          //mp_i_cpucontroller->mp_dynfreqscalingaccess->GetEnableDescription()
+  //        stdtstr
+          stdwstr
+           )
+        );
+      LOGN("after appending menu item \"" << GetStdString(stdwstr) << "\"")
+    }
+  #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+    LOG("after extras menu creation"//\n"
+      )
+    if( ! m_p_wxmenuGUI )
+      m_p_wxmenuGUI = new wxMenu;
+
+    std::string stdstr = "set update view interval" ;
+    LOGN("before appending menu item " << stdstr )
+    m_p_wxmenuGUI->Append(
+      ID_UpdateViewInterval,
+      //_T("&CPU % min and max.")
+      getwxString( stdstr )
+      );
+    stdstr = "collect p-states as default voltage p-states" ;
+    LOGN("before appending menu item " << stdstr )
+    mp_wxmenuitemCollectAsDefaultVoltagePerfStates = m_p_wxmenuGUI->
+      AppendCheckItem(
+      ID_Collect_As_Default_Voltage_PerfStates,
+      //_T("&CPU % min and max.")
+      getwxString( stdstr )
+      );
+  //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+    //wxMenu * m_p_wxmenuGUI = new wxMenu;
+  //#endif
+    //if( ! p_cpucontroller->mp_model->m_cpucoredata.
+    //  m_stdsetvoltageandfreqDefault.empty()
+    //  )
+    {
+      if( ! m_p_wxmenuGUI )
+        m_p_wxmenuGUI = new wxMenu;//(wxT("Graphical User Interface"));
+      stdstr = "enable own Dynamic Voltage and Frequency Scaling" ;
+      LOGN("before appending menu item " << stdstr )
+      mp_wxmenuitemOwnDVFS = m_p_wxmenuGUI->Append(
+        ID_EnableOrDisableOwnDVFS
+        , getwxString( stdstr )
+        );
+      if( //p_cpucontroller->mp_model->m_cpucoredata.
+        mp_model->m_cpucoredata.
+        m_stdsetvoltageandfreqWanted.empty()
+        )
+      {
+        //Does not work.
+  //      mp_wxmenuitemOwnDVFS->Enable(false) ;
+  //      m_p_wxmenuGUI->Enable(ID_EnableOrDisableOwnDVFS , false ) ;
+        //      mp_wxmenuitemOwnDVFS->Enable(false) ;
+        mp_wxmenuitemOwnDVFS->SetHelp( wxT("no desired voltages for frequencies"
+          " available->no DVFS possible") ) ;
+      }
+    }
+  //#endif //#ifdef _WIN32
+  #ifdef COMPILE_WITH_MSR_EXAMINATION
+    if( ! m_p_wxmenuGUI )
+      m_p_wxmenuGUI = new wxMenu;
+    m_p_wxmenuGUI->Append(ID_MSR, wxT("e&xamine CPUID and MSR CPU registers...")
+        );
+    m_p_wxmenuGUI->Append(ID_WriteToMSRdialog,
+        wxT("read from and write to MSR dialog...") );
+  #endif
+
+    m_p_wxmenuGUI->Append( ID_LoadDetectInstableCPUcoreVoltageDynLib,
+      wxT("Load dynamic library for detecting an instable CPU core voltage...")
+      );
+    m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib = m_p_wxmenuGUI->
+      Append( ID_UnloadDetectInstableCPUcoreVoltageDynLib,
+      wxT("Unload dynamic library for detecting an instable CPU core voltage")
+      );
+    if( m_p_wxmenuGUI )
+    {
+      LOGN("before adding menu \"GUI\"")
+      mp_wxmenubar->Append(m_p_wxmenuGUI, //_T("E&xtras")
+         wxT("&GUI") );
+    }
+}
+
 MainFrame::MainFrame(
   const wxString & cr_wxstrTitle,
   const wxPoint & cr_wxpointTopLeftCornerPosition,
   const wxSize & cr_wxsize
   , I_CPUcontroller * p_cpucontroller
-  //, CPUcoreData * p_cpucoredata 
+  //, CPUcoreData * p_cpucoredata
   , Model * p_model
   , wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
   )
@@ -429,122 +561,8 @@ MainFrame::MainFrame(
 
   //UpdatePowerSettings(wxPOWER_UNKNOWN, wxBATTERY_UNKNOWN_STATE);
 
-  p_wxmenuExtras = NULL ;
-//#ifdef COMPILE_WITH_SERVICE_CONTROL
-#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  if( ! p_wxmenuExtras )
-    p_wxmenuExtras = new wxMenu;
-  mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
-    //ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq
-    ID_DisableOtherVoltageOrFrequencyAccess
-    //_T("&CPU % min and max.")
-    //_T("enable or disable OS's dynamic frequency scaling")
-    , _T("disable OS's dynamic frequency scaling")
-    );
-  LOGN("after appending menu item \"disable OS's dynamic frequency scaling\"")
-  //If one can not change the power scheme (Windows) etc.
-  if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->
-    p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
-      ChangeOtherDVFSaccessPossible()
-    )
-    LOGN("Changing other DVFS is possible." )
-  else
-  {
-    LOGN("Changing other DVFS is not possible." )
-    mp_wxmenuitemOtherDVFS->Enable(false);
-    mp_wxmenuitemOtherDVFS->SetHelp (
-      wxT("Start e.g. as administrator to gain access") ) ;
-    //mp_wxmenuitemOtherDVFS->SetItemLabel (wxT("dd") ) ;
-    LOGN("changing other DVFS not possible")
-  }
-  if( //mp_i_cpucontroller->mp_dynfreqscalingaccess->EnablingIsPossible()
-    p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->EnablingIsPossible()
-    )
-  {
-    LOGN("enabling other DVFS is possible")
-//    std::tstring stdtstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
-//        GetEnableDescription() ;
-    std::wstring stdwstr = p_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
-        GetEnableDescription() ;
-    mp_wxmenuitemOtherDVFS = p_wxmenuExtras->Append(
-      ID_EnableOtherVoltageOrFrequencyAccess
-      //_T("enable OS's dynamic frequency scaling")
-      //GetDisableDescrpition() under Windows may return "activate 'performance' power scheme ".
-      //Use GetwxString(...) because GetEnableDescription() may return
-      // -std::wstring although wxString uses char strings.
-      // -std::string although wxString uses wchar_t strings.
-      , getwxString(
-        //mp_i_cpucontroller->mp_dynfreqscalingaccess->GetEnableDescription()
-//        stdtstr
-        stdwstr
-         )
-      );
-    LOGN("after appending menu item \"" << GetStdString(stdwstr) << "\"")
-  }
-#endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  LOG("after extras menu creation"//\n"
-    )
-  if( ! p_wxmenuExtras )
-    p_wxmenuExtras = new wxMenu;
+  CreateGUImenuItems();
 
-  std::string stdstr = "set update view interval" ;
-  LOGN("before appending menu item " << stdstr )
-  p_wxmenuExtras->Append(
-    ID_UpdateViewInterval,
-    //_T("&CPU % min and max.")
-    getwxString( stdstr )
-    );
-  stdstr = "collect p-states as default voltage p-states" ;
-  LOGN("before appending menu item " << stdstr )
-  mp_wxmenuitemCollectAsDefaultVoltagePerfStates = p_wxmenuExtras->
-    AppendCheckItem(
-    ID_Collect_As_Default_Voltage_PerfStates,
-    //_T("&CPU % min and max.")
-    getwxString( stdstr )
-    );
-//#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  //wxMenu * p_wxmenuExtras = new wxMenu;
-//#endif
-  //if( ! p_cpucontroller->mp_model->m_cpucoredata.
-  //  m_stdsetvoltageandfreqDefault.empty()
-  //  )
-  {
-    if( ! p_wxmenuExtras )
-      p_wxmenuExtras = new wxMenu;//(wxT("Graphical User Interface"));
-    stdstr = "enable own Dynamic Voltage and Frequency Scaling" ;
-    LOGN("before appending menu item " << stdstr )
-    mp_wxmenuitemOwnDVFS = p_wxmenuExtras->Append(
-      ID_EnableOrDisableOwnDVFS
-      , getwxString( stdstr )
-      );
-    if( //p_cpucontroller->mp_model->m_cpucoredata.
-      mp_model->m_cpucoredata.
-      m_stdsetvoltageandfreqWanted.empty()
-      )
-    {
-      //Does not work.
-//      mp_wxmenuitemOwnDVFS->Enable(false) ;
-//      p_wxmenuExtras->Enable(ID_EnableOrDisableOwnDVFS , false ) ;
-      //      mp_wxmenuitemOwnDVFS->Enable(false) ;
-      mp_wxmenuitemOwnDVFS->SetHelp( wxT("no desired voltages for frequencies"
-        " available->no DVFS possible") ) ;
-    }
-  }
-//#endif //#ifdef _WIN32
-#ifdef COMPILE_WITH_MSR_EXAMINATION
-  if( ! p_wxmenuExtras )
-    p_wxmenuExtras = new wxMenu;
-  p_wxmenuExtras->Append(ID_MSR, wxT("e&xamine CPUID and MSR CPU registers...")
-      );
-  p_wxmenuExtras->Append(ID_WriteToMSRdialog,
-      wxT("read from and write to MSR dialog...") );
-#endif
-  if( p_wxmenuExtras )
-  {
-    LOGN("before adding menu Extras")
-    mp_wxmenubar->Append(p_wxmenuExtras, //_T("E&xtras")
-       wxT("&GUI"));
-  }
   if( mp_i_cpucontroller != NULL )
   {
     CreateDynamicMenus();
@@ -557,7 +575,7 @@ MainFrame::MainFrame(
 //    ////, new CalculationThread(byCoreID, HighALUloadThreadProc)
 //    //, wxCommandEventHandler( MainFrame::OnOwnDynFreqScaling )
 //    //) ;
-//  mp_wxmenubar->Append(p_wxmenuExtras, _T("E&xtras") );
+//  mp_wxmenubar->Append(m_p_wxmenuGUI, _T("E&xtras") );
 //#endif
   //mp_wxmenubar->Append( p_wxmenuNorthBridge, _T("&NorthBridge") );
   //TODO program crash here for unicode versions (for working versions
@@ -1397,6 +1415,50 @@ void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
   } //if( mp_i_cpucontroller )
 }
 
+void MainFrame::OnLoadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event)
+{
+  wxString wxstrDynLibExtension = wxDynamicLibrary::GetDllExt();
+  wxString wxstrDynLibFilePath = ::wxFileSelector(
+    wxT("Select dynamic library for detecting an instable CPU core volatage")
+    //"default_path"
+    , //wxEmptyString
+    mp_wxx86infoandcontrolapp->
+      m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib
+    , wxEmptyString
+    , wxDynamicLibrary::GetDllExt()
+    , wxT("*") + wxstrDynLibExtension
+    , wxFD_OPEN
+    ) ;
+  if ( ! wxstrDynLibFilePath.empty() )
+  {
+    mp_wxx86infoandcontrolapp->
+      m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib =
+      wxstrDynLibFilePath.Left(
+        //0-based index of path separator = # of chars before it.
+        wxstrDynLibFilePath.rfind(
+        wxFileName::GetPathSeparator() )
+        );
+    //Unload attached dyn lib at first.
+    mp_wxx86infoandcontrolapp->UnloadDetectInstableCPUcoreVoltageDynLib();
+//    std::wstring std_wstrInstableCPUcoreVoltageDynLibPath = ::GetStdWstring(
+//      wxstrDynLibFilePath);
+    mp_wxx86infoandcontrolapp->m_std_wstrInstableCPUcoreVoltageDynLibPath =
+      ::GetStdWstring(wxstrDynLibFilePath);
+
+    if( mp_wxx86infoandcontrolapp->//LoadDetectInstableCPUcoreVoltageDynLib(
+      //std_wstrInstableCPUcoreVoltageDynLibPath);
+      InitUnstableVoltageDetectionDynLibAccess() == 0)
+//      m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib->SetHelp(
+//        wxstrDynLibFilePath);
+      ;
+  }
+}
+
+void MainFrame::OnUnloadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event)
+{
+  mp_wxx86infoandcontrolapp->UnloadDetectInstableCPUcoreVoltageDynLib();
+}
+
 void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
 {
   Hide() ;
@@ -1465,7 +1527,7 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
   wxstrExtension = wxDynamicLibrary::GetDllExt() ;
   //Get rid of the leading ".".
   wxstrExtension = wxstrExtension.Right( wxstrExtension.length() - 1 ) ;
-    wxString wxstrCPUcontrollerDynLibFilePath = ::wxFileSelector( 
+  wxString wxstrCPUcontrollerDynLibFilePath = ::wxFileSelector(
     wxT("Select CPU controlling dynamic library") 
     , wxEmptyString
     , wxEmptyString
@@ -1492,6 +1554,7 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
 //        , mp_wxx86infoandcontrolapp
 //        ) ;
 //      mp_wxx86infoandcontrolapp->CreateDynLibCPUcontroller(
+      //TODO ANSI string may fail if Chinese localization (->use wchar_t)
       std::string stdstrCPUcontrollerDynLibFilePath = GetStdString(
         wxstrCPUcontrollerDynLibFilePath ) ;
       wxGetApp().m_wxstrCPUcontrollerDynLibFilePath =
@@ -1612,7 +1675,7 @@ void MainFrame::CPUcontrollerDynLibAttached(const wxString & wxstrFilePath )
 
   //If both CPU controller and the CPU usage getter exist, DVFS is possible.
   if( mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter )
-    p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
+    m_p_wxmenuGUI->Enable( ID_EnableOrDisableOwnDVFS
       , //const bool enable
       true ) ;
 }
@@ -1624,7 +1687,7 @@ void MainFrame::CPUcontrollerDeleted()
   mp_wxmenuFile->Enable( ID_DetachCPUcontrollerDynamicLibrary
     , //const bool enable
     false ) ;
-  p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
+  m_p_wxmenuGUI->Enable( ID_EnableOrDisableOwnDVFS
     , //const bool enable
     false ) ;
 }
@@ -1641,7 +1704,7 @@ void MainFrame::CPUcoreUsageGetterAttached(const wxString & wxstrFilePath)
       "unload "
       " core usage getter ") + wxstrFilePath ) ;
   if( mp_wxx86infoandcontrolapp->GetCPUcontroller() )
-    p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
+    m_p_wxmenuGUI->Enable( ID_EnableOrDisableOwnDVFS
       , //const bool enable
       true ) ;
 
@@ -1658,7 +1721,7 @@ void MainFrame::CPUcoreUsageGetterDeleted()
   mp_wxmenuFile->Enable( ID_DetachCPUusageGetterDynLib
     , //const bool enable
     false ) ;
-  p_wxmenuExtras->Enable( ID_EnableOrDisableOwnDVFS
+  m_p_wxmenuGUI->Enable( ID_EnableOrDisableOwnDVFS
     , //const bool enable
     false ) ;
 }
