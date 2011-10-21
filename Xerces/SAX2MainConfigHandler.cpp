@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //#ifdef COMPILE_WITH_XERCES
 //  #include "../stdafx.h"
 //  #include <global.h> //for if "COMPILE_WITH_XERCES" is defined or not
@@ -111,6 +118,34 @@
         m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
   }
+
+  void SAX2MainConfigHandler::HandleInstableCPUcoreVoltageDetection(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+    std::string std_strAttributeName = "seconds_until_voltage_decrease" ;
+    DWORD dwValue;
+    if( ::ConvertXercesAttributesValue(
+          cr_xercesc_attributes,
+          std_strAttributeName,
+          dwValue
+          )
+      )
+    {
+      m_p_model->m_instablecpucorevoltagedetection.
+        m_uiNumberOfSecondsToWaitUntilVoltageIsReduced = dwValue;
+    }
+    std_strAttributeName = "dyn_lib_for_instable_voltage_detection";
+//    std::wstring std_wstrDynLibPath;
+    if( XercesAttributesHelper::GetAttributeValue(
+          cr_xercesc_attributes,
+          std_strAttributeName.c_str(),
+          m_p_model->m_instablecpucorevoltagedetection.m_std_wstrDynLibPath
+          )
+      )
+    {
+
+    }
+  }
 	
   void SAX2MainConfigHandler::HandleTopmostXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
@@ -183,6 +218,13 @@
         "CPU_control_main_config" )
       {
         HandleTopmostXMLelement(cr_xercesc_attributes) ;
+      }
+      else if( //If the strings equal.
+          ! Xerces::ansi_or_wchar_string_compare( cpc_xmlchLocalName ,
+          ANSI_OR_WCHAR("instable_CPU_core_voltage_detection") )
+        )
+      {
+        HandleInstableCPUcoreVoltageDetection(cr_xercesc_attributes);
       }
       else if( m_strElementName == "DynamicVoltage_and_FrequencyScaling" )
         HandleDynamicVoltage_and_FrequencyScaling(cr_xercesc_attributes) ;

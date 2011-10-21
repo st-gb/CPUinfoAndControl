@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "ModelData.hpp"
 //#include "RegisterData.hpp" //class MSRdata
 #include <Controller/MSVC_adaption/tchar.h>
@@ -20,6 +27,7 @@ Model::Model()
   , m_bUsePstate0AsMaxFreq (false)
   , mp_cpucontroller (NULL)
   , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
+//  , m_uiNumberOfSecondsToWaitUntilVoltageIsReduced(60)
   {
     //m_cpucoredata
 #ifdef _DEBUG

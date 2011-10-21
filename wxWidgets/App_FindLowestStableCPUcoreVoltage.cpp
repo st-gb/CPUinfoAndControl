@@ -169,12 +169,17 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
 //          , 60000 //__in  DWORD dwMilliseconds
 //          );
         dwMilliSecondsToWait = 1000;
-        for( BYTE bySeconds = 60; bySeconds != 255 &&
-          ! wxGetApp().m_vbExitFindLowestStableVoltage; -- bySeconds)
+        for( unsigned uiSeconds = p_freqandvoltagesettingdlg->mp_model->
+            m_instablecpucorevoltagedetection.
+            m_uiNumberOfSecondsToWaitUntilVoltageIsReduced + 1;
+            uiSeconds != 0 &&
+          ! wxGetApp().m_vbExitFindLowestStableVoltage; -- uiSeconds)
         {
           p_freqandvoltagesettingdlg->
             m_p_wxstatictextSecondsUntilNextVoltageDecrease->SetLabel(
-              wxString::Format( wxT("%us"), (WORD)bySeconds )
+//            m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetLabel(
+              wxString::Format( wxT("%us"), //(WORD)
+                uiSeconds - 1)
               );
           LOGN( FULL_FUNC_NAME << "--waiting max. " << dwMilliSecondsToWait
             << " milliseconds")
@@ -228,10 +233,12 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
   if(m_hmoduleUnstableVoltageDetectionDynLib == NULL)
     m_hmoduleUnstableVoltageDetectionDynLib = //::LoadLibrary(
       //lptstrUnstableVoltageDetectionDynLib
-    ::LoadLibraryW( m_std_wstrInstableCPUcoreVoltageDynLibPath.c_str() );
+    ::LoadLibraryW( //m_std_wstrInstableCPUcoreVoltageDynLibPath.c_str()
+      m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath.c_str() );
   std::string std_strUnstableVoltageDetectionDynLib = GetStdString_Inline(
 //    GetStdTstring_Inline(lptstrUnstableVoltageDetectionDynLib)
-    m_std_wstrInstableCPUcoreVoltageDynLibPath
+//    m_std_wstrInstableCPUcoreVoltageDynLibPath
+    m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath
     );
   if( m_hmoduleUnstableVoltageDetectionDynLib != NULL)
   {
@@ -283,7 +290,8 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
       )
     {
       wxString wxstrDynLibFilePath = ::getwxString(
-        m_std_wstrInstableCPUcoreVoltageDynLibPath);
+//        m_std_wstrInstableCPUcoreVoltageDynLibPath
+        m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath );
       mp_frame->m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib->
         SetHelp(wxstrDynLibFilePath);
       return 0;
@@ -297,7 +305,8 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
     std::wstring std_wstrMessage = L"Loading unstable voltage detection "
       "dynamic library \"" ;
     std_wstrMessage += //lptstrUnstableVoltageDetectionDynLib;
-      m_std_wstrInstableCPUcoreVoltageDynLibPath;
+//      m_std_wstrInstableCPUcoreVoltageDynLibPath;
+      m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath;
     std_wstrMessage += L"\" failed: ";
     std::string std_strErrorMessageFromLastErrorCode =
       ::GetErrorMessageFromLastErrorCodeA();
@@ -321,9 +330,10 @@ void wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
         m_pfnStartInstableCPUcoreVoltageDetection && //wxGetApp().
         m_pfnStopInstableCPUcoreVoltageDetection)
     {
-        DWORD dwExitCode;
-       ::GetExitCodeThread(wxGetApp().m_x86iandc_threadFindLowestStableVoltage.
-         m_handleThread, & dwExitCode ) ;
+      DWORD dwExitCode;
+      ::GetExitCodeThread( //wxGetApp().
+        m_x86iandc_threadFindLowestStableVoltage.
+        m_handleThread, & dwExitCode ) ;
        if( //m_p_wxbuttonFindLowestStableVoltage->GetLabel() ==
          //wxT("stop finding the lowest stable voltage")
       //        ::WaitForSingleObject( wxGetApp().

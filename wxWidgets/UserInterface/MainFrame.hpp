@@ -174,6 +174,9 @@ private:
 //  FreqAndVoltageSettingDlg * mp_freqandvoltagesettingdlg ;
   //Array of pointers to dialogs
   FreqAndVoltageSettingDlg ** m_arp_freqandvoltagesettingdlg ;
+public:
+  FreqAndVoltageSettingDlg * m_p_freqandvoltagesettingsdialog;
+private:
   I_CPUcontroller * mp_i_cpucontroller ;
   int m_nLowestIDForSetVIDnFIDnDID ;
   int m_nNumberOfMenuIDsPerCPUcore ;
@@ -368,6 +371,7 @@ public:
     , float fMaxVoltage
 //    , WORD wXcoordOfBeginOfYaxis
     ) ;
+  void DrawFrequencyMarksAndLines(wxDC & r_wxdc);
   void DrawVoltage(wxDC & r_wxdc, float fVoltage) ;
   void DrawVoltage(wxDC & r_wxdc, float fVoltage, WORD wYcoordinate) ;
   void DrawVoltageFreqCross(
@@ -379,6 +383,9 @@ public:
   void DynVoltnFreqScalingEnabled() ;
   void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes *
     p_percpucoreattributes ) ;
+  inline float GetClosestMuliplier(int nXcoordionate, float &
+    fReferenceClockInMHz);
+  inline float GetClosestVoltageForYcoordinate(int nYcoordinate);
   inline bool GetCPUcoreInfoDirectlyOrFromService(
     ICPUcoreUsageGetter * & p_cpucoreusagegetter ,
     I_CPUcontroller * & p_cpucontroller //,
@@ -406,6 +413,8 @@ public:
   void OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnHighLoadThread( wxCommandEvent & WXUNUSED(event) ) ;
   void OnMinimizeToSystemTray( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnLeftMouseButtonDown(wxMouseEvent & r_wxmouseevent);
+  void OnMoveMouse(wxMouseEvent & WXUNUSED(r_wxmouseevent) );
   void OnSysTrayIconClick( wxCommandEvent & WXUNUSED(event) ) ;
   void OnOwnDynFreqScaling( wxCommandEvent & WXUNUSED(wxevent) 
     //wxevent 

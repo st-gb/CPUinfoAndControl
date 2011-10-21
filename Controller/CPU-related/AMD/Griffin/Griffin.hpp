@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * Griffin.hpp (".hpp" because of C++'s "inline" keyword)
  *
@@ -42,7 +49,7 @@ inline_register_access_functions.hpp>
 extern BYTE g_byFreqID,g_byDivisorID ;
 extern BYTE g_byValue1 , g_byValue2, g_byValue3 ;
 extern BYTE g_byDivisor ;
-extern DWORD g_dwMSRhighmost, g_dwMSRlowmost ;
+extern uint32_t g_dwMSRhighmost, g_dwMSRlowmost ;
 //MSRC001_0071 COFVID Status Register
 //54:49 MainPllOpFreqIdMax: main PLL operating frequency ID maximum.
 extern float g_fMainPllOpFreqIdMax ;
@@ -281,7 +288,7 @@ inline void GetMinAndMaxVoltageID(BYTE & byMaxVID,BYTE & byMinVID)
 inline WORD GetMaximumVoltageID()
 {
 //    return 64 ;
-  DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
+  uint32_t dwEAXlowMostBits, dwEDXhighMostBits ;
   ReadMSR(
     COFVID_STATUS_REGISTER,
     & dwEAXlowMostBits,
@@ -297,7 +304,7 @@ inline WORD GetMaximumVoltageID()
 inline WORD GetMinimumVoltageID()
 {
 //    return 36 ;
-  DWORD dwEAXlowMostBits, dwEDXhighMostBits ;
+  uint32_t dwEAXlowMostBits, dwEDXhighMostBits ;
   ReadMSR(
     COFVID_STATUS_REGISTER,
     & dwEAXlowMostBits,
@@ -325,8 +332,8 @@ inline void GetMSRregisterValue(
 //  const DIDandFID & didandfid ,
   BYTE byFrequencyID ,
   BYTE byDivisorID ,
-  DWORD & dwHighmostMSRvalue ,
-  DWORD & dwLowmostMSRvalue
+  uint32_t & dwHighmostMSRvalue ,
+  uint32_t & dwLowmostMSRvalue
   )
 {
   //GetFIDandDID( wFreqInMHz, byFrequencyID, byDivisorID ) ;
