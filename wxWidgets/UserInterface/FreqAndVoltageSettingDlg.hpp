@@ -82,7 +82,9 @@ private:
 public:
   wxButton * m_p_wxbuttonFindLowestStableVoltage;
   wxBitmapButton * m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage;
+  wxSpinButton * m_p_wxspinbuttonSecondsUntilVoltageDecrease;
   wxStaticText * m_p_wxstatictextSecondsUntilNextVoltageDecrease;
+  wxTextCtrl * m_p_wxtextctrlSecondsUntilNextVoltageDecrease;
   wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
 private:
   wxBoxSizer * m_p_wxboxsizerOK_Cancel;
@@ -128,6 +130,8 @@ private:
     wxSizer * p_wxsizerSuperordinate  ) ;
   inline void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  inline void AddSelectPstateViaMousePositionButton(
+    wxSizer * p_wxsizer );
   inline void AddPauseServiceCheckbox(wxSizer * p_wxsizer ) ;
   inline void AddPerformanceStateSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
@@ -196,6 +200,7 @@ public:
   void OnApplyButton(wxCommandEvent & );
   void OnChar( wxKeyEvent & event) ;
   void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
+  void OnClose( wxCloseEvent & wxcmd );
   void OnDecVoltage(wxCommandEvent & );
   void OnFindLowestStableVoltageButton(wxCommandEvent & );
   void OnStopFindingLowestStableCPUcoreVoltageButton(wxCommandEvent & );
@@ -203,10 +208,13 @@ public:
   void OnPreventVoltageAboveDefaultVoltageCheckbox(wxCommandEvent & ) ;
   void OnPreventVoltageBelowLowestStableVoltageCheckbox(wxCommandEvent & ) ;
   void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
+  void OnSelectPstateViaMousePos(wxCommandEvent & );
   void OnSetAsMinVoltageButton(wxCommandEvent & );
   void OnSetAsWantedVoltageButton(wxCommandEvent & );
 //  void OnSpinVoltageDown(wxSpinEvent & event) ;
 //  void OnSpinVoltageUp(wxSpinEvent & event) ;
+  void OnSpinSecondsUntilVoltageDecreaseSpinButton(
+    wxSpinEvent & event);
   void OnStabilizeVoltageButton(wxCommandEvent & wxcmd ) ;
   void OnSetVoltageType(wxCommandEvent & wxcmd);
   void OutputFrequencyByControlValues() ;
@@ -223,7 +231,8 @@ public:
   void ChangeToStopFindingLowestStableCPUcoreVoltageButton();
   void ChangeVoltageSliderValue(int nNewValue) ;
   void SetStartFindingLowestStableVoltageButton();
-  inline BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
+  void SetMultiplierSliderToClosestValue(float fMultiplier);
+  BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
   inline BYTE VoltageIsWithinValidRange(float fVoltageInVolt
     , float fCPUcoreFrequencyinMHz) ;
   //Necessary in order to get scroll events; to avoid compilation errors.

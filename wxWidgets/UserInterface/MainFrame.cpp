@@ -226,6 +226,9 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   // : 100% CPU load.
   EVT_PAINT  (MainFrame::OnPaint)
   EVT_SIZE(MainFrame::OnSize)
+
+  EVT_MOTION(MainFrame::OnMoveMouse)
+  EVT_LEFT_DOWN(MainFrame::OnLeftMouseButtonDown)
   //EVT_TIMER(-1,MainFrame::OnTimerEvent)
   EVT_TIMER(TIMER_ID,MainFrame::OnTimerEvent)
   //EVT_COMMAND_RIGHT_CLICK(FIRST_TRAYNOTIFY_ID, MainFrame::OnSysTrayIconClick)
@@ -485,6 +488,7 @@ MainFrame::MainFrame(
 //  , m_fPreviousCPUusage(0.0f)
 //  , mp_freqandvoltagesettingdlg(NULL)
   , m_arp_freqandvoltagesettingdlg ( NULL )
+  , m_p_freqandvoltagesettingsdialog(NULL)
   , mp_i_cpucontroller ( p_cpucontroller)
   , mp_model ( p_model )
 //, m_bConfirmedYet(true)
@@ -1442,7 +1446,8 @@ void MainFrame::OnLoadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event)
     mp_wxx86infoandcontrolapp->UnloadDetectInstableCPUcoreVoltageDynLib();
 //    std::wstring std_wstrInstableCPUcoreVoltageDynLibPath = ::GetStdWstring(
 //      wxstrDynLibFilePath);
-    mp_wxx86infoandcontrolapp->m_std_wstrInstableCPUcoreVoltageDynLibPath =
+    mp_wxx86infoandcontrolapp->//m_std_wstrInstableCPUcoreVoltageDynLibPath =
+      m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath =
       ::GetStdWstring(wxstrDynLibFilePath);
 
     if( mp_wxx86infoandcontrolapp->//LoadDetectInstableCPUcoreVoltageDynLib(
@@ -1462,6 +1467,47 @@ void MainFrame::OnUnloadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & even
 void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
 {
   Hide() ;
+}
+
+void MainFrame::OnMoveMouse(wxMouseEvent & r_wxmouseevent)
+{
+  wxPoint wxpoint = r_wxmouseevent.GetPosition();
+
+  float fReferenceClockInMHz;
+  const float fMultiplier = GetClosestMuliplier(wxpoint.x,
+    fReferenceClockInMHz);
+  const float fClosestFrequency = fMultiplier * fReferenceClockInMHz;
+
+  const float fClosestVoltageToYcoordinate = GetClosestVoltageForYcoordinate(
+    wxpoint.y);
+
+  SetStatusText( wxString::Format( wxT("(%f Volt,%f MHz)"),
+    fClosestVoltageToYcoordinate, fClosestFrequency ) );
+}
+
+void MainFrame::OnLeftMouseButtonDown(wxMouseEvent & r_wxmouseevent)
+{
+  const wxPoint & c_r_wxpointPos = r_wxmouseevent.GetPosition();
+
+  if( m_p_freqandvoltagesettingsdialog )
+  {
+    float fVoltageInVolt = GetClosestVoltageForYcoordinate(c_r_wxpointPos.y);
+    float fReferenceClockInMHz;
+    float fMultiplier = GetClosestMuliplier(c_r_wxpointPos.x,
+      fReferenceClockInMHz);
+
+    m_p_freqandvoltagesettingsdialog->SetMultiplierSliderToClosestValue(
+      fMultiplier);
+    m_p_freqandvoltagesettingsdialog->HandleMultiplierValueChanged() ;
+
+    BYTE byIndexForClosestVoltage = m_p_freqandvoltagesettingsdialog->
+      SetVoltageSliderToClosestValue(fVoltageInVolt) ;
+    m_p_freqandvoltagesettingsdialog->ChangeVoltageSliderValue(
+      byIndexForClosestVoltage) ;
+
+    m_p_freqandvoltagesettingsdialog = NULL;
+    SetCursor(wxNullCursor);
+  }
 }
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
@@ -1928,21 +1974,6 @@ void MainFrame::DrawDiagramScale(
   std::set<VoltageAndFreq>::iterator & r_iterstdsetvoltageandfreq
   )
 {
-  wxString wxstrFreq ;
-  //Initialize to avoid g++ warnings like
-  //"'wLeftEndOfCurrFreqText' might be used uninitialized in this function"
-  wxCoord wxcoordWidth = 0 ;
-  wxCoord wxcoordHeight = 0 ;
-  WORD wLeftEndOfCurrFreqText = 0 ;
-  WORD wXcoordinate ;
-  //Initialize to avoid g++ warning
-  //"'wYcoordinate' may be used uninitialized in this function"
-  WORD wYcoordinate = 0;
-  std::map<WORD,WORD>::iterator
-    r_iterstdmapYcoord2RightEndOfFreqString ;
-  std::map<WORD,WORD> stdmapYcoord2RightEndOfFreqString ;
-  std::map<WORD,WORD>::iterator
-    r_iterstdmap_ycoord2rightendoffreqstringToUse ;
   LOGN("DrawDiagramScale mp_i_cpucontroller:" << mp_i_cpucontroller)
   LOGN("DrawDiagramScale m_wMaximumCPUcoreFrequency:" <<
     m_wMaximumCPUcoreFrequency)
@@ -1950,6 +1981,7 @@ void MainFrame::DrawDiagramScale(
   if( //mp_i_cpucontroller
     m_wMaximumCPUcoreFrequency )
   {
+    WORD wXcoordinate = 0, wYcoordinate = 0;
     //float fMinVoltage ;
     //float fMaxMinusMinVoltage ;
     std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
@@ -2021,6 +2053,11 @@ void MainFrame::DrawDiagramScale(
   {
   }
   WORD wPreviousYcoordinateForVoltage = MAXWORD ;
+
+  const wxPen & c_r_penCurrent = r_wxdc.GetPen();
+  wxPen penLine( * wxLIGHT_GREY, 1); // pen of width 1
+  r_wxdc.SetPen(penLine);
+
   for( WORD wVoltageIndex = 0 ; wVoltageIndex < mp_cpucoredata->
     m_stdset_floatAvailableVoltagesInVolt.size() ; ++ wVoltageIndex )
   {
@@ -2030,6 +2067,7 @@ void MainFrame::DrawDiagramScale(
     GetYcoordinateForVoltage( mp_cpucoredata->
       m_arfAvailableVoltagesInVolt[ wVoltageIndex ] ) ;
 //    wYoordinate = m_wYoordinate ;
+
     if( //If y coord of current voltage <= y coord of prev voltage - text h
       m_wYcoordinate <= wPreviousYcoordinateForVoltage - m_wTextHeight )
     {
@@ -2040,36 +2078,14 @@ void MainFrame::DrawDiagramScale(
         ) ;
       wPreviousYcoordinateForVoltage = m_wYcoordinate ;
     }
+    r_wxdc.DrawLine( m_wXcoordOfBeginOfYaxis, m_wYcoordinate,
+      m_wXcoordOfBeginOfYaxis + m_wDiagramWidth, m_wYcoordinate);
   }
+  r_wxdc.SetPen(c_r_penCurrent);
+
   if( mp_i_cpucontroller->m_fReferenceClockInMHz )
   {
-    float fReferenceClockInMHz = mp_i_cpucontroller->m_fReferenceClockInMHz ;
-    WORD wFrequencyInMHz ;
-    for( WORD wMultiplierIndex = 0 ; wMultiplierIndex < mp_cpucoredata->
-      m_stdset_floatAvailableMultipliers.size() ; ++ wMultiplierIndex )
-    {
-      wFrequencyInMHz =
-        //Avoid g++ warning "converting to `WORD' from `float'" .
-        (WORD)
-        ( mp_cpucoredata->m_arfAvailableMultipliers[
-          wMultiplierIndex ] * fReferenceClockInMHz ) ;
-      LOGN("should draw frequency "
-        << wFrequencyInMHz
-        << " for frequency scale")
-      DrawFrequency(
-        r_wxdc,
-        wFrequencyInMHz ,
-        wxcoordWidth ,
-        wxcoordHeight ,
-        wLeftEndOfCurrFreqText ,
-        wxstrFreq ,
-        wXcoordinate ,
-        wYcoordinate ,
-        r_iterstdmapYcoord2RightEndOfFreqString ,
-        stdmapYcoord2RightEndOfFreqString ,
-        r_iterstdmap_ycoord2rightendoffreqstringToUse
-        ) ;
-    }
+    DrawFrequencyMarksAndLines(r_wxdc);
   }
   LOGN("DrawDiagramScale end")
 }
@@ -2842,6 +2858,58 @@ void MainFrame::DrawFrequency(
     ) ;
 }
 
+void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc)
+{
+  //Initialize to avoid g++ warnings like
+  //"'wLeftEndOfCurrFreqText' might be used uninitialized in this function"
+  wxCoord wxcoordWidth = 0 ;
+  wxCoord wxcoordHeight = 0 ;
+  wxString wxstrFreq ;
+  WORD wLeftEndOfCurrFreqText = 0 ;
+  WORD wXcoordinate ;
+  //Initialize to avoid g++ warning
+  //"'wYcoordinate' may be used uninitialized in this function"
+  WORD wYcoordinate = 0;
+  std::map<WORD,WORD>::iterator
+    r_iterstdmapYcoord2RightEndOfFreqString ;
+  std::map<WORD,WORD> stdmapYcoord2RightEndOfFreqString ;
+  std::map<WORD,WORD>::iterator
+    r_iterstdmap_ycoord2rightendoffreqstringToUse ;
+
+  float fReferenceClockInMHz = mp_i_cpucontroller->m_fReferenceClockInMHz ;
+  WORD wFrequencyInMHz ;
+  wxPen penLine( * wxLIGHT_GREY, 1); // pen of width 1
+  const wxPen & c_r_penCurrent = r_wxdc.GetPen();
+  for( WORD wMultiplierIndex = 0 ; wMultiplierIndex < mp_cpucoredata->
+    m_stdset_floatAvailableMultipliers.size() ; ++ wMultiplierIndex )
+  {
+    wFrequencyInMHz =
+      //Avoid g++ warning "converting to `WORD' from `float'" .
+      (WORD)
+      ( mp_cpucoredata->m_arfAvailableMultipliers[
+        wMultiplierIndex ] * fReferenceClockInMHz ) ;
+    LOGN("should draw frequency "
+      << wFrequencyInMHz
+      << " for frequency scale")
+    DrawFrequency(
+      r_wxdc,
+      wFrequencyInMHz ,
+      wxcoordWidth ,
+      wxcoordHeight ,
+      wLeftEndOfCurrFreqText ,
+      wxstrFreq ,
+      wXcoordinate ,
+      wYcoordinate ,
+      r_iterstdmapYcoord2RightEndOfFreqString ,
+      stdmapYcoord2RightEndOfFreqString ,
+      r_iterstdmap_ycoord2rightendoffreqstringToUse
+      ) ;
+    r_wxdc.SetPen(penLine);
+    r_wxdc.DrawLine( wXcoordinate, 0, wXcoordinate, wYcoordinate);
+    r_wxdc.SetPen(c_r_penCurrent);
+  }
+}
+
 void MainFrame::DrawVoltage(wxDC & r_wxdc , float fVoltageInVolt)
 {
 //  WORD wYcoordinate ;
@@ -2981,6 +3049,99 @@ void MainFrame::DrawVoltageFreqCross(
     wXcoordinate , wYcoordinate - 3,
     wXcoordinate , wYcoordinate + 4
     ) ;
+}
+
+float MainFrame::GetClosestMuliplier(int nXcoordionate,
+    float & fReferenceClockInMHz)
+{
+  if( nXcoordionate >= m_wXcoordOfBeginOfYaxis )
+  {
+    unsigned uiFreqInMHz = (unsigned) (
+      (float) (nXcoordionate - m_wXcoordOfBeginOfYaxis) /
+      (float) m_wDiagramWidth * (float) m_wMaximumCPUcoreFrequency
+      );
+
+//    float fReferenceClockInMHz = mp_i_cpucontroller->m_fReferenceClockInMHz ;
+    fReferenceClockInMHz = mp_i_cpucontroller->m_fReferenceClockInMHz ;
+
+    float fMultiplierForYcoordinate = (float) uiFreqInMHz /
+        fReferenceClockInMHz;
+
+    float fAvailableMultiplier;
+    float fLowerMultiplier = FLT_MIN, fHigherMultiplier = FLT_MAX;
+
+    for( WORD wMultiplierIndex = 0 ; wMultiplierIndex < mp_cpucoredata->
+      m_stdset_floatAvailableMultipliers.size() ; ++ wMultiplierIndex )
+    {
+      fAvailableMultiplier = mp_cpucoredata->m_arfAvailableMultipliers[
+        wMultiplierIndex ] ;
+      if( fAvailableMultiplier < fMultiplierForYcoordinate)
+        fLowerMultiplier = fAvailableMultiplier;
+      else
+      {
+        fHigherMultiplier = fAvailableMultiplier;
+        break;
+      }
+    }
+    float fClosestAvailabeMultiplier =
+      (fMultiplierForYcoordinate - fLowerMultiplier) <
+      fHigherMultiplier - fMultiplierForYcoordinate ?
+      fLowerMultiplier : fHigherMultiplier;
+    return fClosestAvailabeMultiplier;
+  }
+  return -1.0;
+}
+
+float MainFrame::GetClosestVoltageForYcoordinate(
+  //Y coordinate starts at 0,0 at top left corner.
+  int nYcoordinate)
+{
+  if( mp_cpucoredata->m_stdset_floatAvailableVoltagesInVolt.size() )
+  {
+    const std::set<float> & c_r_std_set_float = mp_cpucoredata->
+      m_stdset_floatAvailableVoltagesInVolt;
+//    const float fLowestVoltage = * c_r_std_set_float.begin();
+//    const float fHighestVoltage = * ( -- c_r_std_set_float.end() );
+
+//    const float fVoltageDiff = fHighestVoltage - fLowestVoltage;
+
+    const float fYposToDiagramHeightRatio = (float) nYcoordinate / (float)
+      m_wDiagramHeight;
+
+    const float fVoltageAccordingToYcoordinate =
+      //The maximum voltage is at the top left corner.
+      m_fMaxVoltage -
+      ( fYposToDiagramHeightRatio * m_fMaxMinusMinVoltage) //fVoltageDiff
+      ;
+
+  //    c_r_std_set_float.lower_bound(); upper_bound()
+
+    float fClosestLowerVoltage = FLT_MIN, fClosestHigherVoltage =
+      //If no voltage higher than "fVoltageAccordingToYcoordinate": then
+      //fClosestHigherVoltage - fVoltageAccordingToYcoordinate is a very big
+      //number.
+      //http://www.cplusplus.com/reference/clibrary/cfloat/:
+      FLT_MAX;
+    std::set<float>::const_iterator c_iter = c_r_std_set_float.begin();
+    while( c_iter != c_r_std_set_float.end() )
+    {
+      if( * c_iter < fVoltageAccordingToYcoordinate )
+        fClosestLowerVoltage = * c_iter;
+      else
+      {
+        fClosestHigherVoltage = * c_iter;
+        break;
+      }
+      ++ c_iter;
+    }
+
+    const float fClosestVoltageToYcoordinate =
+      ( fVoltageAccordingToYcoordinate - fClosestLowerVoltage ) <
+      ( fClosestHigherVoltage - fVoltageAccordingToYcoordinate ) ?
+      fClosestLowerVoltage : fClosestHigherVoltage;
+    return fClosestVoltageToYcoordinate;
+  }
+  return -1.0;
 }
 
 bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(

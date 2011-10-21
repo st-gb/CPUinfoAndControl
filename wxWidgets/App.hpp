@@ -306,9 +306,10 @@ public:
       //A command usually needs 1 byte
       1,
     BYTE ar_byDataToSend [] = NULL);
-  void MessageWithTimeStamp(const std::wstring & cr_stdwstr);
+  void MessageWithTimeStamp(const std::wstring & cr_stdwstr,
+    unsigned flags = 0);
   void MessageWithTimeStamp(//const LPWSTR
-      const wchar_t * cp_lpwstrMessage);
+      const wchar_t * cp_lpwstrMessage, unsigned flags = 0);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;

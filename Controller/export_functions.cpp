@@ -162,7 +162,7 @@ extern "C"
     static BOOL boolRet ;
     boolRet = FALSE ;
 //    LOGN("WriteMSR")
-    DEBUGN("::WriteMSR(" << dwIndex
+    LOGN("::WriteMSR(" << dwIndex
       << "," << dwEAX
       << "," << dwEDX
       << "," << affinityMask

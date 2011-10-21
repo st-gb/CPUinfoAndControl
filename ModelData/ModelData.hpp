@@ -27,6 +27,19 @@
 class I_CPUcontroller ;
 class CPUcoreData ;
 
+class InstableCPUcoreVoltageDetection
+{
+public:
+  unsigned m_uiNumberOfSecondsToWaitUntilVoltageIsReduced;
+  std::wstring m_std_wstrDynLibPath;
+
+  InstableCPUcoreVoltageDetection():
+    m_uiNumberOfSecondsToWaitUntilVoltageIsReduced(100),
+    m_std_wstrDynLibPath( L"InstableCPUcoreVoltageDetection.dll")
+  {
+  }
+};
+
 //The member variables/ functions that differ between GUI and service _must_
 //be situated at the _end_ of _this_ class because all members that are used
 //in the attached (CPU controller) dynamic library must be aligned as in the
@@ -60,6 +73,9 @@ public:
 //  //file there is no error (because they are sorted by the set).
 //  std::set<MaxVoltageForFreq> m_setmaxvoltageforfreq ;
   CPUcoreData m_cpucoredata ;
+
+  InstableCPUcoreVoltageDetection m_instablecpucorevoltagedetection;
+
   //The attributes that differ between GUI and service _must_ be at the _end_
   //of _this_ class because all members that are used in the dynamic
   //library must be aligned as in the executable(!)
@@ -74,8 +90,8 @@ public:
   Attributes::UserInterfaceAttributes m_userinterfaceattributes ;
 #endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
   ValueTables m_valuetables ;
-  Model( ) ;
 
+  Model( ) ;
 //  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
   void AddValueTableRow(std::vector<std::string [2]>
     stdvecstdstrAttributeNameAndValue) ;

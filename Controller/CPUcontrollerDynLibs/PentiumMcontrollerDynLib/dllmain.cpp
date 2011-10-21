@@ -288,18 +288,27 @@ float *
    // 1.86 GHz FSB 133, 1.8GHz FSB 100)
    BYTE byMinMultiplier = (BYTE) ( ui32HighmostBits >> 24 ) & 255 ;
    BYTE byNumMultis = byMaxMultiplier - byMinMultiplier
+#ifndef LEAVE_OUT_MULTIPLIER_7
        //add "+1" : if min and max identical, the array size must be "1"
-       + 1 ;
+       + 1
+#endif
+       ;
    float * ar_f = new float[byNumMultis] ;
    //Allocation of storage succeeded.
    if( ar_f )
    {
-     *p_wNum = byNumMultis ;
+     * p_wNum = byNumMultis ;
      float fMulti = byMinMultiplier ;
 //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
      for( BYTE by = 0 ; by < byNumMultis ; ++ by )
      {
        ar_f[by] = fMulti ;
+#ifdef LEAVE_OUT_MULTIPLIER_7
+       if( fMulti == 6) //skip multiplier "7" (next is multiplier "8")
+       {
+         ++ fMulti;
+       }
+#endif
 //       stdstrstream << fMulti << " " ;
        ++ fMulti ;
      }

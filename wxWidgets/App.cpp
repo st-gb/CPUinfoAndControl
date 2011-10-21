@@ -128,8 +128,8 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib(
     //For a default value for file seperator.
     wxEmptyString),
-  m_std_wstrInstableCPUcoreVoltageDynLibPath(
-    L"InstableCPUcoreVoltageDetection.dll"),
+//  m_std_wstrInstableCPUcoreVoltageDynLibPath(
+//    L"InstableCPUcoreVoltageDetection.dll"),
   m_hmoduleUnstableVoltageDetectionDynLib(NULL),
   m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
   m_vbExitFindLowestStableVoltage(false),
@@ -1305,7 +1305,9 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
 
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
   //const LPWSTR
-  const wchar_t * cp_lpwstrMessage)
+  const wchar_t * cp_lpwstrMessage,
+  unsigned flags //=0
+  )
 {
 //  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
 //    ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
@@ -1316,7 +1318,9 @@ void wxX86InfoAndControlApp::MessageWithTimeStamp(
 }
 
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
-  const std::wstring & c_r_std_wstrMessage)
+  const std::wstring & c_r_std_wstrMessage,
+  unsigned flags //=0
+  )
 {
 //  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
 //    ::wxNow() + wxT(" ") + getwxString( c_r_std_wstrMessage),

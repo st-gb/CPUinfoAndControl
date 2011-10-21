@@ -32,6 +32,7 @@
 //#include <images/pause16x16.xpm>
 #include <images/prevent_voltage_above_default_voltage16x16.xpm>
 #include <images/prevent_voltage_below_lowest_stable_voltage16x16.xpm>
+#include <images/select_pstate_via_mouse_position16x16.xpm>
 #include <images/set_as_desired_voltage16x16.xpm>
 #include <images/set_as_minimal_voltage16x16.xpm>
 #include <images/stabilize_voltage.xpm>
@@ -48,11 +49,13 @@
 #include <wx/dialog.h> //for base class wxDialog
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
 #include <wx/sizer.h> //for class wxBoxSizer
+#include <wx/spinbutt.h> //class wxSpinButton
 #include <wx/slider.h> //for class wxSlider
 //#include <wx/spinbutt.h> //class wxSpinButton
 ////for a line which may be used in a dialog to separate the groups of controls.
 //#include <wx/statline.h> //class wxStaticLine
 #include <wx/stattext.h> //for wxStaticText
+#include <wx/textctrl.h> //class wxTextCtrl
 #include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
 #include "MainFrame.hpp" //for class MainFrame
 
@@ -69,6 +72,7 @@ enum
   //, ID_SpinVoltageUp
   //, ID_SpinVoltageDown
   , ID_SpinVoltage //= 182
+  , ID_SelectPstateViaMousePos
   , ID_DecreaseVoltage
   , ID_StabilizeVoltage
   , ID_Panel
@@ -77,6 +81,7 @@ enum
   , ID_findLowestStableVoltage
   , ID_stopFindingLowestStableVoltage
   , VoltageTypeListBox
+  , SecondsUntilVoltageDecreaseSpinButton
 };
 
 #ifndef MAXWORD
@@ -130,9 +135,12 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
 #if wxUSE_SPINBTN
   //EVT_SPIN_UP(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageUp)
   //EVT_SPIN_DOWN(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageDown)
-  //EVT_SPIN(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageUp)
+  EVT_SPIN(SecondsUntilVoltageDecreaseSpinButton,
+      FreqAndVoltageSettingDlg::OnSpinSecondsUntilVoltageDecreaseSpinButton)
 #endif
   EVT_BUTTON( ID_DecreaseVoltage, FreqAndVoltageSettingDlg::OnDecVoltage)
+  EVT_BUTTON( ID_SelectPstateViaMousePos, FreqAndVoltageSettingDlg::
+      OnSelectPstateViaMousePos)
   EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
   EVT_CHECKBOX( ID_PreventVoltageAboveDefaultVoltageCheckbox,
     FreqAndVoltageSettingDlg::OnPreventVoltageAboveDefaultVoltageCheckbox)
@@ -146,6 +154,7 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
 //  EVT_CHAR(FreqAndVoltageSettingDlg::OnChar)
 //  EVT_CHAR_HOOK(FreqAndVoltageSettingDlg::OnCharHook)
   EVT_CHOICE( VoltageTypeListBox, FreqAndVoltageSettingDlg::OnSetVoltageType)
+  EVT_CLOSE( FreqAndVoltageSettingDlg::OnClose)
 END_EVENT_TABLE()
 
 inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
@@ -155,7 +164,7 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
   wxStaticText * p_wxstatictext = new wxStaticText(
     this,
     wxID_ANY,
-    _T("affected\ncores:")
+    wxT("affected\ncores:")
     ) ;
   p_wxstatictext->SetToolTip( wxT("the CPU cores the frequency and voltage "
     "should be applied to ") ) ;
@@ -169,11 +178,25 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
 
   WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
   m_ar_p_wxcheckbox = new wxCheckBox * [ wNumCPUcores ] ;
+
   if( m_ar_p_wxcheckbox ) //Allocating the array succeeded.
     for( WORD wCoreID = 0 ; wCoreID < wNumCPUcores ; ++ wCoreID )
     {
-      m_ar_p_wxcheckbox[ wCoreID ] = new wxCheckBox( this, wxID_ANY,
-        wxString::Format(wxT("%u"), wCoreID) ) ;
+      m_ar_p_wxcheckbox[ wCoreID ] = new wxCheckBox(
+        this,
+        wxID_ANY,
+        //const wxString& label,
+        wxString::Format( wxT("%u"), wCoreID),
+        wxDefaultPosition,
+        wxDefaultSize, //const wxSize& size = wxDefaultSize,
+        //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+        // "If you need to use this style in order to get the arrows or etc., but
+        // would still like to have normal keyboard navigation take place, you
+        // should create and send a wxNavigationKeyEvent in response to the key
+        // events for Tab and Shift-Tab."
+        //To get EVT_CHAR events when the button is focused.
+        wxWANTS_CHARS
+      ) ;
       if( mp_model->m_userinterfaceattributes.m_bSelectAllCPUcores )
         m_ar_p_wxcheckbox[ wCoreID ]->SetValue(true) ; //Set the check.
       p_wxboxsizerCPUcoreCheckBox->Add(
@@ -298,13 +321,6 @@ inline void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
   m_p_wxboxsizerOK_Cancel->Add( mp_wxbuttonApply ) ;
 //  m_p_wxboxsizerOK_Cancel->Add( m_p_wxbuttonFindLowestStableVoltage ) ;
 
-  CreateFindLowestStableCPUcoreVoltageButton();
-  m_p_wxboxsizerOK_Cancel->Add(m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage);
-
-  CreateStopFindingLowestStableCPUcoreVoltageButton();
-  m_p_wxboxsizerOK_Cancel->Add(
-    m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage);
-
   //  mp_wxcheckboxSetAsCurrentAfterApplying = new wxCheckBox(this, wxID_ANY,
   //      //_T("Set as current after apply") ) ;
   //      _T("Set as current p-state after write") ) ;
@@ -330,8 +346,39 @@ inline void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
 
   m_p_wxboxsizerOK_Cancel->Add( p_wxbuttonCancel );
 
+  CreateFindLowestStableCPUcoreVoltageButton();
+  m_p_wxboxsizerOK_Cancel->Add(m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage);
+
+  CreateStopFindingLowestStableCPUcoreVoltageButton();
+  m_p_wxboxsizerOK_Cancel->Add(
+    m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage);
+
+  //wxSpinCtrl * p_wx = new
+
+  wxSize wxsize(40, 20);
+  m_p_wxtextctrlSecondsUntilNextVoltageDecrease = new wxTextCtrl(
+    this,
+    wxID_ANY,
+    wxString::Format( wxT("%u"), mp_model->
+      m_instablecpucorevoltagedetection.
+      m_uiNumberOfSecondsToWaitUntilVoltageIsReduced ),
+    wxDefaultPosition,
+    wxsize
+    );
+  m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetToolTip(
+    wxT("For detecting an instable CPU core voltage:\n"
+      "seconds until the voltage is decreased") );
+  m_p_wxboxsizerOK_Cancel->Add(m_p_wxtextctrlSecondsUntilNextVoltageDecrease//,
+    //1
+    );
+  m_p_wxspinbuttonSecondsUntilVoltageDecrease = new wxSpinButton (
+      this,
+      SecondsUntilVoltageDecreaseSpinButton
+      );
+  m_p_wxboxsizerOK_Cancel->Add(m_p_wxspinbuttonSecondsUntilVoltageDecrease);
+
   m_p_wxstatictextSecondsUntilNextVoltageDecrease = new wxStaticText( this,
-    wxID_ANY, wxT("   ") );
+    wxID_ANY, wxT("     s") );
   m_p_wxboxsizerOK_Cancel->Add(m_p_wxstatictextSecondsUntilNextVoltageDecrease);
 
   //  mp_wxcheckboxOnlySafeRange = new wxCheckBox(this, wxID_ANY,
@@ -602,6 +649,37 @@ void FreqAndVoltageSettingDlg::AddIncreaseVoltageButton( wxSizer * p_wxsizer )
     , 0 //0=the control should not take more space if the sizer is enlarged
     , wxLEFT | wxRIGHT
     , 0 );
+}
+
+void FreqAndVoltageSettingDlg::AddSelectPstateViaMousePositionButton(
+  wxSizer * p_wxsizer )
+{
+  wxBitmap wxbitmapSelectPstateViaMousePosition ;
+  wxbitmapSelectPstateViaMousePosition = wxBitmap(
+    select_pstate_via_mouse_position16x16_xpm ) ;
+  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
+   this
+   , ID_SelectPstateViaMousePos
+  //    , wxT("&+")
+   , wxbitmapSelectPstateViaMousePosition
+   , wxDefaultPosition,
+   wxDefaultSize,
+   wxBU_AUTODRAW |
+   //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+   // "If you need to use this style in order to get the arrows or etc., but
+   // would still like to have normal keyboard navigation take place, you
+   // should create and send a wxNavigationKeyEvent in response to the key
+   // events for Tab and Shift-Tab."
+   //To get EVT_CHAR events when the button is focused.
+   wxWANTS_CHARS
+   ) ;
+  p_wxbitmapbutton->SetToolTip( wxT("select voltage&frequency via left mouse click") ) ;
+  p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
+  //    p_wxbuttonIncBy1VoltageStep
+   p_wxbitmapbutton
+   , 0 //0=the control should not take more space if the sizer is enlarged
+   , wxLEFT | wxRIGHT
+   , 0 );
 }
 
 void FreqAndVoltageSettingDlg::AddPauseServiceCheckbox(wxSizer * p_wxsizer )
@@ -900,6 +978,7 @@ inline void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
     //number of children in the sizer
     0 );
   AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
   AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
   mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
     this, wxID_ANY, //_T("")
@@ -1456,7 +1535,14 @@ void FreqAndVoltageSettingDlg::CreateSliders()
     wxDefaultPosition, //const wxPoint& pos = wxDefaultPosition,
     wxDefaultSize, //const wxSize& size = wxDefaultSize,
     3, //int n = 0,
-    ar_wxstrVoltageTypes //const wxString choices[] = NULL
+    ar_wxstrVoltageTypes, //const wxString choices[] = NULL
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    wxWANTS_CHARS
     );
   m_p_wxchoiceVoltageType->Select(maximum_voltage);
   m_p_wxchoiceVoltageType->SetToolTip( wxT("type of voltage for the voltage/"
@@ -2089,6 +2175,39 @@ void FreqAndVoltageSettingDlg::OnCharHook( wxKeyEvent & r_wxkeyevent)
 //  ProcessPendingEvents()
 }
 
+void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
+{
+  DWORD dwExitCode;
+  ::GetExitCodeThread( wxGetApp().
+    m_x86iandc_threadFindLowestStableVoltage.
+    m_handleThread, & dwExitCode ) ;
+   if(
+  //        ::WaitForSingleObject( wxGetApp().
+  //          m_x86iandc_threadFindLowestStableVoltage.m_handleThread,
+  //          //wxGetApp().m_x86iandc_threadFindLowestStableVoltage
+  //          0)
+  //          ==
+       dwExitCode == STILL_ACTIVE
+     )
+   {
+     wxGetApp().MessageWithTimeStamp(
+//     if(
+         //::wxMessageBox( wxT(
+         L"The thread for detecting an "
+           "instable CPU core voltage is still running.\n"
+           //"Close the dialog anyway?"),
+             "You should stop the instable CPU core voltage detection before "
+             "in order to close the dialog."//)
+//           wxT("question")//,
+  //         wxYES_NO
+           );
+         //== wxYES
+//       )
+   }
+   else
+     Destroy();
+}
+
 void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 {
 //  float fMinVoltageInVolt = mp_cpucontroller->GetMinimumVoltageInVolt() ;
@@ -2139,6 +2258,15 @@ void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
     -- m_wVoltageSliderValue ;
     ChangeVoltageSliderValue(m_wVoltageSliderValue) ;
   }
+}
+
+void FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos( wxCommandEvent & wxcmd )
+{
+//  wxCursor wxcursorCross(wxCURSOR_CROSS);
+  mp_mainframe->SetCursor( //wxcursorCross
+    * wxCROSS_CURSOR);
+  //::wxSetCursor( * wxCROSS_CURSOR);
+  mp_mainframe->m_p_freqandvoltagesettingsdialog = this;
 }
 
 void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
@@ -2398,6 +2526,15 @@ void FreqAndVoltageSettingDlg::OnSetVoltageType(wxCommandEvent & wxcmd)
   HandlePstateMayHaveChanged();
 }
 
+void FreqAndVoltageSettingDlg::OnSpinSecondsUntilVoltageDecreaseSpinButton(
+  wxSpinEvent & event)
+{
+  m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetLabel( //wxString::Format(
+    //wxT("%u"), event.GetPosition() )
+    wxT("200")
+    );
+}
+
 void FreqAndVoltageSettingDlg::OnStabilizeVoltageButton(
   wxCommandEvent & wxcmd )
 {
@@ -2554,6 +2691,13 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
     wxCommandEvent & //WXUNUSED(event)
     r_wxcommandevent )
 {
+  wxString wxstr = m_p_wxtextctrlSecondsUntilNextVoltageDecrease->GetLabel();
+  unsigned long ul;
+  if( wxstr.ToULong( & ul, 10) )
+  {
+    mp_model->m_instablecpucorevoltagedetection.
+      m_uiNumberOfSecondsToWaitUntilVoltageIsReduced = ul;
+
 //      wxGetApp().StopInstableCPUcoreVoltageDetection();
 //      }
 //      else
@@ -2574,6 +2718,13 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
 //  //replacing a child from the sizer."
 //  m_p_wxboxsizerOK_Cancel->Layout();
 //  Layout();
+  }
+  else
+  {
+      std::wstring std_wstr = L"can't convert \"" +
+        ::GetStdWstring( wxstr) + L"\" to int";
+      wxGetApp().MessageWithTimeStamp( std_wstr);
+  }
 }
 
 void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS()
@@ -2746,6 +2897,15 @@ void FreqAndVoltageSettingDlg::SetStartFindingLowestStableVoltageButton()
 //  //"[...] call wxSizer::Layout to update the layout "on screen" after
 //  //replacing a child from the sizer."
 //  m_p_wxboxsizerOK_Cancel->Layout();
+}
+
+void FreqAndVoltageSettingDlg::SetMultiplierSliderToClosestValue(
+    float fMultiplier)
+{
+  BYTE byMultiIndex = mp_model->m_cpucoredata.GetIndexForClosestMultiplier(
+    fMultiplier ) ;
+  mp_wxsliderFreqInMHz->SetValue( //m_pstate.GetFreqInMHz()
+    byMultiIndex ) ;
 }
 
 BYTE FreqAndVoltageSettingDlg::SetVoltageSliderToClosestValue(

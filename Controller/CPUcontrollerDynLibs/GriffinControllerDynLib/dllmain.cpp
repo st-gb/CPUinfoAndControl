@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * dllmain.cpp
  *
@@ -30,7 +37,9 @@
 AssignPointersToExportedExeMSRfunctions.h>
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointerToExportedExeReadPCIconfig.h>
+#ifdef _DEBUG
   #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+#endif
   //#include <Windows/GetNumberOfLogicalCPUs.h>
   //for BITMASK_FOR_LOWMOST_5BIT
   #include <preprocessor_macros/preprocessor_helper_macros.h>
