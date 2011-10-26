@@ -193,6 +193,7 @@ private:
   std::vector<wxMenu *> m_vecp_wxmenuCore ;
 public:
   volatile bool m_vbAnotherWindowIsActive ;
+  unsigned m_uiRightmostEndOfVoltageString;
   WORD m_wFreqInMHzOfCurrentActiveCoreSettings ;
   WORD m_wMaxFreqWidth ;
   WORD m_wMaximumCPUcoreFrequency ;
@@ -352,6 +353,7 @@ public:
     std::map<WORD,WORD>::iterator & r_iterstdmapYcoord2RightEndOfFreqString ,
     std::map<WORD,WORD> & stdmapYcoord2RightEndOfFreqString ,
     std::map<WORD,WORD>::iterator & r_iterstdmap_ycoord2rightendoffreqstringToUse
+    , bool bCalculateMaxTextHeight
     ) ;
   void DrawPerformanceStatesCrosses(
     wxDC & r_wxdc 
@@ -363,23 +365,26 @@ public:
     //std::set<MaxVoltageForFreq>::iterator & iterstdsetmaxvoltageforfreq
     std::set<VoltageAndFreq>::iterator & iterstdsetmaxvoltageforfreq
     );
-  void DrawOvervoltageProtectionCurve(
+  void DrawVoltageGraph(
     //wxPaintDC * p_wxpaintdc
     wxDC & wxdc
 //    , WORD wDiagramWidth
 //    , WORD wDiagramHeight
     , float fMaxVoltage
 //    , WORD wXcoordOfBeginOfYaxis
+    , const std::set<VoltageAndFreq> & c_r_stdsetvoltageandfreq
     ) ;
-  void DrawFrequencyMarksAndLines(wxDC & r_wxdc);
+  void DrawFrequencyMarksAndLines(wxDC & r_wxdc, WORD & wMaximumYcoordinateForFrequency);
   void DrawVoltage(wxDC & r_wxdc, float fVoltage) ;
-  void DrawVoltage(wxDC & r_wxdc, float fVoltage, WORD wYcoordinate) ;
+  wxCoord DrawVoltage(wxDC & r_wxdc, float fVoltage, WORD wYcoordinate,
+    unsigned uiXcoordinateInPixels) ;
   void DrawVoltageFreqCross(
     wxDC & r_wxdc
     , float fVoltageInVolt
     , WORD wFreqInMHz
     , const wxColor * cp_wxcolor 
     ) ;
+  void DrawVoltageScale(wxDC & r_wxdc );
   void DynVoltnFreqScalingEnabled() ;
   void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes *
     p_percpucoreattributes ) ;
@@ -394,7 +399,7 @@ public:
     ) ;
   inline WORD GetXcoordinateForFrequency( WORD wFreqInMHz) ;
   inline WORD GetYcoordinateForFrequency( WORD wFreqInMHz) ;
-  void GetYcoordinateForVoltage(float fVoltageInVolt ) ;
+  unsigned GetYcoordinateForVoltage(float fVoltageInVolt ) ;
   inline bool IsCPUcontrollerAccessAllowedThreadSafe()
   {
     {

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * UserInterfaceAttributes.hpp
  *
@@ -26,6 +33,9 @@ namespace Attributes
     unsigned short m_wMainFrameTopLeftCornerXcoordinateInPixels ;
     unsigned short m_wMainFrameTopLeftCornerYcoordinateInPixels ;
     unsigned short m_wToolTipDelay ;
+    int m_nVoltageScaleSizeInPoint;
+    int m_nCurrentCPUcoreInfoSizeInPoint;
+    int m_nCPUcoreFrequencyScaleSizeInPoint;
     UserInterfaceAttributes();
     virtual
     ~UserInterfaceAttributes();

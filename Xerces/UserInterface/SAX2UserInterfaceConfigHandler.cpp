@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * SAX2UserInterfaceConfigHandler.cpp
  *
@@ -132,6 +139,21 @@ namespace Xerces
      )
       m_p_model->m_userinterfaceattributes.
         m_wMainFrameTopLeftCornerYcoordinateInPixels = w ;
+    ConvertXercesAttributesValue<int>(
+      cr_xercesc_attributes
+       ,"CPU_core_voltage_scale_point_size"
+       ,m_p_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint
+     );
+    ConvertXercesAttributesValue<int>(
+      cr_xercesc_attributes
+       ,"current_CPU_core_info_point_size"
+       ,m_p_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint
+     );
+    ConvertXercesAttributesValue<int>(
+      cr_xercesc_attributes
+       ,"CPU_core_frequency_scale_point_size"
+       ,m_p_model->m_userinterfaceattributes.m_nCPUcoreFrequencyScaleSizeInPoint
+     );
   }
 
   void SAX2UserInterfaceConfigHandler::HandleServiceXMLelement(

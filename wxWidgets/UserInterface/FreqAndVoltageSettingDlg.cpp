@@ -48,6 +48,7 @@
 #include <wx/choice.h> //class wxChoice
 #include <wx/dialog.h> //for base class wxDialog
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
+//#include <wx/msw/wx.rc> //for cross cursor
 #include <wx/sizer.h> //for class wxBoxSizer
 #include <wx/spinbutt.h> //class wxSpinButton
 #include <wx/slider.h> //for class wxSlider
@@ -673,7 +674,8 @@ void FreqAndVoltageSettingDlg::AddSelectPstateViaMousePositionButton(
    //To get EVT_CHAR events when the button is focused.
    wxWANTS_CHARS
    ) ;
-  p_wxbitmapbutton->SetToolTip( wxT("select voltage&frequency via left mouse click") ) ;
+  p_wxbitmapbutton->SetToolTip( wxT("select voltage&frequency via left mouse "
+    "click into mainframe") ) ;
   p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
   //    p_wxbuttonIncBy1VoltageStep
    p_wxbitmapbutton
@@ -2178,6 +2180,12 @@ void FreqAndVoltageSettingDlg::OnCharHook( wxKeyEvent & r_wxkeyevent)
 void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
 {
   DWORD dwExitCode;
+
+  if( mp_mainframe->m_p_freqandvoltagesettingsdialog == this)
+  {
+    mp_mainframe->m_p_freqandvoltagesettingsdialog = NULL;
+    mp_mainframe->SetCursor(wxNullCursor);
+  }
   ::GetExitCodeThread( wxGetApp().
     m_x86iandc_threadFindLowestStableVoltage.
     m_handleThread, & dwExitCode ) ;
@@ -2262,11 +2270,20 @@ void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 
 void FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos( wxCommandEvent & wxcmd )
 {
-//  wxCursor wxcursorCross(wxCURSOR_CROSS);
-  mp_mainframe->SetCursor( //wxcursorCross
-    * wxCROSS_CURSOR);
-  //::wxSetCursor( * wxCROSS_CURSOR);
-  mp_mainframe->m_p_freqandvoltagesettingsdialog = this;
+  if( mp_mainframe->m_p_freqandvoltagesettingsdialog == this)
+  {
+    mp_mainframe->m_p_freqandvoltagesettingsdialog = NULL;
+    mp_mainframe->SetCursor(wxNullCursor);
+  }
+  else
+  {
+    wxCursor wxcursorCross(wxCURSOR_CROSS);
+    mp_mainframe->SetCursor( wxcursorCross
+      //* wxCROSS_CURSOR
+      );
+    //::wxSetCursor( * wxCROSS_CURSOR);
+    mp_mainframe->m_p_freqandvoltagesettingsdialog = this;
+  }
 }
 
 void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
