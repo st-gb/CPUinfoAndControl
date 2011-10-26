@@ -364,7 +364,9 @@ void wxServiceSocketClient::GetServerPathAndPort(
   const wxString & cr_wxstrURL )
 {
   size_t size_tIndexOfColon = cr_wxstrURL.rfind( wxT(':') ) ;
-  if( size_tIndexOfColon != wxStringBase::npos )
+  if( size_tIndexOfColon != //wxStringBase::npos
+      wxString::npos
+    )
   {
     m_wxstrServerHostname = cr_wxstrURL.substr( 0, size_tIndexOfColon ) ;
     LOGN("GetServerPathAndPort()--server host name:"

@@ -2003,91 +2003,95 @@ void MainFrame::DrawDiagramScale(
     LOGN( "DrawDiagramScale m_wDiagramWidth:" << m_wDiagramWidth )
     //fMinVoltage = mp_i_cpucontroller->GetMinimumVoltageInVolt() ;
     //fMaxMinusMinVoltage = m_fMaxVoltage - fMinVoltage ;
-    for( ; r_iterstdsetvoltageandfreq !=
-        //mp_i_cpucontroller->mp_model->
-        //m_setmaxvoltageforfreq.end() ; //++ iterstdvecmaxvoltageforfreq
-        r_stdsetvoltageandfreq.end() ;
-        //++ iterstdsetmaxvoltageforfreq
-        ++ r_iterstdsetvoltageandfreq
-        )
-    {
-//      DrawFrequency(
-//        r_wxdc,
-//        //wFrequencyInMHz
-//        r_iterstdsetvoltageandfreq->m_wFreqInMHz ,
-//        wxcoordWidth ,
-//        wxcoordHeight ,
-//        wLeftEndOfCurrFreqText ,
-//        wxstrFreq ,
-//        wXcoordinate ,
-//        wYcoordinate ,
-//        r_iterstdmapYcoord2RightEndOfFreqString ,
-//        stdmapYcoord2RightEndOfFreqString ,
-//        r_iterstdmap_ycoord2rightendoffreqstringToUse
+//    for( ; r_iterstdsetvoltageandfreq !=
+//        //mp_i_cpucontroller->mp_model->
+//        //m_setmaxvoltageforfreq.end() ; //++ iterstdvecmaxvoltageforfreq
+//        r_stdsetvoltageandfreq.end() ;
+//        //++ iterstdsetmaxvoltageforfreq
+//        ++ r_iterstdsetvoltageandfreq
+//        )
+//    {
+////      DrawFrequency(
+////        r_wxdc,
+////        //wFrequencyInMHz
+////        r_iterstdsetvoltageandfreq->m_wFreqInMHz ,
+////        wxcoordWidth ,
+////        wxcoordHeight ,
+////        wLeftEndOfCurrFreqText ,
+////        wxstrFreq ,
+////        wXcoordinate ,
+////        wYcoordinate ,
+////        r_iterstdmapYcoord2RightEndOfFreqString ,
+////        stdmapYcoord2RightEndOfFreqString ,
+////        r_iterstdmap_ycoord2rightendoffreqstringToUse
+////        ) ;
+//      wXcoordinate = GetXcoordinateForFrequency( r_iterstdsetvoltageandfreq->
+//        m_wFreqInMHz) ;
+////      wYcoordinate = r_iterstdmap_ycoord2rightendoffreqstringToUse->first ;
+//      LOGN( "DrawDiagramScale x coord:" << wXcoordinate
+//        << "y coord:" << wYcoordinate )
+//      //mapRightEndOfFreqString2yCoord.insert(
+//      //  std::pair<WORD,WORD> ( wLeftEndOfCurrFreqText + wxcoordWidth, wYcoordinate ) ) ;
+//      //Draw vertical line for current frequency mark.
+//      //p_wxpaintdc->DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
+//      //wxmemorydc.DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
+//      r_wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, m_wDiagramHeight
+//        //wYcoordinate
 //        ) ;
-      wXcoordinate = GetXcoordinateForFrequency( r_iterstdsetvoltageandfreq->
-        m_wFreqInMHz) ;
-//      wYcoordinate = r_iterstdmap_ycoord2rightendoffreqstringToUse->first ;
-      LOGN( "DrawDiagramScale x coord:" << wXcoordinate
-        << "y coord:" << wYcoordinate )
-      //mapRightEndOfFreqString2yCoord.insert(
-      //  std::pair<WORD,WORD> ( wLeftEndOfCurrFreqText + wxcoordWidth, wYcoordinate ) ) ;
-      //Draw vertical line for current frequency mark.
-      //p_wxpaintdc->DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
-      //wxmemorydc.DrawLine(wXcoordinate, 0, wXcoordinate, wDiagramHeight) ;
-      r_wxdc.DrawLine(wXcoordinate, 0, wXcoordinate, m_wDiagramHeight
-        //wYcoordinate
-        ) ;
-//      DrawVoltage(
-//        r_wxdc ,
-//        ( * r_iterstdsetvoltageandfreq).m_fVoltageInVolt
-//        ) ;
-      //Draw horizontal line for current voltage mark.
-      //p_wxpaintdc->DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
-      //wxmemorydc.DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
-      r_wxdc.DrawLine(m_wXcoordOfBeginOfYaxis, wYcoordinate,
-        m_wDiagramWidth + m_wXcoordOfBeginOfYaxis, wYcoordinate ) ;
-    }
+////      DrawVoltage(
+////        r_wxdc ,
+////        ( * r_iterstdsetvoltageandfreq).m_fVoltageInVolt
+////        ) ;
+//      //Draw horizontal line for current voltage mark.
+//      //p_wxpaintdc->DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
+//      //wxmemorydc.DrawLine(wXcoordOfBeginOfYaxis, wYcoordinate,
+//      r_wxdc.DrawLine(m_wXcoordOfBeginOfYaxis, wYcoordinate,
+//        m_wDiagramWidth + m_wXcoordOfBeginOfYaxis, wYcoordinate ) ;
+//    }
   } //if( m_wMaximumCPUcoreFrequency )
-  else //m_wMaximumCPUcoreFrequency = 0
-  {
-  }
-  WORD wPreviousYcoordinateForVoltage = MAXWORD ;
+//  else //m_wMaximumCPUcoreFrequency = 0
+//  {
+//  }
 
-  const wxPen & c_r_penCurrent = r_wxdc.GetPen();
-  wxPen penLine( * wxLIGHT_GREY, 1); // pen of width 1
-  r_wxdc.SetPen(penLine);
-
-  for( WORD wVoltageIndex = 0 ; wVoltageIndex < mp_cpucoredata->
-    m_stdset_floatAvailableVoltagesInVolt.size() ; ++ wVoltageIndex )
-  {
-    LOGN("should draw voltage "
-      << mp_cpucoredata->m_arfAvailableVoltagesInVolt[ wVoltageIndex ]
-      << " for voltage scale")
-    GetYcoordinateForVoltage( mp_cpucoredata->
-      m_arfAvailableVoltagesInVolt[ wVoltageIndex ] ) ;
-//    wYoordinate = m_wYoordinate ;
-
-    if( //If y coord of current voltage <= y coord of prev voltage - text h
-      m_wYcoordinate <= wPreviousYcoordinateForVoltage - m_wTextHeight )
-    {
-      DrawVoltage(
-        r_wxdc,
-        mp_cpucoredata->m_arfAvailableVoltagesInVolt[ wVoltageIndex ]
-        , m_wYcoordinate
-        ) ;
-      wPreviousYcoordinateForVoltage = m_wYcoordinate ;
-    }
-    r_wxdc.DrawLine( m_wXcoordOfBeginOfYaxis, m_wYcoordinate,
-      m_wXcoordOfBeginOfYaxis + m_wDiagramWidth, m_wYcoordinate);
-  }
-  r_wxdc.SetPen(c_r_penCurrent);
+  WORD wMaximumYcoordinateForFrequency = 0;
+  WORD wMaximumHeightForFrequencyMarks = 0;
+  wxCoord wxcoordTextWidth, wxcoordTextHeight;
+  r_wxdc.GetTextExtent(
+    wxT("I")
+    , & wxcoordTextWidth
+    , & wxcoordTextHeight
+    //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+    ) ;
+  int nHalfTextHeightInPixels = wxcoordTextHeight / 2;
 
   if( mp_i_cpucontroller->m_fReferenceClockInMHz )
   {
-    DrawFrequencyMarksAndLines(r_wxdc);
+    //Do not draw: only calculate the max. (text) height of the frequency
+    //scale.
+    DrawFrequencyMarksAndLines(r_wxdc, wMaximumYcoordinateForFrequency);
+    wMaximumHeightForFrequencyMarks = wMaximumYcoordinateForFrequency -
+      m_wDiagramHeight
+      //For the 1st line.
+      + wxcoordTextHeight;
   }
-  LOGN("DrawDiagramScale end")
+
+  //->line for min./ lowest voltage/ 0V directly above frequency marks.
+  m_wDiagramHeight += 50 - wMaximumHeightForFrequencyMarks //-
+    //nHalfTextHeightInPixels
+    ;
+
+  DrawVoltageScale(r_wxdc);
+
+//  //The frequency should start under min. voltage.
+//  m_wDiagramHeight += nHalfTextHeightInPixels;
+
+  if( mp_i_cpucontroller->m_fReferenceClockInMHz )
+  {
+    //Now do really draw.
+    DrawFrequencyMarksAndLines(r_wxdc, wMaximumYcoordinateForFrequency);
+  }
+
+ LOGN("DrawDiagramScale end")
 }
 
 void MainFrame::DrawLowestStableVoltageCurve(
@@ -2169,25 +2173,8 @@ void MainFrame::DrawLowestStableVoltageCurve(
               , fVoltage
               , mp_cpucoredata->m_stdsetvoltageandfreqLowestStable
               ) ;
-            if( m_bRangeBeginningFromMinVoltage )
-              wYcoordinate =
-                //Explicit cast to avoid (g++) warning.
-                (WORD)
-                (
-                  m_wDiagramHeight -
-                  ( fVoltage - m_fMinVoltage )
-                  / m_fMaxMinusMinVoltage * m_wDiagramHeight
-                ) ;
-            else
-              wYcoordinate =
-                //Explicit cast to avoid (g++) warning.
-                (WORD)
-                (
-                  m_wDiagramHeight -
-                  fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-                  fMaxVoltage
-                  * m_wDiagramHeight
-                ) ;
+            wYcoordinate = GetYcoordinateForVoltage(fVoltage);
+
             //p_wxpaintdc->DrawLine(
             wxdc.DrawLine(
               wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
@@ -2215,14 +2202,15 @@ void MainFrame::DrawLowestStableVoltageCurve(
   }
 }
 
-void MainFrame::DrawOvervoltageProtectionCurve(
-    //wxPaintDC * p_wxpaintdc
-    wxDC & wxdc
+void MainFrame::DrawVoltageGraph(
+  //wxPaintDC * p_wxpaintdc
+  wxDC & wxdc
 //    , WORD wDiagramWidth
 //    , WORD wDiagramHeight
-    , float fMaxVoltage
+  , float fMaxVoltage
 //    , WORD wXcoordOfBeginOfYaxis
-    )
+  , const std::set<VoltageAndFreq> & c_r_stdsetvoltageandfreq
+  )
 {
   LOGN("DrawOvervoltageProtectionCurve begin" )
   //May be NULL at startup.
@@ -2261,26 +2249,8 @@ void MainFrame::DrawOvervoltageProtectionCurve(
              ( (float) m_wDiagramWidth / (float) wCurrentXcoordinateInDiagram )
            )
           , fVoltage
-          , mp_cpucoredata->m_stdsetvoltageandfreqDefault ) ;
-        if( m_bRangeBeginningFromMinVoltage )
-          wYcoordinate =
-            //Explicit cast to avoid (g++) warning.
-            (WORD)
-            (
-              m_wDiagramHeight -
-              ( fVoltage - m_fMinVoltage )
-              / m_fMaxMinusMinVoltage * m_wDiagramHeight
-            ) ;
-        else
-          wYcoordinate =
-            //Explicit cast to avoid (g++) warning.
-            (WORD)
-            (
-              m_wDiagramHeight -
-              fVoltage/ //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-              fMaxVoltage
-              * m_wDiagramHeight
-            ) ;
+          , c_r_stdsetvoltageandfreq ) ;
+        wYcoordinate = GetYcoordinateForVoltage(fVoltage);
         //p_wxpaintdc->DrawLine(
         //TODO draw lines from last point to current point. So gaps are avoided if
         //the angle is > 45 degrees
@@ -2487,6 +2457,17 @@ void MainFrame::DrawCurrentPstateInfo(
     wxString ar_wxstrCPUcoreVoltage [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+
+    const wxFont & wxfont = r_wxdc.GetFont();
+//     int nFontPointSize = wxfont.GetPointSize();
+    if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
+    {
+      wxFont wxfont2(wxfont);
+      wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.
+        m_nCurrentCPUcoreInfoSizeInPoint);
+      r_wxdc.SetFont(wxfont2);
+    }
+
     if( //mp_i_cpucontroller
         p_cpucontroller )
     {
@@ -2534,7 +2515,17 @@ void MainFrame::DrawCurrentPstateInfo(
      int nWidth ;
      WORD wMaxCoreNumberTextWidth = 0 ;
      wxCoord wxcoordX ;
-     wxcoordX = 45 ;
+     wxcoordX = //45 ;
+       m_uiRightmostEndOfVoltageString;
+
+     wxCoord wxcoordTextWidth, wxcoordTextHeight;
+     r_wxdc.GetTextExtent(
+       wxT("I")
+       , & wxcoordTextWidth
+       , & wxcoordTextHeight
+       //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+       ) ;
+
      LOGN("DrawCurrentCPUcoreData before drawing the CPU core numbers")
      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
        ++ wCoreID )
@@ -2552,7 +2543,8 @@ void MainFrame::DrawCurrentPstateInfo(
        r_wxdc.DrawText(
          wxstr
          , wxcoordX //x-coord
-         , wCoreID * m_wTextHeight //y-coord
+         , wCoreID * //m_wTextHeight //y-coord
+         wxcoordTextHeight
          ) ;
      }
      wxcoordX += wMaxCoreNumberTextWidth ;
@@ -2566,7 +2558,8 @@ void MainFrame::DrawCurrentPstateInfo(
         r_wxdc.DrawText(
           ar_wxstrCPUcoreVoltage[ wCoreID ]
           , wxcoordX //x-coord
-          , wCoreID * m_wTextHeight //y-coord
+          , wCoreID * //m_wTextHeight //y-coord
+          wxcoordTextHeight
           ) ;
       }
       wxcoordX += m_wMaxVoltageInVoltTextWidth ;
@@ -2582,7 +2575,8 @@ void MainFrame::DrawCurrentPstateInfo(
         r_wxdc.DrawText(
           ar_wxstrFreqInMHz[ wCoreID ]
           , wxcoordX //x-coord
-          , wCoreID * m_wTextHeight //y-coord
+          , wCoreID * //m_wTextHeight //y-coord
+            wxcoordTextHeight
           ) ;
       }
       wxcoordX += m_wMaxFreqInMHzTextWidth ;
@@ -2592,7 +2586,8 @@ void MainFrame::DrawCurrentPstateInfo(
         r_wxdc.DrawText(
           ar_wxstrTemperature[ wCoreID ]
           , wxcoordX //x-coord
-          , wCoreID * m_wTextHeight //y-coord
+          , wCoreID * //m_wTextHeight //y-coord
+            wxcoordTextHeight
           ) ;
       }
       wxcoordX += m_wMaxTemperatureTextWidth ;
@@ -2622,11 +2617,17 @@ void MainFrame::DrawCurrentPstateInfo(
           r_wxdc.DrawText(
             wxstr
             , wxcoordX //x-coord
-            , wCoreID * m_wTextHeight //y-coord
+            , wCoreID * //m_wTextHeight //y-coord
+              wxcoordTextHeight
             ) ;
         }
       }
       //   } //for-loop
+    if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
+    {
+//      wxfont.SetPointSize(nFontPointSize);
+      r_wxdc.SetFont(wxfont);
+    }
   }
   else
   {
@@ -2671,25 +2672,8 @@ void MainFrame::DrawCurrentVoltageSettingsCurve(
             , mp_cpucoredata->m_stdsetvoltageandfreqWanted )
           )
         {
-          if( m_bRangeBeginningFromMinVoltage )
-            wYcoordinate =
-              //Explicit cast to avoid (g++) warning.
-              (WORD)
-              (
-                m_wDiagramHeight -
-                ( fVoltage - m_fMinVoltage )
-                / m_fMaxMinusMinVoltage * m_wDiagramHeight
-              ) ;
-          else
-            wYcoordinate =
-              //Explicit cast to avoid (g++) warning.
-              (WORD)
-              (
-                  m_wDiagramHeight -
-                fVoltage / //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-                fMaxVoltage
-                * m_wDiagramHeight
-              ) ;
+          wYcoordinate = GetYcoordinateForVoltage(fVoltage);
+
           //p_wxpaintdc->DrawLine(
           wxdc.DrawLine(
             wCurrentXcoordinateInDiagram + m_wXcoordOfBeginOfYaxis,
@@ -2735,6 +2719,7 @@ void MainFrame::DrawFrequency(
   std::map<WORD,WORD>::iterator & r_iterstdmapYcoord2RightEndOfFreqString ,
   std::map<WORD,WORD> & stdmapYcoord2RightEndOfFreqString ,
   std::map<WORD,WORD>::iterator & r_iterstdmap_ycoord2rightendoffreqstringToUse
+  , bool bCalculateMaxTextHeight
   )
 {
   wXcoordinate = GetXcoordinateForFrequency(wFrequencyInMHz) ;
@@ -2847,19 +2832,24 @@ void MainFrame::DrawFrequency(
   LOGN("DrawDiagramScale drawing " << GetStdString( wxstrFreq )
     << " at " << wLeftEndOfCurrFreqText << ","
     << wYcoordinate )
-  r_wxdc.DrawText(
-    wxstrFreq
-    ,
-    //wXcoordOfBeginOfYaxis +
-    //(float) wMaxFreqInMHz * wDiagramWidth
-    wLeftEndOfCurrFreqText
-    , //m_wDiagramHeight
-    wYcoordinate
-    ) ;
+  if( ! bCalculateMaxTextHeight)
+    r_wxdc.DrawText(
+      wxstrFreq
+      ,
+      //wXcoordOfBeginOfYaxis +
+      //(float) wMaxFreqInMHz * wDiagramWidth
+      wLeftEndOfCurrFreqText
+      , //m_wDiagramHeight
+      wYcoordinate
+      ) ;
 }
 
-void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc)
+void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc,
+    //0=calculate max height
+    WORD & wMaximumYcoordinateForFrequency)
 {
+  WORD wInitialMaximumYcoordinateForFrequency = wMaximumYcoordinateForFrequency;
+  wMaximumYcoordinateForFrequency = 0;
   //Initialize to avoid g++ warnings like
   //"'wLeftEndOfCurrFreqText' might be used uninitialized in this function"
   wxCoord wxcoordWidth = 0 ;
@@ -2880,6 +2870,23 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc)
   WORD wFrequencyInMHz ;
   wxPen penLine( * wxLIGHT_GREY, 1); // pen of width 1
   const wxPen & c_r_penCurrent = r_wxdc.GetPen();
+  
+  const wxFont & wxfont = r_wxdc.GetFont();
+//  int nFontPointSize = wxfont.GetPointSize();
+  if( mp_model->m_userinterfaceattributes.m_nCPUcoreFrequencyScaleSizeInPoint)
+  {
+    wxFont wxfont2(wxfont);
+    wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.
+      m_nCPUcoreFrequencyScaleSizeInPoint);
+    r_wxdc.SetFont(wxfont2);
+  }
+//  wxCoord wxcoordTextWidth, wxcoordTextHeight;
+//  r_wxdc.GetTextExtent(
+//    wxT("I")
+//    , & wxcoordTextWidth
+//    , & wxcoordTextHeight
+//    //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+//    ) ;
   for( WORD wMultiplierIndex = 0 ; wMultiplierIndex < mp_cpucoredata->
     m_stdset_floatAvailableMultipliers.size() ; ++ wMultiplierIndex )
   {
@@ -2902,11 +2909,23 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc)
       wYcoordinate ,
       r_iterstdmapYcoord2RightEndOfFreqString ,
       stdmapYcoord2RightEndOfFreqString ,
-      r_iterstdmap_ycoord2rightendoffreqstringToUse
+      r_iterstdmap_ycoord2rightendoffreqstringToUse,
+      ! wInitialMaximumYcoordinateForFrequency
       ) ;
-    r_wxdc.SetPen(penLine);
-    r_wxdc.DrawLine( wXcoordinate, 0, wXcoordinate, wYcoordinate);
-    r_wxdc.SetPen(c_r_penCurrent);
+    if( wYcoordinate >
+      wMaximumYcoordinateForFrequency )
+      wMaximumYcoordinateForFrequency = wYcoordinate;
+    if( wInitialMaximumYcoordinateForFrequency > 0)
+    {
+      r_wxdc.SetPen(penLine);
+      r_wxdc.DrawLine( wXcoordinate, 0, wXcoordinate, wYcoordinate);
+      r_wxdc.SetPen(c_r_penCurrent);
+    }
+  }
+  if( mp_model->m_userinterfaceattributes.m_nCPUcoreFrequencyScaleSizeInPoint)
+  {
+//    wxfont.SetPointSize(nFontPointSize);
+    r_wxdc.SetFont(wxfont);
   }
 }
 
@@ -2951,50 +2970,76 @@ void MainFrame::DrawVoltage(wxDC & r_wxdc , float fVoltageInVolt)
     ) ;
 }
 
-void MainFrame::GetYcoordinateForVoltage(float fVoltageInVolt )
+unsigned MainFrame::GetYcoordinateForVoltage(float fVoltageInVolt//,
+  // unsigned uiHalfTextHeightInPixels
+  )
 {
-//  WORD wYcoordinate ;
+  WORD wYcoordinate ;
   if( m_bRangeBeginningFromMinVoltage )
-    m_wYcoordinate =
+    wYcoordinate =
       //Explicit cast to avoid (g++) warning.
       (WORD)
       (
         m_wDiagramHeight -
         ( fVoltageInVolt - m_fMinVoltage )
-        / m_fMaxMinusMinVoltage * m_wDiagramHeight
+        / m_fMaxMinusMinVoltage * (m_wDiagramHeight
+        //The highest voltage should start at the half pixel height of the
+        //voltage string.
+        - m_wMinYcoordInDiagram)
+//        + //uiHalfTextHeightInPixels
+//        m_wMinYcoordInDiagram
       ) ;
   else
-    m_wYcoordinate =
+    wYcoordinate =
       //Explicit cast to avoid (g++) warning.
       (WORD)
       (
         m_wDiagramHeight -
         //(*iterstdsetmaxvoltageforfreq).m_fVoltageInVolt
         fVoltageInVolt
-        / m_fMaxVoltage * m_wDiagramHeight
-        + m_wMinYcoordInDiagram
+        / m_fMaxVoltage * (m_wDiagramHeight
+        //The highest voltage should start at the half pixel height of the
+        //voltage string.
+        - m_wMinYcoordInDiagram)
+//        + m_wMinYcoordInDiagram
       ) ;
+  return wYcoordinate;
 }
 
-void MainFrame::DrawVoltage(wxDC & r_wxdc , float fVoltageInVolt,
-  WORD wYcoordinate )
+wxCoord MainFrame::DrawVoltage(
+  wxDC & r_wxdc ,
+  float fVoltageInVolt,
+  WORD wYcoordinate,
+  unsigned uiXcoordinateInPixels
+  )
 {
+  static wxCoord wxcoordTextWidth, wxcoordTextHeight;
+  wxString wxstrVoltage = wxString::Format(
+    //We need a _T() macro (wide char-> L"", char->"") for EACH
+    //line to make it compatible between char and wide char.
+    wxT("%.3f") ,
+    fVoltageInVolt
+    );
+  unsigned uiBeginOfVoltageString = 3 + uiXcoordinateInPixels;
+
   //Draw voltage mark.
   //p_wxpaintdc->DrawText(
   //wxmemorydc.DrawText(
   r_wxdc.DrawText(
-    wxString::Format(
-      //We need a _T() macro (wide char-> L"", char->"") for EACH
-      //line to make it compatible between char and wide char.
-      _T("%.3f") ,
-        fVoltageInVolt
-        ),
-    5
+    wxstrVoltage ,
+    uiBeginOfVoltageString
     ,
     //wDiagramHeight -
     /// fMaxVoltage * wDiagramHeight
     wYcoordinate
     ) ;
+  r_wxdc.GetTextExtent(
+      wxstrVoltage
+    , & wxcoordTextWidth
+    , & wxcoordTextHeight
+    //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+    ) ;
+  return wxcoordTextWidth + uiBeginOfVoltageString;
 }
 
 void MainFrame::DrawVoltageFreqCross(
@@ -3016,26 +3061,7 @@ void MainFrame::DrawVoltageFreqCross(
       (float) //mp_cpucoredata->m_wMaxFreqInMHz
         m_wMaximumCPUcoreFrequency * m_wDiagramWidth
     ) ;
-  WORD wYcoordinate ;
-  if( m_bRangeBeginningFromMinVoltage )
-    wYcoordinate =
-      //Explicit cast to avoid (g++) warning.
-      (WORD)
-      (
-        m_wDiagramHeight -
-        ( fVoltageInVolt - m_fMinVoltage )
-        / m_fMaxMinusMinVoltage * m_wDiagramHeight
-      ) ;
-  else
-    wYcoordinate =
-      //Explicit cast to avoid (g++) warning.
-      (WORD)
-      (
-          m_wDiagramHeight -
-        //(*iterstdvecmaxvoltageforfreq).m_fVoltageInVolt
-        fVoltageInVolt
-        / m_fMaxVoltage * m_wDiagramHeight
-      ) ;
+  WORD wYcoordinate = GetYcoordinateForVoltage(fVoltageInVolt);
 
   //wxPen pen(*wxBLUE, 3); // pen of width 3
   wxPen pen(*cp_wxcolor, 3); // pen of width 3
@@ -3049,6 +3075,124 @@ void MainFrame::DrawVoltageFreqCross(
     wXcoordinate , wYcoordinate - 3,
     wXcoordinate , wYcoordinate + 4
     ) ;
+}
+
+void MainFrame::DrawVoltageScale(wxDC & r_wxdc )
+{
+  WORD wPreviousYcoordinateForVoltage = MAXWORD ;
+
+  const wxPen & c_r_penCurrent = r_wxdc.GetPen();
+  wxPen penLine( * wxLIGHT_GREY, 1); // pen of width 1
+  r_wxdc.SetPen(penLine);
+
+  const wxFont & cr_wxfontBefore = r_wxdc.GetFont();
+  //wxWidgets runtime error when calling GetPointSize.
+//  int nFontPointSize = cr_wxfontBefore.GetPointSize();
+  if( mp_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint)
+  {
+//    cr_wxfontBefore.SetPointSize(mp_model->m_userinterfaceattributes.
+//      m_nVoltageScaleSizeInPoint);
+    //wxFont copy c'tor uses reference counting.
+    wxFont wxfont(cr_wxfontBefore//.GetNativeFontInfoDesc()
+      );
+    wxfont.SetPointSize(mp_model->m_userinterfaceattributes.
+      m_nVoltageScaleSizeInPoint);
+    r_wxdc.SetFont(//cr_wxfontBefore
+      wxfont);
+  }
+  wxCoord wxcoordTextWidth, wxcoordTextHeight;
+  wxCoord wxcoordVoltageStringWidth = 0;
+  r_wxdc.GetTextExtent(
+    wxT("I")
+    , & wxcoordTextWidth
+    , & wxcoordTextHeight
+    //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
+    ) ;
+  int nHalfTextHeightInPixels = wxcoordTextHeight/2;
+  m_wMinYcoordInDiagram = nHalfTextHeightInPixels;
+
+  unsigned uiBeginOfVoltageString = 0;
+  m_uiRightmostEndOfVoltageString = 0;
+  for( WORD wVoltageIndex = 0 ; wVoltageIndex < mp_cpucoredata->
+    m_stdset_floatAvailableVoltagesInVolt.size() ; ++ wVoltageIndex )
+  {
+    LOGN("should draw voltage "
+      << mp_cpucoredata->m_arfAvailableVoltagesInVolt[ wVoltageIndex ]
+      << " for voltage scale")
+    m_wYcoordinate = GetYcoordinateForVoltage(
+      mp_cpucoredata->m_arfAvailableVoltagesInVolt[
+      wVoltageIndex ]//, nHalfTextHeightInPixels
+      );
+//    wYoordinate = m_wYoordinate ;
+
+
+    if( //If y coord of current voltage <= y coord of prev voltage - text h
+        //=if the voltage string _does not overlap_ with the previous voltage
+        //string.
+      m_wYcoordinate <= wPreviousYcoordinateForVoltage - //m_wTextHeight
+      wxcoordTextHeight)
+    {
+      //uiBeginOfVoltageString = wxcoordVoltageStringWidth;
+//      //Next time start at x pos 0.
+//      wxcoordVoltageStringWidth = 0;
+      //Draw at x pos 0.
+      wxcoordVoltageStringWidth = 0;
+    }
+    else //Strings would overlap-> place right of previous voltage string.
+    {
+//      wxcoordVoltageStringWidth = 0;
+//      uiBeginOfVoltageString = 0;
+//      uiBeginOfVoltageString
+//      wxcoordVoltageStringWidth = DrawVoltage(
+//        r_wxdc,
+//        mp_cpucoredata->m_arfAvailableVoltagesInVolt[ wVoltageIndex ]
+//        , m_wYcoordinate - nHalfTextHeightInPixels
+//        , //wXcoordinateForVoltageStringBegin
+//        wxcoordVoltageStringWidth
+////        0
+//        ) ;
+    }
+    //Next time start with x pos of end of this string.
+//    wxcoordVoltageStringWidth =
+    uiBeginOfVoltageString =
+      DrawVoltage(
+      r_wxdc,
+      mp_cpucoredata->m_arfAvailableVoltagesInVolt[ wVoltageIndex ]
+      , m_wYcoordinate - nHalfTextHeightInPixels
+      , //wXcoordinateForVoltageStringBegin
+//      0
+        wxcoordVoltageStringWidth
+//        uiBeginOfVoltageString
+      ) ;
+    if( wxcoordVoltageStringWidth )
+      //Next time start with x pos 0.
+      wxcoordVoltageStringWidth = 0;
+    else
+      wxcoordVoltageStringWidth = uiBeginOfVoltageString;
+    wPreviousYcoordinateForVoltage = m_wYcoordinate ;
+    if( uiBeginOfVoltageString
+        //wxcoordVoltageStringWidth
+        > m_uiRightmostEndOfVoltageString)
+      m_uiRightmostEndOfVoltageString = uiBeginOfVoltageString;
+      //wxcoordVoltageStringWidth;
+    r_wxdc.DrawLine(
+//      m_wXcoordOfBeginOfYaxis,
+//      wxcoordVoltageStringWidth,
+      uiBeginOfVoltageString,
+      m_wYcoordinate, //+ nHalfTextHeightInPixels,
+      m_wXcoordOfBeginOfYaxis + m_wDiagramWidth,
+      m_wYcoordinate //+ nHalfTextHeightInPixels
+      );
+    if( uiBeginOfVoltageString)
+      //Start at x pos 0 the next time.
+      uiBeginOfVoltageString = 0;
+  }
+  r_wxdc.SetPen(c_r_penCurrent);
+  if( mp_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint)
+  {
+//    cr_wxfontBefore.SetPointSize(nFontPointSize);
+    r_wxdc.SetFont(cr_wxfontBefore);
+  }
 }
 
 float MainFrame::GetClosestMuliplier(int nXcoordionate,
@@ -3096,7 +3240,7 @@ float MainFrame::GetClosestVoltageForYcoordinate(
   //Y coordinate starts at 0,0 at top left corner.
   int nYcoordinate)
 {
-  if( mp_cpucoredata->m_stdset_floatAvailableVoltagesInVolt.size() )
+  if( ! mp_cpucoredata->m_stdset_floatAvailableVoltagesInVolt.empty() )
   {
     const std::set<float> & c_r_std_set_float = mp_cpucoredata->
       m_stdset_floatAvailableVoltagesInVolt;
@@ -3105,15 +3249,18 @@ float MainFrame::GetClosestVoltageForYcoordinate(
 
 //    const float fVoltageDiff = fHighestVoltage - fLowestVoltage;
 
-    const float fYposToDiagramHeightRatio = (float) nYcoordinate / (float)
-      m_wDiagramHeight;
+//    const float fYposToDiagramHeightRatio = (float) nYcoordinate / (float)
+//      m_wDiagramHeight;
 
-    const float fVoltageAccordingToYcoordinate =
-      //The maximum voltage is at the top left corner.
-      m_fMaxVoltage -
-      ( fYposToDiagramHeightRatio * m_fMaxMinusMinVoltage) //fVoltageDiff
-      ;
-
+//    const float fVoltageAccordingToYcoordinate =
+//      //The maximum voltage is at the top left corner.
+//      m_fMaxVoltage -
+//      ( fYposToDiagramHeightRatio * m_fMaxMinusMinVoltage) //fVoltageDiff
+//      ;
+//    GetVoltageAccordignToYcoordinate();
+//    {
+//      uiYcoordinateForAvailableVoltage = GetYcoordinateForVoltage(* c_iter);
+//    }
   //    c_r_std_set_float.lower_bound(); upper_bound()
 
     float fClosestLowerVoltage = FLT_MIN, fClosestHigherVoltage =
@@ -3123,23 +3270,48 @@ float MainFrame::GetClosestVoltageForYcoordinate(
       //http://www.cplusplus.com/reference/clibrary/cfloat/:
       FLT_MAX;
     std::set<float>::const_iterator c_iter = c_r_std_set_float.begin();
+    unsigned uiYcoordinateForAvailableVoltage = 0;
+    unsigned uiClosestLowerYcoordinate = 0;
+    unsigned uiClosestHigherYcoordinate = 0;
     while( c_iter != c_r_std_set_float.end() )
     {
-      if( * c_iter < fVoltageAccordingToYcoordinate )
+      uiYcoordinateForAvailableVoltage = GetYcoordinateForVoltage(* c_iter);
+      if( //* c_iter < fVoltageAccordingToYcoordinate
+          //Higher coordinates=lower voltages.
+          uiYcoordinateForAvailableVoltage > nYcoordinate
+        )
+      {
+        uiClosestHigherYcoordinate = uiYcoordinateForAvailableVoltage;
         fClosestLowerVoltage = * c_iter;
+      }
       else
       {
         fClosestHigherVoltage = * c_iter;
+        uiClosestLowerYcoordinate = uiYcoordinateForAvailableVoltage;
         break;
       }
       ++ c_iter;
     }
-
-    const float fClosestVoltageToYcoordinate =
-      ( fVoltageAccordingToYcoordinate - fClosestLowerVoltage ) <
-      ( fClosestHigherVoltage - fVoltageAccordingToYcoordinate ) ?
-      fClosestLowerVoltage : fClosestHigherVoltage;
-    return fClosestVoltageToYcoordinate;
+    if( uiClosestHigherYcoordinate)
+    {
+      if( uiClosestLowerYcoordinate)
+      {
+        const float fClosestVoltageToYcoordinate =
+  //        ( fVoltageAccordingToYcoordinate - fClosestLowerVoltage ) <
+  //        ( fClosestHigherVoltage - fVoltageAccordingToYcoordinate ) ?
+          //Distance (in pixels) to higher voltage.
+          ( nYcoordinate - uiClosestLowerYcoordinate ) >
+          //Distance (in pixels) to lower voltage.
+          ( uiClosestHigherYcoordinate - nYcoordinate ) ?
+          fClosestLowerVoltage : fClosestHigherVoltage;
+        return fClosestVoltageToYcoordinate;
+      }
+      else
+        return fClosestLowerVoltage;
+    }
+    else
+      return //Lowest voltage.
+        * c_r_std_set_float.begin();
   }
   return -1.0;
 }
@@ -3294,17 +3466,17 @@ WORD MainFrame::GetXcoordinateForFrequency(WORD wFrequencyInMHz)
 {
   LOGN("GetXcoordinateForFrequency(" << wFrequencyInMHz << ")" )
   return
-  //Explicit cast to avoid (g++) warning.
-  (WORD)
-  (
-   m_wXcoordOfBeginOfYaxis +
-    (float) //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
-    //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
-    //(*iterstdsetmaxvoltageforfreq).m_wFreqInMHz /
-  //      (*r_iterstdsetvoltageandfreq).m_wFreqInMHz /
-    wFrequencyInMHz /
-    (float) m_wMaximumCPUcoreFrequency * m_wDiagramWidth
-  ) ;
+    //Explicit cast to avoid (g++) warning.
+    (WORD)
+    (
+     m_wXcoordOfBeginOfYaxis +
+      (float) //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
+      //(*iterstdvecmaxvoltageforfreq).m_wFreqInMHz /
+      //(*iterstdsetmaxvoltageforfreq).m_wFreqInMHz /
+    //      (*r_iterstdsetvoltageandfreq).m_wFreqInMHz /
+      wFrequencyInMHz /
+      (float) m_wMaximumCPUcoreFrequency * m_wDiagramWidth
+    ) ;
 }
 
 //"Cross-Platform GUI Programming with wxWidgets"
@@ -4312,17 +4484,19 @@ void MainFrame::RedrawEverything()
             ) ;
         }
         m_fMaxMinusMinVoltage = m_fMaxVoltage - m_fMinVoltage ;
-        DrawOvervoltageProtectionCurve(
+        DrawVoltageGraph(
           //m_wxbufferedpaintdcStatic
           //*mp_wxbufferedpaintdcStatic
           m_wxmemorydcStatic
           , m_fMaxVoltage
+          , mp_cpucoredata->m_stdsetvoltageandfreqDefault
           ) ;
         DrawCurrentVoltageSettingsCurve(
           //m_wxbufferedpaintdcStatic
           //*mp_wxbufferedpaintdcStatic
           m_wxmemorydcStatic
           , m_fMaxVoltage
+          //, mp_cpucoredata->m_stdsetvoltageandfreqWanted
           ) ;
         DrawLowestStableVoltageCurve(
           //m_wxbufferedpaintdcStatic
