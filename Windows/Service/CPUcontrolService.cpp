@@ -624,7 +624,7 @@ CPUcontrolService::InitializeMemberVariables()
   //  mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService";
 
-  m_hEndProcessingEvent = CreateEvent(NULL, // default security attributes
+  m_hEndProcessingEvent = ::CreateEvent(NULL, // default security attributes
       TRUE, // manual-reset event
       FALSE, // initial state is non-signaled
       _T("EndEvent") // object name
@@ -960,19 +960,17 @@ CPUcontrolService::IPC_Message(
 }
 #endif //#ifdef COMPILE_WITH_IPC
 
-SERVICE_STATUS_HANDLE
-CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
+SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
 {
   DWORD dwLastError;
   //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
   //"The ServiceMain function should immediately call the
   //RegisterServiceCtrlHandlerEx function to specify a HandlerEx
   //function to handle control requests.
-  s_p_cpucontrolservice->
-  //"If the function fails, the return value is zero."
-  m_service_status_handle =
-  //RegisterServiceCtrlHandler(
-      //"GriffinControlService",
+  //s_p_cpucontrolservice->
+    //"If the function fails, the return value is zero."
+    m_service_status_handle =
+    //RegisterServiceCtrlHandler(
       //ServiceCtrlHandler);
       //Use RegisterServiceCtrlHandlerEx  because:
       //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
@@ -986,22 +984,22 @@ CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
       //[...] SERVICE_ACCEPT_POWEREVENT is the service equivalent of the WM_POWERBROADCAST message; dwEventType is the power event identifier, and lpEventData is optional data [Code 2]. This is the WPARAM and LPARAM of WM_POWERBROADCAST, respectively."
       //If the function fails, the return value is zero.
       RegSvcCtrlHandlerExAndGetErrMsg(
-          //"GriffinControlService",
-          s_p_cpucontrolservice->m_stdtstrProgramName.c_str(),
-          ServiceCtrlHandlerEx,
-          //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
-          //"lpContext [in, optional]
-          //Any user-defined data. This parameter, which is passed to the
-          //handler function, can help identify the service when multiple
-          //services share a process."
-          (LPVOID) 2,
-          //stdstrErrorDescripition
-          dwLastError);
+        //s_p_cpucontrolservice->m_stdtstrProgramName.c_str(),
+        m_std_tstrProgramName,
+        ServiceCtrlHandlerEx,
+        //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
+        //"lpContext [in, optional]
+        //Any user-defined data. This parameter, which is passed to the
+        //handler function, can help identify the service when multiple
+        //services share a process."
+        (LPVOID) 2,
+        //stdstrErrorDescripition
+        dwLastError);
   if (s_p_cpucontrolservice->m_service_status_handle
       == (SERVICE_STATUS_HANDLE) 0)
     {
       WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-          "Registering the service contrl handler failed; "
+          "Registering the service control handler failed; "
           "error code: " << dwLastError );
       std::string stdstrErrorDescription;
       ServiceBase::GetErrorDescriptionFromRegSvcCtrlHandlerExErrCode(
@@ -1486,7 +1484,7 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
 #ifndef EMULATE_EXECUTION_AS_SERVICE
   if( s_p_cpucontrolservice->m_bStartedAsService )
     if ( //if error occurred
-        ! s_p_cpucontrolservice->RegSvcCtrlHandlerAndHandleError())
+      ! s_p_cpucontrolservice->RegSvcCtrlHandlerAndHandleError() )
       return;
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
   //http://msdn.microsoft.com/en-us/library/ms687414%28v=VS.85%29.aspx:
@@ -1494,7 +1492,17 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   //  state within 25-100 milliseconds."
   //Initialization not complete, but report "running" status in order to
   // let the service control manager continue.
-  s_p_cpucontrolservice->SetInitialServiceStatusAttributeValues();
+  s_p_cpucontrolservice->SetInitialServiceStatusAttributeValues(
+    SERVICE_WIN32,
+    SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PAUSE_CONTINUE
+    //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
+    //"To accept these new messages[SERVICE_CONTROL_POWEREVENT], the
+    //appropriate flags must be submitted using SetServiceStatus. In the
+    //SERVICE_STATUS structure, the dwControlsAccepted member should be
+    //updated to reflect the desired messages. The bitwise flags are:
+    //[...] SERVICE_ACCEPT_POWEREVENT"
+    | SERVICE_ACCEPT_POWEREVENT | SERVICE_ACCEPT_SESSIONCHANGE
+    );
 
 #if defined( _DEBUG ) && !defined(EMULATE_EXECUTION_AS_SERVICE)
   //Give time to attach a debugger to THIS process if it was not started 
@@ -1505,7 +1513,7 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   //DEBUG("ServiceMain--argument count: %u\n",argc)
   LOGN( "Service main--argument count: " << argc //<< "\n"
     )
-  for (; byArgIndex < argc; ++byArgIndex)
+  for (; byArgIndex < argc; ++ byArgIndex)
     //DEBUG("argument %u:%s\n", (WORD) byArgIndex, argv[byArgIndex]);
     LOG("argument " << (WORD) byArgIndex << ": " << argv[byArgIndex] <<
         "\n" );
@@ -1660,69 +1668,6 @@ CPUcontrolService::SetServiceStatus()
     );
   }
 #endif //#ifndef EMULATE_EXECUTION_AS_SERVICE
-}
-
-void
-CPUcontrolService::SetInitialServiceStatusAttributeValues()
-{
-  //  s_p_cpucontrolservice->
-  m_servicestatus.dwServiceType = SERVICE_WIN32;
-  //  s_p_cpucontrolservice->
-  m_servicestatus.dwCurrentState = //SERVICE_START_PENDING;
-      //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/
-      // servicemain.htm
-      // / http://msdn.microsoft.com/en-us/library/ms685138%28VS.85%29.aspx:
-      //"The Service Control Manager (SCM) waits until the service reports a
-      // status of SERVICE_RUNNING. It is recommended that the service reports
-      // this status as quickly as possible, as other components in the system
-      // that require interaction with SCM will be blocked during this time."
-      //"Furthermore, you should not call any system functions during service
-      // initialization. The service code should call system functions only
-      // after it reports a status of SERVICE_RUNNING."
-      SERVICE_RUNNING;
-  //  s_p_cpucontrolservice->
-  m_servicestatus.dwControlsAccepted = SERVICE_ACCEPT_STOP
-      | SERVICE_ACCEPT_PAUSE_CONTINUE
-  //http://msdn.microsoft.com/en-us/library/ms810440.aspx:
-      //"To accept these new messages[SERVICE_CONTROL_POWEREVENT], the
-      //appropriate flags must be submitted using SetServiceStatus. In the
-      //SERVICE_STATUS structure, the dwControlsAccepted member should be
-      //updated to reflect the desired messages. The bitwise flags are:
-      //[...] SERVICE_ACCEPT_POWEREVENT"
-      | SERVICE_ACCEPT_POWEREVENT | SERVICE_ACCEPT_SESSIONCHANGE;
-  //  s_p_cpucontrolservice->
-  m_servicestatus.dwWin32ExitCode = 0;
-  //  s_p_cpucontrolservice->
-  m_servicestatus.dwServiceSpecificExitCode = 0;
-  //  s_p_cpucontrolservice->
-  //Check-point value the service increments periodically to report its
-  //progress during a lengthy start, stop, pause, or continue operation.
-  //For example, the service should increment this value as it completes
-  //each step of its initialization when it is starting up. The user
-  //interface program that invoked the operation on the service uses this
-  //value to track the progress of the service during a lengthy operation.
-  //This value is not valid and should be zero when the service does not
-  //have a start, stop, pause, or continue operation pending.
-  m_servicestatus.dwCheckPoint = 0;
-  //  s_p_cpucontrolservice->
-  //Estimated time required for a pending start, stop, pause, or
-  //continue operation, in milliseconds. Before the specified amount
-  //of time has elapsed, the service should make its next call to the
-  //SetServiceStatus function with either an incremented dwCheckPoint
-  //value or a change in dwCurrentState. If the amount of time
-  //specified by dwWaitHint passes, and dwCheckPoint has not been
-  //incremented or dwCurrentState has not changed, the service
-  //control manager or service control program can assume that an error
-  //has occurred and the service should be stopped.
-  m_servicestatus.dwWaitHint = 0;
-
-  //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
-  //"The Service Control Manager (SCM) waits until the service reports a
-  //status of SERVICE_RUNNING. It is recommended that the service
-  //reports this status as quickly as possible, as other components in the
-  //system that require interaction with SCM will be blocked during this time."
-  //  s_p_cpucontrolservice->
-  SetServiceStatus();
 }
 
 bool
@@ -1917,7 +1862,7 @@ void CPUcontrolService::StartServiceCtrlDispatcherInSeparateThread()
 
 #ifdef COMPILE_WITH_IPC
   s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
-  //wxWidgets seockets must be initialized in the main thread!
+  //wxWidgets sockets must be initialized in the main thread!
   s_p_cpucontrolservice->m_wxservicesocketserver.Init();
 #endif //#ifdef COMPILE_WITH_IPC
 

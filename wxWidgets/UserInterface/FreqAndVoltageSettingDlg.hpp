@@ -15,6 +15,7 @@
 //#include <wx/checkbox.h>
 //#include <wx/dialog.h>
 #include <wx/event.h>
+#include "wx/power.h" //for power mgmt notification (wxPowerType etc.)
 
 //Forward declarations (to  avoid including the wxWidgets header files HERE)
 class wxBitmapToggleButton ;
@@ -95,8 +96,9 @@ private:
 //  wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
   wxCheckBox * mp_wxcheckboxAlsoSetWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxOnlySafeRange ;
-  wxCheckBox * mp_wxcheckboxPreventVoltageAboveDefaultVoltage ;
+  wxCheckBox * m_p_wxcheckboxPreventVoltageAboveDefaultVoltage ;
   wxCheckBox * mp_wxcheckboxPreventVoltageBelowLowestStableVoltage ;
+  wxCheckBox * m_p_wxcheckboxRestorePerformanceStateAfterResume;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   wxCheckBox * mp_wxcheckboxPauseService ;
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
@@ -122,6 +124,7 @@ private:
     wxSizer * p_wxsizerSuperordinate );
   inline void AddApplyOrCancelSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddCancelButton(wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreCheckBoxSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreFrequencySizer(
@@ -139,6 +142,7 @@ private:
     wxSizer * p_wxsizer ) ;
   inline void AddPreventVoltageBelowLowestStableVoltageButton(
     wxSizer * p_wxsizer ) ;
+  inline void AddRestorePerformanceStateAfterResumeButton(wxSizer * p_wxsizer ) ;
   inline void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddVoltageSettingsSizer(
@@ -188,6 +192,7 @@ public:
       );
   }
   inline float GetCPUcoreFrequencyFromSliderValue() ;
+  uint32_t GetCPUcoreMask();
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   inline float GetMultiplierFromSliderValue() ;
   const std::set<VoltageAndFreq> & GetSelectedVoltageTypeStdSet();
@@ -207,6 +212,9 @@ public:
   void OnIncVoltage(wxCommandEvent & );
   void OnPreventVoltageAboveDefaultVoltageCheckbox(wxCommandEvent & ) ;
   void OnPreventVoltageBelowLowestStableVoltageCheckbox(wxCommandEvent & ) ;
+#ifdef wxHAS_POWER_EVENTS
+  void OnResume(wxPowerEvent & WXUNUSED(event) );
+#endif //#ifdef wxHAS_POWER_EVENTS
   void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
   void OnSelectPstateViaMousePos(wxCommandEvent & );
   void OnSetAsMinVoltageButton(wxCommandEvent & );
@@ -222,6 +230,7 @@ public:
   inline void PossiblyWriteVoltageAndMultiplier_Inline(
     float fVoltageInVolt) ;
   void RemoveAttention(wxWindow * p_wxwindow);
+  void ResumendFromStandByOrHibernate();
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;
   WORD SetNearestHigherPossibleFreqInMHz(
     WORD wFreqInMHz ) ;

@@ -13,8 +13,11 @@
  */
 
 #include <Controller/MainController.hpp>//MainController::GetSupportedCPUs(...)
+#include <ModelData/ModelData.hpp> //class Model
 #include <preprocessor_macros/BuildTimeString.h> //BUILT_TIME
 #include <wxWidgets/UserInterface/AboutDialog.hpp>
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
+
 #include <wx/bitmap.h> //class wxBitmap
 //#include <wx/dialog.h> //for base class wxDialog
 //#include <wx/stattext.h> //class wxStaticText
@@ -38,18 +41,26 @@ wxString g_ar_wxstrWorldlyWisdom [] = {
 };
 WORD g_wNumberOfWorldlyWisdomStrings = 2;
 
-wxString GetRandomWorldlyWisdom()
+wxString GetRandomWorldlyWisdom(
+  const std::map<uint16_t,std::string> & c_r_std_set_WisdomStrings)
 {
   //from http://www.cplusplus.com/reference/clibrary/cstdlib/rand/:
   /* initialize random seed: */
   srand ( time(NULL) );
 
   /* generate secret number: */
-  int nRandomNumber = rand() % g_wNumberOfWorldlyWisdomStrings;
-  return g_ar_wxstrWorldlyWisdom[nRandomNumber];
+  int nRandomNumber = rand() % //g_wNumberOfWorldlyWisdomStrings;
+    c_r_std_set_WisdomStrings.size();
+
+//  m_c_r_model_data.m_std_vec_WisdomStrings.
+
+  return //g_ar_wxstrWorldlyWisdom[nRandomNumber];
+    GetwxString_Inline(c_r_std_set_WisdomStrings.find(nRandomNumber)->second.
+      c_str() );
 }
 
-void GetAboutMessage(wxString & wxstrMessage)
+void GetAboutMessage(wxString & wxstrMessage,
+  const std::map<uint16_t,std::string> & c_r_std_vec_WisdomStrings)
 {
   std::tstring stdtstr ;
   std::vector<std::tstring> stdvecstdtstring ;
@@ -89,23 +100,29 @@ void GetAboutMessage(wxString & wxstrMessage)
     //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
     _T("Licence/ info: http://www.trilobyte-se.de/x86iandc")
     wxT("\n\n")
-    + GetRandomWorldlyWisdom()
+    + GetRandomWorldlyWisdom(c_r_std_vec_WisdomStrings)
     ;
 }
 
-AboutDialog::AboutDialog(const wxString & cr_wxstrProgramName )
+AboutDialog::AboutDialog(
+    const Model & c_r_model_data,
+    const wxString & cr_wxstrProgramName
+    )
   : wxDialog(
     NULL,
     wxID_ANY ,
     _T("About ") + cr_wxstrProgramName,
+//      ::GetwxString_Inline(c_r_model_data.m_stdtstrProgramName.c)
     wxDefaultPosition,
 //    wxDefaultSize,
     wxSize(600, 400),
     wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
-    )
+    ),
+  m_c_r_model_data(c_r_model_data)
 {
   wxString wxstrMessage ;
-  GetAboutMessage(wxstrMessage) ;
+  GetAboutMessage(wxstrMessage, c_r_model_data.m_userinterfaceattributes.
+    m_std_vec_WisdomStrings) ;
 
   wxBoxSizer * p_wxboxsizer = new wxBoxSizer(wxHORIZONTAL) ;
 

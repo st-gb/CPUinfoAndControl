@@ -34,6 +34,7 @@ namespace Xerces
     Model & model ,
     UserInterface * p_userinterface
     )
+    : m_ui16t_WisdomNumber(0)
   {
     m_p_model = & model ;
     m_p_userinterface = p_userinterface ;
@@ -252,6 +253,29 @@ namespace Xerces
       LOGN("getting bool value for " << stdstrAttributeName << " failed ")
   }
 
+  void SAX2UserInterfaceConfigHandler::
+    HandleWisdomXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
+    )
+  {
+    std::string std_strWisdomText;
+    std::string stdstrAttributeName = "text";
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes
+         , stdstrAttributeName
+         , std_strWisdomText
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+      )
+    {
+      LOGN( FULL_FUNC_NAME << "--got attribute value for \""
+          << stdstrAttributeName << "\" attribute:"
+          << std_strWisdomText )
+      m_p_model->m_userinterfaceattributes.m_std_vec_WisdomStrings.//push_back(
+        insert(
+        std::make_pair( m_ui16t_WisdomNumber ++, std_strWisdomText) );
+    }
+  }
+
   void SAX2UserInterfaceConfigHandler::startElement
     (
     const XMLCh * const cpc_xmlchURI,
@@ -339,6 +363,13 @@ namespace Xerces
       )
     {
       HandleVoltageAndFrequencySettingsDialogXMLelement(cr_xercesc_attributes) ;
+    }
+    else if( //If strings equal.
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
+        ANSI_OR_WCHAR("wisdom") )
+      )
+    {
+      HandleWisdomXMLelement(cr_xercesc_attributes) ;
     }
     XERCES_CPP_NAMESPACE::XMLString::release( & p_chLocalName ) ;
   }//SAX2UserInterfaceConfigHandler::startElement(...)

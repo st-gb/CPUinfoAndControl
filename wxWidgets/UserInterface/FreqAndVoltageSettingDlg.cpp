@@ -25,6 +25,7 @@
 //http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
 // : "I believe passing -Wno-write-strings to gcc will suppress this warning."
 #pragma GCC diagnostic ignored "-Wwrite-strings"
+#include <images/cancel16x16.xpm>
 #include <images/decrease16x16.xpm>
 #include <images/find_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/increase16x16.xpm>
@@ -36,6 +37,7 @@
 #include <images/set_as_desired_voltage16x16.xpm>
 #include <images/set_as_minimal_voltage16x16.xpm>
 #include <images/stabilize_voltage.xpm>
+#include <images/standby16x16.xpm>
 #include <images/stop_finding_lowest_stable_CPU_core_voltage16x16.xpm>
 //ENable warning
 #pragma GCC diagnostic warning "-Wwrite-strings"
@@ -78,6 +80,7 @@ enum
   , ID_StabilizeVoltage
   , ID_Panel
   , ID_PreventVoltageBelowLowestStableVoltageCheckbox
+  , ID_RestorePerformanceStateAfterResumeCheckbox
   , ID_PreventVoltageAboveDefaultVoltageCheckbox
   , ID_findLowestStableVoltage
   , ID_stopFindingLowestStableVoltage
@@ -156,6 +159,12 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
 //  EVT_CHAR_HOOK(FreqAndVoltageSettingDlg::OnCharHook)
   EVT_CHOICE( VoltageTypeListBox, FreqAndVoltageSettingDlg::OnSetVoltageType)
   EVT_CLOSE( FreqAndVoltageSettingDlg::OnClose)
+
+#ifdef wxHAS_POWER_EVENTS
+  //For function "restore voltage and multiplier after standby".
+  EVT_POWER_RESUME(FreqAndVoltageSettingDlg::OnResume)
+#endif //#ifdef wxHAS_POWER_EVENTS
+
 END_EVENT_TABLE()
 
 inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
@@ -328,24 +337,8 @@ inline void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
   //  m_p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
 
   AddPauseServiceCheckbox(m_p_wxboxsizerOK_Cancel) ;
-
-  wxButton * p_wxbuttonCancel = new wxButton(
-    this,
-    wxID_CANCEL //,
-  //    wxEmptyString ,
-  //    wxDefaultPosition ,
-  //    wxDefaultSize ,
-  //    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-  //    // "If you need to use this style in order to get the arrows or etc., but
-  //    // would still like to have normal keyboard navigation take place, you
-  //    // should create and send a wxNavigationKeyEvent in response to the key
-  //    // events for Tab and Shift-Tab."
-  //    //To get EVT_CHAR events when the button is focused.
-  //    wxWANTS_CHARS
-    ) ;
-  p_wxbuttonCancel->SetWindowStyle(wxWANTS_CHARS) ;
-
-  m_p_wxboxsizerOK_Cancel->Add( p_wxbuttonCancel );
+  AddRestorePerformanceStateAfterResumeButton(m_p_wxboxsizerOK_Cancel) ;
+  AddCancelButton(m_p_wxboxsizerOK_Cancel);
 
   CreateFindLowestStableCPUcoreVoltageButton();
   m_p_wxboxsizerOK_Cancel->Add(m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage);
@@ -394,6 +387,63 @@ inline void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
     //any border flag.
     2
     );
+}
+
+inline void FreqAndVoltageSettingDlg::AddCancelButton(
+  wxSizer * p_wxsizerSuperordinate )
+{
+//  wxButton * p_wxbuttonCancel = new wxButton(
+//    this,
+//    wxID_CANCEL //,
+//  //    wxEmptyString ,
+//  //    wxDefaultPosition ,
+//  //    wxDefaultSize ,
+//  //    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+//  //    // "If you need to use this style in order to get the arrows or etc., but
+//  //    // would still like to have normal keyboard navigation take place, you
+//  //    // should create and send a wxNavigationKeyEvent in response to the key
+//  //    // events for Tab and Shift-Tab."
+//  //    //To get EVT_CHAR events when the button is focused.
+//  //    wxWANTS_CHARS
+//    ) ;
+
+  #ifndef USE_EXTERNAL_ICONS
+  wxBitmap wxbitmapCancel( cancel16x16_xpm ) ;
+  #else
+  wxBitmap wxbitmapCancel ( m_wxstrIconFilesPrefix +
+    wxT("cancel16x16.png") ) ;
+   if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
+       // #b825460a217d250db53df0c9ca293068:
+       // "Returns true if bitmap data is present."
+     ! wxbitmapCancel.IsOk()
+     )
+     wxbitmapCancel = wxBitmap( cancel16x16_xpm ) ;
+  #endif
+  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
+    this
+    , wxID_CANCEL
+  //    , wxT("&-")
+    , wxbitmapCancel
+    , wxDefaultPosition
+  //    , wxsizeMinimal
+    , wxDefaultSize
+  //    , wxButton::GetDefaultSize()
+    , wxBU_AUTODRAW |
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    wxWANTS_CHARS
+    ) ;
+  p_wxbitmapbutton->SetToolTip( wxT("cancel/ close dialog") ) ;
+
+//  p_wxbuttonCancel->SetWindowStyle(wxWANTS_CHARS) ;
+//  p_wxbitmapbutton->SetWindowStyle(wxWANTS_CHARS) ;
+
+  p_wxsizerSuperordinate->Add( //p_wxbuttonCancel
+    p_wxbitmapbutton);
 }
 
 inline void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
@@ -798,19 +848,19 @@ void FreqAndVoltageSettingDlg::AddPreventVoltageAboveDefaultVoltageButton(
   wxSizer * p_wxsizer )
 {
   wxString wxstrToolTip = wxT("prevent voltage above\ndefault voltage");
-  mp_wxcheckboxPreventVoltageAboveDefaultVoltage = new wxCheckBox(
+  m_p_wxcheckboxPreventVoltageAboveDefaultVoltage = new wxCheckBox(
     this ,
 //    wxID_ANY ,
     ID_PreventVoltageAboveDefaultVoltageCheckbox ,
 //    wxT("prevent voltage above\ndefault voltage")
     wxT("")
     ) ;
-  mp_wxcheckboxPreventVoltageAboveDefaultVoltage->SetToolTip(wxstrToolTip);
+  m_p_wxcheckboxPreventVoltageAboveDefaultVoltage->SetToolTip(wxstrToolTip);
   //Possibly Check the checkbox.
-  mp_wxcheckboxPreventVoltageAboveDefaultVoltage->SetValue( mp_model->
+  m_p_wxcheckboxPreventVoltageAboveDefaultVoltage->SetValue( mp_model->
     m_userinterfaceattributes.m_bPreventVoltageAboveDefaultVoltage ) ;
   p_wxsizer->Add(
-    mp_wxcheckboxPreventVoltageAboveDefaultVoltage
+    m_p_wxcheckboxPreventVoltageAboveDefaultVoltage
     , 0 //0=the control should not take more space if the sizer is enlarged
     , wxLEFT | wxRIGHT
     , 0 );
@@ -862,6 +912,41 @@ void FreqAndVoltageSettingDlg::AddPreventVoltageBelowLowestStableVoltageButton(
     wxstrToolTip ) ;
   p_wxsizer->Add(
     p_wxstaticbitmapPreventVoltageBelowLowestStableVoltage
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    , wxLEFT | wxRIGHT
+    , 0
+    );
+}
+
+void FreqAndVoltageSettingDlg::AddRestorePerformanceStateAfterResumeButton(
+  wxSizer * p_wxsizer )
+{
+  wxString wxstrToolTip = wxT("Restore performance state after resume");
+  m_p_wxcheckboxRestorePerformanceStateAfterResume = new wxCheckBox(
+    this ,
+//    wxID_ANY ,
+    ID_RestorePerformanceStateAfterResumeCheckbox ,
+//    wxT("prevent voltage above\ndefault voltage")
+    wxT("")
+    ) ;
+  m_p_wxcheckboxRestorePerformanceStateAfterResume->SetToolTip(wxstrToolTip);
+  //Possibly Check the checkbox.
+  m_p_wxcheckboxRestorePerformanceStateAfterResume->SetValue( mp_model->
+    m_userinterfaceattributes.m_bPreventVoltageAboveDefaultVoltage ) ;
+  p_wxsizer->Add(
+    m_p_wxcheckboxRestorePerformanceStateAfterResume
+    , 0 //0=the control should not take more space if the sizer is enlarged
+    , wxLEFT | wxRIGHT
+    , 0 );
+  wxStaticBitmap * p_wxstaticbitmapRestorePerformanceStateAfterResume = new
+    wxStaticBitmap(
+    this ,
+    wxID_ANY ,
+    wxBitmap( standby16x16_xpm )
+    ) ;
+  p_wxstaticbitmapRestorePerformanceStateAfterResume->SetToolTip(wxstrToolTip ) ;
+  p_wxsizer->Add(
+    p_wxstaticbitmapRestorePerformanceStateAfterResume
     , 0 //0=the control should not take more space if the sizer is enlarged
     , wxLEFT | wxRIGHT
     , 0
@@ -1724,6 +1809,21 @@ float FreqAndVoltageSettingDlg::GetCPUcoreFrequencyFromSliderValue()
   return 0.0 ;
 }
 
+uint32_t FreqAndVoltageSettingDlg::GetCPUcoreMask()
+{
+  uint32_t ui32CPUcoreMask = 0;
+  WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
+  if( wNumCPUcores > 1 )
+  {
+    for( WORD wCPUcore = 0 ; wCPUcore < wNumCPUcores ; ++ wCPUcore )
+      if( m_ar_p_wxcheckbox[wCPUcore]->IsChecked() )
+        ui32CPUcoreMask |= ( 1 << wCPUcore);
+  }
+  else
+    ui32CPUcoreMask = 1;
+  return ui32CPUcoreMask;
+}
+
 float FreqAndVoltageSettingDlg::GetMultiplierFromSliderValue()
 {
   WORD wMultiplierIndex = mp_wxsliderFreqInMHz->GetValue() ;
@@ -2213,7 +2313,13 @@ void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
 //       )
    }
    else
+   {
+//     mp_mainframe->m_crit_secVoltAndFreqDlgs.Enter();
+//     mp_mainframe->m_stdvec_p_freqandvoltagesettingdlg.delete(this);
+//     mp_mainframe->m_crit_secVoltAndFreqDlgs.Leave();
+
      Destroy();
+   }
 }
 
 void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
@@ -2348,9 +2454,18 @@ void FreqAndVoltageSettingDlg::
   OnPreventVoltageBelowLowestStableVoltageCheckbox(
   wxCommandEvent & r_wxcommandevent )
 {
-//  if( mp_wxcheckboxPreventVoltageAboveDefaultVoltage-> )
+//  if( m_p_wxcheckboxPreventVoltageAboveDefaultVoltage-> )
   HandleCPUcoreFrequencyOrVoltageChanged( NULL) ;
 }
+
+#ifdef wxHAS_POWER_EVENTS
+  void FreqAndVoltageSettingDlg::OnResume(wxPowerEvent & WXUNUSED(event) )
+  {
+    LOGN( FULL_FUNC_NAME << "--(object:" << this <<
+        ")--resumed from standby/ hibernate")
+    ResumendFromStandByOrHibernate();
+  }
+#endif // wxHAS_POWER_EVENTS
 
 void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent) 
   wxscrollevent )
@@ -2833,6 +2948,28 @@ void FreqAndVoltageSettingDlg::RemoveAttention(wxWindow * p_wxwindow)
   p_wxwindow->SetToolTip( wxT("") );
 }
 
+void FreqAndVoltageSettingDlg::ResumendFromStandByOrHibernate()
+{
+  LOGN( FULL_FUNC_NAME << "--this object:" << this )
+  bool bRestorePerformanceStateAfterResume =
+    m_p_wxcheckboxRestorePerformanceStateAfterResume->IsChecked();
+  LOGN( FULL_FUNC_NAME << "(" << this << ")--should restore after standby?:"
+    << ( bRestorePerformanceStateAfterResume ? "yes" : "no") )
+  if( bRestorePerformanceStateAfterResume )
+  {
+    LOGN( FULL_FUNC_NAME << "(" << this << ")--writing voltage and multiplier "
+      "is allowed?:" << (m_bAllowWritingVoltageAndFrequency ? "yes" : "no") )
+    if( m_bAllowWritingVoltageAndFrequency)
+    {
+    //  BYTE byPstateNumber = 0 ;
+    //  byPstateNumber = mp_wxsliderCPUcorePstate->GetValue() ;
+      float fVoltageInVolt = GetVoltageInVoltFromSliderValue() ;
+      PossiblyWriteVoltageAndMultiplier_Inline(fVoltageInVolt) ;
+      //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ;
+    }
+  } // if( mp_i_cpucontroller )
+}
+
 void FreqAndVoltageSettingDlg::SetAttention(
   wxWindow * p_wxwindow, 
   const wxString & wxstr // = _T("")
@@ -2942,7 +3079,7 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
   if( fVoltageInVolt > 0.0 )
   {
     BYTE byRet = 0 ;
-    if( mp_wxcheckboxPreventVoltageAboveDefaultVoltage->IsChecked() )
+    if( m_p_wxcheckboxPreventVoltageAboveDefaultVoltage->IsChecked() )
     {
 //      float fCPUcoreFrequencyinMHz = GetCPUcoreFrequencyFromSliderValue() ;
       LOGN("VoltageIsValid--fCPUcoreFrequencyinMHz:" << fCPUcoreFrequencyinMHz)

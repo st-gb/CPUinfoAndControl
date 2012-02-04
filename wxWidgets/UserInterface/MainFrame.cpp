@@ -1558,8 +1558,8 @@ void MainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 //    wxOK | wxICON_INFORMATION //,
 ////    this
 //    );
-  AboutDialog * p_aboutdialog = new AboutDialog( getwxString( mp_model->
-    m_stdtstrProgramName) ) ;
+  AboutDialog * p_aboutdialog = new AboutDialog(
+    * mp_model, getwxString( mp_model->m_stdtstrProgramName) ) ;
   p_aboutdialog->//Show() ;
     ShowModal();
   p_aboutdialog->Destroy() ;
@@ -1864,8 +1864,13 @@ void MainFrame::OnVoltageAndFrequencySettingsDialog( wxCommandEvent &
     //Allocating succeeded.
     if( p_freqandvoltagesettingdlg  )
     {
-//      m_stdvec_p_freqandvoltagesettingdlg.push_back(
-//        p_freqandvoltagesettingdlg) ;
+#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
+      m_crit_secVoltAndFreqDlgs.Enter();
+      m_stdvec_p_freqandvoltagesettingdlg.push_back(
+        p_freqandvoltagesettingdlg) ;
+      m_crit_secVoltAndFreqDlgs.Leave();
+#endif //#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
+
       p_freqandvoltagesettingdlg->Show(true);
     }
 #endif
@@ -3496,6 +3501,27 @@ void MainFrame::OnEraseBackground(wxEraseEvent& event)
 {
 }
 
+void MainFrame::HandleResumeForAllVoltAndFreqDlgs()
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+
+#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
+  m_crit_secVoltAndFreqDlgs.Enter();
+
+  std::vector<FreqAndVoltageSettingDlg * >::const_iterator c_iter =
+    m_stdvec_p_freqandvoltagesettingdlg.begin();
+//  wxPowerEvent evt;
+  while( c_iter != m_stdvec_p_freqandvoltagesettingdlg.end() )
+  {
+    ( * c_iter)->ResumendFromStandByOrHibernate();
+    ++ c_iter;
+  }
+  m_crit_secVoltAndFreqDlgs.Leave();
+#endif //#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
+
+  LOGN( FULL_FUNC_NAME << "--end")
+}
+
 void MainFrame::OnPaint(wxPaintEvent & r_wx_paint_event)
 {
   LOGN("OnPaint begin")
@@ -4029,7 +4055,10 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
 #ifdef wxHAS_POWER_EVENTS
   void MainFrame::OnResume(wxPowerEvent & WXUNUSED(event) )
   {
-    LOGN("resumed from standby/ hibernate")
+    LOGN( FULL_FUNC_NAME << "--resumed from standby/ hibernate")
+
+//    HandleResumeForAllVoltAndFreqDlgs();
+
     //May be NULL at startup.
     if( mp_i_cpucontroller )
     {
@@ -4080,12 +4109,12 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
 #ifdef wxHAS_POWER_EVENTS
 void MainFrame::OnSuspending(wxPowerEvent & WXUNUSED(event))
 {
-  LOGN("suspending power event")
+  LOGN( FULL_FUNC_NAME << "--suspending power event")
 }
 
 void MainFrame::OnSuspended(wxPowerEvent & WXUNUSED(event))
 {
-  LOGN("suspended power event")
+  LOGN( FULL_FUNC_NAME << "--suspended power event")
 }
 
 void MainFrame::OnSuspendCancel(wxPowerEvent & WXUNUSED(event))

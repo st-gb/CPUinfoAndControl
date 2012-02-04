@@ -134,8 +134,6 @@ public:
   static
     CPUcontrolService * s_p_cpucontrolservice; // nasty hack to get object ptr
   //static
-     SERVICE_STATUS m_servicestatus;
-  //static
 //       SERVICE_STATUS_HANDLE   m_service_status_handle;
 //     Model * mp_modelData ;
   //static
@@ -246,7 +244,6 @@ public :
   void SetCPUcontroller( I_CPUcontroller * p_cpucontrollerNew ) ;
   inline void SetInitHardwareAccessWaitHint() ;
   void SetServiceStatus () ;
-  void SetInitialServiceStatusAttributeValues() ;
   static bool ShouldCreateService(
     const std::vector<std::string> & cr_vecstdstrParams ) ;
   static bool ShouldDeleteService(
