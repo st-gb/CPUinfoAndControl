@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * SAX2UserInterfaceConfigHandler.hpp
  *
@@ -28,6 +35,7 @@ namespace Xerces
   {
   private:
     Model * m_p_model ;
+    uint16_t m_ui16t_WisdomNumber;
     UserInterface * m_p_userinterface ;
   public:
     SAX2UserInterfaceConfigHandler(
@@ -49,6 +57,8 @@ namespace Xerces
     inline void HandleToolTipXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleVoltageAndFrequencySettingsDialogXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleWisdomXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     void startElement(
       const XMLCh * const cp_xmlchURI,

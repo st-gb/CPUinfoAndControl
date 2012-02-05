@@ -75,11 +75,14 @@ DWORD THREAD_PROC_CALLING_CONVENTION
         //" to CPU core 0"
         )
 
+    uint32_t ui32CPUcoreMask = p_freqandvoltagesettingdlg->GetCPUcoreMask();
+
     LOGN( FULL_FUNC_NAME << "--before calling the DynLib's \""
       << START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME "\" function")
     (* wxGetApp().m_pfnStartInstableCPUcoreVoltageDetection)(
-      p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.m_byNumberOfCPUCores,
-       & wxGetApp().m_external_caller);
+      //p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.m_byNumberOfCPUCores,
+      ui32CPUcoreMask,
+      & wxGetApp().m_external_caller);
     LOGN( FULL_FUNC_NAME << "--after calling the DynLib's \""
       << START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME << "\" function")
     return 0;
@@ -95,9 +98,9 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
     (FreqAndVoltageSettingDlg *) p_v;
   if( p_freqandvoltagesettingdlg)
   {
-    x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage;
+    x86IandC::thread_type x86iandc_threadFindLowestStableVoltage;
 
-    m_x86iandc_threadFindLowestStableVoltage.start(
+    x86iandc_threadFindLowestStableVoltage.start(
         StartInstableCPUcoreVoltageDetectionInDLL ,
         p_freqandvoltagesettingdlg ) ;
 
@@ -354,7 +357,7 @@ void wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
 
       //wxGetApp().
         m_x86iandc_threadFindLowestStableVoltage.start(
-        FindLowestStableVoltage , (void *) c_p_freqandvoltagesettingdlg ) ;
+          FindLowestStableVoltage , (void *) c_p_freqandvoltagesettingdlg ) ;
        }
     }
     else

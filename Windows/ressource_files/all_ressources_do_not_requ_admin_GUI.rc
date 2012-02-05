@@ -1,5 +1,9 @@
 #include "version_info_GUI.rc"
-#include <wx/msw/wx.rc> //for wxWidgets cursor
+
+#ifndef COMPILE_WITHOUT_CURSOR
+  /*#include <wx/msw/wx.rc> //for wxWidgets cursor*/
+  #include "C:/Libraries/wxWidgets-2.8.10\include\wx/msw/wx.rc"
+#endif
 
 IDI_ICON1 ICON DISCARDABLE "App32.ico"
 

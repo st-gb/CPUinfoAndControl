@@ -15,6 +15,11 @@
 #ifndef USERINTERFACEATTRIBUTES_HPP_
 #define USERINTERFACEATTRIBUTES_HPP_
 
+#include <map> //class std::map
+#include <string> //class std::string
+#include <vector> //class std::vector
+#include <map> //class std::map
+
 namespace Attributes
 {
 
@@ -36,6 +41,7 @@ namespace Attributes
     int m_nVoltageScaleSizeInPoint;
     int m_nCurrentCPUcoreInfoSizeInPoint;
     int m_nCPUcoreFrequencyScaleSizeInPoint;
+    std::map<uint16_t,std::string> m_std_vec_WisdomStrings;
     UserInterfaceAttributes();
     virtual
     ~UserInterfaceAttributes();

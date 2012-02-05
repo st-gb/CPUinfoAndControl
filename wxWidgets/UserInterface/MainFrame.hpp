@@ -44,6 +44,8 @@
 //#include <UserInterface/UserInterface.hpp> //for abstract class UserInterface
 //#include <Xerces/PStateConfig.hpp> //class VoltageForFrequencyConfiguration
 #include <wxWidgets/icon/IconDrawer.hpp>
+//For typedef "criticalsection_type" :
+#include <Controller/multithread/criticalsection_type.hpp>
 //#include "FreqAndVoltageSettingDlg.hpp"
 #include <map> //class std::map
 #include <vector> //for std::vector
@@ -208,6 +210,10 @@ private:
   wxBitmap * mp_wxbitmapStatic ;
   wxBufferedPaintDC * mp_wxbufferedpaintdcStatic ;
   wxCriticalSection m_wxcriticalsectionCPUctlAccess ;
+#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
+  criticalsection_type m_crit_secVoltAndFreqDlgs;
+#endif //#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
+
   //wxDynLibCPUcontroller * mp_wxdynlibcpucontroller ;
   //wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
@@ -400,6 +406,7 @@ public:
   inline WORD GetXcoordinateForFrequency( WORD wFreqInMHz) ;
   inline WORD GetYcoordinateForFrequency( WORD wFreqInMHz) ;
   unsigned GetYcoordinateForVoltage(float fVoltageInVolt ) ;
+  void HandleResumeForAllVoltAndFreqDlgs();
   inline bool IsCPUcontrollerAccessAllowedThreadSafe()
   {
     {
