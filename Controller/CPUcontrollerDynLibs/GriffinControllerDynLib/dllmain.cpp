@@ -82,11 +82,19 @@ Logger g_logger ;
   ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
   extern float g_fReferenceClockInMHz ;
 
+  BYTE g_byFreqID, g_byDivisorID ;
   BYTE g_byValue1 ;
   BYTE g_byValue2 ;
   BYTE g_byValue3 ;
   DWORD g_dwLowmostBits ;
   DWORD g_dwHighmostBits ;
+  float g_fMaxMultiDiv2 ;
+  float g_fValue1 ;
+  uint32_t g_dwMSRhighmost, g_dwMSRlowmost ;
+  //MSRC001_0071 COFVID Status Register
+  //54:49 MainPllOpFreqIdMax: main PLL operating frequency ID maximum.
+  float g_fMainPllOpFreqIdMax ;
+  float g_fMainPllOpFreqId ;
 
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
@@ -293,7 +301,7 @@ Logger g_logger ;
   {
     DWORD dwValue ;
     float fTempInDegCelsius ;
-    g_byValue1 = ( 24 << 3 ) | 3 ;
+    static BYTE g_byValue1 = ( 24 << 3 ) | 3 ;
     DEBUGN("GetTemperatureInCelsius(...) device and function:"
       << (WORD) g_byValue1 )
 //    BYTE byRet = //GetCPUMiscControlDWORD(

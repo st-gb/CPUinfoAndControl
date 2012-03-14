@@ -1,0 +1,1 @@
+windres --use-temp-file --define __WXMSW__ --define _UNICODE -I C:\Libraries\wxWidgets-2.8.10\lib\MinGW_GCC3.4.5-unicode-release-static\mswu -I C:/Libraries/wxWidgets-2.8.10/include --define NOPCH all_ressources_do_not_requ_admin.rc all_ressources_do_not_requ_admin.opc

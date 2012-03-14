@@ -48,6 +48,7 @@
 #include <Controller/multithread/criticalsection_type.hpp>
 //#include "FreqAndVoltageSettingDlg.hpp"
 #include <map> //class std::map
+#include <set> //class std::set
 #include <vector> //for std::vector
 
 //forward declarations (faster than an #include)

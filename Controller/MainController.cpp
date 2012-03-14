@@ -396,7 +396,8 @@ void MainController::ReadMainConfig(
 {
   std::string stdstrMainConfigFileName = GetStdString( model.
     m_stdtstrProgramName ) + "_config.xml" ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Reading main config file \"" <<
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME <<
+    "Reading main config file \"" <<
       stdstrMainConfigFileName << "\"" )
   //The main cfg also contains the exclusion log message filter--load it in any
   //case.
