@@ -44,8 +44,8 @@ char ReadXMLfileInitAndTermXerces(
   )
 {
 //  LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("read XML configuration--filename: \""
-    << cp_chXMLfilePath << "\"" )
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME <<
+    "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" )
   bool bXercesSuccessfullyInitialized = false ;
   //from http://xerces.apache.org/xerces-c/program-sax2-3.html:
   try
@@ -56,7 +56,7 @@ char ReadXMLfileInitAndTermXerces(
     //Initialize() must be called _before_ any Xerces function call, else SIGSEV
     // /program crash.
     XMLPlatformUtils::Initialize();
-    LOGN( "Xerces access successfully initialized"//"\n"
+    LOGN( FULL_FUNC_NAME << "Xerces access successfully initialized"//"\n"
       )
     bXercesSuccessfullyInitialized = true ;
   }
@@ -69,8 +69,8 @@ char ReadXMLfileInitAndTermXerces(
          << p_archMessage << "\n" ;
     p_userinterface->Confirm( stdostringstream ) ;
       //DEBUG("XML error:%s\n",message);
-//      LOG( "XML error:" << message << "\n" );
-    XMLString::release(&p_archMessage);
+    LOGN( "XML error:" << stdostringstream.str() << "\n" );
+    XMLString::release( & p_archMessage);
     return FAILURE;
   }
   if( bXercesSuccessfullyInitialized )
@@ -82,13 +82,14 @@ char ReadXMLfileInitAndTermXerces(
     {
       XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
         p_xmlchXMLfilePath ) ;
+      LOGN( FULL_FUNC_NAME << "--after creating a LocalFileInputSource obj");
       ReadXMLdocument(
         xerces_localfileinputsource ,
 //        model,
         p_userinterface ,
         r_defaulthandler
         ) ;
-      XMLString::release(&p_xmlchXMLfilePath);
+      XMLString::release( & p_xmlchXMLfilePath);
     }
     //http://xerces.apache.org/xerces-c/program-3.html:
     //"Independent of the API you want to use, DOM, SAX, or SAX2, your
@@ -182,6 +183,7 @@ char ReadXMLdocumentInitAndTermXerces(
 	  XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     )
 	{
+    LOGN( FULL_FUNC_NAME << "--begin" );
     BYTE byReturn = FAILURE ;
       //DEBUG("ReadXMLfileInitAndTermXerces begin--filename:%s\n",xmlFile);
     //Initialize to NULL just to avoid (g++) compiler warning.
@@ -198,10 +200,11 @@ char ReadXMLdocumentInitAndTermXerces(
       p_sax2xmlreader->setContentHandler(//&sax2
         & r_defaulthandler );
       p_sax2xmlreader->setErrorHandler(//p_defaultHandler
-        & defaultHandler );
+        & //defaultHandler
+        r_defaulthandler);
       try
       {
-        LOGN( "before parsing XML document" );
+        LOGN( FULL_FUNC_NAME << "--before parsing XML document" );
         p_sax2xmlreader->
         //from SAX2XMLReader::parse(const   InputSource&    source):
 //        * @exception SAXException Any SAX exception, possibly

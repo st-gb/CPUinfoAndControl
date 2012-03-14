@@ -56,6 +56,7 @@ GetFilenameWithoutExtension.hpp>
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
 #endif
+//#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(), g_logger
 //#include <wxWidgets/wxStringHelper.h>
 //class SAX2VoltagesForFrequencyHandler
 #include <Xerces/SAX2VoltagesForFrequencyHandler.hpp>
@@ -90,7 +91,7 @@ wxServiceSocketClient.hpp>
 
 //This global (important for using preprocessor macros) object is used for 
 //easy logging.
-//Logger g_logger ;
+extern Logger g_logger ;
 CPUcontrolBase * gp_cpucontrolbase ;
 ////Needed for the exported functions.
 //I_CPUaccess * g_p_cpuaccess ;

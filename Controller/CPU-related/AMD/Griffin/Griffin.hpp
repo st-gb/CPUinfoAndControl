@@ -198,6 +198,7 @@ inline BYTE GetCurrentVoltageAndFrequencyAMDGriffin(
   WORD wCoreID
   )
 {
+  static BYTE g_byValue3;
   g_byValue3 =
 //    (*g_pfnreadmsr) (
     ReadMSR(
@@ -208,7 +209,7 @@ inline BYTE GetCurrentVoltageAndFrequencyAMDGriffin(
     1 << wCoreID //m_dwAffinityMask
     ) ;
   //Frequency ID. "5:0 CurCpuFid: current core frequency ID. Read-only."
-  g_byValue1 = (BYTE)( g_dwMSRlowmost & BITMASK_FOR_LOWMOST_6BIT ) ;
+  static BYTE g_byValue1 = (BYTE)( g_dwMSRlowmost & BITMASK_FOR_LOWMOST_6BIT ) ;
   //Divisor ID. "8:6 CurCpuDid: current core divisor ID. Read-only."
   g_byValue2 = //(BYTE)(
   //      (g_dwLowmostBits & 448//=111000000bin
