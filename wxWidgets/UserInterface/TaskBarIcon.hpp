@@ -40,6 +40,7 @@ public:
   //crash).
   //CrashED when using an object of this class.
   wxIconDrawer m_wxicon_drawer;
+//  wxIconDrawer m_colouredBarsIconDrawer;
   //Must be created on heap because else the program hangs when its
   //wxBitmap and or wxMemoryDC wasn't freed.
   wxIconDrawer * m_p_wxicon_drawer;
@@ -60,6 +61,9 @@ public:
       m_wxicon_drawer(16, 16//,8
     //    ,wxBITMAP_SCREEN_DEPTH
         )
+//      , m_colouredBarsIconDrawer(16, 16//,8
+//    //    ,wxBITMAP_SCREEN_DEPTH
+//        )
       , m_p_wxmenuCPUcoreMultipliers(NULL)
       , m_p_wxmenuThrottleTemperatures(NULL)
 #endif

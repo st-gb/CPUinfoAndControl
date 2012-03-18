@@ -10,6 +10,7 @@
 #include <Controller/MSVC_adaption/tchar.h>
 
 #define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
+#define CONFIG_FILE_PATH "configuration"
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
 Model::Model()
@@ -27,6 +28,7 @@ Model::Model()
   , m_bUsePstate0AsMaxFreq (false)
   , mp_cpucontroller (NULL)
   , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
+  , m_std_strConfigFilePath( CONFIG_FILE_PATH )
 //  , m_uiNumberOfSecondsToWaitUntilVoltageIsReduced(60)
   {
     //m_cpucoredata

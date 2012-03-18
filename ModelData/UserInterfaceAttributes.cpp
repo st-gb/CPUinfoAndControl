@@ -25,6 +25,8 @@ namespace Attributes
     m_bPreventVoltageBelowLowestStableVoltage(true) ,
     m_bSelectAllCPUcores ( true) ,
     m_bShowMainFrameAtStartup (true ) ,
+    m_bShowCPUcoreUsagesIconInTaskBar (true),
+    m_bShowCPUcoresMultipliersIconInTaskBar (true),
     m_bStartDVFSatStartup(false) ,
     m_bTryToPauseViaServiceControlManagerIfViaIPCfails(
       //Initialize with "false" to avoid sucking message boxes ("connecting to

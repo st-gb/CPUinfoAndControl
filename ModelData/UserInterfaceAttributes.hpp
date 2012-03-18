@@ -42,6 +42,8 @@ namespace Attributes
     int m_nCurrentCPUcoreInfoSizeInPoint;
     int m_nCPUcoreFrequencyScaleSizeInPoint;
     std::map<uint16_t,std::string> m_std_vec_WisdomStrings;
+    bool m_bShowCPUcoreUsagesIconInTaskBar;
+    bool m_bShowCPUcoresMultipliersIconInTaskBar;
     UserInterfaceAttributes();
     virtual
     ~UserInterfaceAttributes();

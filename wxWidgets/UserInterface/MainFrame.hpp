@@ -219,6 +219,8 @@ private:
   //wxDynLibCPUcoreUsageGetter * mp_wxdynlibcpucoreusagegetter ;
   //wxBufferedPaintDC m_wxbufferedpaintdcStatic ;
   static wxIcon s_wxiconTemperature ;
+  static wxIcon s_wxiconCPUcoreUsages;
+  static wxIcon s_wxiconCPUcoresMultipliers;
 //  wxIconDrawer m_wxicon_drawer;
   //http://docs.wxwidgets.org/2.6/wx_windowdeletionoverview.html#windowdeletionoverview:
   //"When a wxWindow is destroyed, it automatically deletes all its children. 
@@ -483,6 +485,9 @@ public:
   void RedrawEverything() ;
   void SetCPUcontroller(I_CPUcontroller * );
   inline void Show1VoltnFreqSettingsDialogForEveryCPUcore(wxCommandEvent &);
+  inline void ShowCPUcoreUsagesInTaskBar(I_CPUcontroller * p_i_cpucontroller);
+  inline void ShowCPUcoresMultipliersInTaskBar(
+    I_CPUcontroller * p_i_cpucontroller);
   inline void ShowHighestCPUcoreTemperatureInTaskBar(
     I_CPUcontroller * p_i_cpucontroller) ;
   void StoreCurrentVoltageAndFreqInArray(

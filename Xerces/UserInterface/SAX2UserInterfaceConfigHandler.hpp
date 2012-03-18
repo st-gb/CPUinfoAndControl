@@ -54,6 +54,8 @@ namespace Xerces
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleServiceXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleTaskBarIconXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleToolTipXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleVoltageAndFrequencySettingsDialogXMLelement(

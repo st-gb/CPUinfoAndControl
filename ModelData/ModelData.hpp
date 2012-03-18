@@ -76,6 +76,7 @@ public:
 
   InstableCPUcoreVoltageDetection m_instablecpucorevoltagedetection;
 
+  std::string m_std_strConfigFilePath;
   //The attributes that differ between GUI and service _must_ be at the _end_
   //of _this_ class because all members that are used in the dynamic
   //library must be aligned as in the executable(!)
