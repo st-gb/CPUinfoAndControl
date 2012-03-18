@@ -63,12 +63,12 @@ void GetAboutMessage(wxString & wxstrMessage,
   const std::map<uint16_t,std::string> & c_r_std_vec_WisdomStrings)
 {
   std::tstring stdtstr ;
-  std::vector<std::tstring> stdvecstdtstring ;
+  std::vector<std::tstring> stdvec_stdtstring ;
 //  wxString wxstrMessage ;
-  MainController::GetSupportedCPUs(stdvecstdtstring) ;
-  for(BYTE by = 0 ; by < stdvecstdtstring.size() ; by ++ )
+  MainController::GetSupportedCPUs(stdvec_stdtstring) ;
+  for(BYTE by = 0 ; by < stdvec_stdtstring.size() ; by ++ )
   {
-    stdtstr += _T("-") + stdvecstdtstring.at(by) + _T("\n") ;
+    stdtstr += _T("-") + stdvec_stdtstring.at(by) + _T("\n") ;
   }
   if( stdtstr.empty() )
     wxstrMessage += _T("A tool for giving information about and controlling "
@@ -77,11 +77,11 @@ void GetAboutMessage(wxString & wxstrMessage,
     wxstrMessage +=
       //We need a wxT()/ _T() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
-      _T("A tool for giving information about and controlling x86 CPUs ")
+      wxT("A tool for giving information about and controlling x86 CPUs ")
       wxT("(built-in):\n")
       + stdtstr +
-      _T( "\n")
-      _T("and for other CPUs as dynamic library") ;
+      wxT( "\n")
+      wxT("and for other CPUs as dynamic library") ;
   wxstrMessage += _T("\n\n")
     //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
     BUILT_TIME

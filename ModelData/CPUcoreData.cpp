@@ -386,6 +386,19 @@ void CPUcoreData::InterpolateDefaultVoltages()
       return -1.0 ;
   }
 
+  float CPUcoreData::GetMinimumMultiplier()
+  {
+    std::set<float>::const_iterator c_iter_stdset_fMultipliers =
+      m_stdset_floatAvailableMultipliers.begin() ;
+    if( c_iter_stdset_fMultipliers !=
+        m_stdset_floatAvailableMultipliers.end() )
+    {
+      //Return first element.
+      return * c_iter_stdset_fMultipliers ;
+    }
+    return 0.0 ;
+  }
+
   //inline
   float CPUcoreData::GetMaximumMultiplier()
   {
@@ -394,7 +407,8 @@ void CPUcoreData::InterpolateDefaultVoltages()
     if( c_rev_iter_stdset_fMultipliers !=
         m_stdset_floatAvailableMultipliers.rend() )
     {
-      return *c_rev_iter_stdset_fMultipliers ;
+      //Return last element.
+      return * c_rev_iter_stdset_fMultipliers ;
     }
     return 0.0 ;
   }

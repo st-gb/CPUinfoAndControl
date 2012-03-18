@@ -142,6 +142,8 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   mp_taskbaricon( NULL)
 //  , m_wxthreadIPC( )
   ,
+  m_p_CPUcoreUsagesTaskbarIcon(NULL),
+  m_p_CPUcoresMultipliersTaskbarIcon(NULL),
 #endif //#ifdef COMPILE_WITH_TASKBAR
 //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  mp_dynfreqscalingaccess(NULL) ,
@@ -178,7 +180,7 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
   LOGN("app's destructor: before freeing taskbar object")
 //  if( mp_taskbaricon)
 //    delete mp_taskbaricon;
-  DeleteTaskBarIcon();
+  DeleteTaskBarIcons();
   UnloadDetectInstableCPUcoreVoltageDynLib();
   LOGN("end of app's destructor")
 }
@@ -652,19 +654,12 @@ int wxX86InfoAndControlApp::OnExit()
 {
   LOGN("OnExit() begin")
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
-  if( mp_taskbaricon )
-  {
-//  Removing the icon is neccessary to exit the app/
-//  else the icon may not be hidden after exit.
-    mp_taskbaricon->RemoveIcon() ;
-    LOGN("after removing the system tray icon")
 
 //    //Also deleted in the tbtest sample (not automatically deleted?!).
 //    delete mp_taskbaricon;
-    DeleteTaskBarIcon();
+  DeleteTaskBarIcons();
+  LOGN("OnExit() after deleting the system tray icon(s)")
 
-    LOGN("OnExit() after deleting the system tray icon")
-  }
 #endif //#ifdef COMPILE_WITH_TASKBAR
 
   //Release heap mem.
@@ -1369,7 +1364,9 @@ bool wxX86InfoAndControlApp::OnInit()
   //If allocation succeeded.
   if( m_arartchCmdLineArgument && mp_modelData )
   {
-    const char c_ar_chXMLfileName [] = "UserInterface.xml";
+    std::string std_strUserInterfaceFilePath = m_model.m_std_strConfigFilePath
+      + "/UserInterface.xml";
+    const char * c_ar_chXMLfileName = std_strUserInterfaceFilePath.c_str();
     //ISpecificController
     //MyFrame * p_frame ;
     std::tstring stdtstrLogFilePath ;
@@ -1390,8 +1387,8 @@ bool wxX86InfoAndControlApp::OnInit()
       ) ;
 //    LOGN("Before reading file\"" << c_ar_chXMLfileName << "\"")
 //    OUTPUT_TO_LOGFILE_AND_STD_OUT_LN();
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Before reading file\""
-        << c_ar_chXMLfileName << "\"")
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Before reading file \""
+      << c_ar_chXMLfileName << "\"")
     if( //return value: 0 = success
       ReadXMLfileWithoutInitAndTermXercesInline(
         //"UserInterface.xml" ,
@@ -1403,7 +1400,9 @@ bool wxX86InfoAndControlApp::OnInit()
       )
     {
 //      Confirm( "loading UserInterface.xml failed" ) ;
-      MessageWithTimeStamp(L"loading UserInterface.xml failed" ) ;
+      MessageWithTimeStamp(L"loading \"" +
+        GetStdWstring( std::string(c_ar_chXMLfileName) ) +
+        L"\" failed" ) ;
       LOGN("loading UserInterface.xml failed")
 //      OUTPUT_WITH_TIMESTAMP
     }

@@ -123,6 +123,8 @@ extern CPUcontrolBase * gp_cpucontrolbase ;
 //Static class variables must (also) be declared/ defined in the source file.
 float * MainFrame::s_arfTemperatureInDegreesCelsius = NULL ;
 wxIcon MainFrame::s_wxiconTemperature ;
+wxIcon MainFrame::s_wxiconCPUcoreUsages;
+wxIcon MainFrame::s_wxiconCPUcoresMultipliers;
 wxString MainFrame::s_wxstrHighestCPUcoreTemperative ;
 wxString MainFrame::s_wxstrTaskBarIconToolTip =
   wxT("x86IandC--highest CPU core temperature [°C]") ;
@@ -673,7 +675,7 @@ MainFrame::~MainFrame()
   //Only terminates correctly when deleted from here (is also deleted in
   //the wxTopLevelWindow's (wxDialog's) destructor in wxWidgets' "tbtest.cpp"
   //from the "taskbar" sample.
-  mp_wxx86infoandcontrolapp->DeleteTaskBarIcon();
+  mp_wxx86infoandcontrolapp->DeleteTaskBarIcons();
   LOGN("end of main frame's destructor")
 }
 
@@ -1190,7 +1192,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
     //This program does not terminate correctly (does not reach
     //MainController's destructor when a dynamically created.
     //taskbar icon is not deleted.
-//    mp_wxx86infoandcontrolapp->DeleteTaskBarIcon();
+//    mp_wxx86infoandcontrolapp->DeleteTaskBarIcons();
     mp_wxx86infoandcontrolapp->mp_taskbaricon->DisconnectEventHandlers();
   }
 #endif //#ifdef COMPILE_WITH_TASKBAR
@@ -2491,6 +2493,8 @@ void MainFrame::DrawCurrentPstateInfo(
 //      float fHighestTemperature = GetHighestTemperature(
 //        s_arfTemperatureInDegreesCelsius) ;
       ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
+      ShowCPUcoreUsagesInTaskBar(p_cpucontroller);
+      ShowCPUcoresMultipliersInTaskBar(p_cpucontroller);
       LOGN("DrawCurrentCPUcoreData after StoreCurrentVoltageAndFreqInArray" )
     }
     else
@@ -4182,7 +4186,10 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
             p_cpucoreusagegetter,
             p_cpucontroller //,
       //      wxstrCPUcoreUsage
-            , false
+            , //bool bGetCPUcoreUsage
+//            false
+            mp_model->m_userinterfaceattributes.
+              m_bShowCPUcoreUsagesIconInTaskBar
             )
           )
         {
@@ -4197,6 +4204,8 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
           mp_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
           LOGN("DrawCurrentCPUcoreData after leaving IPC 2 in-program data crit sec")
           ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
+          ShowCPUcoreUsagesInTaskBar(p_cpucontroller);
+          ShowCPUcoresMultipliersInTaskBar(p_cpucontroller);
         }
       }
       else
@@ -4576,6 +4585,152 @@ void MainFrame::SetCPUcontroller(I_CPUcontroller * p_cpucontroller )
   m_wMaxTemperatureTextWidth = 0 ;
 }
 
+void MainFrame::ShowCPUcoreUsagesInTaskBar(
+  I_CPUcontroller * p_i_cpucontroller)
+{
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  if( mp_model->m_userinterfaceattributes.m_bShowCPUcoreUsagesIconInTaskBar )
+  {
+    LOGN(//"MainFrame::ShowHighestCPUcoreTemperatureInTaskBar"
+      FULL_FUNC_NAME <<
+      "--mp_taskbaricon:"
+      << mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon )
+    if( mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon )
+    {
+      mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon->
+        m_p_wxicon_drawer->DrawColouredBarsIcon(
+        s_wxiconCPUcoreUsages,
+        mp_cpucoredata->m_arfCPUcoreLoadInPercent,
+        mp_cpucoredata->m_byNumberOfCPUCores
+        );
+      if( mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon->SetIcon(
+          s_wxiconCPUcoreUsages, wxT("x86IandC--CPU cores usages") )
+        )
+      {
+//        if( ! mp_wxmenuFile->IsEnabled() )
+          //The menu item may be disabled if setting the icon failed for the
+          //1st time (if started via the service on logon and the the task bar
+          //was not ready).
+          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
+      }
+      else
+      {
+        //::wxMessageBox( wxT("Could not set task bar icon."),
+        //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
+//        LOGN("Could not set task bar icon.")
+        mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
+      }
+    }
+  }
+#endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+}
+
+void MainFrame::ShowCPUcoresMultipliersInTaskBar(
+  I_CPUcontroller * p_i_cpucontroller)
+{
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+  if( mp_model->m_userinterfaceattributes.
+    m_bShowCPUcoresMultipliersIconInTaskBar )
+  {
+    LOGN(//"MainFrame::ShowHighestCPUcoreTemperatureInTaskBar"
+      FULL_FUNC_NAME <<
+      "--mp_taskbaricon:"
+      << mp_wxx86infoandcontrolapp->m_p_CPUcoresMultipliersTaskbarIcon )
+    if( mp_wxx86infoandcontrolapp->m_p_CPUcoresMultipliersTaskbarIcon )
+    {
+      BYTE byNumberOfCPUcores = mp_cpucoredata->m_byNumberOfCPUCores;
+      float * CPUcoreMultipliersInPercentOfMinAndMax = new float [
+        byNumberOfCPUcores];
+
+      LOGN( FULL_FUNC_NAME << "Number Of CPU cores:" <<
+         (WORD) byNumberOfCPUcores
+        << "CPUcoreMultipliersInPercentOfMinAndMax:" <<
+        CPUcoreMultipliersInPercentOfMinAndMax)
+
+      if( CPUcoreMultipliersInPercentOfMinAndMax )
+      {
+        float fMaximumCPUcoreMultiplier = mp_cpucoredata->GetMaximumMultiplier();
+        float fMinimumCPUcoreMultiplier = mp_cpucoredata->GetMinimumMultiplier();
+
+        float fMaxMultiMinusMinMulti = fMaximumCPUcoreMultiplier -
+          fMinimumCPUcoreMultiplier;
+        float fVoltageInVolt;
+        float fMultiplier;
+        float fReferenceClockInMHz;
+//        WORD wCPUcoreID;
+        float currentMultiMinusMinMulti;
+        float CPUcoreMultiplierInPercentOfMinAndMax;
+
+        for( WORD wCPUcoreID = 0; wCPUcoreID < byNumberOfCPUcores; ++ wCPUcoreID)
+        {
+          fMultiplier = mp_cpucoredata->m_arp_percpucoreattributes[
+            wCPUcoreID].m_fMultiplier;
+
+          if( p_i_cpucontroller->GetCurrentVoltageAndFrequency(
+              fVoltageInVolt
+              , fMultiplier
+              , fReferenceClockInMHz
+              , wCPUcoreID
+              )
+            )
+          {
+            //possible_multis: [min_multi ... max_multi].
+            //current_multi is_element_of possible_multis.
+            //  max_minus_min_multi = max_multi - min_multi = 1.0 = 100%
+            // current_multi_minus_min_multi = current_multi - min_multi.
+            currentMultiMinusMinMulti = fMultiplier -
+              fMinimumCPUcoreMultiplier;
+            // current_multi in percent of possible_multis =
+            //  current_multi_minus_min_multi / max_minus_min_multi
+            CPUcoreMultiplierInPercentOfMinAndMax =
+//              fMinimumCPUcoreMultiplier / currentMultiMinusMinMulti;
+              currentMultiMinusMinMulti / fMaxMultiMinusMinMulti;
+
+            if( currentMultiMinusMinMulti == 0.0f) // x / 0 = infinite
+              CPUcoreMultipliersInPercentOfMinAndMax[wCPUcoreID] = 0;
+            else
+              CPUcoreMultipliersInPercentOfMinAndMax[wCPUcoreID] =
+                CPUcoreMultiplierInPercentOfMinAndMax;
+            LOGN( FULL_FUNC_NAME << "multiplier for CPU core # "
+              << (WORD) wCPUcoreID << " in percent in range of "
+              "min and max=" << fMaxMultiMinusMinMulti << " / (" <<
+              fMultiplier << " - " << fMinimumCPUcoreMultiplier << " ) = "
+              << currentMultiMinusMinMulti << " / " <<
+              fMaxMultiMinusMinMulti << " = "
+              << CPUcoreMultiplierInPercentOfMinAndMax)
+          }
+        }
+        mp_wxx86infoandcontrolapp->m_p_CPUcoresMultipliersTaskbarIcon->
+          m_p_wxicon_drawer->DrawColouredBarsIcon(
+          s_wxiconCPUcoresMultipliers,
+          CPUcoreMultipliersInPercentOfMinAndMax,
+          mp_cpucoredata->m_byNumberOfCPUCores
+          );
+        delete [] CPUcoreMultipliersInPercentOfMinAndMax;
+      }
+      if( mp_wxx86infoandcontrolapp->m_p_CPUcoresMultipliersTaskbarIcon->
+          SetIcon(s_wxiconCPUcoresMultipliers,
+          wxT("x86IandC--CPU cores multipliers") )
+        )
+      {
+  //        if( ! mp_wxmenuFile->IsEnabled() )
+          //The menu item may be disabled if setting the icon failed for the
+          //1st time (if started via the service on logon and the the task bar
+          //was not ready).
+          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
+      }
+      else
+      {
+        //::wxMessageBox( wxT("Could not set task bar icon."),
+        //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
+  //        LOGN("Could not set task bar icon.")
+        mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
+      }
+    }
+  }
+  #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+}
+
 void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
   I_CPUcontroller * p_i_cpucontroller)
 {
@@ -4605,16 +4760,12 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
         <<  p_i_cpucontroller->m_llLastTimeTooHot << "="
         << llDiffInMillis
         )
-  //    m_wxicon_drawer.Create(16,16);
-  //    LOGN("m_wxicon_drawer.m_bOk:" << m_wxicon_drawer.m_bOk)
       if( llDiffInMillis < 5000 )
         mp_wxx86infoandcontrolapp->mp_taskbaricon->//m_wxicon_drawer.DrawText(
           DrawText(
           s_wxiconTemperature,
           s_wxstrHighestCPUcoreTemperative,
-  //        wxT("H"),
           wxRED//,
-//          wxBLUE
           //wxWHITE
           );
       else
@@ -4625,7 +4776,6 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
           s_wxstrHighestCPUcoreTemperative,
           wxBLACK//,
   //        wxWHITE
-//          wxBLACK
           );
       if( mp_wxx86infoandcontrolapp->mp_taskbaricon->SetIcon(
           s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
@@ -4641,7 +4791,7 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
       {
         //::wxMessageBox( wxT("Could not set task bar icon."),
         //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
-        LOGN("Could not set task bar icon.")
+//        LOGN("Could not set task bar icon.")
         mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
       }
     }

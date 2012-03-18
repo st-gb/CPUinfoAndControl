@@ -184,6 +184,52 @@ namespace Xerces
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   }
 
+  inline void SAX2UserInterfaceConfigHandler::HandleTaskBarIconXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+    std::string std_strXMLattributeName = "show_CPU_cores_usages" ;
+    bool & r_bAttributeValue = m_p_model->m_userinterfaceattributes.
+      m_bShowCPUcoreUsagesIconInTaskBar;
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes
+         , std_strXMLattributeName.c_str()
+         , r_bAttributeValue
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+      )
+    {
+      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+        std_strXMLattributeName << "\" succeeded: "
+        "value is:" << r_bAttributeValue )
+//      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
+    }
+    else
+    {
+      LOGN("Getting attribute value for \"" << std_strXMLattributeName <<
+        "\" failed")
+    }
+    std_strXMLattributeName = "show_CPU_cores_multipliers" ;
+    bool & r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue =
+      m_p_model->m_userinterfaceattributes.
+      m_bShowCPUcoresMultipliersIconInTaskBar;
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes
+         , std_strXMLattributeName.c_str()
+         , r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+      )
+    {
+      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+        std_strXMLattributeName << "\" succeeded: "
+        "value is:" << r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue )
+//      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
+    }
+    else
+    {
+      LOGN("Getting attribute value for \"" << std_strXMLattributeName <<
+        "\" failed")
+    }
+  }
+
   inline void SAX2UserInterfaceConfigHandler::HandleToolTipXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
@@ -349,6 +395,13 @@ namespace Xerces
       )
     {
       HandleServiceXMLelement(cr_xercesc_attributes) ;
+    }
+    else if(
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
+        ANSI_OR_WCHAR("task_bar_icon") )
+      )
+    {
+      HandleTaskBarIconXMLelement(cr_xercesc_attributes);
     }
     else if( //If strings equal.
       ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,

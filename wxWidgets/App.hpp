@@ -185,6 +185,8 @@ public:
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   //Must be created on heap, else left mouse clicks were not processed?
   TaskBarIcon * mp_taskbaricon ;
+  TaskBarIcon * m_p_CPUcoreUsagesTaskbarIcon ;
+  TaskBarIcon * m_p_CPUcoresMultipliersTaskbarIcon;
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 //  TaskBarIcon m_taskbaricon ;
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
@@ -254,7 +256,15 @@ public:
   {
     return mp_cpucontroller ;
   }
-  void DeleteTaskBarIcon();
+  inline void CreateTaskBarIcon(
+    TaskBarIcon * & r_p_taskbaricon,
+    const char * p_chTaskBarIconName
+    );
+  inline void DeleteTaskBarIcon(
+    TaskBarIcon * & r_p_taskbaricon,
+    const char * p_chTaskBarIconName
+    );
+  void DeleteTaskBarIcons();
   I_CPUaccess * GetCPUaccess()
   {
     return mp_i_cpuaccess ;

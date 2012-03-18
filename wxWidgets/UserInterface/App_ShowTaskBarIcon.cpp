@@ -48,23 +48,66 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
   return false ;
 }
 
+void wxX86InfoAndControlApp::CreateTaskBarIcon(
+  TaskBarIcon * & r_p_taskbaricon,
+  const char * p_chTaskBarIconName
+  )
+{
+  if( ! r_p_taskbaricon )
+  {
+    r_p_taskbaricon = new TaskBarIcon(mp_frame);
+    if( r_p_taskbaricon )
+      LOGN(FULL_FUNC_NAME << "--successfully created \"" << p_chTaskBarIconName
+        << "\" task bar icon.")
+  }
+}
+
+void wxX86InfoAndControlApp::DeleteTaskBarIcon(
+  TaskBarIcon * & r_p_taskbaricon,
+  const char * p_chTaskBarIconName
+  )
+{
+  if( r_p_taskbaricon )
+  {
+    r_p_taskbaricon->RemoveIcon();
+    LOGN("after removing the \"" << p_chTaskBarIconName << "\" system tray icon")
+    delete r_p_taskbaricon;
+    LOGN("after deleting the \"" << p_chTaskBarIconName << "\" task bar icon")
+    //Mark the pointer that the memory for it was deleted.
+    r_p_taskbaricon = NULL;
+  }
+}
+
 //inline
-void wxX86InfoAndControlApp::DeleteTaskBarIcon()
+void wxX86InfoAndControlApp::DeleteTaskBarIcons()
 {
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
-  LOGN("wxX86InfoAndControlApp::DeleteTaskBarIcon() begin")
+  LOGN(//"wxX86InfoAndControlApp::DeleteTaskBarIcons()"
+    FULL_FUNC_NAME <<
+    "--begin" )
   if( mp_taskbaricon )
   {
+    //  Removing the icon is neccessary to exit the app/
+    //  else the icon may not be hidden after exit.
+    mp_taskbaricon->RemoveIcon() ;
+    LOGN("after removing the highest CPU core temp. system tray icon")
+
     //Also deleted in the wxWidgets "tbtest" sample (not automatically
     //deleted?!).
     delete //mp_wxx86infoandcontrolapp->mp_taskbaricon;
       mp_taskbaricon;
-    LOGN("after deleting the system tray icon")
+    LOGN("after deleting the highest CPU core temperature system tray icon")
 //    mp_wxx86infoandcontrolapp->mp_taskbaricon = NULL ;
     //Mark the pointer that the memory for it was deleted.
     mp_taskbaricon = NULL;
   }
-  LOGN("wxX86InfoAndControlApp::DeleteTaskBarIcon() end")
+
+  DeleteTaskBarIcon(m_p_CPUcoreUsagesTaskbarIcon, "CPU core usages");
+  DeleteTaskBarIcon(m_p_CPUcoresMultipliersTaskbarIcon, "CPU cores multipliers");
+
+  LOGN(//"wxX86InfoAndControlApp::DeleteTaskBarIcons()"
+    FULL_FUNC_NAME <<
+    "--end")
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 }
 
@@ -100,7 +143,13 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
   //from wxWidgets sample tbtest.cpp
   // Created:     01/02/97
   // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
-  LOGN( FULL_FUNC_NAME << "begin" )
+  LOGN( FULL_FUNC_NAME << "--begin" )
+
+  if( mp_modelData->m_userinterfaceattributes.m_bShowCPUcoreUsagesIconInTaskBar)
+    CreateTaskBarIcon(m_p_CPUcoreUsagesTaskbarIcon, "CPU core usages");
+  if( mp_modelData->m_userinterfaceattributes.m_bShowCPUcoresMultipliersIconInTaskBar)
+    CreateTaskBarIcon(m_p_CPUcoresMultipliersTaskbarIcon, "CPU cores multipliers");
+
   if( ! mp_taskbaricon )
   {
     mp_taskbaricon = new TaskBarIcon(mp_frame);
