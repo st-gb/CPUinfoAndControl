@@ -12,12 +12,6 @@
  *      Author: Stefan
  */
 
-  //This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
-  //Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany.
-  //It must not be used commercially without the permission of Trilobyte
-  //SE GmbH, Berlin, Germany.
-  //It may be used for educational / academic purposes for free.
-  //It may be used for personal use for free.
   //If you want to publish (parts) this sourcecode or generated binaries for other
   // purposes than for a DLL for x86Info&Control you have to ask Trilobyte.
   //If you use (parts) of this sourcecode then this license text must be contained.
@@ -69,7 +63,6 @@ AssignPointerToExportedExeReadPCIconfig.h>
 Logger g_logger ;
 #endif
 
-
   #include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
   #include <winuser.h> //MessageBox
   #include <sstream> //std::stringstream
@@ -97,53 +90,6 @@ Logger g_logger ;
   float g_fMainPllOpFreqId ;
 
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
-
-//  //Inline-> replaced instead function call
-//  //inline
-//  BYTE ReadMSR(
-//    DWORD dwRegisterIndex,   // MSR index
-//    PDWORD p_dwEAX,     // bit  0-31
-//    PDWORD p_dwEDX,     // bit 32-63
-//         //1bin =core 0; 10bin=2dec= core 1
-//   DWORD_PTR affinityMask  // Thread Affinity Mask
-//    )
-//  {
-//    DEBUGN("DLL's ReadMSR")
-//    return (*g_pfnreadmsr)(
-//      dwRegisterIndex ,
-//      p_dwEAX ,
-//      p_dwEDX ,
-//      affinityMask
-//      ) ;
-//  }
-//
-//  //Inline-> replaced instead function call
-////  inline
-//  BYTE WriteMSR(
-//    DWORD dwRegisterIndex,   // MSR index
-//    DWORD dwEAX,     // bit  0-31
-//    DWORD dwEDX,     // bit 32-63
-//         //1bin =core 0; 10bin=2dec= core 1
-//   DWORD_PTR affinityMask  // Thread Affinity Mask
-//    )
-//  {
-//#ifdef _DEBUG
-//    DEBUGN("WriteMSR("
-//      << dwRegisterIndex
-//      << "low:" << getBinaryRepresentation(dwEAX)
-//      << "high:" << getBinaryRepresentation(dwEDX)
-//      << affinityMask
-//      << ")"
-//      )
-//#endif
-////    return (*g_pfn_write_msr)(
-////      dwRegisterIndex ,
-////      dwEAX ,
-////      dwEDX ,
-////      affinityMask
-////      ) ;
-//      return 0 ;
-//  }
 
   //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
   //"When external names follow the C naming conventions, they must also be
