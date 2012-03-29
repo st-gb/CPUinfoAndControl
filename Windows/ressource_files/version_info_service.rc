@@ -48,8 +48,8 @@
 */
 1 VERSIONINFO
 /* Fixed-info */
-FILEVERSION VER_FILEVERSION
-PRODUCTVERSION VER_FILEVERSION
+FILEVERSION FILE_VERSION_NUMBER
+PRODUCTVERSION FILE_VERSION_NUMBER
 
 /* No special flags */
 FILEFLAGSMASK 0x0L
@@ -73,12 +73,12 @@ BEGIN
             VALUE "built with",    COMPILER_VERSION
             VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
             VALUE "FileDescription", FILE_DESCRIPTION
-            VALUE "FileVersion",    "0,0,0,0"
+            VALUE "FileVersion",    "2012.03.23.0"
             VALUE "InternalName",   "CPU info & control"
-            VALUE "LegalCopyright",  "Copyright (C) 2011"
+            VALUE "LegalCopyright",  "Copyright (C) 2010-2012"
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
-            VALUE "ProductVersion",  "0,0,0,0"
+            VALUE "ProductVersion",  "2012, codenamed ""Ocean Spray"""
         END
     END
     

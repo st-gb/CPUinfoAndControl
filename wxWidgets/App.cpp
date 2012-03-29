@@ -139,7 +139,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //  m_sax2_ipc_current_cpu_data_handler(m_model),
 #endif
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
-  mp_taskbaricon( NULL)
+  m_p_HighestCPUcoreTemperatureTaskBarIcon( NULL)
 //  , m_wxthreadIPC( )
   ,
   m_p_CPUcoreUsagesTaskbarIcon(NULL),
@@ -178,8 +178,8 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
   LOGN("app's destructor: before leaving IPC2InProgramData crit sec ")
   m_model.m_cpucoredata.wxconditionIPC2InProgramData.Leave() ;
   LOGN("app's destructor: before freeing taskbar object")
-//  if( mp_taskbaricon)
-//    delete mp_taskbaricon;
+//  if( m_p_HighestCPUcoreTemperatureTaskBarIcon)
+//    delete m_p_HighestCPUcoreTemperatureTaskBarIcon;
   DeleteTaskBarIcons();
   UnloadDetectInstableCPUcoreVoltageDynLib();
   LOGN("end of app's destructor")
@@ -656,7 +656,7 @@ int wxX86InfoAndControlApp::OnExit()
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 
 //    //Also deleted in the tbtest sample (not automatically deleted?!).
-//    delete mp_taskbaricon;
+//    delete m_p_HighestCPUcoreTemperatureTaskBarIcon;
   DeleteTaskBarIcons();
   LOGN("OnExit() after deleting the system tray icon(s)")
 
@@ -1661,41 +1661,31 @@ void wxX86InfoAndControlApp::outputAllPstates(
 
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 void wxX86InfoAndControlApp::PauseService(
-  bool bTryToPauseViaServiceControlManagerIfViaIPCfails )
+  wxString & r_wxstrMessageFromService,
+  bool bTryToPauseViaServiceControlManagerIfViaIPCfails
+  )
 {
   bool bTryToPauseViaServiceControlManager = false ;
   //The connection may have broken after it was established, so check it here.
-  if( ! //::wxGetApp().
-      //m_ipcclient.IsConnected()
-      IPC_ClientIsConnected_Inline()
-    )
+  if( ! IPC_ClientIsConnected_Inline() )
   {
     LOGN("not connected to the service")
     std::string stdstrMessage ;
-    if( ! //::wxGetApp().
-        //m_ipcclient.Init()
-        IPCclientConnect_Inline(stdstrMessage)
-      && bTryToPauseViaServiceControlManagerIfViaIPCfails )
+    if( ! IPCclientConnect_Inline(stdstrMessage)
+      && bTryToPauseViaServiceControlManagerIfViaIPCfails
+      )
       bTryToPauseViaServiceControlManager = true ;
   }
-  if( //::wxGetApp().
-      //m_ipcclient.IsConnected()
-      IPC_ClientIsConnected_Inline()
-    )
+  if( IPC_ClientIsConnected_Inline() )
   {
     LOGN("OnPauseService--connected to the service")
     //TODO possibly make IPC communication into a separate thread because it
     // may freeze the whole GUI.
-    //::wxGetApp().
-    //m_ipcclient.SendCommandAndGetResponse(pause_service) ;
     IPC_ClientSendCommandAndGetResponse_Inline(pause_service) ;
-//    wxString wxstr = getwxString( //::wxGetApp().
-//      m_ipcclient.m_stdwstrMessage ) ;
-//    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
     if( m_p_i_ipcclient )
     {
-      wxString wxstr = getwxString( m_p_i_ipcclient->m_stdwstrMessage ) ;
-      ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
+      r_wxstrMessageFromService = getwxString( m_p_i_ipcclient->
+        m_stdwstrMessage ) ;
     }
   }
   else
@@ -1706,33 +1696,31 @@ void wxX86InfoAndControlApp::PauseService(
     {
       std::string stdstrMsg ;
       if( ServiceBase::PauseService( //mp_model->m_strServiceName.c_str()
-        //We need a _T() macro (wide char-> L"", char->"") for EACH
-        //line to make it compatible between char and wide char.
-        //TODO make name variable because the user can change the name when
-        //installing the service.
-        _T("X86_info_and_control")
-        , stdstrMsg
+          //We need a _T() macro (wide char-> L"", char->"") for EACH
+          //line to make it compatible between char and wide char.
+          //TODO make name variable because the user can change the name when
+          //installing the service.
+          _T("X86_info_and_control")
+          , stdstrMsg
+          )
         )
-        )
-        ::wxMessageBox( wxT("successfully paused the service via the service "
-          "control manager")) ;
+        r_wxstrMessageFromService = wxT("successfully paused the service via "
+          "the service control manager") ;
       else
       {
-        wxString wxstr = wxT("not connected to the service\n"
+        r_wxstrMessageFromService = wxT("not connected to the service\n"
           "->tried to pause via service control manager\n"
           "Error pausing the service via the service control manager:\n")
           + getwxString( stdstrMsg) ;
-        ::wxMessageBox( wxstr ) ;
       }
     }
     catch( const ConnectToSCMerror & cr_connecttoscmerror )
     {
-      ::wxMessageBox( wxString(
+      r_wxstrMessageFromService = ( wxString(
         //We need a _T() macro (wide char-> L"", char->"") for EACH
         //line to make it compatible between char and wide char.
         _T("connecting to service control manager failed: ")
         ) +
-//        (const wxChar *) //::LocalLanguageMessageFromErrorCodeA(
         getwxString(
           ::GetErrorMessageFromErrorCodeA( cr_connecttoscmerror.m_dwErrorCode ).
           c_str()

@@ -57,7 +57,7 @@
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
     bool bEnableDVFS = false ;
-    float fValue ;
+    float fValue, * p_fValue ;
     std::string strAttributeName = "enable" ;
     WORD wValue ;
 	  if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
@@ -108,14 +108,13 @@
       LOGN("using increase factor " <<
         m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
     }
-    strAttributeName = "factor" ;
+    strAttributeName = "CPU_core_freq_reserve_in_MHz" ;
+    p_fValue = & m_p_model->m_cpucoredata.m_fCPUcoreFreqInMHzReserve;
     if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
-        strAttributeName.c_str(), fValue )
+        strAttributeName.c_str(), * p_fValue )
       )
     {
-      m_p_model->m_cpucoredata.m_fCPUcoreFreqFactor = fValue ;
-      LOGN("using factor " <<
-        m_p_model->m_cpucoredata.m_fCPUcoreFreqIncreaseFactor )
+      LOGN("using \"" << * p_fValue << "\" for \"" << strAttributeName << "\"" )
     }
   }
 

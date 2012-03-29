@@ -80,13 +80,13 @@ BEGIN
             VALUE "LegalCopyright",  "Copyright (C) 2010-2012"
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
-            VALUE "ProductVersion",  "2012, codenamed ""Violator"""
+            VALUE "ProductVersion",  "2012, codenamed ""Ocean Spray"""
         END
     END
     
     BLOCK "VarFileInfo"
     BEGIN
-	    /* 0x409=English language; 1200=Unicode character-set. */
+	    /* 0x409=English language; 1200=Unicode character-set. */
         VALUE "Translation", 0x409, 1200
     END
 END

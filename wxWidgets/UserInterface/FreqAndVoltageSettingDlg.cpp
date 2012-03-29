@@ -581,7 +581,7 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
     , wxLEFT | wxRIGHT
       | wxALIGN_CENTER_VERTICAL
     , 2 );
-  mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, _T("") );
+  mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, wxT("") );
   p_wxboxsizerCPUcoreVoltage->Add(
     mp_wxstatictextVoltageInVolt ,
     0 //0=the control should not take more space if the sizer is enlarged
@@ -1378,6 +1378,20 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //p_wxboxsizerOK_Cancel->Add(new wxButton(this, wxID_APPLY //, _T("Apply")
   //  ) );
   AddApplyOrCancelSizer(p_wxboxsizerTop) ;
+
+  m_p_wxboxsizerMessage = new wxBoxSizer(wxHORIZONTAL);
+
+  mp_wxstatictextMessage = new wxStaticText(this, wxID_ANY, wxT("") );
+  m_p_wxboxsizerMessage->Add( mp_wxstatictextMessage ) ;
+
+  p_wxboxsizerTop->Add(
+      m_p_wxboxsizerMessage,
+      0 ,
+      wxFIXED_MINSIZE,
+      //Determines the border width, if the flag  parameter is set to include
+      //any border flag.
+      2
+      );
 
   LOGN("before adding to the outer sizer")
 //  wxPanel * p_wxpanel = new wxPanel( this, ID_Panel ) ;
@@ -2859,7 +2873,8 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
   }
 }
 
-void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS()
+void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS(
+  wxString & r_wxstrMessageFromService)
 {
   mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
@@ -2870,10 +2885,19 @@ void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS()
       m_p_wxbitmapToggleButtonPause->GetValue ()
 #endif
       )
-    wxGetApp().PauseService( mp_model->m_userinterfaceattributes.
-      m_bTryToPauseViaServiceControlManagerIfViaIPCfails ) ;
+    wxGetApp().PauseService( r_wxstrMessageFromService,
+      mp_model->m_userinterfaceattributes.
+      m_bTryToPauseViaServiceControlManagerIfViaIPCfails
+      ) ;
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 
+}
+
+inline void FreqAndVoltageSettingDlg::SetMessage(const wxString &
+  c_r_wxstrMessage)
+{
+  mp_wxstatictextMessage->SetLabel( ::wxNow() + wxT(" ") + c_r_wxstrMessage);
+  mp_wxstatictextMessage->SetToolTip(c_r_wxstrMessage);
 }
 
 //Must provide a voltage parameter because this function is called from
@@ -2894,7 +2918,9 @@ void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
       << fVoltageInVolt
       << "multiplier to set:" << fMultiplierFromSliderValue
       )
-    DisableOSesDVFSandServiceDVFS();
+    wxString wxstrMessageFromService;
+    DisableOSesDVFSandServiceDVFS(wxstrMessageFromService);
+    SetMessage(wxstrMessageFromService);
     WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
     if( wNumCPUcores > 1 )
     {

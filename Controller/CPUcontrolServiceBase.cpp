@@ -218,7 +218,8 @@ DWORD CPUcontrolServiceBase::Initialize(
       m_maincontroller.ReadMainAndPstateConfig(
         m_model
         , & m_dummyuserinterface );
-      std::string stdstrServiceCfgFile = "service.xml" ;
+      std::string stdstrServiceCfgFile = m_model.m_std_strConfigFilePath + "/"
+        + "service.xml" ;
       SAX2ServiceConfigHandler sax2serviceconfighandler(
         m_model ,
         & m_dummyuserinterface );

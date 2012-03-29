@@ -38,7 +38,7 @@ int main
     ar_tchProgramArguments);
   int n = ::CallFromMainFunction(argc, //ar_p_chProgramArguments
       ar_tchProgramArguments, NULL);
-  if( ar_tchProgramArguments != ar_p_chProgramArguments)
+  if( (const char **) ar_tchProgramArguments != ar_p_chProgramArguments)
     ::DeleteTCHARarray(argc, ar_tchProgramArguments);
   return n;
 }
