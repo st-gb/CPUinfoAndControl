@@ -16,6 +16,11 @@ set current_day=%current_date:~0,2%
 @echo %current_year%
 @echo %current_day%
 
-windres.exe -D	VER_FILEVERSION=%current_year%,%current_month%,%current_day%,0 all_ressources_with_require_admin_manifest_service.rc all_ressources_with_require_admin_manifest_service.o 
+set file_version_numeric=%current_year%,%current_month%,%current_day%,0
+set file_version_string="%current_year%.%current_month%.%current_day%.0"
+
+set copyright_string="Copyright (C) 2010-%current_year%"
+
+windres.exe -D FILE_VERSION_NUMBER=%file_version_numeric% -D FILE_VERSION_STRING=%file_version_string%  all_ressources_with_require_admin_manifest_service.rc all_ressources_with_require_admin_manifest_service.o 
 
 pause

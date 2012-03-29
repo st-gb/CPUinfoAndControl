@@ -119,6 +119,7 @@ public:
   PerCPUcoreAttributes * m_arp_percpucoreattributes ;
 
   float m_fMaximumCPUcoreMultiplier;
+  float m_fCPUcoreFreqInMHzReserve;
 
   bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;

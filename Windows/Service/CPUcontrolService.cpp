@@ -985,7 +985,7 @@ SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
       //If the function fails, the return value is zero.
       RegSvcCtrlHandlerExAndGetErrMsg(
         //s_p_cpucontrolservice->m_stdtstrProgramName.c_str(),
-        m_std_tstrProgramName,
+        m_stdtstrProgramName.c_str(),
         ServiceCtrlHandlerEx,
         //http://msdn.microsoft.com/en-us/library/ms685058%28VS.85%29.aspx:
         //"lpContext [in, optional]
@@ -1231,8 +1231,8 @@ bool CPUcontrolService::OnInit()
   std::cout << FULL_FUNC_NAME << "--# prog args:" << argc << "\n";
 //  ::OpenLogFile(argv);
   std::cout << "after OpenLogFile\n";
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "before CallFromMainFunction")
 
+  //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "before CallFromMainFunction")
 //  if( CallFromMainFunction(argc,argv, this) == 0)
   {
     //OnInit() must return true, else no wxWidgets socket events can be processed?!
@@ -1559,10 +1559,14 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
       LOGN("service main--current thread ID:" << ::GetCurrentThreadId() )
       s_p_cpucontrolservice->m_vbServiceInitialized = true;
 
-//      //If not waiting the thread object is destroyed at end of block.
-//      ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
-//          INFINITE);
+      LOGN( FULL_FUNC_NAME << "--before waiting for the end condition to "
+        "become signalled." )
+      //If not waiting the thread object is destroyed at end of block.
+      ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
+          INFINITE);
       //    WaitForEndOfDVFSthread() ;
+      LOGN( FULL_FUNC_NAME << "--after waiting for the end condition to "
+        "become signalled." )
     }
 
   // This is where the service does its work.

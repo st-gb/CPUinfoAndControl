@@ -120,6 +120,10 @@ CPUcoreData::CPUcoreData()
   //C++ style initializations:
   :
   m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
+  //This reserve is e.g. useful for watching TV: so the TV application does not
+  // stop showing an image when the time slices for the app wouldn't be
+  // sufficient.
+  , m_fCPUcoreFreqInMHzReserve(300.0f)
   //, m_fCPUcoreFreqIncreaseFactor(1.5f)
   //, m_fVoltageForMaxCPUcoreFreq(1.05f)
   //, m_arfCPUcoreLoadInPercent(NULL)

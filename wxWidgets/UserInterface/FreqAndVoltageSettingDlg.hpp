@@ -89,6 +89,7 @@ public:
   wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
 private:
   wxBoxSizer * m_p_wxboxsizerOK_Cancel;
+  wxBoxSizer * m_p_wxboxsizerMessage;
 //  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
@@ -113,6 +114,7 @@ private:
   wxSpinButton * mp_wxspinbuttonVoltageInVolt ;
   wxStaticText * mp_wxstatictextFreqInMHz ;
   wxStaticText * mp_wxstatictextVoltageInVolt ;
+  wxStaticText * mp_wxstatictextMessage;
   wxStaticText * mp_wxstatictextWantedVoltageInVolt ;
   wxStaticText * mp_wxstatictextExpectedCurrentDissipation ;
   wxStaticText * mp_wxstatictextPercentageOfDefaultVoltage ;
@@ -167,7 +169,7 @@ public:
   void CreateFindLowestStableCPUcoreVoltageButton();
   void CreateStopFindingLowestStableCPUcoreVoltageButton();
   void CreateSliders();
-  void DisableOSesDVFSandServiceDVFS();
+  void DisableOSesDVFSandServiceDVFS(wxString & r_wxstrMessageFromService);
   void DisableWritingVoltageAndMultiplier(const wxString & c_r_wxstrToolTip)
   {
     m_bAllowWritingVoltageAndFrequency = false;
@@ -237,6 +239,7 @@ public:
   //void 
   WORD SetNearestLowerPossibleFreqInMHz(
     WORD wFreqInMHz ) ;
+  inline void SetMessage(const wxString & c_r_wxstrMessage);
   void ChangeToStopFindingLowestStableCPUcoreVoltageButton();
   void ChangeVoltageSliderValue(int nNewValue) ;
   void SetStartFindingLowestStableVoltageButton();

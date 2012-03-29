@@ -252,7 +252,8 @@ BYTE MainController::GetPstatesDirPath(
       WORD wModel = (WORD) byModel ;
       WORD wStepping = (WORD) byStepping ;
       r_strCPUtypeRelativeDirPath = 
-        "configuration/" 
+        //"configuration/"
+        mp_model->m_std_strConfigFilePath + "/"
         + strVendorID 
         + "/" 
         + //strFamily 
@@ -333,8 +334,7 @@ BYTE MainController::ReadPstateConfig(
       //convertToStdString<WORD>( //(WORD) byModel 
       //  wModel //, std::hex
       //  ) 
-      strCPUtypeRelativeDirPath
-        + "/" + strProcessorName + ".xml"
+      strCPUtypeRelativeDirPath + "/" + strProcessorName + ".xml"
       ;
     SAX2VoltagesForFrequencyHandler sax2voltages_for_frequency_handler( 
       * p_userinterface, model );
@@ -394,8 +394,8 @@ void MainController::ReadMainConfig(
   , UserInterface * p_userinterface
   )
 {
-  std::string stdstrMainConfigFileName = GetStdString( model.
-    m_stdtstrProgramName ) + "_config.xml" ;
+  std::string stdstrMainConfigFileName = model.m_std_strConfigFilePath + "/" +
+    GetStdString(model.m_stdtstrProgramName ) + "_config.xml" ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME <<
     "Reading main config file \"" <<
       stdstrMainConfigFileName << "\"" )

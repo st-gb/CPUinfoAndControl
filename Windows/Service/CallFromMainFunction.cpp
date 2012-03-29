@@ -354,8 +354,8 @@ int CallFromMainFunction(
   //            cpucontrolservice.m_model ) ;
             gp_cpucontrolbase = & cpucontrolservice ;
             cpucontrolservice.OnInit();
-            cpucontrolservice.//StartService();
-              StartServiceCtrlDispatcherInSeparateThread();
+            cpucontrolservice.StartService();
+              //StartServiceCtrlDispatcherInSeparateThread();
          }
          else
          {

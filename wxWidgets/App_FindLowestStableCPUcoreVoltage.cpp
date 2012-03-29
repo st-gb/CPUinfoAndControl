@@ -106,7 +106,9 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
 
     float fVoltageInVolt = p_freqandvoltagesettingdlg->
       GetVoltageInVoltFromSliderValue() ;
-    p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS();
+    wxString wxstrMessageFromService;
+    p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS(
+      wxstrMessageFromService);
 
     const std::set<float> & c_r_stdset_floatAvailableVoltagesInVolt =
       p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.

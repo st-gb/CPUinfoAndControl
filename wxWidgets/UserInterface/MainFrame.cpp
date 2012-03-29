@@ -1176,26 +1176,7 @@ void MainFrame::OnClose(wxCloseEvent & event )
     }
   }
   mp_wxx86infoandcontrolapp->CheckForChangedVoltageForFrequencyConfiguration();
-#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
-  if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
-  {
-//    mp_wxx86infoandcontrolapp->mp_taskbaricon->RemoveIcon() ;
-    //Must free the dependant bitmaps BEFORE calling "RemoveIcon()"?
-//    mp_wxx86infoandcontrolapp->mp_taskbaricon->FreeRessources();
-
-    //Removing the icon is neccessary to exit the app/
-    //else the icon may not be hidden after exit.
-    LOGN("before removing the system tray icon")
-    mp_wxx86infoandcontrolapp->mp_taskbaricon->RemoveIcon() ;
-    LOGN("after removing the system tray icon")
-
-    //This program does not terminate correctly (does not reach
-    //MainController's destructor when a dynamically created.
-    //taskbar icon is not deleted.
-//    mp_wxx86infoandcontrolapp->DeleteTaskBarIcons();
-    mp_wxx86infoandcontrolapp->mp_taskbaricon->DisconnectEventHandlers();
-  }
-#endif //#ifdef COMPILE_WITH_TASKBAR
+  mp_wxx86infoandcontrolapp->DeleteTaskBarIcons();
   LOGN("before destroying the mainframe")
   //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
   this->Destroy() ;
@@ -1514,9 +1495,13 @@ void MainFrame::OnLeftMouseButtonDown(wxMouseEvent & r_wxmouseevent)
 
 void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 {
-  LOGN("OnPauseService")
+  LOGN( //"OnPauseService"
+    FULL_FUNC_NAME << "--begin")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  mp_wxx86infoandcontrolapp->PauseService() ;
+  wxString wxstrMessageFromService;
+  mp_wxx86infoandcontrolapp->PauseService(wxstrMessageFromService);
+  ::wxMessageBox( wxT("message from the service:\n") + wxstrMessageFromService
+    ) ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
@@ -4736,8 +4721,8 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
 {
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   LOGN("MainFrame::ShowHighestCPUcoreTemperatureInTaskBar--mp_taskbaricon:"
-    << mp_wxx86infoandcontrolapp->mp_taskbaricon)
-  if( mp_wxx86infoandcontrolapp->mp_taskbaricon )
+    << mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon)
+  if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon )
   {
     //Adapted from http://www.cppreference.com/wiki/valarray/max:
     std::valarray<float> stdvalarray_float(s_arfTemperatureInDegreesCelsius,
@@ -4761,7 +4746,7 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
         << llDiffInMillis
         )
       if( llDiffInMillis < 5000 )
-        mp_wxx86infoandcontrolapp->mp_taskbaricon->//m_wxicon_drawer.DrawText(
+        mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
           DrawText(
           s_wxiconTemperature,
           s_wxstrHighestCPUcoreTemperative,
@@ -4770,14 +4755,14 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
           );
       else
   //      CreateTextIcon( s_wxiconTemperature, s_wxstrHighestCPUcoreTemperative ) ;
-        mp_wxx86infoandcontrolapp->mp_taskbaricon->//m_wxicon_drawer.DrawText(
+        mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
           DrawText(
           s_wxiconTemperature,
           s_wxstrHighestCPUcoreTemperative,
           wxBLACK//,
   //        wxWHITE
           );
-      if( mp_wxx86infoandcontrolapp->mp_taskbaricon->SetIcon(
+      if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->SetIcon(
           s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
         )
       {

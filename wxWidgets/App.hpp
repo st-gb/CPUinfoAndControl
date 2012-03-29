@@ -184,7 +184,7 @@ public:
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   //Must be created on heap, else left mouse clicks were not processed?
-  TaskBarIcon * mp_taskbaricon ;
+  TaskBarIcon * m_p_HighestCPUcoreTemperatureTaskBarIcon ;
   TaskBarIcon * m_p_CPUcoreUsagesTaskbarIcon ;
   TaskBarIcon * m_p_CPUcoresMultipliersTaskbarIcon;
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
@@ -256,7 +256,7 @@ public:
   {
     return mp_cpucontroller ;
   }
-  inline void CreateTaskBarIcon(
+  inline TaskBarIcon * CreateTaskBarIcon(
     TaskBarIcon * & r_p_taskbaricon,
     const char * p_chTaskBarIconName
     );
@@ -307,6 +307,7 @@ public:
       const wchar_t * cp_lpwstrMessage, unsigned flags = 0);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
+    wxString & r_wxstrMessageFromService,
     bool bTryToPauseViaServiceControlManagerIfViaIPCfails = true ) ;
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
