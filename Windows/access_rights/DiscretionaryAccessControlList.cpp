@@ -393,8 +393,8 @@ BYTE CreateSecAttributes(
          & pEveryoneSID
          ))
     {
-        printf("AllocateAndInitializeSid Error %lu\n", GetLastError());
-        goto Cleanup;
+//        printf("AllocateAndInitializeSid Error %lu\n", GetLastError());
+      goto Cleanup;
     }
 
     // Initialize an EXPLICIT_ACCESS structure for an ACE.
@@ -408,21 +408,24 @@ BYTE CreateSecAttributes(
     ea[0].Trustee.ptstrName  = (LPTSTR) pEveryoneSID;
 
     // Create a SID for the BUILTIN\Administrators group.
-    if(! AllocateAndInitializeSid(&SIDAuthNT, 2,
-                     SECURITY_BUILTIN_DOMAIN_RID,
-                     DOMAIN_ALIAS_RID_ADMINS,
-                     0, 0, 0, 0, 0, 0,
-                     &pAdminSID))
+    if( ! AllocateAndInitializeSid(
+        & SIDAuthNT,
+        2,
+         SECURITY_BUILTIN_DOMAIN_RID,
+         DOMAIN_ALIAS_RID_ADMINS,
+         0, 0, 0, 0, 0, 0,
+         & pAdminSID)
+       )
     // Create a SID for the BUILTIN\local system group.
     if(! AllocateAndInitializeSid(
-        &SIDAuthNT,
+        & SIDAuthNT,
         //http://support.microsoft.com/kb/288900/de:
         //NT Bekannte SIDs (wie LocalSystem ) haben nur einen RID Wert
         //relativ zu der Bezeichnerautorit�t SECURITY_NT_AUTHORITY.
         1,
        SECURITY_LOCAL_SYSTEM_RID,
        0, 0, 0, 0, 0, 0, 0,
-       &pAdminSID)
+       & pAdminSID)
        )
     {
       DEBUG_SPRINTF("AllocateAndInitializeSid Error %lu\n", GetLastError());

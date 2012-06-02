@@ -226,7 +226,9 @@ void OpenLogFile(TCHAR * argv[])
   std::cout << L"1st program arg:" << argv[0] << L"\n";
 #endif
 
-  std::string std_strLogFileName = ::GetStdString_Inline(argv[0]);
+  std::string std_strLogFileName =
+    //CPUcontrolBase::m_model.m_stdstrLogFilePath + "/" +
+    ::GetStdString_Inline( argv[0] );
   std::cout << "std_strLogFileName:" << std_strLogFileName << "\n";
 
   //  std::tstring std_tstrLogFileName;
@@ -234,20 +236,28 @@ void OpenLogFile(TCHAR * argv[])
   if( ServiceBase::IsStartedAsService() )
     //std::string std_strLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
     std_strLogFileName += //std::string( argv[0]) +
-      std::string("_log.txt") ;
+      std::string("_log.") ;
   //    std_tstrLogFileName = std::tstring( argv[0]) +
   //      std::tstring( L"_log.txt") ;
   else
     std_strLogFileName += //std::string( argv[0]) +
-      std::string("_execute_actions_log.txt") ;
+      std::string("_execute_actions_log.") ;
   //    std_tstrLogFileName = std::tstring( argv[0]) +
   //      std::tstring(L"_execute_actions_log.txt") ;
   #else
   std_strLogFileName += //std::string( argv[0]) +
-    std::string("_log.txt") ;
+    std::string("_log.") ;
   //  std_tstrLogFileName = std::tstring( argv[0]) +
   //    std::tstring( L"_log.txt") ;
   #endif
+  std::string std_strFileExt;
+  CPUcontrolBase::GetLogFileExtension(std_strFileExt);
+
+  std::string std_strLogTimeFormatString;
+  CPUcontrolBase::GetLogTimeFormatString(std_strLogTimeFormatString);
+
+  std_strLogFileName += std_strFileExt;
+
   if( ! ::SetExePathAsCurrentDir() )
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
       "Getting file path for THIS executable file failed: " <<
@@ -256,9 +266,143 @@ void OpenLogFile(TCHAR * argv[])
 #ifdef USE_LOG4CPLUS
   init_log4cplus() ;
 #endif
-  g_logger.OpenFile2( std_strLogFileName
-    //std_tstrLogFileName
-    ) ;
+
+  if( g_logger.OpenFile2( std_strLogFileName ) )
+  {
+    I_LogFormatter * p_log_formatter = g_logger.CreateFormatter(
+      std_strFileExt, std_strLogTimeFormatString);
+  }
+}
+
+void PossiblyInteractWithUser(int argc, TCHAR * argv[],
+  CPUcontrolService * p_cpucontrolservice,
+  const std::tstring & std_tstrProgramName,
+  bool & bStartServiceWithinThisProcess
+  )
+{
+  int nChar ;
+  std::vector<std::string> vec_std_strParams ;
+//  std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
+//    + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
+  int nOptionInUpperCase = 0;
+  do
+  {
+    nChar = CPUcontrolService::requestOption( vec_std_strParams
+      , std_tstrProgramName );
+    //LOGN("character entered:" << nChar )
+  //        //The vector is empty when this program was executed/ invoked via the
+  //        //service control manager.
+  //        if( vecstdstrParams.empty() )
+    //The character is "-1" when this program was executed/ invoked via the
+    //service control manager.
+    if( nChar == -1 )
+    {
+      LOGN("This exe is started as service (and not "//"as installer)"
+        "for executing actions)");
+      bStartServiceWithinThisProcess = true ;
+      break ; //Leave this loop.
+    }
+    else
+    {
+      DEBUG("Entered strings: ")
+      for ( BYTE by = 0 ; by < vec_std_strParams.size() ; ++ by )
+          //DEBUG("\"%s\" ", vecstdstrParams.at(by).c_str() );
+          LOG("\"" << vec_std_strParams.at(by).c_str() << "\" " );
+      DEBUG("\n" );
+    }
+    //nRet =
+      HandleProgramOptions(vec_std_strParams, std_tstrProgramName,
+      p_cpucontrolservice) ;
+    //Clear the vector for the next call to CPUcontrolService::
+    //requestOption(...).
+    vec_std_strParams.clear() ;
+    nOptionInUpperCase = ::toupper( nChar );
+  }
+  while( nOptionInUpperCase != 'Q' && nOptionInUpperCase != 'A') ;
+}
+
+void NoProgramArgumentsSpecified(int argc, TCHAR * argv[],
+  CPUcontrolService * p_cpucontrolservice,
+  std::tstring & std_tstrProgramName
+  )
+{
+  bool bStartServiceWithinThisProcess = //true ;
+    false ;
+  //IDEA: to distinguish between if called as service or by a user:
+  //get the parent process name of this process.
+  //Programs that run as service have "services.exe" as their parent
+  //process.
+  CPUcontrolService::outputUsage();
+  //Useful for debugging purposes.
+  #ifdef EMULATE_EXECUTION_AS_SERVICE
+  #else
+  PossiblyInteractWithUser(argc, argv, p_cpucontrolservice,
+    std_tstrProgramName, bStartServiceWithinThisProcess);
+  #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
+
+  if( bStartServiceWithinThisProcess )
+  {
+    LOGN("Starting service inside _this_ process.")
+    if( p_cpucontrolservice == NULL )
+    {
+      std::wstring std_wstrProgramName = GetStdWstring( std_tstrProgramName ) ;
+      CPUcontrolService cpucontrolservice(
+        argc,
+        GetTCHARarray_Inline( (const char **) argv, argc),
+  //            Get_wchar_t_Array_Inline( (const char **) argv, argc),
+  //            std_tstrProgramName
+        std_wstrProgramName
+  //            , xerces_ipc_data_handler
+        ) ;
+  //          Xerces::IPCdataHandler xerces_ipc_data_handler(
+  //            cpucontrolservice.m_model ) ;
+      gp_cpucontrolbase = & cpucontrolservice ;
+      cpucontrolservice.OnInit();
+      cpucontrolservice.StartService();
+          //StartServiceCtrlDispatcherInSeparateThread();
+    }
+    else
+    {
+      p_cpucontrolservice->//StartService();
+        StartServiceCtrlDispatcherInSeparateThread();
+      gp_cpucontrolbase = p_cpucontrolservice;
+    }
+  //         if( bStartAsService)
+  //         {
+  //
+  //         }
+  //         else
+  //           cpucontrolservice.StartAsNormalApp();
+//     nRet = 0;
+  }
+}
+
+void AtLeast1ProgramArgumentSpecified(int argc, TCHAR * argv[],
+  CPUcontrolService * p_cpucontrolservice,
+  const std::tstring & std_tstrProgramName
+  )
+{
+  if( argc > 1 && ::IsWithinCmdLineArgs(argc, argv, _T("-a") ) )
+    ::StartAsNormalApp(std_tstrProgramName, p_cpucontrolservice);
+  if( argc > 2 && ShouldDeleteService(argc, argv) )
+  {
+    DWORD dwErrorCodeFor1stError ;
+      ServiceBase::DeleteService( //argv[2]
+        GetStdTstring_Inline( argv[2]).c_str()
+        , dwErrorCodeFor1stError
+        ) ;
+  }
+  if( argc > 2 && ShouldCreateService(argc, argv) )
+  {
+    BYTE by ;
+  //    CreateService(
+  //if( //::AfxMessageBox("Should the undervolting service be installed now?",
+  //    //IDYES | IDNO ) == IDYES  )
+    ServiceBase::CreateService( //argv[2]
+      GetStdTstring_Inline( argv[2]).c_str(), by ) ;
+  }
+  else
+      std::cout << "\nNOT installing the service\n" ;
 }
 
 //Call this function e.g. from "int main()" or from "wxApp::OnInit()"
@@ -283,123 +427,22 @@ int CallFromMainFunction(
     //PossiblyOutputUsage() ;
     CPUcontrolBase::OuputCredits() ;
     LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
-    //LPTSTR ptstrProgramArg = _T("-config=GriffinControl_config.xml") ;
+
     std::tstring std_tstrProgramName(ptstrProgramName) ;
-    if( argc == 1 )
+    if( argc == 1 ) // No program arguments passed.
     {
-      bool bStartServiceWithinThisProcess = //true ;
-        false ;
-      //IDEA: to distinguish between if called as service or by a user:
-      //get the parent process name of this process.
-      //Programs that run as service have "services.exe" as their parent
-      //process.
-      CPUcontrolService::outputUsage();
-      std::vector<std::string> vecstdstrParams ;
-      //Useful for debugging purposes.
-      #ifdef EMULATE_EXECUTION_AS_SERVICE
-      #else
-      int nChar ;
-      std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
-        + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
-      int nOptionInUpperCase = 0;
-      do
-      {
-        nChar = CPUcontrolService::requestOption( vecstdstrParams
-          , std_tstrProgramName );
-        //LOGN("character entered:" << nChar )
-//        //The vector is empty when this program was executed/ invoked via the
-//        //service control manager.
-//        if( vecstdstrParams.empty() )
-        //The character is "-1" when this program was executed/ invoked via the
-        //service control manager.
-        if( nChar == -1 )
-        {
-          LOGN("This exe is started as service (and not "//"as installer)"
-            "for executing actions)");
-          bStartServiceWithinThisProcess = true ;
-          break ; //Leave this loop.
-        }
-        else
-        {
-          DEBUG("Entered strings: ")
-          for ( BYTE by = 0 ; by < vecstdstrParams.size() ; ++ by )
-              //DEBUG("\"%s\" ", vecstdstrParams.at(by).c_str() );
-              LOG("\"" << vecstdstrParams.at(by).c_str() << "\" " );
-          DEBUG("\n" );
-        }
-        nRet = HandleProgramOptions(vecstdstrParams, std_tstrProgramName,
-          p_cpucontrolservice) ;
-        //Clear the vector for the next call to CPUcontrolService::
-        //requestOption(...).
-        vecstdstrParams.clear() ;
-        nOptionInUpperCase = ::toupper( nChar );
-      }
-      while( nOptionInUpperCase != 'Q' && nOptionInUpperCase != 'A') ;
-      #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
-      if( bStartServiceWithinThisProcess )
-      {
-         LOGN("Starting service inside _this_ process.")
-         if( p_cpucontrolservice == NULL )
-         {
-           std::wstring std_wstrProgramName = GetStdWstring( std_tstrProgramName ) ;
-            CPUcontrolService cpucontrolservice(
-              argc,
-              GetTCHARarray_Inline( (const char **) argv, argc),
-  //            Get_wchar_t_Array_Inline( (const char **) argv, argc),
-  //            std_tstrProgramName
-              std_wstrProgramName
-  //            , xerces_ipc_data_handler
-              ) ;
-  //          Xerces::IPCdataHandler xerces_ipc_data_handler(
-  //            cpucontrolservice.m_model ) ;
-            gp_cpucontrolbase = & cpucontrolservice ;
-            cpucontrolservice.OnInit();
-            cpucontrolservice.StartService();
-              //StartServiceCtrlDispatcherInSeparateThread();
-         }
-         else
-         {
-           p_cpucontrolservice->//StartService();
-             StartServiceCtrlDispatcherInSeparateThread();
-           gp_cpucontrolbase = p_cpucontrolservice;
-         }
-//         if( bStartAsService)
-//         {
-//
-//         }
-//         else
-//           cpucontrolservice.StartAsNormalApp();
-         nRet = 0;
-      }
+      NoProgramArgumentsSpecified(argc, argv, p_cpucontrolservice,
+        std_tstrProgramName);
     }
     else
     {
-        if( argc > 1 && ::IsWithinCmdLineArgs(argc, argv, _T("-a") ) )
-          ::StartAsNormalApp(std_tstrProgramName, p_cpucontrolservice);
-
-        if( argc > 2 && ShouldDeleteService(argc, argv) )
-        {
-          DWORD dwErrorCodeFor1stError ;
-            ServiceBase::DeleteService( //argv[2]
-              GetStdTstring_Inline( argv[2]).c_str()
-              , dwErrorCodeFor1stError
-              ) ;
-        }
-        if( argc > 2 && ShouldCreateService(argc, argv) )
-        {
-          BYTE by ;
-        //    CreateService(
-        //if( //::AfxMessageBox("Should the undervolting service be installed now?",
-        //    //IDYES | IDNO ) == IDYES  )
-          ServiceBase::CreateService( //argv[2]
-            GetStdTstring_Inline( argv[2]).c_str(), by ) ;
-        }
-        else
-            std::cout << "\nNOT installing the service\n" ;
+      AtLeast1ProgramArgumentSpecified(argc, argv, p_cpucontrolservice,
+        std_tstrProgramName);
     }
     DEBUG("Run this program as \"local system account\" account within the "
         "service's properties in Windows->control panel->management->services "
         "else errors may occur\n");
+    nRet = 0;
   }
   catch( ConnectToSCMerror & r_connect_to_scm_error )
   {

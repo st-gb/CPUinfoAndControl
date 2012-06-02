@@ -57,6 +57,8 @@ public:
     const XERCES_CPP_NAMESPACE::Attributes & attrs ) ;
   void HandleInstableCPUcoreVoltageDetection(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes );
+  void HandleResumeFromStandbyOrHibernationXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes) ;
   void HandleTopmostXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & attrs ) ;
   void startElement(

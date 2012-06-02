@@ -5,15 +5,6 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-//This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
-//Copyright 2010-2011 by Trilobyte Software Engineering GmbH, Berlin, Germany.
-//It must not be used commercially without the permission of Trilobyte
-//SE GmbH, Berlin, Germany.
-//It may be used for educational / academic purposes for free.
-//It may be used for personal use for free.
-//If you want to publish (parts) this source code or generated binaries for other
-// purposes than for a DLL for x86Info&Control you have to ask Trilobyte.
-//If you use (parts) of this source code then this license text must be contained.
 #ifdef _MSC_VER //MS compiler
 #include "stdafx.h"
 #endif
@@ -41,6 +32,7 @@
 //inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <Controller/AssignPointersToExportedExeFunctions/\
 inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
+
 //For PrepareForNextPerformanceCountingNehalem(...) (etc.)
 #include <Controller/CPU-related/Intel/Nehalem/Nehalem.hpp>
 #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
@@ -56,12 +48,6 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //#define _DEBUG
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
-
-//_WIN32: Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-#if defined(_DEBUG) && defined(_WIN32)
-  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/\
-GetCurrentProcessExeFileNameWithoutDirs.hpp>
-#endif
 
 #include <float.h> //for FLT_MIN
 //#include <sstream> //std::stringstream
@@ -86,34 +72,20 @@ GetCurrentProcessExeFileNameWithoutDirs.hpp>
 // AssignPointersToExportedExeMSRfunctions.cpp
 extern ReadMSR_func_type g_pfnreadmsr ;
 extern WriteMSR_func_type g_pfn_write_msr ;
+
 //  extern float g_fReferenceClockInMHz ;
 //Init to the default reference clock in MHz.
 float g_fReferenceClockInMHz = 133.3 ;
-static float gs_fTimeStampCounterMultiplier = 0.0 ;
+float gs_fTimeStampCounterMultiplier = 0.0 ;
 
 //Use global vars instead of allocating them for each function call (->faster)
 BYTE g_byValue1 , g_byValue2 ;
 //Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
 uint32_t g_dwValue1 , g_ui32Value2 ;
 
-#define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
-
-//http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-//"When external names follow the C naming conventions, they must also be
-//declared as extern "C" in C++ code, to prevent them from using C++ naming
-//conventions."
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #define EXPORT extern "C" __declspec(dllexport)
-#else
-  //http://www.linuxquestions.org/questions/programming-9/
-  // how-to-export-function-symbols-750534/:
-  //"__attribute__ ((visibility("default")))  // (similar to __declspec(dllexport))"
-  #define EXPORT extern "C" //__attribute__ ((visibility("default")))
-#endif
-
-#ifndef APIENTRY
-  #define APIENTRY
-#endif
+#include <preprocessor_macros/export_function_symbols.h> //EXPORT
+#include <preprocessor_macros/dll_main_front_signature.h> //DLLMAIN_FRONT_SIGNATURE
+#include "Nehalem_Windows.h" //InitWindows(...)
 
 void InitOtherOSthanWindows()
 {
@@ -137,82 +109,6 @@ void InitOtherOSthanWindows()
     << "g_pfn_write_msr:" << g_pfn_write_msr)
   gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
 }
-
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-bool InitWindows()
-{
-#ifdef _TEST_VERSION
-//  MessageBox(
-//    NULL,
-//    _T("InitWindows"),
-//    _T("error"),
-//    MB_OK
-//    );
-#endif
-  #ifdef _DEBUG
-  std::string strExeFileNameWithoutDirs = GetStdString(
-    ::GetExeFileNameWithoutDirs() ) ;
-#ifdef WESTMERE
-  std::string stdstrFilename = strExeFileNameWithoutDirs +
-    ("WestmereControllerDLL_log.txt") ;
-#else
-  std::string stdstrFilename = strExeFileNameWithoutDirs +
-    ("NehalemControllerDLL_log.txt") ;
-#endif
-//  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
-  g_logger.OpenFile2( stdstrFilename ) ;
-  DEBUGN_LOGGER_NAME(//g_loggerDynLib
-    g_logger , "Windows version--this Log file is open")
-  //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
-  #endif
-  //gp_nehalem_clocksnothaltedcpucoreusagegetter = new Nehalem::ClocksNotHaltedCPUcoreUsageGetter(
-  //  ) ;
-  //Reaches here when compiled with MSC but not when MinGW?!
-  AssignPointersToExportedExeMSRfunctions(
-    g_pfnreadmsr , g_pfn_write_msr ) ;
-  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
-  {
-    MessageBox( NULL,
-      //_T() macro: ANSI-> "", unicode: ->L""; for Microsoft's compiler
-      //each line needs a _T() macro.
-      _T("Pointers could not be assigned to the execu-tables export functions\n")
-      _T("Does the executable that loads this DLL have ReadMSR and WriteMSR")
-      _T("export functions at all?(analyze this with a tool)")
-      //Title
-      ,_T("error")
-      , MB_OK) ;
-    return FALSE ;
-  }
-  gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
-  //Force the cond. "< min. time diff" to become true.
-  g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
-  g_dwPreviousTickCountInMilliseconds
-    //->time diff gets > max. time diff, so it calcs a ref clock.
-    -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
-//  //The reference clock is needed for setting the current frequency. So it
-//  //must be determined prior to any call of this function.
-//  GetCurrentReferenceClock(
-//    //12.0,
-//    gs_fTimeStampCounterMultiplier ,
-//    g_fReferenceClockInMHz ,
-//    1000 ,
-//    MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-//  DEBUGN("first calculated reference clock in MHz: "
-//    << g_fReferenceClockInMHz )
-  return TRUE ;
-}
-#endif //#ifdef _WIN32
-
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  //For exporting this function with the same name as here in the source file.
-  //Especially for MinGW this line is needed in order to be called automatically
-  //for DLL attach / detach etc. actions.
-  #define DLLMAIN_FRONT_SIGNATURE EXPORT BOOL APIENTRY
-#else //#ifdef _WIN32
-  //from http://tdistler.com/2007/10/05/
-  // implementing-dllmain-in-a-linux-shared-library:
-  #define DLLMAIN_FRONT_SIGNATURE void __attribute__ ((constructor))
-#endif //#ifdef _WIN32
 
 DLLMAIN_FRONT_SIGNATURE DllMain(
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -259,6 +155,7 @@ float *
   , WORD * p_wNumberOfArrayElements
   )
 {
+  DEBUGN( FULL_FUNC_NAME << "--begin")
   static BYTE byMaxMulti = 0;
 //    BYTE byMaxMultiplier = 0 ;
 //  DWORD dwLowmostBits , dwHighmostBits ;
@@ -296,6 +193,7 @@ float *
 //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
       for( BYTE by = 0 ; by < byNumMultis ; ++ by )
       {
+        DEBUGN( FULL_FUNC_NAME << "--adding multplier " << fMulti )
         ar_f[by] = fMulti ++ ;
 //       stdstrstream << fMulti << " " ;
       }
@@ -310,9 +208,11 @@ float *
   ////MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
   //}
 #endif
+    DEBUGN( FULL_FUNC_NAME << "--returning " << ar_f)
     return ar_f ;
   }
   * p_wNumberOfArrayElements = 0 ;
+  DEBUGN( FULL_FUNC_NAME << "--returning NULL")
   return NULL ;
 }
 
@@ -326,6 +226,7 @@ float *
     WORD wCoreID
     , WORD * p_wNum )
 {
+  DEBUGN( FULL_FUNC_NAME << "--begin")
 //    BYTE byMaxMultiplier = 0 ;
 //    DWORD dwLowmostBits , dwHighmostBits ;
 //  #ifdef _DEBUG
@@ -359,6 +260,7 @@ float *
   ////MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
   //}
 #endif
+  DEBUGN( FULL_FUNC_NAME << "--returning " << ar_f )
   return ar_f ;
 }
 
@@ -401,8 +303,13 @@ EXPORT
     //Intel: "15:0 Current performance State Value"
     //   "63:16 Reserved"
     * p_fMultiplier = ( g_dwValue1 & 255 ) ;
-    DEBUGN("dyn lib GetCurrentVoltageAndFrequency--voltage:"
-      << * p_fVoltageInVolt )
+    DEBUGN(//"dyn lib GetCurrentVoltageAndFrequency"
+      FULL_FUNC_NAME
+      << "--multiplier:"
+      << * p_fMultiplier
+      << "--voltage:"
+      << * p_fVoltageInVolt
+      )
 //#if !defined(_DEBUG) && defined(__linux_)
 #ifdef STATIC_133MHZ_REFERENCE_CLOCK
     * p_fReferenceClockInMHz = 133.3 ;
@@ -421,6 +328,7 @@ EXPORT
       fReferenceClockInMHz,
       1000 , //min. timespan in ms
       10000 ) ;
+
     SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after "
       "GetCurrentReferenceClock") )
     * p_fReferenceClockInMHz = fReferenceClockInMHz;
@@ -432,7 +340,7 @@ EXPORT
     DEBUGN( std_strstream.str() )
     SHOW_VIA_GUI( std_strstream.str().c_str() )
 
-    //Timespan too high or too low.
+    //time span for calculating the reference clock was too high or too low.
     if( * p_fReferenceClockInMHz == 0.0 )
       * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
     else
@@ -442,6 +350,11 @@ EXPORT
       << //g_fReferenceClockInMHz
       * p_fReferenceClockInMHz )
 //      * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
+  }
+  else
+  {
+    DEBUGN( FULL_FUNC_NAME << "--failed to read from MSR index "
+      << IA32_PERF_STATUS)
   }
   SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency end") )
   return g_byValue1 ;

@@ -21,6 +21,13 @@
 #include <windef.h> //for BYTE
 #include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
 #include <Controller/CPU-related/I_CPUcontroller.hpp>//class I_CPUcontroller
+//for GetInterpolatedVoltageFromFreq(
+//  WORD wFreqInMHzToGetVoltageFrom
+//  , float & r_fVoltageInVolt
+//  , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
+//  );
+#include <Controller/CPU-related/GetInterpolatedVoltageFromFreq.hpp>
+
 //DISable warning, from
 //http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
 // : "I believe passing -Wno-write-strings to gcc will suppress this warning."
@@ -564,7 +571,8 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
     new wxStaticText(this, wxID_ANY, _T("CPU core\nvoltage" //\nIDentifier
       ":" ))
     , 0 //0=the control should not take more space if the sizer is enlarged
-    //These flags are used to specify which side(s) of the sizer item the border width will apply to.
+    //These flags are used to specify which side(s) of the sizer item the
+    //border width will apply to.
     , //wxEXPAND |
     //wxALL,
     wxLEFT | wxRIGHT
@@ -578,17 +586,25 @@ inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
     mp_wxsliderCPUcoreVoltage,
     1
     //,wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-      | wxALIGN_CENTER_VERTICAL
-    , 2 );
+    , //wxLEFT | wxRIGHT |
+      wxALIGN_CENTER_VERTICAL
+    //http://docs.wxwidgets.org/2.8.10/wx_wxsizer.html#wxsizeradd
+    // "Determines the border width, if the flag parameter is set to include
+    // any border flag."
+//    , 2
+    );
   mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, wxT("") );
   p_wxboxsizerCPUcoreVoltage->Add(
     mp_wxstatictextVoltageInVolt ,
     0 //0=the control should not take more space if the sizer is enlarged
     //,wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-      | wxALIGN_CENTER_VERTICAL
-    , 5);
+    , //wxLEFT | wxRIGHT |
+      wxALIGN_CENTER_VERTICAL
+    //http://docs.wxwidgets.org/2.8.10/wx_wxsizer.html#wxsizeradd
+    // "Determines the border width, if the flag parameter is set to include
+    // any border flag."
+//    , 5
+    );
 //  AddIncreaseVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
 //  AddDecreaseVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
 //  AddPreventVoltageBelowLowestStableVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
@@ -2160,7 +2176,8 @@ void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
       //for AMD Griffin where only 1100 and 2200 MHz are possible. So calc.
       //the voltage for 1100 MHz:
 //      mp_cpucontroller->GetVoltageFromMultiplier(byMultiIndex) ;
-      if( mp_cpucontroller->GetInterpolatedVoltageFromFreq(
+      if( //mp_cpucontroller->
+          GetInterpolatedVoltageFromFreq(
           wFreqInMHz
           //ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz
           , fVoltageInVolt
@@ -2300,6 +2317,7 @@ void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
     mp_mainframe->m_p_freqandvoltagesettingsdialog = NULL;
     mp_mainframe->SetCursor(wxNullCursor);
   }
+  //TODO change to ~ m_x86iandc_threadFindLowestStableVoltage.IsRunning()
   ::GetExitCodeThread( wxGetApp().
     m_x86iandc_threadFindLowestStableVoltage.
     m_handleThread, & dwExitCode ) ;
@@ -2921,27 +2939,41 @@ void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
     wxString wxstrMessageFromService;
     DisableOSesDVFSandServiceDVFS(wxstrMessageFromService);
     SetMessage(wxstrMessageFromService);
-    WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
-    if( wNumCPUcores > 1 )
+
+    //Use the app's CPU controller because it may have changed:
+    // e.g. at first the IPC CPU controller object, then this dialog was
+    //opened -> pointer assigned to it and afterwards a dynamic link
+    //library (file's) CPU controller.
+    I_CPUcontroller * p_cpucontroller = wxGetApp().mp_cpucontroller;
+    LOGN( FULL_FUNC_NAME << "--CPU controller:" << p_cpucontroller )
+    if( p_cpucontroller )
     {
-      for( WORD wCPUcore = 0 ; wCPUcore < wNumCPUcores ; ++ wCPUcore )
-        if( m_ar_p_wxcheckbox[wCPUcore]->IsChecked() )
-          //TODO the confirmation of e.g. wxWidgets seems to happen in
-          //ANOTHER thread->synchronize here (by e.g. using critical sections)
-          //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
-          mp_cpucontroller->SetCurrentVoltageAndMultiplier(
-            fVoltageInVolt ,
-            fMultiplierFromSliderValue ,
-            wCPUcore
-            ) ;
+      WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
+      if( wNumCPUcores > 1 )
+      {
+        for( WORD wCPUcore = 0 ; wCPUcore < wNumCPUcores ; ++ wCPUcore )
+          if( m_ar_p_wxcheckbox[wCPUcore]->IsChecked() )
+            //TODO the confirmation of e.g. wxWidgets seems to happen in
+            //ANOTHER thread->synchronize here (by e.g. using critical sections)
+            //TODO change to "I_CPUcontroller::SetCurrentVoltageAndFrequency(...)"
+
+            //mp_cpucontroller->SetCurrentVoltageAndMultiplier(
+
+            p_cpucontroller->SetCurrentVoltageAndMultiplier(
+              fVoltageInVolt ,
+              fMultiplierFromSliderValue ,
+              wCPUcore
+              ) ;
+      }
+      else
+  //      mp_cpucontroller->SetCurrentVoltageAndMultiplier(
+        p_cpucontroller->SetCurrentVoltageAndMultiplier(
+          fVoltageInVolt ,
+          fMultiplierFromSliderValue ,
+          //Only 1 logical CPU core-> use CPU core ID "0"
+          0
+          ) ;
     }
-    else
-      mp_cpucontroller->SetCurrentVoltageAndMultiplier(
-        fVoltageInVolt ,
-        fMultiplierFromSliderValue ,
-        //Only 1 logical CPU core-> use CPU core ID "0"
-        0
-        ) ;
   //  if( mp_wxcheckboxSetAsCurrentAfterApplying->IsChecked() )
     {
   //      mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;

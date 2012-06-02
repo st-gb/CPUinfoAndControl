@@ -41,7 +41,8 @@ bool wxX86InfoAndControlApp::ContinueServiceViaIPC(wxString & r_wxstrMessage)
       LOGN( FULL_FUNC_NAME << " before sending the continue command")
       //mp_wxx86infoandcontrolapp->
 //        m_p_i_ipcclient->SendCommandAndGetResponse(
-      IPC_ClientSendCommandAndGetResponse_Inline(
+//      IPC_ClientSendCommandAndGetResponse_Inline(
+      IPC_ClientSendCommandAndGetResponse(
         continue_service) ;
       LOGN( FULL_FUNC_NAME << " after sending the continue command")
       r_wxstrMessage = getwxString( //mp_wxx86infoandcontrolapp->
@@ -73,8 +74,10 @@ bool wxX86InfoAndControlApp::GetAvailablePowerSchemesViaIPC(
     )
     //::wxGetApp().m_ipcclient.Init() ;
     //mp_wxx86infoandcontrolapp->
-    m_p_i_ipcclient->ConnectToDataProvider(
-      stdstrMessage ) ;
+//    m_p_i_ipcclient->ConnectToDataProvider(
+//      stdstrMessage ) ;
+    IPCclientConnectToDataProvider(
+      stdstrMessage);
   if( //::wxGetApp().m_ipcclient.IsConnected()
       //mp_wxx86infoandcontrolapp->
       IPC_ClientIsConnected()
@@ -90,7 +93,8 @@ bool wxX86InfoAndControlApp::GetAvailablePowerSchemesViaIPC(
       LOGN( FULL_FUNC_NAME << " before sending the getAvailablePowerSchemeNames command")
       //mp_wxx86infoandcontrolapp->
 //        m_p_i_ipcclient->SendCommandAndGetResponse(
-      IPC_ClientSendCommandAndGetResponse_Inline(
+//      IPC_ClientSendCommandAndGetResponse_Inline(
+      IPC_ClientSendCommandAndGetResponse(
         getAvailablePowerSchemeNames) ;
       LOGN( FULL_FUNC_NAME << " after sending the getAvailablePowerSchemeNames command")
 

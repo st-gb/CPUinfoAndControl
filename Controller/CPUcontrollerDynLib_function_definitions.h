@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * CPUcontrollerDynLib_function_definitions.h
  *
@@ -18,6 +25,11 @@ typedef unsigned short WORD;
 typedef WORD * PWORD;
 //typedef unsigned long DWORD;
 //#include <windef.h> //BYTE et.c
+
+//Must happen in 2 steps: 1st: expand , 2nd: call a second macro that stringifies
+#define EXPAND_AND_STRINGIFY(var) MAKE_STRING(var)
+#define MAKE_STRING(var) #var
+#define MAKE_STRING_FROM_OSTREAM(var) #var
 
 //these typedefs can be used by
 //-the code that e.g. uses wxDynLib or only the Windows API
@@ -46,43 +58,34 @@ class I_CPUaccess ;
 typedef BOOL ReadMSRex_type (
   const I_CPUaccess * ,DWORD, DWORD*, DWORD*, long unsigned int ) ;
 
+//Used for both
+// -function name in function declaration
+// -for assigning a pointer to a dynlib function with this name
+#define DYN_LIB_INIT_FUNCTION_NAME Init
 typedef void (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
   //WINAPI
-    CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_init_type)(
       I_CPUaccess *
       //BYTE
-//      , //I_CPUaccess::RdmsrEx
-//      , I_CPUaccess::ReadMSRex_type
-      //::ReadMSR
       );
+//#define INIT_FUNCTION_DECLARATION(var_name) void ( I_CPUaccess * var_name)
+
 typedef DWORD (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-    CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_getMulti_type)(WORD );
 typedef WORD (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetMaximumFrequencyInMHz_type) (WORD wCPUcoreID) ;
 typedef WORD (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetMaximumVoltageID_type) () ;
 typedef WORD (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetMinimumVoltageID_type) () ;
 typedef
   BYTE (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetCurrentPstate_type) (
     PWORD p_wFreqInMHz
     , //float & Volt
@@ -97,9 +100,7 @@ typedef
   ) ;
 typedef
   BYTE (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * pfn_GetCurrentVoltageAndFrequency_type) (
     float * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -112,38 +113,32 @@ typedef
   //GET_CURRENT_PSTATE_SIG("(* dll_GetCurrentPstate_type)",;)
 typedef
   WORD (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetNumberOfCPUcores_type) (
   ) ;
 typedef
   float (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetCPUusage_type) ( WORD wCoreID
   ) ;
+//Used for both
+// -function name in function declaration
+// -for assigning a pointer to a dynlib function with this name
+#define DYN_LIB_GET_TEMPERATURE_IN_CELSIUS_FUNCTION_NAME GetTemperatureInCelsius
 typedef
   float (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetTemperatureInCelsius_type) ( WORD wCoreID
   ) ;
 typedef
   float (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_PrepareForNextPerformanceCounting)
     ( DWORD dwAffMask
       , BYTE byPerformanceEventSelectRegisterNumber
     ) ;
 //typedef BYTE (//WINAPI
-//  //Calling convention--must be the same as in the DLL
-//  //function signature that calls this function?!
-//  CALLING_CONVENTION
+//  DYN_LIB_CALLING_CONVENTION
 //  * dll_SetCurrentPstate_type) (
 //    WORD wFreqInMHz
 //    , //float & Volt
@@ -151,9 +146,7 @@ typedef
 //    , WORD wCoreID
 //  ) ;
 typedef BYTE (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-//  CALLING_CONVENTION
+//  DYN_LIB_CALLING_CONVENTION
 //  WINAPI
 //  __stdcall
   * pfnSetCurrentVoltageAndMultiplier_type) (
@@ -164,9 +157,7 @@ typedef BYTE (
   ) ;
 
 typedef float * (
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   //the reference clock might change. So better get the possible multipliers.
   * pfnGetAvailableMultipliers_type) (
     WORD wCoreID
@@ -174,30 +165,22 @@ typedef float * (
   ) ;
 typedef
   float (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetVoltageInVolt_type) ( WORD wCoreID
   ) ;
 typedef
   WORD (//WINAPI
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_GetVoltageID_type) ( float fVoltageInVolt
   ) ;
 //typedef void (
-//  //Calling convention--must be the same as in the DLL
-//  //function signature that calls this function?!
-//  CALLING_CONVENTION
+//  DYN_LIB_CALLING_CONVENTION
 //  * dynlib_SetPstateFromFreq) (
 //    WORD wFreqInMHz
 //    , const std::set<VoltageAndFreq> & cr_stdsetvoltageandfreqForInterpolation
 //    , BYTE byCoreID ) ;
 typedef BOOL ( // TRUE: success, FALSE: failure
-  //Calling convention--must be the same as in the DLL
-  //function signature that calls this function?!
-  CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   * dll_WriteMSR_type) (
     DWORD index,    // MSR index
     DWORD dwLow ,//eax,     // bit  0-31

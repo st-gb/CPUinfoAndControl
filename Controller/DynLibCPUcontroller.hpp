@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //Include guard.
 
 #include "CPUcontrollerDynLib_function_definitions.h"
@@ -24,6 +31,11 @@ protected:
   dll_GetVoltageInVolt_type m_pfn_GetVoltageInVolt ;
   dll_GetVoltageID_type m_pfn_GetVoltageID ;
 //  dynlib_SetPstateFromFreq m_pfn_set_pstate_from_freq ;
+
+  //Writing to MSR can be done inside the CPU controller dyn lib in a safer way
+  //because inside the
+  //CPU controller DLL is the knowledge that knows writing to which MSR registers
+  //may be harmful-
   dll_WriteMSR_type m_pfn_write_msr ;
 
 };

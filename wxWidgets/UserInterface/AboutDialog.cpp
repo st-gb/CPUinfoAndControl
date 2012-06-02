@@ -84,7 +84,20 @@ void GetAboutMessage(wxString & wxstrMessage,
       wxT("and for other CPUs as dynamic library") ;
   wxstrMessage += _T("\n\n")
     //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-    BUILT_TIME
+    BUILT_TIME //+ _T("") +
+    _T("\nbuilt with compiler version:")
+    //_T( STRINGIFY(COMPILER_VERSION) )
+    //wxT("compiled/ built with:")
+#ifdef __MINGW32__
+    wxT("MinGW32 ")
+#endif
+#ifdef __GNUC__
+    wxT("GCC ")
+    //wxT("version ")
+#endif
+    wxT( COMPILER_VERSION_NUMBER )
+    //COMPILER_VERSION
+    _T("\n\n")
     //"AMD--smarter choice than Intel?\n\n"
     //"To ensure a stable operation:\n"
     _T("To give important information (that already may be contained in ")

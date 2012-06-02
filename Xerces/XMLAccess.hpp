@@ -68,8 +68,9 @@
    //So one calls this functions with different handlers passed.
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     ) ;
-  //warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been
-  //called before calling this function.
+
+  /** Warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been
+  * called before calling this function. */
   inline char ReadXMLdocumentWithoutInitAndTermXerces(
     BYTE arbyXMLdata [] ,
     DWORD dwDataSizeInByte ,
@@ -128,7 +129,7 @@
         p_userinterface ,
         r_defaulthandler
         ) ;
-      XERCES_CPP_NAMESPACE::XMLString::release(&p_xmlchXMLfilePath);
+      XERCES_CPP_NAMESPACE::XMLString::release( & p_xmlchXMLfilePath);
     }
     return byReturn ;
   }

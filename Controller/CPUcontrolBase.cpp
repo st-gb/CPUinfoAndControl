@@ -43,7 +43,10 @@ UserInterface * g_p_user_interface = NULL;
 I_CPUaccess * CPUcontrolBase::s_p_hardware_access = NULL;
 //static
 UserInterface * CPUcontrolBase::s_p_userinterface = NULL;
+//Static members need to be defined once.
+Model CPUcontrolBase::m_model;
 
+//TODO is needed for reading from file?
 void RemoveCarriageReturn(std::string & r_stdstr )
 {
   std::string::size_type stdstrsizetype = r_stdstr.find( 0x0A ) ;
@@ -215,8 +218,9 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   catch(//ReadMSRexception
       CPUaccessException & r_cpuaccessexception )
   {
-    LOGN("caught a CPUaccessException:"
-      << r_cpuaccessexception.m_stdstrErrorMessage )
+//    LOGN_TYPE("caught a CPUaccessException:"
+//      << r_cpuaccessexception.m_stdstrErrorMessage,
+//      I_LogFormatter::log_message_typeERROR )
     LOGN("mp_i_cpuaccess:" << mp_i_cpuaccess)
     g_p_cpuaccess = NULL;
     //Important: show the message to the user so that he knows that there is
@@ -297,6 +301,26 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     LOGN("FreeRessources end")
   }
 
+  void CPUcontrolBase::GetLogFileExtension(std::string & std_strFileExt)
+  {
+    std_strFileExt = m_model.m_std_strConfigFilePath +
+      "/log_file_format.txt";
+
+    if( ! ReadFileContent(std_strFileExt) )
+      std_strFileExt = "html";
+  }
+
+  void CPUcontrolBase::GetLogTimeFormatString(
+    std::string & std_strLogTimeFormatString)
+  {
+    std_strLogTimeFormatString = m_model.m_std_strConfigFilePath +
+      "/log_time_format_string.txt";
+
+    if( ! ReadFileContent(std_strLogTimeFormatString) )
+      std_strLogTimeFormatString =
+        "%year%-%month%-%day%&nbsp;%hour%:%minute%:%second%s%millisecond%ms";
+  }
+
   std::string CPUcontrolBase::GetCPUcontrollerConfigFilePath(
     const std::string & stdstrCPUtypeRelativeDirPath
      )
@@ -374,6 +398,10 @@ void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
     )
   {
     EndDVFS() ;
+    if( mp_userinterface )
+      //The CPU controller object/ pointer should not be accessed while it is
+      //changed.
+      mp_userinterface->EndAllAccessToCPUcontroller();
 //        SetCPUcontroller( NULL ) ;
     DeleteCPUcontroller() ;
 //        //This may either point to a built-in CPU controller or to a dyn lib

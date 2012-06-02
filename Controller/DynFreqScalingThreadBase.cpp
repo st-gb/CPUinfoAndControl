@@ -174,7 +174,7 @@ void DynFreqScalingThreadBase::ChangeOperatingPointByLoad(
 //        ) ;
       m_fCPUcoreFreqInMHz = //"(WORD)" to avoid g++ compiler warning
           //"converting to `WORD' from `float'"
-          //(WORD)
+          (WORD)
           mp_cpucoredata->m_arp_percpucoreattributes[byCoreID].
           GetFreqInMHz() ;
       DEBUGN("DynFreqScalingThreadBase::ChangeOperatingPointByLoad("

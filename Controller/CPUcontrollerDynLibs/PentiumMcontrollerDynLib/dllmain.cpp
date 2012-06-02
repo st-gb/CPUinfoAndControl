@@ -23,6 +23,8 @@ inline_register_access_functions.hpp>
 #include <Controller/CPUcontrollerDynLibs/function_specifiers.h>
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
 
+#include "Controller/CPU-related/Intel/PentiumM/SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent.hpp"
+
 //#include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 #ifdef INSERT_DEFAULT_P_STATES
   #include <ModelData/ModelData.hpp>
@@ -54,18 +56,19 @@ uint32_t g_ui32HighmostBits ;
 
 #ifdef _DEBUG
 //Logger g_logger ;
-Logger g_loggerDynLib ;
+//Logger g_loggerDynLib ;
 #endif
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 bool InitWindows()
 {
   #ifdef _DEBUG
-  std::string strExeFileNameWithoutDirs = GetStdString(
-    ::GetExeFileNameWithoutDirs() ) ;
+  std::string strExeFileNameWithoutDirs //= GetStdString(
+    //::GetExeFileNameWithoutDirs() )
+    ;
   std::string stdstrFilename = strExeFileNameWithoutDirs +
     ("PentiumM_DLL_log.txt") ;
-  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
+  g_logger.OpenFile2( stdstrFilename ) ;
   DEBUGN("this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif
@@ -131,9 +134,6 @@ BOOL APIENTRY DllMain(
 		break;
 	}
 #endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
-  SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent() ;
-#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
 	return TRUE;
 }
 
@@ -162,6 +162,9 @@ void
     g_pfnreadmsr , g_pfn_write_msr ) ;
 #endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   GetReferenceClockAccordingToStepping() ;
+#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
+  SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent() ;
+#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
 //#endif
 //#ifdef _DEBUG
 //  g_pi_cpuaccess = pi_cpuaccess ;

@@ -16,12 +16,17 @@
 #define NEHALEM_HPP_
 
   #include <preprocessor_macros/bitmasks.h>
+  #include <Controller/CPU-related/Intel/Intel_registers.h>
 
 //  extern DWORD g_dwValue1, g_dwValue2 ;
 //from http://stackoverflow.com/questions/911035/uint32-int16-and-the-like-are-they-standard-c:
 #include <stdint.h>
-  //Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
-  extern uint32_t g_dwValue1, g_ui32Value2 ;
+
+//Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
+extern uint32_t g_dwValue1, g_ui32Value2 ;
+extern DWORD g_dwPreviousTickCountInMilliseconds;
+
+#define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
   //Name Nehalem-specific functions "...Nehalem", also because more than 1
   //(e.g. Intel Core, Nehalem) CPU header file may be included, so 1 name like

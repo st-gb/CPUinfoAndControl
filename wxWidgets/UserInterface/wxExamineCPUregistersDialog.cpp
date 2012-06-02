@@ -49,6 +49,8 @@ enum
 //DEFINE_EVENT_TYPE(wxEVT_MY_CUSTOM_COMMAND)
 //
 BEGIN_EVENT_TABLE(wxExamineCPUregistersDialog, wxDialog)
+  EVT_CLOSE( wxExamineCPUregistersDialog::OnClose)
+
 //    EVT_MY_CUSTOM_COMMAND(wxID_ANY, wxExamineCPUregistersDialog::OnRuntimeCreatedControls)
   EVT_TIMER(ID_Timer,wxExamineCPUregistersDialog::OnTimerEvent)
   EVT_SIZE(wxExamineCPUregistersDialog::OnSize)
@@ -68,7 +70,7 @@ wxExamineCPUregistersDialog::wxExamineCPUregistersDialog(//RegisterData
     ID_Dialog ,
     //wxString::Format("MSR register index: %x",
     //r_regdata.m_dwIndex)
-    wxT("")
+    wxT("ExamineCPUregistersDialog")
     , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
     , wxSize(400, 200)
     , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
@@ -80,6 +82,7 @@ wxExamineCPUregistersDialog::wxExamineCPUregistersDialog(//RegisterData
   , mp_cpuaccess ( p_wxx86infoandcontrolapp->GetCPUaccess() )
   , mp_modeldata ( //& r_modeldata
     p_wxx86infoandcontrolapp->GetModel() )
+  , mp_wxcheckboxRebuildGUIonResize(NULL)
   , mp_wxx86infoandcontrolapp ( p_wxx86infoandcontrolapp )
 {
   m_wControlID = 1 ;
@@ -108,6 +111,34 @@ wxExamineCPUregistersDialog::~wxExamineCPUregistersDialog()
   //TODO prog crash in wxSizerItem::~wxSizerItem() (a children of a sizer
   //at "delete m_sizer" m_sizer.m_containingWindow  is 0xfeeefeee
   LOGN("wxDynamicDialog's d'tor")
+}
+
+inline void wxExamineCPUregistersDialog::InsertIntoLeftColumn(
+  const wxString & cr_wxstr)
+{
+  LOGN( FULL_FUNC_NAME << "--text:" << GetStdString(cr_wxstr) )
+  mp_sizerLeftColumn->Add( new wxStaticText(
+    this,
+    wxID_ANY,
+    cr_wxstr
+  //#ifdef _DEBUG
+  //      + wxString::Format("%x",p_wxstatictext)
+  //#endif //#ifdef _DEBUG
+    + wxString(wxT(": ") )
+    )
+    //0=the control should not take more space if the sizer is enlarged
+    , 0
+    //, wxFIXED_MINSIZE,
+    , wxLEFT | wxRIGHT |
+      //wxALIGN_CENTER_VERTICAL
+      //The label and the adjustable value should be at the same vertical
+      //position, so place at the top.
+      wxALIGN_TOP
+      | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
+    //Determines the border width, if the flag parameter is set to include
+    //any border flag.
+    , 2
+    );
 }
 
 inline void wxExamineCPUregistersDialog::AddStatictext( const wxString & cr_wxstr )
@@ -152,28 +183,7 @@ inline void wxExamineCPUregistersDialog::AddStatictext( const wxString & cr_wxst
 //      mp_sizerTop->GetSize().GetHeight() > GetClientRect().height )
 //    ::wxMessageBox(wxT( "mp_sizerLeftColumn->GetSize().GetHeight() > "
 //      "GetClientRect().height") ) ;
-  mp_sizerLeftColumn->Add( new wxStaticText(
-    this,
-    wxID_ANY,
-    cr_wxstr
-//#ifdef _DEBUG
-//      + wxString::Format("%x",p_wxstatictext)
-//#endif //#ifdef _DEBUG
-    + wxString(wxT(": ") )
-    )
-    //0=the control should not take more space if the sizer is enlarged
-    , 0
-    //, wxFIXED_MINSIZE,
-    , wxLEFT | wxRIGHT |
-      //wxALIGN_CENTER_VERTICAL
-      //The label and the adjustable value should be at the same vertical
-      //position, so place at the top.
-      wxALIGN_TOP
-      | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
-    //Determines the border width, if the flag parameter is set to include
-    //any border flag.
-    , 2
-    );
+  InsertIntoLeftColumn(cr_wxstr);
   //m_stdmap_p_wxstatictext
   m_stdvector_p_wxstatictext.push_back(mp_wxstatictext) ;
   //p_sizerHorizontal->Add(
@@ -193,31 +203,120 @@ inline void wxExamineCPUregistersDialog::AddStatictext( const wxString & cr_wxst
    );
 }
 
+void wxExamineCPUregistersDialog::AddIntervalCheckbox()
+{
+  mp_wxcheckboxInterval = new wxCheckBox(
+    this
+    , ID_IntervalCheckbox
+    , _T("interval in ms:")
+    ) ;
+  //  mp_sizerLeftColumn->Add(
+  p_wxboxsizerOptions->Add(
+    mp_wxcheckboxInterval
+    , 0
+    , wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2
+    );
+}
+
+void wxExamineCPUregistersDialog::AddUpdateIntervalInMsTextctrl()
+{
+  mp_wxtextctrlUpdateIntervalInMs = new wxTextCtrl(
+    this
+    , wxID_ANY
+//    , _T("interval in ms")
+    , wxT("1000") //const wxString& value = wxEmptyString,
+    , wxDefaultPosition //const wxPoint& pos = wxDefaultPosition,
+    , wxDefaultSize //const wxSize& size = wxDefaultSize,
+    , 0 //long style = 0,
+    , wxTextValidator(
+      //http://docs.wxwidgets.org/2.8/wx_wxtextvalidator.html#wxtextvalidator:
+      // "Non-numeric characters are filtered out."
+      wxFILTER_NUMERIC//, &g_data.m_string
+      )
+    ) ;
+  //  mp_sizerRightColumn->Add(
+  p_wxboxsizerOptions->Add(
+    mp_wxtextctrlUpdateIntervalInMs
+    , 0
+    , wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2
+    );
+}
+
+void wxExamineCPUregistersDialog::AddRebuildGUIonResizeCheckbox()
+{
+  mp_wxcheckboxRebuildGUIonResize = new wxCheckBox(
+    this
+  //    , ID_RebuildGUIonResizeCheckbox
+    , wxID_ANY
+    , _T("RebuildGUIonResize")
+    ) ;
+  p_wxboxsizerOptions->Add(
+    mp_wxcheckboxRebuildGUIonResize
+    , 0
+    , wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2
+    );
+}
+
+void wxExamineCPUregistersDialog::AddCPUIDdataControls()
+{
+  std::vector<CPUIDdata> c_r_std_vector_cpuiddata = mp_modeldata->
+    m_stdvector_cpuiddata;
+  std::vector<CPUIDdata>::iterator iter_cpuiddata = c_r_std_vector_cpuiddata.
+    begin() ;
+  LOGN( FULL_FUNC_NAME << "--# CPUID data objects:"
+    << c_r_std_vector_cpuiddata.size() )
+  std::vector<CPUIDdata>::const_iterator c_iter_cpuiddataEnd =
+    c_r_std_vector_cpuiddata.end();
+  while( iter_cpuiddata != c_iter_cpuiddataEnd )
+  {
+    BuildGUI( * iter_cpuiddata ) ,
+    ++ iter_cpuiddata ;
+  }
+}
+
+void wxExamineCPUregistersDialog::AddMSRdataControls()
+{
+  const std::vector<MSRdata> & c_r_std_vector_msrdata = mp_modeldata->
+    m_stdvector_msrdata;
+  std::vector<MSRdata>::const_iterator iter_msrdata = c_r_std_vector_msrdata.
+    begin() ;
+
+  LOGN( FULL_FUNC_NAME << "--# MSR data objects:"
+    << c_r_std_vector_msrdata.size() )
+  std::vector<MSRdata>::const_iterator c_iter_msrdata =
+    c_r_std_vector_msrdata.end();
+  while( iter_msrdata != c_iter_msrdata )
+  {
+    BuildGUI( * iter_msrdata ) ,
+    ++ iter_msrdata ;
+  }
+}
+
 void wxExamineCPUregistersDialog::BuildCPUregisterControls()
 {
-  std::vector<MSRdata>::iterator itermsrdata =
-    mp_modeldata->m_stdvector_msrdata.begin() ;
-  std::vector<CPUIDdata>::iterator itercpuiddata =
-    mp_modeldata->m_stdvector_cpuiddata.begin() ;
-
+  LOGN( FULL_FUNC_NAME << "--begin")
   mp_sizerLeftColumn = new wxBoxSizer(wxVERTICAL);
   mp_sizerRightColumn = new wxBoxSizer(wxVERTICAL);
   mp_sizerTop->Add( mp_sizerLeftColumn );
   mp_sizerTop->Add( mp_sizerRightColumn );
+
   //  AddTimeStampCounter() ;
   AddStatictext( wxT("TSC") ) ;
   AddStatictext( wxT("TSC diff") ) ;
 
-  while( itercpuiddata != mp_modeldata->m_stdvector_cpuiddata.end() )
-  {
-    BuildGUI( *itercpuiddata ) ,
-    ++ itercpuiddata ;
-  }
-  while( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
-  {
-    BuildGUI( *itermsrdata ) ,
-    ++ itermsrdata ;
-  }
+  AddCPUIDdataControls();
+  AddMSRdataControls();
+
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void wxExamineCPUregistersDialog::BuildGUI()
@@ -241,17 +340,8 @@ void wxExamineCPUregistersDialog::BuildGUI()
     , _T("reload CPU register to read configuration")
     ) ;
   p_wxboxsizerOptions->Add( p_wxbuttonReloadCPUregisterToReadConfig ) ;
-  mp_wxcheckboxInterval = new wxCheckBox(
-    this 
-    , ID_IntervalCheckbox
-    , _T("interval in ms:")
-    ) ;
-  mp_wxtextctrlUpdateIntervalInMs = new wxTextCtrl(
-    this
-    , wxID_ANY
-//    , _T("interval in ms")
-    , wxT("1000")
-    ) ;
+
+  AddIntervalCheckbox();
 
 //  wxButton * p_wxbuttonMSR = new wxButton(
 //      this
@@ -266,38 +356,10 @@ void wxExamineCPUregistersDialog::BuildGUI()
 //    //any border flag.
 //    2
 //    );
-//  mp_sizerLeftColumn->Add(
-  p_wxboxsizerOptions->Add(
-    mp_wxcheckboxInterval
-    , 0 
-    , wxFIXED_MINSIZE, 
-    //Determines the border width, if the flag  parameter is set to include 
-    //any border flag.
-    2 
-    );
-//  mp_sizerRightColumn->Add(
-  p_wxboxsizerOptions->Add(
-    mp_wxtextctrlUpdateIntervalInMs
-    , 0
-    , wxFIXED_MINSIZE,
-    //Determines the border width, if the flag  parameter is set to include
-    //any border flag.
-    2
-    );
-//  mp_wxcheckboxRebuildGUIonResize = new wxCheckBox(
-//    this
-////    , ID_RebuildGUIonResizeCheckbox
-//    , wxID_ANY
-//    , _T("RebuildGUIonResize")
-//    ) ;
-//  p_wxboxsizerOptions->Add(
-//    mp_wxcheckboxRebuildGUIonResize
-//    , 0
-//    , wxFIXED_MINSIZE,
-//    //Determines the border width, if the flag  parameter is set to include
-//    //any border flag.
-//    2
-//    );
+
+  AddUpdateIntervalInMsTextctrl();
+//  AddRebuildGUIonResizeCheckbox();
+
 //  mp_sizerLeftColumn->Add(
 //    p_wxbuttonMSR
 //    , 0
@@ -359,16 +421,22 @@ void wxExamineCPUregistersDialog::BuildGUI()
 //  mp_wxboxsizerOutmost->Fit(this);
 }
 
-void wxExamineCPUregistersDialog::BuildGUI(MSRdata & r_msrdata )
+void wxExamineCPUregistersDialog::BuildGUI(const MSRdata & r_msrdata )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
-  std::vector<RegisterData>::iterator iter_registerdata = 
+  const std::vector<RegisterData> & c_r_std_vector_registerdata = r_msrdata.
+    m_stdvec_registerdata;
+  std::vector<RegisterData>::const_iterator iter_registerdata =
     //mp_msr_data->m_stdvec_registerdata.begin() ;
-    r_msrdata.m_stdvec_registerdata.begin() ;
+      c_r_std_vector_registerdata.begin() ;
 
+  LOGN( FULL_FUNC_NAME << "--# of register data elements:"
+    << c_r_std_vector_registerdata.size() )
   while( iter_registerdata != //mp_msr_data->
-    r_msrdata.m_stdvec_registerdata.end() )
+    c_r_std_vector_registerdata.end() )
   {
+    LOGN( FULL_FUNC_NAME << "--adding " << (*iter_registerdata).m_strDataName)
     //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
     AddStatictext(getwxString( (*iter_registerdata).m_strDataName )) ;
      ++ iter_registerdata ;
@@ -409,24 +477,32 @@ void wxExamineCPUregistersDialog::BuildGUI(MSRdata & r_msrdata )
   //Create(this,wxID_ANY, _T("gg"));
    //p_wxdlg->AddChild(new wxStaticText(p_wxdlg, wxID_ANY, _T("sdsd") ) );
    //p_wxdlg->Add(new wxStaticText(p_wxdlg, wxID_ANY, _T("sdsd") ) );
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
-void wxExamineCPUregistersDialog::BuildGUI(CPUIDdata & r_cpuiddata )
+void wxExamineCPUregistersDialog::BuildGUI(const CPUIDdata & r_cpuiddata )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
   wxString wxstrDataName ;
-  std::vector<RegisterData>::iterator iter_registerdata = 
+  const std::vector<RegisterData> & c_r_std_vector_registerdata = r_cpuiddata.
+    m_stdvec_registerdata;
+  std::vector<RegisterData>::const_iterator iter_registerdata =
     //mp_msr_data->m_stdvec_registerdata.begin() ;
-    r_cpuiddata.m_stdvec_registerdata.begin() ;
+    c_r_std_vector_registerdata.begin() ;
 
+  LOGN( FULL_FUNC_NAME << "--# of register data elements:"
+    << c_r_std_vector_registerdata.size() )
   while( iter_registerdata != //mp_msr_data->
-    r_cpuiddata.m_stdvec_registerdata.end() )
+    c_r_std_vector_registerdata.end() )
   {
+    LOGN( FULL_FUNC_NAME << "--adding " << (*iter_registerdata).m_strDataName)
     //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
     wxstrDataName = getwxString( (*iter_registerdata).m_strDataName ) ;
     AddStatictext(wxstrDataName ) ;
      ++ iter_registerdata ;
   }
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void wxExamineCPUregistersDialog::DisplayTSCvalues()
@@ -686,11 +762,20 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(MSRdata & r_msrdata)
       ++ iterp_wxstatictext ;
     }
   }
-  catch(ReadMSRexception ex)
+  catch(ReadMSRexception & ex)
   {
 //    //Breakpoint possibility
 //    int i = 0 ;
   }
+}
+
+void wxExamineCPUregistersDialog::OnClose( wxCloseEvent & wxcmd )
+{
+  LOGN( FULL_FUNC_NAME << "--begin--stopping timer")
+  m_wxtimer.Stop();
+  //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
+  this->Destroy() ;
+  LOGN( FULL_FUNC_NAME << "--end--after stopping timer")
 }
 
 void wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig(
@@ -699,13 +784,18 @@ void wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig(
   ReloadCPUregisterToReadConfig() ;
 }
 
-void wxExamineCPUregistersDialog::OnRuntimeCreatedControls(wxCommandEvent & wxevent)
+void wxExamineCPUregistersDialog::OnRuntimeCreatedControls(
+  wxCommandEvent & wxevent)
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   int nControlID = wxevent.GetId() ;
+
   if( nControlID == ID_IntervalCheckbox )
   {
     if( StartTimerWithIntervalTime() )
+    {//By using a block/ braces: avoid g++ warning "Suspicious semicolon"
       ;
+    }
     else
       m_wxtimer.Stop() ;
   }
@@ -775,26 +865,30 @@ void wxExamineCPUregistersDialog::OnSize( wxSizeEvent & //WXUNUSED(
   sizeevent//)
   )
 {
-//  if( mp_wxcheckboxRebuildGUIonResize->IsChecked() )
-//  {
-//    m_wxtimer.Stop();
-//    ReBuildGUI() ;
-//    StartTimerWithIntervalTime();
-//  }
+  if( mp_wxcheckboxRebuildGUIonResize &&
+      mp_wxcheckboxRebuildGUIonResize->IsChecked() )
+  {
+    m_wxtimer.Stop();
+    ReBuildGUI() ;
+    StartTimerWithIntervalTime();
+  }
 
-  mp_wxboxsizerOutmost->SetSizeHints(this);
-  mp_wxboxsizerOutmost->Fit(this);
+  //sets the window size:
+//  mp_wxboxsizerOutmost->SetSizeHints(this);
+//  mp_wxboxsizerOutmost->Fit(this);
 //  Validate();
   Layout() ;
 }
 
 void wxExamineCPUregistersDialog::OnTimerEvent(wxTimerEvent &event)
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   DisplayRegisterData() ;
 }
 
 inline void wxExamineCPUregistersDialog::ReBuildGUI()
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   //delete all contained UI controls.
   //delete mp_sizerTop ;
   //while( mp_sizerTop->m_children.GetCount() &&
@@ -822,6 +916,8 @@ inline void wxExamineCPUregistersDialog::ReBuildGUI()
   //while keeping the current dimension."
 //  mp_sizerTop->Layout() ;
   mp_wxboxsizerOutmost->Layout() ;
+  mp_sizerTop->Layout() ;
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 inline void wxExamineCPUregistersDialog::ReloadCPUregisterToReadConfig()
@@ -851,19 +947,25 @@ inline void wxExamineCPUregistersDialog::ReloadCPUregisterToReadConfig()
 
 bool wxExamineCPUregistersDialog::StartTimerWithIntervalTime()
 {
-  if( mp_wxcheckboxInterval->GetValue() )
+  bool bChecked = mp_wxcheckboxInterval->GetValue();
+  LOGN( FULL_FUNC_NAME << "--begin--checkbox is checked?:"
+    << bChecked)
+  if( bChecked )
   {
-    DWORD dw ;
-    if( mp_wxtextctrlUpdateIntervalInMs->GetValue().ToULong( &dw, 10) )
+    DWORD dwTimerIntervalInMilliseconds ;
+    if( mp_wxtextctrlUpdateIntervalInMs->GetValue().ToULong(
+      & dwTimerIntervalInMilliseconds, 10) )
     {
       mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("") ) ;
-      m_wxtimer.Start(dw) ;
     }
     else
     {
       mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("not a number") ) ;
-      m_wxtimer.Start(1000) ;
+      dwTimerIntervalInMilliseconds = 1000 ;
     }
+    LOGN( FULL_FUNC_NAME << "--starting timer with "
+      << dwTimerIntervalInMilliseconds << " milliseconds")
+    m_wxtimer.Start(dwTimerIntervalInMilliseconds) ;
     return true;
   }
   return false;

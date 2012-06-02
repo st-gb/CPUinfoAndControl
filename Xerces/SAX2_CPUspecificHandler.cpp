@@ -12,22 +12,30 @@
  * Created on 24. August 2009, 20:20
  */
 
-#include "SAX2_CPUspecificHandler.hpp"
 #ifdef _MSC_VER //if MicroSoft Compiler
   #include "../stdafx.h"
 #endif //#ifdef _MSC_VER
+
 #include <ModelData/ModelData.hpp> //class Model
 #include <ModelData/RegisterData.hpp> //class RegisterData
 #include <ModelData/ValueTables.hpp> //ARRAY_INDEX_OF_ATTR_VALUE
+
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOG(..)
+#include <Controller/Logger/ILogFormatter.hpp> //class I_LogFormatter
+
 #include <UserInterface/UserInterface.hpp> //class UserInterface
+
 #include <Xerces/XercesAttributesHelper.hpp> //class XercesAttributesHelper
 //class XercesHelper::ToStdString(const XMLCh *)
 #include <Xerces/XercesHelper.hpp>
+
 #include <xercesc/sax2/Attributes.hpp>//Class "XERCES_CPP_NAMESPACE::Attributes"
 //for XERCES_CPP_NAMESPACE::XMLString::transcode(...)
 #include <xercesc/util/XMLString.hpp>
+
 #include <map> //class std::map
+#include <string> //class std::string
+
 //With Xerces < Version 2.8:
 //  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
 // statically (else many "LNK2001" and "LNK2019" and linker errors).
@@ -42,6 +50,8 @@
 
 #define SUCCESS 1
 #define FAILURE 0
+
+#include "SAX2_CPUspecificHandler.hpp"
 
 SAX2_CPUspecificHandler::SAX2_CPUspecificHandler(
   UserInterface & r_userinterface,
@@ -97,28 +107,30 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
   BYTE byStartBit ;
   BYTE byBitLength ;
   std::string strMSRdataName = m_strElementName ;
-  std::string strXMLattributeName ;
+  std::string std_strNameAttributeValue ;
+  std::string std_strXMLattributeName = "name";
   if( XercesAttributesHelper::GetAttributeValue
       (
-      r_xercesc_attributes,//"processor_name"
-      //By casting explicitely: avoid Linux g++ warning
-      // "deprecated conversion from string constant to ‘char*’"
-      (char *)
-      "name" ,
+      r_xercesc_attributes,
+//      //By casting explicitely: avoid Linux g++ warning
+//      // "deprecated conversion from string constant to ‘char*’"
+//      (char *)
+      std_strXMLattributeName.c_str(),
       //strValue
-      strXMLattributeName
+      std_strNameAttributeValue
       )
     )
   {
-    strMSRdataName = strXMLattributeName ;
+    strMSRdataName = std_strXMLattributeName ;
   }
+  std_strXMLattributeName = "startbit";
   if( XercesAttributesHelper::GetAttributeValue
       (
       r_xercesc_attributes,//"processor_name"
-      //By casting explicitely: avoid Linux g++ warning
-      // "deprecated conversion from string constant to ‘char*’"
-      (char *)
-      "startbit" ,
+//      //By casting explicitely: avoid Linux g++ warning
+//      // "deprecated conversion from string constant to ‘char*’"
+//      (char *)
+      std_strXMLattributeName.c_str() ,
       //strValue
       byStartBit
       )
@@ -137,25 +149,48 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
     }
     else
       bCalculateDiff = false ;
+    std_strXMLattributeName = "bitlength";
     if( XercesAttributesHelper::GetAttributeValue
         (
         r_xercesc_attributes,
-        //Avoid Linux g++ "warning deprecated conversion from string constant
-        //to ‘char*’"
-        (char *) "bitlength" ,
+//        //Avoid Linux g++ "warning deprecated conversion from string constant
+//        //to ‘char*’"
+//        (char *)  ,
+        std_strXMLattributeName.c_str(),
         //strValue
         byBitLength
         )
       )
     {
+      LOGN(FULL_FUNC_NAME << "--adding register data element")
       RegisterData registerdata(//m_strElementName
         strMSRdataName ) ;
       registerdata.m_bCalculateDiff = bCalculateDiff ;
       registerdata.add(byStartBit,byBitLength) ;
       m_stdvec_msrdata_riter->m_stdvec_registerdata.push_back(registerdata) ;
     }
+    else
+    {
+      std::wstring std_wstrMessage = L"no (mandatory) \""
+        + std_strXMLattributeName
+        + L"\" attribute name";
+      LOGN_TYPE( GetStdString(std_wstrMessage),
+        I_LogFormatter::log_message_typeWARNING)
+      mp_userinterface->MessageWithTimeStamp(std_wstrMessage);
+    }
   }
-  //else
+  else
+  {
+    std::wstring std_wstrMessage = L"no (mandatory) \""
+      + std_strXMLattributeName
+      + L"\" attribute name";
+    LOGN_TYPE( GetStdString(std_wstrMessage),
+      I_LogFormatter::log_message_typeWARNING)
+    std::wstring std_wstrDocumentIDandLocation;
+    GetDocumentIDandLocation(std_wstrDocumentIDandLocation);
+    mp_userinterface->MessageWithTimeStamp(std_wstrMessage +
+      std_wstrDocumentIDandLocation);
+  }
   if( m_strElementName == "value_table_row")
     //A row follows. ex:
     //<value_table_row MHz="1100" FID="14" DID="2"></value_table_row>
@@ -209,11 +244,12 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
     //  mapstr2str,
     //  arstdstrResultingNameAndValue
     //  ) ;
-      mp_modeldata->m_valuetables.AddValueTableRow(
-        m_stdvec_msrdata_riter,
-        mapstr2str ,
-        arstdstrResultingNameAndValue
-        ) ;
+
+//      mp_modeldata->m_valuetables.AddValueTableRow(
+//        m_stdvec_msrdata_riter,
+//        mapstr2str ,
+//        arstdstrResultingNameAndValue
+//        ) ;
   }
 }
 
@@ -363,9 +399,11 @@ void SAX2_CPUspecificHandler::HandleMSRelement(
   const XERCES_CPP_NAMESPACE::Attributes & r_xercesc_attributes
   )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   DWORD dwIndex ;
   char archAttributeName [] = "index" ;
   char archCoreIDattributeName [] = "core" ;
+  std::string std_strAttributeName = "index";
 //    std::string stdstrAttributeName = "MSR" ;
   XercesAttributesHelper xercesattributeshelper;
   if( //template method can't get hexadecimal numbers:
@@ -382,20 +420,25 @@ void SAX2_CPUspecificHandler::HandleMSRelement(
     //Can get dec or hex numbers;
     xercesattributeshelper.GetAttributeValue(
       r_xercesc_attributes, //const XERCES_CPP_NAMESPACE::Attributes & attrs,
-      archAttributeName, //const char * lpctstrAttrName,
+//      archAttributeName, //const char * lpctstrAttrName,
+      std_strAttributeName.c_str(),
       dwIndex //DWORD & r_dwValue
       ) == XercesAttributesHelper::getting_attribute_value_succeeded
     )
   {
+    LOGN( FULL_FUNC_NAME << "--got " << archAttributeName
+      << " attribute value:" << dwIndex)
     m_bInsideValidMSRelement = true ;
     std::string stdstrRegisterName ;
+    std_strAttributeName = "name";
     if( XercesAttributesHelper::GetAttributeValue
         (
         r_xercesc_attributes,
         //archAttributeName ,
-        //Avoid Linux g++ "warning deprecated conversion from string constant
-        //to ‘char*’"
-        (char *) "name" ,
+//        //Avoid Linux g++ "warning deprecated conversion from string constant
+//        //to ‘char*’"
+//        (char *) "name" ,
+        std_strAttributeName,
         //* StdStringToDWORD::Convert ,
         //m_xerceshelper.ToDWORD
         //strValue
@@ -406,25 +449,36 @@ void SAX2_CPUspecificHandler::HandleMSRelement(
       && stdstrRegisterName != ""
       )
     {
+      LOGN( FULL_FUNC_NAME << "--got " << std_strAttributeName
+        << " attribute value:" << stdstrRegisterName)
       mp_modeldata->m_stdvector_msrdata.push_back( MSRdata(
         dwIndex, stdstrRegisterName ) ) ;
+      LOGN( FULL_FUNC_NAME << "--added element for containing MSR data")
     }
     else
       mp_modeldata->m_stdvector_msrdata.push_back(MSRdata(dwIndex)) ;
     m_stdvec_msrdata_riter = mp_modeldata->m_stdvector_msrdata.rbegin() ;
   }
+  std_strAttributeName = "core";
   if( ConvertXercesAttributesValue<DWORD>
       (
       r_xercesc_attributes,
       dwIndex ,
       archCoreIDattributeName
       )
-    == SUCCESS
+      == SUCCESS
     )
   {
+    LOGN( FULL_FUNC_NAME << "--got " << std_strAttributeName
+      << " attribute value:" << dwIndex)
     m_stdvec_msrdata_riter->m_byCoreID = dwIndex ;
   }
 }
+
+//void SAX2_CPUspecificHandler::setDocumentLocator(const Locator* const locator)
+//{
+//  m_p_locator = locator;
+//}
 
 void SAX2_CPUspecificHandler::startElement
   (
@@ -474,11 +528,13 @@ void SAX2_CPUspecificHandler::startElement
   XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
 }
 
+//TODO why is this function called and not the exception handler inside
+//ReadXMLdocument?
 void SAX2_CPUspecificHandler::fatalError(
   const XERCES_CPP_NAMESPACE::SAXParseException & r_xercesc_sax_parse_exception)
 {
-  LOG( "SAX2 handler: Fatal Error: " << XercesHelper::ToStdString(
+  LOGN_TYPE( FULL_FUNC_NAME << ": fatal Error: " << XercesHelper::ToStdString(
     r_xercesc_sax_parse_exception.getMessage() )
    << " at line: " << r_xercesc_sax_parse_exception.getLineNumber()
-   << "\n" ) ;
+   , I_LogFormatter::log_message_typeERROR )
 }

@@ -69,9 +69,9 @@ public:
   virtual void Disconnect() {} ;
   IPC_Client()
     :
+    m_arbyIPCdata(NULL),
     m_bProcessingIPCdata(//false
-      ReadNextIPCdata),
-    m_arbyIPCdata(NULL)
+      ReadNextIPCdata)
     {}
   //Avoid g++ warning
   //`class IPC_Client' has virtual functions but non-virtual destructor
