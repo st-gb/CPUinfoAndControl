@@ -92,6 +92,7 @@ public:
     No2PstatesForVoltageInterpolationFound ,
     VoltageIsOutsideSafeRange
   };
+  const std::set<VoltageAndFreq> * m_p_std_set_voltageandfreqUseForDVFS;
   float m_fReferenceClockInMHz ;
   bool m_b1CPUcorePowerPlane ;
   //For notifying via user interface if the CPU is too hot/ being throttled.
@@ -180,11 +181,12 @@ public:
   }
   virtual float GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex ) ;
 
-  BYTE GetInterpolatedVoltageFromFreq(
-    WORD wFreqInMHzToGetVoltageFrom,
-    float & r_fVoltageInVolt 
-    , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
-    ) ;
+//  BYTE GetInterpolatedVoltageFromFreq(
+//    WORD wFreqInMHzToGetVoltageFrom,
+//    float & r_fVoltageInVolt
+//    , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
+//    ) ;
+
   //Can not simply do maximum Voltage ID -> voltage in Volt because
   //AMD:   max. voltage ID = MIN. voltage, 
   //Intel: max. voltage ID = MAX. voltage

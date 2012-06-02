@@ -56,7 +56,9 @@ AssignPointersToExportedExeMSRfunctions.h>
   #define APIENTRY
 #endif
 
-#ifdef _DEBUG
+#ifdef COMPILE_WITH_LOG
+//g_logger, DEBUGN()
+#include <preprocessor_macros/logging_preprocessor_macros.h>
 void OpenLogFile()
 {
   std::string strExeFileNameWithoutDirs = //GetExeFileNameWithoutDirs() ;
@@ -85,7 +87,7 @@ void OpenLogFile()
 
 bool Init()
 {
-  #ifdef _DEBUG
+  #ifdef COMPILE_WITH_LOG
   OpenLogFile() ;
   #endif
   AssignPointersToExportedExeMSRfunctions(

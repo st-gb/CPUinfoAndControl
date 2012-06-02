@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
@@ -44,6 +51,13 @@ public:
     , Model * p_model
     ) ;
   ~wxDynLibCPUcontroller() ;
+
+  inline void AssignPointersToDynLibFunctions(I_CPUaccess * p_cpuaccess);
+  inline void AssignPointerToDynLibsInitFunction(I_CPUaccess * p_cpuaccess);
+  inline void AssignPointerToDynLibsGetAvailableMultipliersFunction();
+  inline void AssignPointerToDynLibsGetAvailableVoltagesFunction();
+  inline void AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
+
   void DecreaseVoltageBy1Step(float & r_fVoltage) ;
   void GetAvailableMultipliers(
     //Use a std::set because: in this set the elements are sorted, also:

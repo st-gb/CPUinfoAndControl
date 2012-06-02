@@ -247,8 +247,10 @@ public:
 //  //access .
 //  inline void CreateHardwareAccessObject() ;
   void CurrenCPUfreqAndVoltageUpdated() ;
+  void CreateLogFileFormatter(const std::string & c_r_std_strFileExt);
   void DeleteCPUcontroller() ;
   void DynVoltnFreqScalingEnabled() ;
+  void EndAllAccessToCPUcontroller();
   void EndDVFS() ;
   void EndGetCPUcoreDataViaIPCthread() ;
   void ExitFindLowestStableVoltageThread();
@@ -305,6 +307,7 @@ public:
     unsigned flags = 0);
   void MessageWithTimeStamp(//const LPWSTR
       const wchar_t * cp_lpwstrMessage, unsigned flags = 0);
+  void OpenLogFile(std::tstring & r_std_tstrLogFilePath);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     wxString & r_wxstrMessageFromService,

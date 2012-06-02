@@ -32,6 +32,8 @@
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 //class wxThreadBasedI_Thread
 #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
+//WaitAsyncAndExec(...)
+#include <Windows/multithread/WaitAndExecuteFunction.hpp>
 //class XercesConfigurationHandler: for writing into memory buffer for IPC
 #include <Xerces/PStateConfig.hpp>
 #include <wx/apptrait.h> //class wxAppTraits
@@ -335,7 +337,8 @@ CPUcontrolService::CreateHardwareAccessObject()
   //Use parameterized constructor, because there were runtime errors with
   //parameterless c'tor.
   //mp_winring0dynlinked = new //WinRing0dynLinked(
-  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(&m_dummyuserinterface);
+  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked( & m_dummyuserinterface);
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void
@@ -552,6 +555,13 @@ CPUcontrolService::HandlePowerEvent(DWORD dwEventType)
   //since Windows 2000
   case PBT_APMRESUMESUSPEND:
     LOGN("system has resumed operation after being suspended")
+    //TODO timer that elapses after x seconds and sets back to the wanted voltage.
+    //timer timer;
+    //::CreateWaitableTimer()
+    //OperatingSystem
+    Windows_API::WaitAsyncAndExec(
+      m_model.m_StableCPUcoreVoltageWaitTimeInMillis,
+      SetToWantedVoltages);
     break;
   case PBT_APMRESUMEAUTOMATIC:
     LOGN("the computer has woken up automatically")
@@ -584,6 +594,16 @@ CPUcontrolService::HandlePowerEvent(DWORD dwEventType)
     s_p_cpucontrolservice->mp_cpucoreusagegetter->Init();
     //return NO_ERROR;
     break;
+  case PBT_APMSUSPEND:
+    LOGN("suspending")
+    //Set to higher voltages before suspending so that a OS hangup / restart is
+    //less probable.
+//    mp_cpucontroller->m_p_std_set_voltageandfreqUseForDVFS =
+//      & m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
+    SetToMaximumVoltages();
+    break;
+    //http://msdn.microsoft.com/en-us/library/windows/desktop/aa372716%28v=vs.85%29.aspx:
+    // only Windows XP, Server 2003
   case PBT_APMQUERYSUSPEND:
     LOGN("querying suspend")
     //TODO Before a hibernation set core 1 to a low freq and voltage
@@ -1360,10 +1380,10 @@ CPUcontrolService::Pause()
 
 int
 CPUcontrolService::requestOption(
-    //Make as parameter as reference: more ressource-saving than
-    //to return (=a copy).
-    std::vector<std::string> & r_vec_std_strParams,
-    std::tstring & r_tstrProgName)
+  //Make as parameter as reference: more ressource-saving than
+  //to return (=a copy).
+  std::vector<std::string> & r_vec_std_strParams,
+  const std::tstring & r_tstrProgName)
 {
   bool bContinue = false;
   char arch[101];

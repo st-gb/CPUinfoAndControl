@@ -397,7 +397,7 @@ public:
   void DynVoltnFreqScalingEnabled() ;
   void EndDynVoltAndFreqScalingThread( PerCPUcoreAttributes *
     p_percpucoreattributes ) ;
-  inline float GetClosestMuliplier(int nXcoordionate, float &
+  inline float GetClosestMultiplier(int nXcoordionate, float &
     fReferenceClockInMHz);
   inline float GetClosestVoltageForYcoordinate(int nYcoordinate);
   inline bool GetCPUcoreInfoDirectlyOrFromService(
@@ -412,12 +412,10 @@ public:
   void HandleResumeForAllVoltAndFreqDlgs();
   inline bool IsCPUcontrollerAccessAllowedThreadSafe()
   {
-    {
     //Control access to m_bAllowCPUcontrollerAccess between threads.
     wxCriticalSectionLocker wxcriticalsectionlocker(
       m_wxcriticalsectionCPUctlAccess) ;
     return m_bAllowCPUcontrollerAccess ;
-    }
   }
   void OnCollectAsDefaultVoltagePerfStates( wxCommandEvent & WXUNUSED(event) ) ;
   void OnClose(wxCloseEvent & event) ;

@@ -75,282 +75,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   if( m_wxdynamiclibraryCPUctl.Load(r_wxstrFilePath) 
     )
   {
-    //wxdynamiclibraryCPUctl.
-    wxString wxstrFuncName (
-      //Use wxT() to enable to compile with both unicode and ANSI.
-        wxT("Init" ) ) ;
-//    LOGN("Dyn Lib " << r_wxstrFilePath << " successfully loaded")
-    if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName )
-      )
-    {
-      LOGN("Dyn Lib symbol " <<
-        //wxString may be wide char -> to ANSI string.
-        GetStdString( wxstrFuncName ) << " exists")
-//#ifdef _DEBUG
-//      wxMessageBox( wxString::Format( "CPU access address: %x "
-//        ", adress of ReadMSR fct:%x"
-//        , p_cpuaccess
-//        //, & WinRing0_1_3RunTimeDynLinked::RdmsrEx
-//        , & ::ReadMSR
-//        ) ) ;
-//#endif
-      wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
-      LOGN("Dyn Lib assigned fct ptr to symbol "
-        //Convert to std::string, else g++ linker error:
-        //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
-        << ::GetStdString( wxstrFuncName )
-        << " address of function:" << (void *) pfnInit
-        )
-      LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
-      LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)
-
-      LOGN("Dyn Lib before calling "
-        //Convert to std::string, else g++ linker error:
-        //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
-        << ::GetStdString( wxstrFuncName )
-        )
-//      //TODO
-//      p_cpuaccess->mp_cpucontroller = NULL ;
-      //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
-
-      //IMPORTANT: the class "Model" should have the same structure as in the
-      //dynamic (link) library, else the executable file (i.e. GUI or service)
-      //may malfunction:
-      //it happened that the executable ran into an endless loop
-      //(e.g. because the instruction pointer pointed to wrong data or the data
-      //pointer for an operator for an operation pointed to a wrong address)
-      //after a member
-      //was added to class "CPUcoreData" whose instance is a member of class
-      //"ModelData" and only the executable (and not the dynamic library)
-      //included this change.
-      ( * pfnInit)( //wxGetApp().mp_i_cpuaccess
-        //Pass pointer to I_CPUaccess in order for the DLL to be able to
-        // access the model via "p_cpuaccess->model"
-        p_cpuaccess
-        //, & WinRing0_1_3RunTimeDynLinked::RdmsrEx
-//        , & ::ReadMSR
-//        )
-        ) ;
-      LOGN("Dyn Lib after calling "
-        //Convert to std::string, else g++ linker error:
-        //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
-        << ::GetStdString( wxstrFuncName )
-        )
-      LOGN("# of available default voltages:" << p_cpuaccess->mp_model->
-        m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
-      std::set<VoltageAndFreq> & r_stdset =  p_cpuaccess->mp_model->
-        m_cpucoredata.m_stdsetvoltageandfreqDefault;
-      std::set<VoltageAndFreq>::const_iterator c_iter = r_stdset.begin();
-      WORD wIndex = 0 ;
-      while( c_iter != r_stdset.end() )
-      {
-        LOGN("Default voltages #" << wIndex ++ << ":"
-          << c_iter->m_fVoltageInVolt << " Volt for " << c_iter->m_wFreqInMHz
-          << " MHz.")
-        ++ c_iter;
-      }
-    }
-//#endif
-//      wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
-//      LOGN("Dyn Lib assigned fct ptr to symbol " <<
-//        //else g++: "undefined reference to `operator<<(std::ostream&,
-//        //wxString const&)'"
-//        GetStdString( wxstrFuncName) )
-//      LOGN("Dyn Lib before calling " <<
-//        //else g++: "undefined reference to `operator<<(std::ostream&,
-//        //wxString const&)'"
-//        GetStdString( wxstrFuncName ) )
-      DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
-
-#ifdef _DEBUG
-      //TODO is that possible: change the cpu controller class inside the DLL's
-      //init() function the a controller class in that module?
-      //e.g. INit(CPUaccess * p_cpuaccess ) {
-      //   p_cpuaccess->m_cpucontroller = & g_NehalemCPUcontroller ;
-      // }
-      //This would avoid writing export functions.
-//      p_cpuaccess->mp_cpu = p_cpuaccess
-#endif
-//      LOGN("Dyn Lib after calling " << wxstrFuncName )
-//      m_pfnGetMaximumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumFrequencyInMHz")
-//        ) ;
-//      m_pfnGetMinimumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumFrequencyInMHz")
-//        ) ;
-      m_pfnGetAvailableMultipliers = (pfnGetAvailableMultipliers_type)
-        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetAvailableMultipliers")
-        ) ;
-      LOGN("m_pfnGetAvailableMultipliers:" <<
-        //see http://stackoverflow.com/questions/2064692/
-        //  how-to-print-function-pointers-with-cout:
-        // cast to (void*), else either 1 or 0 is outputted.
-        (void*) m_pfnGetAvailableMultipliers )
-//      GetAvailableMultipliers( mp_cpuaccess->mp_model->m_cpucoredata.
-//        m_stdset_floatAvailableMultipliers) ;
-//      m_pfnGetMaximumVoltageID = (dll_GetMaximumVoltageID_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumVoltageID")
-//        ) ;
-//      m_pfnGetMinimumVoltageID = (dll_GetMinimumVoltageID_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumVoltageID")
-//        ) ;
-      m_pfnGetAvailableVoltages = (pfnGetAvailableMultipliers_type)
-        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetAvailableVoltagesInVolt")
-        ) ;
-      LOGN("m_pfnGetAvailableVoltages:" <<
-        //see http://stackoverflow.com/questions/2064692/
-        //  how-to-print-function-pointers-with-cout:
-        // cast to (void*), else either 1 or 0 is outputted.
-        (void*) m_pfnGetAvailableVoltages )
-//      LOGN("Dyn Lib after GetMinimumFrequencyInMHz")
-
-      wxstrFuncName = wxT("PrepareForNextPerformanceCounting") ;
-      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-        m_pfn_preparefornextperformancecounting =
-          (dll_PrepareForNextPerformanceCounting)
-          m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
-      else
-        m_pfn_preparefornextperformancecounting = NULL ;
-      //Do not use wxDYNLIB_FUNCTION: it shows a wxWidgets error message if 
-      // a DLL function does not exist.
-      //  wxDYNLIB_FUNCTION(dll_GetCurrentPstate_type, GetCurrentPstate,
-      //  m_wxdynamiclibraryCPUctl) ;
-      //m_pfngetcurrentpstate = pfnGetCurrentPstate ;
-//      m_pfngetcurrentpstate = (dll_GetCurrentPstate_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetCurrentPstate") ) ;
-      LOGN("m_pfnGetCurrentVoltageAndFrequency before assigning fct ptrs:"
-        << m_pfnGetCurrentVoltageAndFrequency )
-      m_pfnGetCurrentVoltageAndFrequency = (
-          pfn_GetCurrentVoltageAndFrequency_type )
-        m_wxdynamiclibraryCPUctl.GetSymbol(
-          wxT("GetCurrentVoltageAndFrequency") ) ;
-      LOGN("m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
-        //see http://stackoverflow.com/questions/2064692/
-        //  how-to-print-function-pointers-with-cout:
-        // cast to (void*), else either 1 or 0 is outputted.
-        << (void*) m_pfnGetCurrentVoltageAndFrequency )
-
-      GetCurrentReferenceClock();
-
-      //wxDYNLIB_FUNCTION(dll_SetCurrentPstate_type, SetCurrentPstate,
-      //  m_wxdynamiclibraryCPUctl) ;
-      //m_pfnsetcurrentpstate = pfnSetCurrentPstate ;
-//      m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
-      m_pfnSetCurrentVoltageAndMultiplier =
-          (pfnSetCurrentVoltageAndMultiplier_type)
-        m_wxdynamiclibraryCPUctl.GetSymbol(
-          wxT("SetCurrentVoltageAndMultiplier") ) ;
-
-//      m_pfn_GetVoltageID = (dll_GetVoltageID_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetVoltageID") ) ;
-//
-//      m_pfn_GetVoltageInVolt = (dll_GetVoltageInVolt_type)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetVoltageInVolt") ) ;
-
-//      m_pfn_set_pstate_from_freq = (dynlib_SetPstateFromFreq)
-//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
-
-      //m_pfn_too_hot = (dll_TooHot_type)
-      //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
-
-      wxstrFuncName = wxT("WriteMSR") ;
-      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-        m_pfn_write_msr = (dll_WriteMSR_type)
-          m_wxdynamiclibraryCPUctl.GetSymbol( wxT("WriteMSR") ) ;
-      else
-        m_pfn_write_msr = NULL ;
-      //wxDYNLIB_FUNCTION(dll_GetNumberOfCPUcores_type, GetNumberOfCPUcores,
-      //  m_wxdynamiclibraryCPUctl) ;
-
-      wxstrFuncName = wxT("GetNumberOfCPUcores") ;
-      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-//        m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
-        m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
-          m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetNumberOfCPUcores") ) ;
-      else
-        m_pfnGetNumberOfCPUcores = NULL ;
-
-      wxstrFuncName = wxT("GetTemperatureInCelsius") ;
-      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName) )
-      {
-#ifdef COMPILE_WITH_LOG
-        std::string stdstringFunctionName = GetStdString(wxstrFuncName) ;
-#endif
-        bool bFunctionPointerSuccessfullyAssigned = false ;
-        LOGN("The symbol \""
-          << stdstringFunctionName
-          << "\" exists in the dynamic library "
-          //<< r_wxstrFilePath << "\""
-          )
-        m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
-          m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ,
-            & bFunctionPointerSuccessfullyAssigned) ;
-        LOGN("function pointer for function \"" << stdstringFunctionName
-          << "\":" << (void *) m_pfngettemperatureincelsius )
-        if( bFunctionPointerSuccessfullyAssigned )
-          LOGN("successfully assigned pointer to function " <<
-            stdstringFunctionName )
-        else
-          LOGN("Failed to assign pointer to function " <<
-            GetStdString(wxstrFuncName) )
-      }
-      else
-      {
-        LOGN("The symbol \""
-          << GetStdString(wxstrFuncName)
-          << "\" does _not_ exist in the dynamic library "
-          //<< r_wxstrFilePath << "\""
-          )
-        m_pfngettemperatureincelsius = NULL ;
-      }
-      wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
-      if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-        m_b1CPUcorePowerPlane = false ;
-      LOGN("Dyn Lib after moreThan1CPUcorePowerPlane")
-
-//      DWORD dw = ::GetLastError() ;
-//      std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
-//      stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
-//      //ERROR_PROC_NOT_FOUND
-//      /*::wxMessageBox(
-//        wxString::Format("function %s was not found within DLL",
-//          wxstrFuncName) + wxString(stdstrErrMsg) ,
-//        wxT("Error ")
-//        ) ;*/
-
-      //Because this may not be the 1st time a controller is attached, clear
-      // previous multipliers, else the result is the intersection of the
-      //current and the next multipliers.
-      mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.clear() ;
-      LOGN("before DLL::GetAvailableMultipliers")
-      GetAvailableMultipliers(
-        mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers) ;
-      mp_model->m_cpucoredata.AvailableMultipliersToArray() ;
-
-//      LOGN("after DLL::GetAvailableMultipliers")
-      LOGN("Available multipliers:")
-      for( WORD wIndex = 0 ; wIndex < mp_model->m_cpucoredata.
-        m_stdset_floatAvailableMultipliers.size() ; ++ wIndex )
-      {
-        LOGN( mp_model->m_cpucoredata.m_arfAvailableMultipliers[ wIndex ]
-          << " " )
-      }
-//      LOGN("")
-      //Because this may not be the 1st time a controller is attached, clear
-      // previous voltages, else the result is the intersection of the
-      //current and the next voltages.
-      mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.clear() ;
-      GetAvailableVoltagesInVolt(
-        mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt) ;
-      mp_model->m_cpucoredata.AvailableVoltagesToArray() ;
-      LOGN("Available voltages in Volt:")
-      for( WORD wIndex = 0 ; wIndex < mp_model->m_cpucoredata.
-        m_stdset_floatAvailableVoltagesInVolt.size() ; ++ wIndex )
-      {
-        LOGN( mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ wIndex ]
-          << " " )
-      }
+    AssignPointersToDynLibFunctions(p_cpuaccess);
 //      LOGN("")
   }
   else
@@ -382,6 +107,325 @@ wxDynLibCPUcontroller::~wxDynLibCPUcontroller()
   LOGN("Before Unloading the CPU controller dynamic library")
   m_wxdynamiclibraryCPUctl.Unload() ;
   LOGN("Unloaded the CPU controller dynamic library")
+}
+
+void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
+  I_CPUaccess * p_cpuaccess)
+{
+  //wxdynamiclibraryCPUctl.
+  wxString wxstrFuncName = //(
+    //Use wxT() to enable to compile with both unicode and ANSI.
+    //wxT("Init" ) ) ;
+    wxT( EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME) );
+  //    LOGN("Dyn Lib " << r_wxstrFilePath << " successfully loaded")
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName )
+    )
+  {
+    LOGN_TYPE("Dyn Lib's symbol \""
+      //wxString may be wide char -> to ANSI string.
+      //<< GetStdString( wxstrFuncName ) <<
+      EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
+      "\" exists",
+      I_LogFormatter::log_message_typeSUCCESS)
+  //#ifdef _DEBUG
+  //      wxMessageBox( wxString::Format( "CPU access address: %x "
+  //        ", adress of ReadMSR fct:%x"
+  //        , p_cpuaccess
+  //        //, & WinRing0_1_3RunTimeDynLinked::RdmsrEx
+  //        , & ::ReadMSR
+  //        ) ) ;
+  //#endif
+    wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
+    LOGN("assigned fct ptr to Dyn Lib's symbol "
+      //Convert to std::string, else g++ linker error:
+      //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
+      //<< ::GetStdString( wxstrFuncName ) <<
+      EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
+      " address of function:" << (void *) pfnInit
+      )
+    LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
+    LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)
+
+    LOGN("before calling Dyn Lib's \""
+      //Convert to std::string, else g++ linker error:
+      //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
+      //<< ::GetStdString( wxstrFuncName ) <<
+      EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
+      "\" function (may fail due to "
+          " incompatible structure definitions between executable and dyn lib)"
+      )
+  //      //TODO
+  //      p_cpuaccess->mp_cpucontroller = NULL ;
+    //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
+
+    //IMPORTANT: the class "Model" should have the same structure as in the
+    //dynamic (link) library, else the executable file (i.e. GUI or service)
+    //may malfunction:
+    //it happened that the executable ran into an endless loop
+    //(e.g. because the instruction pointer pointed to wrong data or the data
+    //pointer for an operator for an operation pointed to a wrong address)
+    //after a member
+    //was added to class "CPUcoreData" whose instance is a member of class
+    //"ModelData" and only the executable (and not the dynamic library)
+    //included this change.
+    ( * pfnInit)( //wxGetApp().mp_i_cpuaccess
+      //Pass pointer to I_CPUaccess in order for the DLL to be able to
+      // access the model via "p_cpuaccess->model"
+      p_cpuaccess
+      //, & WinRing0_1_3RunTimeDynLinked::RdmsrEx
+  //        , & ::ReadMSR
+  //        )
+      ) ;
+    LOGN_TYPE("after calling Dyn Lib's \""
+      //Convert to std::string, else g++ linker error:
+      //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
+      //<< ::GetStdString( wxstrFuncName ) <<
+      EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
+      "\" function",
+      I_LogFormatter::log_message_typeSUCCESS
+      )
+    LOGN("# of available default voltages:" << p_cpuaccess->mp_model->
+      m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
+    std::set<VoltageAndFreq> & r_stdset =  p_cpuaccess->mp_model->
+      m_cpucoredata.m_stdsetvoltageandfreqDefault;
+    std::set<VoltageAndFreq>::const_iterator c_iter = r_stdset.begin();
+    WORD wIndex = 0 ;
+    while( c_iter != r_stdset.end() )
+    {
+      LOGN("Default voltages #" << wIndex ++ << ":"
+        << c_iter->m_fVoltageInVolt << " Volt for " << c_iter->m_wFreqInMHz
+        << " MHz.")
+      ++ c_iter;
+    }
+  }
+}
+
+void wxDynLibCPUcontroller::AssignPointerToDynLibsGetAvailableMultipliersFunction()
+{
+  m_pfnGetAvailableMultipliers = (pfnGetAvailableMultipliers_type)
+    m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetAvailableMultipliers")
+    ) ;
+  LOGN("m_pfnGetAvailableMultipliers:" <<
+    //see http://stackoverflow.com/questions/2064692/
+    //  how-to-print-function-pointers-with-cout:
+    // cast to (void*), else either 1 or 0 is outputted.
+    (void*) m_pfnGetAvailableMultipliers )
+  //      GetAvailableMultipliers( mp_cpuaccess->mp_model->m_cpucoredata.
+  //        m_stdset_floatAvailableMultipliers) ;
+}
+
+void wxDynLibCPUcontroller::AssignPointerToDynLibsGetAvailableVoltagesFunction()
+{
+  //      m_pfnGetMaximumVoltageID = (dll_GetMaximumVoltageID_type)
+  //        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumVoltageID")
+  //        ) ;
+  //      m_pfnGetMinimumVoltageID = (dll_GetMinimumVoltageID_type)
+  //        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumVoltageID")
+  //        ) ;
+  m_pfnGetAvailableVoltages = (pfnGetAvailableMultipliers_type)
+    m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetAvailableVoltagesInVolt")
+    ) ;
+  LOGN("m_pfnGetAvailableVoltages:" <<
+    //see http://stackoverflow.com/questions/2064692/
+    //  how-to-print-function-pointers-with-cout:
+    // cast to (void*), else either 1 or 0 is outputted.
+    (void*) m_pfnGetAvailableVoltages )
+  //      LOGN("Dyn Lib after GetMinimumFrequencyInMHz")
+}
+
+void wxDynLibCPUcontroller::AssignPointerToDynLibsGetTemperatureInCelsiusFunction()
+{
+  wxString wxstrFuncName = //wxT("GetTemperatureInCelsius") ;
+    wxT( EXPAND_AND_STRINGIFY(DYN_LIB_GET_TEMPERATURE_IN_CELSIUS_FUNCTION_NAME) );
+
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName) )
+  {
+  #ifdef COMPILE_WITH_LOG
+    std::string stdstringFunctionName = GetStdString(wxstrFuncName) ;
+  #endif
+    bool bFunctionPointerSuccessfullyAssigned = false ;
+    LOGN_TYPE("The symbol \""
+      << stdstringFunctionName
+      << "\" exists in the dynamic library "
+      //<< r_wxstrFilePath << "\""
+      , I_LogFormatter::log_message_typeSUCCESS
+      )
+    m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ,
+        & bFunctionPointerSuccessfullyAssigned) ;
+    LOGN("function pointer for function \"" << stdstringFunctionName
+      << "\":" << (void *) m_pfngettemperatureincelsius )
+    if( bFunctionPointerSuccessfullyAssigned )
+      LOGN("successfully assigned pointer to function " <<
+        stdstringFunctionName )
+    else
+      LOGN("Failed to assign pointer to function " <<
+        GetStdString(wxstrFuncName) )
+  }
+  else
+  {
+    LOGN_TYPE("The symbol \""
+      << GetStdString(wxstrFuncName)
+      << "\" does _not_ exist in the dynamic library "
+      //<< r_wxstrFilePath << "\""
+      , I_LogFormatter::log_message_typeWARNING
+      )
+    m_pfngettemperatureincelsius = NULL ;
+  }
+}
+
+void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
+  I_CPUaccess * p_cpuaccess)
+{
+  AssignPointerToDynLibsInitFunction(p_cpuaccess);
+  AssignPointerToDynLibsGetAvailableMultipliersFunction();
+  AssignPointerToDynLibsGetAvailableVoltagesFunction();
+  AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
+//#endif
+//      wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
+//      LOGN("Dyn Lib assigned fct ptr to symbol " <<
+//        //else g++: "undefined reference to `operator<<(std::ostream&,
+//        //wxString const&)'"
+//        GetStdString( wxstrFuncName) )
+//      LOGN("Dyn Lib before calling " <<
+//        //else g++: "undefined reference to `operator<<(std::ostream&,
+//        //wxString const&)'"
+//        GetStdString( wxstrFuncName ) )
+  DEBUGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
+
+#ifdef _DEBUG
+  //TODO is that possible: change the cpu controller class inside the DLL's
+  //init() function the a controller class in that module?
+  //e.g. INit(CPUaccess * p_cpuaccess ) {
+  //   p_cpuaccess->m_cpucontroller = & g_NehalemCPUcontroller ;
+  // }
+  //This would avoid writing export functions.
+//      p_cpuaccess->mp_cpu = p_cpuaccess
+#endif
+//      LOGN("Dyn Lib after calling " << wxstrFuncName )
+//      m_pfnGetMaximumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMaximumFrequencyInMHz")
+//        ) ;
+//      m_pfnGetMinimumFrequencyInMHz = (dll_GetMaximumFrequencyInMHz_type)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumFrequencyInMHz")
+//        ) ;
+
+  wxString wxstrFuncName = wxT("PrepareForNextPerformanceCounting") ;
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+    m_pfn_preparefornextperformancecounting =
+      (dll_PrepareForNextPerformanceCounting)
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
+  else
+    m_pfn_preparefornextperformancecounting = NULL ;
+
+  //Do not use wxDYNLIB_FUNCTION: it shows a wxWidgets error message if
+  // a DLL function does not exist.
+  //  wxDYNLIB_FUNCTION(dll_GetCurrentPstate_type, GetCurrentPstate,
+  //  m_wxdynamiclibraryCPUctl) ;
+  //m_pfngetcurrentpstate = pfnGetCurrentPstate ;
+//      m_pfngetcurrentpstate = (dll_GetCurrentPstate_type)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetCurrentPstate") ) ;
+  LOGN("m_pfnGetCurrentVoltageAndFrequency before assigning fct ptrs:"
+    << m_pfnGetCurrentVoltageAndFrequency )
+  m_pfnGetCurrentVoltageAndFrequency = (
+      pfn_GetCurrentVoltageAndFrequency_type )
+    m_wxdynamiclibraryCPUctl.GetSymbol(
+      wxT("GetCurrentVoltageAndFrequency") ) ;
+  LOGN("m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
+    //see http://stackoverflow.com/questions/2064692/
+    //  how-to-print-function-pointers-with-cout:
+    // cast to (void*), else either 1 or 0 is outputted.
+    << (void*) m_pfnGetCurrentVoltageAndFrequency )
+
+  GetCurrentReferenceClock();
+
+  //wxDYNLIB_FUNCTION(dll_SetCurrentPstate_type, SetCurrentPstate,
+  //  m_wxdynamiclibraryCPUctl) ;
+  //m_pfnsetcurrentpstate = pfnSetCurrentPstate ;
+//      m_pfnsetcurrentpstate = (dll_SetCurrentPstate_type)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetCurrentPstate") ) ;
+  m_pfnSetCurrentVoltageAndMultiplier =
+      (pfnSetCurrentVoltageAndMultiplier_type)
+    m_wxdynamiclibraryCPUctl.GetSymbol(
+      wxT("SetCurrentVoltageAndMultiplier") ) ;
+
+//      m_pfn_GetVoltageID = (dll_GetVoltageID_type)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetVoltageID") ) ;
+//
+//      m_pfn_GetVoltageInVolt = (dll_GetVoltageInVolt_type)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetVoltageInVolt") ) ;
+
+//      m_pfn_set_pstate_from_freq = (dynlib_SetPstateFromFreq)
+//        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
+
+  //m_pfn_too_hot = (dll_TooHot_type)
+  //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
+
+  wxstrFuncName = wxT("WriteMSR") ;
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+    m_pfn_write_msr = (dll_WriteMSR_type)
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("WriteMSR") ) ;
+  else
+    m_pfn_write_msr = NULL ;
+  //wxDYNLIB_FUNCTION(dll_GetNumberOfCPUcores_type, GetNumberOfCPUcores,
+  //  m_wxdynamiclibraryCPUctl) ;
+
+  wxstrFuncName = wxT("GetNumberOfCPUcores") ;
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+//        m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
+    m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetNumberOfCPUcores") ) ;
+  else
+    m_pfnGetNumberOfCPUcores = NULL ;
+
+//  AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
+  wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+    m_b1CPUcorePowerPlane = false ;
+  LOGN("Dyn Lib after moreThan1CPUcorePowerPlane")
+
+//      DWORD dw = ::GetLastError() ;
+//      std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
+//      stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
+//      //ERROR_PROC_NOT_FOUND
+//      /*::wxMessageBox(
+//        wxString::Format("function %s was not found within DLL",
+//          wxstrFuncName) + wxString(stdstrErrMsg) ,
+//        wxT("Error ")
+//        ) ;*/
+
+  //Because this may not be the 1st time a controller is attached, clear
+  // previous multipliers, else the result is the intersection of the
+  //current and the next multipliers.
+  mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.clear() ;
+  LOGN("before DLL::GetAvailableMultipliers")
+  GetAvailableMultipliers(
+    mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers) ;
+  mp_model->m_cpucoredata.AvailableMultipliersToArray() ;
+
+//      LOGN("after DLL::GetAvailableMultipliers")
+  LOGN("Available multipliers:")
+  for( WORD wIndex = 0 ; wIndex < mp_model->m_cpucoredata.
+    m_stdset_floatAvailableMultipliers.size() ; ++ wIndex )
+  {
+    LOGN( mp_model->m_cpucoredata.m_arfAvailableMultipliers[ wIndex ]
+      << " " )
+  }
+//      LOGN("")
+  //Because this may not be the 1st time a controller is attached, clear
+  // previous voltages, else the result is the intersection of the
+  //current and the next voltages.
+  mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.clear() ;
+  GetAvailableVoltagesInVolt(
+    mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt) ;
+  mp_model->m_cpucoredata.AvailableVoltagesToArray() ;
+  LOGN("Available voltages in Volt:")
+  for( WORD wIndex = 0 ; wIndex < mp_model->m_cpucoredata.
+    m_stdset_floatAvailableVoltagesInVolt.size() ; ++ wIndex )
+  {
+    LOGN( mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ wIndex ]
+      << " " )
+  }
 }
 
 void wxDynLibCPUcontroller::DecreaseVoltageBy1Step(float & r_fVoltage)

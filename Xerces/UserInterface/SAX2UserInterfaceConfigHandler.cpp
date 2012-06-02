@@ -360,10 +360,12 @@ namespace Xerces
       stdwstr.c_str()
       )
     if( PossiblyHandleLoggingExclusionFilter_Inline(
-      cpc_xmlchLocalName,
-      cr_xercesc_attributes)
+        cpc_xmlchLocalName,
+        cr_xercesc_attributes)
       )
+    { //Use a block because: to avoid g++ warning "Suspicious semicolon".
       ;
+    }
     else
     //TODO inperformant string comparison if multiple strings to compare start
     //with the same prefix: "e.g." "start", "start_at_startup"

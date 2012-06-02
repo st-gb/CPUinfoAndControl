@@ -19,22 +19,22 @@
   #include "stdafx.h"
   #endif
 
+  //For "GetCurrentReferenceClock(...)" .
   #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
   #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
-  //for EXPORT, APIENTRY preprocessor macros
-  #include <Controller/CPUcontrollerDynLibs/function_specifiers.h>
-  #include <Controller/CPUindependentHelper.h> //::getBinaryRepresentation(...)
-  #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
+
+  #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
   #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointerToExportedExeReadPCIconfig.h>
 #ifdef _DEBUG
-  #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+//  #include <Windows/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
   //#include <Windows/GetNumberOfLogicalCPUs.h>
+
   //for BITMASK_FOR_LOWMOST_5BIT
   #include <preprocessor_macros/preprocessor_helper_macros.h>
 
@@ -46,11 +46,11 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
   #ifdef COMPILE_WITH_MODEL_DEFINITION
     #include <Controller/I_CPUaccess.hpp>
-    #include <Controller/CPU-related/I_CPUcontroller.hpp>
+//    #include <Controller/CPU-related/I_CPUcontroller.hpp>
     #include <ModelData/ModelData.hpp>
     #include <ModelData/VoltageAndFreq.hpp>
     #include <set>
-    I_CPUcontroller * g_p_cpucontroller ;
+//    I_CPUcontroller * g_p_cpucontroller ;
     I_CPUaccess * g_pi_cpuaccess ;
     std::set<VoltageAndFreq> * g_p_stdsetvoltageandfreqWanted ;
   #else
@@ -60,14 +60,15 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
 #ifdef _DEBUG
 #include <Controller/Logger/Logger.hpp>
-Logger g_logger ;
+//Logger g_logger ;
 #endif
 
-  #include <windows.h> //for PSYSTEM_LOGICAL_PROCESSOR_INFORMATION
+  #include <windows.h> //for
   #include <winuser.h> //MessageBox
   #include <sstream> //std::stringstream
   #include <tchar.h> //_T()
-  #include <global.h> //logging
+//  #include <global.h> //logging
+  #include <Controller/CPU-related/AMD/Griffin/GetAvailableMultipliers.hpp>
 
   extern ReadMSR_func_type g_pfnreadmsr ;
   extern WriteMSR_func_type g_pfn_write_msr ;
@@ -87,57 +88,77 @@ Logger g_logger ;
   //MSRC001_0071 COFVID Status Register
   //54:49 MainPllOpFreqIdMax: main PLL operating frequency ID maximum.
   float g_fMainPllOpFreqIdMax ;
+  float g_fMaxMultiplier;
   float g_fMainPllOpFreqId ;
+
+#ifdef MAX_MULTI_IS_MAIN_PLL_OP_FREQ_ID_MAX_PLUS_8
+  float g_fReferenceClockInMHz = 100.0f ;
+#else
+  float g_fReferenceClockInMHz = 200.0f ;
+#endif
 
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  //For exporting this function with the same name as here in the source file.
-  //Especially for MinGW this line is needed in order to be called automatically
-  //for DLL attach / detach etc. actions.
-  extern "C" __declspec(dllexport)
-  BOOL APIENTRY DllMain( HMODULE hModule,
-                         DWORD  ul_reason_for_call,
-                         LPVOID lpReserved
-             )
+  void InitializeLogger()
+  {
+    std::string strExeFileNameWithoutDirs //= GetExeFileNameWithoutDirs() ;
+      ;
+    std::string stdstrFilename = strExeFileNameWithoutDirs +
+        ("GriffinControllerDLL_log.txt") ;
+    if( g_logger.OpenFile2( stdstrFilename ) )
+  //        SHOW_VIA_GUI("log file is open")
+  //      else
+  //        SHOW_VIA_GUI("log file is closed")
+
+  //      g_logger.Log("this Log file is open");
+    g_logger.CreateFormatter("htm");
+  //      if( g_logger.GetFormatter() )
+  //        g_logger.Log("m_p_log_formatter is not NULL");
+  //      std::string std_str = "std::string";
+  //      g_logger.Log(std_str);
+  //      g_logger.Log(std_str.c_str() );
+  //      std::string std_str("DllMain:");
+  //    //  std_str +=
+  //      g_logger.Log(//"MainPllOpFreqIdMax:" << g_fMainPllOpFreqIdMax
+  //        std_str );
+
+    DEBUGN("this Log file is open")
+  //  LPSTR lpstrModuleName ;
+  //  CHAR ar_strModuleName[100] ;
+  //  DWORD dwChars =
+  //     GetModuleFileName(
+  //     //HINSTANCE
+  //     //NULL
+  //     GetModuleHandle(NULL)
+  ////     ,NULL //LPSTR
+  //     , ar_strModuleName
+  //     ,99 //DWORD
+  //     ) ;
+    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
+        << strExeFileNameWithoutDirs )
+  //  LPSTR = new STR[dwChars] ;
+  //  DEBUGN()
+  }
+
+  EXPORT BOOL APIENTRY DllMain(
+    HMODULE hModule,
+    DWORD  ul_reason_for_call,
+    LPVOID lpReserved
+    )
   {
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
 #ifdef _DEBUG
-      {
-      std::string strExeFileNameWithoutDirs //= GetExeFileNameWithoutDirs() ;
-        ;
-      std::string stdstrFilename = strExeFileNameWithoutDirs +
-          ("GriffinControllerDLL_log.txt") ;
-      g_logger.OpenFile2( stdstrFilename ) ;
-      DEBUGN("this Log file is open")
-    //  LPSTR lpstrModuleName ;
-    //  CHAR ar_strModuleName[100] ;
-    //  DWORD dwChars =
-    //     GetModuleFileName(
-    //     //HINSTANCE
-    //     //NULL
-    //     GetModuleHandle(NULL)
-    ////     ,NULL //LPSTR
-    //     , ar_strModuleName
-    //     ,99 //DWORD
-    //     ) ;
-      DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
-          << strExeFileNameWithoutDirs )
-    //  LPSTR = new STR[dwChars] ;
-    //  DEBUGN()
-      }
+      InitializeLogger();
 #endif
-      DEBUGN("after GetMainPllOpFreqIdMax")
       AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
       AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
       //Pointers to Exe's fct must be assigned prior to the call of
       //GetMainPllOpFreqIdMax() !
       GetMainPllOpFreqIdMax() ;
+      DEBUGN("after GetMainPllOpFreqIdMax")
+//      LOGN("after GetMainPllOpFreqIdMax")
       if( ! g_pfnreadmsr || ! g_pfn_write_msr )
       {
         MessageBox(NULL,
@@ -163,7 +184,7 @@ Logger g_logger ;
 //      //The reference clock is needed for setting the current frequency. So it
 //      //must be determined prior to any call of this function.
 //      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-
+      break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
@@ -175,12 +196,7 @@ Logger g_logger ;
   //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
   #define NEHALEM_DLL_CALLING_CONVENTION
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  //For exporting this function with the same name as here in the source file.
-  extern "C" __declspec(dllexport)
+  EXPORT
   //The array pointed to by the return value must be freed by the caller (i.e.
   //x86I&C GUI or service) of this function.
   float *
@@ -193,29 +209,20 @@ Logger g_logger ;
       )
   {
     DEBUGN("DLL's GetAvailableMultipliers")
-    return GetAvailableMultipliers(p_wNumberOfArrayElements) ;
+    return GetAvailableMultipliersAMDfamilyFh(p_wNumberOfArrayElements) ;
   }
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  extern "C" __declspec(dllexport)
+  EXPORT
   //The array pointed to by the return value must be freed by the caller (i.e.
   //x86I&C GUI or service) of this function.
   float * GetAvailableVoltagesInVolt(
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements )
   {
-    return GetAvailableVoltages(*p_wNumberOfArrayElements) ;
+    return GetAvailableVoltagesAMDfamilyFh(*p_wNumberOfArrayElements) ;
   }
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  //For exporting this function with the same name as here in the source file.
-  extern "C" __declspec(dllexport)
+  EXPORT
     BYTE
     NEHALEM_DLL_CALLING_CONVENTION
     GetCurrentVoltageAndFrequency(
@@ -226,6 +233,7 @@ Logger g_logger ;
       , WORD wCoreID
     )
   {
+    DEBUGN( FULL_FUNC_NAME << "--begin")
     return GetCurrentVoltageAndFrequencyAMDGriffin(
       p_fVoltageInVolt,
       p_fMultiplier ,
@@ -234,12 +242,7 @@ Logger g_logger ;
       ) ;
   }
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  //For exporting this function with the same name as here in the source file.
-  extern "C" __declspec(dllexport)
+  EXPORT
   float
     NEHALEM_DLL_CALLING_CONVENTION
     GetTemperatureInCelsius ( WORD wCoreID
@@ -247,7 +250,7 @@ Logger g_logger ;
   {
     DWORD dwValue ;
     float fTempInDegCelsius ;
-    static BYTE g_byValue1 = ( 24 << 3 ) | 3 ;
+//    static BYTE g_byValue1 = ( 24 << 3 ) | 3 ;
     DEBUGN("GetTemperatureInCelsius(...) device and function:"
       << (WORD) g_byValue1 )
 //    BYTE byRet = //GetCPUMiscControlDWORD(
@@ -306,7 +309,7 @@ Logger g_logger ;
   #endif
   #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
     g_pi_cpuaccess = pi_cpuaccess ;
-    g_p_cpucontroller = pi_cpuaccess->mp_cpu_controller ;
+//    g_p_cpucontroller = pi_cpuaccess->mp_cpu_controller ;
     g_p_stdsetvoltageandfreqWanted = & g_pi_cpuaccess->mp_model->m_cpucoredata.
       m_stdsetvoltageandfreqWanted ;
   #endif //INSERT_DEFAULT_P_STATES
@@ -321,23 +324,14 @@ Logger g_logger ;
     //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
   }
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  extern "C" __declspec(dllexport)
+  EXPORT
   //When a function with this name exists in the DLL the dyn volt n freq scal thread
   //scales per core.
   void moreThan1CPUcorePowerPlane()
   {
   }
 
-  //http://en.wikipedia.org/wiki/Dynamic-link_library#C_and_C.2B.2B:
-  //"When external names follow the C naming conventions, they must also be
-  //declared as extern "C" in C++ code, to prevent them from using C++ naming
-  //conventions."
-  //For exporting this function with the same name as here in the source file.
-  extern "C" __declspec(dllexport)
+  EXPORT
     BYTE
     NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
     SetCurrentVoltageAndMultiplier(
@@ -348,15 +342,6 @@ Logger g_logger ;
     )
   {
     DEBUGN("DLL fct SetCurrentVoltageAndMultiplier")
-//    DWORD dwLowmostBits , dwHighmostBits = 0 ;
-//    dwLowmostBits =
-//      //Freq / "FSB in MHz" = multiplier
-//      (BYTE) fMultiplier ;
-////    std::stringstream ss ;
-////    ss << "multiplier to set: " << fMultiplier << "lowmost bits:"
-////        << dwLowmostBits ;
-////    MessageBox(NULL,ss.str().c_str(), "info" , MB_OK ) ;
-//    g_byValue1 = GetVoltageID( fVoltageInVolt ) ;
     SetVoltageAndMultiplier( fVoltageInVolt , fMultiplier , (BYTE) wCoreID ) ;
     return 0 ;
   }

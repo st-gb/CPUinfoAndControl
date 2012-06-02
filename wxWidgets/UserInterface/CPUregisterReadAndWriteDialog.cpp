@@ -39,6 +39,8 @@ enum
   , ID_LastStaticWindowID
 };
 
+#include <wx/event.h> //for "BEGIN_EVENT_TABLE"
+
 BEGIN_EVENT_TABLE(CPUregisterReadAndWriteDialog, wxDialog)
   EVT_LISTBOX(ID_RegisterListBox,CPUregisterReadAndWriteDialog::
     OnRegisterListBoxSelection)
@@ -62,7 +64,7 @@ CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
     ,
     //wxString::Format("MSR register index: %x",
     //r_regdata.m_dwIndex)
-    wxT("")
+    wxT("CPUregisterReadAndWriteDialog")
     , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
     , wxSize(400, 200)
     , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
@@ -133,11 +135,29 @@ CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
     mp_modeldata->m_stdvector_msrdata.begin() ;
   if( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
     ShowRegisterAttributes( *itermsrdata ) ;
+
   mp_sizerAttributeNameAndValue->Add( p_wxlistbox , 0 , wxEXPAND | wxBOTTOM ) ;
   //mp_sizerAttributeNameAndValue->Add( mp_sizerLeftColumn );
   //mp_sizerAttributeNameAndValue->Add( mp_sizerRightColumn ) ;
   mp_sizerAttributeNameAndValue->Add( mp_wxgridsizerAttributeNameAndValue ) ;
 
+  AddActionButtons();
+
+  //SetSizer(mp_sizerAttributeNameAndValue );
+  //mp_sizerVerticalOuter->Add( mp_sizerAttributeNameAndValue ) ;
+  //SetSizer(mp_sizerVerticalOuter) ;
+  SetSizer( mp_sizerAttributeNameAndValue);
+  //mp_sizerTop->SetSizeHints(this);
+  //mp_sizerTop->Fit(this);
+}
+
+CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
+  const CPUregisterReadAndWriteDialog& orig)
+{
+}
+
+void CPUregisterReadAndWriteDialog::AddActionButtons()
+{
   wxBoxSizer * p_wxsizerButtons = new wxBoxSizer( wxVERTICAL ) ;
   mp_wxbuttonWriteMSR = new wxButton( this, ID_WriteToMSR ,
     wxT("write to MSR") ) ;
@@ -152,18 +172,8 @@ CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
   wxButton * p_wxbuttonPreparePMC = new wxButton( this, ID_PreparePMC , 
     wxT("prepare for PMC") ) ;
   p_wxsizerButtons->Add( p_wxbuttonPreparePMC) ;
-  mp_sizerAttributeNameAndValue->Add( p_wxsizerButtons ) ;
-  //SetSizer(mp_sizerAttributeNameAndValue );
-  //mp_sizerVerticalOuter->Add( mp_sizerAttributeNameAndValue ) ;
-  //SetSizer(mp_sizerVerticalOuter) ;
-  SetSizer( mp_sizerAttributeNameAndValue);
-  //mp_sizerTop->SetSizeHints(this);
-  //mp_sizerTop->Fit(this);
-}
 
-CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
-  const CPUregisterReadAndWriteDialog& orig)
-{
+  mp_sizerAttributeNameAndValue->Add( p_wxsizerButtons ) ;
 }
 
 void CPUregisterReadAndWriteDialog::ShowRegisterAttributes( //const
@@ -432,7 +442,10 @@ void CPUregisterReadAndWriteDialog::OnRegisterListBoxSelection(
     //Layout() ;
     //mp_sizerLeftColumn->Layout() ;
     //mp_sizerRightColumn->Layout() ;
-    mp_wxgridsizerAttributeNameAndValue->Layout() ;
+
+//    mp_wxgridsizerAttributeNameAndValue->Layout() ;
+    mp_sizerAttributeNameAndValue->Layout() ;
+
     //mp_sizerLeftColumn->RecalcSizes() ;
     //mp_sizerRightColumn->RecalcSizes() ;
   }

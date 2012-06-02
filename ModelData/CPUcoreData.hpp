@@ -7,37 +7,28 @@
  */
 #pragma once //include guard
 
-//#include <global.h> //for BYTE, WORD
-#include <windef.h> //for BYTE
 #include "VoltageAndFreq.hpp" //class VoltageAndFreq
-//CPU controller (dyn libs) do not need thread synchronisation yet.
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+
+//#include <ModelData/PerCPUcoreAttributes.hpp>
+#include <set> //class std::set
+
+#define CPU_CORE_DATA_NOT_SET 255
+
+#if defined(COMPILE_AS_GUI) || defined(COMPILE_AS_SERVICE)
+  #define COMPILE_AS_EXECUTABLE
+  //Forward declarations (faster than #include)
+  class I_CPUcontroller ;
+  class MaxVoltageForFreq ;
+  class PerCPUcoreAttributes ;
+
+  #include <windef.h> //for BYTE
+  #include <map> //class std::map
+  #include <string> //std::string
+  //CPU controller (dyn libs) do not need thread synchronisation yet.
   #include <Controller/multithread/condition_type.hpp>
   #include <Controller/multithread/criticalsection_type.hpp>
   #include <Controller/multithread/mutex_type.hpp>
-#endif //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-//#include <ModelData/PerCPUcoreAttributes.hpp>
-//CPU controller (dyn libs) do not need thread synchronisation yet.
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-//  #include <Windows/multithread/Win32EventBasedCondition.hpp>
-    //Keep away the dependence on mp_dynfreqscalingaccess for dyn libs.
-//  #include <wxWidgets/DynFreqScalingThread.hpp>
-//  #include <wx/thread.h> //for wxCondition
 #endif
-#include <map> //class std::map
-#include <set> //class std::set
-#include <string> //std::string
-
-#define CPU_CORE_DATA_NOT_SET 255
-//#include <Controller/ClocksNotHaltedCPUcoreUsageGetter.hpp>
-//#include <wxWidgets/DynFreqScalingThread.hpp>
-
-//using namespace wxWidgets ;
-
-//Forward declarations (faster than #include)
-class I_CPUcontroller ;
-class MaxVoltageForFreq ;
-class PerCPUcoreAttributes ;
 
 //The member variables can be shared through the subclass of 
 //ICPUcoreUsageGetter and the user interface class.
@@ -49,19 +40,28 @@ class PerCPUcoreAttributes ;
 //dyn lib is attached to crashes.
 class CPUcoreData
 {
-private:
 public:
+  std::set<VoltageAndFreq> m_stdsetvoltageandfreqWanted ;
+  std::set<VoltageAndFreq> m_stdsetvoltageandfreqLowestStable ;
+  std::set<VoltageAndFreq> m_stdsetvoltageandfreqDefault ;
+
+  bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
+#ifdef COMPILE_AS_EXECUTABLE
   bool m_b1CPUcorePowerPlane ;
   bool m_bEnableDVFS ;
   bool m_bTooHot ;
   BYTE m_byUpdateViewOnDVFS ;
   BYTE m_byNumberOfCPUCores ;
+
   BYTE m_byMaxVoltageID ; //=lowest voltage
   BYTE m_byMinVoltageID ;
+
   BYTE m_byModel ;
   BYTE m_byStepping ;
+
   float * m_arfAvailableMultipliers ;
   float * m_arfAvailableVoltagesInVolt ;
+
   float * m_arfCPUcoreLoadInPercent ;
   float m_fCPUcoreLoadThresholdForIncreaseInPercent;
   float m_fCPUcoreFreqFactor ;
@@ -74,9 +74,7 @@ public:
   std::set<float> m_stdset_floatAvailableMultipliers ;
   std::set<float> m_stdset_floatAvailableVoltagesInVolt ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqAvailableFreq ;
-  std::set<VoltageAndFreq> m_stdsetvoltageandfreqWanted ;
-  std::set<VoltageAndFreq> m_stdsetvoltageandfreqLowestStable ;
-  std::set<VoltageAndFreq> m_stdsetvoltageandfreqDefault ;
+
   ////Make as pointers because shared memories need a fixed size,
   ////else if elements are added.
   //std::set<VoltageAndFreq> * mp_stdsetvoltageandfreqAvailableFreq ;
@@ -121,7 +119,6 @@ public:
   float m_fMaximumCPUcoreMultiplier;
   float m_fCPUcoreFreqInMHzReserve;
 
-  bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   //void AddFreqAndLowestStableVoltage(float fValue,WORD wFreqInMHz) ;
   void AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz) ;
@@ -139,6 +136,7 @@ public:
       m_stdsetvoltageandfreqWanted.insert( * c_iter ) ;
     }
   }
+
   CPUcoreData() ;
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
@@ -167,4 +165,5 @@ public:
   void SetCPUcoreNumber(BYTE byNumberOfCPUcores) ;
   void SetMaxFreqInMHz(WORD wMaxFreqInMHz) ;
   void ThreadFinishedAccess() ;
+#endif //#ifdef COMPILE_AS_EXECUTABLE
 };

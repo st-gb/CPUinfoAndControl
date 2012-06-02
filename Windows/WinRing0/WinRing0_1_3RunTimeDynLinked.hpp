@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //include guard
 //#include <windef.h> //for  WINAPI in OlsApiInitDef.h
 //to resolve WINAPI in OlsApiInitDef.h
@@ -60,6 +67,7 @@ public:
   WinRing0_1_3RunTimeDynLinked(UserInterface * pui) ;
   WinRing0_1_3RunTimeDynLinked() ;
   ~WinRing0_1_3RunTimeDynLinked() ;
+
   void UIconfirm(const std::string & str) ;
   BOOL CpuidEx(
     DWORD index,
@@ -69,6 +77,8 @@ public:
     PDWORD edx,
     DWORD_PTR affinityMask
   );
+  static void GetErrorMessageForInitError(DWORD dwValue,
+    std::string & stdstrErrorMsg );
   BYTE GetNumberOfCPUCores() ;
   void Init(UserInterface * pui) ;
 

@@ -15,23 +15,64 @@
 #ifndef GETREFERENCECLOCKVIATSCDIFFDIVMULTIIFNOFIDCHANGE_HPP_
 #define GETREFERENCECLOCKVIATSCDIFFDIVMULTIIFNOFIDCHANGE_HPP_
 
-#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
-inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
+#include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF(...)
+#include <Controller/time/GetTickCount.hpp> //DWORD ::GetTickCount()
+//for IA32_PERF_STATUS etc.
+#include <Controller/CPU-related/Intel/Intel_registers.h>
+//ReadMSR(...)
+#include <Controller/AssignPointersToExportedExeFunctions/inline_register_access_functions.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <Controller/CPU-related/ReadTimeStampCounter.h> //ReadTSCinOrder(...)
+
+
+#define PERFORMANCE_COUNTER_FOR_FID_CHANGE IA32_PMC0
+
+//#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+inline float GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
 {
+  DEBUGN( FULL_FUNC_NAME << "--begin FID:" << (WORD) byFID)
+  static DWORD m_dwTickCountInMilliseconds;
+  static DWORD m_dwTickCountDiffInMilliseconds;
+  static DWORD m_dwTickCountInMillisecondsPrev;
+  static DWORD m_dwMinimumTimeSpanInMilliseconds;
+
+  static uint32_t g_dwHighmostBits;
+  static uint32_t g_dwLowmostBits;
+
+  static ULONGLONG m_ullPerformanceEventCounterNumberOfFIDchange;
+  static ULONGLONG m_ullTSCvalue;
+  static ULONGLONG m_ullTSCvaluePrevious;
+  static ULONGLONG m_ullNumberOfFIDchangePrevious;
+  static ULONGLONG m_ullTSCdiff;
+  static ULONGLONG m_ullNumberOfFIDchangeDiff;
+
+  static double m_dCurrentTSCclockInHz;
+  static float m_fCurrentReferenceClockInMHz;
+
+  static bool m_b2ndTimeOrLaterReadTSCandFIDchange = false;
+
   m_dwTickCountInMilliseconds = ::GetTickCount();
+
   //For taking a difference we need to have recorded a value before.
   if( m_b2ndTimeOrLaterReadTSCandFIDchange )
   {
+    DEBUGN( FULL_FUNC_NAME << "--m_b2ndTimeOrLaterReadTSCandFIDchange:"
+      << m_b2ndTimeOrLaterReadTSCandFIDchange)
     m_dwTickCountDiffInMilliseconds = ULONG_VALUE_DIFF( m_dwTickCountInMilliseconds ,
       m_dwTickCountInMillisecondsPrev ) ;
+    DEBUGN( FULL_FUNC_NAME << "--m_dwTickCountDiffInMilliseconds:"
+      << m_dwTickCountDiffInMilliseconds)
     if( m_dwTickCountDiffInMilliseconds > m_dwMinimumTimeSpanInMilliseconds )
     {
-      if( mp_cpuaccess->ReadTSC( g_dwLowmostBits, g_dwHighmostBits) )
+//      if( ReadTSC( g_dwLowmostBits, g_dwHighmostBits) )
   //      if( mp_cpuaccess->RdmsrEx( IA32_TIME_STAMP_COUNTER, & dwLow, & dwHigh , 1 ) )
       {
-        m_ullTSCvalue = g_dwHighmostBits ;
-        m_ullTSCvalue <<= 32 ;
-        m_ullTSCvalue |= g_dwLowmostBits ;
+//        m_ullTSCvalue = g_dwHighmostBits ;
+//        m_ullTSCvalue <<= 32 ;
+//        m_ullTSCvalue |= g_dwLowmostBits ;
+
+        m_ullTSCvalue = ReadTSCinOrder(//pass thread affinity mask
+            1) ;
   //        //For taking a difference we need to have recorded a value before.
   //        if( m_b2ndTimeOrLaterReadTSCandFIDchange )
   //        {
@@ -56,13 +97,16 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
           m_ullPerformanceEventCounterNumberOfFIDchange <<= 32 ;
           m_ullPerformanceEventCounterNumberOfFIDchange |= g_dwLowmostBits ;
 
+          DEBUGN( FULL_FUNC_NAME
+            << "--m_ullPerformanceEventCounterNumberOfFIDchange:"
+            << m_ullPerformanceEventCounterNumberOfFIDchange)
           if( m_ullPerformanceEventCounterNumberOfFIDchange )
           {
   //        //For taking a difference we need to have recorded a value before.
   //        if( m_b2ndTimeOrLaterReadTSCandFIDchange )
   //        {
-            m_ullNumberOfFIDchangeDiff = //PERFORMANCE_COUNTER_VALUE_DIFF(
-              PerformanceCounterValueDiff(
+            m_ullNumberOfFIDchangeDiff = PERFORMANCE_COUNTER_VALUE_DIFF(
+              //PerformanceCounterValueDiff(
               m_ullPerformanceEventCounterNumberOfFIDchange ,
               m_ullNumberOfFIDchangePrevious
               ) ;
@@ -100,18 +144,21 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
       //        r_wFreqInMHz = dMHz ;
               m_fCurrentReferenceClockInMHz = m_dCurrentTSCclockInHz /
                   (float) byFID / 1000000.0 ;
+//              g_fReferenceClockInMHz = m_fCurrentReferenceClockInMHz;
               m_ullNumberOfFIDchangePrevious =
                   m_ullPerformanceEventCounterNumberOfFIDchange ;
+              return m_fCurrentReferenceClockInMHz;
             }
   //        }
           }
           //After a standby or hibernate the PMC value remains 0.
           //I was not able to detect standby or hibernate on Linux to re-init
-          //the performance countung, so this is a universal (also Windows)
+          //the performance counting, so this is a universal (also Windows)
           //workaround.
           else
           {
-            MonitorNumberOfFrequencyIDtransitions() ;
+//            MonitorNumberOfFrequencyIDtransitions() ;
+            SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent();
           }
         }
   //        //The Pentium M model 13, stepping 8 has the effect (bug?) that it
@@ -127,11 +174,13 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
   else //1st time the values are read.
   {
     m_dwTickCountInMillisecondsPrev = m_dwTickCountInMilliseconds ;
-    if( mp_cpuaccess->ReadTSC( g_dwLowmostBits, g_dwHighmostBits) )
+//    if( ReadTSC( g_dwLowmostBits, g_dwHighmostBits) )
     {
-      m_ullTSCvaluePrevious = g_dwHighmostBits ;
-      m_ullTSCvaluePrevious <<= 32 ;
-      m_ullTSCvaluePrevious |= g_dwLowmostBits ;
+//      m_ullTSCvaluePrevious = g_dwHighmostBits ;
+//      m_ullTSCvaluePrevious <<= 32 ;
+//      m_ullTSCvaluePrevious |= g_dwLowmostBits ;
+
+      m_ullTSCvaluePrevious = ReadTSCinOrder(1);
   //    //The Pentium M model 13, stepping 8 has the effect (bug?) that it
   //    // does not increment the TimeStampCounter at a low multiplier (e,g. 6)
   //    //at the same rate as the CPU clock: e.g. 400 M timestamp ticks /s
@@ -140,7 +189,7 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
   //    mp_cpuaccess->WrmsrEx( IA32_TIME_STAMP_COUNTER , 0 , 0 , 1) ;
   ////    m_ullTSCvalue = 0 ;
   //    m_ullTSCvaluePrevious = 0 ;
-      if( mp_cpuaccess->RdmsrEx(
+      if( ReadMSR(
         //IA32_PERFEVTSEL0
         //Intel vol. 3B:
         //"IA32_PMCx MSRs start at address 0C1H and occupy a contiguous block of MSR
@@ -160,12 +209,15 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
         m_ullNumberOfFIDchangePrevious = g_dwHighmostBits ;
         m_ullNumberOfFIDchangePrevious <<= 32 ;
         m_ullNumberOfFIDchangePrevious |= g_dwLowmostBits ;
+        DEBUGN( FULL_FUNC_NAME << "--m_ullNumberOfFIDchangePrevious:"
+          << m_ullNumberOfFIDchangePrevious)
         //After a standby or hibernate the PMC value remains 0.
         //I was not able to detect standby or hibernate on Linux to re-init
         //the performance counting, so this is a universal (also Windows)
         //workaround.
        if( ! m_ullNumberOfFIDchangePrevious )
-          MonitorNumberOfFrequencyIDtransitions() ;
+         //MonitorNumberOfFrequencyIDtransitions() ;
+         SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent();
        else
          //All values have been got successfully-> can get the 2nd values.
          m_b2ndTimeOrLaterReadTSCandFIDchange = true ;
@@ -177,6 +229,8 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
   //    else
     }
   }
+  DEBUGN( FULL_FUNC_NAME << "--end")
+  return 0.0f;
 }
 
 //inline void NumberOfFreqIDchanges()
@@ -273,6 +327,6 @@ inline void GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
 //  #endif //#ifndef _WIN32
 //}
 
-#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
+//#endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
 
 #endif /* GETREFERENCECLOCKVIATSCDIFFDIVMULTIIFNOFIDCHANGE_HPP_ */

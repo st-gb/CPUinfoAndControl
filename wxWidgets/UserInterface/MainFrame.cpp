@@ -43,6 +43,12 @@
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
 #include <preprocessor_macros/suppress_unused_variable.h>
 #include <Controller/CalculationThreadProc.h>
+//for GetInterpolatedVoltageFromFreq(
+//  WORD wFreqInMHzToGetVoltageFrom
+//  , float & r_fVoltageInVolt
+//  , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
+//  );
+#include <Controller/CPU-related/GetInterpolatedVoltageFromFreq.hpp>
 //::wxGetApp().mp_cpucoreusagegetter
 #include <Controller/CPU-related/ICPUcoreUsageGetter.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
@@ -232,7 +238,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MOTION(MainFrame::OnMoveMouse)
   EVT_LEFT_DOWN(MainFrame::OnLeftMouseButtonDown)
   //EVT_TIMER(-1,MainFrame::OnTimerEvent)
-  EVT_TIMER(TIMER_ID,MainFrame::OnTimerEvent)
+  EVT_TIMER(TIMER_ID, MainFrame::OnTimerEvent)
   //EVT_COMMAND_RIGHT_CLICK(FIRST_TRAYNOTIFY_ID, MainFrame::OnSysTrayIconClick)
 //  EVT_MOUSE_EVENTS(FIRST_TRAYNOTIFY_ID, MainFrame::OnSysTrayIconClick)
 END_EVENT_TABLE()
@@ -245,6 +251,13 @@ _T("Attach CPU &usage getter dynamic library...")
 _T("Detach CPU controller dynamic library")
 #define DETACH_CPU_CORE_USAGE_GETTER_DYNAMIC_LIBRARY_T_STRING \
 _T("Detach CPU usage getter dynamic library")
+
+//see http://en.wikipedia.org/wiki/Kelvin
+#define O_KELVIN_IN_DEG_CELSIUS -273.15
+//http://de.wikipedia.org/wiki/Gleitkommazahl#IEEE_754_und_andere_Normen:
+//IEEE 754: mantissa: 23 bit, exponent: 8 bit
+#define CPU_TEMP_IS_BELOW_CRITICAL -300.0f
+#define CPU_TEMP_IS_CRITICAL -280.0f
 
 inline void MainFrame::CreateFileMenu()
 {
@@ -1438,7 +1451,9 @@ void MainFrame::OnLoadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event)
       InitUnstableVoltageDetectionDynLibAccess() == 0)
 //      m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib->SetHelp(
 //        wxstrDynLibFilePath);
+    { //By using a block/ braces: avoid g++ warning "Suspicious semicolon"
       ;
+    }
   }
 }
 
@@ -1454,10 +1469,11 @@ void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
 
 void MainFrame::OnMoveMouse(wxMouseEvent & r_wxmouseevent)
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   wxPoint wxpoint = r_wxmouseevent.GetPosition();
 
   float fReferenceClockInMHz;
-  const float fMultiplier = GetClosestMuliplier(wxpoint.x,
+  const float fMultiplier = GetClosestMultiplier(wxpoint.x,
     fReferenceClockInMHz);
   const float fClosestFrequency = fMultiplier * fReferenceClockInMHz;
 
@@ -1466,6 +1482,7 @@ void MainFrame::OnMoveMouse(wxMouseEvent & r_wxmouseevent)
 
   SetStatusText( wxString::Format( wxT("(%f Volt,%f MHz)"),
     fClosestVoltageToYcoordinate, fClosestFrequency ) );
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void MainFrame::OnLeftMouseButtonDown(wxMouseEvent & r_wxmouseevent)
@@ -1476,7 +1493,7 @@ void MainFrame::OnLeftMouseButtonDown(wxMouseEvent & r_wxmouseevent)
   {
     float fVoltageInVolt = GetClosestVoltageForYcoordinate(c_r_wxpointPos.y);
     float fReferenceClockInMHz;
-    float fMultiplier = GetClosestMuliplier(c_r_wxpointPos.x,
+    float fMultiplier = GetClosestMultiplier(c_r_wxpointPos.x,
       fReferenceClockInMHz);
 
     m_p_freqandvoltagesettingsdialog->SetMultiplierSliderToClosestValue(
@@ -1610,6 +1627,8 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
         LOGN("after creating per CPU core menus " )
 
         CPUcontrollerDynLibAttached(wxstrCPUcontrollerDynLibFilePath) ;
+        //(Re-)start the "update view" timer.
+        m_wxtimer.Start(m_dwTimerIntervalInMilliseconds);
       }
     }
     catch( const CPUaccessException & ex )
@@ -1715,6 +1734,8 @@ void MainFrame::CPUcontrollerDynLibAttached(const wxString & wxstrFilePath )
 
 void MainFrame::CPUcontrollerDeleted()
 {
+  mp_i_cpucontroller = NULL;
+
   PossiblyReleaseMemForCPUcontrollerUIcontrols() ;
   //mp_model->m_cpucoredata.ClearCPUcontrollerSpecificAtts() ;
   mp_wxmenuFile->Enable( ID_DetachCPUcontrollerDynamicLibrary
@@ -1973,7 +1994,7 @@ void MainFrame::DrawDiagramScale(
   if( //mp_i_cpucontroller
     m_wMaximumCPUcoreFrequency )
   {
-    WORD wXcoordinate = 0, wYcoordinate = 0;
+//    WORD wXcoordinate = 0, wYcoordinate = 0;
     //float fMinVoltage ;
     //float fMaxMinusMinVoltage ;
     std::set<VoltageAndFreq> & r_stdsetvoltageandfreq = 
@@ -2054,7 +2075,7 @@ void MainFrame::DrawDiagramScale(
     , & wxcoordTextHeight
     //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
     ) ;
-  int nHalfTextHeightInPixels = wxcoordTextHeight / 2;
+//  int nHalfTextHeightInPixels = wxcoordTextHeight / 2;
 
   if( mp_i_cpucontroller->m_fReferenceClockInMHz )
   {
@@ -2160,7 +2181,8 @@ void MainFrame::DrawLowestStableVoltageCurve(
             //  , *ciLower
             //  , fVoltage
             //  ) ;
-            mp_i_cpucontroller->GetInterpolatedVoltageFromFreq(
+            //mp_i_cpucontroller->
+            GetInterpolatedVoltageFromFreq(
               wCurrentFreqInMHz
               , fVoltage
               , mp_cpucoredata->m_stdsetvoltageandfreqLowestStable
@@ -2233,7 +2255,8 @@ void MainFrame::DrawVoltageGraph(
           wCurrentXcoordinateInDiagram < //wxcoordWidth
           m_wDiagramWidth ; ++ wCurrentXcoordinateInDiagram )
       {
-        mp_i_cpucontroller->GetInterpolatedVoltageFromFreq(
+        //mp_i_cpucontroller->
+        GetInterpolatedVoltageFromFreq(
           //Explicit cast to avoid (g++) compiler warning.
           (WORD)
            (
@@ -2655,7 +2678,8 @@ void MainFrame::DrawCurrentVoltageSettingsCurve(
           m_wDiagramWidth ; ++ wCurrentXcoordinateInDiagram )
       {
         //mp_i_cpucontroller->GetMinFreqToPreventOvervoltage( iter ) ;
-        if( mp_i_cpucontroller->GetInterpolatedVoltageFromFreq(
+        if( //mp_i_cpucontroller->
+            GetInterpolatedVoltageFromFreq(
             //Explicit cast to avoid (g++) compiler warning.
             (WORD)
              (
@@ -3189,10 +3213,11 @@ void MainFrame::DrawVoltageScale(wxDC & r_wxdc )
   }
 }
 
-float MainFrame::GetClosestMuliplier(int nXcoordionate,
+float MainFrame::GetClosestMultiplier(int nXcoordionate,
     float & fReferenceClockInMHz)
 {
-  if( nXcoordionate >= m_wXcoordOfBeginOfYaxis )
+  LOGN( FULL_FUNC_NAME << "--begin--mp_i_cpucontroller:" << mp_i_cpucontroller)
+  if( mp_i_cpucontroller && nXcoordionate >= m_wXcoordOfBeginOfYaxis )
   {
     unsigned uiFreqInMHz = (unsigned) (
       (float) (nXcoordionate - m_wXcoordOfBeginOfYaxis) /
@@ -3702,7 +3727,8 @@ void MainFrame::DynVoltnFreqScalingEnabled()
 void MainFrame::EndDynVoltAndFreqScalingThread(
   PerCPUcoreAttributes * p_percpucoreattributes )
 {
-  LOGN("ending Dynamic Voltage and Frequency scaling thread")
+//  LOGN("ending Dynamic Voltage and Frequency scaling thread")
+  LOGN(FULL_FUNC_NAME << "--begin")
   p_percpucoreattributes->mp_dynfreqscalingthread->Stop() ;
   //p_percpucoreattributes->mp_dynfreqscalingthread->Delete() ;
   p_percpucoreattributes->mp_dynfreqscalingthread = NULL ;
@@ -3714,6 +3740,7 @@ void MainFrame::EndDynVoltAndFreqScalingThread(
     //line to make it compatible between char and wide char.
     _T("enable Own DVFS") 
     ) ;
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void MainFrame::Notify() //overrides wxTimer::Notify()
@@ -4059,6 +4086,7 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
       ::wxGetApp().mp_cpucoreusagegetter->Init() ;
       //wxLogMessage(_T("System resumed from suspend."));
     } // if( mp_i_cpucontroller )
+    LOGN( FULL_FUNC_NAME << "--end")
   }
 #endif // wxHAS_POWER_EVENTS
 
@@ -4112,9 +4140,58 @@ void MainFrame::OnSuspendCancel(wxPowerEvent & WXUNUSED(event))
 }
 #endif //#ifdef wxHAS_POWER_EVENTS
 
+//void GetCurrentPstateAndAddDefaultVoltage()
+//{
+//      //Do something
+//      bool bNewVoltageAndFreqPair = false ;
+//      float fVoltageInVolt ;
+//      WORD wFreqInMHz ;
+//      std::pair <std::set<VoltageAndFreq>::iterator, bool>
+//        stdpairstdsetvoltageandfreq ;
+//      for ( BYTE byCPUcoreID = 0 ; byCPUcoreID <
+//        mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
+//      {
+//        if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt,
+//          byCPUcoreID ) )
+//        {
+//    #ifdef _DEBUG
+//          if( wFreqInMHz > 1800 )
+//            wFreqInMHz = wFreqInMHz ;
+//    #endif
+//          //stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
+//          //  m_stdsetvoltageandfreqDefault.insert(
+//          //  VoltageAndFreq ( fVoltageInVolt , wFreqInMHz )
+//          //  ) ;
+//          if( mp_model->m_bCollectPstatesAsDefault )
+//            bNewVoltageAndFreqPair = mp_model->m_cpucoredata.
+//              AddDefaultVoltageForFreq(
+//              fVoltageInVolt , wFreqInMHz ) ;
+//          ////New p-state inserted.
+//          //if( stdpairstdsetvoltageandfreq.second )
+//          //  bNewVoltageAndFreqPair = true ;
+//        }
+//      }
+//      if( bNewVoltageAndFreqPair )
+//      {
+//        std::set<VoltageAndFreq>::reverse_iterator reviter =
+//          mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin() ;
+//        //Need to set the max freq. Else (all) the operating points are
+//        // drawn at x-coord. "0".
+//        mp_cpucoredata->m_wMaxFreqInMHz = (*reviter).m_wFreqInMHz ;
+//        if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() > 1
+//          //&& ! mp_wxmenuitemOwnDVFS->IsEnabled()
+//          )
+//          mp_wxmenuitemOwnDVFS->Enable(true) ;
+//        RedrawEverything() ;
+//      }
+//      else
+//}
+
 void MainFrame::OnTimerEvent(wxTimerEvent & event)
 {
-  LOGN("OnTimerEvent begin")
+  LOGN(//"OnTimerEvent"
+    FULL_FUNC_NAME <<
+      "--begin")
 //  DEBUGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
 //  LOGN("OnTimerEvent CPU controller pointer:" << mp_i_cpucontroller )
   //May be NULL at startup.
@@ -4188,56 +4265,15 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
           LOGN("DrawCurrentCPUcoreData leaving IPC 2 in-program data crit sec")
           mp_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
           LOGN("DrawCurrentCPUcoreData after leaving IPC 2 in-program data crit sec")
+
           ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
           ShowCPUcoreUsagesInTaskBar(p_cpucontroller);
           ShowCPUcoresMultipliersInTaskBar(p_cpucontroller);
         }
       }
-      else
+      else // !IsIconized() && IsVisible()
       {
-  //      //Do something
-  //      bool bNewVoltageAndFreqPair = false ;
-  //      float fVoltageInVolt ;
-  //      WORD wFreqInMHz ;
-  //      std::pair <std::set<VoltageAndFreq>::iterator, bool>
-  //        stdpairstdsetvoltageandfreq ;
-  //      for ( BYTE byCPUcoreID = 0 ; byCPUcoreID <
-  //        mp_cpucoredata->m_byNumberOfCPUCores ; ++ byCPUcoreID )
-  //      {
-  //        if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt,
-  //          byCPUcoreID ) )
-  //        {
-  //    #ifdef _DEBUG
-  //          if( wFreqInMHz > 1800 )
-  //            wFreqInMHz = wFreqInMHz ;
-  //    #endif
-  //          //stdpairstdsetvoltageandfreq = mp_model->m_cpucoredata.
-  //          //  m_stdsetvoltageandfreqDefault.insert(
-  //          //  VoltageAndFreq ( fVoltageInVolt , wFreqInMHz )
-  //          //  ) ;
-  //          if( mp_model->m_bCollectPstatesAsDefault )
-  //            bNewVoltageAndFreqPair = mp_model->m_cpucoredata.
-  //              AddDefaultVoltageForFreq(
-  //              fVoltageInVolt , wFreqInMHz ) ;
-  //          ////New p-state inserted.
-  //          //if( stdpairstdsetvoltageandfreq.second )
-  //          //  bNewVoltageAndFreqPair = true ;
-  //        }
-  //      }
-  //      if( bNewVoltageAndFreqPair )
-  //      {
-  //        std::set<VoltageAndFreq>::reverse_iterator reviter =
-  //          mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.rbegin() ;
-  //        //Need to set the max freq. Else (all) the operating points are
-  //        // drawn at x-coord. "0".
-  //        mp_cpucoredata->m_wMaxFreqInMHz = (*reviter).m_wFreqInMHz ;
-  //        if( mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.size() > 1
-  //          //&& ! mp_wxmenuitemOwnDVFS->IsEnabled()
-  //          )
-  //          mp_wxmenuitemOwnDVFS->Enable(true) ;
-  //        RedrawEverything() ;
-  //      }
-  //      else
+//        GetCurrentPstateAndAddDefaultVoltage();
 
         if( m_bDiagramNotDrawn //&& mp_i_cpucontroller
             && //mp_i_cpucontroller->m_fReferenceClockInMHz
@@ -4277,7 +4313,9 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
       //core)
       Refresh() ;
   }
-  LOGN("OnTimerEvent end")
+  LOGN(//"OnTimerEvent"
+    FULL_FUNC_NAME <<
+      "--end")
 }
 
 void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
@@ -4596,7 +4634,10 @@ void MainFrame::ShowCPUcoreUsagesInTaskBar(
           //The menu item may be disabled if setting the icon failed for the
           //1st time (if started via the service on logon and the the task bar
           //was not ready).
-          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
+
+        //TODO wx assert here if no menu item with ID "ID_MinimizeToSystemTray"
+        //was added.
+//          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
       }
       else
       {
@@ -4702,7 +4743,10 @@ void MainFrame::ShowCPUcoresMultipliersInTaskBar(
           //The menu item may be disabled if setting the icon failed for the
           //1st time (if started via the service on logon and the the task bar
           //was not ready).
-          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
+
+        //TODO wxWidgets debug alert ("no such ID "ID_MinimizeToSystemTray"??)
+        //here?!
+//          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
       }
       else
       {
@@ -4724,61 +4768,80 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
     << mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon)
   if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon )
   {
+    static wxLongLong_t wxlonglong_tLocalTimeMillis;
+    wxlonglong_tLocalTimeMillis = ::wxGetLocalTimeMillis().
+      GetValue();
+    static long long llDiffInMillis;
+    llDiffInMillis = wxlonglong_tLocalTimeMillis -
+//      mp_cpucoredata->m_llLastTimeTooHot;
+      p_i_cpucontroller->m_llLastTimeTooHot;
+    static std::basic_string<LOGGING_CHARACTER_TYPE> str;
+    MAKE_STRING_FROM_STRING_STREAM( str,
+      "diff between current time and last time too hot="
+      << wxlonglong_tLocalTimeMillis << "-"
+      <<  p_i_cpucontroller->m_llLastTimeTooHot << "="
+      << llDiffInMillis
+      )
+    g_logger.Log_inline( //FULL_FUNC_NAME,
+      str);
+
     //Adapted from http://www.cppreference.com/wiki/valarray/max:
     std::valarray<float> stdvalarray_float(s_arfTemperatureInDegreesCelsius,
       mp_cpucoredata->m_byNumberOfCPUCores);
     float fHighestTemperature = stdvalarray_float.max() ;
+
     //E.g. the Pentium M has no temperature sensor.
-    if( fHighestTemperature > 0.0f )
+    if( fHighestTemperature >= //0.0f
+        O_KELVIN_IN_DEG_CELSIUS )
     {
       s_wxstrHighestCPUcoreTemperative = wxString::Format( wxT("%u") ,
         (WORD) fHighestTemperature
         ) ;
-
-      wxLongLong_t wxlonglong_tLocalTimeMillis = ::wxGetLocalTimeMillis().
-        GetValue();
-      long long llDiffInMillis = wxlonglong_tLocalTimeMillis -
-  //      mp_cpucoredata->m_llLastTimeTooHot;
-        p_i_cpucontroller->m_llLastTimeTooHot;
-      LOGN("diff between current time and last time too hot="
-        << wxlonglong_tLocalTimeMillis << "-"
-        <<  p_i_cpucontroller->m_llLastTimeTooHot << "="
-        << llDiffInMillis
-        )
-      if( llDiffInMillis < 5000 )
-        mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
-          DrawText(
-          s_wxiconTemperature,
-          s_wxstrHighestCPUcoreTemperative,
-          wxRED//,
-          //wxWHITE
-          );
-      else
-  //      CreateTextIcon( s_wxiconTemperature, s_wxstrHighestCPUcoreTemperative ) ;
-        mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
-          DrawText(
-          s_wxiconTemperature,
-          s_wxstrHighestCPUcoreTemperative,
-          wxBLACK//,
-  //        wxWHITE
-          );
-      if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->SetIcon(
-          s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
-        )
-      {
+    }
+    else if( fHighestTemperature == CPU_TEMP_IS_BELOW_CRITICAL )
+    {
+      s_wxstrHighestCPUcoreTemperative = wxT("<C");
+    }
+    else if( fHighestTemperature == CPU_TEMP_IS_CRITICAL )
+    {
+      s_wxstrHighestCPUcoreTemperative = wxT("C");
+    }
+    if( llDiffInMillis < 5000 )
+      mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
+        DrawText(
+        s_wxiconTemperature,
+        s_wxstrHighestCPUcoreTemperative,
+        wxRED//,
+        //wxWHITE
+        );
+    else
+//      CreateTextIcon( s_wxiconTemperature, s_wxstrHighestCPUcoreTemperative ) ;
+      mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
+        DrawText(
+        s_wxiconTemperature,
+        s_wxstrHighestCPUcoreTemperative,
+        wxBLACK//,
+//        wxWHITE
+        );
+    if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->SetIcon(
+        s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
+      )
+    {
 //        if( ! mp_wxmenuFile->IsEnabled() )
-          //The menu item may be disabled if setting the icon failed for the
-          //1st time (if started via the service on logon and the the task bar
-          //was not ready).
-          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
-      }
-      else
-      {
-        //::wxMessageBox( wxT("Could not set task bar icon."),
-        //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
+        //The menu item may be disabled if setting the icon failed for the
+        //1st time (if started via the service on logon and the the task bar
+        //was not ready).
+
+      //TODO wxWidgets debug alert ("no such ID "ID_MinimizeToSystemTray"??)
+      //here?!
+//          mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, true);
+    }
+    else
+    {
+      //::wxMessageBox( wxT("Could not set task bar icon."),
+      //  getwxString(mp_wxx86infoandcontrolapp->m_stdtstrProgramName) ) ;
 //        LOGN("Could not set task bar icon.")
-        mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
-      }
+      mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
     }
   }
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON

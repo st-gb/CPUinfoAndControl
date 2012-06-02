@@ -1,4 +1,11 @@
-/* 
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
+/*
  * File:   SAX2_CPUspecificHandler.hpp
  * Author: Stefan
  *
@@ -9,9 +16,11 @@
 #define	_SAX2_CPUSPECIFICHANDLER_HPP
 
 //#ifdef COMPILE_WITH_XERCES
-//#include "../global.h" //for DEBUG(...) etc.
-//Base class XERCES_CPP_NAMESPACE::DefaultHandler
-#include <xercesc/sax2/DefaultHandler.hpp>
+
+////Base class XERCES_CPP_NAMESPACE::DefaultHandler
+//#include <xercesc/sax2/DefaultHandler.hpp>
+//Base class DocumentLocationSAX2Handler
+#include <Xerces/DocumentLocationSAX2Handler.hpp>
 #include <string> //for std::string
 #include <vector> //class std::vector
 
@@ -36,17 +45,20 @@ XERCES_CPP_NAMESPACE_END
 //#define XERCES_STATIC_LIBRARY
 
 class SAX2_CPUspecificHandler
-  : public XERCES_CPP_NAMESPACE::DefaultHandler
+  : public //XERCES_CPP_NAMESPACE::DefaultHandler
+  Apache_Xerces::DocumentLocationSAX2Handler
 {
-public:
-//private:
+private:
+//  const XERCES_CPP_NAMESPACE::Locator * const m_p_locator;
   bool m_bInsideValidCPUIDelement ;
   bool m_bInsideValidMSRelement ;
   Model * mp_modeldata ;
   std::string m_strElementName ;
+public:
   std::vector<MSRdata>::reverse_iterator m_stdvec_msrdata_riter;
   std::vector<CPUIDdata>::reverse_iterator m_stdvec_cpuiddata_riter;
   UserInterface * mp_userinterface ;
+
 //  XercesHelper m_xerceshelper ;
   SAX2_CPUspecificHandler(
     UserInterface & r_userinterface,
@@ -69,6 +81,7 @@ public:
     r_xercesc_attributes) ;
   void HandleMSRelement(const XERCES_CPP_NAMESPACE::Attributes &
       cr_xercesc_attributes) ;
+//  void setDocumentLocator(const XERCES_CPP_NAMESPACE::Locator * const locator);
   void startElement(
     const XMLCh * const cpc_xmlchURI ,
     const XMLCh * const cpc_xmlchLocalName ,

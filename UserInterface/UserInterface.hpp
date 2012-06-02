@@ -1,4 +1,11 @@
-#pragma once
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
+#pragma once //Include guard
 //#ifndef 
 //TODO file "strstream" is deprecated.
 //#include <strstream> //for std::ostrstream
@@ -58,9 +65,12 @@ public:
   virtual void CPUcoreUsageGetterDeleted() {} ;
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
   virtual void DynVoltnFreqScalingEnabled() {}
+  virtual void EndAllAccessToCPUcontroller() {};
   //The following function are for ease to not need to create the time stamp
   //string on our own in order to display it.
-  virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr) {}
+  virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr
+    //Flag like "OK_BUTTON"
+    , unsigned flags = 0) {}
   virtual void MessageWithTimeStamp(const wchar_t * cp_wch) {}
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};

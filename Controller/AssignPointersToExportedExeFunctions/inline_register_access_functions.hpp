@@ -75,7 +75,7 @@ inline BYTE CPUID(
     )
   {
     DEBUGN( //"inline ReadMSR"
-      FULL_FUNC_NAME
+      FULL_FUNC_NAME << "--index:" << dwRegisterIndex
       )
     return ( * g_pfnreadmsr)(
       dwRegisterIndex ,

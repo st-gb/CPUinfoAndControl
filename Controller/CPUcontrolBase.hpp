@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * CPUcontrolBase.hpp
  *
@@ -77,7 +84,7 @@ public:
   I_CPUaccess * mp_i_cpuaccess ;
   static I_CPUaccess * s_p_hardware_access;
   MainController m_maincontroller ;
-  Model m_model ;
+  static Model m_model ;
   UserInterface * mp_userinterface ;
   static UserInterface * s_p_userinterface;
 public:
@@ -88,6 +95,7 @@ public:
   //Avoid g++ warning "warning: `class CPUcontrolBase' has virtual functions
   //but non-virtual destructor" .
   virtual ~CPUcontrolBase() ;
+
   void CreateDynLibCPUcontroller(
     const std::string & stdstrCPUtypeRelativeDirPath
 //    , I_CPUcontroller * & r_p_cpucontroller
@@ -171,6 +179,8 @@ public:
 
   virtual void EndDVFS() ; //{}
   virtual void FreeRessources() ;
+  static void GetLogFileExtension(std::string & std_strFileExt);
+  static void GetLogTimeFormatString(std::string & std_strLogTimeFormatString);
   //Used for choosing the CPU controller, for saving as CPU controller for the
   //current CPU.
   //inline

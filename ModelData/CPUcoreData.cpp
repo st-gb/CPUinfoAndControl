@@ -13,26 +13,6 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 
-bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
-{
-  bool bInserted = false ;
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  m_wxcriticalsection.Enter() ;
-#endif
-  std::pair <std::set<VoltageAndFreq>::iterator, bool> 
-    stdpairstdsetvoltageandfreq = m_stdsetvoltageandfreqDefault.insert( 
-    VoltageAndFreq(fValue,wFreqInMHz) ) ;
-  bInserted = stdpairstdsetvoltageandfreq.second ;
-  //Used by I_CPUcontroller::GetMaximumFrequencyInMHz(), 
-  //I_CPUcontroller::GetMinimumFrequencyInMHz()
-  m_stdsetvoltageandfreqAvailableFreq.insert(
-    VoltageAndFreq(fValue,wFreqInMHz) ) ;
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  m_wxcriticalsection.Leave() ;
-#endif
-  return bInserted ;
-}
-
 void CPUcoreData::AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz)
 {
   m_stdsetvoltageandfreqLowestStable.insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;

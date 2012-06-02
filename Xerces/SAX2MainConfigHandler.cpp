@@ -118,6 +118,28 @@
     }
   }
 
+  void SAX2MainConfigHandler::HandleResumeFromStandbyOrHibernationXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
+    )
+  {
+    std::string std_strAttributeName =
+      "stable_CPU_core_voltage_wait_time_in_milliseconds" ;
+    LOGN("trying to get XML attribute value for \"" <<
+      std_strAttributeName << "\"")
+    uint16_t & r_StableCPUcoreVoltageWaitTimeInMillis = m_p_model->
+      m_StableCPUcoreVoltageWaitTimeInMillis;
+    if( ConvertXercesAttributesValue<uint16_t>(
+          cr_xercesc_attributes, //const XERCES_CPP_NAMESPACE::Attributes & ,
+          std_strAttributeName,//const XMLCh * const cpc_xmlchAttributeName
+          r_StableCPUcoreVoltageWaitTimeInMillis // T & r_templateType,
+          )
+      )
+    {
+      LOGN( FULL_FUNC_NAME << "--successfully got XML attribute value: \""
+        << r_StableCPUcoreVoltageWaitTimeInMillis << "\"")
+    }
+  }
+
   void SAX2MainConfigHandler::HandleInstableCPUcoreVoltageDetection(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
@@ -171,14 +193,14 @@
         )
       )
       m_p_model->m_bEnableOvervoltageProtection = bConfirm ;
-    if( XercesAttributesHelper::GetAttributeValue
-        (
-          cr_xercesc_attributes,
-          "use_default_formula_for_overvoltage_protection"
-          ,bConfirm
-        )
-      )
-      m_p_model->m_bUseDefaultFormularForOvervoltageProtection = bConfirm ;
+//    if( XercesAttributesHelper::GetAttributeValue
+//        (
+//          cr_xercesc_attributes,
+//          "use_default_formula_for_overvoltage_protection"
+//          ,bConfirm
+//        )
+//      )
+//      m_p_model->m_bUseDefaultFormulaForOvervoltageProtection = bConfirm ;
     if( XercesAttributesHelper::GetAttributeValue
         ( 
           cr_xercesc_attributes,
@@ -212,12 +234,16 @@
         cpc_xmlchLocalName,
         cr_xercesc_attributes)
         )
+      { //Use a block because: to avoid g++ warning "Suspicious semicolon".
         ;
+      }
       else if( m_strElementName == //"main_config"
         "CPU_control_main_config" )
       {
         HandleTopmostXMLelement(cr_xercesc_attributes) ;
       }
+      else if( m_strElementName == "resume_from_standby_or_hibernation")
+        HandleResumeFromStandbyOrHibernationXMLelement(cr_xercesc_attributes);
       else if( //If the strings equal.
           ! Xerces::ansi_or_wchar_string_compare( cpc_xmlchLocalName ,
           ANSI_OR_WCHAR("instable_CPU_core_voltage_detection") )

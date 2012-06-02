@@ -170,7 +170,8 @@ inline bool PossiblyHandleLoggingExclusionFilter_Inline(
 
   if( //If the strings equal.
       ! Xerces::ansi_or_wchar_string_compare( cpc_xmlchLocalName ,
-      ANSI_OR_WCHAR("log_file_filter") )
+      ANSI_OR_WCHAR("log_file_filter")
+      )
     )
   {
     std::string stdstrValue ;

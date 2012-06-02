@@ -126,7 +126,7 @@ StartGUIprocessDelayedAsync(ServiceAttributes & r_service_attributes,
   CreateProcessAttributesAndDelayTime * p_createprocessattributesanddelaytime =
     new CreateProcessAttributesAndDelayTime(
       p_create_gui_process,
-      r_service_attributes.m_dwDelayTimeInMillis);
+      r_service_attributes.m_dwStartGUIdelayTimeInMillis);
 
   //http://docs.wxwidgets.org/2.8/wx_wxthread.html#typeswxthread:
   //"Detached threads delete themselves once they have completed, either by

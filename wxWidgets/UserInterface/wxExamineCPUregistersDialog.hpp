@@ -78,6 +78,10 @@ class wxExamineCPUregistersDialog
   wxTextCtrl * mp_wxtextctrlUpdateIntervalInMs ;
   wxTimer m_wxtimer ;
   wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
+
+  void AddIntervalCheckbox();
+  void AddUpdateIntervalInMsTextctrl();
+  void AddRebuildGUIonResizeCheckbox();
   void DisplayRegisterData() ;
   void DisplayRegisterData(CPUIDdata & r_cpuiddata);
   void DisplayRegisterData(MSRdata & r_msrdata);
@@ -96,11 +100,15 @@ public:
     wxX86InfoAndControlApp * p_wxx86infoandcontrolapp
     ) ;
   ~wxExamineCPUregistersDialog() ;
+  inline void AddCPUIDdataControls();
+  inline void AddMSRdataControls();
   inline void AddStatictext( const wxString & cr_wxstr ) ;
   void BuildCPUregisterControls() ;
-  void BuildGUI(MSRdata & r_msrdata ) ;
-  void BuildGUI(CPUIDdata & r_cpuiddata ) ;
+  void BuildGUI(const MSRdata & r_msrdata ) ;
+  void BuildGUI(const CPUIDdata & r_cpuiddata ) ;
   void BuildGUI() ;
+  void InsertIntoLeftColumn(const wxString & cr_wxstr);
+  void OnClose( wxCloseEvent & wxcmd );
   void OnReloadCPUregisterToReadConfig( wxCommandEvent & r_wxcommandevent ) ;
   void OnRuntimeCreatedControls(wxCommandEvent & wxevent) ;
   void OnSize( wxSizeEvent & sizeevent ) ;

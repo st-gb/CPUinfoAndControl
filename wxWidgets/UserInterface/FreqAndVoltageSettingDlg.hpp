@@ -196,9 +196,11 @@ public:
   inline float GetCPUcoreFrequencyFromSliderValue() ;
   uint32_t GetCPUcoreMask();
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
-  inline float GetMultiplierFromSliderValue() ;
+  //inline
+    float GetMultiplierFromSliderValue() ;
   const std::set<VoltageAndFreq> & GetSelectedVoltageTypeStdSet();
-  inline float GetVoltageInVoltFromSliderValue() ;
+  //inline
+    float GetVoltageInVoltFromSliderValue() ;
   void HandleCPUcoreFrequencyOrVoltageChanged(wxWindow * r_wxwindow) ;
   inline void HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent) ;
   void HandleMultiplierValueChanged() ;

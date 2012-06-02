@@ -32,10 +32,12 @@
 //#include <Controller/CPU-related/Intel/Nehalem/NehalemController.hpp>
 //#include <Controller/CPU-related/Intel/Nehalem/NehalemClocksNotHaltedCPUcoreUsageGetter.hpp>
 #include <Controller/GetNumberOfLogicalCPUcores.h>//GetNumberOfLogicalCPUcores()
+
 #ifdef COMPILE_WITH_MSR_EXAMINATION
   //only useful for user interface
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #endif
+
 #include <Xerces/SAX2MainConfigHandler.hpp> //class SAX2MainConfigHandler
 //class SAX2VoltagesForFrequencyHandler
 #include <Xerces/SAX2VoltagesForFrequencyHandler.hpp>
@@ -338,10 +340,12 @@ BYTE MainController::ReadPstateConfig(
       ;
     SAX2VoltagesForFrequencyHandler sax2voltages_for_frequency_handler( 
       * p_userinterface, model );
+
     //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
     #ifdef COMPILE_WITH_MSR_EXAMINATION
     ReadRegisterDataConfig( strFamilyAndModelFilePath, p_userinterface ) ;
     #endif //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
+
     if( ! ReadXMLfileWithoutInitAndTermXercesInline(
         //const char* xmlFile
         strProcessorFilePath.c_str()
@@ -382,10 +386,12 @@ BYTE MainController::ReadMainAndPstateConfig(
   , UserInterface * p_userinterface
   )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   BYTE byRet = 255 ;
   mp_model = & model ;
   ReadMainConfig(model, p_userinterface) ;
   byRet = ReadPstateConfig(model, p_userinterface) ;
+  LOGN( FULL_FUNC_NAME << "--return " << (WORD) byRet)
   return byRet ;
 }
 
@@ -423,18 +429,20 @@ void MainController::ReadRegisterDataConfig(
   )
 {
 #ifdef COMPILE_WITH_MSR_EXAMINATION
-  SAX2_CPUspecificHandler sax2handler( * p_userinterface, * mp_model );
-   if( ReadXMLfileInitAndTermXerces(
+  SAX2_CPUspecificHandler sax2_cpu_specific_handler( * p_userinterface, * mp_model );
+
+   if( //ReadXMLfileInitAndTermXerces(
+     ReadXMLfileWithoutInitAndTermXercesInline(
       //const char* xmlFile
       strFamilyAndModelFilePath.c_str()
-      , * mp_model
+//      , * mp_model
       , p_userinterface
       //Base class of implementing Xerces XML handlers.
       //This is useful because there may be more than one XML file to read.
       //So one calls this functions with different handlers passed.
       //DefaultHandler & r_defaulthandler
       //, sax2mainconfighandler
-      , sax2handler
+      , sax2_cpu_specific_handler
       )
     )
 	  {

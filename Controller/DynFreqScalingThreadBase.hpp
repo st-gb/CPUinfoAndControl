@@ -84,9 +84,9 @@ public:
   virtual ~DynFreqScalingThreadBase()
   {
     if( m_ar_fPreviousTemperaturesInDegCelsius )
-      delete m_ar_fPreviousTemperaturesInDegCelsius ;
+      delete [] m_ar_fPreviousTemperaturesInDegCelsius ;
     if( m_ar_fPreviousMinusCurrentTemperature )
-      delete m_ar_fPreviousMinusCurrentTemperature ;
+      delete [] m_ar_fPreviousMinusCurrentTemperature ;
   }
   inline void CalcDiffBetweenCurrentAndPreviousTemperature() ;
   ExitCode Entry() ;

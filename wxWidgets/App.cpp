@@ -39,6 +39,8 @@
 #include <Controller/FileSystem/GetFilenameWithoutExtension/\
 GetFilenameWithoutExtension.hpp>
 #include <InputOutput/WriteFileContent/WriteFileContent.hpp>
+//ReadFileContent(...)
+#include <InputOutput/ReadFileContent/ReadFileContent.hpp>
 #include <Controller/IPC/I_IPC.hpp> //for "get_current_CPU_data"
 #include <Controller/IPC/IPC_data.hpp> //class IPC_data
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess, CPUaccessException
@@ -218,7 +220,8 @@ void wxX86InfoAndControlApp::CheckForChangedVoltageForFrequencyConfiguration()
       stdstrCPUtypeRelativeFilePath ) )
     {
       int nReturn = ::wxMessageBox(
-        wxT("The performance state configuration has changed.\n")
+        wxT("The " //"performance state configuration has changed.\n"
+          "\"voltage for frequency\" settings have changed.\n")
         wxT("Save changes?"),
         //wxGetApp().m_stdtstrProgramName
         m_stdtstrProgramName
@@ -528,6 +531,7 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
     else
     {
       wxString wxstrPipeName( cp_wxchPipeNameRegEx) ;
+#ifdef COMPILE_WITH_WX_SOCKETS
       LOGN("address \"" << GetStdString(cr_wxstrIPCclientURL)
         << "\"is not a pipe address: \""
         << GetStdString( cr_wxstrIPCclientURL )
@@ -536,6 +540,7 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
       //mp_wxx86infoandcontrolapp->
       m_p_i_ipcclient = new
         NonBlocking::wxServiceSocketClient(cr_wxstrIPCclientURL) ;
+#endif //#ifdef COMPILE_WITH_WX_SOCKETS
     }
 #endif //#ifdef _WIN32
     //mp_wxx86infoandcontrolapp->
@@ -626,6 +631,14 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
 void wxX86InfoAndControlApp::DynVoltnFreqScalingEnabled()
 {
   mp_frame->DynVoltnFreqScalingEnabled() ;
+}
+
+void wxX86InfoAndControlApp::EndAllAccessToCPUcontroller()
+{
+  LOGN( FULL_FUNC_NAME << "begin--before stopping the \"update view\" timer")
+  //End timer event (calls to "OnTimerEvent()").
+  mp_frame->m_wxtimer.Stop();
+  LOGN( FULL_FUNC_NAME << "end")
 }
 
 void wxX86InfoAndControlApp::EndDVFS()
@@ -1227,7 +1240,7 @@ inline bool wxX86InfoAndControlApp::IPCclientConnect_Inline(
     m_wxcriticalsectionIPCobject ) ;
 #ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   if( //Must be the 1st evaluation: check whether pointer is NULL
-    m_p_i_ipcclient )
+      m_p_i_ipcclient )
     return m_p_i_ipcclient->ConnectToDataProvider(r_stdstrMessage) ;
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
   return false ;
@@ -1373,6 +1386,9 @@ bool wxX86InfoAndControlApp::OnInit()
     if( argc > 0 )
     {
       std::tstring tstrArg0(argv[0]) ;
+      //Maybe it's better to use a file name for the log file that is derived
+      //from THIS executable's file name: e.g. so different log files for the
+      //x86I&C service and the x86I&C GUI are possible.
       stdtstrLogFilePath = std::tstring( //Getstdtstring(argv) +
         tstrArg0
 //        + _T("_log.txt")
@@ -1382,6 +1398,7 @@ bool wxX86InfoAndControlApp::OnInit()
       stdtstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName
         //+ _T("_log.txt")
         ) ;
+
     Xerces::SAX2UserInterfaceConfigHandler sax2userinterfaceconfighandler(
       m_model , this
       ) ;
@@ -1412,27 +1429,17 @@ bool wxX86InfoAndControlApp::OnInit()
       m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
     }
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("After reading file\""
-        << c_ar_chXMLfileName << "\"")
-    DWORD dwProcID = wxGetProcessId() ;
-    if( mp_modelData->m_bAppendProcessID )
-    {
-      //Because more than 1 GUI is possible at a time: append a process ID.
-      //So the log files are not overwritten by the GUI instances.
-      stdtstrLogFilePath += Getstdtstring( convertToStdString<DWORD>(dwProcID) ) ;
-    }
-    stdtstrLogFilePath += _T("_log.txt") ;
+
+    OpenLogFile(stdtstrLogFilePath);
 
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
         //stdtstrLogFilePath
       GetStdString(stdtstrLogFilePath) << "\"")
-    //Maybe it's better to use a file name for the log file that is derived 
-    //from THIS executable's file name: e.g. so different log files for the 
-    //x86I&C service and the x86I&C GUI are possible.
-    g_logger.OpenFile( stdtstrLogFilePath ) ;
+//    g_logger.OpenFile( stdtstrLogFilePath ) ;
+
 //    LOGN("process ID of this process:" << dwProcID )
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("process ID of this process:"
-        << dwProcID)
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("process ID of this process:"
+//        << dwProcID)
     m_maincontroller.ReadMainConfig( //m_modelData
       * mp_modelData, this );
 //    LOGN("address of attribute data:" << & m_model)
@@ -1652,6 +1659,55 @@ bool wxX86InfoAndControlApp::OnInit()
     return FALSE ;
   return TRUE;
 } 
+
+void wxX86InfoAndControlApp::CreateLogFileFormatter(
+  const std::string & c_r_std_strFileExt)
+{
+  //    if( std_strFileExt == "html" )
+//  g_logger.CreateFormatter(c_r_std_strFileExt);
+}
+
+/**
+ * r_std_tstrLogFilePath: file name before the file extension separator.
+ */
+void wxX86InfoAndControlApp::OpenLogFile(std::tstring & r_std_tstrLogFilePath)
+{
+//  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("After reading file\""
+//    << c_ar_chXMLfileName << "\"")
+  DWORD dwProcID = wxGetProcessId() ;
+  if( mp_modelData->m_bAppendProcessID )
+  {
+//      std::tstring std_tstrOldLogFilePath = stdtstrLogFilePath;
+    //Because more than 1 GUI is possible at a time: append a process ID.
+    //So the log files are not overwritten by the GUI instances.
+    r_std_tstrLogFilePath += Getstdtstring( convertToStdString<DWORD>(dwProcID) ) ;
+
+    g_logger.RenameFile( GetStdString_Inline( r_std_tstrLogFilePath) );
+  }
+  r_std_tstrLogFilePath += _T("_log.") ;
+
+  std::string std_strFileExt;
+  GetLogFileExtension(std_strFileExt);
+
+  std::string std_strLogTimeFormatString;
+  GetLogTimeFormatString(std_strLogTimeFormatString);
+
+  r_std_tstrLogFilePath += GetStdTstring_Inline(std_strFileExt);
+
+  if( g_logger.OpenFile( r_std_tstrLogFilePath ) )
+  {
+    g_logger.CreateFormatter(std_strFileExt, std_strLogTimeFormatString);
+    LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
+  }
+  else
+  {
+    MessageWithTimeStamp( L"Failed to open log file \n\"" +
+      GetStdWstring(r_std_tstrLogFilePath) + "\":\n"
+      //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
+      + GetErrorMessageFromLastErrorCodeA() );
+  }
+//    stdtstrLogFilePath += _T("_log.txt") ;
+}
 
 void wxX86InfoAndControlApp::outputAllPstates(
   unsigned char byCurrentP_state, int & vid)
@@ -2108,7 +2164,10 @@ void wxX86InfoAndControlApp::StartService()
   }
   catch( const ConnectToSCMerror & cr_connecttoscmerror )
   {
-    ::wxMessageBox( wxT("error connecting to the service control manager") ) ;
+    std::wstring std_wstrErrorMessage;
+    cr_connecttoscmerror.GetErrorMessage(std_wstrErrorMessage);
+    ::wxMessageBox( wxT("error connecting to the service control manager in "
+      "order to start the service: ") + getwxString( std_wstrErrorMessage ) ) ;
   }
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 }
@@ -2166,7 +2225,10 @@ void wxX86InfoAndControlApp::StopService()
   }
   catch( const ConnectToSCMerror & cr_connecttoscmerror )
   {
-    ::wxMessageBox( wxT("error connecting to the service control manager") ) ;
+    std::wstring std_wstrErrorMessage;
+    cr_connecttoscmerror.GetErrorMessage(std_wstrErrorMessage);
+    ::wxMessageBox( wxT("error connecting to the service control manager in "
+      "order to stop the service: ") + getwxString( std_wstrErrorMessage ) ) ;
   }
 #endif //#ifdef _WIN32
 }

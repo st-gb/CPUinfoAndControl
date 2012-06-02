@@ -62,33 +62,6 @@
     //p_cpucontroller = p_cpucontroller ;
 	}
 
-//	void SAX2ServiceConfigHandler::HandleDelayTimeXMLelement(
-//    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
-//    )
-//  {
-//    if( m_strElementName == "delay_time_in_milliseconds" )
-//    {
-//        std::string stdstrAttributeName = "current_dir_for_GUI" ;
-//        LOGN("trying to get XML attribute value for \"" <<
-//          stdstrAttributeName << "\"")
-//    //      xercesc_3_1:: Get
-//        if( XercesAttributesHelper::GetAttributeValue
-//            (
-//              cr_xercesc_attributes,//"processor_name"
-//    //            archAttributeName ,
-//              stdstrAttributeName.c_str() ,
-//              stdwstrValue
-//            )
-//          )
-//        {
-//          LOGN("XML attribute \"" << stdstrAttributeName << "\" exists")
-//          LOGWN_WSPRINTF(L"Before setting current dir for GUI to %ls" ,
-//            stdwstrValue.c_str()
-//            )
-//        }
-//    }
-//  }
-
 	void SAX2ServiceConfigHandler::HandleGUIpathesXMLelement(
 	  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
 	{
@@ -102,7 +75,7 @@
   //      xercesc_3_1:: Get
       if( XercesAttributesHelper::GetAttributeValue
           (
-            cr_xercesc_attributes,//"processor_name"
+            cr_xercesc_attributes,
   //            archAttributeName ,
             stdstrAttributeName.c_str() ,
             stdwstrValue
@@ -110,16 +83,20 @@
         )
       {
         LOGN("XML attribute \"" << stdstrAttributeName << "\" exists")
-        LOGWN_WSPRINTF(L"Before setting current dir for GUI to %ls" ,
+        LOGWN_WSPRINTF(L"Before setting current dir for GUI to \"%ls\"" ,
           stdwstrValue.c_str()
           )
-        LOGN("SAX2ServiceConfigHandler--address of model:" << m_p_model)
-        LOGN("SAX2ServiceConfigHandler--address of service attributes:"
+        LOGN(//"SAX2ServiceConfigHandler"
+          FULL_FUNC_NAME << "--address of model:" << m_p_model)
+        LOGN(//"SAX2ServiceConfigHandler"
+          FULL_FUNC_NAME << "--address of service attributes:"
           << & m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo )
-        LOGN("SAX2ServiceConfigHandler--address of GUI current dir:"
+        LOGN(//"SAX2ServiceConfigHandler"
+          FULL_FUNC_NAME << "--address of GUI current dir:"
           << & m_p_model->m_serviceattributes.
           m_stdwstrGUICurrentDirFullPathTo )
-        LOGN("SAX2ServiceConfigHandler--address of GUI current dir char ptr:"
+        LOGN(//"SAX2ServiceConfigHandler"
+          FULL_FUNC_NAME << "--address of GUI current dir char ptr:"
           << m_p_model->m_serviceattributes.
           m_stdwstrGUICurrentDirFullPathTo.c_str() )
   //          LOGN("SAX2ServiceConfigHandler--model->m_strProcessorName :"
@@ -129,6 +106,8 @@
         //TODO program crash here
         m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo =
           stdwstrValue ;
+        LOGN(FULL_FUNC_NAME << "--after assigning " << stdstrAttributeName
+          << " to model")
         //Use wide string because the character set for the language may
         //need more than 256 characters.
         LOGWN_WSPRINTF(L"set current dir for GUI to \"%ls\"" ,
@@ -142,7 +121,7 @@
         stdstrAttributeName << "\"")
       if( XercesAttributesHelper::GetAttributeValue
           (
-            cr_xercesc_attributes,//"processor_name"
+            cr_xercesc_attributes,
   //                archAttributeName ,
             stdstrAttributeName.c_str() ,
             stdwstrValue
@@ -160,26 +139,19 @@
       LOGN("trying to get XML attribute value for \"" <<
         stdstrAttributeName << "\"")
       DWORD dwDelayTimeInMillis;
-      if( //XercesAttributesHelper::GetAttributeValue
-//          (
-//            cr_xercesc_attributes,//"processor_name"
-//  //                archAttributeName ,
-//            stdstrAttributeName.c_str() ,
-//            dwDelayTimeInMillis
-//          ) == SUCCESS
-          ConvertXercesAttributesValue<DWORD>(
+      if( ConvertXercesAttributesValue<DWORD>(
             cr_xercesc_attributes, //const XERCES_CPP_NAMESPACE::Attributes & ,
             stdstrAttributeName,//const XMLCh * const cpc_xmlchAttributeName
             dwDelayTimeInMillis // T & r_templateType,
             )
         )
       {
-        m_p_model->m_serviceattributes.m_dwDelayTimeInMillis =
+        m_p_model->m_serviceattributes.m_dwStartGUIdelayTimeInMillis =
           dwDelayTimeInMillis ;
         //Use wide string because the character set for the language may
         //need more than 256 characters.
         LOGN( "set \"" << stdstrAttributeName
-          << "\" to " << m_p_model->m_serviceattributes.m_dwDelayTimeInMillis
+          << "\" to " << m_p_model->m_serviceattributes.m_dwStartGUIdelayTimeInMillis
           //stdwstrValue.c_str()
           )
       }
@@ -208,17 +180,10 @@
         )
         ;
       else
-//        if(HandleDelayTimeXMLelement(cr_xercesc_attributes) )
-//          ;
-//        else
-          HandleGUIpathesXMLelement(cr_xercesc_attributes) ;
+        HandleGUIpathesXMLelement(cr_xercesc_attributes) ;
       //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
       // << endl );
 
-  //    else if( m_strElementName == "path_to_GUI_exe" )
-  //    {
-  //
-  //    }
       //Release memory AFTER comparing.
       XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
 	  }

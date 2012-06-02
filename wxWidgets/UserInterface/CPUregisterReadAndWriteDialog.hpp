@@ -28,8 +28,8 @@
     #include "wx/wx.h"
 #endif
 
-#include <wx/dialog.h>
-#include <vector>
+#include <wx/dialog.h> //class wxDialog
+#include <vector> //class std::vector
 
 //Forward declaration instead of include's(=faster)
 class Model ;
@@ -65,6 +65,7 @@ public:
   void ShowRegisterAttributes( //const
     MSRdata & r_msrdata ) ;
 private:
+  void AddActionButtons();
   void OnChangedText(wxCommandEvent & evt ) ;
   void OnPreparePMC( wxCommandEvent & evt ) ;
   void OnReadFromMSR( wxCommandEvent & evt ) ;

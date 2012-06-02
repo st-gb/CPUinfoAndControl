@@ -42,8 +42,8 @@
   typedef BOOL ( * ReadPCIconfigSpace_func_type)
     (
     BYTE byPCIbus , //"8-bit PCI bus",
-    //"0- 2 Function Number
-    //3- 7 Device Number
+    //Bits 0- 2 : Function Number
+    //Bits 3- 7 : Device Number
     BYTE byDeviceAndFunction ,//"5-bit device, and 3-bit function"
     DWORD dwRegisterAddress ,
     PDWORD p_dwValue ) ;

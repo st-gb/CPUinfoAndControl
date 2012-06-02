@@ -133,6 +133,35 @@ public:
   //http://msdn.microsoft.com/en-us/library/ms810429.aspx
   static
     CPUcontrolService * s_p_cpucontrolservice; // nasty hack to get object ptr
+  static void SetToWantedVoltages()
+  {
+    LOGN(FULL_FUNC_NAME << "--begin")
+    //wxCriticalSectionLocker
+    s_p_cpucontrolservice->m_model.m_cpucoredata.
+      m_mutexDVFSthreadMayChangeData.Lock();
+    LOGN(FULL_FUNC_NAME << "--after locking the mutex")
+    s_p_cpucontrolservice->mp_cpucontroller->
+      m_p_std_set_voltageandfreqUseForDVFS = & s_p_cpucontrolservice->m_model.
+      m_cpucoredata.m_stdsetvoltageandfreqWanted;
+    s_p_cpucontrolservice->m_model.m_cpucoredata.
+      m_mutexDVFSthreadMayChangeData.Unlock();
+    LOGN(FULL_FUNC_NAME << "--end")
+  }
+  static void SetToMaximumVoltages()
+  {
+    LOGN(FULL_FUNC_NAME << "--begin")
+    //wxCriticalSectionLocker
+    //Sync access to the variable with the DVFS thread.
+    s_p_cpucontrolservice->m_model.m_cpucoredata.
+      m_mutexDVFSthreadMayChangeData.Lock();
+    LOGN(FULL_FUNC_NAME << "--after locking the mutex")
+    s_p_cpucontrolservice->mp_cpucontroller->
+      m_p_std_set_voltageandfreqUseForDVFS = & s_p_cpucontrolservice->m_model.
+      m_cpucoredata.m_stdsetvoltageandfreqDefault;
+    s_p_cpucontrolservice->m_model.m_cpucoredata.
+      m_mutexDVFSthreadMayChangeData.Unlock();
+    LOGN(FULL_FUNC_NAME << "--end")
+  }
   //static
 //       SERVICE_STATUS_HANDLE   m_service_status_handle;
 //     Model * mp_modelData ;
@@ -227,7 +256,7 @@ public :
     //Make as parameter as reference: more resource-saving than
     //to return (=a copy).
     std::vector<std::string> & vecstdstrParams
-    , std::tstring & r_tstrProgName ) ;
+    , const std::tstring & r_tstrProgName ) ;
   static bool IsWithinStrings(
     const std::vector<std::string> & vecstdstrParams
     , const std::string & cr_stdstrToCompare ) ;
