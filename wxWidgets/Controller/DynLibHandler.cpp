@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * DynLibHandler.cpp
  *
@@ -71,9 +78,12 @@ namespace wxWidgets
   //        gp_cpucontrolbase->mp_wxdynlibcpucontroller->GetAvailableVoltagesInVolt(
   //          mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt) ;
   //        mp_model->m_cpucoredata.AvailableVoltagesToArray() ;
-      LOGN("CPU controller DynLib "
-        << mr_cpucontrolbase.m_model.m_stdstrCPUcontrollerDynLibPath
-        << ": successfully loaded and function pointers to it assigned.")
+      LOGN_TYPE(//"CPU controller DynLib "
+        FULL_FUNC_NAME
+        << "\"" << mr_cpucontrolbase.m_model.m_stdstrCPUcontrollerDynLibPath
+        << "\""
+        << ": successfully loaded and function pointers to it assigned.",
+        I_LogFormatter::log_message_typeSUCCESS)
   //        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
   //           //mp_wxdynlibcpucontroller
   //           gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
@@ -102,7 +112,7 @@ namespace wxWidgets
         << mr_cpucontrolbase.m_p_cpucontrollerDynLib )
 //      r_p_cpucontroller = NULL ;
     }
-    LOGN( FULL_FUNC_NAME << "--return" << bSuccess)
+    LOGN( FULL_FUNC_NAME << "--return " << bSuccess)
     return bSuccess ;
   }
 

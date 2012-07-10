@@ -242,6 +242,7 @@ public:
   bool ConnectIPCclient(
     const wxString & cr_wxstrIPCclientURL
     //, std::string & r_stdstrMessage
+    , bool bShowResultViaUserInterface = false
     ) ;
 //  //Created an object of subclass of I_CPUacces for CPU and PCIconfig etc.
 //  //access .
@@ -326,7 +327,14 @@ public:
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
   inline void ShowTaskBarIconViaWindowsAPI();
   inline bool ShowTaskBarIconUsingwxWidgets();
-  void StabilizeVoltage(float & fVoltageInVolt, float & fMultiplier);
+  void StabilizeVoltage(
+    const float fVoltageInVolt,
+    const float fMultiplier,
+    const float fReferenceClockInMHz);
+  void StabilizeVoltageAndRepaintMainFrame(
+    const float fVoltageInVolt
+    ,const float fMultiplier,
+    const float fReferenceClockInMHz);
   void StartInstableCPUcoreVoltageDetection(const FreqAndVoltageSettingDlg *);
   void StopInstableCPUcoreVoltageDetection();
   void StartService() ;

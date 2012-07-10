@@ -34,6 +34,7 @@
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
 
 #include <iostream> //std::cout
+#include <algorithm> //std::set_difference(...)
 
 //Needed for the exported functions.
 I_CPUaccess * g_p_cpuaccess = NULL;
@@ -127,14 +128,59 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
   //      << stdstrFullFilePath
         << m_model.m_stdstrCPUcontrollerDynLibPath
         << "\" as CPU controller" )
+
+      std::set<VoltageAndFreq> std_set_voltageandfreqDefaultBeforeAttach =
+        m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
+
       m_dynlibhandler.CreateDynLibCPUcontroller(
   //      stdstrFullFilePath //,
         m_model.m_stdstrCPUcontrollerDynLibPath
   //      mp_i_cpuaccess,
   //      mp_userinterface
         ) ;
+
+      std::set<VoltageAndFreq> std_set_voltageandfreqDefaultAfterAttach =
+        m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
+
+      LOGN( FULL_FUNC_NAME << "--before getting the difference of between the "
+        "default voltages before:"
+        << std_set_voltageandfreqDefaultBeforeAttach.size()
+        << " and after:" << std_set_voltageandfreqDefaultAfterAttach.size()
+        << " an attached CPU controller.")
+      std::vector<VoltageAndFreq> &
+        r_std_vec_voltageandfreqInsertedByCPUcontroller =
+        m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller;
+      std::set<VoltageAndFreq> * p_std_setToCopy = NULL;
+      if( std_set_voltageandfreqDefaultBeforeAttach.empty() )
+        p_std_setToCopy = & std_set_voltageandfreqDefaultAfterAttach;
+      else
+        if( std_set_voltageandfreqDefaultAfterAttach.empty() )
+          p_std_setToCopy = & std_set_voltageandfreqDefaultBeforeAttach;
+      if( p_std_setToCopy )
+      {
+        r_std_vec_voltageandfreqInsertedByCPUcontroller.resize(
+          p_std_setToCopy->size() );
+        std::copy(
+          p_std_setToCopy->begin(),
+          p_std_setToCopy->end(),
+          r_std_vec_voltageandfreqInsertedByCPUcontroller.begin() );
+      }
+      else
+        //http://www.cplusplus.com/reference/algorithm/set_difference/:
+        //"The difference of two sets is formed by the elements that are present
+        //in the first set, but not in the second one. "
+        // Crashed when at least 1 of the containers were empty.
+        std::set_difference(
+          std_set_voltageandfreqDefaultAfterAttach.begin(),
+          std_set_voltageandfreqDefaultAfterAttach.end(),
+          std_set_voltageandfreqDefaultBeforeAttach.begin(),
+          std_set_voltageandfreqDefaultBeforeAttach.end(),
+          m_model.m_cpucoredata.
+          m_std_vec_voltageandfreqInsertedByCPUcontroller.begin()
+          );
     }
   }
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
@@ -142,10 +188,16 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
 //  , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter
   )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
     "CPUcoreUsageGetter.cfg" ;
   std::string stdstr = stdstrFilePath ;
-  if( ReadFileContent( stdstr ) )
+  if( ! ReadFileContent( stdstr ) )
+  {
+    stdstr = m_model.m_std_strDefaultCPUcoreUsageGetter;
+    LOGN( FULL_FUNC_NAME << "--using default CPU core usage getter \""
+      << stdstr << "\"")
+  }
   {
     if( stdstr.empty() )
       LOGN("Do not load/ attach CPU core usage getter because string read from "
@@ -380,6 +432,35 @@ void CPUcontrolBase::OuputCredits()
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
 }
 
+void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
+{
+  LOGN( FULL_FUNC_NAME << "--begin--# default voltages:" <<
+    m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
+  std::vector<VoltageAndFreq> & r_std_vec_voltageandfreqInsertedByCPUcontroller =
+    m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller;
+  //    for( int i = 0; i < r_std_vec_voltageandfreqInsertedByDynLib.size() ; ++ i)
+  std::vector<VoltageAndFreq>::iterator
+    iterDefaultVoltagesInsertedByCPUcontroller =
+    r_std_vec_voltageandfreqInsertedByCPUcontroller.begin();
+
+  while( iterDefaultVoltagesInsertedByCPUcontroller !=
+      r_std_vec_voltageandfreqInsertedByCPUcontroller.end() )
+  {
+//    const VoltageAndFreq & c_r_voltageandfreqDefaultByCPUcontroller =
+//      iterDefaultVoltagesInsertedByCPUcontroller;
+    LOGN( FULL_FUNC_NAME << "--deleting ("
+      << iterDefaultVoltagesInsertedByCPUcontroller->m_fVoltageInVolt << "V;"
+      << iterDefaultVoltagesInsertedByCPUcontroller->m_wFreqInMHz << "MHz)"
+      //" from the default voltages inserted by the CPU controller"
+      )
+    m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.erase(
+      * iterDefaultVoltagesInsertedByCPUcontroller);
+    ++ iterDefaultVoltagesInsertedByCPUcontroller;
+  }
+  r_std_vec_voltageandfreqInsertedByCPUcontroller.clear();
+  LOGN( FULL_FUNC_NAME << "--end--# default voltages:" <<
+    m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
+}
 
 //TODO delete CPU controller _dynlib_ or CPU controller?
 void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
@@ -404,6 +485,9 @@ void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
       mp_userinterface->EndAllAccessToCPUcontroller();
 //        SetCPUcontroller( NULL ) ;
     DeleteCPUcontroller() ;
+
+    RemoveDefaultVoltagesInsertedByCPUcontroller();
+
 //        //This may either point to a built-in CPU controller or to a dyn lib
 //        //CPU controller.
 //        mp_cpucontroller ;

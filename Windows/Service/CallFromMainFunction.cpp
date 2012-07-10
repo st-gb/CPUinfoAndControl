@@ -218,7 +218,7 @@ BYTE HandleProgramOptions(
   return byRet;
 }
 
-void OpenLogFile(TCHAR * argv[])
+bool OpenLogFile(TCHAR * argv[])
 {
 #ifdef UNICODE
 //  std::wcout << L"1st program arg:" << argv[0] << L"\n";
@@ -267,11 +267,13 @@ void OpenLogFile(TCHAR * argv[])
   init_log4cplus() ;
 #endif
 
-  if( g_logger.OpenFile2( std_strLogFileName ) )
+  bool logFileIsOpen = g_logger.OpenFile2( std_strLogFileName );
+  if( logFileIsOpen )
   {
     I_LogFormatter * p_log_formatter = g_logger.CreateFormatter(
       std_strFileExt, std_strLogTimeFormatString);
   }
+  return logFileIsOpen;
 }
 
 void PossiblyInteractWithUser(int argc, TCHAR * argv[],

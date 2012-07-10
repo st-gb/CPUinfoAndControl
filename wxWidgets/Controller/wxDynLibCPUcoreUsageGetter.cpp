@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "wxDynLibCPUcoreUsageGetter.hpp"
 //GetErrorMessageFromErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
@@ -38,7 +45,8 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     //  m_wxdynamiclibraryCPUcoreUsage);
     if( m_wxdynamiclibraryCPUcoreUsage.IsLoaded() )
     {
-      LOGN("CPU core usage getter Dyn lib successfully loaded")
+      LOGN_TYPE("CPU core usage getter Dyn lib successfully loaded",
+        I_LogFormatter::log_message_typeSUCCESS)
       m_pfngetcpucoreusage = (_GetCPUcoreUsage) 
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
           //Use wxT() macro to enable to compile with both unicode and ANSI.
@@ -109,8 +117,8 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) , wxT("loading DLL failed") ) ;
 #else
 #endif //#ifdef _WIN32
-    LOGN("loading CPU core usage getter dynamic library failed:" <<
-        stdstrErrMsg )
+    LOGN_TYPE("loading CPU core usage getter dynamic library failed:" <<
+        stdstrErrMsg, I_LogFormatter::log_message_typeERROR)
     //It does not make a sense to use this class instance because the 
     //initialisation failed. So throw an exception.
     throw CPUaccessException(stdstrErrMsg) ;

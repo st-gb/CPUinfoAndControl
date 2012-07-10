@@ -34,11 +34,15 @@ int main
 {
   TCHAR ** ar_tchProgramArguments = ::GetTCHARarray_Inline(
     (const char **) ar_p_chProgramArguments, argc);
-  ::OpenLogFile(//ar_p_chProgramArguments
+  bool logFileIsOpen = ::OpenLogFile(//ar_p_chProgramArguments
     ar_tchProgramArguments);
-  int n = ::CallFromMainFunction(argc, //ar_p_chProgramArguments
+  int n = 2;
+  if( logFileIsOpen )
+  {
+    n = ::CallFromMainFunction(argc, //ar_p_chProgramArguments
       ar_tchProgramArguments, NULL);
-  if( (const char **) ar_tchProgramArguments != ar_p_chProgramArguments)
-    ::DeleteTCHARarray(argc, ar_tchProgramArguments);
+    if( (const char **) ar_tchProgramArguments != ar_p_chProgramArguments)
+      ::DeleteTCHARarray(argc, ar_tchProgramArguments);
+  }
   return n;
 }

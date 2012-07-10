@@ -408,7 +408,9 @@ void MainController::ReadMainConfig(
   //The main cfg also contains the exclusion log message filter--load it in any
   //case.
   SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
+#ifdef COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
   DEBUGN( "number of Trie nodes: " << g_logger.m_trie.m_dwNumberOfNodes )
+#endif //COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
   ReadXMLfileInitAndTermXerces(
     //const char* xmlFile
     stdstrMainConfigFileName.c_str()

@@ -16,9 +16,36 @@
 //#include <wx/dialog.h>
 #include <wx/event.h>
 #include "wx/power.h" //for power mgmt notification (wxPowerType etc.)
+#include <wx/tglbtn.h> //wxHAS_BITMAPTOGGLEBUTTON
 
-//Forward declarations (to  avoid including the wxWidgets header files HERE)
-class wxBitmapToggleButton ;
+#define USE_BITMAP_TOGGLE_BTN
+
+#ifndef wxHAS_BITMAPTOGGLEBUTTON
+  //#if wxMAJOR_VERSION > 1
+    #if wxMAJOR_VERSION == 2 && wxMINOR_VERSION > 8 && wxRELEASE_NUMBER > 0
+      //For wx2.9.1 wxHAS_BITMAPTOGGLEBUTTON is not defined although
+      //there class wxBitmapToggleButton exists.
+      #define wxHAS_BITMAPTOGGLEBUTTON
+    #else
+      //#define wxHAS_BITMAPTOGGLEBUTTON
+    #endif
+  //#endif
+#endif
+//#ifdef USE_BITMAP_TOGGLE_BTN
+//  //Forward declarations (to  avoid including the wxWidgets header files HERE)
+#ifdef wxHAS_BITMAPTOGGLEBUTTON
+  #define WX_BITMAP_TOGGLE_BUTTON_NAMESPACE /* empty string->global namespace*/
+#else
+  #define WX_BITMAP_TOGGLE_BUTTON_NAMESPACE wx2_9compatibility
+#endif //#ifdef wxHAS_BITMAPTOGGLEBUTTON
+
+namespace WX_BITMAP_TOGGLE_BUTTON_NAMESPACE
+{
+  class wxBitmapToggleButton;
+};
+//  using namespace wx2_9compatibility;
+
+
 class wxBoxSizer ;
 class wxCheckBox ;
 class wxChoice;
@@ -74,9 +101,6 @@ private:
   ////in order to release the memory later (by storing the pointer
   ////to them).
   //std::vector<wxControl * > m_vecp_wxcontrol ;
-#ifdef wxUSE_BITMAPTOGGLEBTN
-  wxBitmapToggleButton * m_p_wxbitmapToggleButtonPause ;
-#endif //#ifdef wxUSE_BITMAPTOGGLEBTN
   wxBoxSizer * p_wxboxsizerCPUcoreFrequencyInMHz ;
   wxBoxSizer * p_wxboxsizerTop ;
   wxButton * mp_wxbuttonApply ;
@@ -88,20 +112,34 @@ public:
   wxTextCtrl * m_p_wxtextctrlSecondsUntilNextVoltageDecrease;
   wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
 private:
-  wxBoxSizer * m_p_wxboxsizerOK_Cancel;
+//  wxBoxSizer * m_p_wxboxsizerOK_Cancel;
+//  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer * m_p_wxboxsizerOK_Cancel;
+    //wx2_9compatibility::wxFlexGridSizer * m_p_wxboxsizerOK_Cancel;
   wxBoxSizer * m_p_wxboxsizerMessage;
 //  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
 //  wxCheckBox * mp_wxcheckboxValidPstate ;
 //  wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
-  wxCheckBox * mp_wxcheckboxAlsoSetWantedVoltage ;
+  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
+    m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxOnlySafeRange ;
-  wxCheckBox * m_p_wxcheckboxPreventVoltageAboveDefaultVoltage ;
-  wxCheckBox * mp_wxcheckboxPreventVoltageBelowLowestStableVoltage ;
-  wxCheckBox * m_p_wxcheckboxRestorePerformanceStateAfterResume;
+  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton * 
+    m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage ;
+public:
+//  wxCheckBox * mp_wxcheckboxPreventVoltageBelowLowestStableVoltage ;
+  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
+    m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage;
+  wxBitmapButton *
+    m_p_wxbitmapbuttonAutoConfigureVoltageSettings;
+private:
+  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
+    m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume;
+  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
+    m_p_wxbitmaptogglebuttonSelectPstateViaMouseClick;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
-  wxCheckBox * mp_wxcheckboxPauseService ;
+  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
+    m_p_wxbitmaptogglebuttonPauseService ;
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Array of pointers to checkbox.
   wxCheckBox ** m_ar_p_wxcheckbox ;
@@ -126,6 +164,8 @@ private:
     wxSizer * p_wxsizerSuperordinate );
   inline void AddApplyOrCancelSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddAutoConfigureVoltageSettingsButton(
+    wxSizer * p_wxsizerSuperordinate );
   inline void AddCancelButton(wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddCPUcoreCheckBoxSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
@@ -135,6 +175,8 @@ private:
     wxSizer * p_wxsizerSuperordinate  ) ;
   inline void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  inline void AddSecondsUntilNextVoltageDecreaseTextControl(
+    wxSizer * p_wxsizer );
   inline void AddSelectPstateViaMousePositionButton(
     wxSizer * p_wxsizer );
   inline void AddPauseServiceCheckbox(wxSizer * p_wxsizer ) ;
@@ -147,11 +189,15 @@ private:
   inline void AddRestorePerformanceStateAfterResumeButton(wxSizer * p_wxsizer ) ;
   inline void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
   inline void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
-  inline void AddVoltageSettingsSizer(
-    wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddVoltageSettingsSizer( wxSizer * p_wxsizerSuperordinate ) ;
+  inline void AddWritePstateButton(wxSizer * p_wxsizer);
   inline void AddSetAsWantedVoltageSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   inline void AddStabilizeVoltageButton( wxSizer * p_wxsizer ) ;
+  void AddWindowToSizer(wxWindow * p_window, wxSizer * p_sizer,
+    ////0=the control should not take more space if the sizer is enlarged
+    int proportion = 0,
+    int flag = 0, int border = 0, wxObject* userData = 0);
 public:
   FreqAndVoltageSettingDlg(
     wxWindow * parent

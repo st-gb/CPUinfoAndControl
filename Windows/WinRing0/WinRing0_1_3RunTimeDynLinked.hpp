@@ -77,10 +77,13 @@ public:
     PDWORD edx,
     DWORD_PTR affinityMask
   );
+  void DLLerror( DWORD dwDllStatus);
+  void GetDriverPath();
   static void GetErrorMessageForInitError(DWORD dwValue,
     std::string & stdstrErrorMsg );
   BYTE GetNumberOfCPUCores() ;
   void Init(UserInterface * pui) ;
+  void InitOpenLibSysFailed();
 
   BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall

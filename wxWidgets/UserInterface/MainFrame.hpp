@@ -348,7 +348,16 @@ public:
     wxDC & wxdc
     , float fMaxVoltage
     ) ;
-  void DrawCurrentPstateInfo( wxDC & r_wxdc ) ;
+  inline void DrawCPUcoreIDs(
+    wxDC & r_wxdc,
+    wxCoord & wxcoordX,
+    wxCoord wxcoordTextHeight);
+  inline void DrawCPUcoreUsages(wxDC & r_wxdc,
+    const ICPUcoreUsageGetter * p_cpucoreusagegetter,
+    wxCoord wxcoordX,
+    wxCoord wxcoordTextHeight
+    );
+  void DrawCurrentCPUcoreInfo( wxDC & r_wxdc ) ;
   inline void DrawFrequency(
     wxDC & r_wxdc ,
     WORD wFrequencyInMHz ,
@@ -400,6 +409,10 @@ public:
   inline float GetClosestMultiplier(int nXcoordionate, float &
     fReferenceClockInMHz);
   inline float GetClosestVoltageForYcoordinate(int nYcoordinate);
+  inline void GetCPUcoreInfoFromDataProvider(
+    ICPUcoreUsageGetter * & p_cpucoreusagegetter ,
+    I_CPUcontroller * & p_cpucontroller //,
+    );
   inline bool GetCPUcoreInfoDirectlyOrFromService(
     ICPUcoreUsageGetter * & p_cpucoreusagegetter ,
     I_CPUcontroller * & p_cpucontroller //,
@@ -440,6 +453,7 @@ public:
   void OnSaveAsCPUcontrollerDynLibForThisCPU(
     wxCommandEvent & WXUNUSED(event) ) ;
   void OnSize(wxSizeEvent & WXUNUSED(event)) ;
+  void OnSizing(wxSizeEvent & WXUNUSED(event)) ;
   void OnFindLowestOperatingVoltage(wxCommandEvent & WXUNUSED(event));
   void OnSaveVoltageForFrequencySettings(wxCommandEvent & WXUNUSED(event));
 

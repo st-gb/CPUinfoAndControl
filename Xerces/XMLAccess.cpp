@@ -320,10 +320,10 @@ char ReadXMLdocument(
   //        *            handler code.
           parse(//xmlFile
             r_inputsource );
-        LOGN_TYPE("Successfully parsed XML document/ input source "
+        LOGN_TYPE("Successfully parsed XML document/ input source \""
           << GetStdString_Inline(GET_WCHAR_STRING_FROM_XERCES_STRING(
               r_inputsource.getSystemId() )
-            ),
+            ) << "\"",
             I_LogFormatter::log_message_typeSUCCESS
           )
 //          if( model.m_bTruncateLogFileForEveryStartup )
