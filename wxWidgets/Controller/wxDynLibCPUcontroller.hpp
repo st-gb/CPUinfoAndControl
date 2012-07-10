@@ -114,7 +114,7 @@ public:
       , BYTE byCoreID 
       ) //{return 0 ; }
       ;
-  BYTE TooHot() ;
+  BYTE GetCPUcoreTooHot() ;
   BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI

@@ -11,6 +11,7 @@
 
 //#include <ModelData/PerCPUcoreAttributes.hpp>
 #include <set> //class std::set
+#include <vector> //class std::vector
 
 #define CPU_CORE_DATA_NOT_SET 255
 
@@ -47,6 +48,7 @@ public:
 
   bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
 #ifdef COMPILE_AS_EXECUTABLE
+  std::vector<VoltageAndFreq> m_std_vec_voltageandfreqInsertedByCPUcontroller;
   bool m_b1CPUcorePowerPlane ;
   bool m_bEnableDVFS ;
   bool m_bTooHot ;

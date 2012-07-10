@@ -235,10 +235,12 @@ BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
 void I_CPUcontroller::GetCurrentTemperatureInCelsiusAndStoreValues(
   WORD wCoreID )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
     m_arp_percpucoreattributes ;
   arp_percpucoreattributes[wCoreID].m_fTempInDegCelsius =
     GetTemperatureInCelsius(wCoreID) ;
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 //BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(

@@ -18,6 +18,11 @@
 #include <Controller/SetThreadAffinityMask.h>
 //THREAD_PROC_CALLING_CONVENTION
 #include <preprocessor_macros/thread_proc_calling_convention.h>
+
+//#ifdef wxUSE_BITMAPTOGGLEBUTTUN
+#include <wxWidgets/UserInterface/wxBitmapToggleButton.hpp>
+#include <wx/tglbtn.h> //class wxBitmapToggleButton
+
 //class FreqAndVoltageSettingDlg
 #include <wxWidgets/UserInterface/FreqAndVoltageSettingDlg.hpp>
 //::getwxString(...)
@@ -90,22 +95,45 @@ DWORD THREAD_PROC_CALLING_CONVENTION
   return 1;
 }
 
+void CountSecondsDown(FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg,
+  DWORD dwMilliSecondsToWait)
+{
+  for( unsigned uiSeconds = p_freqandvoltagesettingdlg->mp_model->
+      m_instablecpucorevoltagedetection.
+      m_uiNumberOfSecondsToWaitUntilVoltageIsReduced + 1;
+      uiSeconds != 0 &&
+    ! wxGetApp().m_vbExitFindLowestStableVoltage; -- uiSeconds)
+  {
+    p_freqandvoltagesettingdlg->
+      m_p_wxstatictextSecondsUntilNextVoltageDecrease->SetLabel(
+  //            m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetLabel(
+        wxString::Format( wxT("%us"), //(WORD)
+          uiSeconds - 1)
+        );
+    LOGN( FULL_FUNC_NAME << "--waiting max. " << dwMilliSecondsToWait
+      << " milliseconds")
+    ::WaitForSingleObject( wxGetApp().m_conditionFindLowestStableVoltage.
+      m_handleEvent, dwMilliSecondsToWait);
+    LOGN( FULL_FUNC_NAME << "--after waiting for either thread's end or "
+        "timeout ")
+    wxGetApp().m_conditionFindLowestStableVoltage.ResetEvent();
+  }
+}
 DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
 {
   LOGN( FULL_FUNC_NAME << "--begin")
-
   FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
     (FreqAndVoltageSettingDlg *) p_v;
   if( p_freqandvoltagesettingdlg)
   {
     x86IandC::thread_type x86iandc_threadFindLowestStableVoltage;
-
     x86iandc_threadFindLowestStableVoltage.start(
         StartInstableCPUcoreVoltageDetectionInDLL ,
         p_freqandvoltagesettingdlg ) ;
 
     float fVoltageInVolt = p_freqandvoltagesettingdlg->
       GetVoltageInVoltFromSliderValue() ;
+
     wxString wxstrMessageFromService;
     p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS(
       wxstrMessageFromService);
@@ -113,24 +141,12 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
     const std::set<float> & c_r_stdset_floatAvailableVoltagesInVolt =
       p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
       m_stdset_floatAvailableVoltagesInVolt;
-//    std::set<float>::
-//      //Voltages are sorted ascending, but we want to get decrease the voltage:
-//      //so use a "const_reverse_iterator"
-//      const_reverse_iterator c_rev_iter =
-//      c_r_stdset_floatAvailableVoltagesInVolt.find(fVoltageInVolt);
 
     WORD wArrayIndex = ::GetArrayIndexForClosestGreaterOrEqual(
       p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
         m_arfAvailableVoltagesInVolt,
       c_r_stdset_floatAvailableVoltagesInVolt.size(),
       fVoltageInVolt);
-//    while( c_rev_iter != c_r_stdset_floatAvailableVoltagesInVolt.rend() )
-//    {
-//      p_freqandvoltagesettingdlg->PossiblyWriteVoltageAndMultiplier_Inline(
-////        fVoltageInVolt
-//        * c_rev_iter
-//        ) ;
-//    }
 //    p_freqandvoltagesettingdlg->m_p_wxbuttonFindLowestStableVoltage->SetLabel(
 //      wxT("stop finding the lowest stable voltage") );
 
@@ -139,74 +155,54 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage(void * p_v )
 
     DWORD dwMilliSecondsToWait = 60000;
 
-//    float fVoltageInVolt;
-//    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-//    float fMultiplier;
-//    float fReferenceClockInMHz;
-//    WORD wCoreID;
-//    p_freqandvoltagesettingdlg->mp_cpucontroller->GetCurrentVoltageAndFrequency(
-//      fVoltageInVolt,
-//      fMultiplier, fReferenceClockInMHz, 0);
-    float fMultiplierFromSliderValue = p_freqandvoltagesettingdlg->
+    //Multipliers can also be floats: e.g. "5.5" for AMD Griffin.
+    const float fMultiplierFromSliderValue = p_freqandvoltagesettingdlg->
       GetMultiplierFromSliderValue();
 
+    dwMilliSecondsToWait = 1000;
     for( //-- wArrayIndex
       ; wArrayIndex != MAXWORD &&
       ! wxGetApp().m_vbExitFindLowestStableVoltage; -- wArrayIndex )
     {
         fVoltageInVolt = p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
           m_arfAvailableVoltagesInVolt[wArrayIndex];
-
+        //The reference clock can be changed via special tools etc., so get it
+        //every time.
+        const float r_fReferenceClockInMHz =
+          //p_freqandvoltagesettingdlg->mp_cpucontroller->
+          wxGetApp().mp_cpucontroller->m_fReferenceClockInMHz;
+        if( //p_freqandvoltagesettingdlg->mp_model->m_userinterfaceattributes.
+            //m_bPreventVoltageBelowLowestStableVoltage &&
+            p_freqandvoltagesettingdlg->
+//            mp_wxcheckboxPreventVoltageBelowLowestStableVoltage->IsChecked()
+              m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage->
+              GetValue()
+            &&
+            //p_freqandvoltagesettingdlg->mp_cpucontroller->
+            wxGetApp().mp_cpucontroller->
+            CheckWhetherVoltageIsBelowLowestStableVoltage(fVoltageInVolt,
+              r_fReferenceClockInMHz * fMultiplierFromSliderValue) ==
+              I_CPUcontroller::VoltageIsOutsideSafeRange
+          )
+        {
+          LOGN( FULL_FUNC_NAME << "--voltage " << fVoltageInVolt
+            << "is below lowest stable CPU core voltage "
+              " for multi " << fMultiplierFromSliderValue)
+          wxGetApp().StabilizeVoltageAndRepaintMainFrame(
+            fVoltageInVolt,
+            fMultiplierFromSliderValue,
+            r_fReferenceClockInMHz);
+          wxGetApp().StopInstableCPUcoreVoltageDetection();
+          break;
+        }
         LOGN( FULL_FUNC_NAME << "--before setting voltage[Volt] to: "
             << fVoltageInVolt << " , multi to " << fMultiplierFromSliderValue)
         p_freqandvoltagesettingdlg->mp_cpucontroller->
           SetCurrentVoltageAndMultiplier(
             fVoltageInVolt, //fMultiplier
             fMultiplierFromSliderValue, 0);
-        //::Sleep(60000);
 
-//        //http://msdn.microsoft.com/en-us/library/ms687025%28v=VS.85%29.aspx:
-//        ::WaitForMultipleObjects(
-//          2 //__in  DWORD nCount
-//          , //__in  const HANDLE *lpHandles,
-//          ,BOOL
-//          //"The time-out interval, in milliseconds."
-//          , 60000 //__in  DWORD dwMilliseconds
-//          );
-        dwMilliSecondsToWait = 1000;
-        for( unsigned uiSeconds = p_freqandvoltagesettingdlg->mp_model->
-            m_instablecpucorevoltagedetection.
-            m_uiNumberOfSecondsToWaitUntilVoltageIsReduced + 1;
-            uiSeconds != 0 &&
-          ! wxGetApp().m_vbExitFindLowestStableVoltage; -- uiSeconds)
-        {
-          p_freqandvoltagesettingdlg->
-            m_p_wxstatictextSecondsUntilNextVoltageDecrease->SetLabel(
-//            m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetLabel(
-              wxString::Format( wxT("%us"), //(WORD)
-                uiSeconds - 1)
-              );
-          LOGN( FULL_FUNC_NAME << "--waiting max. " << dwMilliSecondsToWait
-            << " milliseconds")
-          ::WaitForSingleObject( wxGetApp().m_conditionFindLowestStableVoltage.
-            m_handleEvent, dwMilliSecondsToWait);
-          LOGN( FULL_FUNC_NAME << "--after waiting for either thread's end or "
-              "timeout ")
-          wxGetApp().m_conditionFindLowestStableVoltage.ResetEvent();
-        }
-
-//        // "Each wxCondition object is associated with a (single) wxMutex object.
-//        // The mutex object MUST be locked before calling Wait()"
-//        wxGetApp().m_wxmutexFindLowestStableVoltage.Lock();
-//        wxGetApp().m_wxconditionFindLowestStableVoltage.
-//          //"exactly as Wait() except that it may also return if the specified
-//          // timeout elapses even if the condition hasn't been signalled: in this
-//          // case, the return value is false, otherwise (i.e. in case of a normal
-//          // return) it is true
-//          WaitTimeout(
-//          // "the timeout parameter specifies an interval that needs to be waited for
-//          // in milliseconds"
-//          60000);
+        CountSecondsDown(p_freqandvoltagesettingdlg, dwMilliSecondsToWait);
     }
     p_freqandvoltagesettingdlg->SetStartFindingLowestStableVoltageButton();
 //    p_freqandvoltagesettingdlg->m_p_wxbuttonFindLowestStableVoltage->SetLabel(
@@ -376,6 +372,7 @@ void wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
 
 void wxX86InfoAndControlApp::StopInstableCPUcoreVoltageDetection()
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   if( wxGetApp().m_hmoduleUnstableVoltageDetectionDynLib )
   {
     if( //wxGetApp().m_pfnStartInstableCPUcoreVoltageDetection && wxGetApp().
@@ -394,7 +391,7 @@ void wxX86InfoAndControlApp::StopInstableCPUcoreVoltageDetection()
          dwExitCode == STILL_ACTIVE
        )
      {
-      LOGN( FULL_FUNC_NAME << "--should stop the find lowest stable voltage thread")
+      LOGN( FULL_FUNC_NAME << "--should stop the \"find lowest stable voltage\" thread")
 
       LOGN( FULL_FUNC_NAME << "--before  calling \""
           << STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME << "\"" )

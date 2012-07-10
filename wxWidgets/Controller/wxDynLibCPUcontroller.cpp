@@ -359,7 +359,7 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
 //        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("SetPstateFromFreq") ) ;
 
   //m_pfn_too_hot = (dll_TooHot_type)
-  //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("TooHot") ) ;
+  //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetCPUcoreTooHot") ) ;
 
   wxstrFuncName = wxT("WriteMSR") ;
   if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
@@ -579,13 +579,24 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
 //        fVoltageInVolt = r_cpucoredata.m_arfAvailableVoltagesInVolt[
 //          wArrayIndex ] ;
 //    }
-    by = ( * m_pfnSetCurrentVoltageAndMultiplier)(
-      fVoltageInVolt
-      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-      , //byMultiplierToUse
-      fMultiplier
-      , wCoreID
-      ) ;
+    const PerCPUcoreAttributes & c_r_percpucoreattributes = mp_model->
+      m_cpucoredata.m_arp_percpucoreattributes[wCoreID];
+    if( c_r_percpucoreattributes.m_fMultiplier != fMultiplier ||
+        c_r_percpucoreattributes.m_fVoltageInVolt != fVoltageInVolt )
+    {
+      LOGN( FULL_FUNC_NAME << "--multiplier or voltage differs from current "
+          "settings->setting them")
+      by = ( * m_pfnSetCurrentVoltageAndMultiplier)(
+        fVoltageInVolt
+        //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+        , //byMultiplierToUse
+        fMultiplier
+        , wCoreID
+        ) ;
+    }
+    else
+      LOGN( FULL_FUNC_NAME << "--not writing new p-state because multiplier "
+        "and voltage are equal to current settings")
     DEBUGN("return value of DLL's function SetCurrentVoltageAndMultiplier( "
       << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
       fMultiplier
@@ -646,7 +657,8 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
-  LOGN("wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency("
+  LOGN(//"wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency("
+    FULL_FUNC_NAME
     << wCoreID << ") begin"
     "--m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
     //see http://stackoverflow.com/questions/2064692/
@@ -663,15 +675,21 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
        , wCoreID
        ) ;
 //    BYTE byReturn = 1 ;
-    LOGN("dyn lib CPU controller: after calling DLL's "
-      "GetCurrentVoltageAndFrequency"
-//#ifdef _DEBUG
-      << " voltage: " << r_fVoltageInVolt
-      << " multi: " << r_fMultiplier
-      << " r_fReferenceClockInMHz:" << r_fReferenceClockInMHz
+    LOGN(//"dyn lib CPU controller: "
+      FULL_FUNC_NAME <<
+      " after calling (return value:" << (WORD) byReturn << ") "
+      "DLL's "
+      "GetCurrentVoltageAndFrequency function for "
       << " core: " << wCoreID
+//#ifdef _DEBUG
+      << ": voltage: " << r_fVoltageInVolt
+      << " multi: " << r_fMultiplier
+      << " reference clockInMHz:" << r_fReferenceClockInMHz
 //#endif
       )
+    if( ! byReturn )
+      LOGN_TYPE("warning/ error:DLL's \"GetCurrentVoltageAndFrequency\" "
+        "function returned 0", I_LogFormatter::log_message_typeERROR)
      if( r_fReferenceClockInMHz )
      {
        if( mp_model->m_bCollectPstatesAsDefault )
@@ -717,10 +735,12 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
 //        << (WORD) byCoreID
 //        << "):" <<
 //        r_wFreqInMHz << " " << r_fVolt << "\n" ) ;
-     LOGN("dyn lib CPU controller: GetCurrentVoltageAndFrequency end")
+//     LOGN("dyn lib CPU controller: GetCurrentVoltageAndFrequency end")
+     LOGN( FULL_FUNC_NAME << " return " << (WORD)byReturn)
      return byReturn ;
   }
-  LOGN("dyn lib CPU controller: GetCurrentVoltageAndFrequency end")
+  LOGN(//"dyn lib CPU controller: GetCurrentVoltageAndFrequency end"
+    FULL_FUNC_NAME << " return 0")
   return 0 ;
 }
 
@@ -789,6 +809,8 @@ WORD wxDynLibCPUcontroller::GetNumberOfCPUcores()
 
 float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 {
+  LOGN( FULL_FUNC_NAME << "--begin--dyn lib function's address: "
+    << (void *) m_pfngettemperatureincelsius)
   if( m_pfngettemperatureincelsius )
   {
 #ifdef COMPILE_WITH_LOG
@@ -933,8 +955,9 @@ BYTE wxDynLibCPUcontroller::
 //  return byRet ;
 //}
 
-BYTE wxDynLibCPUcontroller::TooHot() 
+BYTE wxDynLibCPUcontroller::GetCPUcoreTooHot() 
 { 
+  LOGN( FULL_FUNC_NAME << "--begin")
   BYTE by = 0 ;
   float fTemperatureInCelsius ;
   m_wNumberOfLogicalCPUcores = mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
@@ -945,11 +968,12 @@ BYTE wxDynLibCPUcontroller::TooHot()
   //Lock for concurrent write when the throttle temp should be changed in
   //another thread.
   wxCriticalSectionLocker cs_locker(mp_model->m_cpucoredata.
-      m_wxcriticalsectionIPCdata);
+    m_wxcriticalsectionIPCdata);
   for( WORD wCPUcoreIdx = 0 ; wCPUcoreIdx < m_wNumberOfLogicalCPUcores ; 
     ++ wCPUcoreIdx )
   {
     fTemperatureInCelsius = GetTemperatureInCelsius( wCPUcoreIdx ) ;
+      //arp_percpucoreattributes[wCPUcoreIdx].m_fTempInDegCelsius;
     arp_percpucoreattributes[wCPUcoreIdx].m_fTempInDegCelsius =
       fTemperatureInCelsius ;
     if( fTemperatureInCelsius > //90.0
@@ -969,6 +993,7 @@ BYTE wxDynLibCPUcontroller::TooHot()
 #endif
     }
   }
+  LOGN( FULL_FUNC_NAME << "--return " << (WORD) by)
   return by ;
 }
 

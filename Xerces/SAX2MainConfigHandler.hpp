@@ -43,7 +43,7 @@ class SAX2MainConfigHandler
 private:
   Model * m_p_model ;
   I_CPUcontroller * mp_cpucontroller ;
-  std::string m_strProcessorName ;
+  std::string m_strTopmostXMLelement ;
   std::string m_strElementName ;
   UserInterface * m_p_userinterface ;
 public:
@@ -52,7 +52,7 @@ public:
     UserInterface * p_userinterface //,
     //I_CPUcontroller * p_cpucontroller
     );
-  void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException & );
+//  void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException & );
   void HandleDynamicVoltage_and_FrequencyScaling(
     const XERCES_CPP_NAMESPACE::Attributes & attrs ) ;
   void HandleInstableCPUcoreVoltageDetection(

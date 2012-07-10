@@ -16,6 +16,6 @@ class CPUcontrolService;
 int CallFromMainFunction(int argc, //char
     TCHAR * argv[],
     CPUcontrolService * p_cpucontrolservice);
-void OpenLogFile(TCHAR * argv[]);
+bool OpenLogFile(TCHAR * argv[]);
 
 #endif /* CALLFROMMAINFUNCTION_H_ */

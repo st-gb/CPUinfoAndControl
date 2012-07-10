@@ -67,6 +67,7 @@ typedef struct tagWTSSESSION_NOTIFICATION {
 //Forward declarations (faster than #include)
 class I_DynFreqScalingAccess ;
 class WinRing0DynLinked ;
+class wxEventLoopBase;
 //namespace Xerces
 //{
 //  class IPCdataHandler ;
@@ -245,6 +246,8 @@ public :
   ////static
   //    bool HasLogFilePathOption( int argc, char *  argv[] ) ;
   static void outputUsage();
+  //Overrides wxAppConsole::OnEventLoopEnter
+  void OnEventLoopEnter(wxEventLoopBase *   loop);
   //Overwrites wxApp::OnInit() ;
   bool OnInit();
   void OnServerEvent(wxSocketEvent & event);
@@ -301,7 +304,7 @@ public :
   inline void WakeUpCreateIPCdataThread() ;
 
 //  //For receiving wxWidgets (socket) events.
-//  DECLARE_EVENT_TABLE()
+  DECLARE_EVENT_TABLE()
 };
 
 //

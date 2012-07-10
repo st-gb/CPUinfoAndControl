@@ -1,0 +1,403 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH (=Trilobyte SE), Berlin,
+ * Germany 2012.
+ * You are allowed to modify and use the source code from
+ * Trilobyte SE for free if you are not
+ * making profit directly or indirectly with it or its adaption.
+ * Else you may contact Trilobyte SE.
+ */
+/*
+ * dllmain.cpp
+ *
+ *  Created on: 03.05.2012
+ *      Author: Stefan
+ */
+  #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
+  #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
+  #include <Controller/AssignPointersToExportedExeFunctions/\
+AssignPointersToExportedExeMSRfunctions.h>
+  #include <Controller/AssignPointersToExportedExeFunctions/\
+AssignPointerToExportedExeReadPCIconfig.h>
+  #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
+//  #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
+
+  #include <windows.h> //for
+  #include <winuser.h> //MessageBox
+
+//  #include <pantheios/pantheios.hpp>
+//  #include <pantheios/implicit_link/core.h>
+//  #include <pantheios/implicit_link/fe.simple.h>
+//  #include <pantheios/backends/bec.file.h>      // be.file header
+//  #include <pantheios/implicit_link/be.file.h> //We use a log file.
+
+#ifdef COMPILE_WITH_LOG
+  #include <log4cplus/logger.h>
+  #include <log4cplus/loggingmacros.h>
+  //#include <log4cplus/configurator.h>
+  #include <log4cplus/fileappender.h>
+  #include <log4cplus/layout.h>
+
+  log4cplus::Logger log4cplus_logger;
+  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
+  Windows_API::Logger g_windows_api_logger;
+  HMODULE g_hModule;
+#endif
+
+  //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
+  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
+  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
+
+  #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
+
+  ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+
+  //static std::map<BYTE, MinAndMaxFID> s_std_mapFID2MinAndMaxFID;
+
+#ifndef COMPILE_WITH_MODEL_ACCESS
+  #define COMPILE_WITH_MODEL_ACCESS
+#endif
+#ifdef COMPILE_WITH_MODEL_ACCESS
+  #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+  #include <ModelData/ModelData.hpp> //class Model
+#else
+  //Only forward declaration
+  class I_CPUaccess;
+#endif
+
+  //Must create in DllMain?
+//  Logger * p_g_logger;
+
+  //from http://www.pantheios.org/doc/html/cpp_2backends_2example_8cpp_8backends_8file_2example_8cpp_8backends_8file_8cpp-example.html
+  /* Define the stock front-end process identity, so that it links when using
+   * fe.N, fe.simple, etc. */
+//  PANTHEIOS_EXTERN_C const PAN_CHAR_T PANTHEIOS_FE_PROCESS_IDENTITY[] = PANTHEIOS_LITERAL_STRING("example.cpp.backends.file");
+
+  EXPORT BOOL APIENTRY DllMain(
+    HMODULE hModule,
+    DWORD  ul_reason_for_call,
+    LPVOID lpReserved
+    )
+  {
+    switch (ul_reason_for_call)
+    {
+    case DLL_PROCESS_ATTACH:
+#ifdef _DEBUG
+      //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll:
+      g_hModule = hModule;
+#endif //#ifdef _DEBUG
+//      //Force the cond. "< min. time diff" to become true.
+//      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
+//      g_dwPreviousTickCountInMilliseconds
+//        //->time diff gets > max. time diff, so it calcs a ref clock.
+//        -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
+//      //The reference clock is needed for setting the current frequency. So it
+//      //must be determined prior to any call of this function.
+//      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
+
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
+    case DLL_PROCESS_DETACH:
+      break;
+    }
+    return TRUE;
+  }
+
+  //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
+  #define NEHALEM_DLL_CALLING_CONVENTION
+
+  EXPORT
+  //The array pointed to by the return value must be freed by the caller (i.e.
+  //x86I&C GUI or service) of this function.
+  float *
+    NEHALEM_DLL_CALLING_CONVENTION
+    //The reference clock might change, also during runtime.
+    //This is why it is a good idea to get the possible multipliers.
+    GetAvailableMultipliers(
+      WORD wCoreID
+      , WORD * p_wNumberOfArrayElements
+      )
+  {
+    DEBUGN("DLL's GetAvailableMultipliers")
+    return GetAvailableMultipliersAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
+  }
+
+  EXPORT
+  //The array pointed to by the return value must be freed by the caller (i.e.
+  //x86I&C GUI or service) of this function.
+  float * GetAvailableVoltagesInVolt(
+      WORD wCoreID
+      , WORD * p_wNumberOfArrayElements )
+  {
+    return GetAvailableVoltagesAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
+  }
+
+  EXPORT
+    BYTE
+    NEHALEM_DLL_CALLING_CONVENTION
+    GetCurrentVoltageAndFrequency(
+      float * p_fVoltageInVolt
+      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+      , float * p_fMultiplier
+      , float * p_fReferenceClockInMHz
+      , WORD wCoreID
+    )
+  {
+    static BYTE byRet;
+    byRet = GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
+      p_fVoltageInVolt,
+      p_fMultiplier ,
+      p_fReferenceClockInMHz ,
+      wCoreID
+      ) ;
+    DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) byRet << " ref.clock:"
+      << * p_fReferenceClockInMHz << "MHz multi:" << * p_fMultiplier
+      << " " << * p_fVoltageInVolt << "V")
+    return byRet;
+  }
+
+  EXPORT
+  float
+    NEHALEM_DLL_CALLING_CONVENTION
+    GetTemperatureInCelsius ( WORD wCoreID
+    )
+  {
+//    DEBUGN( FULL_FUNC_NAME << "--begin ")
+    return //fTempInDegCelsius ;
+      //0.0 ;
+      GetTemperatureInDegCelsiusAMD_NPT_family0F();
+  }
+
+  //#define DLL_CALLING_CONVENTION __stdcall
+  #define DLL_CALLING_CONVENTION
+
+  void InsertDefaultVoltageForStartUpFID(I_CPUaccess * pi_cpuaccess)
+  {
+    uint32_t lowmostMSRbits;
+    uint32_t highmostMSRbits;
+    BYTE readMSRreturnValue;
+
+    readMSRreturnValue = ReadMSR(
+      FIDVID_STATUS_MSR_ADDRESS,
+      & lowmostMSRbits,
+      & highmostMSRbits,
+      1
+      );
+    //"Startup VID (StartVID)—Bits 45–40."
+    BYTE StartupVID = (highmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
+    float fVoltageInVolt = GetVoltageInVolt_AMD_NPT_family_0FH( StartupVID);
+
+    //"Startup FID (StartFID)—Bit 13–8"
+    BYTE StartupFID = (lowmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
+    float fMultiplier = GetMultiplier_AMD_NPT_family_0FH(StartupFID);
+    pi_cpuaccess->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.insert(
+      VoltageAndFreq(fVoltageInVolt, (WORD) ( fMultiplier * //g_fReferenceClockInMHz
+        200.0f)
+        )
+      );
+
+  }
+
+#ifdef _DEBUG
+  void InitLog4cplusLogger(const std::tstring & std_tstrDLLfileName)
+  {
+    //from http://log4cplus.sourceforge.net/hello_world.html:
+    log4cplus_logger = log4cplus::Logger::getInstance(
+      LOG4CPLUS_TEXT("main") );
+    log4cplus::SharedAppenderPtr append_1(
+      new log4cplus::RollingFileAppender( LOG4CPLUS_TEXT(std_tstrDLLfileName
+        + "_log4cplus_logger.txt"),
+        5*1024, 5));
+    log4cplus_logger.addAppender(append_1);
+    append_1->setLayout( std::auto_ptr<log4cplus::Layout>(
+      new log4cplus::PatternLayout("%d{%H:%M:%s}") ) );
+
+    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
+  }
+#endif //#ifdef _DEBUG
+
+  inline void InitPantheiosLogger()
+  {
+//      //from http://www.pantheios.org/doc/html/cpp_2backends_2example_8cpp_8backends_8file_2example_8cpp_8backends_8file_8cpp-example.html:
+//      pantheios_be_file_setFilePath(
+//        PSTR("AMD_NPT_ControllerDLL_pantheios_log.txt"),
+//        PANTHEIOS_BE_FILE_F_TRUNCATE,
+//        PANTHEIOS_BE_FILE_F_TRUNCATE,
+//        PANTHEIOS_BEID_ALL);
+  }
+
+  void AssignPointersToExportedExefunctions()
+  {
+    AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
+    AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
+    DEBUGN( "g_pfnReadPCIconfigSpace:" << (void *) g_pfnReadPCIconfigSpace )
+
+    if( ! g_pfnreadmsr || ! g_pfn_write_msr )
+    {
+      MessageBox(NULL,
+        "Pointers could not be assigned to the execu-tables export functions\n"
+        "Does the executable that loads this DLL have ReadMSR and WriteMSR"
+        "export functions at all?(analyze this with a tool)"
+        //Title
+        ,"error"
+        , MB_OK) ;
+      return ;
+    }
+  }
+
+  std::tstring GetDLLfileName(HMODULE hModule, TCHAR * fileName)
+  {
+    //  LPSTR lpstrModuleName ;
+    //  CHAR ar_strModuleName[100] ;
+    //  DWORD dwChars =
+    //     GetModuleFileName(
+    //     //HINSTANCE
+    //     //NULL
+    //     GetModuleHandle(NULL)
+    ////     ,NULL //LPSTR
+    //     , ar_strModuleName
+    //     ,99 //DWORD
+    //     ) ;
+    //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll
+    DWORD dwNumChars =
+      //http://msdn.microsoft.com/en-us/library/windows/desktop/ms683197%28v=vs.85%29.aspx:
+      //"Return value":
+      //"length of the string that is copied to the buffer, in characters, not
+      //including the terminating null character"
+      ::GetModuleFileName(hModule, fileName, MAX_PATH);
+    TCHAR * p_tch = fileName + dwNumChars;
+    while( * p_tch != _T('\\') )
+      -- p_tch;
+    std::tstring std_str( ++ p_tch);
+    return std_str;
+  }
+
+#ifdef _DEBUG
+  void OpenLogFile()
+  {
+    TCHAR fileName[MAX_PATH];
+    std::tstring std_tstrDLLfileName = GetDLLfileName(g_hModule, fileName);
+
+    std::string strExeFileNameWithoutDirs //= GetExeFileNameWithoutDirs() ;
+      ;
+    std::string stdstrFilename = //strExeFileNameWithoutDirs +
+      //("AMD_NPT_ControllerDLL_log.txt") ;
+      std_tstrDLLfileName + "_std_ofstream_logger.txt";
+//      g_logger.OpenFile2( stdstrFilename ) ;
+    g_logger.OpenFile2(stdstrFilename);
+
+//    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
+//          << strExeFileNameWithoutDirs )
+    g_windows_api_logger.OpenFile2(
+      //"AMD_NPT_ControllerDLL_Windows_API_log.txt"
+      std_tstrDLLfileName + "Windows_API_logger.txt") ;
+    DEBUGN( "this module's file name:" << fileName)
+    DEBUGN_LOGGER_NAME( g_windows_api_logger, "this module's file name:"
+      //<< fileName << " "
+      << std_tstrDLLfileName)
+
+    InitPantheiosLogger();
+
+    InitLog4cplusLogger(std_tstrDLLfileName);
+//      p_g_logger = new Logger();
+//      if( ! p_g_logger )
+//        return FALSE;
+//      DEBUGN_LOGGER_NAME( *p_g_logger, "this Log file is open")
+  }
+#endif //#ifdef _DEBUG
+
+  /** All init code into this function and not into "DLLMain" because Dllmain can
+  * blocks other processes from load a DLL according to U. Pohl. */
+  EXPORT void
+    //Calling convention--must be the same as in the DLL
+    //function signature that calls this function?!
+    //WINAPI
+    DLL_CALLING_CONVENTION
+    Init( //I_CPUcontroller * pi_cpu
+    //CPUaccess object inside the exe.
+    I_CPUaccess * pi_cpuaccess
+  //  Trie *
+  //  , ReadMSR_func_type pfnreadmsr
+    //BYTE by
+    )
+  {
+#ifdef __linux__
+    AssignPointersToExportedExeMSRfunctions(
+      g_pfnreadmsr , g_pfn_write_msr ) ;
+#else
+    DEBUGN("after GetMainPllOpFreqIdMax")
+    AssignPointersToExportedExefunctions();
+#endif
+
+#ifdef _DEBUG
+    OpenLogFile();
+    //  LPSTR = new STR[dwChars] ;
+    //  DEBUGN()
+#endif
+
+  g_s_stepping = GetStepping();
+  //  g_pi_cpuaccess = pi_cpuaccess ;
+    std::string stdstrFilename = //strExeFileNameWithoutDirs +
+      ("PentiumM_DLL_log.txt") ;
+  #ifdef _DEBUG
+    //ReadMSR_func_type rdmsr = (ReadMSR_func_type) (void*) & pi_cpuaccess->RdmsrEx ;
+    std::stringstream stdstrstream ;
+//    //For checking if the members are on the same RAM address between MSVC and MinGW:
+//    stdstrstream << "DLL::Init(...)--\naddress of I_CPUaccess:" << & pi_cpuaccess << "\n"
+//      << "address of I_CPUaccess::mp_model: " << & pi_cpuaccess->mp_model <<"\n"
+//      << "address in I_CPUaccess::mp_model: " << pi_cpuaccess->mp_model <<"\n"
+//      //<< "address in I_CPUaccess::RdmsrEx: " << & pi_cpuaccess->RdmsrEx()
+//      << "address of I_CPUaccess::mp_cpu_controller: " <<
+//        & pi_cpuaccess->mp_cpu_controller <<"\n"
+//      << "address in I_CPUaccess::mp_cpu_controller: " <<
+//        pi_cpuaccess->mp_cpu_controller ;
+//    MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
+//      "", MB_OK) ;
+  #endif
+  #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+    g_pi_cpuaccess = pi_cpuaccess ;
+//    g_p_cpucontroller = pi_cpuaccess->mp_cpu_controller ;
+    g_p_stdsetvoltageandfreqWanted = & g_pi_cpuaccess->mp_model->m_cpucoredata.
+      m_stdsetvoltageandfreqWanted ;
+  #endif //INSERT_DEFAULT_P_STATES
+//    CreateFIDtoPortalCoreFIDmapping();
+
+    InsertDefaultVoltageForStartUpFID(pi_cpuaccess);
+  //  AssignExeFunctionPointers() ;
+    //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
+    //MSC-generated version has no problems
+  //#ifndef _MSC_VER
+  //  std::stringstream str ;
+  //  str << "DLL::Init--Adress of CPUaccess: " << pi_cpuaccess ;
+  //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
+  //#endif
+    //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
+  }
+
+  EXPORT
+    BYTE
+    NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
+    SetCurrentVoltageAndMultiplier(
+      float fVoltageInVolt
+      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+      , float fMultiplier
+      , WORD wCoreID
+    )
+  {
+#ifdef _DEBUG
+    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
+#endif //#ifdef _DEBUG
+    DEBUGN( FULL_FUNC_NAME << "--begin--fVoltageInVolt:" << fVoltageInVolt
+      << " fMultiplier:" << fMultiplier)
+    // see "10.5 Processor Performance States"
+        //10.5.1.1 P-state Recognition Algorithm
+    //"10.5.7.2 P-state Transition Algorithm"
+
+    //"Note: Software must hold the FID constant when changing the VID."
+
+    //"Odd FID values are supported in revision G and later revisions"
+    SetCurrentVoltageAndMultiplier_AMD_NPT_family_0FH( fVoltageInVolt ,
+      fMultiplier ,
+      wCoreID ) ;
+    return 1 ;
+  }

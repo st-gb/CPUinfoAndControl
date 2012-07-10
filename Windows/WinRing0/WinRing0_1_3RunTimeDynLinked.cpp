@@ -26,6 +26,7 @@
 #include <Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/HardwareAccess/HardwareAccessError/\
 GetHardwareAccessErrorDescription.hpp>
+#include <Windows/FileSystem/GetCurrentDirectory/GetCurrentDirectory.hpp>
 
 //WinRing0 docu:
 //Run-Time Dynamic Linking
@@ -75,12 +76,33 @@ WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
 }
 void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 {
+  //Initialize just to avoid (g++) compiler warning.
+  DWORD dwDllStatus = 0 ;
 //  char * archDLLName = DLL_NAME ;
   mp_userinterface = pui ;
 
   ::SetLastError(0) ;
+
   //WinRing0 Run-Time Dynamic Linking docu step 2: "Call InitOpenLibSys(). "
   BOOL boolInit = InitOpenLibSys( & m_hModuleWinRing0DLL ) ;
+
+  //WinRing0 documentation "How to Use"->"Run-Time Dynamic Linking"
+  // step 3: "Call GetDllStatus() to check error."
+  dwDllStatus = GetDllStatus() ;
+  if( dwDllStatus == OLS_DLL_NO_ERROR )
+  {
+     LOGN_TYPE("WinRing0 successfully initialized",
+       I_LogFormatter::log_message_typeSUCCESS)
+     //UIconfirm("WinRing0 successfully initialized") ;
+  }
+  else
+  {
+//        DWORD dw = ::GetLastError() ;
+//        _GetDetailedWinRing0Error pfnGetDetailedWinRing0Error =
+//          (_GetDetailedWinRing0Error)
+//          ::GetProcAddress(m_hModuleWinRing0DLL,"GetDetailedWinRing0Error");
+    DLLerror(dwDllStatus);
+  }
   //TRUE  if loading WinRing0 DLL succeeded and all function pointers are
   // assigned/ <> NULL.
   if( boolInit )
@@ -90,8 +112,6 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
     BYTE revision;
     BYTE release ;
     std::string strFuncName ;
-    //Initialize just to avoid (g++) compiler warning.
-    DWORD dwDllStatus = 0 ;
     LOGN_TYPE( "InitOpenLibSys succeeded", I_LogFormatter::
       log_message_typeSUCCESS )
 
@@ -102,195 +122,91 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
       << (WORD)revision << " "
       << (WORD) release
       )
-    //WinRing0 Run-Time Dynamic Linking docu step 2:
-    //   "Call GetDllStatus() to check error."
-    dwDllStatus = GetDllStatus() ;
-    if( dwDllStatus == OLS_DLL_NO_ERROR )
-    {
-       LOGN_TYPE("WinRing0 successfully initialized",
-         I_LogFormatter::log_message_typeSUCCESS)
-       //UIconfirm("WinRing0 successfully initialized") ;
-    }
-    else
-    {
-      std::string stdstrFunctionName = "GetDriverPath" ;
-//        DWORD dw = ::GetLastError() ;
-//        _GetDetailedWinRing0Error pfnGetDetailedWinRing0Error =
-//          (_GetDetailedWinRing0Error)
-//          ::GetProcAddress(m_hModuleWinRing0DLL,"GetDetailedWinRing0Error");
-
-      _GetWinRing0DriverPath pfnGetWinRing0DriverPath =
-        (_GetWinRing0DriverPath)
-        ::GetProcAddress(m_hModuleWinRing0DLL,stdstrFunctionName.c_str());
-      //only available at own compiled WinRing0 DLL version.
-      if( //pfnGetDetailedWinRing0Error
-          pfnGetWinRing0DriverPath )
-      {
-#ifdef COMPILE_WITH_LOG
-        TCHAR * p_tch = (*pfnGetWinRing0DriverPath) () ;
-#endif //#ifdef COMPILE_WITH_LOG
-        LOGN("driver path expected  by WinRing0:" << p_tch )
-      }
-      else
-        LOGN( "function \"" << stdstrFunctionName <<
-            "\" does not exist in WinRing0 DLL")
-        //std::ostrstream ostrstreamErrorDesc;
-        std::ostringstream ostrstreamErrorDesc;
-        std::string stdstrErrorMsg //("WinRing0 error ") ;
-          ;
-        if( mp_userinterface )
-        {
-            DWORD dw =
-            //http://msdn.microsoft.com/en-us/library/aa364934(VS.85).aspx:
-            //If the buffer that is pointed to by lpBuffer is not large
-            //enough, the return value specifies the required size of
-            //the buffer, in characters, including the null-terminating
-            //character.
-            ::GetCurrentDirectory(
-              //__in   DWORD nBufferLength,
-              0 ,
-              //__out  LPTSTR lpBuffer
-              NULL
-            );
-            LPTSTR lptstrCurrentDirectory = new
-              TCHAR[dw] ;
-            if(
-              //If the function succeeds, the return value specifies the
-              //number of characters that are written to the buffer, not
-              //including the terminating null character.
-              ::GetCurrentDirectory(
-                //The length of the buffer for the current directory string,
-                //in TCHARs. The buffer length must include room for a
-                //terminating null character.
-                dw
-                , lptstrCurrentDirectory
-                ) == (dw - 1)
-              )
-            {
-              //TODO mysterious g++ error
-              //"error: `ostrstreamErrorDesc' was not declared in this scope"
-//                ostrstreamErrorDesc <<
-//                    "current working dir:\""
-//                  << //GetCharPointer(
-//                  GetStdString(
-//                    //is "wchar_t" if using unicode
-//                    lptstrCurrentDirectory
-//                    ) << "\"\n" ;
-                stdstrErrorMsg +=
-                  "current working dir:\""
-                  + GetStdString(
-                    //is "wchar_t" if using unicode
-                    lptstrCurrentDirectory
-                    ) + "\"\n" ;
-            }
-            //TODO mysterious g++ error
-            //"error: `ostrstreamErrorDesc' was not declared in this scope"
-//              ostrstreamErrorDesc <<
-              stdstrErrorMsg +=
-                "WinRing0 error:" ;
-            delete [] lptstrCurrentDirectory ;
-            GetErrorMessageForInitError(dwDllStatus, stdstrErrorMsg);
-            //TODO mysterious g++ error
-            //"error: `ostrstreamErrorDesc' was not declared in this scope"
-          mp_userinterface->Confirm(
-              //ostrstreamErrorDesc
-              stdstrErrorMsg);
-#ifdef _DEBUG
-//            //Breakpoint possibility
-//            int i = 0 ;
-#endif
-        }
-        //When throwing an exception by creating the exception object on the
-        //stack VS 2005 reported an "stack buffer error"?.
-        //Oh, that was rather because the exception was not caught.
-       throw //new
-         CPUaccessException(
-             //TODO Mysterious g++ error
-             //"error: `ostrstreamErrorDesc' was not declared in this scope"
-            //ostrstreamErrorDesc.str()
-             stdstrErrorMsg
-             ) ;
-    }
   }
   else
   {
-    LOGN_TYPE("InitOpenLibSys failed", I_LogFormatter::log_message_typeERROR)
-    //Is NULL if the WinRing0 DLL could not be loaded.
-    //m_hModuleWinRing0DLL == NULL (WinRing0 DLL could not be loaded)
-    if( m_hModuleWinRing0DLL )
-    {
-      //TODO error message
-//        std::ostrstream ostrstream;
-//        ostrstream << "Error loading the necessary library \"" <<
-//          archDLLName << "\"" ;
-//        if( mp_userinterface )
-//          mp_userinterface->Confirm(ostrstream);
-//        throw CPUaccessException( ) ;
-      const char * pchErrorMessage =
-        "Other error initializing the CPU/hardware access library "
-        "\"WinRing0\":\n this may be due to "
-        "insufficient rights, so running this program as administrator "
-        "may help\nIf you do not run this program elevated then it could/"
-        "should not work properly, especially when it is not connected to"
-        " the service.";
-      LOGN_TYPE("Throwing a CPUaccessException:" << pchErrorMessage,
-        I_LogFormatter::log_message_typeERROR )
-      //When throwing an exception by creating the exception object on the
-      //stack VS 2005 reported an "stack buffer error"?.
-      //Oh, that was rather because the exception was not caught.
-       throw //new
-         CPUaccessException(
-           //TODO Mysterious g++ error
-           //"error: `ostrstreamErrorDesc' was not declared in this scope"
-           //ostrstreamErrorDesc.str()
-           //Avoid g++ warning "deprecated conversion from string constant to
-           //'char*'"
-           (char *)
-           pchErrorMessage
-           ) ;
-    }
-    else
-    {
-      //  if (m_hinstanceWinRingDLL == 0)
-      //  {
-      //    std::ostrstream ostrstream;
-      //#ifndef __MINGW32__
-      //    ostrstream << "Error loading the necessary library \"" <<
-      //        archDLLName << "\"\n-Possible solution: put this library into the "
-      //        "same directory as this executable's (working) directory or into a "
-      //        "Windows system directory" ;
-      //    if( mp_userinterface )
-      //      mp_userinterface->Confirm(ostrstream);
-      //    throw DLLnotLoadedException(ostrstream.str() ) ;
-      //#else
-      //    throw DLLnotLoadedException( "error" ) ;
-      //
-      // #endif
-      //  }
-      //  else
-      std::string stdstrErrorMsg("the CPU access DLL \"" //<< //TSTR_DLL_NAME
-        DLL_NAME
-        //<<
-        "\" failed to load/ "
-        "InitOpenLibSys failed\n"
-        "Is \"" //<< TSTR_DLL_NAME <<
-        DLL_NAME "\" in the Windows system path or in the "
-        "current directory of this program?") ;
-//      mp_userinterface->Confirm( stdstrErrorMsg ) ;
-      LOGN( stdstrErrorMsg )
-      //When throwing an exception by creating the exception object on the
-      //stack VS 2005 reported an "stack buffer error"?.
-      //Oh, that was rather because the exception was not caught.
-       throw //new
-         CPUaccessException(
-           //TODO Mysterious g++ error
-           //"error: `ostrstreamErrorDesc' was not declared in this scope"
-           //ostrstreamErrorDesc.str()
-           stdstrErrorMsg
-           ) ;
-    }
+//    InitOpenLibSysFailed();
   }
   LOGN( FULL_FUNC_NAME << "--end")
+}
+
+void WinRing0_1_3RunTimeDynLinked::InitOpenLibSysFailed()
+{
+  LOGN_TYPE("InitOpenLibSys failed", I_LogFormatter::log_message_typeERROR)
+  //Is NULL if the WinRing0 DLL could not be loaded.
+  //m_hModuleWinRing0DLL == NULL (WinRing0 DLL could not be loaded)
+  if( m_hModuleWinRing0DLL )
+  {
+    //TODO error message
+  //        std::ostrstream ostrstream;
+  //        ostrstream << "Error loading the necessary library \"" <<
+  //          archDLLName << "\"" ;
+  //        if( mp_userinterface )
+  //          mp_userinterface->Confirm(ostrstream);
+  //        throw CPUaccessException( ) ;
+    const char * pchErrorMessage =
+      "Other error initializing the CPU/hardware access library "
+      "\"WinRing0\":\n this may be due to "
+      "insufficient rights, so running this program as administrator "
+      "may help\nIf you do not run this program elevated then it could/"
+      "should not work properly, especially when it is not connected to"
+      " the service.";
+    LOGN_TYPE("Throwing a CPUaccessException:" << pchErrorMessage,
+      I_LogFormatter::log_message_typeERROR )
+    //When throwing an exception by creating the exception object on the
+    //stack VS 2005 reported an "stack buffer error"?.
+    //Oh, that was rather because the exception was not caught.
+     throw //new
+       CPUaccessException(
+         //TODO Mysterious g++ error
+         //"error: `ostrstreamErrorDesc' was not declared in this scope"
+         //ostrstreamErrorDesc.str()
+         //Avoid g++ warning "deprecated conversion from string constant to
+         //'char*'"
+         (char *)
+         pchErrorMessage
+         ) ;
+  }
+  else
+  {
+    //  if (m_hinstanceWinRingDLL == 0)
+    //  {
+    //    std::ostrstream ostrstream;
+    //#ifndef __MINGW32__
+    //    ostrstream << "Error loading the necessary library \"" <<
+    //        archDLLName << "\"\n-Possible solution: put this library into the "
+    //        "same directory as this executable's (working) directory or into a "
+    //        "Windows system directory" ;
+    //    if( mp_userinterface )
+    //      mp_userinterface->Confirm(ostrstream);
+    //    throw DLLnotLoadedException(ostrstream.str() ) ;
+    //#else
+    //    throw DLLnotLoadedException( "error" ) ;
+    //
+    // #endif
+    //  }
+    //  else
+    std::string stdstrErrorMsg("the CPU access DLL \"" //<< //TSTR_DLL_NAME
+      DLL_NAME
+      //<<
+      "\" failed to load/ "
+      "InitOpenLibSys failed\n"
+      "Is \"" //<< TSTR_DLL_NAME <<
+      DLL_NAME "\" in the Windows system path or in the "
+      "current directory of this program?") ;
+  //      mp_userinterface->Confirm( stdstrErrorMsg ) ;
+    LOGN( stdstrErrorMsg )
+    //When throwing an exception by creating the exception object on the
+    //stack VS 2005 reported an "stack buffer error"?.
+    //Oh, that was rather because the exception was not caught.
+     throw //new
+       CPUaccessException(
+         //TODO Mysterious g++ error
+         //"error: `ostrstreamErrorDesc' was not declared in this scope"
+         //ostrstreamErrorDesc.str()
+         stdstrErrorMsg
+         ) ;
+  }
 }
 
 //WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
@@ -330,6 +246,72 @@ BOOL WinRing0_1_3RunTimeDynLinked::CpuidEx(
   //else
   //  DEBUG("CPUID function pointer could not be assigned.\n");
   return bReturn ;
+}
+
+void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
+{
+  LOGN_TYPE("WinRing0 failed to initialize (DLL status <> 0)",
+    I_LogFormatter::log_message_typeERROR)
+  GetDriverPath();
+
+  std::ostringstream ostrstreamErrorDesc;
+  std::string stdstrErrorMsg //("WinRing0 error ") ;
+    ;
+  std::tstring std_tstrCurrentDirectory;
+  if( ! Windows::GetCurrentDirectory(std_tstrCurrentDirectory) )
+  {
+      stdstrErrorMsg +=
+        "current working dir:\""
+        + GetStdString(
+          std_tstrCurrentDirectory
+          ) + "\"\n" ;
+  }
+  stdstrErrorMsg +=
+    "WinRing0 error:" ;
+  GetErrorMessageForInitError(dwDllStatus, stdstrErrorMsg);
+//    if( mp_userinterface )
+//    {
+//    mp_userinterface->Confirm(
+//        stdstrErrorMsg);
+//    }
+  LOGN_TYPE(stdstrErrorMsg, I_LogFormatter::log_message_typeERROR)
+  #ifdef _DEBUG
+  //            //Breakpoint possibility
+  //            int i = 0 ;
+  #endif
+    //When throwing an exception by creating the exception object on the
+    //stack VS 2005 reported an "stack buffer error"?.
+    //Oh, that was rather because the exception was not caught.
+  throw //new
+    CPUaccessException(
+      stdstrErrorMsg
+      ) ;
+  }
+
+void WinRing0_1_3RunTimeDynLinked::GetDriverPath()
+{
+  const std::string stdstrFunctionName = "GetDriverPath" ;
+  LOGN( FULL_FUNC_NAME << "--checking if the WinRing0 DLL contains a \""
+    << stdstrFunctionName << "\" function")
+  _GetWinRing0DriverPath pfnGetWinRing0DriverPath =
+    (_GetWinRing0DriverPath)
+    ::GetProcAddress(m_hModuleWinRing0DLL, stdstrFunctionName.c_str() );
+  //only available at own compiled WinRing0 DLL version.
+  if( //pfnGetDetailedWinRing0Error
+      pfnGetWinRing0DriverPath )
+  {
+  #ifdef COMPILE_WITH_LOG
+    TCHAR * p_tch = (*pfnGetWinRing0DriverPath) () ;
+    LOGN("driver path expected by WinRing0:" << p_tch )
+  #endif //#ifdef COMPILE_WITH_LOG
+  }
+  else
+  {
+    LOGN_TYPE( "function \"" << stdstrFunctionName <<
+      "\" does not exist in WinRing0 DLL -> unable to output expected "
+      "driver path for diagnosing the initialize error ",
+      I_LogFormatter::log_message_typeWARNING)
+  }
 }
 
 void WinRing0_1_3RunTimeDynLinked::GetErrorMessageForInitError(
@@ -683,11 +665,13 @@ WinRing0_1_3RunTimeDynLinked::WrmsrEx(
     DWORD dwErrorCode = ::GetLastError( ) ;
     std::string strErrorMessage = GetHardwareAccessErrorDescription(
       dwErrorCode, "MSR" , dwIndex) ;
-    mp_userinterface->Confirm("writing to MSR failed. "
-      + strErrorMessage +
-      "possible causes:\n"
-      "This program needs elevated privileges for ring 0 "
-      "access. So run it as administrator.\n"
+    mp_userinterface->Confirm( L"writing to MSR failed. "
+      + GetStdWstring(strErrorMessage) +
+      L"possible causes:\n"
+      //This happened when wanted to write to a read-only status register.
+      L"-all or some bits within the register of this address are only readable\n"
+      L"-this program needs elevated privileges for ring 0 "
+      L"access. So run it as administrator.\n"
 //      "This program uses "
 //      "a DLL to communicate with the CPU for higher privileges. Does the "
 //      "file \"WinRing0[...].sys\" lay within the same directory as "

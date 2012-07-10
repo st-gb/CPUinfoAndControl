@@ -187,12 +187,13 @@ enum
 
 #include <wx/socket.h> //EVT_SOCKET
 
-//BEGIN_EVENT_TABLE(CPUcontrolService, wxApp)
-//  EVT_SOCKET(SERVER_ID,
-//      CPUcontrolService::OnServerEvent)
-//  EVT_SOCKET(SOCKET_ID,  //wxServiceSocketServer::
-//      CPUcontrolService::OnSocketEvent)
-//END_EVENT_TABLE()
+BEGIN_EVENT_TABLE(CPUcontrolService, wxApp)
+  EVT_SOCKET(SERVER_ID,
+      CPUcontrolService::OnServerEvent)
+  EVT_SOCKET(SOCKET_ID,  //wxServiceSocketServer::
+      CPUcontrolService::OnSocketEvent)
+//  EVT_EV
+END_EVENT_TABLE()
 
 ////Defines "WinMain(...)":
 ////Erzeugt ein wxAppConsole-Object auf dem Heap.
@@ -687,7 +688,8 @@ CPUcontrolService::GetCurrentCPUcoreData_Inline(DWORD & dwByteSize)
       //      r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
       //      dwByteSize = 0 ;
       m_criticalsection_typeCPUcoreData.Enter();
-      GetUsageAndVoltageAndFrequencyForAllCores(
+//      GetUsageAndVoltageAndFreqAndTempForAllCores(
+      GetUsageAndVoltageAndFreqForAllCores(
           m_model.m_cpucoredata.m_arfCPUcoreLoadInPercent,
           m_model.m_cpucoredata.GetNumberOfCPUcores());
       //r_arbyPipeDataToSend =
@@ -1244,6 +1246,16 @@ CPUcontrolService::GetLogFilePath()
 //        }
 //    return bHasPrefix ;
 //}
+
+//http://svn.wxwidgets.org/svn/wx/wxWidgets/trunk/docs/changes.txt:
+//"Processing of pending events now requires a running event loop.
+//  Thus initialization code (e.g. showing a dialog) previously done in wxApp::OnRun()
+//  or equivalent function should now be done into wxApp::OnEventLoopEnter().
+//  See wxApp::OnEventLoopEnter() and wxApp::OnEventLoopExit() docs for more info."
+void CPUcontrolService::OnEventLoopEnter( wxEventLoopBase *   loop)
+{
+
+}
 
 bool CPUcontrolService::OnInit()
 {

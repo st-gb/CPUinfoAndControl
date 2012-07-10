@@ -108,13 +108,15 @@ public:
   //access .
   //inline
     virtual void CreateHardwareAccessObject() ;
-  inline bool GetUsageAndVoltageAndFrequencyForAllCores(
+  inline bool GetUsageAndVoltageAndFreqForAllCores(
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores
     )
   {
-    LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores(...,"
-      << wNumCPUcores << ")--before GetPercentalUsageForAllCores" )
+    LOGN(//"CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores(...,"
+      FULL_FUNC_NAME <<
+      //<< wNumCPUcores << ")"
+      "--before GetPercentalUsageForAllCores" )
     //TODO exit thread when getting CPU core load fails?
     if( ! mp_cpucoreusagegetter ||
         //Use brackets to avoid g++ warning
@@ -147,8 +149,6 @@ public:
   //              fMultiplier,
   //              fReferenceClockInMhz ,
   //              byCoreID ) ;
-        mp_cpucontroller->GetCurrentTemperatureInCelsiusAndStoreValues(
-          byCoreID) ;
       }
 //      m_criticalsection_typeCPUcoreData.Leave() ;
       LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
@@ -156,19 +156,38 @@ public:
       return true ;
     }
 //    m_criticalsection_typeCPUcoreData.Leave() ;
-    LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
-      "return false")
+    LOGN( //"CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores"
+      FULL_FUNC_NAME <<
+      "--return false")
     return false ;
   }
-  inline bool GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
+  inline bool GetUsageAndVoltageAndFreqAndTempForAllCores(
+    float ar_fCPUcoreLoadInPercent []
+    , WORD wNumCPUcores
+    )
+  {
+    bool b = GetUsageAndVoltageAndFreqForAllCores(ar_fCPUcoreLoadInPercent,
+      wNumCPUcores);
+    for( BYTE byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
+    {
+      mp_cpucontroller->GetCurrentTemperatureInCelsiusAndStoreValues(
+        byCoreID) ;
+    }
+    return b;
+  }
+  inline bool //GetUsageAndVoltageAndFreqAndTempForAllCoresThreadSafe(
+    GetUsageAndVoltageAndFreqForAllCoresThreadSafe(
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores )
   {
+    LOGN( FULL_FUNC_NAME << "--begin")
     bool b ;
     m_criticalsection_typeCPUcoreData.Enter() ;
-    b = GetUsageAndVoltageAndFrequencyForAllCores(
+    b = //GetUsageAndVoltageAndFreqAndTempForAllCores(
+      GetUsageAndVoltageAndFreqForAllCores(
       ar_fCPUcoreLoadInPercent , wNumCPUcores ) ;
     m_criticalsection_typeCPUcoreData.Leave() ;
+    LOGN( FULL_FUNC_NAME << "--return " << (b ? "true" : "false") )
     return b ;
   }
 //  BYTE CreateCPUcontrollerAndUsageGetter(
@@ -196,7 +215,7 @@ public:
   //controller.
   //"Possibly" because: if the controller is NULL it is not being deleted.
   void PossiblyDeleteCPUcontrollerDynLib() ;
-
+  void RemoveDefaultVoltagesInsertedByCPUcontroller();
   //Declare here because e.g. either a service or a GUI may delete a CPU core
   //usage getter.
   void PossiblyDeleteCPUcoreUsageGetter() ;

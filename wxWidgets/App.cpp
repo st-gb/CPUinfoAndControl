@@ -101,22 +101,38 @@ CPUcontrolBase * gp_cpucontrolbase ;
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
 
+void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
+  const float fVoltageInVolt,
+  const float fMultiplier,
+  const float fReferenceClockInMHz)
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+//  float fVoltageInVolt;
+//  float fMultiplier;
+  StabilizeVoltage(fVoltageInVolt, fMultiplier, fReferenceClockInMHz);
+  mp_frame->RedrawEverything() ;
+  mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
+  LOGN( FULL_FUNC_NAME << "--end")
+}
+
 void VoltageTooLow()
 {
   LOGN( FULL_FUNC_NAME << "--called by Dyn lib")
   float fVoltageInVolt;
   float fMultiplier;
-  wxGetApp().StabilizeVoltage(fVoltageInVolt, fMultiplier);
+  float fReferenceClockInMHz;
+  wxGetApp().mp_cpucontroller->GetCurrentVoltageAndFrequency(
+    fVoltageInVolt,
+    fMultiplier, fReferenceClockInMHz, 0);
   //Important: else instable voltage can not be detected after Prime95 torture
   //test ended.
   wxGetApp().ExitFindLowestStableVoltageThread();
+  wxGetApp().StabilizeVoltageAndRepaintMainFrame(fVoltageInVolt, fMultiplier,
+    fReferenceClockInMHz);
   ::wxMessageBox( wxString::Format( wxT("Highest unstable voltage: %f Volt found for "
       "multiplier %f"), fVoltageInVolt, fMultiplier
       )
     );
-  wxGetApp().mp_frame->RedrawEverything() ;
-  wxGetApp().mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
-
 }
 
 wxX86InfoAndControlApp::wxX86InfoAndControlApp()
@@ -488,8 +504,9 @@ void wxX86InfoAndControlApp::CPUcontrollerDeleted()
 }
 
 bool wxX86InfoAndControlApp::ConnectIPCclient(
-  const wxString & cr_wxstrIPCclientURL
+  const wxString & cr_wxstrIPCclientURL,
 //  , std::string & r_stdstrMessage
+  bool bShowResultViaUserInterface // = false
   )
 {
   if( cr_wxstrIPCclientURL != wxEmptyString )
@@ -543,10 +560,21 @@ bool wxX86InfoAndControlApp::ConnectIPCclient(
 #endif //#ifdef COMPILE_WITH_WX_SOCKETS
     }
 #endif //#ifdef _WIN32
-    //mp_wxx86infoandcontrolapp->
     m_wxstrDataProviderURL = cr_wxstrIPCclientURL ;
-    //ConnectToDataProvider_Inline() ;
-    return ConnectToDataProviderAndShowResult() ;
+//    ConnectToDataProvider_Inline() ;
+    std::string stdstrMessage ;
+    bool bConnected = IPCclientConnectToDataProvider(stdstrMessage);
+    if( bShowResultViaUserInterface)
+      MessageWithTimeStamp( L"Could not connect to the service" +
+        ( stdstrMessage.empty() ? //wxT("")
+  //          GetStdWstring( L("") )
+          std::wstring( L"" )
+          : //wxT(":\n")
+          //+ wxString( wxT(":\n") ) + getwxString(stdstrMessage) )
+          GetStdWstring( ":\n" + stdstrMessage )
+        )
+      );
+    return bConnected;
   }
   return false ;
 }
@@ -1171,18 +1199,15 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
 }
 
 void wxX86InfoAndControlApp::StabilizeVoltage(
-  float & fVoltageInVolt,
-  float & fMultiplier
+  const float fVoltageInVolt,
+  const float fMultiplier,
+  const float fReferenceClockInMHz
   )
 {
   LOGN( FULL_FUNC_NAME << "--begin")
   //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
 //  float fMultiplier;
-  float fReferenceClockInMHz;
 //  WORD wCoreID;
-  mp_cpucontroller->GetCurrentVoltageAndFrequency(
-    fVoltageInVolt,
-    fMultiplier, fReferenceClockInMHz, 0);
 
   float fLowestStableVoltageInVolt = m_model.m_cpucoredata.
     GetNextVoltageAbove(fVoltageInVolt);
@@ -1431,6 +1456,9 @@ bool wxX86InfoAndControlApp::OnInit()
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 
     OpenLogFile(stdtstrLogFilePath);
+    LOGN_TYPE( "note: this program may crash (immediately) after this output if "
+      "it was built with an incompatible combination of \"wx\\setup.h\" and "
+      "linked wxWidgets libraries", I_LogFormatter::log_message_typeWARNING)
 
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
         //stdtstrLogFilePath
@@ -1702,7 +1730,7 @@ void wxX86InfoAndControlApp::OpenLogFile(std::tstring & r_std_tstrLogFilePath)
   else
   {
     MessageWithTimeStamp( L"Failed to open log file \n\"" +
-      GetStdWstring(r_std_tstrLogFilePath) + "\":\n"
+      GetStdWstring(r_std_tstrLogFilePath) + L"\":\n"
       //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
       + GetErrorMessageFromLastErrorCodeA() );
   }

@@ -234,6 +234,7 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   // : 100% CPU load.
   EVT_PAINT  (MainFrame::OnPaint)
   EVT_SIZE(MainFrame::OnSize)
+  EVT_SIZING(MainFrame::OnSizing)
 
   EVT_MOTION(MainFrame::OnMoveMouse)
   EVT_LEFT_DOWN(MainFrame::OnLeftMouseButtonDown)
@@ -1609,6 +1610,7 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
         wxstrCPUcontrollerDynLibFilePath ) ;
       wxGetApp().m_wxstrCPUcontrollerDynLibFilePath =
         wxstrCPUcontrollerDynLibFilePath ;
+
       if( mp_wxx86infoandcontrolapp->m_dynlibhandler.CreateDynLibCPUcontroller(
           stdstrCPUcontrollerDynLibFilePath )
         )
@@ -2308,7 +2310,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
   , I_CPUcontroller * p_cpucontroller
   )
 {
-//  LOGN("StoreCurrentVoltageAndFreqInArray")
+  LOGN(//"StoreCurrentVoltageAndFreqInArray"
+    FULL_FUNC_NAME << " begin")
   if( //mp_i_cpucontroller
       p_cpucontroller )
   {
@@ -2359,6 +2362,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
             fMultiplier , fReferenceClockInMHz , fMultiplier *
             fReferenceClockInMHz
             ) ;
+        LOGN( FULL_FUNC_NAME << "--frequency string:\"" << GetStdString(
+          r_ar_wxstrFreqInMHz[ wCPUcoreID ]) << "\"")
 //        LOGN("r_ar_wxstrFreqInMHz[ wCPUcoreID ]:" << GetStdString(
 //          r_ar_wxstrFreqInMHz[ wCPUcoreID ]) )
 //        wxstr = wxString::Format( wxT("%u"), wFreqInMHz ) ;
@@ -2390,6 +2395,12 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
           m_wMaxVoltageInVoltTextWidth = nWidth ;
 //        r_ar_voltageandfreq[byCPUcoreID].m_fVoltageInVolt = fVoltageInVolt ;
 //        r_ar_voltageandfreq[byCPUcoreID].m_wFreqInMHz = wFreqInMHz ;
+      }
+      else
+      {
+        LOGN_TYPE("error getting the current CPU core voltage and frequency "
+          "CPU controller via the CPU controller->not using their results",
+          I_LogFormatter::log_message_typeERROR)
       }
       fTempInCelsius = //mp_i_cpucontroller->
         p_cpucontroller->
@@ -2438,19 +2449,96 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
   }
 }
 
-void MainFrame::DrawCurrentPstateInfo(
+void MainFrame::DrawCPUcoreIDs(
+  wxDC & r_wxdc,
+  wxCoord & wxcoordX, //must be call by reference
+  wxCoord wxcoordTextHeight
+  )
+{
+  LOGN("DrawCurrentCPUcoreData before drawing the CPU core numbers")
+  static wxString wxstr;
+  int nWidth ;
+  wxSize wxsize ;
+  WORD wMaxCoreNumberTextWidth = 0 ;
+  for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+    ++ wCoreID )
+  {
+    wxstr =  wxString::Format(
+      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //line to make it compatible between char and wide char.
+      wxT("Core %u: ")
+      , wCoreID
+      ) ;
+    wxsize = r_wxdc.GetTextExtent( wxstr ) ;
+    nWidth = wxsize.GetWidth() ;
+    if( nWidth > wMaxCoreNumberTextWidth )
+      wMaxCoreNumberTextWidth = nWidth ;
+    r_wxdc.DrawText(
+      wxstr
+      , wxcoordX //x-coord
+      , wCoreID * //m_wTextHeight //y-coord
+      wxcoordTextHeight
+      ) ;
+  }
+  wxcoordX += wMaxCoreNumberTextWidth ;
+}
+
+void MainFrame::DrawCPUcoreUsages(
+  wxDC & r_wxdc,
+  const ICPUcoreUsageGetter * p_cpucoreusagegetter,
+  wxCoord wxcoordX,
+  wxCoord wxcoordTextHeight
+  )
+{
+ //mp_i_cpucontroller->
+ if( //mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
+     p_cpucoreusagegetter )
+ {
+   float fCPUload ;
+   wxSize wxsize ;
+   fCPUload = -1.0 ;
+   static wxString wxstr;
+   for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+     ++ wCoreID )
+   {
+     fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ wCoreID ] ;
+     wxstr = wxString::Format(
+//#ifdef _WINDOWS
+#ifdef _MSC_VER //If MicroSoft compiler.
+        _T("%.3f percent usage")
+#else
+        //when compiled with MSVC and running under WinXP the executable
+        //crashes with this format string (surely because of the 1st "%")
+        //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
+        //"  A % followed by another % character will write % to stdout."
+        wxT("%.3f%% usage")
+#endif
+      , fCPUload * 100.0f
+      ) ;
+     r_wxdc.DrawText(
+       wxstr
+       , wxcoordX //x-coord
+       , wCoreID * //m_wTextHeight //y-coord
+         wxcoordTextHeight
+       ) ;
+   }
+ }
+}
+
+/**
+ * Draws current CPU core data onto a wxDC:
+ *  -core ID
+ *  -frequency
+ *  -voltage
+ *  -temperature
+ *  -usage
+ */
+void MainFrame::DrawCurrentCPUcoreInfo(
   wxDC & r_wxdc
   )
 {
-  LOGN("DrawCurrentCPUcoreData begin")
-//  BYTE byCPUcoreID = 0 ;
-   //DWORD dwEDX ;
-   //DWORD dwLowmostBitsCurrentLimitRegister, dwLowmostBits ;
-   //ULONGLONG ull ;
-//  WORD wFreqInMHz = 0 ;
-//  float fVoltageInVolt = 0.0f ;
-  float fCPUload ;
-//  float fTempInCelsius ;
+  LOGN(//"DrawCurrentCPUcoreData"
+      FULL_FUNC_NAME << " begin")
 //  wxString wxstrCPUcoreUsage ;
   wxString wxstrCPUcoreVoltage ;
   wxString wxstrTemperature ;
@@ -2467,13 +2555,14 @@ void MainFrame::DrawCurrentPstateInfo(
     )
   {
 
-//    DEBUGN("DrawCurrentPstateInfo--Number of CPU cores:" <<
+//    DEBUGN("DrawCurrentCPUcoreInfo--Number of CPU cores:" <<
 //        (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
     wxString ar_wxstrCPUcoreVoltage [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
 
     const wxFont & wxfont = r_wxdc.GetFont();
+
 //     int nFontPointSize = wxfont.GetPointSize();
     if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
     {
@@ -2528,9 +2617,6 @@ void MainFrame::DrawCurrentPstateInfo(
 //#endif
       //wxmemorydc
      wxString wxstr ;
-     wxSize wxsize ;
-     int nWidth ;
-     WORD wMaxCoreNumberTextWidth = 0 ;
      wxCoord wxcoordX ;
      wxcoordX = //45 ;
        m_uiRightmostEndOfVoltageString;
@@ -2543,28 +2629,8 @@ void MainFrame::DrawCurrentPstateInfo(
        //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
        ) ;
 
-     LOGN("DrawCurrentCPUcoreData before drawing the CPU core numbers")
-     for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
-       ++ wCoreID )
-     {
-       wxstr =  wxString::Format(
-         //We need a _T() macro (wide char-> L"", char->"") for EACH
-         //line to make it compatible between char and wide char.
-         wxT("Core %u: ")
-         , wCoreID
-         ) ;
-       wxsize = r_wxdc.GetTextExtent( wxstr ) ;
-       nWidth = wxsize.GetWidth() ;
-       if( nWidth > wMaxCoreNumberTextWidth )
-         wMaxCoreNumberTextWidth = nWidth ;
-       r_wxdc.DrawText(
-         wxstr
-         , wxcoordX //x-coord
-         , wCoreID * //m_wTextHeight //y-coord
-         wxcoordTextHeight
-         ) ;
-     }
-     wxcoordX += wMaxCoreNumberTextWidth ;
+     DrawCPUcoreIDs(r_wxdc, wxcoordX, wxcoordTextHeight);
+
      if( //mp_i_cpucontroller
          p_cpucontroller )
      {
@@ -2609,36 +2675,10 @@ void MainFrame::DrawCurrentPstateInfo(
       }
       wxcoordX += m_wMaxTemperatureTextWidth ;
      }
-      //mp_i_cpucontroller->
-      if( //mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
-          p_cpucoreusagegetter )
-      {
-        fCPUload = -1.0 ;
-        for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
-          ++ wCoreID )
-        {
-          fCPUload = mp_cpucoredata->m_arfCPUcoreLoadInPercent[ wCoreID ] ;
-          wxstr = wxString::Format(
-   //#ifdef _WINDOWS
-   #ifdef _MSC_VER
-             _T("%.3f percent usage")
-   #else
-             //when compiled with MSVC and running under WinXP the executable
-             //crashes with this format string (surely because of the 1st "%")
-             //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
-             //"  A % followed by another % character will write % to stdout."
-             wxT("%.3f%% usage")
-   #endif
-           , fCPUload * 100.0f
-           ) ;
-          r_wxdc.DrawText(
-            wxstr
-            , wxcoordX //x-coord
-            , wCoreID * //m_wTextHeight //y-coord
-              wxcoordTextHeight
-            ) ;
-        }
-      }
+
+     DrawCPUcoreUsages(r_wxdc, p_cpucoreusagegetter, wxcoordX,
+       wxcoordTextHeight);
+
       //   } //for-loop
     if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
     {
@@ -3335,6 +3375,69 @@ float MainFrame::GetClosestVoltageForYcoordinate(
   return -1.0;
 }
 
+/**
+ * data provider: usually the x86I&C Windows service
+ */
+void MainFrame::GetCPUcoreInfoFromDataProvider(
+  ICPUcoreUsageGetter * & p_cpucoreusagegetter ,
+  I_CPUcontroller * & p_cpucontroller //,
+  )
+{
+  LOGN(FULL_FUNC_NAME << " begin")
+//  LOGN("DrawCurrentPstateInfo: connected to the service")
+  //TODO possibly make IPC communication into a separate thread because it
+  // may freeze the whole GUI.
+  //    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(get_current_CPU_data) ;
+  //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
+
+  LOGN("MainFrame::DrawCurrentPstateInfo "
+    "m_bCPUcoreUsageConsumed"
+  #ifdef _DEBUG
+    ": " << m_bCPUcoreUsageConsumed
+  #endif
+    )
+  LOGN("mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData:" <<
+    mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData )
+//Do not run it more than once concurrently.
+//    if( //m_bCPUcoreUsageConsumed
+//        true
+//  //    if(
+//  //      //Do not call/ wait on the IPC thread if it is running right now.
+//  //      && mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData
+//        )
+//    {
+//      //set to true when the thread has finished.
+//      mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData = false ;
+  mp_wxx86infoandcontrolapp->GetCurrentCPUcoreDataViaIPCNonBlocking() ;
+  m_bCPUcoreUsageConsumed = false ;
+//    }
+//    if( ::wxGetApp().m_ipcclient.m_arbyIPCdata )
+//    {
+  p_cpucontroller = & mp_wxx86infoandcontrolapp->
+      m_sax2_ipc_current_cpu_data_handler ;
+  p_cpucoreusagegetter = & mp_wxx86infoandcontrolapp->
+      m_sax2_ipc_current_cpu_data_handler ;
+  //Prevent the modification of in-program data of either the the CPU core usage
+  // or CPU controller data
+  // else this may happen:
+  //  for some cores data may be from the previous retrieval.
+  //  or even the CPU usage may be from previous and so not match the CPU
+  //   controller data
+  LOGN("DrawCurrent CPU core info: entering IPC 2 in-program data crit sec")
+  //Prevent the concurrent modification of the # of log. cores in the
+  //IPC data 2 in-program data thread.
+  mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
+
+  LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
+  //The number of CPU cores is known if the IPC data were got at first.
+  WORD wNumCPUcores = p_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
+  LOGN("DrawCurrentCPUcoreData after GetNumberOfLogicalCPUcores" )
+//      if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
+    mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
+  SetTitle( m_wxstrTitle + //wxT("--values from service")
+    wxT("--") + mp_wxx86infoandcontrolapp->m_wxstrDataProviderURL ) ;
+}
+
 bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
   ICPUcoreUsageGetter * & p_cpucoreusagegetter ,
   I_CPUcontroller * & p_cpucontroller //,
@@ -3342,19 +3445,18 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
   , bool bGetCPUcoreUsage
   )
 {
+  LOGN(FULL_FUNC_NAME << " begin")
   bool bReturn = false ;
   p_cpucoreusagegetter = mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter ;
   p_cpucontroller = mp_i_cpucontroller ;
-  //  wxFont wxfont ;
-  //  r_wxdc.GetFont(wxfont) ;
-  //  wxfont.
-  //  LOGN("DrawCurrentPstateInfo")
+  //  LOGN("DrawCurrentCPUcoreInfo")
   #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //  #ifdef _DEBUG
 //    bool bIsGettingCPUcoreData = mp_wxx86infoandcontrolapp->m_ipcclient.
 //      m_vbIsGettingCPUcoreData ;
 //    SUPPRESS_UNUSED_VARIABLE_WARNING(bIsGettingCPUcoreData)
 //  #endif
+
   if( //::wxGetApp().m_ipcclient.IsConnected()
       mp_wxx86infoandcontrolapp->IPC_ClientIsConnected()
     //This flag should be (set to) "true" as long as writing and reading data
@@ -3363,59 +3465,10 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
   //    false
     )
   {
-    LOGN("DrawCurrentPstateInfo: connected to the service")
-    //TODO possibly make IPC communication into a separate thread because it
-    // may freeze the whole GUI.
-  //    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(get_current_CPU_data) ;
-  //    ::wxGetApp().m_ipcclient.SendCommand(get_current_CPU_data) ;
-
-    LOGN("MainFrame::DrawCurrentPstateInfo "
-      "m_bCPUcoreUsageConsumed"
-  #ifdef _DEBUG
-      ": " << m_bCPUcoreUsageConsumed
-  #endif
-      )
-    LOGN("mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData:" <<
-      mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData )
-    //Do not run it more than once concurrently.
-//    if( //m_bCPUcoreUsageConsumed
-//        true
-//  //    if(
-//  //      //Do not call/ wait on the IPC thread if it is running right now.
-//  //      && mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData
-//        )
-//    {
-  //      //set to true when the thread has finished.
-  //      mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData = false ;
-      mp_wxx86infoandcontrolapp->GetCurrentCPUcoreDataViaIPCNonBlocking() ;
-      m_bCPUcoreUsageConsumed = false ;
-//    }
-  //    if( ::wxGetApp().m_ipcclient.m_arbyIPCdata )
-//    {
-      p_cpucontroller = & mp_wxx86infoandcontrolapp->
-          m_sax2_ipc_current_cpu_data_handler ;
-      p_cpucoreusagegetter = & mp_wxx86infoandcontrolapp->
-          m_sax2_ipc_current_cpu_data_handler ;
-      //Prevent the modification of in-program data of either the the CPU core usage
-      // or CPU controller data
-      // else this may happen:
-      //  for some cores data may be from the previous retrieval.
-      //  or even the CPU usage may be from previous and so not match the CPU
-      //   controller data
-      LOGN("DrawCurrent CPU core info: entering IPC 2 in-program data crit sec")
-      //Prevent the concurrent modification of the # of log. cores in the
-      //IPC data 2 in-program data thread.
-      mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
-
-      LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
-      //The number of CPU cores is known if the IPC data were got at first.
-      WORD wNumCPUcores = p_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
-      LOGN("DrawCurrentCPUcoreData after GetNumberOfLogicalCPUcores" )
-  //      if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
-        mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
-      SetTitle( m_wxstrTitle + //wxT("--values from service")
-        wxT("--") + mp_wxx86infoandcontrolapp->m_wxstrDataProviderURL ) ;
-//    }
+    GetCPUcoreInfoFromDataProvider(
+      p_cpucoreusagegetter,
+      p_cpucontroller //,
+      );
   }
   else
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
@@ -3433,7 +3486,7 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
     mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
     LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
   }
-  //  DEBUGN("DrawCurrentPstateInfo CPU controller address:" << mp_i_cpucontroller )
+  //  DEBUGN("DrawCurrentCPUcoreInfo CPU controller address:" << mp_i_cpucontroller )
    //::wxGetApp().mp_cpucoreusagegetter->
   if( //mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
       p_cpucoreusagegetter
@@ -3456,7 +3509,7 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
           GetPercentalUsageForAllCores(
           mp_cpucoredata->m_arfCPUcoreLoadInPercent) ;
       m_bCPUcoreUsageConsumed = true ;
-  //      DEBUGN("DrawCurrentPstateInfo after GetPercentalUsageForAllCores" )
+  //      DEBUGN("DrawCurrentCPUcoreInfo after GetPercentalUsageForAllCores" )
     }
   }
 //  else
@@ -3478,6 +3531,8 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
       m_byNumberOfCPUCores ] ;
     bReturn = true ;
   }
+  LOGN(FULL_FUNC_NAME << " return " << bReturn << " I_CPUcontroller *:"
+    << p_cpucontroller)
   return bReturn ;
 }
 
@@ -3631,7 +3686,7 @@ void MainFrame::OnPaint(wxPaintEvent & r_wx_paint_event)
       wxmemorydc.SetFont( wxfont) ;
 #endif //#ifdef __WXGTK__
 
-      DrawCurrentPstateInfo(wxmemorydc) ;
+      DrawCurrentCPUcoreInfo(wxmemorydc) ;
 
       //Just for testing:
       //wXcoordinate = wYcoordinate = 50 ;
@@ -4121,6 +4176,11 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
 {
   LOGN("OnSize")
   RedrawEverything() ;
+}
+
+void MainFrame::OnSizing(wxSizeEvent & wxSizeEvent)
+{
+
 }
 
 #ifdef wxHAS_POWER_EVENTS

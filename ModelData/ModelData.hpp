@@ -68,8 +68,11 @@ public:
   std::string m_strProcessorName ;
   std::string m_stdstrLogFilePath ;
   std::tstring m_stdtstrProgramName ;
+
+  std::string m_std_strDefaultCPUcoreUsageGetter;
   std::string m_stdstrCPUcontrollerDynLibPath ;
   std::string m_stdstrCPUcoreUsageGetterDynLibPath ;
+
   std::string m_stdstrExecutableStartupPath ;
 //  WORD m_wMaxFrequency ;
 

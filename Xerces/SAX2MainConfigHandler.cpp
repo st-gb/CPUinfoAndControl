@@ -201,16 +201,42 @@
 //        )
 //      )
 //      m_p_model->m_bUseDefaultFormulaForOvervoltageProtection = bConfirm ;
+    std::string std_strAttributeName;
+    std_strAttributeName =
+      //Use "( char * )" to avoid g++ Linux compiler warning
+      // "deprecated conversion from string constant to ‘char*’ "
+      ( char * ) "log_file_path";
     if( XercesAttributesHelper::GetAttributeValue
         ( 
           cr_xercesc_attributes,
-          //Use "( char * )" to avoid g++ Linux compiler warning
-          // "deprecated conversion from string constant to ‘char*’ "
-          ( char * ) "log_file_path",
-            strValue
-        )
+          std_strAttributeName,
+          m_p_model->m_stdstrLogFilePath
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
-      m_p_model->m_stdstrLogFilePath = strValue ;
+      LOGN_TYPE( FULL_FUNC_NAME << "--got attribute value for \""
+        << std_strAttributeName << "\":" << m_p_model->m_stdstrLogFilePath,
+        I_LogFormatter::log_message_typeSUCCESS)
+    else
+      LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
+        << std_strAttributeName << "\" failed",
+        I_LogFormatter::log_message_typeINFO)
+    std_strAttributeName = "default_CPU_core_usage_getter";
+    if( XercesAttributesHelper::GetAttributeValue
+        (
+          cr_xercesc_attributes,
+          std_strAttributeName,
+          m_p_model->m_std_strDefaultCPUcoreUsageGetter
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+      )
+    {
+      LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
+        << std_strAttributeName << "\" succeeded",
+        I_LogFormatter::log_message_typeSUCCESS)
+    }
+    else
+      LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
+        << std_strAttributeName << "\" failed",
+        I_LogFormatter::log_message_typeINFO)
   }
 
   void SAX2MainConfigHandler::startElement
@@ -225,6 +251,10 @@
 	    cpc_xmlchLocalName);
 	  if( pchXMLelementName )
 	  {
+//	    if( m_strTopmostXMLelement.empty() )
+//	    {
+//	      m_strTopmostXMLelement = std::string(pchXMLelementName);
+//	    }
       std::string strValue ;
       LOG( "XML element: " << pchXMLelementName << "\n" );
       m_strElementName = std::string(pchXMLelementName) ;
@@ -238,7 +268,7 @@
         ;
       }
       else if( m_strElementName == //"main_config"
-        "CPU_control_main_config" )
+        "etc" )
       {
         HandleTopmostXMLelement(cr_xercesc_attributes) ;
       }
@@ -258,14 +288,15 @@
 	  } //if( pchXMLelementName )
 	}
 	
-	void SAX2MainConfigHandler::fatalError(
-	  const XERCES_CPP_NAMESPACE::SAXParseException &
-	    cr_xercesc_sax_parse_exception
-	  )
-	{
-    LOGN( "SAX2 handler: Fatal Error: "
-      << XercesHelper::ToStdString( cr_xercesc_sax_parse_exception.getMessage()
-        )
-      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber() ) ;
-	}
+//	void SAX2MainConfigHandler::fatalError(
+//	  const XERCES_CPP_NAMESPACE::SAXParseException &
+//	    cr_xercesc_sax_parse_exception
+//	  )
+//	{
+//    LOGN_TYPE( FULL_FUNC_NAME << " Fatal Error: "
+//      << XercesHelper::ToStdString( cr_xercesc_sax_parse_exception.getMessage()
+//        )
+//      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber(),
+//      I_LogFormatter::log_message_typeERROR) ;
+//	}
 //#endif //#ifdef COMPILE_WITH_XERCES

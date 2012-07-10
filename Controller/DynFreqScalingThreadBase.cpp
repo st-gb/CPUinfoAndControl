@@ -392,17 +392,18 @@ ExitCode DynFreqScalingThreadBase::Entry()
 //        mp_cpucoredata.m_arp_percpucoreattributes[]
 
         if( mr_cpucontrolbase.
-          GetUsageAndVoltageAndFrequencyForAllCoresThreadSafe(
+          //GetUsageAndVoltageAndFreqAndTempForAllCoresThreadSafe(
+          GetUsageAndVoltageAndFreqForAllCoresThreadSafe(
             m_ar_fCPUcoreLoadInPercent, m_wNumCPUcores) )
         {
-          LOGN("after GetCurrentVoltageAndFrequency")
+          LOGN( FULL_FUNC_NAME << " after GetCurrentVoltageAndFrequency")
           //check if a temp. could be received:
           //Pentium M CPUs have no temperature register
           if(
             //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
             //e.g. the CPU asserts "PROC_HOT" or the temp is above the throttle
             //temperature.
-            (mp_cpucoredata->m_bTooHot = mp_cpucontroller->TooHot() )
+            (mp_cpucoredata->m_bTooHot = mp_cpucontroller->GetCPUcoreTooHot() )
             )
           {
             LOGN("DynFreqScalingThreadBase::Entry()--too hot")
@@ -607,7 +608,7 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
             //mp_i_cpucontroller->GetCurrentTempInDegCelsius(fTempInDegCelsius) ;
             //e.g. the CPU asserts "PROC_HOT" or the temp is above the throttle
             //temperature.
-            (mp_cpucoredata->m_bTooHot = mp_cpucontroller->TooHot() )
+            (mp_cpucoredata->m_bTooHot = mp_cpucontroller->GetCPUcoreTooHot() )
             )
           {
             LOGN("too hot:yes")

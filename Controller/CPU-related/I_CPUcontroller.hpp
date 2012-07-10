@@ -175,8 +175,10 @@ public:
     , WORD wCoreID
     )
   {
-    LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequency("
-      << wCoreID << ") begin" )
+    LOGN(//"StoreCurrentVoltageAndFreqInArray"
+      FULL_FUNC_NAME << " begin")
+//    LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequency("
+//      << wCoreID << ") begin" )
     return 0 ;
   }
   virtual float GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex ) ;
@@ -325,7 +327,7 @@ public:
 
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
-  virtual BYTE TooHot() { return 0 ; }
+  virtual BYTE GetCPUcoreTooHot() { return 0 ; }
   void SetFrequencyInMHz(WORD wFre) {} ;
   //MUST be declared virtual ("virtual ...") else 
   //SetVoltageAndFrequency() of the derived class is NOT called.
