@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once
 
 #include <string> //std::wstring
@@ -9,6 +16,9 @@
 //#include <specstrings.h> //for __out
 #include <Controller/multithread/criticalsection_type.hpp>
 #include <Controller/IPC/I_IPC.hpp> //for base class I_IPC_Client
+
+//TODO change to (also for the service) "\\\\.\\pipe\\x86IandC_service"
+#define NAMED_PIPE_NAME_ANSI "\\\\.\\pipe\\CPUcontrollerService"
 
 //Forward declarations.
 class Model ;

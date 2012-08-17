@@ -89,6 +89,7 @@ public:
   enum CheckWhetherVoltageIsInSafeRange
   {
     in_safe_range = 0 ,
+    VoltageMatchesInterpolatedVoltage,
     No2PstatesForVoltageInterpolationFound ,
     VoltageIsOutsideSafeRange
   };
@@ -121,6 +122,14 @@ public:
     float fCPUcoreFrequencyinMHz) ;
   BYTE CheckWhetherVoltageIsBelowLowestStableVoltage(float fVoltageInVolt,
     float fCPUcoreFrequencyinMHz) ;
+  BYTE CheckWhetherCPUcoreVoltageIsBelowHighestInstableVoltage(
+    float fVoltageInVolt, float fCPUcoreFrequencyinMHz) ;
+  /** This function exists because the reference clock may fluctuate, so
+   * one cannot simply divide the CPU core frequency by the reference clock
+   * for getting the multiplier. */
+  float GetClosestMultiplier(WORD wFrequencyInMHz//, float fMultiplier
+    );
+
   //This CPU instruction (in contrast to wrmsr) is not dangerous.
   //So it can be implemented for every CPU controller in this base class.
   virtual BOOL CpuidEx(

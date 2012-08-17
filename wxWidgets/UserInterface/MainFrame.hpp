@@ -352,6 +352,24 @@ public:
     wxDC & r_wxdc,
     wxCoord & wxcoordX,
     wxCoord wxcoordTextHeight);
+  inline void DrawCurrentCPUcoreFrequency(
+    wxDC & r_wxdc,
+    const wxString ar_wxstrCPUcoreFreqInMHz [],
+    wxCoord & wxcoordX,
+    wxCoord wxcoordTextHeight
+    );
+  inline void DrawCurrentCPUcoreTemperature(
+    wxDC & r_wxdc,
+    const wxString ar_wxstrCPUcoreTemperature [],
+    wxCoord & wxcoordX,
+    wxCoord wxcoordTextHeight
+    );
+  inline void DrawCPUcoreVoltage(
+    wxDC & r_wxdc,
+    const wxString ar_wxstrCPUcoreVoltageInVolt [],
+    wxCoord & wxcoordX,
+    wxCoord wxcoordTextHeight
+    );
   inline void DrawCPUcoreUsages(wxDC & r_wxdc,
     const ICPUcoreUsageGetter * p_cpucoreusagegetter,
     wxCoord wxcoordX,

@@ -1,4 +1,12 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "VoltageAndFreq.hpp"
+#include <ostream> //class std::ostream
 
 VoltageAndFreq::VoltageAndFreq()
 	//eclipse / g++ hatte gemeckert bei dieser C++ style initialization.
@@ -28,6 +36,17 @@ bool VoltageAndFreq::operator < (const VoltageAndFreq & _Right) const
     // apply operator< to operands
   return ( 
       m_wFreqInMHz < _Right.m_wFreqInMHz );
+}
+
+std::ostream & //VoltageAndFreq::
+  operator << (std::ostream & std_ostream
+  ,const VoltageAndFreq & voltageandfreq
+  ) //const
+{
+//    std::ostream std_ostream;
+  std_ostream << "(" << voltageandfreq.m_fVoltageInVolt << "V;"
+    << voltageandfreq.m_wFreqInMHz << "MHz)";
+  return std_ostream;
 }
 
 VoltageAndMultiAndRefClock::VoltageAndMultiAndRefClock()

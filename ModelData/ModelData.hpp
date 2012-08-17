@@ -55,6 +55,7 @@ public:
   //must be on top.
   BYTE m_byNumberOfCPUCores ;
   bool m_bAppendProcessID ;
+  volatile bool m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI;
   volatile bool m_bCollectPstatesAsDefault ;
   bool m_bEnableOvervoltageProtection ;
   bool m_bSkipCPUtypeCheck ;

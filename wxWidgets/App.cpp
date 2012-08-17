@@ -93,7 +93,8 @@ wxServiceSocketClient.hpp>
 
 //This global (important for using preprocessor macros) object is used for 
 //easy logging.
-extern Logger g_logger ;
+//extern Logger g_logger ;
+
 CPUcontrolBase * gp_cpucontrolbase ;
 ////Needed for the exported functions.
 //I_CPUaccess * g_p_cpuaccess ;
@@ -118,17 +119,32 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
 void VoltageTooLow()
 {
   LOGN( FULL_FUNC_NAME << "--called by Dyn lib")
-  float fVoltageInVolt;
-  float fMultiplier;
-  float fReferenceClockInMHz;
-  wxGetApp().mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//  wxGetApp().mp_cpucontroller->GetCurrentVoltageAndFrequency(
+//    fVoltageInVolt,
+//    fMultiplier, fReferenceClockInMHz, 0);
+
+    //Important: else unstable voltage can not be detected after Prime95 torture
+    //test ended.
+    wxGetApp().ExitFindLowestStableVoltageThread();
+
+  const InstableCPUcoreVoltageDetection & c_r_instablecpucorevoltagedetection =
+    wxGetApp().m_model.m_instablecpucorevoltagedetection;
+  float fVoltageInVolt = c_r_instablecpucorevoltagedetection.
+    m_lastSetCPUcoreVoltageInVolt;
+  float fMultiplier = c_r_instablecpucorevoltagedetection.
+    m_lastSetCPUcoreMultiplier;
+  float fReferenceClockInMHz = c_r_instablecpucorevoltagedetection.
+    m_fReferenceClockInMHz;
+  wxGetApp().StabilizeVoltageAndRepaintMainFrame(
     fVoltageInVolt,
-    fMultiplier, fReferenceClockInMHz, 0);
-  //Important: else instable voltage can not be detected after Prime95 torture
-  //test ended.
-  wxGetApp().ExitFindLowestStableVoltageThread();
-  wxGetApp().StabilizeVoltageAndRepaintMainFrame(fVoltageInVolt, fMultiplier,
-    fReferenceClockInMHz);
+    fMultiplier,
+    fReferenceClockInMHz
+    );
+  //This flag is important for to know why the find instable CPU core voltage
+  //loop ended.
+  wxGetApp().m_bVoltageWasTooLowCalled = true;
+//  if( ! wxGetApp().m_bAutoConfigureVoltage)
+//  {
   ::wxMessageBox( wxString::Format( wxT("Highest unstable voltage: %f Volt found for "
       "multiplier %f"), fVoltageInVolt, fMultiplier
       )
@@ -143,6 +159,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   :
 //      mp_cpucontroller(NULL)
 //    ,
+  m_bVoltageWasTooLowCalled(false),
   CPUcontrolBase(this) ,
   m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib(
     //For a default value for file seperator.
@@ -150,7 +167,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //  m_std_wstrInstableCPUcoreVoltageDynLibPath(
 //    L"InstableCPUcoreVoltageDetection.dll"),
   m_hmoduleUnstableVoltageDetectionDynLib(NULL),
-  m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
+//  m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
   m_vbExitFindLowestStableVoltage(false),
   m_x86iandc_threadFindLowestStableVoltage(I_Thread::detached),
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
@@ -999,12 +1016,17 @@ void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
   LOGN("After possibly freeing \"get CPU core data via IPC\" thread ressources")
 }
 
+/**
+ * Ends the decrease of voltage and the countdown of seconds in the certain
+ * thread and other threads waiting on the condition.
+ */
 void wxX86InfoAndControlApp::ExitFindLowestStableVoltageThread()
 {
   LOGN( FULL_FUNC_NAME << "--begin")
   //Exit the "find lowest stable voltage" thread.
   wxGetApp().m_vbExitFindLowestStableVoltage = true;
 //          wxGetApp().m_wxconditionFindLowestStableVoltage.Signal();
+  //Wake up all threads waiting on the condition.
   wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
   LOGN( FULL_FUNC_NAME << "--end")
 }
@@ -1204,7 +1226,8 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
   const float fReferenceClockInMHz
   )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( FULL_FUNC_NAME << " begin " << fVoltageInVolt << "V,multi:"
+    << fMultiplier)
   //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
 //  float fMultiplier;
 //  WORD wCoreID;
@@ -1459,7 +1482,7 @@ bool wxX86InfoAndControlApp::OnInit()
     LOGN_TYPE( "note: this program may crash (immediately) after this output if "
       "it was built with an incompatible combination of \"wx\\setup.h\" and "
       "linked wxWidgets libraries", I_LogFormatter::log_message_typeWARNING)
-
+    LOGN( "current date/time: " << GetStdString(wxNow() ) )
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
         //stdtstrLogFilePath
       GetStdString(stdtstrLogFilePath) << "\"")
@@ -1724,8 +1747,14 @@ void wxX86InfoAndControlApp::OpenLogFile(std::tstring & r_std_tstrLogFilePath)
 
   if( g_logger.OpenFile( r_std_tstrLogFilePath ) )
   {
-    g_logger.CreateFormatter(std_strFileExt, std_strLogTimeFormatString);
-    LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
+    g_logger.CreateFormatter(std_strFileExt.c_str(),
+      std_strLogTimeFormatString);
+    if( typeid(g_logger) == typeid(Logger) )
+      LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
+    if( typeid(g_logger.GetFormatter() ) == typeid(I_LogFormatter *) )
+      LOGN(FULL_FUNC_NAME << " formatter is I_LogFormatter" )
+    else if( typeid(g_logger.GetFormatter() ) == typeid(HTMLlogFormatter *) )
+      LOGN(FULL_FUNC_NAME << " formatter is HTMLlogFormatter" )
   }
   else
   {

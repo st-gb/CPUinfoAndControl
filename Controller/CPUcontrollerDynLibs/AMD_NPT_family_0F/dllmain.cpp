@@ -22,27 +22,33 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
 //  #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
 
+  #include <typeinfo> //for typeid<>
+#ifdef _WIN32
   #include <windows.h> //for
   #include <winuser.h> //MessageBox
+  HMODULE g_hModule;
+  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
+  #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
+#endif
 
-//  #include <pantheios/pantheios.hpp>
-//  #include <pantheios/implicit_link/core.h>
-//  #include <pantheios/implicit_link/fe.simple.h>
-//  #include <pantheios/backends/bec.file.h>      // be.file header
-//  #include <pantheios/implicit_link/be.file.h> //We use a log file.
+#if defined(COMPILE_WITH_LOG) && defined(USE_PANTHEIOS)
+  #include <pantheios/pantheios.hpp>
+  #include <pantheios/implicit_link/core.h>
+  #include <pantheios/implicit_link/fe.simple.h>
+  #include <pantheios/backends/bec.file.h>      // be.file header
+  #include <pantheios/implicit_link/be.file.h> //We use a log file.
+#endif
 
-#ifdef COMPILE_WITH_LOG
+#if defined(COMPILE_WITH_LOG) && defined(USE_LOG4CPLUS)
   #include <log4cplus/logger.h>
   #include <log4cplus/loggingmacros.h>
   //#include <log4cplus/configurator.h>
   #include <log4cplus/fileappender.h>
   #include <log4cplus/layout.h>
-
-  log4cplus::Logger log4cplus_logger;
-  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
-  Windows_API::Logger g_windows_api_logger;
-  HMODULE g_hModule;
 #endif
+
+//  log4cplus::Logger log4cplus_logger;
+//  Windows_API::Logger g_windows_api_logger;
 
   //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
   #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
@@ -51,6 +57,8 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
   ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+  //static
+    BYTE s_minimumFID;
 
   //static std::map<BYTE, MinAndMaxFID> s_std_mapFID2MinAndMaxFID;
 
@@ -189,6 +197,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
     //"Startup FID (StartFID)—Bit 13–8"
     BYTE StartupFID = (lowmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
+#ifdef USE_STARTUP_FID_AS_MIN_FID
+    s_minimumFID = StartupFID;
+#endif //#ifdef USE_STARTUP_FID_AS_MIN_FID
     float fMultiplier = GetMultiplier_AMD_NPT_family_0FH(StartupFID);
     pi_cpuaccess->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.insert(
       VoltageAndFreq(fVoltageInVolt, (WORD) ( fMultiplier * //g_fReferenceClockInMHz
@@ -198,7 +209,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
   }
 
-#ifdef _DEBUG
+#if defined (_DEBUG) && defined(USE_LOG4CPLUS)
   void InitLog4cplusLogger(const std::tstring & std_tstrDLLfileName)
   {
     //from http://log4cplus.sourceforge.net/hello_world.html:
@@ -245,32 +256,14 @@ AssignPointerToExportedExeReadPCIconfig.h>
     }
   }
 
-  std::tstring GetDLLfileName(HMODULE hModule, TCHAR * fileName)
-  {
-    //  LPSTR lpstrModuleName ;
-    //  CHAR ar_strModuleName[100] ;
-    //  DWORD dwChars =
-    //     GetModuleFileName(
-    //     //HINSTANCE
-    //     //NULL
-    //     GetModuleHandle(NULL)
-    ////     ,NULL //LPSTR
-    //     , ar_strModuleName
-    //     ,99 //DWORD
-    //     ) ;
-    //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll
-    DWORD dwNumChars =
-      //http://msdn.microsoft.com/en-us/library/windows/desktop/ms683197%28v=vs.85%29.aspx:
-      //"Return value":
-      //"length of the string that is copied to the buffer, in characters, not
-      //including the terminating null character"
-      ::GetModuleFileName(hModule, fileName, MAX_PATH);
-    TCHAR * p_tch = fileName + dwNumChars;
-    while( * p_tch != _T('\\') )
-      -- p_tch;
-    std::tstring std_str( ++ p_tch);
-    return std_str;
-  }
+//  float GetMaxVoltageinVolt()
+//  {
+//    DWORD eax, edx;
+//    if( ReadMSR(FIDVID_STATUS_MSR_ADDRESS, & eax, & edx, 1) )
+//    {
+//
+//    }
+//  }
 
 #ifdef _DEBUG
   void OpenLogFile()
@@ -280,25 +273,30 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
     std::string strExeFileNameWithoutDirs //= GetExeFileNameWithoutDirs() ;
       ;
-    std::string stdstrFilename = //strExeFileNameWithoutDirs +
-      //("AMD_NPT_ControllerDLL_log.txt") ;
-      std_tstrDLLfileName + "_std_ofstream_logger.txt";
+    std::string stdstrFilename;
+    if( typeid(g_logger) == typeid(::Logger) )
+      stdstrFilename = //strExeFileNameWithoutDirs +
+        //("AMD_NPT_ControllerDLL_log.txt") ;
+        std_tstrDLLfileName + "_std_ofstream_logger.txt";
+    if( typeid(g_logger) == typeid(Windows_API::Logger) )
+      stdstrFilename =
+        std_tstrDLLfileName + "_Windows_API_logger.txt";
 //      g_logger.OpenFile2( stdstrFilename ) ;
     g_logger.OpenFile2(stdstrFilename);
 
 //    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
 //          << strExeFileNameWithoutDirs )
-    g_windows_api_logger.OpenFile2(
-      //"AMD_NPT_ControllerDLL_Windows_API_log.txt"
-      std_tstrDLLfileName + "Windows_API_logger.txt") ;
+//    g_windows_api_logger.OpenFile2(
+//      std_tstrDLLfileName + "Windows_API_logger2.txt") ;
+
     DEBUGN( "this module's file name:" << fileName)
-    DEBUGN_LOGGER_NAME( g_windows_api_logger, "this module's file name:"
-      //<< fileName << " "
-      << std_tstrDLLfileName)
+//    DEBUGN_LOGGER_NAME( g_windows_api_logger, "this module's file name:"
+//      //<< fileName << " "
+//      << std_tstrDLLfileName)
 
     InitPantheiosLogger();
 
-    InitLog4cplusLogger(std_tstrDLLfileName);
+//    InitLog4cplusLogger(std_tstrDLLfileName);
 //      p_g_logger = new Logger();
 //      if( ! p_g_logger )
 //        return FALSE;
@@ -336,6 +334,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
 #endif
 
   g_s_stepping = GetStepping();
+  GetAdvancedPowerManagementInformationViaCPUID();
+//  s_maxVoltageInVolt = GetMaxVoltage();
+
   //  g_pi_cpuaccess = pi_cpuaccess ;
     std::string stdstrFilename = //strExeFileNameWithoutDirs +
       ("PentiumM_DLL_log.txt") ;
@@ -385,7 +386,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     )
   {
 #ifdef _DEBUG
-    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
+//    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
 #endif //#ifdef _DEBUG
     DEBUGN( FULL_FUNC_NAME << "--begin--fVoltageInVolt:" << fVoltageInVolt
       << " fMultiplier:" << fMultiplier)

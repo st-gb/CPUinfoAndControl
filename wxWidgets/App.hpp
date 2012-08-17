@@ -21,6 +21,8 @@
 //#include <Controller/IDynFreqScalingAccess.hpp>
 //#include <Controller/MSVC_adaption/tchar.h> //for TCHAR
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
+//for CPU_TEMP_IS_BELOW_CRITICAL, CPU_TEMP_IS_CRITICAL
+#include <Controller/CPU-related/CPU_core_temperature_defs.h>
 //#include <Controller/multithread/native_API_event_type.hpp>
 #include <Controller/multithread/condition_type.hpp>
 #include <Controller/multithread/thread_type.hpp>
@@ -107,6 +109,7 @@ private:
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
 public:
+  bool m_bVoltageWasTooLowCalled;
   std::vector<std::wstring> m_std_vec_std_wstrPowerSchemeName;
   uint16_t m_ui16ActivePowerSchemeIndex;
 #endif
@@ -126,14 +129,16 @@ private:
 public:
   wxString m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib;
   std::wstring m_std_wstrInstableCPUcoreVoltageDynLibPath;
+  //TODO replace with wxDynLib
   HMODULE m_hmoduleUnstableVoltageDetectionDynLib;
   StartInstableVoltageDetectionFunctionPointer m_pfnStartInstableCPUcoreVoltageDetection;
   StopInstableVoltageDetectionFunctionPointer m_pfnStopInstableCPUcoreVoltageDetection;
   struct external_caller m_external_caller;
   //http://forums.wxwidgets.org/viewtopic.php?t=4824:
-  wxMutex m_wxmutexFindLowestStableVoltage;
-  wxCondition m_wxconditionFindLowestStableVoltage;
+//  wxMutex m_wxmutexFindLowestStableVoltage;
+//  wxCondition m_wxconditionFindLowestStableVoltage;
   condition_type m_conditionFindLowestStableVoltage;
+  //Is set to true when "VoltageTooLow" was called.
   volatile bool m_vbExitFindLowestStableVoltage;
   x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage; ;
 private:
@@ -282,6 +287,26 @@ public:
   BYTE GetConfigDataViaInterProcessCommunication() ;
   void GetCurrentCPUcoreDataViaIPCNonBlocking() ;
   void GetCurrentCPUcoreDataViaIPCNonBlockingCreateThread() ;
+  void GetTemperatureString(const float fTemperature,
+    wxString & r_wxstrTemperative)
+  {
+    //E.g. the Pentium M has no temperature sensor.
+    if( fTemperature >= //0.0f
+        O_KELVIN_IN_DEG_CELSIUS )
+    {
+      r_wxstrTemperative = wxString::Format( //wxT("%u"), (WORD) fTemperature
+        wxT("%.3g°C"), fTemperature
+        ) ;
+    }
+    else if( fTemperature == CPU_TEMP_IS_BELOW_CRITICAL )
+    {
+      r_wxstrTemperative = wxT("<C");
+    }
+    else if( fTemperature == CPU_TEMP_IS_CRITICAL )
+    {
+      r_wxstrTemperative = wxT("C");
+    }
+  }
   bool GetX86IandCiconFromFile(wxIcon & r_wxicon );
   Model * GetModel()
   {
@@ -335,7 +360,7 @@ public:
     const float fVoltageInVolt
     ,const float fMultiplier,
     const float fReferenceClockInMHz);
-  void StartInstableCPUcoreVoltageDetection(const FreqAndVoltageSettingDlg *);
+  BYTE StartInstableCPUcoreVoltageDetection(const FreqAndVoltageSettingDlg *);
   void StopInstableCPUcoreVoltageDetection();
   void StartService() ;
   void StopService() ;

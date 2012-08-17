@@ -66,7 +66,9 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsAboveDefaultVoltage(
       )
     )
   {
-    LOGN("VoltageIsValid--interpolated voltage:" << fInterpolatedVoltage )
+    LOGN(//"VoltageIsValid"
+      FULL_FUNC_NAME <<
+        "--interpolated voltage:" << fInterpolatedVoltage )
     if(//Voltage to set is _above_ default voltage (-> too high/ dangerous).
       fVoltageInVolt > fInterpolatedVoltage )
     {
@@ -74,6 +76,8 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsAboveDefaultVoltage(
       bVoltageIsValid = //VoltageIsAboveDefaultVoltage ;
         VoltageIsOutsideSafeRange ;
     }
+    else if( fVoltageInVolt == fInterpolatedVoltage )
+      bVoltageIsValid = VoltageMatchesInterpolatedVoltage;
   }
   else
     bVoltageIsValid = No2PstatesForVoltageInterpolationFound ;
@@ -85,6 +89,7 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsBelowLowestStableVoltage(
 {
   BYTE bVoltageIsValid = //not_below ;
     in_safe_range ;
+  LOGN( FULL_FUNC_NAME << " begin")
   float fInterpolatedVoltage ;
   if( //mp_cpucontroller->GetInterpolatedVoltageFromFreq(
     GetInterpolatedVoltageFromFreq(
@@ -102,6 +107,45 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsBelowLowestStableVoltage(
       LOGN("voltage is below lowest stable voltage-> invalid")
       bVoltageIsValid = //VoltageIsBelowLowestStableVoltage ;
         VoltageIsOutsideSafeRange ;
+    }
+  }
+  else
+    bVoltageIsValid = No2PstatesForVoltageInterpolationFound ;
+  return bVoltageIsValid ;
+}
+
+BYTE I_CPUcontroller::CheckWhetherCPUcoreVoltageIsBelowHighestInstableVoltage(
+  float fVoltageInVolt, float fCPUcoreFrequencyinMHz)
+{
+  BYTE bVoltageIsValid = //not_below ;
+    in_safe_range ;
+  float fInterpolatedVoltage ;
+  if( //mp_cpucontroller->GetInterpolatedVoltageFromFreq(
+    GetInterpolatedVoltageFromFreq(
+      (WORD) fCPUcoreFrequencyinMHz ,
+      fInterpolatedVoltage ,
+      mp_model->m_cpucoredata.m_stdsetvoltageandfreqLowestStable
+      )
+    )
+  {
+    const WORD voltageInVoltArrayIndex = mp_model->m_cpucoredata.
+      GetIndexForClosestVoltage(fInterpolatedVoltage);
+    LOGN( FULL_FUNC_NAME << " interpolated voltage:" << fInterpolatedVoltage
+      << " array index:" << voltageInVoltArrayIndex )
+    if( voltageInVoltArrayIndex > 0 )
+    {
+      const float highestInstableCPUcoreVoltage = mp_model->m_cpucoredata.
+        m_arfAvailableVoltagesInVolt[voltageInVoltArrayIndex - 1];
+      LOGN( FULL_FUNC_NAME << " highestInstableCPUcoreVoltage:"
+        << highestInstableCPUcoreVoltage )
+      if(//Voltage to set is _below_ lowest settable voltage (-> too low/
+        //device may freeze/ malfunction/ can cause wrong CPU cache content).
+        fVoltageInVolt < highestInstableCPUcoreVoltage )
+      {
+        LOGN(FULL_FUNC_NAME << " voltage is below highest instable voltage-> invalid")
+        bVoltageIsValid = //VoltageIsBelowLowestStableVoltage ;
+          VoltageIsOutsideSafeRange ;
+      }
     }
   }
   else
@@ -185,6 +229,55 @@ BYTE I_CPUcontroller::DisableFrequencyScalingByOS()
 //  }
 //  return 0 ;
 //}
+
+float I_CPUcontroller::GetClosestMultiplier(WORD wFrequencyInMHz//, float fMultiplier
+  )
+{
+  float fMultiplierFromCoreFreq = (float) wFrequencyInMHz /
+    m_fReferenceClockInMHz;
+  LOGN( FULL_FUNC_NAME << " multiplier from " << wFrequencyInMHz << " Mhz="
+    << fMultiplierFromCoreFreq)
+  if( mp_model )
+  {
+//      const std::set<float> & c_r_stdset_floatAvailableMultipliers = mp_model->
+//        m_cpucoredata.m_stdset_floatAvailableMultipliers;
+//      std::set<float>::const_iterator c_iter =
+//        c_r_stdset_floatAvailableMultipliers.
+//        //http://www.cplusplus.com/reference/stl/set/lower_bound/:
+//        //"Returns an iterator pointing to the first element in the container
+//        //which does not compare less than x (using the container's comparison
+//        //object), i.e. it is either equal or greater."
+//        lower_bound(fMultiplierFromCoreFreq);
+//      if( c_iter != c_r_stdset_floatAvailableMultipliers.end() )
+//      {
+//        float greaterOrEqualMulti = *c_iter;
+//        if( c_iter != c_r_stdset_floatAvailableMultipliers.begin() )
+//        {
+//          -- c_iter;
+//          float lessMulti = *c_iter;
+//          return fMultiplierFromCoreFreq - lessMulti < greaterOrEqualMulti -
+//            fMultiplierFromCoreFreq ? lessMulti : greaterOrEqualMulti;
+//        }
+//        else
+//          return greaterOrEqualMulti;
+//      }
+//      else
+//      {
+//        if( c_iter != c_r_stdset_floatAvailableMultipliers.begin() )
+//        {
+//          -- c_iter;
+//          return * c_iter;
+//        }
+//      }
+    WORD wArrayIndexForClosestValue = mp_model->m_cpucoredata.
+      GetIndexForClosestMultiplier(
+      fMultiplierFromCoreFreq);
+    if( wArrayIndexForClosestValue != MAXWORD)
+      return mp_model->m_cpucoredata.m_arfAvailableMultipliers[
+        wArrayIndexForClosestValue];
+  }
+  return 0.0f;
+}
 
 float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
 {

@@ -6,10 +6,10 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "NamedPipeClient.hpp"
-#include <global.h> //LOGN
 #include <windows.h>
 //for format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
 #include <ModelData/ModelData.hpp> //class Model
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 //GetErrorMessageFromLastErrorCodeA()
@@ -20,7 +20,6 @@
 //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/ipc/base/named_pipe_client.htm
 
 #define BUFSIZE 512
-#define NAMED_PIPE_NAME_ANSI "\\\\.\\pipe\\CPUcontrollerService"
 
 using namespace Windows ;
 

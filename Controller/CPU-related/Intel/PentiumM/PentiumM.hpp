@@ -27,6 +27,8 @@
 #include <preprocessor_macros/value_difference.h> //ULONGLONG_VALUE_DIFF
 //ReadMSR(...)
 #include <Controller/AssignPointersToExportedExeFunctions/inline_register_access_functions.hpp>
+//for CPU_TEMP_IS_BELOW_CRITICAL, CPU_TEMP_IS_CRITICAL
+#include <Controller/CPU-related/CPU_core_temperature_defs.h>
 //PERFORMANCE_COUNTER_VALUE_DIFF(...)
 #include <Controller/CPU-related/PerformanceCounterValueDiff.h>
 //for IA32_PERF_STATUS etc.
@@ -117,9 +119,9 @@ inline BYTE GetCurrentVoltageAndFrequencyPentium_M(
 //    bySuccess = 1 ;
 #ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
     r_fReferenceClockInMHz = GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(byFID) ;
-//#else
+#else
+    r_fReferenceClockInMHz = g_fReferenceClockInMHz ;
 #endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
-//    r_fReferenceClockInMHz = g_fReferenceClockInMHz ;
     DEBUGN( FULL_FUNC_NAME << "--return 1")
     return 1 ;
   }
@@ -244,13 +246,16 @@ inline float GetTemperatureInDegCelsiusPentiumM()
 //  temperature detector output signal is currently active. If bit 4 = 1, the critical
 //  temperature detector output signal is currently active."
   //bit 2 PROCHOT # or FORCEPR# event (RO)
-  return dwEAX &
+  return (dwEAX &
     //4dec = 100 bin
     //
-    Critical_Temperature_Status_bit_mask |
-    dwEAX & Thermal_Threshold_1_Status_bit_mask
-    ? 99.0
-    : 30.0 ;
+    CRITICAL_TEMPERATURE_STATUS_BIT_MASK) ||
+    (dwEAX & THERMAL_THRESHOLD_1_STATUS_BIT_MASK)
+    ? //99.0
+    CPU_TEMP_IS_CRITICAL
+    : //30.0
+    CPU_TEMP_IS_BELOW_CRITICAL
+    ;
 }
 
 inline float GetVoltage(BYTE byVoltageID)

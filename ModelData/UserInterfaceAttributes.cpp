@@ -44,7 +44,9 @@ namespace Attributes
     m_wToolTipDelay( MAXWORD) ,
     m_nVoltageScaleSizeInPoint(0),
     m_nCurrentCPUcoreInfoSizeInPoint(0),
-    m_nCPUcoreFrequencyScaleSizeInPoint(0)
+    m_nCPUcoreFrequencyScaleSizeInPoint(0),
+    //TODO change to ~ "\\\\.\\pipe\\x86IandC_service"
+    m_std_wstrServiceAddress(L"\\\\.\\pipe\\CPUcontrollerService")
   {
   }
 

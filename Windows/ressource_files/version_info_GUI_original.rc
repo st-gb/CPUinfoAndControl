@@ -10,10 +10,17 @@
  the number will be considered as octal and converted to decimal
 */
 
+#ifndef FILE_VERSION_STRING
+	/* A default version number */
+	#define FILE_VERSION_STRING     "2012,0,0,0"
+#endif
 
-#ifndef VER_FILEVERSION
-/* A default version number */
-#define VER_FILEVERSION     "0,0,0,0"
+#ifndef FILE_VERSION_NUMBER
+	#define FILE_VERSION_NUMBER 2012,0,0,0
+#endif
+
+#ifndef COPYRIGHT_STRING
+	#define COPYRIGHT_STRING    "Copyright (C) 2010-2012"
 #endif
 
 #ifndef FILE_DESCRIPTION
@@ -21,14 +28,13 @@
 #endif
 
 #ifndef VER_FILEVERSION_STR
-/* A default version number */
-#define VER_FILEVERSION_STR   "0,0,0,0"
+	/* A default version number */
+	#define VER_FILEVERSION_STR   "0,0,0,0"
 #endif
 
-#ifndef BUILD_WITH
-	#define BUILD_WITH "n/a"
+#ifndef BUILD_WITH_STRING
+	#define BUILD_WITH_STRING "n/a"
 #else
-	
 #endif
 
 /* defines for VERSIONINFO block */
@@ -49,8 +55,8 @@
 */
 1 VERSIONINFO
 /* Fixed-info (numeric literals)*/
-FILEVERSION VER_FILEVERSION_NUMBER
-PRODUCTVERSION VER_FILEVERSION_NUMBER
+FILEVERSION FILE_VERSION_NUMBER
+PRODUCTVERSION FILE_VERSION_NUMBER
 
 /* No special flags */
 FILEFLAGSMASK 0x0L
@@ -75,9 +81,9 @@ BEGIN
 			VALUE "Comments",    BUILD_WITH_STRING
             VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
             VALUE "FileDescription", FILE_DESCRIPTION
-            VALUE "FileVersion",    VER_FILEVERSION_STRING
+            VALUE "FileVersion",    FILE_VERSION_STRING
             VALUE "InternalName",   "CPU info & control"
-            VALUE "LegalCopyright",  "Copyright (C) 2010-2012"
+            VALUE "LegalCopyright",  COPYRIGHT_STRING
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
             VALUE "ProductVersion",  "2012, codenamed ""Ocean Spray"""

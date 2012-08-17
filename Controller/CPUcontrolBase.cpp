@@ -58,6 +58,19 @@ void RemoveCarriageReturn(std::string & r_stdstr )
   }
 }
 
+/** Can be used to show while testing for an instable CPU core voltage */
+TCHAR CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning [] =
+  _T("Do not cause any voltage fluctuation while testing for"
+  "(and thus the possibility of being in an unstable voltage range) "
+  "an unstable voltage:\n"
+  "-do not switch from Alternate Current(power supply) to Direct Current"
+  "(battery mode) (and vice versa)\n"
+  "-do not (un-)plug any device\n"
+  "-do not change the power consumption of any device that is _attached_ "
+  "  to the same electric circuit that the CPU is attached to (e.g. do not:\n"
+  " -burn discs\n"
+  " -change the load of graphics chip");
+
 //CPUcontrolBase::CPUcontrolBase()
 //  :
 //  m_dynlibhandler ( * this ) ,

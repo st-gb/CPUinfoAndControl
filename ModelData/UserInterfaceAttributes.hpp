@@ -49,6 +49,8 @@ namespace Attributes
     bool m_bShowCPUcoreUsagesIconInTaskBar;
     bool m_bShowCPUcoresMultipliersIconInTaskBar;
 
+    std::wstring m_std_wstrServiceAddress;
+
     UserInterfaceAttributes();
     virtual
     ~UserInterfaceAttributes();
