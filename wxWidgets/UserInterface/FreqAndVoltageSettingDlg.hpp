@@ -22,7 +22,8 @@
 
 #ifndef wxHAS_BITMAPTOGGLEBUTTON
   //#if wxMAJOR_VERSION > 1
-    #if wxMAJOR_VERSION == 2 && wxMINOR_VERSION > 8 && wxRELEASE_NUMBER > 0
+    //#if wxMAJOR_VERSION == 2 && wxMINOR_VERSION > 8 && wxRELEASE_NUMBER > 0
+    #if wxCHECK_VERSION(2,9,0)
       //For wx2.9.1 wxHAS_BITMAPTOGGLEBUTTON is not defined although
       //there class wxBitmapToggleButton exists.
       #define wxHAS_BITMAPTOGGLEBUTTON
@@ -54,6 +55,7 @@ class wxDialog ;
 class wxStaticText ;
 class wxSpinButton ;
 class wxSpinEvent ;
+class wxTextCtrl;
 class I_CPUcontroller ;
 class MainFrame ;
 class Model ;
@@ -75,6 +77,7 @@ private:
   BYTE m_byPreviousMultiplierValue ;
   float m_fWantedVoltageInVolt ;
 public:
+  static wxString s_wxstrInstableCPUcoreVoltageWarning;
   enum voltageTypes
   {
     minimum_voltage = 0,
@@ -109,8 +112,9 @@ public:
   wxBitmapButton * m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage;
   wxSpinButton * m_p_wxspinbuttonSecondsUntilVoltageDecrease;
   wxStaticText * m_p_wxstatictextSecondsUntilNextVoltageDecrease;
+//  wxStaticText * m_p_wxstatictextInstableCPUcoreVoltageWarning;
   wxTextCtrl * m_p_wxtextctrlSecondsUntilNextVoltageDecrease;
-  wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
+//  wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
 private:
 //  wxBoxSizer * m_p_wxboxsizerOK_Cancel;
 //  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer * m_p_wxboxsizerOK_Cancel;
@@ -119,15 +123,14 @@ private:
 //  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
-//  wxCheckBox * mp_wxcheckboxValidPstate ;
-//  wxCheckBox * mp_wxcheckboxCOFVIDcontrol ;
+  wxBoxSizer * p_wxboxsizerCPUcorePstate;
+
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
     m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxOnlySafeRange ;
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton * 
     m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage ;
 public:
-//  wxCheckBox * mp_wxcheckboxPreventVoltageBelowLowestStableVoltage ;
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
     m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage;
   wxBitmapButton *
@@ -158,6 +161,7 @@ private:
   wxStaticText * mp_wxstatictextPercentageOfDefaultVoltage ;
   wxString m_wxstrIconFilesPrefix ; //= wxT("icons/") ;
   wxString m_wxstrWriteVoltageAndMultiplierToolTip ;
+  wxTextCtrl * m_p_wxtextctrlInstableCPUcoreVoltageWarning;
 //  wxSpinCtrlDouble * mp_wxspinctrldoubleMultiplier ;
 private:
   inline void AddAlsoSetWantedVoltageControls(
@@ -239,6 +243,11 @@ public:
         c_r_wxstrToolTip
       );
   }
+  void FindLowestStableVoltage();
+  void FindLowestStableVoltage(
+    const float fVoltageInVolt,
+    const float fMultiplier
+    );
   inline float GetCPUcoreFrequencyFromSliderValue() ;
   uint32_t GetCPUcoreMask();
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
@@ -253,6 +262,7 @@ public:
   void HandlePstateMayHaveChanged() ;
   void OnActivate(wxActivateEvent & r_activateevent ) ;
   void OnApplyButton(wxCommandEvent & );
+  void OnAutoConfigureVoltageSettingsButton(wxCommandEvent & r_wxcommandevent );
   void OnChar( wxKeyEvent & event) ;
   void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
   void OnClose( wxCloseEvent & wxcmd );
@@ -274,6 +284,9 @@ public:
   void OnSpinSecondsUntilVoltageDecreaseSpinButton(
     wxSpinEvent & event);
   void OnStabilizeVoltageButton(wxCommandEvent & wxcmd ) ;
+  void OnSetSecondsCountDownLabel( wxCommandEvent
+    //wxEvent
+    & event );
   void OnSetVoltageType(wxCommandEvent & wxcmd);
   void OutputFrequencyByControlValues() ;
   void OutputVoltageByControlValues() ;
@@ -282,19 +295,30 @@ public:
   void RemoveAttention(wxWindow * p_wxwindow);
   void ResumendFromStandByOrHibernate();
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;
+  void HideInstableCPUcoreVoltageWarning();
+  void ShowInstableCPUcoreVoltageWarning();
   WORD SetNearestHigherPossibleFreqInMHz(
     WORD wFreqInMHz ) ;
   //void 
   WORD SetNearestLowerPossibleFreqInMHz(
     WORD wFreqInMHz ) ;
   inline void SetMessage(const wxString & c_r_wxstrMessage);
+  void SetSecondsUntilNextVoltageDecreaseLabel(
+    unsigned seconds);
   void ChangeToStopFindingLowestStableCPUcoreVoltageButton();
   void ChangeVoltageSliderValue(int nNewValue) ;
   void SetStartFindingLowestStableVoltageButton();
   void SetMultiplierSliderToClosestValue(float fMultiplier);
   BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
+  void StartedInstableCPUcoreVoltageDetection();
+  void StopFindingLowestStableCPUcoreVoltage();
   inline BYTE VoltageIsWithinValidRange(float fVoltageInVolt
     , float fCPUcoreFrequencyinMHz) ;
   //Necessary in order to get scroll events; to avoid compilation errors.
   DECLARE_EVENT_TABLE()
 };
+  BEGIN_DECLARE_EVENT_TYPES()
+    DECLARE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxNewEventType() )
+  //"EVT_BUTTON" also expands to "DECLARE_EVENT_TYPE"
+  //  DECLARE_EVENT_TYPE(wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, 7777)
+  END_DECLARE_EVENT_TYPES()

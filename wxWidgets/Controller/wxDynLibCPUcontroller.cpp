@@ -82,9 +82,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   {
     DWORD dw = OperatingSystem::GetLastErrorCode() ;
     std::string stdstrErrMsg = //EnglishMessageFromLastErrorCode() ;
-      "loading the CPU controller dynamic library\""
+      "loading the CPU controller dynamic library\n\""
       + GetStdString( r_wxstrFilePath )
-      + "\" failed:"
+      + "\"\nfailed:"
       + GetErrorMessageFromErrorCodeA(dw) ;
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)

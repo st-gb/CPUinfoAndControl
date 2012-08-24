@@ -409,7 +409,7 @@ void MainController::ReadMainConfig(
   //case.
   SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
 #ifdef COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
-  DEBUGN( "number of Trie nodes: " << g_logger.m_trie.m_dwNumberOfNodes )
+  //DEBUGN( "number of Trie nodes: " << g_logger.GetTrie().m_dwNumberOfNodes )
 #endif //COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
   ReadXMLfileInitAndTermXerces(
     //const char* xmlFile

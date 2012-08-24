@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once // include guard
 
 #ifndef I_CPUACCESS_H
@@ -80,6 +87,7 @@ protected:
   UserInterface * mp_userinterface ;
 
 public:
+  enum access_result { hardware_access_failed, hardware_access_succeeded };
   Model * mp_model ;
   //for an attempt to set the controller object pointer from the DLL:
   //init() function the a controller class in that module?

@@ -1,0 +1,1 @@
+create_DLL_object_file.bat %1 %2

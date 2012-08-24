@@ -41,8 +41,7 @@
 #define XERCES_ATTRIBUTE_VALUE_INVALID_DATA_FORMAT 2
 
 //class Logger ;
-
-extern Logger g_logger ;
+//extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
 
 //Needed for avoiding the exact namespace.
 //XERCES_CPP_NAMESPACE_USE

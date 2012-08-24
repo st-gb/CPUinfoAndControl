@@ -11,7 +11,8 @@
  *  Created on: Oct 3, 2010
  *      Author: Stefan
  */
-
+//class CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning
+#include <Controller/CPUcontrolBase.hpp>
 #include <Controller/MainController.hpp>//MainController::GetSupportedCPUs(...)
 #include <ModelData/ModelData.hpp> //class Model
 #include <preprocessor_macros/BuildTimeString.h> //BUILT_TIME
@@ -96,16 +97,21 @@ void GetAboutMessage(wxString & wxstrMessage,
     //wxT("version ")
 #endif
     wxT( COMPILER_VERSION_NUMBER )
+    wxT("\nusing wxWidgets " ) wxVERSION_NUM_DOT_STRING_T
     //COMPILER_VERSION
-    _T("\n\n")
+    _T("\n\n");
     //"AMD--smarter choice than Intel?\n\n"
     //"To ensure a stable operation:\n"
-    _T("To give important information (that already may be contained in ")
-    _T("the documentation):\n")
-    _T("When undervolting there may be system instability when switching ")
-    _T("from power supply operation to battery mode\n")
-    _T("So test for this case if needed: test for the different p-states, ")
-    _T("especially for the ones that are much undervolted.\n")
+//    _T("To give important information (that already may be contained in ")
+//    _T("the documentation):\n")
+//    _T("When undervolting there may be system instability when switching ")
+//    _T("from power supply operation to battery mode\n")
+//    _T("So test for this case if needed: test for the different p-states, ")
+//    _T("especially for the ones that are much undervolted.\n")
+    wxstrMessage +=
+      CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning;
+    wxstrMessage +=
+    _T("\n\n")
     _T("If the system is instable, heighten the voltage(s).\n")
     _T("Note that the OS may freeze if changing voltages, so you may ")
     _T("encounter data loss.\n->save all of your work before.\n\n")

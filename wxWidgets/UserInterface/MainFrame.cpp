@@ -122,6 +122,10 @@ wxServiceSocketClient.hpp>
   #include "SystemTrayAccess.hpp"
 #endif //#ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
 
+#ifdef _MSC_VER
+  #define __FLT_MIN__ FLT_MIN
+#endif
+
 class wxObject ;
 
 extern CPUcontrolBase * gp_cpucontrolbase ;
@@ -253,12 +257,8 @@ _T("Detach CPU controller dynamic library")
 #define DETACH_CPU_CORE_USAGE_GETTER_DYNAMIC_LIBRARY_T_STRING \
 _T("Detach CPU usage getter dynamic library")
 
-//see http://en.wikipedia.org/wiki/Kelvin
-#define O_KELVIN_IN_DEG_CELSIUS -273.15
-//http://de.wikipedia.org/wiki/Gleitkommazahl#IEEE_754_und_andere_Normen:
-//IEEE 754: mantissa: 23 bit, exponent: 8 bit
-#define CPU_TEMP_IS_BELOW_CRITICAL -300.0f
-#define CPU_TEMP_IS_CRITICAL -280.0f
+//for CPU_TEMP_IS_BELOW_CRITICAL, CPU_TEMP_IS_CRITICAL
+#include <Controller/CPU-related/CPU_core_temperature_defs.h>
 
 inline void MainFrame::CreateFileMenu()
 {
@@ -790,27 +790,42 @@ void MainFrame::CreateServiceMenuItems()
   p_wxmenuService = new wxMenu ;
   if( ServiceBase::CanStartService() )
   {
-    p_wxmenuService->Append( ID_StartService , wxT("&start") ) ;
+    p_wxmenuService->Append( ID_StartService , wxT("&start"),
+      wxT("start the x86I&C service via the Service Control Manager") ) ;
   }
   //Stopping a service can be done via Inter Process Communication. (Else if
   //via Service Control manager then needs the same? rights/ privileges as
   //starting a service).
-  p_wxmenuService->Append( ID_StopService , wxT("s&top") ) ;
+  p_wxmenuService->Append( ID_StopService , wxT("s&top"),
+    wxT("stop the x86I&C service via InterProcess Communication or via "
+      "Service Control Manager") );
 
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   p_wxmenuService->Append( ID_ConnectToService,
-    wxT("connect...") );
+    wxT("connect..."), wxT("connect to an arbitrary address to the (x86IandC) "
+      "CPU core data provider/ server/ service") );
 //  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
 //    wxstrConnectOrDisconnect = wxT("disconnect") ;
 //  else
-    wxstrConnectOrDisconnect = wxT("c&onnect") ;
+    wxstrConnectOrDisconnect = wxT("c&onnect to ") + getwxString(mp_model->
+      m_userinterfaceattributes.m_std_wstrServiceAddress);
   p_wxmenuService->Append( ID_ConnectToOrDisconnectFromService,
-    wxstrConnectOrDisconnect );
-  p_wxmenuService->Append( ID_DisconnectFromService, wxT("&DISCOnnect") );
+    wxstrConnectOrDisconnect, wxT("connect to the (x86IandC) "
+      "CPU core data provider/ server/ service"
+//      " specified in the x86IandC "
+//      "config file"
+      ) );
+  p_wxmenuService->Append( ID_DisconnectFromService, wxT("&DISCOnnect"),
+    wxT("DISconnect from the (x86IandC) "
+      "CPU core data provider/ server/ service if currently connected") );
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   //pause and continue is possible via service ctrl mgr
-  p_wxmenuService->Append( ID_ContinueService, wxT("&Continue") );
-  p_wxmenuService->Append( ID_PauseService , wxT("&Pause") );
+  p_wxmenuService->Append( ID_ContinueService, wxT("&Continue"), wxT("continue "
+    "the Dynamic Voltage and Frequency Scaling done by the x86IandC service/ "
+    "server") );
+  p_wxmenuService->Append( ID_PauseService , wxT("&Pause"), wxT("pause "
+    "the Dynamic Voltage and Frequency Scaling done by the x86IandC service/ "
+    "server") );
 //  p_wxmenuService->Append( ID_StartService , _T("&Start") );
 //  p_wxmenuService->Append( ID_StopService , _T("Sto&p") );
     
@@ -2358,7 +2373,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
             //Use wxT() to enable to compile with both unicode and ANSI.
 //            wxT("%u MHz "),
 //            wFreqInMHz ) ;
-            wxT("%.3f*%.3f=%.3f MHz "),
+            wxT("%.3f*%.3fMHz=%.3fMHz "),
+//            wxT("%.3g*%.3gMHz=%.3gMHz "),
             fMultiplier , fReferenceClockInMHz , fMultiplier *
             fReferenceClockInMHz
             ) ;
@@ -2383,11 +2399,13 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
           m_wMaxFreqInMHzTextWidth = nWidth ;
 
         if( fVoltageInVolt == 0.0 )
-          r_ar_wxstrVoltageInVolt[ wCPUcoreID ] = wxT("? Volt ") ;
+          r_ar_wxstrVoltageInVolt[ wCPUcoreID ] = wxT("?V ") ;
         else
           r_ar_wxstrVoltageInVolt[ wCPUcoreID ] = wxString::Format(
             //Use wxT() to enable to compile with both unicode and ANSI.
-            wxT("%.4f Volt "), fVoltageInVolt ) ;
+            wxT("%.4f"
+              //"%.3g"
+              "V "), fVoltageInVolt ) ;
         wxsize = r_wxdc.GetTextExtent(//wxstr
           r_ar_wxstrVoltageInVolt[ wCPUcoreID ] ) ;
         nWidth = wxsize.GetWidth() ;
@@ -2406,38 +2424,31 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
         p_cpucontroller->
         GetTemperatureInCelsius(wCPUcoreID) ;
       s_arfTemperatureInDegreesCelsius[ wCPUcoreID ] = fTempInCelsius ;
-      if( fTempInCelsius ==
-      #ifdef _MSC_VER
-            FLT_MIN
-      #else
-            __FLT_MIN__
-      #endif
-         )
-        r_ar_wxstrTempInCelsius[ wCPUcoreID ] =
-#if wxUSE_UNICODE == 1
-        //"converting to execution character set: Illegal byte sequence"
-        //for wxT("? �C ")
-      wxT("? °C ") ;
-#else
-      wxT("? °C ") ;
-#endif
-      else
-        //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
-        //"Use the shorter of %e or %f"
-        //-> if "%.3g" (max 3 digits after decimal point):
-        //    for "60.0" it is "60"
-        //   for  "60.1755" it is "60.175"
-        r_ar_wxstrTempInCelsius[ wCPUcoreID ] = wxString::Format(
-          //Use wxT() to enable to compile with both unicode and ANSI.
-//#if wxUSE_UNICODE == 1
-//        //"converting to execution character set: Illegal byte sequence"
-//        //for wxT("%.3g �C ")
-//          wxT("%.3g deg C ")
-//#else
-          wxT("%.3g °C ")
-//#endif
-          ,
-          fTempInCelsius ) ;
+//      switch(fTempInCelsius)
+//      {
+//        case __FLT_MIN__ :
+//          r_ar_wxstrTempInCelsius[ wCPUcoreID ] = wxT("?°C ");
+//          break;
+//        case CPU_TEMP_IS_CRITICAL:
+//          r_ar_wxstrTempInCelsius[ wCPUcoreID ] = wxT("<C ");
+//          break;
+//        case CPU_TEMP_IS_BELOW_CRITICAL:
+//          r_ar_wxstrTempInCelsius[ wCPUcoreID ] = wxT(">C ");
+//          break;
+//        default:
+//        //http://www.cplusplus.com/reference/clibrary/cstdio/printf/:
+//        //"Use the shorter of %e or %f"
+//        //-> if "%.3g" (max 3 digits after decimal point):
+//        //    for "60.0" it is "60"
+//        //   for  "60.1755" it is "60.175"
+//        r_ar_wxstrTempInCelsius[ wCPUcoreID ] = wxString::Format(
+//          //Use wxT() to enable to compile with both unicode and ANSI.
+//          wxT("%.3g°C "),
+//          fTempInCelsius ) ;
+//      }
+      wxGetApp().GetTemperatureString(fTempInCelsius,
+        r_ar_wxstrTempInCelsius[ wCPUcoreID ]);
+      r_ar_wxstrTempInCelsius[ wCPUcoreID ] += wxT(" ");
 //      LOGN("r_ar_wxstrTempInCelsius[ wCPUcoreID ]:" << GetStdString(
 //        r_ar_wxstrTempInCelsius[ wCPUcoreID ]) )
       wxsize = r_wxdc.GetTextExtent(//wxstr
@@ -2447,6 +2458,7 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
         m_wMaxTemperatureTextWidth = nWidth ;
     }
   }
+  LOGN( FULL_FUNC_NAME << " end")
 }
 
 void MainFrame::DrawCPUcoreIDs(
@@ -2466,7 +2478,7 @@ void MainFrame::DrawCPUcoreIDs(
     wxstr =  wxString::Format(
       //We need a _T() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
-      wxT("Core %u: ")
+      wxT("core%u:")
       , wCoreID
       ) ;
     wxsize = r_wxdc.GetTextExtent( wxstr ) ;
@@ -2481,6 +2493,73 @@ void MainFrame::DrawCPUcoreIDs(
       ) ;
   }
   wxcoordX += wMaxCoreNumberTextWidth ;
+}
+
+void MainFrame::DrawCurrentCPUcoreFrequency(
+  wxDC & r_wxdc,
+  const wxString ar_wxstrFreqInMHz [],
+  wxCoord & wxcoordX,
+  wxCoord wxcoordTextHeight
+  )
+{
+  LOGN("DrawCurrentCPUcoreData before drawing the CPU core frequency")
+  for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+    ++ wCoreID )
+  {
+#ifdef _DEBUG
+    const wxString & r_wxstr = ar_wxstrFreqInMHz[ wCoreID ] ;
+    //Avoid g++ warning "unused variable ‘r_wxstr’"
+    SUPPRESS_UNUSED_VARIABLE_WARNING(r_wxstr)
+#endif
+    r_wxdc.DrawText(
+      ar_wxstrFreqInMHz[ wCoreID ]
+      , wxcoordX //x-coord
+      , wCoreID * //m_wTextHeight //y-coord
+        wxcoordTextHeight
+      ) ;
+  }
+  wxcoordX += m_wMaxFreqInMHzTextWidth ;
+}
+
+void MainFrame::DrawCurrentCPUcoreTemperature(
+  wxDC & r_wxdc,
+  const wxString ar_wxstrCPUcoreTemperature [],
+  wxCoord & wxcoordX,
+  wxCoord wxcoordTextHeight
+  )
+{
+  for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+    ++ wCoreID )
+  {
+    r_wxdc.DrawText(
+      ar_wxstrCPUcoreTemperature[ wCoreID ]
+      , wxcoordX //x-coord
+      , wCoreID * //m_wTextHeight //y-coord
+        wxcoordTextHeight
+      ) ;
+  }
+  wxcoordX += m_wMaxTemperatureTextWidth ;
+}
+
+void MainFrame::DrawCPUcoreVoltage(
+  wxDC & r_wxdc,
+  const wxString ar_wxstrCPUcoreVoltageInVolt [],
+  wxCoord & wxcoordX,
+  wxCoord wxcoordTextHeight
+  )
+{
+  LOGN("DrawCurrentCPUcoreData before drawing the CPU core voltage")
+  for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
+    ++ wCoreID )
+  {
+    r_wxdc.DrawText(
+      ar_wxstrCPUcoreVoltageInVolt[ wCoreID ]
+      , wxcoordX //x-coord
+      , wCoreID * //m_wTextHeight //y-coord
+      wxcoordTextHeight
+      ) ;
+  }
+  wxcoordX += m_wMaxVoltageInVoltTextWidth ;
 }
 
 void MainFrame::DrawCPUcoreUsages(
@@ -2554,12 +2633,11 @@ void MainFrame::DrawCurrentCPUcoreInfo(
       )
     )
   {
-
 //    DEBUGN("DrawCurrentCPUcoreInfo--Number of CPU cores:" <<
 //        (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
     wxString ar_wxstrCPUcoreVoltage [ mp_cpucoredata->m_byNumberOfCPUCores] ;
-    wxString ar_wxstrTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
-    wxString ar_wxstrFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+    wxString ar_wxstrCPUcoreTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
+    wxString ar_wxstrCPUcoreFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
 
     const wxFont & wxfont = r_wxdc.GetFont();
 
@@ -2582,9 +2660,9 @@ void MainFrame::DrawCurrentCPUcoreInfo(
 //        ar_voltageandfreq,
 //        ar_fTempInDegCelsius
         r_wxdc
-        , ar_wxstrFreqInMHz
+        , ar_wxstrCPUcoreFreqInMHz
         , ar_wxstrCPUcoreVoltage
-        , ar_wxstrTemperature
+        , ar_wxstrCPUcoreTemperature
         , p_cpucontroller
         ) ;
 //      float fHighestTemperature = GetHighestTemperature(
@@ -2600,8 +2678,8 @@ void MainFrame::DrawCurrentCPUcoreInfo(
         ++ wCoreID )
       {
         ar_wxstrCPUcoreVoltage [ wCoreID ] = wxT("?");
-        ar_wxstrTemperature [ wCoreID ] = wxT("?");
-        ar_wxstrFreqInMHz [ wCoreID ] = wxT("?");
+        ar_wxstrCPUcoreTemperature [ wCoreID ] = wxT("?");
+        ar_wxstrCPUcoreFreqInMHz [ wCoreID ] = wxT("?");
       }
     }
     LOGN("DrawCurrentCPUcoreData leaving IPC 2 in-program data crit sec")
@@ -2628,57 +2706,19 @@ void MainFrame::DrawCurrentCPUcoreInfo(
        , & wxcoordTextHeight
        //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
        ) ;
-
      DrawCPUcoreIDs(r_wxdc, wxcoordX, wxcoordTextHeight);
-
      if( //mp_i_cpucontroller
          p_cpucontroller )
      {
-       LOGN("DrawCurrentCPUcoreData before drawing the CPU core voltage")
-      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
-        ++ wCoreID )
-      {
-        r_wxdc.DrawText(
-          ar_wxstrCPUcoreVoltage[ wCoreID ]
-          , wxcoordX //x-coord
-          , wCoreID * //m_wTextHeight //y-coord
-          wxcoordTextHeight
-          ) ;
-      }
-      wxcoordX += m_wMaxVoltageInVoltTextWidth ;
-      LOGN("DrawCurrentCPUcoreData before drawing the CPU core frequency")
-      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
-        ++ wCoreID )
-      {
-#ifdef _DEBUG
-        wxString & r_wxstr = ar_wxstrFreqInMHz[ wCoreID ] ;
-        //Avoid g++ warning "unused variable ‘r_wxstr’"
-        SUPPRESS_UNUSED_VARIABLE_WARNING(r_wxstr)
-#endif
-        r_wxdc.DrawText(
-          ar_wxstrFreqInMHz[ wCoreID ]
-          , wxcoordX //x-coord
-          , wCoreID * //m_wTextHeight //y-coord
-            wxcoordTextHeight
-          ) ;
-      }
-      wxcoordX += m_wMaxFreqInMHzTextWidth ;
-      for ( WORD wCoreID = 0 ; wCoreID < mp_cpucoredata->m_byNumberOfCPUCores ;
-        ++ wCoreID )
-      {
-        r_wxdc.DrawText(
-          ar_wxstrTemperature[ wCoreID ]
-          , wxcoordX //x-coord
-          , wCoreID * //m_wTextHeight //y-coord
-            wxcoordTextHeight
-          ) ;
-      }
-      wxcoordX += m_wMaxTemperatureTextWidth ;
+       DrawCPUcoreVoltage(r_wxdc, ar_wxstrCPUcoreVoltage, wxcoordX,
+         wxcoordTextHeight);
+       DrawCurrentCPUcoreFrequency(r_wxdc, ar_wxstrCPUcoreFreqInMHz, wxcoordX,
+         wxcoordTextHeight);
+       DrawCurrentCPUcoreTemperature(r_wxdc, ar_wxstrCPUcoreTemperature,
+         wxcoordX, wxcoordTextHeight);
      }
-
      DrawCPUcoreUsages(r_wxdc, p_cpucoreusagegetter, wxcoordX,
        wxcoordTextHeight);
-
       //   } //for-loop
     if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
     {
@@ -3770,12 +3810,12 @@ enum
 
 void MainFrame::DynVoltnFreqScalingEnabled()
 {
-  ////Stop the timer (else the timer redraws addtionally to the scaling thread).
+  ////Stop the timer (else the timer redraws additionally to the scaling thread).
   //m_wxtimer.Stop() ;
   mp_wxmenuitemOwnDVFS->SetText(
     //We need a _T() macro (wide char-> L"", char->"") for EACH
     //line to make it compatible between char and wide char.
-    _T("disable Own Dynamic Voltage and Frequency Scaling")
+    wxT("disable Own Dynamic Voltage and Frequency Scaling")
     ) ;
 }
 
@@ -4850,22 +4890,8 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
       mp_cpucoredata->m_byNumberOfCPUCores);
     float fHighestTemperature = stdvalarray_float.max() ;
 
-    //E.g. the Pentium M has no temperature sensor.
-    if( fHighestTemperature >= //0.0f
-        O_KELVIN_IN_DEG_CELSIUS )
-    {
-      s_wxstrHighestCPUcoreTemperative = wxString::Format( wxT("%u") ,
-        (WORD) fHighestTemperature
-        ) ;
-    }
-    else if( fHighestTemperature == CPU_TEMP_IS_BELOW_CRITICAL )
-    {
-      s_wxstrHighestCPUcoreTemperative = wxT("<C");
-    }
-    else if( fHighestTemperature == CPU_TEMP_IS_CRITICAL )
-    {
-      s_wxstrHighestCPUcoreTemperative = wxT("C");
-    }
+    mp_wxx86infoandcontrolapp->GetTemperatureString(fHighestTemperature,
+      s_wxstrHighestCPUcoreTemperative);
     if( llDiffInMillis < 5000 )
       mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
         DrawText(

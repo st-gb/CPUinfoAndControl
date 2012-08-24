@@ -51,6 +51,7 @@ class UserInterface ;
 class CPUcontrolBase
 {
 public:
+  static TCHAR s_ar_tchInstableCPUcoreVoltageWarning[];
   enum
   {
     success = 0,

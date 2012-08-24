@@ -13,22 +13,23 @@
 
 #ifndef VER_FILEVERSION
 /* A default version number */
-#define VER_FILEVERSION     0,0,0,0
+#define VER_FILEVERSION     "0,0,0,0"
 #endif
 
-#ifndef COMPILER_VERSION
-	#define COMPILER_VERSION ""
-#endif
-	
 #ifndef FILE_DESCRIPTION
-  #define FILE_DESCRIPTION "x86 CPU information & control program--service"
+  #define FILE_DESCRIPTION "x86 CPU information & control program--GUI"
 #endif
 
-#ifndef FILE_VERSION_STRING
-	/* A default version number */
-	#define FILE_VERSION_STRING   "2012,0,0,0"
+#ifndef VER_FILEVERSION_STR
+/* A default version number */
+#define VER_FILEVERSION_STR   "0,0,0,0"
 #endif
 
+#ifndef BUILD_WITH
+	#define BUILD_WITH "n/a"
+#else
+	
+#endif
 
 /* defines for VERSIONINFO block */
 #define VOS_NT                  0x00040000L
@@ -47,9 +48,9 @@
   http://msdn.microsoft.com/en-us/library/aa381058(VS.85).aspx
 */
 1 VERSIONINFO
-/* Fixed-info */
-FILEVERSION FILE_VERSION_NUMBER
-PRODUCTVERSION FILE_VERSION_NUMBER
+/* Fixed-info (numeric literals)*/
+FILEVERSION VER_FILEVERSION_NUMBER
+PRODUCTVERSION VER_FILEVERSION_NUMBER
 
 /* No special flags */
 FILEFLAGSMASK 0x0L
@@ -68,22 +69,24 @@ BEGIN
     BLOCK "StringFileInfo"
     BEGIN
     /* Block language charset is U.S. English, Unicode */
+	/* see http://msdn.microsoft.com/en-us/library/windows/desktop/aa381058%28v=vs.85%29.aspx */ 
         BLOCK "040904B0"
         BEGIN
-            VALUE "Comments",    COMPILER_VERSION
+			VALUE "Comments",    BUILD_WITH_STRING
             VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
             VALUE "FileDescription", FILE_DESCRIPTION
-            VALUE "FileVersion",    FILE_VERSION_STRING
+            VALUE "FileVersion",    VER_FILEVERSION_STRING
             VALUE "InternalName",   "CPU info & control"
             VALUE "LegalCopyright",  "Copyright (C) 2010-2012"
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
-            VALUE "ProductVersion",  "2012, codenamed ""Ocean Spray"""
+            VALUE "ProductVersion",  "2012, codenamed ""Violator"""
         END
     END
     
     BLOCK "VarFileInfo"
     BEGIN
+	    /* 0x409=English language; 1200=Unicode character-set. */
         VALUE "Translation", 0x409, 1200
     END
 END

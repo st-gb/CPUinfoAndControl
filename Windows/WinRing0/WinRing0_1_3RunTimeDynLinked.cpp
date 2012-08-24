@@ -653,8 +653,11 @@ WinRing0_1_3RunTimeDynLinked::WrmsrEx(
   BOOL bReturn = FAILURE ;
   //DEBUG("Directly before writing to MSR\n");
   bReturn =
-    //"If the function succeeds, the return value is TRUE."
     //Function pointer "WrmsrTx" is <> NULL if "InitOpenLibSys" succeeded.
+    //WinRing0 1.3.1b doc:
+    //"This function executes "WRMSR" (Opcode : 0F 30) instruction with thread
+    //affinity mask."
+    //"If the function succeeds, the return value is TRUE."
     ::WrmsrTx(dwIndex,dwEAX,dwEDX,dwAffinityMask);
   if( bReturn )
   {
@@ -678,5 +681,5 @@ WinRing0_1_3RunTimeDynLinked::WrmsrEx(
 //      "\"WinRing0[...].dll\"?\n"
       );
   }
-  return bReturn ;
+  return bReturn ? hardware_access_succeeded : hardware_access_failed;
 }

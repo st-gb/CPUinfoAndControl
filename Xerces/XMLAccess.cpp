@@ -34,7 +34,7 @@
 using namespace std;
 using namespace xercesc;
 
-extern Logger g_logger ;
+//extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
 
 char ReadXMLfileInitAndTermXerces(
   const char * cp_chXMLfilePath,

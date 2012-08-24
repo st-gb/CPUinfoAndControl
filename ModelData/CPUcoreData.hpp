@@ -143,7 +143,12 @@ public:
   CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
 
-  WORD GetIndexForClosestMultiplier(float fMultiplier) ;
+  bool ArentDirectlyNeighbouredMultipliers(
+    const float fLowestMultiplierWhereInstabilityWasReached,
+    const float fHighestMultiplierWhereInstabilityCouldntBeReached);
+  const VoltageAndFreq * GetClosestHigherVoltageAndFreqInsertedByCPUcontroller(
+    float fMultiplier) const;
+  WORD GetIndexForClosestMultiplier(float fMultiplier) const;
   BYTE GetIndexForClosestVoltage(float) ;
   float GetLowerMultiplier( float fMulti ) ;
   float GetNextVoltageAbove(float fVoltageInVolt);
@@ -156,6 +161,16 @@ public:
   float GetMaximumMultiplier() ;
   //inline
   float GetMinimumVoltage() ;
+  float GetStartVoltageForHighestMultiplierForFindingLowestCPUcoreVoltage(
+    float & fMultiplier) const;
+  float GetStartVoltageForLowestMultiplierForFindingLowestCPUcoreVoltage(
+    float & fMultiplier) const;
+  float GetStartVoltageForMultiplierForFindingLowestCPUcoreVoltage(
+  //      float & fPercentOfMinAndMaxMultiplier
+    const float fHighestMultiplierWhereInstabilityCouldntBeReached,
+    const float fLowestMultiplierWhereInstabilityWasReached,
+    float & fMultiplier
+    ) const;
   float GetVoltageInVolt(WORD wVoltageInVoltIndex) ;
   void PossiblyReleaseMemForCoreNumAffectedData() ;
   void Init() ;

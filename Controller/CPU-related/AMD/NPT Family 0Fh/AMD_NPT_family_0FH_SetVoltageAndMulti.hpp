@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany
+ * ("Trilobyte SE") 2010-at least 2012.
+ * You are allowed to modify and use the source code from Trilobyte SE for free
+ * if you are not making profit directly or indirectly with it or its adaption.
+ * Else you may contact Trilobyte SE. */
 /*
  * AMD_NPT_family_0FH_SetVoltageAndMulti.hpp
  *
@@ -30,9 +37,12 @@
 #include <Controller/time/GetTickCount.hpp> //DWORD ::GetTickCount()
 #include <Controller/Sleep.hpp> //OperatingSystem::Sleep()
 
-enum voltageIDincOrdec{ decrementVoltageID = -1, incrementVoltageID = 1};
-enum incOrdecVoltage{ incrementVoltage = decrementVoltageID,
+enum voltageIDincOrDec{ decrementVoltageID = -1, incrementVoltageID = 1};
+enum incOrDecVoltage{ incrementVoltage = decrementVoltageID,
   decrementVoltage = incrementVoltageID };
+
+//extern static BYTE s_minimumFID;
+extern BYTE s_minimumFID;
 
 //#ifdef COMPILE_WITH_LOG
 //  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
@@ -78,7 +88,7 @@ void WaitVoltageStabilizationTime()
 //  OperatingSystem::Sleep(10);
 }
 
-//10.6.2.1.5 Isochronous Relief Time:
+//"10.6.2.1.5 Isochronous Relief Time" :
 //"The Isochronous Relief Time (IRT) is the amount of time the processor driver must count after each
 //FID change step in a given P-state transition."
 void WaitIsochronousReliefTime()
@@ -142,8 +152,10 @@ inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
     if( ! ( lowmostMSRbits & BIT_31_SET )
       )
       break;
-    if(//It happened that the bit had never been set->endless loop (when both
-        //FID and VID to set differed from the current FID and VID).
+    if(//It happened that the bit had never been set->endless loop (when
+        // written to FIDVID_CONTROL_MSR and _both_ FID and VID to set
+        // differed from the current FID and VID).
+        //This comparison prevents the endless loop.
         (currentTimeCountInSeconds - initialTimeCountInSeconds) > 0.0001
       )
     {
@@ -187,20 +199,27 @@ inline BYTE WriteVoltageIDandFID_AMD_NPT_family_0FH(
   return MSRaccessRetVal;
 }
 
-inline BYTE SetCurrentVoltage_AMD_NPT_family_0FH(
-  float fVoltageInVoltToSet,
+//  "To change the processor voltage:
+//  1. Write the following values to FIDVID_CTL (MSR C001_0041h):
+//  – NewVID field (bits 13–8) with the VID code associated with the target voltage
+//  – NewFID field (bits 5–0) with the CurrFID value indicated in the FIDVID_STATUS MSR
+//  – InitFidVid bit (bit 16) set to 1. Setting this bit initiates the VID change.
+//  – Clear all other bits to 0."
+inline BYTE SetVIDorFID_AMD_NPT_family_0FH(
+//  float fVoltageInVoltToSet,
+  BYTE VoltageID,
   BYTE byFrequencyIDtoSet,
   uint16_t StpGntTOCnt
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--fVoltageInVoltToSet:" << fVoltageInVoltToSet
+  DEBUGN( FULL_FUNC_NAME //<< "--fVoltageInVoltToSet:" << fVoltageInVoltToSet
+    << "VoltageID:" << (WORD) VoltageID
     << " byFrequencyIDtoSet:" << (WORD) byFrequencyIDtoSet
     << " StpGntTOCnt:" << StpGntTOCnt)
   static BYTE MSRaccessRetVal;
 //  float fMultiplierFromFID = GetMultiplier( lowmostMSRbits & BITMASK_FOR_LOWMOST_6BIT);
 
 //  BYTE FID = GetFrequencyID_AMD_NPT_family_0FH(fMultiplierToSet);
-  BYTE VoltageID = GetVoltageID_AMD_NPT_family_0FH(fVoltageInVoltToSet);
 
   MSRaccessRetVal = WriteVoltageIDandFID_AMD_NPT_family_0FH(
     VoltageID, byFrequencyIDtoSet, StpGntTOCnt);
@@ -248,7 +267,8 @@ inline BYTE makePositive(char by)
 }
 
 inline BYTE TransitionFrequencyID_StepByStep(
-  float fCurrentVoltageInVolt
+//  float fCurrentVoltageInVolt
+  BYTE currentVoltageID
   , BYTE byCurrentFrequencyID,
   BYTE TargetFrequencyID,
   char FIDstep // positive: increase FID; negative: decrease FID
@@ -261,17 +281,20 @@ inline BYTE TransitionFrequencyID_StepByStep(
   {
 //    -- byCurrentFrequencyID;
     byCurrentFrequencyID += FIDstep; //next lower or higher even FID.
-    retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-      fCurrentVoltageInVolt,
+    retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//      fCurrentVoltageInVolt,
+      currentVoltageID,
       byCurrentFrequencyID,
       s_StpGntTOCnt
       );
+    WaitIsochronousReliefTime();
   } while( direction * byCurrentFrequencyID < direction * TargetFrequencyID);
   return retVal;
 }
 
 inline BYTE TransitionToLowerFrequencyID_StepByStep(
-  float fCurrentVoltageInVolt
+//  float fCurrentVoltageInVolt
+  BYTE currentVoltageID
   , BYTE & byCurrentFrequencyID,
   BYTE TargetFrequencyID
   )
@@ -290,8 +313,9 @@ inline BYTE TransitionToLowerFrequencyID_StepByStep(
   //    -- byCurrentFrequencyID;
       byCurrentFrequencyID -= FIDstep; //next even lower FID.
       DEBUGN( FULL_FUNC_NAME << "--byCurrentFrequencyID:" << (WORD) byCurrentFrequencyID)
-      retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-        fCurrentVoltageInVolt,
+      retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//        fCurrentVoltageInVolt,
+        currentVoltageID,
         byCurrentFrequencyID,
         s_StpGntTOCnt
         );
@@ -301,16 +325,84 @@ inline BYTE TransitionToLowerFrequencyID_StepByStep(
   return retVal;
 }
 
+/** This function uses VCO portal frequencies to transition faster.
+* s_minimumFID must have been set before  */
+inline BYTE PossibyTransitionToMinimumFID(
+  BYTE & byCurrentFrequencyID,
+  const BYTE TargetFID,
+//  float fCurrentVoltageInVolt
+  const BYTE currentVoltageID
+  )
+{
+  BYTE retVal = 1;
+  const MinAndMaxFID & minandmaxfidForMinimumFID =
+    s_ar_minandmaxfid[s_minimumFID];
+//  BYTE VID = GetVoltageID_AMD_NPT_family_0FH(fCurrentVoltageInVolt);
+  // but where stands the min FID? e.g. min FID can be = FID for 1400 MHz
+  if( TargetFID == s_minimumFID
+      && byCurrentFrequencyID //> 7 // > 1600 MHz
+      >= minandmaxfidForMinimumFID.m_maxFID
+    )
+  {
+      //s_ar_minandmaxfidVCO_FIDtoLowerFID[targetFID - 8];
+    if( byCurrentFrequencyID //> 7 // > 1600 MHz
+        >= minandmaxfidForMinimumFID.m_maxFID
+      )
+    {
+      retVal = TransitionToLowerFrequencyID_StepByStep(
+  //      fVoltageInVoltToSet,
+//        fCurrentVoltageInVolt,
+        currentVoltageID,
+        byCurrentFrequencyID,
+        minandmaxfidForMinimumFID.m_maxFID
+        );
+    }
+    //Now we are at max FID for portal frequency to minimum FID.
+    if( retVal )
+    {
+      //Do the change from high FID frequency table
+      // (minandmaxfidForMinimumFID.m_maxFID) to low FID frequency table
+      // (s_minimumFID).
+      // (byCurrentFrequencyID - s_minimumFID > 2)
+      retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//        VID,
+        currentVoltageID,
+        s_minimumFID,
+        s_StpGntTOCnt);
+      WaitIsochronousReliefTime();
+      //Now we are at minimum FID.
+    }
+  //    const MinAndMaxFID & minandmaxfid = s_ar_minandmaxfidVCO_FIDtoLowerFID[
+  //      byCurrentFrequencyID - 8];
+  //    if( TargetFID >= minandmaxfid.m_minFID && TargetFID <=
+  //        minandmaxfid.m_maxFID)
+  //    {
+  //    }
+//    }
+//    else
+//  //"Is TargetFID in the “High FID Frequency Table”?"
+//  if( TargetFID > 7
+//      //1
+//      )
+  }
+  return retVal;
+}
+
 BYTE TransitionToLowerFrequencyID(
   float fMultiplierToSet,
   BYTE & byCurrentFrequencyID,
-  float fCurrentVoltageInVolt
+  //When the FID is changed the VID is not allowed to change.
+  const float fCurrentVoltageInVolt
+//  const BYTE currentVoltageID
   )
 {
   DEBUGN( FULL_FUNC_NAME << "--begin--byCurrentFrequencyID:"
     << (WORD) byCurrentFrequencyID << " ")
-  BYTE retVal;
+  BYTE retVal = 1;
   BYTE FinalFID = GetFrequencyID_AMD_NPT_family_0FH(fMultiplierToSet);
+  const BYTE currentVoltageID = GetVoltageID_AMD_NPT_family_0FH(
+    fCurrentVoltageInVolt);
+
 #ifdef ALLOW_ODD_FIDS_FOR_STEPPING_NUMBER_BELOW_3
   BYTE TargetFID = FinalFID;
 #else
@@ -319,26 +411,21 @@ BYTE TransitionToLowerFrequencyID(
 #endif
   DEBUGN( FULL_FUNC_NAME << "--begin--FinalFID:"
     << (WORD) FinalFID << " TargetFID:" << (WORD) TargetFID)
-  //TODO use VCO portal frequencies to transition faster.
-//  if( byCurrentFrequencyID > 7 // > 1600 MHz
-//      )
-//  {
-//    const MinAndMaxFID & minandmaxfid = s_ar_minandmaxfidVCO_FIDtoLowerFID[
-//      byCurrentFrequencyID - 8];
-//    if( TargetFID >= minandmaxfid.m_minFID && TargetFID <=
-//        minandmaxfid.m_maxFID)
-//    {
-//
-//    }
-//  }
-  //"Is TargetFID in the “High FID Frequency Table”?"
-//  if( //TargetFID > 7
-//      1
-//      )
+
+#ifdef USE_STARTUP_FID_AS_MIN_FID
+  retVal = PossibyTransitionToMinimumFID(
+    byCurrentFrequencyID,
+    TargetFID,
+//    fCurrentVoltageInVolt
+    currentVoltageID
+    );
+#endif //#ifdef USE_STARTUP_FID_AS_MIN_FID
+  if( byCurrentFrequencyID > TargetFID)
   {
     retVal = TransitionToLowerFrequencyID_StepByStep(
 //      fVoltageInVoltToSet,
-      fCurrentVoltageInVolt,
+//      fCurrentVoltageInVolt,
+      currentVoltageID,
       byCurrentFrequencyID,
       TargetFID
 //      FinalFID
@@ -354,7 +441,7 @@ BYTE TransitionToLowerFrequencyID(
 //      do
 //      {
 //        --byCurrentFrequencyID;
-//        retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
+//        retVal = SetVIDorFID_AMD_NPT_family_0FH(
 //          fCurrentVoltageInVolt,
 //          byCurrentFrequencyID,
 //          s_StpGntTOCnt);
@@ -363,7 +450,7 @@ BYTE TransitionToLowerFrequencyID(
 //    }
 //    else
 //    {
-//      retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
+//      retVal = SetVIDorFID_AMD_NPT_family_0FH(
 //        fCurrentVoltageInVolt,
 //        TargetFID,
 //        s_StpGntTOCnt);
@@ -390,7 +477,10 @@ inline BYTE GetVCOportalFrequencyID(
   BYTE retVal = 255;
   //"The processor supports direct transitions between the minimum core
   //frequency [...]"
+  // but where stands the min FID? e.g. min FID can be = FID for 1400 MHz
+#ifdef USE_STARTUP_FID_AS_MIN_FID
   if( byCurrentFrequencyID == s_minimumFID )
+#endif //#ifdef USE_STARTUP_FID_AS_MIN_FID
   {
     const MinAndMaxFID & c_r_minandmaxfid =
       s_ar_minandmaxfid[byCurrentFrequencyID];
@@ -407,7 +497,8 @@ inline BYTE GetVCOportalFrequencyID(
 }
 
 inline BYTE TransitionToHigherFrequencyID_StepByStep(
-  float fVoltageInVoltToSet
+//  float fVoltageInVoltToSet
+  const BYTE currentVoltageID
   , BYTE & byCurrentFrequencyID,
   BYTE TargetFrequencyID
   )
@@ -420,8 +511,9 @@ inline BYTE TransitionToHigherFrequencyID_StepByStep(
     byCurrentFrequencyID += 2; //next even higher FID <=> higher multiplier.
     DEBUGN( FULL_FUNC_NAME << "byCurrentFrequencyID:"
       << (WORD) byCurrentFrequencyID )
-    retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-      fVoltageInVoltToSet,
+    retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//      fVoltageInVoltToSet,
+      currentVoltageID,
       byCurrentFrequencyID,
       s_StpGntTOCnt);
     WaitIsochronousReliefTime();
@@ -431,10 +523,12 @@ inline BYTE TransitionToHigherFrequencyID_StepByStep(
   {
     DEBUGN( FULL_FUNC_NAME << "--byCurrentFrequencyID < TargetFrequencyID" )
     ++ byCurrentFrequencyID;
-    retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-      fVoltageInVoltToSet,
+    retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//      fVoltageInVoltToSet,
+      currentVoltageID,
       byCurrentFrequencyID,
       s_StpGntTOCnt);
+    WaitIsochronousReliefTime();
   }
   DEBUGN( FULL_FUNC_NAME << "--return " << retVal)
   return retVal;
@@ -449,52 +543,61 @@ inline BYTE TransitionToHigherFrequencyID(
   DEBUGN( FULL_FUNC_NAME << "--begin")
   BYTE retVal = 0;
   BYTE FinalFID = GetFrequencyID_AMD_NPT_family_0FH(fMultiplierToSet);
+  const BYTE VoltageID = GetVoltageID_AMD_NPT_family_0FH(fVoltageInVoltToSet);
   BYTE TargetFID = FinalFID % 2 == 1 ? FinalFID - 1 : FinalFID;
   DEBUGN( FULL_FUNC_NAME
     << "--TargetFID:" << (WORD) TargetFID
     << "current FID: " << (WORD) byCurrentFrequencyID )
 
-  //"Is CurrentFID in the “High FID Frequency Table”?"
-  if( byCurrentFrequencyID > 7
-      //1
-      )
-  {
-    retVal = TransitionToHigherFrequencyID_StepByStep(
-      fVoltageInVoltToSet,
-      byCurrentFrequencyID,
-      TargetFID);
-  }
-  else
-  {
-    //TODO: only transition to VCO freq if byCurrentFrequencyID = min FID?
-//    if( byCurrentFrequencyID == minimumFrequencyID )
-    BYTE VCOportalFrequencyID = GetVCOportalFrequencyID(
-      byCurrentFrequencyID,
-      TargetFID);
-    //"Is TargetFID above VCO portal of CurrentFID?"
-    if( VCOportalFrequencyID != 255 )
+//  //"Is CurrentFID in the “High FID Frequency Table”?"
+//  if( byCurrentFrequencyID > 7
+//      //1
+//      )
+//  {
+//    retVal = TransitionToHigherFrequencyID_StepByStep(
+//      fVoltageInVoltToSet,
+//      byCurrentFrequencyID,
+//      TargetFID);
+//  }
+//  else
+//  {
+#ifdef USE_STARTUP_FID_AS_MIN_FID
+  //TODO: only transition to VCO freq if byCurrentFrequencyID = minimum FID?
+   //    but where stands the min FID? e.g. min FID can be = FID for 1400 MHz
+    if( byCurrentFrequencyID == s_minimumFID )
     {
-      //"FID Transition Process To highest portal FID in “High FID Frequency
-      // Table”"
-      retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-        fVoltageInVoltToSet,
-        VCOportalFrequencyID,
-        s_StpGntTOCnt);
-      WaitIsochronousReliefTime();
-      if( retVal )
-        byCurrentFrequencyID = VCOportalFrequencyID;
-    }
-    if( byCurrentFrequencyID < TargetFID )
-    {
-//      byCurrentFrequencyID = VCOportalFrequencyID;
-      TransitionToHigherFrequencyID_StepByStep(
-        fVoltageInVoltToSet,
-//        VCOportalFrequencyID,
+      BYTE VCOportalFrequencyID = GetVCOportalFrequencyID(
         byCurrentFrequencyID,
         TargetFID);
-      //"FID Transition Process To TargetFID"
-    }
+      //"Is TargetFID above VCO portal of CurrentFID?"
+      if( VCOportalFrequencyID != 255 )
+      {
+        //"FID Transition Process To highest portal FID in “High FID Frequency
+        // Table”"
+        retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//          fVoltageInVoltToSet,
+          VoltageID,
+          VCOportalFrequencyID,
+          s_StpGntTOCnt);
+        WaitIsochronousReliefTime();
+        if( retVal )
+          byCurrentFrequencyID = VCOportalFrequencyID;
+      }
+      if( byCurrentFrequencyID < TargetFID )
+#endif //USE_STARTUP_FID_AS_MIN_FID
+      {
+  //      byCurrentFrequencyID = VCOportalFrequencyID;
+        TransitionToHigherFrequencyID_StepByStep(
+//          fVoltageInVoltToSet,
+          VoltageID,
+  //        VCOportalFrequencyID,
+          byCurrentFrequencyID,
+          TargetFID);
+        //"FID Transition Process To TargetFID"
+      }
+#ifdef USE_STARTUP_FID_AS_MIN_FID
   }
+#endif //USE_STARTUP_FID_AS_MIN_FID
   DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal)
   return retVal;
 }
@@ -508,6 +611,8 @@ inline void CalculateTargetVoltageID()
   //"TargetVID = VID after RVO applied
 }
 
+/**Use this function for both increase and decrease of voltage for better code
+ * maintainance/ to avoid redundancy.*/
 inline BYTE TransitionToVoltageInSingleVIDsteps(
   char direction, /** -1: decrement voltage ID<=>increment voltage,
     1: increment voltage ID*/
@@ -573,10 +678,13 @@ inline float SetToClosestConfigurableVoltage(float fCurrentVoltageInVolt)
   return fVoltageInVoltFromVID;
 }
 
+/**Use this function for both increase and decrease of voltage for better code
+ * maintainance/ to avoid code redundancy.*/
 inline BYTE ChangeVoltageByMaximumVoltageStep(
   float & fCurrentVoltageInVolt,
   const BYTE byCurrentFrequencyID,
-  float MaximumVoltageStepInVolt, //negative: decrease voltage
+  /**if negative: decrease voltage by this value in Volt*/
+  float MaximumVoltageStepInVolt,
   float fVoltageInVoltToSet
   )
 {
@@ -587,6 +695,12 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
     << " fVoltageToSet:" << fVoltageInVoltToSet << "V"
     )
   BYTE retVal = 0;
+//  //Max exceed max voltage when the ramp voltage offset is added to a voltage.
+//  if( fVoltageInVoltToSet > s_maxVoltageInVolt)
+//  {
+//    DEBUGN( FULL_FUNC_NAME << " setting to max voltage")
+//    fVoltageInVoltToSet = s_maxVoltageInVolt;
+//  }
   float comparativeVoltageInVoltToSet = fVoltageInVoltToSet;
 //  float absoluteCurrentVoltageInVolt;
   float absoluteMaximumVoltageStepInVolt = MaximumVoltageStepInVolt;
@@ -611,11 +725,15 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
 
   if( fCurrentVoltageInVolt * direction <= fBorderVoltage)
   {
+    BYTE VoltageID;
     do
     {
       fCurrentVoltageInVolt += MaximumVoltageStepInVolt;
-      retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-        fCurrentVoltageInVolt,
+      VoltageID = GetVoltageID_AMD_NPT_family_0FH(//fVoltageInVoltToSet
+        fCurrentVoltageInVolt);
+      retVal = SetVIDorFID_AMD_NPT_family_0FH(
+//        fCurrentVoltageInVolt,
+        VoltageID,
         byCurrentFrequencyID,
         0);
       //10.6.2.1.1 Voltage Stabilization Time:
@@ -659,92 +777,40 @@ inline BYTE TransitionVoltage(
   // "25 mV BIOS default."
     0.025f;
 
-  //  "To change the processor voltage:
-  //  1. Write the following values to FIDVID_CTL (MSR C001_0041h):
-  //  – NewVID field (bits 13–8) with the VID code associated with the target voltage
-  //  – NewFID field (bits 5–0) with the CurrFID value indicated in the FIDVID_STATUS MSR
-  //  – InitFidVid bit (bit 16) set to 1. Setting this bit initiates the VID change.
-  //  – Clear all other bits to 0."
+  BYTE direction = incrementVoltage;
 //  static uint16_t StpGntTOCnt = 0;
-  if( fCurrentVoltageInVolt < fVoltageInVoltToSet)
+  if( fCurrentVoltageInVolt > fVoltageInVoltToSet)
   {
-//    do
-//    {
-//      fCurrentVoltageInVolt += MaximumVoltageStepInVolt;
-//      retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-//        fCurrentVoltageInVolt,
-//        byCurrentFrequencyID,
-//        StpGntTOCnt);
-//      WaitVoltageStabilizationTime();
-//    }
-//    while( retVal && fCurrentVoltageInVolt <= ( fVoltageInVoltToSet -
-//        MaximumVoltageStepInVolt)
-//      );
-    ChangeVoltageByMaximumVoltageStep(
-      fCurrentVoltageInVolt,
-      byCurrentFrequencyID,
-      MaximumVoltageStepInVolt,
-      fVoltageInVoltToSet
-      );
-    //if MaximumVoltageStepInVolt was too higher (higher than 1 voltage step)
-    if( fCurrentVoltageInVolt < fVoltageInVoltToSet)
-    {
-      DEBUGN( FULL_FUNC_NAME << " fCurrentVoltageInVolt < fVoltageInVoltToSet")
-      DEBUGN( FULL_FUNC_NAME << "--"
-        << getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
-        << "--fCurrentVoltageInVolt")
-      DEBUGN( FULL_FUNC_NAME << "--"
-        << getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltToSet) )
-        << "--fVoltageInVoltToSet"
-        )
-      TransitionToVoltageInSingleVIDsteps(
-//        -1,
-        incrementVoltage,
-        fCurrentVoltageInVolt,
-        fVoltageInVoltToSet,
-        byCurrentFrequencyID);
-    }
+    direction = decrementVoltage;
+    MaximumVoltageStepInVolt *= -1.f;
   }
-  else if( fCurrentVoltageInVolt > fVoltageInVoltToSet )
+  ChangeVoltageByMaximumVoltageStep(
+    fCurrentVoltageInVolt,
+    byCurrentFrequencyID,
+    MaximumVoltageStepInVolt,
+    fVoltageInVoltToSet
+    );
+  //if MaximumVoltageStepInVolt was too high (higher than 1 voltage step)
+  if( //if e.g 1.2V->0.8V: 0.825 > 0.8V;
+      // 0.8V->1.2V: -1.175V > -1.2V
+      fCurrentVoltageInVolt * direction > fVoltageInVoltToSet * direction
+//      direction * fCurrentVoltageInVolt < direction * fVoltageInVoltToSet
+    )
   {
-//    do
-//    {
-//      fCurrentVoltageInVolt -= MaximumVoltageStepInVolt;
-//      retVal = SetCurrentVoltage_AMD_NPT_family_0FH(
-//        fCurrentVoltageInVolt,
-//        byCurrentFrequencyID,
-//        StpGntTOCnt);
-//      WaitVoltageStabilizationTime();
-//      SetToClosestConfigurableVoltage(fCurrentVoltageInVolt);
-//    }
-//    while( retVal && fCurrentVoltageInVolt >=
-//      //If not checking so then "current voltage" could go below
-//      //fVoltageInVoltToSet.
-//       (fVoltageInVoltToSet + MaximumVoltageStepInVolt) );
-    ChangeVoltageByMaximumVoltageStep(
+    DEBUGN( FULL_FUNC_NAME << " did not reach fVoltageInVoltToSet")
+    DEBUGN( FULL_FUNC_NAME << "--"
+      << getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
+      << "--fCurrentVoltageInVolt")
+    DEBUGN( FULL_FUNC_NAME << "--"
+      << getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltToSet) )
+      << "--fVoltageInVoltToSet"
+      )
+    TransitionToVoltageInSingleVIDsteps(
+//      incrementVoltage,
+      direction,
       fCurrentVoltageInVolt,
-      byCurrentFrequencyID,
-      MaximumVoltageStepInVolt * -1.0f,
-      fVoltageInVoltToSet
-      );
-    if( fCurrentVoltageInVolt > fVoltageInVoltToSet)
-    {
-      DEBUGN( FULL_FUNC_NAME << " fCurrentVoltageInVolt > fVoltageInVoltToSet")
-      DEBUGN( FULL_FUNC_NAME << "--"
-        << getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
-        << "--fCurrentVoltageInVolt")
-      DEBUGN( FULL_FUNC_NAME << "--"
-        << getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltToSet) )
-        << "--fVoltageInVoltToSet"
-        )
-      TransitionToVoltageInSingleVIDsteps(
-//        -1,
-//        incrementVoltageID,
-        decrementVoltage,
-        fCurrentVoltageInVolt,
-        fVoltageInVoltToSet,
-        byCurrentFrequencyID);
-    }
+      fVoltageInVoltToSet,
+      byCurrentFrequencyID);
   }
   DEBUGN( FULL_FUNC_NAME << "--fCurrentVoltageInVolt:" << fCurrentVoltageInVolt )
   DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal )
@@ -764,22 +830,41 @@ inline BYTE TransitionToVoltageRequiredForFrequencyTransition(
   static BYTE MSRaccessRetVal;
   static float fVoltageToTransitionTo;
 
-  //  "Processor driver: perform a series of VID-only transitions each increasing the
-  //  voltage by the maximum voltage step (MVS) to change the voltage:
+  //Cites from "BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
+  // Processors", document number 32559 Rev. 3.16 November 2009:
+  // , "Figure 8. High-Level P-state Transition Flow"
+  //"Processor driver: perform a series of VID-only transitions each increasing
+  // the voltage by the maximum voltage step (MVS) to change the voltage:"
+
+  //TODO idea: avoid setting a voltage that is too high(if lowest multi then
+  //do not set to the max voltage)
   if( fMultiplierToSet > fCurrentMultiplier)
   {
-    //  • To the voltage for the requested P-state plus the voltage indicated by the ramp
-    //  voltage offset (RVO), if the requested P-state is greater in frequency than the
-    //  current P-state.
-    fVoltageToTransitionTo = fVoltageInVoltToSet + fRampVoltageOffsetInVolt;
+    fVoltageToTransitionTo =
+    //"• To the voltage for the requested P-state plus"
+      fVoltageInVoltToSet +
+      //"the voltage indicated by the ramp voltage offset (RVO),"
+      fRampVoltageOffsetInVolt;
+    //"if the requested P-state is greater in frequency than the current
+    //P-state."
   }
   else if( fMultiplierToSet < fCurrentMultiplier)
   {
-    //  "• To the voltage indicated by the CurrVID plus the voltage indicated by the RVO,
-    //  if the requested P-state is lower in frequency than the current P-state.
-    //  Software counts off voltage stabilization time (VST) after each voltage step"
-    fVoltageToTransitionTo = fCurrentVoltageInVolt + fRampVoltageOffsetInVolt;
+    fVoltageToTransitionTo =
+    //"• To the voltage indicated by the CurrVID plus"
+      fCurrentVoltageInVolt +
+    //"the voltage indicated by the RVO,"
+      fRampVoltageOffsetInVolt;
+    // "if the requested P-state is lower in frequency than the current P-state.
   }
+  //Max exceed max voltage when the ramp voltage offset is added to a voltage.
+  if( fVoltageToTransitionTo > s_maxVoltageInVolt)
+  {
+    DEBUGN( FULL_FUNC_NAME << " setting to max voltage")
+    fVoltageToTransitionTo = s_maxVoltageInVolt;
+  }
+  //"Software counts off voltage stabilization time (VST) after each voltage
+  // step"
   MSRaccessRetVal = TransitionVoltage(
     fCurrentVoltageInVolt,
     fVoltageToTransitionTo,
@@ -851,10 +936,10 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
 
 //  CalculateTargetVoltageID();
 
-//  10.5.7.2 P-state Transition Algorithm
+//  "10.5.7.2 P-state Transition Algorithm" :
 //  "The P-state transition algorithm has three phases.
 //  1 During phase 1 the processor voltage is transitioned
-//    to the level required to support frequency transitions.
+//    to the level required to support frequency transitions."
   TransitionToVoltageRequiredForFrequencyTransition(
     fVoltageInVoltToSet
     , fMultiplierToSet
@@ -869,8 +954,8 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
   DEBUGN( FULL_FUNC_NAME << "--after TransitionToVoltageRequiredForFrequency"
     "Transition--curr VID:" << (WORD) byCurrentVoltageID << " curr FID:"
     << (WORD) byCurrentFrequencyID )
-//  2 During phase 2 the processor frequency is transitioned to frequency
-//    associated with the OS-requested P-state.
+//  "2 During phase 2 the processor frequency is transitioned to frequency
+//    associated with the OS-requested P-state."
   TransitionFrequency(
     fVoltageInVoltToSet
     , fMultiplierToSet
@@ -879,7 +964,7 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
     , fCurrentMultiplier
     , byCurrentFrequencyID
     );
-//  3 During phase 3 the processor voltage is transitioned to the voltage
+//  "3 During phase 3 the processor voltage is transitioned to the voltage
 //    associated with the OS-requested P-state."
   MSRaccessRetVal = TransitionVoltage(
     fCurrentVoltageInVolt,
@@ -901,8 +986,8 @@ inline BYTE
 {
   DEBUGN( FULL_FUNC_NAME << "--begin--should set" << fVoltageInVoltToSet
     << "V, multiplier:" << fMultiplierToSet)
-  DEBUGN_LOGGER_NAME(g_windows_api_logger, FULL_FUNC_NAME << "--begin--"
-    << fVoltageInVoltToSet << "V, " << fMultiplierToSet)
+//  DEBUGN_LOGGER_NAME(g_windows_api_logger, FULL_FUNC_NAME << "--begin--"
+//    << fVoltageInVoltToSet << "V, " << fMultiplierToSet)
   float fCurrentVoltageInVolt;
   float fCurrentMultiplier;
   float fCurrentReferenceClockInMHz;
@@ -919,7 +1004,7 @@ inline BYTE
     << " fCurrentVoltageInVolt:" << fCurrentVoltageInVolt)
   if( fCurrentMultiplier == fMultiplierToSet)
   {
-//    SetCurrentVoltage_AMD_NPT_family_0FH(
+//    SetVIDorFID_AMD_NPT_family_0FH(
 //      fVoltageInVoltToSet,
 //      byCurrentFrequencyID,
 //      0);

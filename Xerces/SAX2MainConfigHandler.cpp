@@ -28,7 +28,7 @@
   #include <sstream> //for std::istringstream
 	
 	//#define MB_CUR_MAX 1 
-  extern Logger g_logger ;
+//  extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
 	
 	//With Xerces < Version 2.8:
 	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces

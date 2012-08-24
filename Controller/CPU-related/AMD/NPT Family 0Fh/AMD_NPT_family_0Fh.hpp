@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany
+ * ("Trilobyte SE") 2010-at least 2012.
+ * You are allowed to modify and use the source code from Trilobyte SE for free
+ * if you are not making profit directly or indirectly with it or its adaption.
+ * Else you may contact Trilobyte SE. */
 /*
  * AMD_NPT_family_0Fh.hpp
  *
@@ -35,15 +42,17 @@ inline_register_access_functions.hpp>
 
 extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace;
 
-#ifdef COMPILE_WITH_LOG
+#if defined(COMPILE_WITH_LOG) && defined(USE_LOG4CPLUS)
   #include <log4cplus/logger.h>
 
   extern log4cplus::Logger log4cplus_logger;
 #endif
 
 #define GET_FREQUENCY_ID_FROM_FREQ_IN_MHZ(freqInMHz) ( \
-  ( (float) freqInMHz / 200.0f  /*= multiplier) */ \
-    - 4.0f ) / 0.5f ) /*= frequency ID) */
+  (BYTE)( \
+    ( (float) freqInMHz / 200.0f  /*= multiplier) */ \
+    - 4.0f ) / 0.5f ) /*= frequency ID) */ \
+    )
 
 class MinAndMaxFID
 {
@@ -93,13 +102,23 @@ static MinAndMaxFID s_ar_minandmaxfidVCO_FIDtoLowerFID[] = {
   MinAndMaxFID(0,1), //1700 MHz -> 800, 900 MHz
   MinAndMaxFID(0,2), //1800 MHz -> 800, 900, 1000 MHz
   MinAndMaxFID(1,2), //1900 MHz -> 900, 1000 MHz
-  MinAndMaxFID(1,3) //2000 MHz -> 900, 1000, 1100 MHz
-//  MinAndMaxFID(16,20), //1300 MHz -> 2400, 2500, 2600, 2700, 2800 MHz
-//  MinAndMaxFID(18,22), //1400 MHz -> 2600, 2700, 2800, 2900, 3000 MHz
-//  MinAndMaxFID(20,24)  //1500 MHz -> 2800, 2900, 3000, 3100, 3200 MHz
-  };
+  MinAndMaxFID(1,3), //2000 MHz -> 900, 1000, 1100 MHz
+  MinAndMaxFID(2,3), //2100 MHz -> 1000, 1100 MHz
+  MinAndMaxFID(2,4), //2200 MHz -> 1000 - 1200 MHz
+  MinAndMaxFID(3,4), //2300 MHz -> 1100 - 1200 MHz
+  MinAndMaxFID(3,5), //2400 MHz -> 1100 - 1300 MHz
+  MinAndMaxFID(4,5), //2500 MHz -> 1200 - 1300 MHz
+  MinAndMaxFID(4,6), //2600 MHz -> 1200 - 1400 MHz
+  MinAndMaxFID(5,6), //2700 MHz -> 1300 - 1400 MHz
+  MinAndMaxFID(5,7), //2800 MHz -> 1300 - 1500 MHz
+  MinAndMaxFID(6,7), //2900 MHz -> 1400 - 1500 MHz
+  MinAndMaxFID(6,6), //3000 MHz -> 1400 MHz
+  MinAndMaxFID(7,7), //3100 MHz -> 1500 MHz
+  MinAndMaxFID(7,7), //3200 MHz -> 1500 MHz
+  }; //17 entries
 
 static BYTE g_s_stepping; //= GetStepping();
+static float s_maxVoltageInVolt;
 
 inline float GetMultiplier_AMD_NPT_family_0FH(BYTE frequencyID)
 {
@@ -133,7 +152,7 @@ inline BYTE GetFrequencyID_AMD_NPT_family_0FH(float fMultiplier)
 
 inline float GetVoltageInVolt_AMD_NPT_family_0FH(BYTE voltageID)
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--VID:" << (WORD) voltageID)
+  static float fVoltageInVolt;
   //BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
   // Processors 32559 Rev. 3.16 November 2009
   //Table 74. VID Code Voltages
@@ -146,10 +165,20 @@ inline float GetVoltageInVolt_AMD_NPT_family_0FH(BYTE voltageID)
   // 11_1111b (=63 dec) -> 0.3750 V
 
   //voltage_in_Volt = 1.550 V - VID * 0.025 V | VID <= 01_1111b
-  return voltageID < 32 ?
-    (1.550f - (float) voltageID * 0.025) :
+  if( voltageID < 32)
+  {
+    fVoltageInVolt = (1.550f - (float) voltageID * 0.025);
+    DEBUGN( FULL_FUNC_NAME << " voltage=1.550f-VID("
+      << (WORD) voltageID << ")*0.025=" << fVoltageInVolt)
+  }
+  else
+  {
     //voltage_in_Volt = 0.7625 V - (VID - 32) * 0.0125 V | VID > 01_1111b
-    0.7625f - (voltageID - 32) * 0.0125f ;
+    fVoltageInVolt = 0.7625f - (voltageID - 32) * 0.0125f;
+    DEBUGN( FULL_FUNC_NAME << " voltage=0.7625-(VID(" << (WORD) voltageID
+      << ")-32) * 0.0125=" << fVoltageInVolt)
+  }
+  return fVoltageInVolt;
 }
 
 inline BYTE GetVoltageID_AMD_NPT_family_0FH(float fVoltageInVoltToSet)
@@ -253,7 +282,7 @@ inline BYTE GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
   )
 {
   DEBUGN( FULL_FUNC_NAME << "--begin")
-  DEBUGN_LOGGER_NAME( g_windows_api_logger, FULL_FUNC_NAME << "--begin")
+//  DEBUGN_LOGGER_NAME( g_windows_api_logger, FULL_FUNC_NAME << "--begin")
   static BYTE readMSRreturnValue;
 
   readMSRreturnValue = GetCurrentVoltageIDAndFrequencyID_AMD_NPT_family_0Fh(
@@ -266,11 +295,11 @@ inline BYTE GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
   * p_fReferenceClockInMHz = 200.0f;
   DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) readMSRreturnValue
     << " ref.clock:" << * p_fReferenceClockInMHz
-    << "multi: " << * p_fMultiplier
+    << " multi: " << * p_fMultiplier
     << " " << * p_fVoltageInVolt << "V"
     )
 //  pantheios::log(pantheios::notice, FULL_FUNC_NAME);
-#ifdef COMPILE_WITH_LOG
+#if defined(COMPILE_WITH_LOG) && defined(USE_LOG4CPLUS)
   LOG4CPLUS_WARN(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
 #endif
   return readMSRreturnValue;
@@ -371,6 +400,7 @@ inline float * GetAvailableVoltagesAMD_NPT_family0F(
   const BYTE maximumVoltageVID = ( highmostMSRbits >>
     MAX_VID_START_ADDRESS_IN_BIT_IN_HIGHMOST_BYTES ) &
     BITMASK_FOR_LOWMOST_6BIT;
+  s_maxVoltageInVolt = GetVoltageInVolt_AMD_NPT_family_0FH(maximumVoltageVID);
 #ifdef _DEBUG
   const BYTE MaxRampVID = ( lowmostMSRbits >> MAX_RAMP_VID_START_ADDRESS_IN_BIT
     ) & BITMASK_FOR_LOWMOST_6BIT;
@@ -405,7 +435,8 @@ inline float * GetAvailableVoltagesAMD_NPT_family0F(
     for( ; arrayIndexForCurrentVoltage < r_wNumberOfArrayElements;
         ++ arrayIndexForCurrentVoltage)
     {
-      voltages[arrayIndexForCurrentVoltage] = GetVoltageInVolt_AMD_NPT_family_0FH(currentVID);
+      voltages[arrayIndexForCurrentVoltage] =
+        GetVoltageInVolt_AMD_NPT_family_0FH(currentVID);
       DEBUGN( FULL_FUNC_NAME << "--added #"
         << (WORD) arrayIndexForCurrentVoltage
         << " : "
@@ -447,6 +478,40 @@ inline BYTE GetStepping()
   return 0;
 }
 
+void GetAdvancedPowerManagementInformationViaCPUID()
+{
+  DWORD dwEAX, dwEBX, dwECX , dwEDX ;
+  bool bRet = CPUID(
+    //CPUID Fn8000_0007 Advanced Power Management Information
+    0x80000007
+    , & dwEAX
+    , & dwEBX
+    , & dwECX
+    , & dwEDX
+    , 1
+    ) ;
+  if( bRet )
+  {
+    //EDX 6 100MhzSteps
+    DEBUGN( "100MhzSteps ?:" << ((dwEDX >> 6 ) & 1) )
+    //EDX 2 VID: Voltage ID control is supported.
+    DEBUGN( "Voltage ID control is supported ?:" << ((dwEDX >> 2 ) & 1) )
+    //EDX 1 FID: Frequency ID control is supported.
+    DEBUGN( "Frequency ID control is supported ?:" << ((dwEDX >> 1 ) & 1) )
+    //EDX 0 TS: Temperature sensor = 1.
+    DEBUGN( "Temperature sensor ?:" << (dwEDX & 1) )
+
+    //http://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits:
+    //"The format of the information in EAX is as follows:"
+    //"3:0 - Stepping"
+#ifdef _DEBUG
+    BYTE byStepping = dwEAX & BITMASK_FOR_LOWMOST_4BIT ;
+#endif
+    DEBUGN(FULL_FUNC_NAME << "--stepping via CPUID:" << (WORD) byStepping )
+//    return byStepping;
+  }
+}
+
 float GetTemperatureAccordingToStepping(BYTE stepping, DWORD dwValue)
 {
 //  DEBUGN( FULL_FUNC_NAME << "--begin")
@@ -482,7 +547,7 @@ float GetTemperatureAccordingToStepping(BYTE stepping, DWORD dwValue)
 inline float GetTemperatureInDegCelsiusAMD_NPT_family0F()
 {
   DEBUGN( FULL_FUNC_NAME << "--begin")
-  DEBUGN_LOGGER_NAME( g_windows_api_logger, FULL_FUNC_NAME << "--begin")
+//  DEBUGN_LOGGER_NAME( g_windows_api_logger, FULL_FUNC_NAME << "--begin")
   DWORD dwValue ;
   ( * g_pfnReadPCIconfigSpace) (
     CONFIGURATION_ACCESS_BUS_NUMBER, //8-bit PCI bus number

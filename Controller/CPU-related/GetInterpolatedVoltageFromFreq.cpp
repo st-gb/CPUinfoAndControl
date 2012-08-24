@@ -74,7 +74,7 @@ BYTE //I_CPUcontroller::
   {
     if( //This is the case if wFreqInMHzToGetVoltageFrom has the
       //same freq as one of the p-states.
-      //This case must be catched, else wrong values by the
+      //This case must be caught, else wrong values by the
       //log_x() function (  log_1(1)  is calculated then ) .
       //p_pstateGreaterEqual == p_pstateLowerEqual
       ci_stdsetvoltageandfreqNearestLowerEqual ==

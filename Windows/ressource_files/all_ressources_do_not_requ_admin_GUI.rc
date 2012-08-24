@@ -2,8 +2,11 @@
 #include "version_info_GUI_preprocessed.rc"
 
 #ifndef COMPILE_WITHOUT_CURSOR
-  /*#include <wx/msw/wx.rc> //for wxWidgets cursor*/
-  #include "C:/Libraries/wxWidgets-2.8.10\include\wx/msw/wx.rc"
+  //For wxWidgets cursor; requires "wxWidgets/include" dir /
+  //so include it like with "windres -I C:/Libraries/wxWidgets-2.8.10\include"
+  //as command line parameter when calling "windres.exe"
+  #include <wx/msw/wx.rc>
+  /*#include "C:/Libraries/wxWidgets-2.8.10\include\wx/msw/wx.rc"*/
 #endif
 
 IDI_ICON1 ICON DISCARDABLE "App32.ico"

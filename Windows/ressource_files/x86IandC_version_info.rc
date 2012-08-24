@@ -10,25 +10,32 @@
  the number will be considered as octal and converted to decimal
 */
 
-
-#ifndef VER_FILEVERSION
-/* A default version number */
-#define VER_FILEVERSION     0,0,0,0
-#endif
-
-#ifndef COMPILER_VERSION
-	#define COMPILER_VERSION ""
-#endif
-	
-#ifndef FILE_DESCRIPTION
-  #define FILE_DESCRIPTION "x86 CPU information & control program--service"
-#endif
-
 #ifndef FILE_VERSION_STRING
 	/* A default version number */
-	#define FILE_VERSION_STRING   "2012,0,0,0"
+	#define FILE_VERSION_STRING     "2012,0,0,0"
 #endif
 
+#ifndef FILE_VERSION_NUMBER
+	#define FILE_VERSION_NUMBER 2012,0,0,0
+#endif
+
+#ifndef COPYRIGHT_STRING
+	#define COPYRIGHT_STRING    "Copyright (C) 2010-2012"
+#endif
+
+#ifndef FILE_DESCRIPTION
+  #define FILE_DESCRIPTION "CPU (info &) controller DLL for x86Info&Control"
+#endif
+
+#ifndef VER_FILEVERSION_STR
+	/* A default version number */
+	#define VER_FILEVERSION_STR   "0,0,0,0"
+#endif
+
+#ifndef BUILD_WITH_STRING
+	#define BUILD_WITH_STRING "n/a"
+#else
+#endif
 
 /* defines for VERSIONINFO block */
 #define VOS_NT                  0x00040000L
@@ -47,7 +54,7 @@
   http://msdn.microsoft.com/en-us/library/aa381058(VS.85).aspx
 */
 1 VERSIONINFO
-/* Fixed-info */
+/* Fixed-info (numeric literals)*/
 FILEVERSION FILE_VERSION_NUMBER
 PRODUCTVERSION FILE_VERSION_NUMBER
 
@@ -68,14 +75,15 @@ BEGIN
     BLOCK "StringFileInfo"
     BEGIN
     /* Block language charset is U.S. English, Unicode */
+	/* see http://msdn.microsoft.com/en-us/library/windows/desktop/aa381058%28v=vs.85%29.aspx */ 
         BLOCK "040904B0"
         BEGIN
-            VALUE "Comments",    COMPILER_VERSION
+			VALUE "Comments",    BUILD_WITH_STRING
             VALUE "CompanyName",    "Trilobyte Software Engineering GmbH, Berlin, Germany"
             VALUE "FileDescription", FILE_DESCRIPTION
             VALUE "FileVersion",    FILE_VERSION_STRING
             VALUE "InternalName",   "CPU info & control"
-            VALUE "LegalCopyright",  "Copyright (C) 2010-2012"
+            VALUE "LegalCopyright",  COPYRIGHT_STRING
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
             VALUE "ProductVersion",  "2012, codenamed ""Ocean Spray"""
@@ -84,6 +92,7 @@ BEGIN
     
     BLOCK "VarFileInfo"
     BEGIN
+	    /* 0x409=English language; 1200=Unicode character-set. */
         VALUE "Translation", 0x409, 1200
     END
 END
