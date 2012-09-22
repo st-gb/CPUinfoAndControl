@@ -13,13 +13,17 @@
  *  Created on: 03.05.2012
  *      Author: Stefan
  */
+  #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
+  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
+  //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
+  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
+
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
   #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointerToExportedExeReadPCIconfig.h>
-  #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
 //  #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
 
   #include <typeinfo> //for typeid<>
@@ -29,6 +33,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
   HMODULE g_hModule;
   #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
   #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
+#ifdef _DEBUG
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+#endif
 #endif
 
 #if defined(COMPILE_WITH_LOG) && defined(USE_PANTHEIOS)
@@ -49,10 +56,6 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
 //  log4cplus::Logger log4cplus_logger;
 //  Windows_API::Logger g_windows_api_logger;
-
-  //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
-  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
-  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
 
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
@@ -271,16 +274,18 @@ AssignPointerToExportedExeReadPCIconfig.h>
     TCHAR fileName[MAX_PATH];
     std::tstring std_tstrDLLfileName = GetDLLfileName(g_hModule, fileName);
 
-    std::string strExeFileNameWithoutDirs //= GetExeFileNameWithoutDirs() ;
+    std::string strExeFileNameWithoutDirs = GetExeFileNameWithoutDirs() ;
       ;
     std::string stdstrFilename;
-    if( typeid(g_logger) == typeid(::Logger) )
-      stdstrFilename = //strExeFileNameWithoutDirs +
-        //("AMD_NPT_ControllerDLL_log.txt") ;
-        std_tstrDLLfileName + "_std_ofstream_logger.txt";
-    if( typeid(g_logger) == typeid(Windows_API::Logger) )
-      stdstrFilename =
-        std_tstrDLLfileName + "_Windows_API_logger.txt";
+//    if( typeid(g_logger) == typeid(::Logger) )
+//      stdstrFilename = //strExeFileNameWithoutDirs +
+//        //("AMD_NPT_ControllerDLL_log.txt") ;
+//        std_tstrDLLfileName + "_std_ofstream_logger.txt";
+//    if( typeid(g_logger) == typeid(Windows_API::Logger) )
+//      stdstrFilename =
+//        std_tstrDLLfileName + "_Windows_API_logger.txt";
+    stdstrFilename = std_tstrDLLfileName + strExeFileNameWithoutDirs +
+      "_log.txt";
 //      g_logger.OpenFile2( stdstrFilename ) ;
     g_logger.OpenFile2(stdstrFilename);
 

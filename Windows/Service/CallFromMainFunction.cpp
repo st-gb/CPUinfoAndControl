@@ -250,6 +250,14 @@ bool OpenLogFile(TCHAR * argv[])
   //  std_tstrLogFileName = std::tstring( argv[0]) +
   //    std::tstring( L"_log.txt") ;
   #endif
+
+  //The path must be set before the config files are accessed.
+  if( ! ::SetExePathAsCurrentDir() )
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "Getting file path for THIS executable file failed: " <<
+      LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+      );
+
   std::string std_strFileExt;
   CPUcontrolBase::GetLogFileExtension(std_strFileExt);
 
@@ -257,12 +265,6 @@ bool OpenLogFile(TCHAR * argv[])
   CPUcontrolBase::GetLogTimeFormatString(std_strLogTimeFormatString);
 
   std_strLogFileName += std_strFileExt;
-
-  if( ! ::SetExePathAsCurrentDir() )
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-      "Getting file path for THIS executable file failed: " <<
-      LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
-      );
 #ifdef USE_LOG4CPLUS
   init_log4cplus() ;
 #endif
@@ -271,7 +273,7 @@ bool OpenLogFile(TCHAR * argv[])
   if( logFileIsOpen )
   {
     I_LogFormatter * p_log_formatter = g_logger.CreateFormatter(
-      std_strFileExt, std_strLogTimeFormatString);
+      std_strFileExt.c_str(), std_strLogTimeFormatString);
   }
   return logFileIsOpen;
 }

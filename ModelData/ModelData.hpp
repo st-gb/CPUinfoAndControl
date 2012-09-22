@@ -117,6 +117,29 @@ public:
   //  std::vector<MSRdata>::reverse_iterator rev_iter_msrdata ,
   //  std::vector<std::string [2]> & stdvecstdstrAttributeNameAndValue) ;
   BYTE GetNumberOfCPUCores() ;
+#ifdef COMPILE_AS_GUI
+  float GetVoltageWithOperatingSafetyMargin(float fVoltageInVolt)
+  {
+//    return m_cpucoredata.GetClosestVoltage(fVoltageInVolt +
+//      m_userinterfaceattributes.
+//      m_fOperatingSafetyMarginInVolt);
+    WORD index = m_cpucoredata.GetIndexForClosestVoltage(fVoltageInVolt
+      + m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt);
+    if( index != MAXWORD)
+    {
+      float fVoltageWithOperatingSafetyMargin = m_cpucoredata.
+        m_arfAvailableVoltagesInVolt[index];
+      if( fVoltageWithOperatingSafetyMargin >= fVoltageInVolt +
+          m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt )
+        return fVoltageWithOperatingSafetyMargin;
+      else
+        if( index + 1 < m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.
+          size() )
+          return m_cpucoredata.m_arfAvailableVoltagesInVolt[index + 1];
+    }
+  }
+#endif //#ifdef COMPILE_AS_GUI
+
   void SetCPUcontroller( I_CPUcontroller * p_cpucontroller )
   {
     mp_cpucontroller = p_cpucontroller ;

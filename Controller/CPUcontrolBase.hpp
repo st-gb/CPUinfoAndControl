@@ -208,6 +208,8 @@ public:
     const std::string & cr_stdstrCPUtypeRelativeDirPath ) ;
   void InitMemberVariables() ;
   static void OuputCredits() ;
+  static void OutputLinkageWarning();
+
   //Should be implemented here (and not in UserInterface) because the service
   // usally can mot get feedback from a user (so this method shouldn't be
   // implemented there)

@@ -20,10 +20,18 @@ public:
   VoltageAndFreq(
     float fVoltageInVolt ,
     WORD wFreqInMHz
-    ) ;
+    )
+    :
+      m_fVoltageInVolt (fVoltageInVolt),
+      m_wFreqInMHz (wFreqInMHz)
+  {
+
+  }
   /** This operator is needed for inserting into STL sorting container like a
    * std::set. */
-  bool operator < (const VoltageAndFreq & _Right) const ;
+  bool operator < (const VoltageAndFreq & _Right) const {
+    return ( m_wFreqInMHz < _Right.m_wFreqInMHz ); }
+
   /** For outputting to a std::ostream or derived class
   * see http://www.cplusplus.com/forum/general/20792/
   * see http://www.learncpp.com/cpp-tutorial/93-overloading-the-io-operators/:
@@ -32,6 +40,100 @@ public:
     const VoltageAndFreq & voltageandfreq
     ) //const
     ;
+  void GetLinearExtrapolatedVoltage(
+    const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
+    WORD wFreqInMHzToGetVoltageFrom,
+    float & r_fVoltageInVolt) const;
+  void GetLinearExtrapolatedFrequency(
+    const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
+    const float fVoltageInVoltToGetFreqInMHzFrom,
+    WORD & r_fFrequencyInMHz
+    )
+    const
+  {
+    WORD wHigherFreqInMHz = m_wFreqInMHz ;
+    WORD wLowerFreqInMHz = c_r_voltageandfreqLowerEqual.m_wFreqInMHz ;
+
+    float fVoltageInVoltFromHigherFreq ;
+    float fVoltageInVoltFromLowerFreq ;
+    fVoltageInVoltFromHigherFreq = m_fVoltageInVolt ;
+
+    fVoltageInVoltFromLowerFreq =
+      c_r_voltageandfreqLowerEqual.m_fVoltageInVolt ;
+
+    //example: 1.148 V - 0.732V = 0,416 V
+    float fVoltageFromHigherAndLowerFreqDiff =
+      fVoltageInVoltFromHigherFreq -
+      fVoltageInVoltFromLowerFreq ;
+
+    //ex.: 1800-800 = 1000
+    WORD wHigherAndLowerFreqDiffInMHz =
+      wHigherFreqInMHz - wLowerFreqInMHz ;
+
+    //ex.: 1000 MHz / 0.416V = 2403.84615384615 MHz/V
+    float fMHzPerVolt = wHigherAndLowerFreqDiffInMHz /
+      fVoltageFromHigherAndLowerFreqDiff ;
+
+    //ex.: 1800 - 600=1200
+    float fVoltageAboveMinusDesiredVoltage =
+      (fVoltageInVoltFromHigherFreq - fVoltageInVoltToGetFreqInMHzFrom
+       ) ;
+
+    //ex.: 1800 MHz - 2403.84615384615 MHz/V * 0.448V = 723.076923076925 MHz
+    r_fFrequencyInMHz =
+      wHigherFreqInMHz -
+      // (f / U) * U = f
+      fMHzPerVolt * fVoltageAboveMinusDesiredVoltage
+      ;
+  }
+  void GetInterpolatedVoltage(
+    const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
+    WORD wFreqInMHzToGetVoltageFrom,
+    float & r_fVoltageInVolt) const
+  {
+    WORD wFreqInMHzFromNearFreqAboveWantedFreq =
+      m_wFreqInMHz ;
+    WORD wFreqInMHzFromNearFreqBelowWantedFreq =
+      c_r_voltageandfreqLowerEqual.m_wFreqInMHz ;
+    float fVoltageInVoltFromNearFreqAboveWantedFreq ;
+    float fVoltageInVoltFromNearFreqBelowWantedFreq ;
+    fVoltageInVoltFromNearFreqAboveWantedFreq =
+      m_fVoltageInVolt ;
+    fVoltageInVoltFromNearFreqBelowWantedFreq =
+      c_r_voltageandfreqLowerEqual.m_fVoltageInVolt ;
+    //example: 1.0625 V - 0.85V = 0,2125 V
+    float fVoltageFromFreqAboveAndBelowDiff =
+      fVoltageInVoltFromNearFreqAboveWantedFreq -
+      fVoltageInVoltFromNearFreqBelowWantedFreq ;
+    WORD wFreqInMHzFromNearFreqsWantedFreqDiff =
+      wFreqInMHzFromNearFreqAboveWantedFreq -
+     wFreqInMHzFromNearFreqBelowWantedFreq ;
+    float fVoltagePerMHz =
+      fVoltageFromFreqAboveAndBelowDiff /
+        wFreqInMHzFromNearFreqsWantedFreqDiff ;
+    WORD wWantedFreqMinusFreqBelow =
+      (wFreqInMHzToGetVoltageFrom -
+      wFreqInMHzFromNearFreqBelowWantedFreq
+       ) ;
+
+    r_fVoltageInVolt =
+      fVoltageInVoltFromNearFreqBelowWantedFreq +
+      fVoltagePerMHz * (float) wWantedFreqMinusFreqBelow
+      ;
+//    LOGN("GetInterpolatedVoltageFromFreq("
+//      << "\nnearest freq from std::set below:"
+//      << wFreqInMHzFromNearFreqBelowWantedFreq
+//      << "\nnearest freq from std::set above:"
+//      << wFreqInMHzFromNearFreqAboveWantedFreq
+//      << "\nabove - below freq=" << wFreqInMHzFromNearFreqsWantedFreqDiff
+//      << "\nabove - below voltage=" << fVoltageFromFreqAboveAndBelowDiff
+//      << "\nvoltage/MHz(voltage above-below/freq above-below)="
+//      << std::ios::fixed << fVoltagePerMHz
+//      << "\nwanted freq - freq below=" << wWantedFreqMinusFreqBelow
+//      << "\ninterpolated voltage (voltage below+voltage/MHz*"
+//          "\"wanted freq - freq below\"=" << r_fVoltageInVolt
+//      )
+  }
 };
 
 class VoltageAndMultiAndRefClock

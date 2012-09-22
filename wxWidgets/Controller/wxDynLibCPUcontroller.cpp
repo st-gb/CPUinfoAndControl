@@ -146,13 +146,14 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
     LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
     LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)
 
-    LOGN("before calling Dyn Lib's \""
+    LOGN_TYPE("before calling Dyn Lib's \""
       //Convert to std::string, else g++ linker error:
       //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
       //<< ::GetStdString( wxstrFuncName ) <<
       EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
       "\" function (may fail due to "
           " incompatible structure definitions between executable and dyn lib)"
+      , I_LogFormatter::log_message_typeWARNING
       )
   //      //TODO
   //      p_cpuaccess->mp_cpucontroller = NULL ;
@@ -498,8 +499,8 @@ void wxDynLibCPUcontroller::GetAvailableVoltagesInVolt(
   }
 }
 
-//Get closest multiplier because if a client wants an unsupported multiplier
-// then this multi is not used.
+/** Get closest multiplier because if a client wants an unsupported multiplier
+* then this multiplier is not used. */
 //TODO also set closest voltage?!
 inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier(
   float fVoltageInVolt ,
@@ -508,7 +509,8 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
   )
 {
   BYTE by = 0 ;
-  LOGN("wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier("
+  LOGN(//"wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier("
+    FULL_FUNC_NAME <<
     "voltage in Volt:" << fVoltageInVolt
     << "multiplier:" << fMultiplier
     << "core ID:" << wCoreID )
@@ -585,7 +587,7 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
         c_r_percpucoreattributes.m_fVoltageInVolt != fVoltageInVolt )
     {
       LOGN( FULL_FUNC_NAME << "--multiplier or voltage differs from current "
-          "settings->setting them")
+          "settings->writing/ setting both")
       by = ( * m_pfnSetCurrentVoltageAndMultiplier)(
         fVoltageInVolt
         //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -604,8 +606,9 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
       << wCoreID << ") : " << (WORD) by )
   }
   else
-    LOGN("wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAnd"
-      "Multiplier(...): function pointer for settting voltage and multiplier "
+    LOGN(//"wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAnd"
+      //"Multiplier(...): "
+      FULL_FUNC_NAME << "function pointer for settting voltage and multiplier "
       "is NULL or no available multipliers")
   return by ;
 }

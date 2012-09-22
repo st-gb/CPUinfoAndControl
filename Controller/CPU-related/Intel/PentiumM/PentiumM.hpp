@@ -136,7 +136,8 @@ inline BYTE GetCurrentVoltageAndFrequencyPentium_M(
 //  return bySuccess ;
 }
 
-//Pentium M has default voltages for min and max multiplier stored in MSRegister
+/** Pentium M has default voltages for min and max multiplier stored in
+ * MSRegister */
 inline BYTE GetDefaultPstates(
   float & fVoltageForLowestMulti,
   float & fLowestMulti,

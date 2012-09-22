@@ -21,6 +21,13 @@
 //    "50 mV BIOS default"
     0.05f;
 
+  //TODO calculate/ get MVS
+  static const float MaximumVoltageStepInVolt =
+  // 32559 Rev. 3.16 November 2009 BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
+  // Processors: Table 72. MVS Values:
+  // "25 mV BIOS default."
+    0.025f;
+
 //  "To translate the PLL lock time to an StpGntTOCnt value, multiply
 //  PLL_LOCK_TIME by 1000 to get nanoseconds, then divide by 5 which is the clock period of
 //  the counter in ns. Therefore, StpGntTOCnt value = PLL_LOCK_TIME * 1000/5. For example,
@@ -37,9 +44,12 @@
 #include <Controller/time/GetTickCount.hpp> //DWORD ::GetTickCount()
 #include <Controller/Sleep.hpp> //OperatingSystem::Sleep()
 
-enum voltageIDincOrDec{ decrementVoltageID = -1, incrementVoltageID = 1};
-enum incOrDecVoltage{ incrementVoltage = decrementVoltageID,
-  decrementVoltage = incrementVoltageID };
+//enum voltageIDincOrDec{ decrementVoltageID = -1, incrementVoltageID = 1};
+//enum incOrDecVoltage{ incrementVoltage = decrementVoltageID,
+//  decrementVoltage = incrementVoltageID };
+enum incOrDecVoltage{ decrementVoltage = -1, incrementVoltage = 1};
+enum voltageIDincOrDec{ decrementVoltageID = incrementVoltage,
+  incrementVoltageID = decrementVoltage };
 
 //extern static BYTE s_minimumFID;
 extern BYTE s_minimumFID;
@@ -614,22 +624,23 @@ inline void CalculateTargetVoltageID()
 /**Use this function for both increase and decrease of voltage for better code
  * maintainance/ to avoid redundancy.*/
 inline BYTE TransitionToVoltageInSingleVIDsteps(
-  char direction, /** -1: decrement voltage ID<=>increment voltage,
+  char voltageIDdirection, /** -1: decrement voltage ID<=>increment voltage,
     1: increment voltage ID*/
   float & fCurrentVoltageInVolt,
   float fVoltageInVoltToSet,
   BYTE byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--fCurrentVoltage:" <<
-    fCurrentVoltageInVolt << "V fVoltageToSet:" << fVoltageInVoltToSet << "V"
-    << " current FID:" << (WORD) byCurrentFrequencyID)
+  DEBUGN( FULL_FUNC_NAME << "--begin--VIDdirection:" << (WORD) voltageIDdirection
+    << "fCurrVoltage:" << fCurrentVoltageInVolt
+    << "V VoltageToSet:" << fVoltageInVoltToSet << "V"
+    << " currentFID:" << (WORD) byCurrentFrequencyID)
   BYTE retVal = 0;
   BYTE voltageIDtoSet = GetVoltageID_AMD_NPT_family_0FH(fVoltageInVoltToSet);
   BYTE currentVoltageID = GetVoltageID_AMD_NPT_family_0FH(fCurrentVoltageInVolt);
   do
   {
-    currentVoltageID += direction;
+    currentVoltageID += voltageIDdirection;
 
     retVal = WriteVoltageIDandFID_AMD_NPT_family_0FH(
       currentVoltageID,
@@ -638,12 +649,12 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
     //10.6.2.1.1 Voltage Stabilization Time:
     //" The processor driver counts VST between VID steps that increase
     //the processor’s core voltage, not between steps that decrease it.""
-    if( direction == incrementVoltage )
+    if( voltageIDdirection == incrementVoltage )
       WaitVoltageStabilizationTime();
     // Lower Voltage ID = higher voltage
     // case of: increment voltage: while ( -1 * 5 < -1 * 0)
     // case of: decrement voltage: while ( 1 * 0 < 1 * 5)
-  }while( direction * currentVoltageID < direction * voltageIDtoSet);
+  }while( voltageIDdirection * currentVoltageID < voltageIDdirection * voltageIDtoSet);
 
   fCurrentVoltageInVolt = GetVoltageInVolt_AMD_NPT_family_0FH(currentVoltageID);
 
@@ -688,11 +699,11 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
   float fVoltageInVoltToSet
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--fCurrentVoltage:"
-    << fCurrentVoltageInVolt << "V current FID:"
+  DEBUGN( FULL_FUNC_NAME << "--begin--CurrVoltage:"
+    << fCurrentVoltageInVolt << "V currFID:"
     << (WORD) byCurrentFrequencyID
     << " MaximumVoltageStep:" << MaximumVoltageStepInVolt << "V"
-    << " fVoltageToSet:" << fVoltageInVoltToSet << "V"
+    << " VoltageToSet:" << fVoltageInVoltToSet << "V"
     )
   BYTE retVal = 0;
 //  //Max exceed max voltage when the ramp voltage offset is added to a voltage.
@@ -770,24 +781,17 @@ inline BYTE TransitionVoltage(
     )
   BYTE retVal = 0;
 
-  //TODO calculate/ get MVS
-  static float MaximumVoltageStepInVolt =
-  // 32559 Rev. 3.16 November 2009 BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
-  // Processors: Table 72. MVS Values:
-  // "25 mV BIOS default."
-    0.025f;
-
   BYTE direction = incrementVoltage;
 //  static uint16_t StpGntTOCnt = 0;
   if( fCurrentVoltageInVolt > fVoltageInVoltToSet)
   {
     direction = decrementVoltage;
-    MaximumVoltageStepInVolt *= -1.f;
+    //MaximumVoltageStepInVolt *= -1.f;
   }
   ChangeVoltageByMaximumVoltageStep(
     fCurrentVoltageInVolt,
     byCurrentFrequencyID,
-    MaximumVoltageStepInVolt,
+    MaximumVoltageStepInVolt * direction,
     fVoltageInVoltToSet
     );
   //if MaximumVoltageStepInVolt was too high (higher than 1 voltage step)
@@ -807,7 +811,7 @@ inline BYTE TransitionVoltage(
       )
     TransitionToVoltageInSingleVIDsteps(
 //      incrementVoltage,
-      direction,
+      direction * -1,
       fCurrentVoltageInVolt,
       fVoltageInVoltToSet,
       byCurrentFrequencyID);

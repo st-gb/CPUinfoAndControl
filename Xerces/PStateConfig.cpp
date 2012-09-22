@@ -234,8 +234,9 @@ namespace Xerces
         WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
         wResultSetIndex ++ )
       {
-        LOGN("at " << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
-          << " element " << wResultSetIndex )
+        LOGN( FULL_FUNC_NAME << "--at \""
+          << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
+          << "\" element # " << wResultSetIndex )
         //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
         //"XPathException  TYPE_ERR: raised if resultType is not
         //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
@@ -259,7 +260,7 @@ namespace Xerces
           cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
           std::string stdstr = //XercesHelper::ToStdString(cp_xmlchAttrValue) ;
             Xerces::ToStdString(cp_xmlchAttrValue) ;
-          LOGN("Attribute value for " << //arp_chAttributeName
+          LOGN(FULL_FUNC_NAME << "--attribute value for " << //arp_chAttributeName
             FREQUENCY_IN_MHZ_ANSI_LITERAL
             << ": " << stdstr )
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
@@ -295,7 +296,7 @@ namespace Xerces
     }
     LOGN("mp_domxpathresult: " << mp_domxpathresult )
 
-    LOGN("end of freq in MHz to DOM index")
+    LOGN(FULL_FUNC_NAME << "--end")
     return p_dom_xpath_ns_resolver ;
   }
 
@@ -740,15 +741,31 @@ namespace Xerces
                 mp_dom_elementFreqnVolt =
                   (XERCES_CPP_NAMESPACE::DOMElement *) mp_domxpathresult->
                   getNodeValue() ;
+                //Because "0.949999999999" represents "0.95" as float and
+                // "0.95" gets something above 0.95 as float there would be a
+                //difference.
+                WORD voltageInVoltArrayIndex = mp_model->m_cpucoredata.
+                  GetIndexForClosestVoltage(fVoltageFromDOMtree);
+                fVoltageFromDOMtree = mp_model->m_cpucoredata.
+                    m_arfAvailableVoltagesInVolt[voltageInVoltArrayIndex];
+                fVoltageFromProgramMemory = mp_model->m_cpucoredata.
+                  GetClosestVoltage(fVoltageFromProgramMemory);
                 if( fVoltageFromDOMtree != fVoltageFromProgramMemory )
                 {
                   m_bDOMtreeDiffersOrDifferedFromModelData = true ;
+//                  //from http://stackoverflow.com/questions/554063/how-do-i-print-a-double-value-with-full-precision-using-cout
+//                  g_std_basicstring_log_char_typeLog.precision(
+//                    std::numeric_limits<double>::digits10 + 1);
+                  //TODO seems to output "0.95" for "0.949999999999" and so
+                  // a difference can not be seen.
                   LOGN("for attribute  \"" << cpc_XMLAttrName
                     << "\": value from program memory: \""
                     //Must set the precision higher than the default (6 digits
                     //after floating point?) else no difference between the 2
                     //numbers may be visible.
-                    << std::setprecision(14)
+                    //<< std::setprecision(14)
+                    //http://stackoverflow.com/questions/554063/how-do-i-print-a-double-value-with-full-precision-using-couts
+                    << std::setprecision(std::numeric_limits<float>::digits10 + 1)
                     << fVoltageFromProgramMemory
                     << "\" does not match value \""
                     << fVoltageFromDOMtree << "\" from DOM tree" )
@@ -1112,6 +1129,7 @@ namespace Xerces
     bool bTest
     )
   {
+    LOGN( FULL_FUNC_NAME << "--begin")
     //Reset because this method may be called more than once for the same
     // VoltageForFrequencyConfiguration object.
 //    bool bDOMtreeModified = false ;
@@ -1147,6 +1165,7 @@ namespace Xerces
         //  bDOMtreeModified = true ;
         //if( PossiblyAddWantedVoltages() )
         //  bDOMtreeModified = true ;
+        PossiblyAddVoltages(bTest);
 
 //        bDOMtreeModified = PossiblyAddVoltages( bTest ) ;
 
@@ -1208,10 +1227,10 @@ namespace Xerces
       byReturnValue;
   }
 
-  //Purpose: this should called by all fcts that change the voltage or test for
-  //their changes. This is good if something is changed (e.g. if attributes
-  //are added/ removed)
-  //So it can be done central (do not repeat principle)
+  /** Purpose: this should called by all fcts that change the voltage or test for
+  * their changes. This is good if something is changed (e.g. if attributes
+  * are added/ removed)
+  * So it can be done central (do not repeat principle) */
   bool VoltageForFrequencyConfiguration::PossiblyAddVoltages(
     //true: do not change, only test if it would be changed.
     bool bTest
@@ -1219,7 +1238,7 @@ namespace Xerces
   {
     bool bDOMtreeModified = false ;
     m_bOnlySimulate = bTest ;
-    LOGN("begin of PossiblyAddVoltages")
+    LOGN( FULL_FUNC_NAME << "--begin")
     PossiblyReleaseDOM_XPathResult() ;
 
     //A DOM tree may already exist( if read from an XML file). So build a map

@@ -160,6 +160,9 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
         << std_set_voltageandfreqDefaultBeforeAttach.size()
         << " and after:" << std_set_voltageandfreqDefaultAfterAttach.size()
         << " an attached CPU controller.")
+
+      //TODO the following code before the 2nd else branch can obviously be
+      //deleted because the error was the missing vector size.
       std::vector<VoltageAndFreq> &
         r_std_vec_voltageandfreqInsertedByCPUcontroller =
         m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller;
@@ -179,6 +182,12 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
           r_std_vec_voltageandfreqInsertedByCPUcontroller.begin() );
       }
       else
+      {
+        //Must reserve enough space for std::set_difference(...), else program
+        //crash.
+        m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller.
+          reserve(std_set_voltageandfreqDefaultAfterAttach.size() );
+        LOGN( FULL_FUNC_NAME << " both sets are not empty")
         //http://www.cplusplus.com/reference/algorithm/set_difference/:
         //"The difference of two sets is formed by the elements that are present
         //in the first set, but not in the second one. "
@@ -191,6 +200,7 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
           m_model.m_cpucoredata.
           m_std_vec_voltageandfreqInsertedByCPUcontroller.begin()
           );
+      }
     }
   }
   LOGN( FULL_FUNC_NAME << "--end")
@@ -366,6 +376,8 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     LOGN("FreeRessources end")
   }
 
+  /** For the service the path must have been set to the path of the service
+   * executable before */
   void CPUcontrolBase::GetLogFileExtension(std::string & std_strFileExt)
   {
     std_strFileExt = m_model.m_std_strConfigFilePath +
@@ -443,6 +455,13 @@ void CPUcontrolBase::OuputCredits()
     "-the CPU controlling/ information providing service itself\n" ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
     "Build time: " __DATE__ " " __TIME__ " (Greenwich Mean Time + 1)" );
+}
+
+void CPUcontrolBase::OutputLinkageWarning()
+{
+  LOGN_TYPE( "note: this program may crash (immediately) after this output if "
+    "it was built with an incompatible combination of \"wx\\setup.h\" and "
+    "linked wxWidgets libraries", I_LogFormatter::log_message_typeWARNING)
 }
 
 void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
@@ -784,34 +803,37 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
 //      dwReturnValue = CPUcontrolBase::no_default_voltages_specified ;
       m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
     }
-    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.size() == 0
+    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.size() < 2
       //mp_stdsetvoltageandfreqWanted->size() == 0
       )
     {
-      LOGN("No preferred voltages specified.");
+      LOGN_TYPE( FULL_FUNC_NAME << "--# of preferred voltages < 2 ->can only "
+        "use default/max voltages for DVFS if there are at least 2 of them",
+        I_LogFormatter::log_message_typeWARNING)
       if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault//.empty()
           .size() < 2
         )
       {
-        LOGN("# of default voltages < 2"
-          "->only temperature based Dynamic Voltage and Frequency Scaling"
-          );
+        LOGN_TYPE(FULL_FUNC_NAME << "--# of default voltages < 2"
+          "->no Dynamic Voltage and Frequency Scaling at all possible "
+          , I_LogFormatter::log_message_typeWARNING
+          )
     //        return CPUcontrolBase::no_preferred_voltages_specified ;
 //      dwReturnValue = CPUcontrolBase::no_preferred_voltages_specified ;
         m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
       }
       else
       {
-        LOGN("Using default voltages as preferred voltages.");
+        LOGN( FULL_FUNC_NAME << "--Using default voltages as preferred voltages.");
         m_model.m_cpucoredata.CopyDefaultVoltageToPreferredVoltages();
       }
     }
-    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0
-      && m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0 )
-    {
-      LOGN("No preferred voltages AND no default voltages specified.");
-      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
-    }
+//    if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0
+//      && m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.size() == 0 )
+//    {
+//      LOGN("No preferred voltages AND no default voltages specified.");
+//      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
+//    }
   }
   LOGN("SetDynVoltnFreqScalingType_Inline end--DVFS type:" <<
     (WORD) m_byVoltageAndFrequencyScalingType )
@@ -894,13 +916,11 @@ void CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling()
 ////                )
 //            {
 //              LOGN("closed the DVFS dialog with OK or apply")
-//              //p_percpucoreattributes->mp_dynfreqscalingthread
 //              //TODO uncomment
                 p_percpucoreattributes->SetCPUcontroller( //mp_i_cpucontroller
                   mp_cpucontroller ) ;
                 p_percpucoreattributes->CreateDynFreqScalingThread(
                   mp_cpucoreusagegetter
-//                  gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter
                   ) ;
                 mp_userinterface->DynVoltnFreqScalingEnabled() ;
 //            }
@@ -919,3 +939,90 @@ void CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling()
   }
   LOGN("CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling() end")
 }
+
+//bool I_CPUcontroller::CmdLineParamsContain(
+//  TCHAR * ptcharOption
+//  , std::string & strValue
+//  )
+//{
+//  bool bcmdLineParamsContain = false ;
+//  int nIndex = 1 ;
+//  signed short wPos = 0 ;
+//  DEBUG("cmdLineParamsContain begin\n");
+//  for ( ;nIndex < m_byNumberOfCmdLineArgs ; ++ nIndex )
+//  {
+//    std::string strCmdArg( //GetCharPointer( m_arartcharCmdLineArg[ nIndex ] ) );
+//      GetStdString(m_arartcharCmdLineArg[ nIndex ]) ) ;
+//    wPos = (WORD) strCmdArg.find( //std::string( GetCharPointer(
+//      //ptcharOption ) ) +
+//      GetStdString(ptcharOption ) +
+//      //TCHAR("=")
+//      std::string("=") ) ;
+//    if( wPos != std::string::npos && wPos == 0 )
+//    {
+////#ifdef WIN32
+//#ifdef MS_COMPILER
+//      strValue = strCmdArg.substr(_tcslen(ptcharOption)
+//        //Start after "="
+//        +1);
+//#else
+//      strValue = strCmdArg.substr( //strlen( GetCharPointer( ptcharOption ) )
+//        GetStdString( ptcharOption ).length()
+//        //Start after "="
+//        + 1 );
+//#endif //#ifdef WIN32
+//      bcmdLineParamsContain = true ;
+//      break ;
+//    }
+//  }
+//  DEBUG("cmdLineParamsContain end\n");
+//  return bcmdLineParamsContain ;
+//}
+
+////this method may be overwritten for CPU-specific configuration
+//BYTE I_CPUcontroller::HandleCmdLineArgs()
+//{
+//  std::string strValue ;
+//  if( CmdLineParamsContain(_T("-config"),strValue) )
+//  {
+//#ifdef COMPILE_WITH_XERCES
+//    SAX2MainConfigHandler saxhandler(
+//      *mp_model ,
+//      mp_userinterface //,
+//      //this
+//      );
+//    if(
+//      ReadXMLfileInitAndTermXerces(//"config.xml"
+//
+//      strValue.c_str(),
+//      *mp_model,
+//      mp_userinterface ,
+//      //this
+//      saxhandler
+//      )
+//      )
+//    {
+//
+//      //If the file is NOT assigned/ opened yet.
+//      //if( fileDebug == NULL )
+//      if( //An empty string means: do NOT write to the log file.
+//          ! mp_model->m_stdstrLogFilePath.empty()
+//          &&
+//          ! //g_logger.m_ofstream.is_open()
+//          g_logger.IsOpen()
+//        )
+//      {
+//        //Convert std::string to wstring or remain std::string.
+//        std::tstring stdtstr = Getstdtstring(mp_model->m_stdstrLogFilePath) ;
+//          //g_logger = new Logger(mp_model->m_stdstrLogFilePath);
+//          g_logger.OpenFile( stdtstr ) ;
+//      }
+//    }
+//    else
+//      mp_userinterface->Confirm("Error reading the XML-configuration file");
+//#else //COMPILE_WITH_XERCES
+//    //byReturn = SUCCESS ;
+//#endif //COMPILE_WITH_XERCES
+//  }
+//  return 1 ;
+//}

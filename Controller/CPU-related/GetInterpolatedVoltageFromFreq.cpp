@@ -90,99 +90,10 @@ BYTE //I_CPUcontroller::
     }
     else
     {
-      WORD wFreqInMHzFromNearFreqAboveWantedFreq =
-        //p_pstateGreaterEqual->GetFreqInMHz() ;
-        ci_stdsetvoltageandfreqNearestHigherEqual->m_wFreqInMHz ;
-      WORD wFreqInMHzFromNearFreqBelowWantedFreq =
-        //p_pstateLowerEqual->GetFreqInMHz() ;
-        ci_stdsetvoltageandfreqNearestLowerEqual->m_wFreqInMHz ;
-    //if( mp_model->m_pstates.m_arp_pstate[1] &&
-    //  mp_model->m_pstates.m_arp_pstate[1]->GetFreqInMHz() <
-    //  wFreqInMHzToGetVoltageFrom
-    //  )
-    //{
-      float fVoltageInVoltFromNearFreqAboveWantedFreq ;
-      float fVoltageInVoltFromNearFreqBelowWantedFreq ;
-      fVoltageInVoltFromNearFreqAboveWantedFreq =
-        //mp_model->m_pstates.m_arp_pstate[0]->GetVoltageInVolt() ;
-        //p_pstateGreaterEqual->GetVoltageInVolt() ;
-        ci_stdsetvoltageandfreqNearestHigherEqual->
-          m_fVoltageInVolt ;
-      fVoltageInVoltFromNearFreqBelowWantedFreq =
-        //mp_model->m_pstates.m_arp_pstate[1]->GetVoltageInVolt() ;
-        //p_pstateLowerEqual->GetVoltageInVolt() ;
-        ci_stdsetvoltageandfreqNearestLowerEqual->
-          m_fVoltageInVolt ;
-      //example: 1.0625 V - 0.85V = 0,2125 V
-      float fVoltageFromFreqAboveAndBelowDiff =
-        fVoltageInVoltFromNearFreqAboveWantedFreq -
-        fVoltageInVoltFromNearFreqBelowWantedFreq ;
-      WORD wFreqInMHzFromNearFreqsWantedFreqDiff =
-        wFreqInMHzFromNearFreqAboveWantedFreq -
-       wFreqInMHzFromNearFreqBelowWantedFreq ;
-      float fVoltagePerMHz =
-        fVoltageFromFreqAboveAndBelowDiff /
-          wFreqInMHzFromNearFreqsWantedFreqDiff ;
-      WORD wWantedFreqMinusFreqBelow =
-        (wFreqInMHzToGetVoltageFrom -
-        wFreqInMHzFromNearFreqBelowWantedFreq
-         ) ;
-
-      //example: 2200 MHz / 1050 MHz ~= 2,0952380952
-//      double dFreqInMHzFromNearFreqAboveDivFreqInMHzToGetVoltageFrom =
-//          (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-//          (double) wFreqInMHzToGetVoltageFrom ;
-
-      r_fVoltageInVolt =
-        ////fVoltageOfOvVoltProtVnf_pairHigherEqualWantedFreq
-        //// 1,0625 - 0,22676176661993910555202664192874
-        ////  = 0,835738233380060894447973358072
-        //fVoltageInVoltFromNearFreqAboveWantedFreq -
-        //  //log10(2,0952380952380952380952380952381) =
-        //  //  0,32123338175226816317043359884426
-        //  //log10(2) = 0,30102999566398119521373889472449
-        //  // => log2(2,0952380952380952380952380952381) =
-        //  //  0,32123338175226816317043359884426 /
-        //  //  0,30102999566398119521373889472449
-        //  //  = 1,067114195858536967303654785547
-        //  // 1,067114195858536967303654785547 * 0,2125 =
-        //  //   0,22676176661993910555202664192874
-        //  //log_dualis
-        //  log_x
-        //  (
-        //    (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-        //    (double) wFreqInMHzFromNearFreqBelowWantedFreq
-        //    ,
-        //  //wFreqOfOvVoltProtVnf_pairHigherEqualWantedFreq
-        //    //example: 2200 MHz / 1050 MHz ~= 2.0952380952
-        //    //example: 2200 MHz / 550 MHz = 4
-        //    (double) wFreqInMHzFromNearFreqAboveWantedFreq /
-        //    (double) wFreqInMHzToGetVoltageFrom
-        //  )
-        //  *
-        //  //fVoltageDiffBetwOvVoltProtVnf_pairs
-        //  (
-        //    //example: 1.0625 V - 0.85V = 0,2125 V
-        //    //example: 1.0625 V - 0.75V = 0.3125 V
-        //    fVoltageInVoltFromNearFreqAboveWantedFreq -
-        //    fVoltageInVoltFromNearFreqBelowWantedFreq
-        //  )
-        fVoltageInVoltFromNearFreqBelowWantedFreq +
-        fVoltagePerMHz * (float) wWantedFreqMinusFreqBelow
-        ;
-      LOGN("GetInterpolatedVoltageFromFreq("
-        << "\nnearest freq from std::set below:"
-        << wFreqInMHzFromNearFreqBelowWantedFreq
-        << "\nnearest freq from std::set above:"
-        << wFreqInMHzFromNearFreqAboveWantedFreq
-        << "\nabove - below freq=" << wFreqInMHzFromNearFreqsWantedFreqDiff
-        << "\nabove - below voltage=" << fVoltageFromFreqAboveAndBelowDiff
-        << "\nvoltage/MHz(voltage above-below/freq above-below)="
-        << std::ios::fixed << fVoltagePerMHz
-        << "\nwanted freq - freq below=" << wWantedFreqMinusFreqBelow
-        << "\ninterpolated voltage (voltage below+voltage/MHz*"
-            "\"wanted freq - freq below\"=" << r_fVoltageInVolt
-        )
+      ci_stdsetvoltageandfreqNearestHigherEqual->GetInterpolatedVoltage(
+        * ci_stdsetvoltageandfreqNearestLowerEqual, wFreqInMHzToGetVoltageFrom,
+        r_fVoltageInVolt
+        );
       return true ;
     }
   }

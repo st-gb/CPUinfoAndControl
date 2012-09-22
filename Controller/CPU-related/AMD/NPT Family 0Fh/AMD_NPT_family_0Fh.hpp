@@ -20,6 +20,9 @@
 inline_register_access_functions.hpp>
 
 #include <preprocessor_macros/bitmasks.h> //BITMASK_FOR_LOWMOST_3BIT
+#include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
+//#define DEBUGN(to_ostream) ;
+
 //#include <pantheios/pantheios.hpp>
 
 //From "BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh Processors",

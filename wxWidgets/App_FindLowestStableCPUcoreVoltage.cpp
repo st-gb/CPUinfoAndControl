@@ -69,6 +69,7 @@ void SetThreadAffinityMask()
 DWORD THREAD_PROC_CALLING_CONVENTION
   StartInstableCPUcoreVoltageDetectionInDLL(void * p_v )
 {
+  LOGN( FULL_FUNC_NAME << " begin")
   FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
     (FreqAndVoltageSettingDlg *) p_v;
   if( p_freqandvoltagesettingdlg)
@@ -92,8 +93,10 @@ DWORD THREAD_PROC_CALLING_CONVENTION
       & wxGetApp().m_external_caller);
     LOGN( FULL_FUNC_NAME << "--after calling the DynLib's \""
       << START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME << "\" function")
+    LOGN( FULL_FUNC_NAME << " return 0")
     return 0;
   }
+  LOGN( FULL_FUNC_NAME << " return 1")
   return 1;
 }
 
@@ -142,6 +145,13 @@ void CountSecondsDown(FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg,
     LOGN( FULL_FUNC_NAME << "--after waiting for either thread's end or "
         "timeout ")
     wxGetApp().m_conditionFindLowestStableVoltage.ResetEvent();
+    if( ! uiSeconds )
+    {
+      LOGN( FULL_FUNC_NAME << " waiting for \"VoltageTooLow()\" to be finished")
+      //Wait for "::VoltageTooLow()" to be ended (after messagebox was shown).
+      wxGetApp().m_conditionFindLowestStableVoltage.Wait();
+      LOGN( FULL_FUNC_NAME << " after waiting for \"VoltageTooLow()\" to be finished")
+    }
   }
   LOGN( FULL_FUNC_NAME << " end")
 }
@@ -179,6 +189,7 @@ void StartInstableCPUcoreVoltageDetectionInDynLibInSeparateThread(
       p_freqandvoltagesettingdlg ) ;
 //    StartInstableCPUcoreVoltageDetectionInDLL(p_freqandvoltagesettingdlg);
 //  }
+  LOGN( FULL_FUNC_NAME << " end")
 }
 
 #define NO_NEGATIVE_OVERFLOW(number, max_number) ( number != max_number )
@@ -260,6 +271,9 @@ float DecreaseVoltageStepByStep(
 DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage_ThreadProc(void * p_v )
 {
   LOGN( FULL_FUNC_NAME << "--begin")
+//  //Reset to initial value in order to differentiate between whether the
+//  //voltage was too low later.
+//  wxGetApp().m_bVoltageWasTooLowCalled = false;
   FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
     (FreqAndVoltageSettingDlg *) p_v;
   if( p_freqandvoltagesettingdlg)
@@ -337,7 +351,7 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage_ThreadProc(void * p
 //        );
 //    }
 //    else
-      wxGetApp().m_bVoltageWasTooLowCalled = false;
+//      wxGetApp().m_bVoltageWasTooLowCalled = false;
 
     p_freqandvoltagesettingdlg->SetStartFindingLowestStableVoltageButton();
 
@@ -457,6 +471,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
     const FreqAndVoltageSettingDlg * c_p_freqandvoltagesettingdlg)
 {
+  LOGN( FULL_FUNC_NAME << " begin")
   BYTE ret = 1;
   //wxGetApp().
     InitUnstableVoltageDetectionDynLibAccess();
@@ -505,6 +520,7 @@ BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
   {
     ::wxMessageBox( wxT("unstable volt detect DLL access not initialized") );
   }
+  LOGN( FULL_FUNC_NAME << " return " << (WORD) ret)
   return ret;
 }
 
