@@ -6,6 +6,7 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "VoltageAndFreq.hpp"
+#include <preprocessor_macros/logging_preprocessor_macros.h> // LOGN()
 #include <ostream> //class std::ostream
 
 VoltageAndFreq::VoltageAndFreq()
@@ -18,25 +19,87 @@ VoltageAndFreq::VoltageAndFreq()
   m_fVoltageInVolt = 0.0f ;
 }
 
-VoltageAndFreq::VoltageAndFreq(
-  float fVoltageInVolt ,
-  WORD wFreqInMHz
-  )
+//VoltageAndFreq::VoltageAndFreq(
+//  float fVoltageInVolt ,
+//  WORD wFreqInMHz
+//  )
+//{
+//  m_fVoltageInVolt = fVoltageInVolt ;
+//  m_wFreqInMHz = wFreqInMHz ;
+////#ifdef _DEBUG
+//  //LOGN("VoltageAndFreq c'tor" << m_fVoltageInVolt << m_wFreqInMHz )
+////#endif
+//}
+
+void VoltageAndFreq::GetLinearExtrapolatedVoltage(
+  const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
+  WORD wFreqInMHzToGetVoltageFrom,
+  float & r_fVoltageInVolt) const
 {
-  m_fVoltageInVolt = fVoltageInVolt ;
-  m_wFreqInMHz = wFreqInMHz ;
-//#ifdef _DEBUG
-  //LOGN("VoltageAndFreq c'tor" << m_fVoltageInVolt << m_wFreqInMHz )
-//#endif
+  WORD wFreqInMHzFromNearFreqAboveWantedFreq = m_wFreqInMHz ;
+  WORD wFreqInMHzFromNearFreqBelowWantedFreq =
+    c_r_voltageandfreqLowerEqual.m_wFreqInMHz ;
+
+  float fVoltageInVoltFromLowerFreq ;
+  float fVoltageInVoltFromHigherFreq = m_fVoltageInVolt ;
+
+  fVoltageInVoltFromLowerFreq =
+    c_r_voltageandfreqLowerEqual.m_fVoltageInVolt ;
+
+  //example: 1.148 V - 0.732V = 0,416 V
+  float fVoltageFromFreqAboveAndBelowDiff =
+    fVoltageInVoltFromHigherFreq -
+    fVoltageInVoltFromLowerFreq ;
+  LOGN( FULL_FUNC_NAME << "--higher and lower voltage diff:" <<
+    fVoltageFromFreqAboveAndBelowDiff << "V")
+
+  //ex.: 1800-800 = 1000
+  WORD wFreqInMHzFromNearFreqsWantedFreqDiff =
+    wFreqInMHzFromNearFreqAboveWantedFreq -
+   wFreqInMHzFromNearFreqBelowWantedFreq ;
+  LOGN( FULL_FUNC_NAME << "--higher and lower frequency diff:" <<
+    wFreqInMHzFromNearFreqsWantedFreqDiff << "MHz")
+
+//  float fVoltageInVoltFromHigherFreqMinusWantedVoltage =
+//      fVoltageInVoltFromHigherFreq - r_fVoltageInVolt;
+
+  //ex.: 0,416 / 1000 = 0.000416
+  float fVoltageInVoltPerMHz =
+    fVoltageFromFreqAboveAndBelowDiff /
+      wFreqInMHzFromNearFreqsWantedFreqDiff ;
+  LOGN( FULL_FUNC_NAME << "--voltage/frequency="
+    << fVoltageFromFreqAboveAndBelowDiff << "V / "
+    << wFreqInMHzFromNearFreqsWantedFreqDiff << "MHz ="
+    << fVoltageInVoltPerMHz << "V/MHz")
+
+  //ex.: 1800 - 600=1200
+  WORD wFreqAboveMinusWantedFreq =
+    (wFreqInMHzFromNearFreqAboveWantedFreq - wFreqInMHzToGetVoltageFrom
+     ) ;
+  LOGN( FULL_FUNC_NAME << "--higher frequency-wanted frequency:" <<
+    wFreqInMHzFromNearFreqsWantedFreqDiff << "MHz")
+
+  //ex.: 1.148 V  - 0.000416V * 1200 MHz = 0.6488V
+  r_fVoltageInVolt =
+    fVoltageInVoltFromHigherFreq -
+    fVoltageInVoltPerMHz * (float) wFreqAboveMinusWantedFreq
+    ;
+  LOGN( FULL_FUNC_NAME << "--(higher-wanted voltage) - voltage/freq * "
+      " (higher - wanted freq) =" << fVoltageInVoltFromHigherFreq
+      << "MHz-" << fVoltageInVoltPerMHz << "V/MHz * " << wFreqAboveMinusWantedFreq
+      << "MHZ =" << fVoltageInVoltFromHigherFreq << "-"
+      << fVoltageInVoltPerMHz * wFreqAboveMinusWantedFreq << "=" <<
+      r_fVoltageInVolt << "V")
 }
 
-//This operator is needed for inserting into STL sorting container like a std::set.
-bool VoltageAndFreq::operator < (const VoltageAndFreq & _Right) const
-{	
-    // apply operator< to operands
-  return ( 
-      m_wFreqInMHz < _Right.m_wFreqInMHz );
-}
+///** This operator is needed for inserting into STL sorting container like a
+//std::set. */
+//bool VoltageAndFreq::operator < (const VoltageAndFreq & _Right) const
+//{
+//  // apply operator < to operands
+//  return (
+//      m_wFreqInMHz < _Right.m_wFreqInMHz );
+//}
 
 std::ostream & //VoltageAndFreq::
   operator << (std::ostream & std_ostream

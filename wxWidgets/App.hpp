@@ -109,7 +109,7 @@ private:
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
 public:
-  bool m_bVoltageWasTooLowCalled;
+  volatile bool m_bVoltageWasTooLowCalled;
   std::vector<std::wstring> m_std_vec_std_wstrPowerSchemeName;
   uint16_t m_ui16ActivePowerSchemeIndex;
 #endif

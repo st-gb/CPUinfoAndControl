@@ -19,7 +19,8 @@ Model::Model()
   :
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
-  m_bAppendProcessID(true)
+  m_cpucoredata( * this)
+  , m_bAppendProcessID(true)
   , m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI(false)
   , m_bCollectPstatesAsDefault(false)
   , m_bEnableOvervoltageProtection(true)

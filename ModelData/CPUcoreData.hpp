@@ -1,6 +1,6 @@
 /* Do not remove this header/ copyright information.
  *
- * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2012.
  * You are allowed to modify and use the source code from
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
@@ -19,6 +19,7 @@
   #define COMPILE_AS_EXECUTABLE
   //Forward declarations (faster than #include)
   class I_CPUcontroller ;
+  class Model;
   class MaxVoltageForFreq ;
   class PerCPUcoreAttributes ;
 
@@ -47,7 +48,32 @@ public:
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqDefault ;
 
   bool AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz) ;
+  /** Needed by CPU controller dynlibs to insert default voltages */
+  bool AddDefaultVoltageForFreq_inline(float fValue,WORD wFreqInMHz)
+  {
+    bool bInserted = false ;
+//  #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #ifdef COMPILE_AS_EXECUTABLE
+    m_wxcriticalsection.Enter() ;
+  #endif
+    std::pair <std::set<VoltageAndFreq>::iterator, bool>
+      stdpairstdsetvoltageandfreq = m_stdsetvoltageandfreqDefault.insert(
+      VoltageAndFreq(fValue,wFreqInMHz) ) ;
+    bInserted = stdpairstdsetvoltageandfreq.second ;
+
+  //  //Used by I_CPUcontroller::GetMaximumFrequencyInMHz(),
+  //  //I_CPUcontroller::GetMinimumFrequencyInMHz()
+  //  m_stdsetvoltageandfreqAvailableFreq.insert(
+  //    VoltageAndFreq(fValue,wFreqInMHz) ) ;
+
+  //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+  #ifdef COMPILE_AS_EXECUTABLE
+    m_wxcriticalsection.Leave() ;
+  #endif
+    return bInserted ;
+  }
 #ifdef COMPILE_AS_EXECUTABLE
+  Model & m_r_model;
   std::vector<VoltageAndFreq> m_std_vec_voltageandfreqInsertedByCPUcontroller;
   bool m_b1CPUcorePowerPlane ;
   bool m_bEnableDVFS ;
@@ -124,6 +150,21 @@ public:
   void AddPreferredVoltageForFreq(float fValue,WORD wFreqInMHz) ;
   //void AddFreqAndLowestStableVoltage(float fValue,WORD wFreqInMHz) ;
   void AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz) ;
+  float AddLowestStableVoltageForLowestAvailableMulti(
+    const VoltageAndFreq & lowestStableVoltageForLowestMultiFound,
+    const WORD wLowestFreqInMHz,
+    VoltageAndFreq & lowestStableVoltageForLowestMulti);
+  WORD AddWantedVoltageForLowestVoltage(
+    const VoltageAndFreq & lowestStableVoltageForLowestMultiFound);
+#ifdef COMPILE_AS_GUI //Because margin value is member of class
+  // "UserInterfaceAttributes" that is unavailable to the service.
+  void AddWantedVoltageForLowestAvailableMulti(
+    const float fLowestStableVoltageForLowestAvailableMulti,
+    const WORD wLowestFreqInMHz);
+#endif //#ifdef COMPILE_AS_GUI
+  void AddWantedVoltageForMinVoltage(
+    WORD wExtrapolatedWantedFreqForMinVoltage);
+  void AddMinVoltageForLowestMulti(WORD wLowestFreqInMHz);
   void AvailableMultipliersToArray() ;
   void AvailableVoltagesToArray() ;
   void ClearCPUcontrollerSpecificAtts() ;
@@ -139,8 +180,8 @@ public:
     }
   }
 
-  CPUcoreData() ;
-  CPUcoreData(BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
+  CPUcoreData(Model & r_model) ;
+  CPUcoreData(Model & r_model,BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
   ~CPUcoreData() ;
 
   bool ArentDirectlyNeighbouredMultipliers(
@@ -149,7 +190,38 @@ public:
   const VoltageAndFreq * GetClosestHigherVoltageAndFreqInsertedByCPUcontroller(
     float fMultiplier) const;
   WORD GetIndexForClosestMultiplier(float fMultiplier) const;
-  BYTE GetIndexForClosestVoltage(float) ;
+  /** Define a function because of this problem:
+  * the calculated float value was 1.0999999
+  * the compared float value was 1.1000000
+  * both values belong the SAME voltage ID, just a little rounding error. */
+  float GetClosestVoltage(float fVoltageInVolt)
+  {
+    WORD index = GetIndexForClosestVoltage(fVoltageInVolt);
+    if( index != MAXWORD)
+      return m_arfAvailableVoltagesInVolt[index];
+    return 0.0f;
+  }
+  BYTE GetIndexForClosestVoltage(float) const;
+  const VoltageAndFreq * GetClosestHigherVoltageAndFreq(
+    const std::set<VoltageAndFreq> & stdsetvoltageandfreq,
+    float fMultiplier) const;
+  const VoltageAndFreq * GetClosestLowerVoltageAndFreq(
+    const std::set<VoltageAndFreq> & stdsetvoltageandfreq,
+    float fMultiplier) const;
+  const VoltageAndFreq * GetClosestLowerVoltageAndFreq(
+    float fMultiplier) const
+  {
+    const VoltageAndFreq * p_voltageandfreqLower =
+      GetClosestLowerVoltageAndFreq(
+      m_stdsetvoltageandfreqLowestStable, fMultiplier);
+    if( ! p_voltageandfreqLower)
+      p_voltageandfreqLower = GetClosestLowerVoltageAndFreq(
+        m_stdsetvoltageandfreqWanted, fMultiplier);
+    if( ! p_voltageandfreqLower)
+      p_voltageandfreqLower = GetClosestLowerVoltageAndFreq(
+        m_stdsetvoltageandfreqDefault, fMultiplier);
+    return p_voltageandfreqLower;
+  }
   float GetLowerMultiplier( float fMulti ) ;
   float GetNextVoltageAbove(float fVoltageInVolt);
   BYTE GetNumberOfCPUcores() ;

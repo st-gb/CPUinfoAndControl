@@ -4892,6 +4892,18 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
 
     mp_wxx86infoandcontrolapp->GetTemperatureString(fHighestTemperature,
       s_wxstrHighestCPUcoreTemperative);
+
+    //TODO
+//    const wxFont & wxfontBefore = r_wxdc.GetFont();
+////     int nFontPointSize = wxfont.GetPointSize();
+//    if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
+//    {
+//      wxFont wxfont2(wxfont);
+//      wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.
+//        m_nCurrentCPUcoreInfoSizeInPoint);
+//      mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->
+//        m_wxdc.SetFont(wxfont2);
+//    }
     if( llDiffInMillis < 5000 )
       mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->//m_wxicon_drawer.DrawText(
         DrawText(

@@ -15,25 +15,8 @@
 
 #include "CPUcoreData.hpp"
 
+/** Needed by CPU controller dynlibs to insert default voltages */
 bool CPUcoreData::AddDefaultVoltageForFreq(float fValue,WORD wFreqInMHz)
 {
-  bool bInserted = false ;
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  m_wxcriticalsection.Enter() ;
-#endif
-  std::pair <std::set<VoltageAndFreq>::iterator, bool>
-    stdpairstdsetvoltageandfreq = m_stdsetvoltageandfreqDefault.insert(
-    VoltageAndFreq(fValue,wFreqInMHz) ) ;
-  bInserted = stdpairstdsetvoltageandfreq.second ;
-
-//  //Used by I_CPUcontroller::GetMaximumFrequencyInMHz(),
-//  //I_CPUcontroller::GetMinimumFrequencyInMHz()
-//  m_stdsetvoltageandfreqAvailableFreq.insert(
-//    VoltageAndFreq(fValue,wFreqInMHz) ) ;
-
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  m_wxcriticalsection.Leave() ;
-#endif
-  return bInserted ;
+  return AddDefaultVoltageForFreq_inline(fValue, wFreqInMHz);
 }
-

@@ -50,6 +50,7 @@ GetFilenameWithoutExtension.hpp>
 #include <Controller/multithread/I_Thread.hpp> //class I_Thread
 #include <ModelData/ModelData.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
+#include <preprocessor_macros/BuildTimeString.h> //"BUILT_TIME" macro
 //getwxString(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
@@ -123,9 +124,9 @@ void VoltageTooLow()
 //    fVoltageInVolt,
 //    fMultiplier, fReferenceClockInMHz, 0);
 
-    //Important: else unstable voltage can not be detected after Prime95 torture
-    //test ended.
-    wxGetApp().ExitFindLowestStableVoltageThread();
+  //Important: else unstable voltage can not be detected after Prime95 torture
+  //test ended.
+  wxGetApp().ExitFindLowestStableVoltageThread();
 
   const InstableCPUcoreVoltageDetection & c_r_instablecpucorevoltagedetection =
     wxGetApp().m_model.m_instablecpucorevoltagedetection;
@@ -149,6 +150,16 @@ void VoltageTooLow()
       "multiplier %f"), fVoltageInVolt, fMultiplier
       )
     );
+  LOGN( FULL_FUNC_NAME << " waking up threads that wait for "
+    "\"VoltageTooLow()\" to be finished")
+  //Wake up all threads (the auto-configure voltages thread) waiting on the
+  //condition.
+  wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
+//  LOGN( FULL_FUNC_NAME << " waiting up the for \"VoltageTooLow()\" to be finished")
+//  //Wake up all threads (the auto-configure voltages thread) waiting on the
+//  //condition.
+//  wxGetApp().m_conditionFindLowestStableVoltage.Wait();
+  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 wxX86InfoAndControlApp::wxX86InfoAndControlApp()
@@ -1026,6 +1037,8 @@ void wxX86InfoAndControlApp::ExitFindLowestStableVoltageThread()
   //Exit the "find lowest stable voltage" thread.
   wxGetApp().m_vbExitFindLowestStableVoltage = true;
 //          wxGetApp().m_wxconditionFindLowestStableVoltage.Signal();
+  LOGN( FULL_FUNC_NAME << "--signalling the condition to end finding the"
+      " lowest stable voltage thread")
   //Wake up all threads waiting on the condition.
   wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
   LOGN( FULL_FUNC_NAME << "--end")
@@ -1236,11 +1249,11 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
     GetNextVoltageAbove(fVoltageInVolt);
 
   float fStableVoltageInVolt = //fVoltageInVolt
-    fLowestStableVoltageInVolt + m_model.
-    m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt;
+    m_model.GetVoltageWithOperatingSafetyMargin(
+      fLowestStableVoltageInVolt);
 
-  LOGN( FULL_FUNC_NAME << "--setting " << fStableVoltageInVolt << " Volt,"
-    << fMultiplier << " as stable p-state")
+  LOGN( FULL_FUNC_NAME << "--writing " << fStableVoltageInVolt << " Volt,"
+    << fMultiplier << " for stabilizing CPU operation")
 //  mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(0);
   mp_cpucontroller->SetCurrentVoltageAndMultiplier(
     //fVoltageInVolt
@@ -1479,9 +1492,12 @@ bool wxX86InfoAndControlApp::OnInit()
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 
     OpenLogFile(stdtstrLogFilePath);
-    LOGN_TYPE( "note: this program may crash (immediately) after this output if "
-      "it was built with an incompatible combination of \"wx\\setup.h\" and "
-      "linked wxWidgets libraries", I_LogFormatter::log_message_typeWARNING)
+    OutputLinkageWarning();
+//    TCHAR * tstr = BUILT_TIME;
+    std::tstring std_tstr = BUILT_TIME;
+    LOGN( "Built time of this executable:" << GetStdString(std_tstr) )
+    //Time should be output because the log time format may e.g. not contain the
+    //year.
     LOGN( "current date/time: " << GetStdString(wxNow() ) )
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
         //stdtstrLogFilePath
@@ -1635,52 +1651,6 @@ bool wxX86InfoAndControlApp::OnInit()
 //      LOGN("initializing IPC (for connection to the service) succeeded")
 //#endif
 
-      if( mp_cpucontroller )
-      {
-        //char * archCPUID ;
-        std::string strCPUID ;
-//        DEBUG("initialization of dialog--after get processor name\n");
-        //if( ! m_modelData.m_bSkipCPUtypeCheck &&
-        //  ! mp_pstatectrl->IsSupportedCPUModel() )
-        //{
-        //  mp_userinterface->Confirm("This CPU model is not supported by this program."
-        //    "Use \"skip_cpu_type_check\" (see help) if you think it makes "
-        //    "sense.\n->exiting");
-        //  return FALSE;
-        //}
-  //#endif //	#ifdef _EMULATE_TURION_X2_ULTRA_ZM82
-
-//        DEBUG("initialization of dialog--after a possible CPU type check\n");
-
-        mp_cpucontroller->SetCmdLineArgs(
-          NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS ,
-          m_arartchCmdLineArgument
-          ) ;
-//        BYTE byReturn = mp_cpucontroller->HandleCmdLineArgs( ) ;
-
-//        DEBUG("initialization of dialog--after handling cmd line args\n");
-//        //DEBUG("return value of handleCmdLineArgs(): %u\n",(WORD)byReturn);
-//        LOG("return value of handling command line args: " << (WORD) byReturn
-            //<< "\n"
-//            )
-
-//        switch(byReturn)
-//        {
-//          case FAILURE:
-//            mp_userinterface->Confirm("An error occured (a message should have been "
-//              "shown previously)->exiting");
-//            return FALSE;
-//            break;
-//          case EXIT:
-//            return FALSE;
-//            break;
-////          default:
-//  //          DEBUG("Before starting timer\n");
-////            DWORD dwValue = 0 ;
-//            //TODO read values from CPU at first because the other values should not
-//            //be affected.
-//        }
-      } //if( mp_i_cpucontroller )
       //else //CreateCPUcontrollerAndUsageGetter(...) failed
       //  mp_userinterface->Confirm("got no CPU controller and/ or CPU usage getter");
 //      }
@@ -1751,10 +1721,11 @@ void wxX86InfoAndControlApp::OpenLogFile(std::tstring & r_std_tstrLogFilePath)
       std_strLogTimeFormatString);
     if( typeid(g_logger) == typeid(Logger) )
       LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
-    if( typeid(g_logger.GetFormatter() ) == typeid(I_LogFormatter *) )
-      LOGN(FULL_FUNC_NAME << " formatter is I_LogFormatter" )
-    else if( typeid(g_logger.GetFormatter() ) == typeid(HTMLlogFormatter *) )
-      LOGN(FULL_FUNC_NAME << " formatter is HTMLlogFormatter" )
+//    if( typeid(g_logger.GetFormatter() ) == typeid(I_LogFormatter *) )
+//      LOGN(FULL_FUNC_NAME << " formatter is I_LogFormatter" )
+//    else if( typeid(g_logger.GetFormatter() ) == typeid(HTMLlogFormatter *) )
+//      LOGN(FULL_FUNC_NAME << " formatter is HTMLlogFormatter" )
+
   }
   else
   {

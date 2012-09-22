@@ -1,6 +1,6 @@
 /* Do not remove this header/ copyright information.
  *
- * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2012.
  * You are allowed to modify and use the source code from
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
@@ -18,6 +18,11 @@
 #include "stdafx.h"
 #endif
 
+#ifdef INSERT_DEFAULT_P_STATES
+  #include <ModelData/ModelData.hpp>
+  //A I_CPUaccess pointer is passed as parameter in Init(...)
+  #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+#endif //#ifdef INSERT_DEFAULT_P_STATES
 //#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 //  #include <Controller/CPU-related/Intel/Intel_registers.h>
 #include <Controller/CPU-related/Intel/Core/Core.hpp>
@@ -240,44 +245,72 @@ float
     GetTemperatureInDegCelsiusIntel( wCoreID ) ;
 }
 
+void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
+{
+  float fVoltageForMiddleMulti ;
+  float fMiddleMulti ;
+  float fVoltageForHighestMulti ;
+  float fHighestMulti ;
+
+  if( GetDefaultPstates(
+      fVoltageForMiddleMulti,
+      fMiddleMulti,
+      fVoltageForHighestMulti,
+      fHighestMulti
+      )
+    )
+  {
+    DEBUGN("adding default voltage " << fVoltageForMiddleMulti << " for "
+      << (WORD) fMiddleMulti * g_fReferenceClockInMHz << "MHz" )
+    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+      AddDefaultVoltageForFreq_inline( fVoltageForMiddleMulti,
+        (WORD) ( fMiddleMulti * g_fReferenceClockInMHz )
+        ) ;
+    DEBUGN("adding default voltage " << fVoltageForHighestMulti << " for "
+      << (WORD) fHighestMulti * g_fReferenceClockInMHz << "MHz" )
+    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+      AddDefaultVoltageForFreq_inline( fVoltageForHighestMulti,
+        (WORD) ( fHighestMulti * g_fReferenceClockInMHz)
+        ) ;
+    //Diff may be for either multi with or without IDA (e.g. 9.0 or 9.5 for P8600)
+    //e.g. for multi 9.5 at 1.2375V: 1.2375V - 1 = 0.2375V
+    const float VoltageDiff = fVoltageForHighestMulti - fVoltageForMiddleMulti;
+    const float MultiDiff = fHighestMulti - fMiddleMulti;
+    const float minSuperLFMmulti = fMiddleMulti / 2.0f;
+
+    //e.g. 1.0V - 0.1125 / 3 * 3 = 0.875 or 1.0V - 0.2375 / 3.5 * 3 = 0.875
+    const float VoltageForMinMulti = fVoltageForMiddleMulti -
+      VoltageDiff / MultiDiff * //(fMiddleMulti - 3.0f);
+      minSuperLFMmulti;
+
+    const float minFrequencyInMHz = //3.0f
+      minSuperLFMmulti * g_fReferenceClockInMHz;
+    //Core 2 P8600's MSR 0x15F has "00 20 86 0D" data: 86 hex=134 dec = multi 3,
+    // 0D=13 dec= VID for 0.875 V
+    DEBUGN("adding default voltage " << VoltageForMinMulti << " for "
+      << (WORD) minFrequencyInMHz << "MHz" )
+    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
+      AddDefaultVoltageForFreq_inline( VoltageForMinMulti ,
+        (WORD) minFrequencyInMHz
+        ) ;
+  }
+}
+
 EXPORT
 void
   NEHALEM_DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
-  //CPUaccess object inside the exe.
-//  I_CPUaccess * pi_cpuaccess
-  void * p_v
+  /** CPUaccess object inside the exe.*/
+  I_CPUaccess * pi_cpuaccess
+//  void * p_v
 //  , ReadMSR_func_type pfnreadmsr
   //BYTE by
   )
 {
   Init() ;
-//  float fVoltageForLowestMulti ;
-//  float fLowestMulti ;
-//  float fVoltageForHighestMulti ;
-//  float fHighestMulti ;
-//
-//  if( GetDefaultPstates(
-//      fVoltageForLowestMulti,
-//      fLowestMulti,
-//      fVoltageForHighestMulti,
-//      fHighestMulti
-//      )
-//    )
-//  {
-//    DEBUGN("adding default voltage " << fVoltageForLowestMulti << " for "
-//      << (WORD) fLowestMulti * g_fReferenceClockInMHz << "MHz" )
-//    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
-//      AddDefaultVoltageForFreq( fVoltageForLowestMulti,
-//        (WORD) ( fLowestMulti * g_fReferenceClockInMHz )
-//        ) ;
-//    DEBUGN("adding default voltage " << fVoltageForHighestMulti << " for "
-//      << (WORD) fHighestMulti * g_fReferenceClockInMHz << "MHz" )
-//    pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
-//      AddDefaultVoltageForFreq( fVoltageForHighestMulti,
-//        (WORD) ( fHighestMulti * g_fReferenceClockInMHz)
-//        ) ;
-//  }
+#ifdef INSERT_DEFAULT_P_STATES
+  InsertDefaultPstates(pi_cpuaccess);
+#endif
 }
 
 EXPORT

@@ -102,7 +102,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
             //Minimum multi + Index
 //            ( g_byValue2 + g_byValue1 )
             g_fValue1 + (float) g_byValue1 * 0.5 ;
-          DEBUGN("adding multiplier " << g_fValue1 )
+          DEBUGN("adding multiplier " << ar_f[ g_byValue1 ] )
         }
       }
     }
@@ -111,6 +111,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 
   inline float * GetAvailableVoltagesInVoltIntelCore(WORD & r_byNumVoltages)
   {
+//    uint32_t lowmostBits, highmostBits;
     float * ar_f = NULL ;
     //                    byte index:7  6  5  4 3 2  1  0
     //ex.: "value at MSR address 408:6 23 73 42 6 0 73 42 "
@@ -119,7 +120,10 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     g_byValue1 =
 //      (*g_pfnreadmsr) (
       ReadMSR(
-      IA32_PERF_STATUS,
+//      IA32_PERF_STATUS,
+      //MSR Address from image: http://img223.imageshack.us/img223/6914/msr.png
+      //referred from http://www.techpowerup.com/forums/showthread.php?p=1572128
+      0xCE,
       & g_dwValue1,// bit  0-31 (register "EAX")
       & g_dwValue2, //bytes 4-8
       1 //<< wCoreID //m_dwAffinityMask
@@ -128,27 +132,37 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     {
 //      //Lowest voltage ID.
 //      g_byValue2 = ( ( g_dwValue2 >> 16 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
+      BYTE lowestVoltageID = ( g_dwValue1 & BITMASK_FOR_LOWMOST_8BIT );
+      DEBUGN( "lowest voltage ID:" << (WORD) lowestVoltageID)
+      BYTE highestVoltageID = ( g_dwValue2 & BITMASK_FOR_LOWMOST_8BIT );
+      DEBUGN( "highest voltage ID:" << (WORD) highestVoltageID)
       //Number of different voltages = highest voltage ID-lowest voltage ID + 1
 //      g_byValue1 =
       r_byNumVoltages =
         //Highest voltage ID.
-        ( g_dwValue2 & BITMASK_FOR_LOWMOST_8BIT )
+        highestVoltageID - lowestVoltageID
 //        //lowest voltage ID
 //        - g_byValue2
         + 1 ;
+      DEBUGN("# voltages:" << (WORD) r_byNumVoltages )
       ar_f = new float [ //g_byValue1
         r_byNumVoltages ] ;
       //g_byValue1 = r_byNumVoltages ;
       if( ar_f ) //Allocating memory on heap succeeded.
       {
+        const float minVoltageInVolt = 0.7125 + lowestVoltageID * 0.0125;
+        DEBUGN( "min voltage in Volt:" << minVoltageInVolt)
+        float voltageInVolt;
         //for( -- g_byValue1 ; g_byValue1 > 255 ; -- g_byValue1 )
-        for( g_byValue1 = 0 ; g_byValue1 < r_byNumVoltages ; ++ g_byValue1 )
+        for( g_byValue1 = 0 ; g_byValue1 < r_byNumVoltages ;
+            ++ g_byValue1 )
         {
-          ar_f[g_byValue1] = 0.7125 +
-//            //Minimum voltage ID + Index
-//            ( g_byValue2 + g_byValue1 )
-            g_byValue1
-            * 0.0125 ;
+          voltageInVolt = minVoltageInVolt +
+          //            //Minimum voltage ID + Index
+          //            ( g_byValue2 + g_byValue1 )
+              g_byValue1 * 0.0125 ;
+          DEBUGN("adding " << voltageInVolt << "V")
+          ar_f[g_byValue1] = voltageInVolt;
         }
       }
     }
@@ -161,6 +175,72 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
     //1 voltage ID step = 0.1625V / (30-17) = 0.1625V / 13 = 0.0125
     //0.925- 17 * 0.0125 = 0.7125 ;
     return 0.7125 + byValue * 0.0125 ;
+  }
+
+  /** Intel Core has default voltages for min and max multiplier stored in
+   * MSRegister? */
+  inline BYTE GetDefaultPstates(
+    float & fVoltageForLowerMulti,
+    float & fLowerMulti,
+    float & fVoltageForHighestMulti,
+    float & fHighestMulti
+    )
+  {
+    static uint32_t ui32LowmostBits;
+    static uint32_t ui32HighmostBits;
+
+    do
+    {
+      //bytes 4 and 5 (bits 32-39, 40-47) from MSR 0x198 (STATUS) change
+      //  during operation byte 4:32<->42, byte 5:9<->73)
+      // VID 32 : 0.7125V + 32 * 0.0125V = 1.1125 V
+      // VID 42 : 0.7125V + 42 * 0.0125V = 1.2375 V
+      // FID 9 : multiplier 9, FID 73 = multiplier 9.5?
+      // 23: 0.7125V + 23 * 0.0125V = 1V
+      // 0 6 32 9 23 6
+      if( ReadMSR(
+          //MIN_AND_MAX_FID ,
+          //According to the MSR walker of CrystalCPUID:
+          //for Pentium M reg. addr. 0x198:
+          //Bit 24-32 showed hex "0E" for a max. multipl. "14" for 1.86 133 MHz FSB.
+          //Bit 24-32 showed hex "0C" for a max. multipl. "12" for 1.6 133 MHz FSB.
+          IA32_PERF_STATUS ,
+          & ui32LowmostBits, // bits 0-31 (register "EAX")
+          & ui32HighmostBits,
+          //m_dwAffinityMask
+      //    1 << wCoreID
+          1
+          )
+        )
+      {
+        //CrystalCPUID's MSR walker for Intel mobile_Core2_Duo_P8600:
+        //00000198 : 06170920 0600860D
+        //           06 : min multi for High Frequency Mode (=HFM) = 6
+        //           0x17: default voltage for min HFMode multi = 1.0V
+        //               09 : max multi = 9
+        //               0x20: default voltage for max multi = 1.1125 V
+        fVoltageForHighestMulti = GetVoltageAsEncodedInMSRIntelCore(
+          ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
+        DEBUGN("fVoltageForHighestMulti: " << fVoltageForHighestMulti )
+
+        ui32HighmostBits >>= 8 ;
+        fHighestMulti = ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ;
+        DEBUGN("fHighestMulti: " << fHighestMulti )
+      }
+      else
+        return 0 ;
+    }while( //Ensure we don't have the IDA multiplier
+        (float) ((BYTE) fHighestMulti) != fHighestMulti );
+
+    ui32HighmostBits >>= 8 ;
+    fVoltageForLowerMulti = GetVoltageAsEncodedInMSRIntelCore(
+      ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
+    DEBUGN("fVoltageForLowerMulti: " << fVoltageForLowerMulti )
+
+    ui32HighmostBits >>= 8 ;
+    fLowerMulti = ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ;
+    DEBUGN("fLowerMulti: " << fLowerMulti )
+    return 1 ;
   }
 
   inline float GetMultiplierAsEncodedInMSRIntelCore(DWORD dwValue )

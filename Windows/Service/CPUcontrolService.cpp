@@ -30,6 +30,8 @@
 #include <Windows/Service/CallFromMainFunction.h>
 //class WinRing0_1_3RunTimeDynLinked
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
+//GetStdString(wxString )
+#include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 //class wxThreadBasedI_Thread
 #include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 //WaitAsyncAndExec(...)
@@ -271,8 +273,8 @@ CPUcontrolService::CPUcontrolService(
 //  std::tstring & r_stdtstrProgramName
 //  , I_IPC_DataHandler & r_ipc_datahandler
 )
-//C++ style init.
-:
+  //C++ style init.
+  :
   CPUcontrolServiceBase(&m_dummyuserinterface),
       m_dwArgCount(argc)
 #ifdef COMPILE_WITH_IPC
@@ -290,6 +292,9 @@ CPUcontrolService::CPUcontrolService(
       m_powerprofdynlinked(r_stdwstrProgramName),
       m_x86iandc_threadGetCurrentCPUcoreData(I_Thread::joinable)
 {
+  //Time should be output (dumped) because the log time format may e.g. not the
+  //contain year.
+  LOGN( "current date/time: " << GetStdString(wxNow() ) )
   //  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
   LOGN( FULL_FUNC_NAME << "--begin")
   m_stdtstrProgramName = Getstdtstring(r_stdwstrProgramName);

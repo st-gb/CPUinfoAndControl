@@ -23,6 +23,7 @@
 
 //GetTCHARarray_Inline(...)
 #include <Controller/character_string/stdtstr.hpp>
+#include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
 
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
@@ -39,6 +40,7 @@ int main
   int n = 2;
   if( logFileIsOpen )
   {
+    CPUcontrolBase::OutputLinkageWarning();
     n = ::CallFromMainFunction(argc, //ar_p_chProgramArguments
       ar_tchProgramArguments, NULL);
     if( (const char **) ar_tchProgramArguments != ar_p_chProgramArguments)
