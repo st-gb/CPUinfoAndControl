@@ -82,8 +82,8 @@ namespace wxWidgets
         FULL_FUNC_NAME
         << "\"" << mr_cpucontrolbase.m_model.m_stdstrCPUcontrollerDynLibPath
         << "\""
-        << ": successfully loaded and function pointers to it assigned.",
-        I_LogFormatter::log_message_typeSUCCESS)
+        << ": successfully loaded and function pointers assigned to it.",
+        LogLevel::log_message_typeSUCCESS)
   //        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
   //           //mp_wxdynlibcpucontroller
   //           gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;
@@ -93,12 +93,18 @@ namespace wxWidgets
       //This number is important for CPU core creating usage getter.
       WORD wNumberOfLogicalCPUcores =
         mr_cpucontrolbase.m_p_cpucontrollerDynLib->GetNumberOfCPUcores() ;
+      LOGN( FULL_FUNC_NAME << " # CPU cores from CPU controller:"
+        << wNumberOfLogicalCPUcores)
       if( wNumberOfLogicalCPUcores ) // <> 0
+      {
+        LOGN( FULL_FUNC_NAME << " setting CPU core number to "
+          << wNumberOfLogicalCPUcores)
         mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
           wNumberOfLogicalCPUcores ;
-      else
-        mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
-          GetNumberOfLogicalCPUcores() ;
+      }
+//      else
+//        mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
+//          GetNumberOfLogicalCPUcores() ;
     }
 //    catch(CPUaccessException & r_cpuaccessexception)
 //    {

@@ -5,6 +5,7 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
+#pragma once //incl. guard
 //Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany
 
 //Architectural(=for a bunch of Intel CPU types/ models) MSRs follow
@@ -56,6 +57,7 @@
 #define IA32_PERF_CTL 0x199 //409 (Read/Write); gibt es seit 0F_03H 
 //Thermal Status Information (ReadOnly)
 #define IA32_THERM_STATUS 0x19C //412 
+#define IA32_CLOCK_MODULATION_REG_ADDR 0x19A
 //Critical Temperature Status (bit 4, RO): 1 << 4 = 2^4 = 16dec = 10000bin
 #define CRITICAL_TEMPERATURE_STATUS_BIT_MASK 16
 //Thermal Threshold #1 Status (bit 6, RO): 1 << 6 = 2^6 = 64dec = 1000000bin
@@ -90,3 +92,18 @@
 #define LAST_LEVEL_CACHE_MISSES_UMASK 0x41
 #define LAST_LEVEL_CACHE_REFERENCES_EVENT_SELECT 0x2E
 #define LAST_LEVEL_CACHE_REFERENCES_UMASK 0x4F
+
+#define MSR_EBC_FREQUENCY_ID 0x2C
+
+/** ar_f must have at least 8 elements
+ *  baseMultiplier: e.g. "6" -> */
+void AddODCMdutyCyclesAsMultipliers(float ar_f[], float baseMultiplier)
+{
+  unsigned num = 0;
+  const float OneEighthOfBaseMulti = 0.125f * baseMultiplier;
+  do
+  {
+    ar_f[num] = (float) (num+1) * OneEighthOfBaseMulti; //e.g. 23/ 8 = 3,3525
+  }
+  while( num ++ < 7);
+}

@@ -245,6 +245,7 @@ float
     GetTemperatureInDegCelsiusIntel( wCoreID ) ;
 }
 
+#ifdef INSERT_DEFAULT_P_STATES
 void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
 {
   float fVoltageForMiddleMulti ;
@@ -295,14 +296,18 @@ void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
         ) ;
   }
 }
+#endif //INSERT_DEFAULT_P_STATES
 
 EXPORT
 void
   NEHALEM_DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
+#ifdef INSERT_DEFAULT_P_STATES
   /** CPUaccess object inside the exe.*/
   I_CPUaccess * pi_cpuaccess
-//  void * p_v
+#else
+  void * p_v
+#endif //#ifdef INSERT_DEFAULT_P_STATES
 //  , ReadMSR_func_type pfnreadmsr
   //BYTE by
   )

@@ -113,7 +113,7 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //  LOGN("Trying to set current working dir to \""
 //    << mp_model->m_stdstrExecutableStartupPath.c_str() << "\"" )
 //  chdir( mp_model->m_stdstrExecutableStartupPath.c_str() ) ;
-  system( "chmod 777 load_kernel_module.sh") ;
+  int ret = system( "chmod 777 load_kernel_module.sh") ;
 //  LOGN("Trying to set current working dir to \"/\"" )
 //  chdir( "/" ) ;
   //from www.opengroup.org:
@@ -411,9 +411,12 @@ BOOL // TRUE: success, FALSE: failure
     (size_t) 8 );
   if ( m_ssize_t == -1)
   {
-    UIconfirm( std::string("Reading failed from file ") + getMSRdeviceFilePath(
-      m_byCoreID) + GetErrorMessageFromLastErrorCodeA() + std::string("\n")
+    std::string std_strMessage = std::string("Reading failed from file \"") +
+      getMSRdeviceFilePath(m_byCoreID) + //_T("\":")
+      "\":" + GetErrorMessageFromLastErrorCodeA() + std::string("\n");
+    UIconfirm( std_strMessage
       );
+//    mp_userinterface->MessageWithTimeStamp(std_strMessage);
     return FAILURE;
   }
   * p_dwedx = m_ullMSRvalue >> 32;

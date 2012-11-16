@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #pragma once //include guard
 #ifndef WX_DYN_LIB_CPU_CORE_USAGE_GETTER_HPP
 #define WX_DYN_LIB_CPU_CORE_USAGE_GETTER_HPP
@@ -15,7 +22,7 @@ class I_CPUaccess ;
 
 //WINAPI is replaced by __stdcall (a calling convention) that is needed 
 //    because else runtime error may occur: something with CPU register "ESP".
-typedef void (
+typedef BYTE (
   //WINAPI
   * dll_usage_getter_init_type)(
       I_CPUaccess *

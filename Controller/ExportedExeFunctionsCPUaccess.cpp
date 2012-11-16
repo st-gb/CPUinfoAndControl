@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * ExportedExeFunctionsCPUaccess.cpp
  *
@@ -108,8 +115,8 @@ AssignPointersToExportedExeMSRfunctions.h>
     return (*m_pfn_read_msr)
       (
       index,    // MSR index
-      eax,     // bit  0-31
-      edx,     // bit 32-63
+      (uint32_t *) eax,     // bit  0-31
+      (uint32_t *) edx,     // bit 32-63
             //1bin =core 0; 10bin=2dec= core 1
       affinityMask ) ;
   }

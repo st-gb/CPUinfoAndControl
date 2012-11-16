@@ -81,7 +81,7 @@ public:
   void GetDriverPath();
   static void GetErrorMessageForInitError(DWORD dwValue,
     std::string & stdstrErrorMsg );
-  BYTE GetNumberOfCPUCores() ;
+//  BYTE GetNumberOfCPUCores() ;
   void Init(UserInterface * pui) ;
   void InitOpenLibSysFailed();
 

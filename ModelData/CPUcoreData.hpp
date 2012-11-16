@@ -12,10 +12,16 @@
 //#include <ModelData/PerCPUcoreAttributes.hpp>
 #include <set> //class std::set
 #include <vector> //class std::vector
+//from http://stackoverflow.com/questions/3243454/what-is-the-linux-equivalent-to-maxdword
+#include <limits.h> //UINT_MAX
+//GetArrayIndexForClosestValue(...)
+#include <algorithms/binary_search/binary_search.cpp>
+#include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD etc.
 
 #define CPU_CORE_DATA_NOT_SET 255
 
 #if defined(COMPILE_AS_GUI) || defined(COMPILE_AS_SERVICE)
+  #define COMPILE_MODEL_ACCESS_THREAD_SAFE
   #define COMPILE_AS_EXECUTABLE
   //Forward declarations (faster than #include)
   class I_CPUcontroller ;
@@ -32,14 +38,17 @@
   #include <Controller/multithread/mutex_type.hpp>
 #endif
 
-//The member variables can be shared through the subclass of 
+/** Forward decl. */
+  class PerCPUcoreAttributes;
+
+/** The member variables can be shared through the subclass of
 //ICPUcoreUsageGetter and the user interface class.
 //Add new member variables _after_ the last member variable, else
 //software using this class may have incongruent declarations of this class:
 //a compiled CPU controller dyn lib may have a previous declaration, the GUI
 //a newer one. Then when the CPU controller dyn lib tries to write to a member
 //variable it may write to the wrong member and the executable the CPU controller
-//dyn lib is attached to crashes.
+//dyn lib is attached to crashes. */
 class CPUcoreData
 {
 public:
@@ -53,7 +62,8 @@ public:
   {
     bool bInserted = false ;
 //  #ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  #ifdef COMPILE_AS_EXECUTABLE
+  //#ifdef COMPILE_AS_EXECUTABLE
+  #ifdef COMPILE_MODEL_ACCESS_THREAD_SAFE
     m_wxcriticalsection.Enter() ;
   #endif
     std::pair <std::set<VoltageAndFreq>::iterator, bool>
@@ -67,10 +77,16 @@ public:
   //    VoltageAndFreq(fValue,wFreqInMHz) ) ;
 
   //#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
-  #ifdef COMPILE_AS_EXECUTABLE
+  //#ifdef COMPILE_AS_EXECUTABLE
+  #ifdef COMPILE_MODEL_ACCESS_THREAD_SAFE
     m_wxcriticalsection.Leave() ;
   #endif
     return bInserted ;
+  }
+  BYTE m_byNumberOfCPUCores ;
+  BYTE GetNumberOfCPUcores()
+  {
+    return m_byNumberOfCPUCores;
   }
 #ifdef COMPILE_AS_EXECUTABLE
   Model & m_r_model;
@@ -79,7 +95,6 @@ public:
   bool m_bEnableDVFS ;
   bool m_bTooHot ;
   BYTE m_byUpdateViewOnDVFS ;
-  BYTE m_byNumberOfCPUCores ;
 
   BYTE m_byMaxVoltageID ; //=lowest voltage
   BYTE m_byMinVoltageID ;
@@ -119,7 +134,8 @@ public:
   WORD m_wMilliSecondsWaitToCheckWhetherTemperatureDecreased ;
   WORD m_wFamily ;
 //CPU controller (dyn libs) do not need thread synchronisation yet.
-#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+//#ifndef COMPILE_FOR_CPUCONTROLLER_DYNLIB
+#ifdef COMPILE_MODEL_ACCESS_THREAD_SAFE
   //wxCriticalSection m_wxcriticalsection ;
   //Purpose: for multiple threads accessing the data:
   //  prevent accessing the data while they are being changed by a thread (->the
@@ -180,9 +196,50 @@ public:
     }
   }
 
-  CPUcoreData(Model & r_model) ;
-  CPUcoreData(Model & r_model,BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz) ;
-  ~CPUcoreData() ;
+  CPUcoreData(Model & r_model)
+    : m_r_model (r_model)
+    , m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
+    //This reserve is e.g. useful for watching TV: so the TV application does not
+    // stop showing an image when the time slices for the app wouldn't be
+    // sufficient.
+    , m_fCPUcoreFreqInMHzReserve(300.0f)
+  {
+    Init();
+  }
+  CPUcoreData(Model & r_model,BYTE byNumberOfCPUcores, WORD wMaxFreqInMHz)
+    : m_r_model (r_model)
+  {
+    //LOGN("CPU attributes ctor 2")
+    //Call default constructor.
+    //CPUcoreData();
+    Init() ;
+    SetMaxFreqInMHz(wMaxFreqInMHz) ;
+    SetCPUcoreNumber(byNumberOfCPUcores);
+  }
+  ~CPUcoreData() { Destruct(); }
+//  void Construct_Inline()
+//  {
+//    //LOGN("CPU attributes ctor 2")
+//    //Call default constructor.
+//    //CPUcoreData();
+//    Init() ;
+//    SetMaxFreqInMHz(wMaxFreqInMHz) ;
+//    SetCPUcoreNumber(byNumberOfCPUcores);
+//  }
+  void Destruct()
+  {
+    if( m_arfAvailableMultipliers )
+    {
+      delete [] m_arfAvailableMultipliers ;
+      m_arfAvailableMultipliers = NULL ;
+    }
+    if( m_arfAvailableVoltagesInVolt )
+    {
+      delete [] m_arfAvailableVoltagesInVolt ;
+      m_arfAvailableVoltagesInVolt = NULL ;
+    }
+    PossiblyReleaseMemForCoreNumAffectedData();
+  }
 
   bool ArentDirectlyNeighbouredMultipliers(
     const float fLowestMultiplierWhereInstabilityWasReached,
@@ -190,6 +247,11 @@ public:
   const VoltageAndFreq * GetClosestHigherVoltageAndFreqInsertedByCPUcontroller(
     float fMultiplier) const;
   WORD GetIndexForClosestMultiplier(float fMultiplier) const;
+  WORD GetIndexForClosestGreaterEqualMultiplier(float fMultiplier) const
+  {
+    return GetArrayIndexForClosestGreaterOrEqual(m_arfAvailableMultipliers,
+      m_stdset_floatAvailableMultipliers.size(), fMultiplier);
+  }
   /** Define a function because of this problem:
   * the calculated float value was 1.0999999
   * the compared float value was 1.1000000
@@ -197,7 +259,8 @@ public:
   float GetClosestVoltage(float fVoltageInVolt)
   {
     WORD index = GetIndexForClosestVoltage(fVoltageInVolt);
-    if( index != MAXWORD)
+    if( index != //MAXWORD
+        USHRT_MAX)
       return m_arfAvailableVoltagesInVolt[index];
     return 0.0f;
   }
@@ -224,7 +287,6 @@ public:
   }
   float GetLowerMultiplier( float fMulti ) ;
   float GetNextVoltageAbove(float fVoltageInVolt);
-  BYTE GetNumberOfCPUcores() ;
   float GetMinimumMultiplier();
   //Can't be inline, else g++ warning
   // "undefined reference to `CPUcoreData::GetMaximumMultiplier()'"

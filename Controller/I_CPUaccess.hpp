@@ -71,13 +71,13 @@ class Model ;
 
 class I_CPUcontroller ;
 
-//For succ. linking with gcc: if there is an error with vftable:
+/** For succ. linking with gcc: if there is an error with vftable:
 ///usr/lib/gcc/i686-pc-cygwin/3.4.4/include/c++/bits/locale_facets.tcc:2498:
 //  undefined reference to `vtable for ISpecificController'
 //http://gcc.gnu.org/faq.html#vtables:
 //"The solution is to ensure that all virtual methods that are not pure are
 //defined. Note that a destructor must be defined even if it is declared
-//pure-virtual [class.dtor]/7."
+//pure-virtual [class.dtor]/7." */
 class //ISpecificController
   I_CPUaccess
   //: public Windows_API::CalculationThread
@@ -190,7 +190,8 @@ public:
 	  PDWORD edx,			// bit 32-63
           //1bin =core 0; 10bin=2dec= core 1
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
-  ) = 0 ;
+  ) //= 0 ;
+  { return false; }
 //  virtual static BOOL // TRUE: success, FALSE: failure
 //  //In g++ virtual methods can't be declared as stdcall
 //  //WINAPI
@@ -210,7 +211,8 @@ public:
 	  PDWORD edx,			// bit 32-63
           //1bin =core 0; 10bin=2dec= core 1
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
-  ) = 0 ;
+    ) //= 0 ;
+    { return false; }
   virtual BOOL ReadPciConfigDwordEx(
     //From WinRing0 manual:
     //"bit description
@@ -221,7 +223,8 @@ public:
     DWORD dwPCIaddress
     , DWORD dwRegAddress
     , PDWORD p_dwValue
-    ) = 0 ;
+    ) //= 0 ;
+    { return false; }
   //inline
   virtual BOOL ReadTSC(DWORD & r_dwLow , DWORD & r_dwHigh ) //= 0
     ;
@@ -238,14 +241,16 @@ public:
   { 
       mp_userinterface = & r_userinterface ;
   }
-  virtual void Sleep(WORD wMillis) = 0 ;
+  virtual void Sleep(WORD wMillis) //= 0 ;
+    { }
   virtual BOOL 
     //In g++ virtual methods can't be declared as stdcall
     //WINAPI
     WritePciConfigDwordEx ( 
     DWORD pciAddress,
     DWORD regAddress,
-    DWORD value) = 0 ;
+    DWORD value) //= 0 ;
+    { return false; }
   virtual BOOL // TRUE: success, FALSE: failure
     //In g++ virtual methods can't be declared as stdcall
     //WINAPI
@@ -254,7 +259,8 @@ public:
       DWORD dwLow ,//eax,			// bit  0-31
       DWORD dwHigh, //edx,			// bit 32-63
       DWORD affinityMask	// Thread Affinity Mask
-    ) = 0 ;
+    ) //= 0 ;
+    { return false; }
 };
 
 #endif //#ifndef I_CPUACCESS_H

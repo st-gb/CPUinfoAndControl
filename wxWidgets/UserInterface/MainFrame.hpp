@@ -550,9 +550,16 @@ public:
   //}
   void OnResume(wxPowerEvent& WXUNUSED(event)) ;
 #endif // wxHAS_POWER_EVENTS
+  void OnRedrawEverything(wxCommandEvent & evt );
   void OnTimerEvent(wxTimerEvent &event);
 //  void UpdatePowerSettings(wxPowerType powerType, wxBatteryState batteryState) ;
 //  wxPowerType m_powerType;
 //  wxBatteryState m_batteryState;
   DECLARE_EVENT_TABLE()
 };
+
+BEGIN_DECLARE_EVENT_TYPES()
+  DECLARE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_REDRAW_EVERYTHING, wxNewEventType() )
+//"EVT_BUTTON" also expands to "DECLARE_EVENT_TYPE"
+//  DECLARE_EVENT_TYPE(wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, 7777)
+END_DECLARE_EVENT_TYPES()

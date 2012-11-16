@@ -1,9 +1,16 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 //#include "ISpecificController.hpp"
 #include "I_CPUaccess.hpp"
 //for BITMASK_FOR_LOWMOST_7BIT
 #include <preprocessor_macros/bitmasks.h>
 #include <Controller/CPU-related/ReadTimeStampCounter.h>
-
+#include <ModelData/ModelData.hpp> //class Model
 #include <string.h> //strcat(...)
 #include <windef.h> //for DWORD
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
@@ -490,17 +497,29 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
 
 BYTE I_CPUaccess::GetNumberOfCPUCores()
 {
-  //return 2 ;
-  //If CPUID for address Fn8000_0008 fails the core count is 1.
+//  //return 2 ;
+//  //If CPUID for address Fn8000_0008 fails the core count is 1.
   BYTE byCoreNumber = 1 ;
-  DWORD dwEAX;
-  DWORD dwEBX;
-  DWORD dwECX;
-  DWORD dwEDX;
-  //DEBUG("WRDL--getting number of CPU cores\n");
+//  DWORD dwEAX;
+//  DWORD dwEBX;
+//  DWORD dwECX;
+//  DWORD dwEDX;
+//  //DEBUG("WRDL--getting number of CPU cores\n");
+////  if( CpuidEx(
+////    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
+////    0x80000008,
+////    &dwEAX,
+////    &dwEBX,
+////    &dwECX,
+////    &dwEDX,
+////    1
+////      )
+////    )
 //  if( CpuidEx(
-//    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
-//    0x80000008,
+//    //Intel: "Place core count in BL (originally in EAX[31:26]"
+//    //0x0000001,
+//		//Thread Level Processor Topology (CPUID Function 0Bh with ECX=0)
+//		0xB,
 //    &dwEAX,
 //    &dwEBX,
 //    &dwECX,
@@ -508,29 +527,18 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
 //    1
 //      )
 //    )
-  if( CpuidEx(
-    //Intel: "Place core count in BL (originally in EAX[31:26]"
-    //0x0000001,
-		//Thread Level Processor Topology (CPUID Function 0Bh with ECX=0)
-		0xB,
-    &dwEAX,
-    &dwEBX,
-    &dwECX,
-    &dwEDX,
-    1
-      )
-    )
-	{
-    byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT )
-      //"ECX 7:0 NC: number of physical cores - 1.
-      //The number of cores in the processor is NC+1 (e.g., if
-      //NC=0, then there is one core).
-      //See also section 2.9.2 [Number of Cores and Core Number]."
-      + 1 ;
-    //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
-    //LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
-  }
+//	{
+//    byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT )
+//      //"ECX 7:0 NC: number of physical cores - 1.
+//      //The number of cores in the processor is NC+1 (e.g., if
+//      //NC=0, then there is one core).
+//      //See also section 2.9.2 [Number of Cores and Core Number]."
+//      + 1 ;
+//    //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
+//    //LOG( "Number of CPU cores: " << (WORD) byCoreNumber << "\n" );
+//  }
   //DEBUG("WRDL--end of getting number of CPU cores\n");
+  byCoreNumber = mp_model->m_cpucoredata.GetNumberOfCPUcores();
   return byCoreNumber ;
 }
 

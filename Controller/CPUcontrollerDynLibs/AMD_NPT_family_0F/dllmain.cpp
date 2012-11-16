@@ -84,6 +84,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
    * fe.N, fe.simple, etc. */
 //  PANTHEIOS_EXTERN_C const PAN_CHAR_T PANTHEIOS_FE_PROCESS_IDENTITY[] = PANTHEIOS_LITERAL_STRING("example.cpp.backends.file");
 
+#ifdef _WIN32
   EXPORT BOOL APIENTRY DllMain(
     HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -113,6 +114,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     }
     return TRUE;
   }
+#endif //#ifdef _WIN32
 
   //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
   #define NEHALEM_DLL_CALLING_CONVENTION
@@ -248,6 +250,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
     if( ! g_pfnreadmsr || ! g_pfn_write_msr )
     {
+#ifdef _WIN32
       MessageBox(NULL,
         "Pointers could not be assigned to the execu-tables export functions\n"
         "Does the executable that loads this DLL have ReadMSR and WriteMSR"
@@ -256,6 +259,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
         ,"error"
         , MB_OK) ;
       return ;
+#endif //#ifdef _WIN32
     }
   }
 
@@ -271,10 +275,22 @@ AssignPointerToExportedExeReadPCIconfig.h>
 #ifdef _DEBUG
   void OpenLogFile()
   {
+#ifdef _WIN32
     TCHAR fileName[MAX_PATH];
-    std::tstring std_tstrDLLfileName = GetDLLfileName(g_hModule, fileName);
+#endif
+    std::tstring std_tstrDLLfileName
+#ifdef _WIN32 //win 32 or 64 bit
+    = GetDLLfileName(g_hModule, fileName)
+#endif //#ifdef _WIN32
+#ifdef __linux__
+    = "AMD_NPT_family_0F"
+#endif //#ifdef __linux__
+    ;
 
-    std::string strExeFileNameWithoutDirs = GetExeFileNameWithoutDirs() ;
+    std::string strExeFileNameWithoutDirs
+#ifdef _WIN32
+    = GetExeFileNameWithoutDirs()
+#endif
       ;
     std::string stdstrFilename;
 //    if( typeid(g_logger) == typeid(::Logger) )
@@ -294,7 +310,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
 //    g_windows_api_logger.OpenFile2(
 //      std_tstrDLLfileName + "Windows_API_logger2.txt") ;
 
+#ifdef _WIN32
     DEBUGN( "this module's file name:" << fileName)
+#endif
 //    DEBUGN_LOGGER_NAME( g_windows_api_logger, "this module's file name:"
 //      //<< fileName << " "
 //      << std_tstrDLLfileName)

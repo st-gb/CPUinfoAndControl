@@ -290,6 +290,7 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
 #endif //#ifdef _WIN32
 }
 
+#ifdef _WIN32
 void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
   wxMenu * p_wxmenuPowerSchemes)
 {
@@ -377,6 +378,7 @@ void TaskBarIcon::CreatePowerSchemeMenuByRetrieving(
   }
   LOGN( FULL_FUNC_NAME << "--end")
 }
+#endif //#ifdef _WIN32
 
 void TaskBarIcon::FreeRessources()
 {

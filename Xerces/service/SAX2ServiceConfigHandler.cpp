@@ -174,6 +174,8 @@
 	  {
       LOGN( "XML element: " << pchXMLelementName );
       m_strElementName = std::string(pchXMLelementName) ;
+      /** The log exclusion filter exists for possibility of different entries
+       * between UI and service. */
       if( PossiblyHandleLoggingExclusionFilter_Inline(
         cpc_xmlchLocalName,
         cr_xercesc_attributes)

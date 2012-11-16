@@ -17,6 +17,7 @@
 
 #include <map> //class std::map
 #include <string> //class std::string
+#include <inttypes.h> //uint16_t
 //#include <vector> //class std::vector
 
 namespace Attributes
@@ -43,6 +44,7 @@ namespace Attributes
     int m_nVoltageScaleSizeInPoint;
     int m_nCurrentCPUcoreInfoSizeInPoint;
     int m_nCPUcoreFrequencyScaleSizeInPoint;
+    int m_nCPUcoreTempTaskBarIconFontSizeInPoint;
 
     std::map<uint16_t,std::string> m_std_vec_WisdomStrings;
 

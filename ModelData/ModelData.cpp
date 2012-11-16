@@ -11,35 +11,33 @@
 
 #define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
 #define CONFIG_FILE_PATH "configuration"
-#define LOG_FILE_PATH "log_files"
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
-Model::Model()
-  //C++ style inits:
-  :
-  //Initialize in the same order as textual in the declaration?
-  //(to avoid g++ warnings)
-  m_cpucoredata( * this)
-  , m_bAppendProcessID(true)
-  , m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI(false)
-  , m_bCollectPstatesAsDefault(false)
-  , m_bEnableOvervoltageProtection(true)
-  , m_bSkipCPUtypeCheck(false)
-  , m_bSyncGUIshowDataWithService ( false )
-  , m_bTruncateLogFileForEveryStartup(true)
-  , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
-  , mp_cpucontroller (NULL)
-  , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
-  , m_std_strConfigFilePath( CONFIG_FILE_PATH )
-  , m_std_strLogFilePath( LOG_FILE_PATH )
-//  , m_uiNumberOfSecondsToWaitUntilVoltageIsReduced(60)
-  {
-    //m_cpucoredata
-#ifdef _DEBUG
-//      const Model * pmodel = this ;
-#endif
-//    m_dPreviousPERF_CTRvalue = 0.0 ;
-  }
+//Model::Model()
+//  //C++ style inits:
+//  :
+//  //Initialize in the same order as textual in the declaration?
+//  //(to avoid g++ warnings)
+//  m_cpucoredata( * this)
+//  , m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI(false)
+//  , m_bCollectPstatesAsDefault(false)
+//  , m_bEnableOvervoltageProtection(true)
+//  , m_bSkipCPUtypeCheck(false)
+//  , m_bSyncGUIshowDataWithService ( false )
+////  , m_bTruncateLogFileForEveryStartup(true)
+//  , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
+//  , mp_cpucontroller (NULL)
+//  , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
+//  , m_std_strConfigFilePath( CONFIG_FILE_PATH )
+////  , m_std_strLogFilePath( LOG_FILE_PATH )
+////  , m_uiNumberOfSecondsToWaitUntilVoltageIsReduced(60)
+//  {
+//    //m_cpucoredata
+//#ifdef _DEBUG
+////      const Model * pmodel = this ;
+//#endif
+////    m_dPreviousPERF_CTRvalue = 0.0 ;
+//  }
 
 //  void Model::AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue)
 //  {

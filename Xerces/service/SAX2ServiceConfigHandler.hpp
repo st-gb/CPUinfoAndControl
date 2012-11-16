@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #ifndef _SAX2SERVICECONFIG_HPP
 #define _SAX2SERVICECONFIG_HPP
 
@@ -29,6 +36,9 @@ XERCES_CPP_NAMESPACE_BEGIN
   class Attributes;
 XERCES_CPP_NAMESPACE_END
 
+/** Class for handling service-/ daemon-specific attribute data.
+ * E.g. the log exclusion filter exists for possibility of different entries
+ * between UI and service.*/
 class SAX2ServiceConfigHandler
   : public XERCES_CPP_NAMESPACE::DefaultHandler
   //ContentHandler

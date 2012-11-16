@@ -209,17 +209,18 @@
     if( XercesAttributesHelper::GetAttributeValue
         ( 
           cr_xercesc_attributes,
-          std_strAttributeName,
-          m_p_model->m_stdstrLogFilePath
+          std_strAttributeName.c_str(),
+          m_p_model->m_logfileattributes.m_std_wstrLogFilePath
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
       LOGN_TYPE( FULL_FUNC_NAME << "--got attribute value for \""
-        << std_strAttributeName << "\":" << m_p_model->m_stdstrLogFilePath,
-        I_LogFormatter::log_message_typeSUCCESS)
+        << std_strAttributeName << "\":" << m_p_model->m_logfileattributes.
+        m_std_wstrLogFilePath,
+        LogLevel::log_message_typeSUCCESS)
     else
       LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
         << std_strAttributeName << "\" failed",
-        I_LogFormatter::log_message_typeINFO)
+        LogLevel::log_message_typeINFO)
     std_strAttributeName = "default_CPU_core_usage_getter";
     if( XercesAttributesHelper::GetAttributeValue
         (
@@ -231,12 +232,12 @@
     {
       LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
         << std_strAttributeName << "\" succeeded",
-        I_LogFormatter::log_message_typeSUCCESS)
+        LogLevel::log_message_typeSUCCESS)
     }
     else
       LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
         << std_strAttributeName << "\" failed",
-        I_LogFormatter::log_message_typeINFO)
+        LogLevel::log_message_typeINFO)
   }
 
   void SAX2MainConfigHandler::startElement

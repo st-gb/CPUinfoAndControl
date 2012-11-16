@@ -218,66 +218,6 @@ BYTE HandleProgramOptions(
   return byRet;
 }
 
-bool OpenLogFile(TCHAR * argv[])
-{
-#ifdef UNICODE
-//  std::wcout << L"1st program arg:" << argv[0] << L"\n";
-#else
-  std::cout << L"1st program arg:" << argv[0] << L"\n";
-#endif
-
-  std::string std_strLogFileName =
-    //CPUcontrolBase::m_model.m_stdstrLogFilePath + "/" +
-    ::GetStdString_Inline( argv[0] );
-  std::cout << "std_strLogFileName:" << std_strLogFileName << "\n";
-
-  //  std::tstring std_tstrLogFileName;
-  #if defined(__GNUC__) && __GNUC__ > 3 //GCC 3.4.5 does not have "psapi.a" lib.
-  if( ServiceBase::IsStartedAsService() )
-    //std::string std_strLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
-    std_strLogFileName += //std::string( argv[0]) +
-      std::string("_log.") ;
-  //    std_tstrLogFileName = std::tstring( argv[0]) +
-  //      std::tstring( L"_log.txt") ;
-  else
-    std_strLogFileName += //std::string( argv[0]) +
-      std::string("_execute_actions_log.") ;
-  //    std_tstrLogFileName = std::tstring( argv[0]) +
-  //      std::tstring(L"_execute_actions_log.txt") ;
-  #else
-  std_strLogFileName += //std::string( argv[0]) +
-    std::string("_log.") ;
-  //  std_tstrLogFileName = std::tstring( argv[0]) +
-  //    std::tstring( L"_log.txt") ;
-  #endif
-
-  //The path must be set before the config files are accessed.
-  if( ! ::SetExePathAsCurrentDir() )
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-      "Getting file path for THIS executable file failed: " <<
-      LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
-      );
-
-  std::string std_strFileExt;
-  CPUcontrolBase::GetLogFileExtension(std_strFileExt);
-
-  std::string std_strLogTimeFormatString;
-  CPUcontrolBase::GetLogTimeFormatString(std_strLogTimeFormatString);
-
-  std_strLogFileName += std_strFileExt;
-#ifdef USE_LOG4CPLUS
-  init_log4cplus() ;
-#endif
-
-  bool logFileIsOpen = g_logger.OpenFile2( std_strLogFileName );
-  if( logFileIsOpen )
-  {
-    I_LogFormatter * p_log_formatter = g_logger.CreateFormatter(
-      std_strFileExt.c_str(), std_strLogTimeFormatString);
-  }
-  return logFileIsOpen;
-}
-
 void PossiblyInteractWithUser(int argc, TCHAR * argv[],
   CPUcontrolService * p_cpucontrolservice,
   const std::tstring & std_tstrProgramName,
@@ -347,30 +287,30 @@ void NoProgramArgumentsSpecified(int argc, TCHAR * argv[],
   if( bStartServiceWithinThisProcess )
   {
     LOGN("Starting service inside _this_ process.")
-    if( p_cpucontrolservice == NULL )
+//    if( p_cpucontrolservice == NULL )
     {
-      std::wstring std_wstrProgramName = GetStdWstring( std_tstrProgramName ) ;
-      CPUcontrolService cpucontrolservice(
-        argc,
-        GetTCHARarray_Inline( (const char **) argv, argc),
-  //            Get_wchar_t_Array_Inline( (const char **) argv, argc),
-  //            std_tstrProgramName
-        std_wstrProgramName
-  //            , xerces_ipc_data_handler
-        ) ;
-  //          Xerces::IPCdataHandler xerces_ipc_data_handler(
-  //            cpucontrolservice.m_model ) ;
-      gp_cpucontrolbase = & cpucontrolservice ;
-      cpucontrolservice.OnInit();
-      cpucontrolservice.StartService();
+//      std::wstring std_wstrProgramName = GetStdWstring( std_tstrProgramName ) ;
+//      CPUcontrolService cpucontrolservice(
+//        argc,
+//        GetTCHARarray_Inline( (const char **) argv, argc),
+//  //            Get_wchar_t_Array_Inline( (const char **) argv, argc),
+//  //            std_tstrProgramName
+//        std_wstrProgramName
+//  //            , xerces_ipc_data_handler
+//        ) ;
+//  //          Xerces::IPCdataHandler xerces_ipc_data_handler(
+//  //            cpucontrolservice.m_model ) ;
+//      gp_cpucontrolbase = & cpucontrolservice ;
+      p_cpucontrolservice->OnInit();
+      p_cpucontrolservice->StartService();
           //StartServiceCtrlDispatcherInSeparateThread();
     }
-    else
-    {
-      p_cpucontrolservice->//StartService();
-        StartServiceCtrlDispatcherInSeparateThread();
-      gp_cpucontrolbase = p_cpucontrolservice;
-    }
+//    else
+//    {
+//      p_cpucontrolservice->//StartService();
+//        StartServiceCtrlDispatcherInSeparateThread();
+//      gp_cpucontrolbase = p_cpucontrolservice;
+//    }
   //         if( bStartAsService)
   //         {
   //

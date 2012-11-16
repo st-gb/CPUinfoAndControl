@@ -10,6 +10,7 @@
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 #include <Controller/I_CPUaccess.hpp>
+#include <Controller/Logger/LogLevel.hpp>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
@@ -46,7 +47,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     if( m_wxdynamiclibraryCPUcoreUsage.IsLoaded() )
     {
       LOGN_TYPE("CPU core usage getter Dyn lib successfully loaded",
-        I_LogFormatter::log_message_typeSUCCESS)
+        LogLevel::log_message_typeSUCCESS)
       m_pfngetcpucoreusage = (_GetCPUcoreUsage) 
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
           //Use wxT() macro to enable to compile with both unicode and ANSI.
@@ -69,7 +70,12 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
           wxT(INIT_LITERAL) ) ;
       LOGN("address of CPU access object: " << mp_cpuaccess )
       if( m_pfn_dll_init_type )
-        (*m_pfn_dll_init_type) ( //p_cpuaccess 
+      {
+        if( ! mp_cpuaccess )
+          LOGN_TYPE( FULL_FUNC_NAME << " pointer to hardware access object is "
+            "0->may crash when dyn lib's \"" << INIT_LITERAL << "\" function "
+            "derefers it", LogLevel::log_message_typeWARNING)
+        BYTE byRet = (*m_pfn_dll_init_type) ( //p_cpuaccess
         //p_cpuacces->wNumLogicalCPUcores 
         //cpucoredata.m_byNumberOfCPUCores
 
@@ -92,6 +98,12 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         mp_cpuaccess
 //#endif
         ) ;
+        LOGN( FULL_FUNC_NAME << "--return value of DLL's " << INIT_LITERAL
+          << " function:" << (WORD) byRet)
+        if( byRet )
+          LOGN_TYPE( FULL_FUNC_NAME << "--DLL's " << INIT_LITERAL
+            << " function failed", LogLevel::log_message_typeERROR)
+      }
       LOGN("after calling DLL's " << INIT_LITERAL <<  "function")
       if( m_pfngetcpucoreusage //&& m_pfn_dll_init_type
           )
@@ -118,7 +130,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
 #else
 #endif //#ifdef _WIN32
     LOGN_TYPE("loading CPU core usage getter dynamic library failed:" <<
-        stdstrErrMsg, I_LogFormatter::log_message_typeERROR)
+        stdstrErrMsg, LogLevel::log_message_typeERROR)
     //It does not make a sense to use this class instance because the 
     //initialisation failed. So throw an exception.
     throw CPUaccessException(stdstrErrMsg) ;
@@ -129,6 +141,9 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
 wxDynLibCPUcoreUsageGetter::~wxDynLibCPUcoreUsageGetter()
 {
   m_wxdynamiclibraryCPUcoreUsage.Unload() ;
+  //TODO crashed here under Linux if dyn lib uses global logger as in this exe
+  // (the logger object is destroyed at end of dyn lib and then this exe tries
+  // to access it)
   DEBUGN("~wxDynLibCPUcoreUsageGetter()")
   LOGN("Unloaded the CPU core usage getter dynamic library")
 }

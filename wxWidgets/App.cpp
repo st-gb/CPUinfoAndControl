@@ -23,6 +23,7 @@
 #include "wx/wx.h" //for wxMessageBox(...) (,etc.)
 //#include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
+#include <wx/thread.h> //wxThread::GetCPUcount()
 
 #include "App.hpp"
 
@@ -70,7 +71,7 @@ GetFilenameWithoutExtension.hpp>
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/DynFreqScalingThread.hpp>
 //  #include <Windows/GetNumberOfLogicalCPUs.h>
-//  #include <Windows/HideMinGWconsoleWindow.h>
+  #include <Windows/HideMinGWconsoleWindow.h>
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/LocalLanguageMessageFromErrorCodeA.h>
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
@@ -79,13 +80,14 @@ GetFilenameWithoutExtension.hpp>
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #else
-  #include <Linux/MSRdeviceFile.hpp>
+  #include <Linux/MSRdeviceFile.hpp> //class MSRdeviceFile
 #endif
 //class NonBlocking::wxServiceSocketClient
 #include <wxWidgets/Controller/non-blocking_socket/client/\
 wxServiceSocketClient.hpp>
 //#include <strstream> //ostrstream
 #include <string> //class std::string
+#include <typeinfo> //typeid
 //#include <errno.h> //for "errno"
 
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
@@ -112,7 +114,12 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
 //  float fVoltageInVolt;
 //  float fMultiplier;
   StabilizeVoltage(fVoltageInVolt, fMultiplier, fReferenceClockInMHz);
-  mp_frame->RedrawEverything() ;
+  //Should only be executed in main thread, else program exit?
+  //mp_frame->RedrawEverything() ;
+  //send "RedrawEverything" event because this is not the GUI thread.
+  //TODO seems to cause a program crashf
+//  wxCommandEvent wxcommand_event(wxEVT_COMMAND_REDRAW_EVERYTHING);
+//  wxPostEvent(mp_frame, wxcommand_event);
   mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
   LOGN( FULL_FUNC_NAME << "--end")
 }
@@ -146,12 +153,15 @@ void VoltageTooLow()
   wxGetApp().m_bVoltageWasTooLowCalled = true;
 //  if( ! wxGetApp().m_bAutoConfigureVoltage)
 //  {
-  ::wxMessageBox( wxString::Format( wxT("Highest unstable voltage: %f Volt found for "
-      "multiplier %f"), fVoltageInVolt, fMultiplier
-      )
-    );
+  wxString wxstrMessage = wxString::Format(
+    wxT("Highest unstable voltage: %f Volt found for "
+        "multiplier %f"), fVoltageInVolt, fMultiplier);
+//  ::wxMessageBox( wxstrMessage )
+  wxGetApp().MessageWithTimeStamp( GetStdTstring_Inline(wxstrMessage) );
   LOGN( FULL_FUNC_NAME << " waking up threads that wait for "
     "\"VoltageTooLow()\" to be finished")
+  LOGN( FULL_FUNC_NAME << "--signalling the condition to end finding the"
+      " lowest stable voltage thread")
   //Wake up all threads (the auto-configure voltages thread) waiting on the
   //condition.
   wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
@@ -177,7 +187,9 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
     wxEmptyString),
 //  m_std_wstrInstableCPUcoreVoltageDynLibPath(
 //    L"InstableCPUcoreVoltageDetection.dll"),
+#ifdef _WIN32
   m_hmoduleUnstableVoltageDetectionDynLib(NULL),
+#endif //#ifdef _WIN32
 //  m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
   m_vbExitFindLowestStableVoltage(false),
   m_x86iandc_threadFindLowestStableVoltage(I_Thread::detached),
@@ -227,7 +239,9 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
 //  if( m_p_HighestCPUcoreTemperatureTaskBarIcon)
 //    delete m_p_HighestCPUcoreTemperatureTaskBarIcon;
   DeleteTaskBarIcons();
+#ifndef __linux__
   UnloadDetectInstableCPUcoreVoltageDynLib();
+#endif
   LOGN("end of app's destructor")
 }
 
@@ -456,8 +470,11 @@ void wxX86InfoAndControlApp::CreateAndShowMainFrame()
     LOGN("after main frame creation")
     //p_frame->Show(TRUE);
     //SetTopWindow(p_frame);
-    if( m_model.m_userinterfaceattributes.m_bShowMainFrameAtStartup )
+//    if( m_model.m_userinterfaceattributes.m_bShowMainFrameAtStartup )
+    //Show main frame in _any_ case (if not shown no taskbar icons appear)
       mp_frame->Show(true);
+    if( ! m_model.m_userinterfaceattributes.m_bShowMainFrameAtStartup )
+      mp_frame->Hide();
   //      p_wxframe->Show( true ) ;
     LOGN("after showing the main frame")
   //      ShowTaskBarIcon() ;
@@ -1418,7 +1435,7 @@ bool wxX86InfoAndControlApp::OnInit()
   //from http://www.kharchi.eu/algierlib/tips.html:
   //If using MinGW then pass "-mwindows" as linker flag in order to hide the
   //console window.
-//  HideMinGWconsoleWindow() ;
+//  HideMinGWconsoleWindow();
 #ifdef COMPILE_WITH_SHARED_MEMORY
   mp_voidMappedViewStartingAddress = NULL ;
   m_handleMapFile = NULL ;
@@ -1432,6 +1449,7 @@ bool wxX86InfoAndControlApp::OnInit()
 //  mp_modelData = new Model() ;
   mp_modelData = & m_model ;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+  m_sax2_ipc_current_cpu_data_handler.SetModelData(mp_modelData);
   m_sax2_ipc_current_cpu_data_handler.m_cpc_cpucoredata =
     & mp_modelData->m_cpucoredata ;
 #endif
@@ -1443,22 +1461,28 @@ bool wxX86InfoAndControlApp::OnInit()
     const char * c_ar_chXMLfileName = std_strUserInterfaceFilePath.c_str();
     //ISpecificController
     //MyFrame * p_frame ;
-    std::tstring stdtstrLogFilePath ;
+    std::tstring std_tstrLogFilePath ;
     if( argc > 0 )
     {
       std::tstring tstrArg0(argv[0]) ;
       //Maybe it's better to use a file name for the log file that is derived
       //from THIS executable's file name: e.g. so different log files for the
       //x86I&C service and the x86I&C GUI are possible.
-      stdtstrLogFilePath = std::tstring( //Getstdtstring(argv) +
+      std_tstrLogFilePath = std::tstring( //Getstdtstring(argv) +
         tstrArg0
 //        + _T("_log.txt")
         ) ;
     }
     else
-      stdtstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName
+      std_tstrLogFilePath = std::tstring( mp_modelData->m_stdtstrProgramName
         //+ _T("_log.txt")
         ) ;
+    std::tstring std_tstrLogFilePrefix = std_tstrLogFilePath;
+    std::wstring std_wstrLogFilePath = GetStdWstring(std_tstrLogFilePath);
+    ReadLogConfig(//r_std_tstrLogFilePath
+      std_wstrLogFilePath);
+//    if( OpenLogFile(std_wstrLogFilePath) )
+//      HideMinGWconsoleWindow();
 
     Xerces::SAX2UserInterfaceConfigHandler sax2userinterfaceconfighandler(
       m_model , this
@@ -1481,17 +1505,43 @@ bool wxX86InfoAndControlApp::OnInit()
       MessageWithTimeStamp(L"loading \"" +
         GetStdWstring( std::string(c_ar_chXMLfileName) ) +
         L"\" failed" ) ;
-      LOGN("loading UserInterface.xml failed")
+      LOGN("loading \"" << c_ar_chXMLfileName << "\" failed")
 //      OUTPUT_WITH_TIMESTAMP
     }
-#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+//    std::string std_strLogFile;
+//    if( ! mp_modelData->m_logfileattributes.m_bAppendProcessID )
+//    {
+////      std_strLogFile = GetStdString(std_tstrLogFilePrefix) + "_log." +
+////        m_model.m_logfileattributes.m_std_strFormat;
+//      std_wstrLogFilePath = GetStdWstring(std_tstrLogFilePrefix) + L"_log." +
+//        GetStdWstring(m_model.m_logfileattributes.m_std_strFormat);
+////      if( g_logger.//RenameFile()
+////          RenameFileThreadUnsafe( std_strLogFile) )
+////        MessageWithTimeStamp( L"renaming the log file to \"" + stdstr +
+////          "\" failed: " +
+////          GetStdWstring( GetErrorMessageFromLastErrorCodeA() ) );
+//    }
+////    else
+////      std_strLogFile = std_wstrLogFilePath;
+    if( OpenLogFile(std_wstrLogFilePath,
+        m_model.m_logfileattributes.m_bAppendProcessID) )
+#ifdef _WIN32
+      HideMinGWconsoleWindow();
+#else //#ifdef _WIN32
+      ;
+#endif //#ifdef _WIN32
     else
+      MessageWithTimeStamp( L"creating the log file \"" + //std_strLogFile +
+        std_wstrLogFilePath +
+        "\" failed: " +
+        GetStdWstring( GetErrorMessageFromLastErrorCodeA() ) );
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+//    else
     {
       m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
     }
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 
-    OpenLogFile(stdtstrLogFilePath);
     OutputLinkageWarning();
 //    TCHAR * tstr = BUILT_TIME;
     std::tstring std_tstr = BUILT_TIME;
@@ -1500,9 +1550,14 @@ bool wxX86InfoAndControlApp::OnInit()
     //year.
     LOGN( "current date/time: " << GetStdString(wxNow() ) )
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
-        //stdtstrLogFilePath
-      GetStdString(stdtstrLogFilePath) << "\"")
-//    g_logger.OpenFile( stdtstrLogFilePath ) ;
+        //std_tstrLogFilePath
+      GetStdString(std_tstrLogFilePath) << "\"")
+    BYTE & r_byNumberOfCPUCores = m_model.m_cpucoredata.m_byNumberOfCPUCores;
+    int nCPUCount = wxThread::GetCPUCount();
+    LOGN( FULL_FUNC_NAME << " # CPUs reported by wxWidgets: " << nCPUCount)
+    if( nCPUCount != -1 )
+      r_byNumberOfCPUCores = nCPUCount;
+//    g_logger.OpenFile( std_tstrLogFilePath ) ;
 
 //    LOGN("process ID of this process:" << dwProcID )
 //    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("process ID of this process:"
@@ -1616,10 +1671,12 @@ bool wxX86InfoAndControlApp::OnInit()
         //#endif
         CPUcontrollerChanged() ;
       }
+#ifdef _WIN32
       GetAvailablePowerSchemesViaIPC(
         m_std_vec_std_wstrPowerSchemeName,
         m_ui16ActivePowerSchemeIndex
         );
+#endif //#ifdef _WIN32
       //Get the default, min and max voltages.
       BYTE byGetConfigDataViaInterProcessCommunicationReturnValue =
         GetConfigDataViaInterProcessCommunication() ;
@@ -1691,34 +1748,47 @@ void wxX86InfoAndControlApp::CreateLogFileFormatter(
 /**
  * r_std_tstrLogFilePath: file name before the file extension separator.
  */
-void wxX86InfoAndControlApp::OpenLogFile(std::tstring & r_std_tstrLogFilePath)
+bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
+  /** Should be wide string because of non-English languages.*/
+  std::wstring & r_std_wstrLogFilePath,
+  bool bAppendProcessID)
 {
 //  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("After reading file\""
 //    << c_ar_chXMLfileName << "\"")
-  DWORD dwProcID = wxGetProcessId() ;
-  if( mp_modelData->m_bAppendProcessID )
+//  GetLogFilePropertiesAndOpenLogFile();
+
+  std::tstring r_std_tstrLogFilePath = Getstdtstring(r_std_wstrLogFilePath);
+  if( //mp_modelData->m_logfileattributes.m_bAppendProcessID
+      bAppendProcessID )
   {
+    const DWORD dwProcID = wxGetProcessId() ;
 //      std::tstring std_tstrOldLogFilePath = stdtstrLogFilePath;
     //Because more than 1 GUI is possible at a time: append a process ID.
     //So the log files are not overwritten by the GUI instances.
     r_std_tstrLogFilePath += Getstdtstring( convertToStdString<DWORD>(dwProcID) ) ;
 
-    g_logger.RenameFile( GetStdString_Inline( r_std_tstrLogFilePath) );
+    //g_logger.RenameFile( GetStdString_Inline( r_std_tstrLogFilePath) );
   }
   r_std_tstrLogFilePath += _T("_log.") ;
+//  r_std_wstrLogFilePath += L"_log.";
 
-  std::string std_strFileExt;
-  GetLogFileExtension(std_strFileExt);
+//  std::string std_strFileExt;
+//  GetLogFileExtension(std_strFileExt);
+//
+//  std::string std_strLogTimeFormatString;
+//  GetLogTimeFormatString(std_strLogTimeFormatString);
 
-  std::string std_strLogTimeFormatString;
-  GetLogTimeFormatString(std_strLogTimeFormatString);
+  r_std_tstrLogFilePath += GetStdTstring_Inline(//std_strFileExt
+    m_model.m_logfileattributes.m_std_strFormat);
 
-  r_std_tstrLogFilePath += GetStdTstring_Inline(std_strFileExt);
-
-  if( g_logger.OpenFile( r_std_tstrLogFilePath ) )
+  bool fileIsOpen = g_logger.OpenFileA( GetStdString(r_std_tstrLogFilePath) );
+  if( fileIsOpen )
   {
-    g_logger.CreateFormatter(std_strFileExt.c_str(),
-      std_strLogTimeFormatString);
+    g_logger.CreateFormatter(//std_strFileExt.c_str()
+      m_model.m_logfileattributes.m_std_strFormat.c_str(),
+      //std_strLogTimeFormatString
+      m_model.m_logfileattributes.m_std_strTimeFormat
+      );
     if( typeid(g_logger) == typeid(Logger) )
       LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
 //    if( typeid(g_logger.GetFormatter() ) == typeid(I_LogFormatter *) )
@@ -1734,7 +1804,13 @@ void wxX86InfoAndControlApp::OpenLogFile(std::tstring & r_std_tstrLogFilePath)
       //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
       + GetErrorMessageFromLastErrorCodeA() );
   }
+  //from http://www.kharchi.eu/algierlib/tips.html:
+  //If using MinGW then pass "-mwindows" as linker flag in order to hide the
+  //console window.
+//  HideMinGWconsoleWindow();
+//  Sleep(10000);
 //    stdtstrLogFilePath += _T("_log.txt") ;
+  return fileIsOpen;
 }
 
 void wxX86InfoAndControlApp::outputAllPstates(
@@ -1749,6 +1825,7 @@ void wxX86InfoAndControlApp::PauseService(
   bool bTryToPauseViaServiceControlManagerIfViaIPCfails
   )
 {
+  LOGN(FULL_FUNC_NAME << " begin")
   bool bTryToPauseViaServiceControlManager = false ;
   //The connection may have broken after it was established, so check it here.
   if( ! IPC_ClientIsConnected_Inline() )
@@ -1811,6 +1888,7 @@ void wxX86InfoAndControlApp::PauseService(
           )
         ) ;
     }
+  LOGN(FULL_FUNC_NAME << " end")
 }
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 
@@ -2232,31 +2310,32 @@ void wxX86InfoAndControlApp::StopService()
     //m_ipcclient.SendCommandAndGetResponse(pause_service) ;
     IPC_ClientSendCommandAndGetResponse_Inline(stop_service) ;
   }
-  try
-  {
-    if( ! ServiceBase::Stop( //mp_model->m_strServiceName.c_str()
-      //We need a _T() macro (wide char-> L"", char->"") for EACH
-      //line to make it compatible between char and wide char.
-  //    _T("CPUcontrolService"
-  //      )
-//        mp_wxx86infoandcontrolapp->m_stdtstrProgramName.c_str()
-        m_stdtstrProgramName.c_str()
+  else
+    try
+    {
+      if( ! ServiceBase::Stop( //mp_model->m_strServiceName.c_str()
+        //We need a _T() macro (wide char-> L"", char->"") for EACH
+        //line to make it compatible between char and wide char.
+    //    _T("CPUcontrolService"
+    //      )
+  //        mp_wxx86infoandcontrolapp->m_stdtstrProgramName.c_str()
+          m_stdtstrProgramName.c_str()
+          )
         )
-      )
-      ::wxMessageBox( wxT("stopping the service succeeded") ) ;
-    else
-      ::wxMessageBox( wxT("error stopping the service:") +
-        getwxString( ::GetErrorMessageFromLastErrorCodeA()
-          //::LocalLanguageMessageAndErrorCodeA( ::GetLastError() )
-           )
-        ) ;
-  }
-  catch( const ConnectToSCMerror & cr_connecttoscmerror )
-  {
-    std::wstring std_wstrErrorMessage;
-    cr_connecttoscmerror.GetErrorMessage(std_wstrErrorMessage);
-    ::wxMessageBox( wxT("error connecting to the service control manager in "
-      "order to stop the service: ") + getwxString( std_wstrErrorMessage ) ) ;
-  }
+        ::wxMessageBox( wxT("stopping the service succeeded") ) ;
+      else
+        ::wxMessageBox( wxT("error stopping the service:") +
+          getwxString( ::GetErrorMessageFromLastErrorCodeA()
+            //::LocalLanguageMessageAndErrorCodeA( ::GetLastError() )
+             )
+          ) ;
+    }
+    catch( const ConnectToSCMerror & cr_connecttoscmerror )
+    {
+      std::wstring std_wstrErrorMessage;
+      cr_connecttoscmerror.GetErrorMessage(std_wstrErrorMessage);
+      ::wxMessageBox( wxT("error connecting to the service control manager in "
+        "order to stop the service: ") + getwxString( std_wstrErrorMessage ) ) ;
+    }
 #endif //#ifdef _WIN32
 }

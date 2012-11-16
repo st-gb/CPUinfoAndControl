@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
 //class DynFreqScalingThreadBase
 #include <Controller/DynFreqScalingThreadBase.hpp>
@@ -6,6 +13,8 @@
 #include <Linux/daemon/daemon.h> //for daemonize(...)
 #include <Linux/daemon/daemon_functions.hpp> //init_daemon()
 #include <Linux/daemon/CPUcontrolDaemon.hpp>//class CPUcontrolDaemon
+//GetErrorMessageFromLastErrorCodeA()
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 //GetCurrentWorkingDir(std::string & )
 #include <Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.hpp>
 #include <ModelData/ModelData.hpp> //class Model
@@ -27,8 +36,10 @@ void init_logger(int argc, char *  argv[] )
 {
   std::string stdstrLogFileName = std::string( argv[0] ) +
     std::string( "_log.txt" ) ;
-  g_logger.OpenFile2( //std::string("x86IandC_service_log.txt")
-    stdstrLogFileName ) ;
+  if( ! g_logger.OpenFileA( //std::string("x86IandC_service_log.txt")
+    stdstrLogFileName ) )
+    std::cerr << "Failed to open log file \"" << stdstrLogFileName << "\":"
+      << GetErrorMessageFromLastErrorCodeA();
 }
 
 //    WaitForTermination()

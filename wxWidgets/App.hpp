@@ -109,7 +109,6 @@ private:
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
 public:
-  volatile bool m_bVoltageWasTooLowCalled;
   std::vector<std::wstring> m_std_vec_std_wstrPowerSchemeName;
   uint16_t m_ui16ActivePowerSchemeIndex;
 #endif
@@ -121,35 +120,39 @@ private:
   //I_CPUcontroller * mp_cpucontroller ;
   //e.g. point to console or GUI.
 public:
+  volatile bool m_bVoltageWasTooLowCalled;
   MainFrame * mp_frame ;
 private:
 //  UserInterface * mp_userinterface ;
   #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
 public:
-  wxString m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib;
-  std::wstring m_std_wstrInstableCPUcoreVoltageDynLibPath;
   //TODO replace with wxDynLib
   HMODULE m_hmoduleUnstableVoltageDetectionDynLib;
-  StartInstableVoltageDetectionFunctionPointer m_pfnStartInstableCPUcoreVoltageDetection;
-  StopInstableVoltageDetectionFunctionPointer m_pfnStopInstableCPUcoreVoltageDetection;
-  struct external_caller m_external_caller;
-  //http://forums.wxwidgets.org/viewtopic.php?t=4824:
-//  wxMutex m_wxmutexFindLowestStableVoltage;
-//  wxCondition m_wxconditionFindLowestStableVoltage;
-  condition_type m_conditionFindLowestStableVoltage;
-  //Is set to true when "VoltageTooLow" was called.
-  volatile bool m_vbExitFindLowestStableVoltage;
-  x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage; ;
 private:
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
+  std::wstring m_std_wstrInstableCPUcoreVoltageDynLibPath;
   ////This member needs to be created on runtime because it may throw
   ////an exception (that should be caught, else runtime error) when it is created.
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
 public:
+  StartInstableVoltageDetectionFunctionPointer
+    m_pfnStartInstableCPUcoreVoltageDetection;
+  StopInstableVoltageDetectionFunctionPointer
+    m_pfnStopInstableCPUcoreVoltageDetection;
+  struct external_caller m_external_caller;
+  //http://forums.wxwidgets.org/viewtopic.php?t=4824:
+//  wxMutex m_wxmutexFindLowestStableVoltage;
+//  wxCondition m_wxconditionFindLowestStableVoltage;
+  //Is set to true when "VoltageTooLow" was called.
+  volatile bool m_vbExitFindLowestStableVoltage;
+  condition_type m_conditionFindLowestStableVoltage;
+  wxString m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib;
+  x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage;
+  x86IandC::thread_type m_x86iandc_threadFindLowestStableCPUcoreOperationInDLL;
   IPC_data s_ipc_data;
   wxString m_wxstrCPUcontrollerDynLibFilePath ;
 private:
@@ -333,7 +336,8 @@ public:
     unsigned flags = 0);
   void MessageWithTimeStamp(//const LPWSTR
       const wchar_t * cp_lpwstrMessage, unsigned flags = 0);
-  void OpenLogFile(std::tstring & r_std_tstrLogFilePath);
+  bool OpenLogFile(//std::tstring & r_std_tstrLogFilePath
+    std::wstring & r_std_wstrLogFilePath, bool bAppendProcessID);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     wxString & r_wxstrMessageFromService,
@@ -364,6 +368,7 @@ public:
   void StopInstableCPUcoreVoltageDetection();
   void StartService() ;
   void StopService() ;
+  void LoadDetectInstableCPUcoreVoltageDynLib();
   void UnloadDetectInstableCPUcoreVoltageDynLib();
 };
 
