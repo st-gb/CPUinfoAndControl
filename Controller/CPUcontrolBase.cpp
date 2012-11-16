@@ -30,9 +30,14 @@
 #include <InputOutput/ReadFileContent/ReadFileContent.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <preprocessor_macros/make_widestring.h> //EXPAND_TO_WIDESTRING
+#include <preprocessor_macros/path_seperator.hpp> //for PATH_SEPERATOR_CHAR
 #include <UserInterface/UserInterface.hpp>
+#include <Xerces/XMLAccess.hpp> //for readXMLconfig()
+#include <Xerces/LogOutputHandler.hpp> //class LogOutputHandler
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
 
+#include <platformstl/filesystem/path.hpp>
 #include <iostream> //std::cout
 #include <algorithm> //std::set_difference(...)
 
@@ -82,6 +87,8 @@ TCHAR CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning [] =
 //  LOGN("CPUcontrolBase() end")
 //}
 
+extern std::basic_string<LOGGING_CHARACTER_TYPE> g_std_basicstring_log_char_typeLog;
+
 CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
   :
   m_dynlibhandler ( * this ) ,
@@ -95,6 +102,18 @@ CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
 {
   LOGN(//"CPUcontrolBase()"
     FULL_FUNC_NAME << "--begin")
+    /* E.g. do not log "info" messages if level is "warning". */
+//    if( LogLevel::log_message_typeINFO  >= g_logger.GetLogLevel() ) {
+////      WRITE_INTO_STRING_STREAM(g_logger, FULL_FUNC_NAME << "--begin)
+//      css::basic_stringstream<LOGGING_CHARACTER_TYPE> stringstream ;
+//      stringstream << FULL_FUNC_NAME << "--begin";
+//      OWN_LOGGER_LOG_ENTER_CRIT_SEC_LOGGER_NAME(g_logger)
+//      g_std_basicstring_log_char_typeLog = stringstream.str() ;
+//
+//      OWN_LOGGER_LOG_LOGGER_NAME_TYPE( g_logger ,
+//        g_std_basicstring_log_char_typeLog, LogLevel::log_message_typeINFO)
+//      OWN_LOGGER_LOG_LEAVE_CRIT_SEC_LOGGER_NAME(g_logger)
+//    }
   g_p_user_interface = (UserInterface *) cpc_userinterface;
   InitMemberVariables() ;
   m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
@@ -380,22 +399,71 @@ void CPUcontrolBase::CreateHardwareAccessObject()
    * executable before */
   void CPUcontrolBase::GetLogFileExtension(std::string & std_strFileExt)
   {
-    std_strFileExt = m_model.m_std_strConfigFilePath +
-      "/log_file_format.txt";
+//    std_strFileExt = m_model.m_std_strConfigFilePath +
+//      "/log_file_format.txt";
 
-    if( ! ReadFileContent(std_strFileExt) )
-      std_strFileExt = "html";
+//    if( ! ReadFileContent(std_strFileExt) )
+//    std_strFileExt = "html";
+    std_strFileExt = m_model.m_logfileattributes.m_std_strFormat;
+  }
+
+  void CPUcontrolBase::GetLogLevel(
+    std::string & std_strLogLevelString)
+  {
+    std_strLogLevelString = m_model.m_std_strConfigFilePath +
+      "/log_level.txt";
+
+    if( ! ReadFileContent(std_strLogLevelString) )
+      std_strLogLevelString =
+        "warning";
+  }
+
+  bool CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
+    std::string & std_strLogFileName)
+  {
+    std::wstring std_wstrLogFilePath = GetStdWstring(std_strLogFileName);
+    ReadLogConfig(//r_std_tstrLogFilePath
+      std_wstrLogFilePath
+      );
+    std::string std_strFileExt;
+    CPUcontrolBase::GetLogFileExtension(std_strFileExt);
+
+    std::string std_strLogTimeFormatString;
+    CPUcontrolBase::GetLogTimeFormatString(std_strLogTimeFormatString);
+
+//    std::string std_strLogLevelString;
+//    CPUcontrolBase::GetLogLevel(std_strLogLevelString);
+
+    std_strLogFileName += std_strFileExt;
+  #ifdef USE_LOG4CPLUS
+    init_log4cplus() ;
+  #endif
+
+    bool logFileIsOpen = g_logger.OpenFileA( std_strLogFileName );
+    if( logFileIsOpen )
+    {
+      //I_LogFormatter * p_log_formatter =
+        g_logger.CreateFormatter(
+        std_strFileExt.c_str(), std_strLogTimeFormatString);
+//      g_logger.SetLogLevel(std_strLogLevelString);
+    }
+    //TODO show message to user and/ or create window event log or return
+    //error code for starting the service
+  //  else
+  //    gp_cpucontrolbase->ShowMessage();
+    return logFileIsOpen;
   }
 
   void CPUcontrolBase::GetLogTimeFormatString(
     std::string & std_strLogTimeFormatString)
   {
-    std_strLogTimeFormatString = m_model.m_std_strConfigFilePath +
-      "/log_time_format_string.txt";
-
-    if( ! ReadFileContent(std_strLogTimeFormatString) )
-      std_strLogTimeFormatString =
-        "%year%-%month%-%day%&nbsp;%hour%:%minute%:%second%s%millisecond%ms";
+//    std_strLogTimeFormatString = m_model.m_std_strConfigFilePath +
+//      "/log_time_format_string.txt";
+//
+//    if( ! ReadFileContent(std_strLogTimeFormatString) )
+//      std_strLogTimeFormatString =
+//        "%year%-%month%-%day%&nbsp;%hour%:%minute%:%second%s%millisecond%ms";
+    std_strLogTimeFormatString = m_model.m_logfileattributes.m_std_strTimeFormat;
   }
 
   std::string CPUcontrolBase::GetCPUcontrollerConfigFilePath(
@@ -461,7 +529,7 @@ void CPUcontrolBase::OutputLinkageWarning()
 {
   LOGN_TYPE( "note: this program may crash (immediately) after this output if "
     "it was built with an incompatible combination of \"wx\\setup.h\" and "
-    "linked wxWidgets libraries", I_LogFormatter::log_message_typeWARNING)
+    "linked wxWidgets libraries", LogLevel::log_message_typeWARNING)
 }
 
 void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
@@ -561,6 +629,68 @@ void CPUcontrolBase::PossiblyDeleteCPUcoreUsageGetter()
     if( mp_userinterface )
       //E.g. do stuff like disable "unload dyn lib CPU controller" in menu.
       mp_userinterface->CPUcoreUsageGetterDeleted() ;
+  }
+}
+
+void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
+  /** Should be wide string because of non-English languages.*/
+  std::wstring & r_std_wstrLogFilePath)
+{
+  Xerces::LogOutputHandler logoutputhandler(
+    //this
+    * mp_userinterface,
+    m_model
+    ) ;
+  std::string std_strFilePath = m_model.m_std_strConfigFilePath
+    + "/logging.xml";
+  const char * c_ar_chXMLfileName = std_strFilePath.c_str();
+  if( //return value: 0 = success
+    ReadXMLfileWithoutInitAndTermXercesInline(
+      c_ar_chXMLfileName,
+      //this,
+      mp_userinterface,
+      logoutputhandler
+      )
+    )
+  {
+  //      Confirm( "loading UserInterface.xml failed" ) ;
+    mp_userinterface->MessageWithTimeStamp(L"loading \"" +
+      GetStdWstring( std::string(c_ar_chXMLfileName) ) +
+      L"\" failed" ) ;
+    LOGN("loading \"" << c_ar_chXMLfileName << "\" failed")
+  //      OUTPUT_WITH_TIMESTAMP
+//    r_std_tstrLogFilePath = m_model.m_logfileattributes.m_std_wstrLogFilePath +
+//      r_std_tstrLogFilePath;
+    const std::wstring & std_wstrLogFilePathFromConfig= m_model.m_logfileattributes.
+      m_std_wstrLogFilePath;
+    if( ! std_wstrLogFilePathFromConfig.empty() )
+    {
+//      wchar_t wch =
+//        wxstr(PATH_SEPERATOR_CHAR );
+      //if relative path
+//      if( IsRelativePath(r_std_wstrLogFilePath) != L'/' )
+      platformstl::basic_path<wchar_t> platformstl_basic_path(r_std_wstrLogFilePath);
+//      platformstl::path platformstl_basic_path(r_std_wstrLogFilePath);
+      if( platformstl_basic_path.is_absolute() )
+      {
+        std::wstring::size_type lastBackSlashCharIndex =
+          r_std_wstrLogFilePath.rfind(
+          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR )
+          //std::basic_string::npos
+          , r_std_wstrLogFilePath.length()
+          );
+        r_std_wstrLogFilePath =
+          //path without filename
+          r_std_wstrLogFilePath.substr(0, lastBackSlashCharIndex + 1)
+          + m_model.m_logfileattributes.
+          m_std_wstrLogFilePath + //L"/";
+          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR );
+      }
+      else
+        r_std_wstrLogFilePath = m_model.m_logfileattributes.
+          m_std_wstrLogFilePath + //L"/";
+          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR );
+    }
   }
 }
 
@@ -794,9 +924,12 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
   {
     if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() == 0
       //mp_stdsetvoltageandfreqDefault->size() == 0
+        && m_model.m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.size()
+        > 1
       )
     {
-      LOGN("No default voltages specified->no overvoltage protection"
+      LOGN("No default voltages specified and # of "
+        " available voltages > 1->no overvoltage protection"
         "->only temperature based Dynamic Voltage and Frequency Scaling"
         );
     //        return CPUcontrolBase::no_default_voltages_specified ;
@@ -805,18 +938,21 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
     }
     if( m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.size() < 2
       //mp_stdsetvoltageandfreqWanted->size() == 0
+        && m_model.m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.size()
+        > 1
       )
     {
-      LOGN_TYPE( FULL_FUNC_NAME << "--# of preferred voltages < 2 ->can only "
+      LOGN_TYPE( FULL_FUNC_NAME << "--# of preferred voltages < 2 and # of "
+        " available voltages > 1->can only "
         "use default/max voltages for DVFS if there are at least 2 of them",
-        I_LogFormatter::log_message_typeWARNING)
+        LogLevel::log_message_typeWARNING)
       if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault//.empty()
           .size() < 2
         )
       {
         LOGN_TYPE(FULL_FUNC_NAME << "--# of default voltages < 2"
           "->no Dynamic Voltage and Frequency Scaling at all possible "
-          , I_LogFormatter::log_message_typeWARNING
+          , LogLevel::log_message_typeWARNING
           )
     //        return CPUcontrolBase::no_preferred_voltages_specified ;
 //      dwReturnValue = CPUcontrolBase::no_preferred_voltages_specified ;

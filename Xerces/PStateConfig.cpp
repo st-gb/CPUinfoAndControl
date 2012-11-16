@@ -58,6 +58,7 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 
 #include <iomanip> //setprecision ( int n );
+#include <limits> //for std::numeric_limits
 
 #define MAKE_WCHAR_STRING(string) L##string
 #define FREQ_AND_VOLTAGE_LITERAL "freq_and_voltage"

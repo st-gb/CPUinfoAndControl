@@ -11,12 +11,16 @@
 //#include <bits/stl_algobase.h> //for std::max(...). else:522: error:
 // expected unqualified-id before '(' token
 #include <vector> //for std::vector
+//from http://lists.freedesktop.org/archives/release-wranglers/2004-August/000935.html
+#include <stdint.h> //uint32_t
 //Must be included here in the header file (else linker error LNK2001)
 //#include <wx/checkbox.h>
-//#include <wx/dialog.h>
+#include <wx/button.h> //class wxButton in "EnableWritingVoltageAndMultiplier"
+#include <wx/dialog.h> //base class wxDialog
 #include <wx/event.h>
 #include "wx/power.h" //for power mgmt notification (wxPowerType etc.)
 #include <wx/tglbtn.h> //wxHAS_BITMAPTOGGLEBUTTON
+#include <windef.h> //for BYTE etc.
 
 #define USE_BITMAP_TOGGLE_BTN
 
@@ -46,12 +50,13 @@ namespace WX_BITMAP_TOGGLE_BUTTON_NAMESPACE
 };
 //  using namespace wx2_9compatibility;
 
-
+class wxBitmapButton;
+//class wxButton;
 class wxBoxSizer ;
 class wxCheckBox ;
 class wxChoice;
 class wxControl ;
-class wxDialog ;
+//class wxDialog ;
 class wxStaticText ;
 class wxSpinButton ;
 class wxSpinEvent ;
@@ -66,10 +71,44 @@ class VoltageAndFreq;
 //   typename _Alloc = std::allocator<_Key> > class set;
 //}
 
+#ifdef _WIN32
+  #define BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
+#endif
+
+#define CREATE_DIALOG_INLINED /*inline*/
+
 class FreqAndVoltageSettingDlg
   : public wxDialog
 {
 private:
+    //An enum guarantees a unique number for each element.
+    enum
+    {
+      ID_DivisorSlider = 1,
+      ID_PstateSlider ,
+      ID_MultiplierSlider,
+      ID_VoltageSlider
+      , ID_FrequencySlider
+      , ID_SetAsMinVoltage
+      , ID_SetAsWantedVoltage
+      //, ID_SpinVoltageUp
+      //, ID_SpinVoltageDown
+      , ID_SpinVoltage //= 182
+      , ID_SelectPstateViaMousePos
+      , ID_DecreaseVoltage
+      , ID_StabilizeVoltage
+      , ID_Panel
+      , ID_PreventVoltageBelowLowestStableVoltageCheckbox
+      , ID_RestorePerformanceStateAfterResumeCheckbox
+      , ID_PreventVoltageAboveDefaultVoltageCheckbox
+      , ID_findLowestStableVoltage
+      , ID_stopFindingLowestStableVoltage
+      , ID_AutoConfigureVoltageSettings
+      , VoltageTypeListBox
+      , SecondsUntilVoltageDecreaseSpinButton
+      , SetStartUnstableCPUcoreOperationImage
+    };
+
   bool m_bAllowWritingVoltageAndFrequency;
   //The core ID is needed for setting p-state.
   BYTE m_byCoreID ;
@@ -164,40 +203,42 @@ private:
   wxTextCtrl * m_p_wxtextctrlInstableCPUcoreVoltageWarning;
 //  wxSpinCtrlDouble * mp_wxspinctrldoubleMultiplier ;
 private:
-  inline void AddAlsoSetWantedVoltageControls(
+  CREATE_DIALOG_INLINED void AddAlsoSetWantedVoltageControls(
     wxSizer * p_wxsizerSuperordinate );
-  inline void AddApplyOrCancelSizer(
+  CREATE_DIALOG_INLINED void AddApplyOrCancelSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
-  inline void AddAutoConfigureVoltageSettingsButton(
+  //inline
+  void AddAutoConfigureVoltageSettingsButton(
     wxSizer * p_wxsizerSuperordinate );
-  inline void AddCancelButton(wxSizer * p_wxsizerSuperordinate ) ;
-  inline void AddCPUcoreCheckBoxSizer(
+  CREATE_DIALOG_INLINED void AddCancelButton(wxSizer * p_wxsizerSuperordinate ) ;
+  CREATE_DIALOG_INLINED void AddCPUcoreCheckBoxSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
-  inline void AddCPUcoreFrequencySizer(
+  CREATE_DIALOG_INLINED void AddCPUcoreFrequencySizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
-  inline void AddCPUcoreVoltageSizer(
+  CREATE_DIALOG_INLINED void AddCPUcoreVoltageSizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
-  inline void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
-  inline void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
-  inline void AddSecondsUntilNextVoltageDecreaseTextControl(
+  CREATE_DIALOG_INLINED void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
+  //CREATE_DIALOG_INLINED
+    void AddSecondsUntilNextVoltageDecreaseTextControl(
     wxSizer * p_wxsizer );
-  inline void AddSelectPstateViaMousePositionButton(
+  CREATE_DIALOG_INLINED void AddSelectPstateViaMousePositionButton(
     wxSizer * p_wxsizer );
-  inline void AddPauseServiceCheckbox(wxSizer * p_wxsizer ) ;
-  inline void AddPerformanceStateSizer(
+  CREATE_DIALOG_INLINED void AddPauseServiceCheckbox(wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddPerformanceStateSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
-  inline void AddPreventVoltageAboveDefaultVoltageButton(
+  CREATE_DIALOG_INLINED void AddPreventVoltageAboveDefaultVoltageButton(
     wxSizer * p_wxsizer ) ;
-  inline void AddPreventVoltageBelowLowestStableVoltageButton(
+  CREATE_DIALOG_INLINED void AddPreventVoltageBelowLowestStableVoltageButton(
     wxSizer * p_wxsizer ) ;
-  inline void AddRestorePerformanceStateAfterResumeButton(wxSizer * p_wxsizer ) ;
-  inline void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
-  inline void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
-  inline void AddVoltageSettingsSizer( wxSizer * p_wxsizerSuperordinate ) ;
-  inline void AddWritePstateButton(wxSizer * p_wxsizer);
-  inline void AddSetAsWantedVoltageSizer(
+  CREATE_DIALOG_INLINED void AddRestorePerformanceStateAfterResumeButton(wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddVoltageSettingsSizer( wxSizer * p_wxsizerSuperordinate ) ;
+  CREATE_DIALOG_INLINED void AddWritePstateButton(wxSizer * p_wxsizer);
+  CREATE_DIALOG_INLINED void AddSetAsWantedVoltageSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
-  inline void AddStabilizeVoltageButton( wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddStabilizeVoltageButton( wxSizer * p_wxsizer ) ;
   void AddWindowToSizer(wxWindow * p_window, wxSizer * p_sizer,
     ////0=the control should not take more space if the sizer is enlarged
     int proportion = 0,
@@ -262,13 +303,15 @@ public:
   void HandlePstateMayHaveChanged() ;
   void OnActivate(wxActivateEvent & r_activateevent ) ;
   void OnApplyButton(wxCommandEvent & );
+#ifdef BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
   void OnAutoConfigureVoltageSettingsButton(wxCommandEvent & r_wxcommandevent );
+  void OnFindLowestStableVoltageButton(wxCommandEvent & );
+  void OnStopFindingLowestStableCPUcoreVoltageButton(wxCommandEvent & );
+#endif
   void OnChar( wxKeyEvent & event) ;
   void OnCharHook( wxKeyEvent & r_wxkeyevent) ;
   void OnClose( wxCloseEvent & wxcmd );
   void OnDecVoltage(wxCommandEvent & );
-  void OnFindLowestStableVoltageButton(wxCommandEvent & );
-  void OnStopFindingLowestStableCPUcoreVoltageButton(wxCommandEvent & );
   void OnIncVoltage(wxCommandEvent & );
   void OnPreventVoltageAboveDefaultVoltageCheckbox(wxCommandEvent & ) ;
   void OnPreventVoltageBelowLowestStableVoltageCheckbox(wxCommandEvent & ) ;
@@ -287,6 +330,7 @@ public:
   void OnSetSecondsCountDownLabel( wxCommandEvent
     //wxEvent
     & event );
+  void OnSetStartUnstableCPUcoreOperationImage(wxEvent &);
   void OnSetVoltageType(wxCommandEvent & wxcmd);
   void OutputFrequencyByControlValues() ;
   void OutputVoltageByControlValues() ;

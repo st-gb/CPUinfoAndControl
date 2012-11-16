@@ -21,7 +21,8 @@
 #include <ModelData/ValueTables.hpp> //ARRAY_INDEX_OF_ATTR_VALUE
 
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOG(..)
-#include <Controller/Logger/ILogFormatter.hpp> //class I_LogFormatter
+//#include <Controller/Logger/ILogFormatter.hpp> //class I_LogFormatter
+#include <Controller/Logger/LogLevel.hpp> //enum namespace LogLevel::MessageType
 
 #include <UserInterface/UserInterface.hpp> //class UserInterface
 
@@ -175,7 +176,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
         + std_strXMLattributeName
         + L"\" attribute name";
       LOGN_TYPE( GetStdString(std_wstrMessage),
-        I_LogFormatter::log_message_typeWARNING)
+        LogLevel::log_message_typeWARNING)
       mp_userinterface->MessageWithTimeStamp(std_wstrMessage);
     }
   }
@@ -185,7 +186,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
       + std_strXMLattributeName
       + L"\" attribute name";
     LOGN_TYPE( GetStdString(std_wstrMessage),
-      I_LogFormatter::log_message_typeWARNING)
+      LogLevel::log_message_typeWARNING)
     std::wstring std_wstrDocumentIDandLocation;
     GetDocumentIDandLocation(std_wstrDocumentIDandLocation);
     mp_userinterface->MessageWithTimeStamp(std_wstrMessage +
@@ -536,5 +537,5 @@ void SAX2_CPUspecificHandler::fatalError(
   LOGN_TYPE( FULL_FUNC_NAME << ": fatal Error: " << XercesHelper::ToStdString(
     r_xercesc_sax_parse_exception.getMessage() )
    << " at line: " << r_xercesc_sax_parse_exception.getLineNumber()
-   , I_LogFormatter::log_message_typeERROR )
+   , LogLevel::log_message_typeERROR )
 }

@@ -131,6 +131,7 @@
         ) ;
       XERCES_CPP_NAMESPACE::XMLString::release( & p_xmlchXMLfilePath);
     }
+    LOGN( FULL_FUNC_NAME << "--after reading config file")
     return byReturn ;
   }
 //#endif //#ifdef COMPILE_WITH_XERCES

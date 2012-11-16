@@ -28,6 +28,8 @@
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 //for int ::CallFromMainFunction(int argc, char * argv[])
 #include <Windows/Service/CallFromMainFunction.h>
+// for ::SetExePathAsCurrentDir()
+#include <Windows/SetExePathAsCurrentDir/SetExePathAsCurrentDir.h>
 //class WinRing0_1_3RunTimeDynLinked
 #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 //GetStdString(wxString )
@@ -688,20 +690,20 @@ CPUcontrolService::GetCurrentCPUcoreData_Inline(DWORD & dwByteSize)
   BYTE * ar_byPipeDataToSend = NULL;
   LOGN("IPC: get_current_CPU_data--mp_dynfreqscalingthreadbase:"
       << mp_dynfreqscalingthreadbase )
-  if (mp_dynfreqscalingthreadbase && mp_dynfreqscalingthreadbase-> IsStopped())
-    {
-      //      r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
-      //      dwByteSize = 0 ;
-      m_criticalsection_typeCPUcoreData.Enter();
-//      GetUsageAndVoltageAndFreqAndTempForAllCores(
-      GetUsageAndVoltageAndFreqForAllCores(
-          m_model.m_cpucoredata.m_arfCPUcoreLoadInPercent,
-          m_model.m_cpucoredata.GetNumberOfCPUcores());
-      //r_arbyPipeDataToSend =
-      m_ipc_datahandler. GetCurrentCPUcoreAttributeValues(dwByteSize, false);
-      ar_byPipeDataToSend = GetIPCdataThreadSafe(dwByteSize);
-      m_criticalsection_typeCPUcoreData.Leave();
-    }
+  if (mp_dynfreqscalingthreadbase && mp_dynfreqscalingthreadbase-> IsStopped() )
+  { //The DVFS thread does not collect CPU info-> collect it ourselves.
+    //      r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
+    //      dwByteSize = 0 ;
+    m_criticalsection_typeCPUcoreData.Enter();
+    GetUsageAndVoltageAndFreqAndTempForAllCores(
+//      GetUsageAndVoltageAndFreqForAllCores(
+        m_model.m_cpucoredata.m_arfCPUcoreLoadInPercent,
+        m_model.m_cpucoredata.GetNumberOfCPUcores() );
+    //r_arbyPipeDataToSend =
+    m_ipc_datahandler. GetCurrentCPUcoreAttributeValues(dwByteSize, false);
+    ar_byPipeDataToSend = GetIPCdataThreadSafe(dwByteSize);
+    m_criticalsection_typeCPUcoreData.Leave();
+  }
   else
     {
       //    InterlockedIncrement()
@@ -1287,6 +1289,53 @@ void CPUcontrolService::OnServerEvent(wxSocketEvent & event)
 void CPUcontrolService::OnSocketEvent(wxSocketEvent & event)
 {
   LOGN( FULL_FUNC_NAME)
+}
+
+
+bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
+{
+#ifdef UNICODE
+//  std::wcout << L"1st program arg:" << argv[0] << L"\n";
+#else
+  std::cout << L"1st program arg:" << argv[0] << L"\n";
+#endif
+
+  std::string std_strLogFileName =
+    //CPUcontrolBase::m_model.m_stdstrLogFilePath + "/" +
+    ::GetStdString_Inline( argv[0] );
+  std::cout << "std_strLogFileName:" << std_strLogFileName << "\n";
+
+  //  std::tstring std_tstrLogFileName;
+  #if defined(__GNUC__) && __GNUC__ > 3 //GCC 3.4.5 does not have "psapi.a" lib.
+  if( ServiceBase::IsStartedAsService() )
+    //std::string std_strLogFileName = ptstrProgramName + std::tstring("_log.txt") ;
+    std_strLogFileName += //std::string( argv[0]) +
+      std::string("_log.") ;
+  //    std_tstrLogFileName = std::tstring( argv[0]) +
+  //      std::tstring( L"_log.txt") ;
+  else
+    std_strLogFileName += //std::string( argv[0]) +
+      //to not use the same log file as the possibly running service.
+      std::string("_execute_actions_log.") ;
+  //    std_tstrLogFileName = std::tstring( argv[0]) +
+  //      std::tstring(L"_execute_actions_log.txt") ;
+  #else
+  std_strLogFileName += //std::string( argv[0]) +
+    std::string("_log.") ;
+  //  std_tstrLogFileName = std::tstring( argv[0]) +
+  //    std::tstring( L"_log.txt") ;
+  #endif
+
+  //The path must be set before the config files are accessed.
+  if( ! ::SetExePathAsCurrentDir() )
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+      "Getting file path for THIS executable file failed: " <<
+      LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+      );
+
+  bool logFileIsOpen = CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
+    std_strLogFileName);
+  return logFileIsOpen;
 }
 
 /**@ return true: already paused*/

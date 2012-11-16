@@ -200,6 +200,11 @@ public:
   virtual void EndDVFS() ; //{}
   virtual void FreeRessources() ;
   static void GetLogFileExtension(std::string & std_strFileExt);
+  //static
+    bool GetLogFilePropertiesAndOpenLogFile(
+    std::string & std_strLogFileName);
+
+  static void GetLogLevel(std::string & std_strLogLevels);
   static void GetLogTimeFormatString(std::string & std_strLogTimeFormatString);
   //Used for choosing the CPU controller, for saving as CPU controller for the
   //current CPU.
@@ -225,6 +230,8 @@ public:
 
   I_CPUaccess * GetCPUaccess() { return mp_i_cpuaccess ; }
 
+  void ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
+    std::wstring & r_std_wstrLogFilePath);
   static CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
   BOOL ReadPCIconfigSpace(
     BYTE byPCIbus , //"8-bit PCI bus",

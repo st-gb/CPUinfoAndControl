@@ -19,6 +19,8 @@
 #include <Controller/CPUcoreLoadBasedDynVoltnFreqScaling.hpp>
 //namespace DynFreqScalingThreadBase::ThreadFunc
 #include <Controller/DynFreqScalingThreadBase.hpp>
+//GetNumberOfLogicalCPUcores(...)
+#include <Controller/GetNumberOfLogicalCPUcores.h>
 //GetErrorMessageFromErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/I_CPUaccess.hpp> //class CPUaccessException
@@ -31,6 +33,7 @@
   #include <wxWidgets/DynFreqScalingThread.hpp>
 #endif //#ifdef USE_WINDOWS_THREAD
 #include <stdlib.h> //EXIT_SUCCESS
+#include <wx/thread.h> //wxThread::GetCPUcount()
 
 #define NUMBER_OF_IMPLICITE_PROGRAM_ARGUMENTS 2
 #ifndef NO_ERROR
@@ -249,6 +252,12 @@ DWORD CPUcontrolServiceBase::Initialize(
         //  tstr ) ;
 //        byRet = 1 ;
       }
+      int nCPUcount = //wxThread::GetCPUcount();
+        GetNumberOfLogicalCPUcores();
+//      LOGN( FULL_FUNC_NAME << "# CPU cores via wxWidgets:" << nCPUcount)
+      LOGN( FULL_FUNC_NAME << "# CPU cores from Operating System:" << nCPUcount)
+      if( nCPUcount != -1 )
+        m_model.m_cpucoredata.m_byNumberOfCPUCores = nCPUcount;
       //if( !
         m_maincontroller.
         //Creates e.g. an AMD Griffin oder Intel Pentium M controller

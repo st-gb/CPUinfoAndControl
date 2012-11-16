@@ -28,10 +28,13 @@ public:
   float m_lastSetCPUcoreMultiplier;
   float m_lastSetCPUcoreVoltageInVolt;
   float m_fReferenceClockInMHz;
+  /** min CPU core usage for unstable CPU operation detection thread needed */
+  float m_fMinCPUcoreUsage;
 
   InstableCPUcoreVoltageDetection():
+    m_std_wstrDynLibPath( L"InstableCPUcoreVoltageDetection.dll"),
     m_uiNumberOfSecondsToWaitUntilVoltageIsReduced(100),
-    m_std_wstrDynLibPath( L"InstableCPUcoreVoltageDetection.dll")
+    m_fMinCPUcoreUsage(0.9f)
   {
   }
 };

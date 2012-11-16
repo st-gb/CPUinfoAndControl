@@ -90,13 +90,13 @@ namespace Xerces
        ,//"append_process_ID"
        p_chXMLattributeName
        ,//bAppendProcessID
-       m_p_model->m_bAppendProcessID
+       m_p_model->m_logfileattributes.m_bAppendProcessID
        )
      )
     {
       LOGN("bool value for \"" << p_chXMLattributeName << "\":"
         << //bAppendProcessID
-        m_p_model->m_bAppendProcessID
+        m_p_model->m_logfileattributes.m_bAppendProcessID
         )
 //      m_p_model->m_bAppendProcessID = bAppendProcessID ;
     }
@@ -269,8 +269,14 @@ namespace Xerces
        ,"operating_safety_margin_in_Volt"
        ,f )
      )
-      m_p_model->m_userinterfaceattributes.
-        m_fOperatingSafetyMarginInVolt = f ;
+      m_p_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt = f ;
+    if( ConvertXercesAttributesValue<float>(
+      cr_xercesc_attributes
+       ,"min_usage_percentage_for_find_voltage_for_lowest_stable_CPU_core_"
+         "operation_thread"
+       ,f )
+     )
+      m_p_model->m_instablecpucorevoltagedetection.m_fMinCPUcoreUsage = f ;
     stdstrAttributeName = "prevent_voltage_above_default_voltage" ;
     if( XercesAttributesHelper::GetAttributeValue(
       cr_xercesc_attributes

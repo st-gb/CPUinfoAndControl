@@ -92,7 +92,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
   if( dwDllStatus == OLS_DLL_NO_ERROR )
   {
      LOGN_TYPE("WinRing0 successfully initialized",
-       I_LogFormatter::log_message_typeSUCCESS)
+       LogLevel::log_message_typeSUCCESS)
      //UIconfirm("WinRing0 successfully initialized") ;
   }
   else
@@ -112,8 +112,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
     BYTE revision;
     BYTE release ;
     std::string strFuncName ;
-    LOGN_TYPE( "InitOpenLibSys succeeded", I_LogFormatter::
-      log_message_typeSUCCESS )
+    LOGN_TYPE( "InitOpenLibSys succeeded", LogLevel::log_message_typeSUCCESS )
 
     GetDllVersion (& major, & minor, & revision, & release);
     LOGN("using WinRing0 DLL version "
@@ -132,7 +131,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 
 void WinRing0_1_3RunTimeDynLinked::InitOpenLibSysFailed()
 {
-  LOGN_TYPE("InitOpenLibSys failed", I_LogFormatter::log_message_typeERROR)
+  LOGN_TYPE("InitOpenLibSys failed", LogLevel::log_message_typeERROR)
   //Is NULL if the WinRing0 DLL could not be loaded.
   //m_hModuleWinRing0DLL == NULL (WinRing0 DLL could not be loaded)
   if( m_hModuleWinRing0DLL )
@@ -152,7 +151,7 @@ void WinRing0_1_3RunTimeDynLinked::InitOpenLibSysFailed()
       "should not work properly, especially when it is not connected to"
       " the service.";
     LOGN_TYPE("Throwing a CPUaccessException:" << pchErrorMessage,
-      I_LogFormatter::log_message_typeERROR )
+      LogLevel::log_message_typeERROR )
     //When throwing an exception by creating the exception object on the
     //stack VS 2005 reported an "stack buffer error"?.
     //Oh, that was rather because the exception was not caught.
@@ -251,7 +250,7 @@ BOOL WinRing0_1_3RunTimeDynLinked::CpuidEx(
 void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
 {
   LOGN_TYPE("WinRing0 failed to initialize (DLL status <> 0)",
-    I_LogFormatter::log_message_typeERROR)
+    LogLevel::log_message_typeERROR)
   GetDriverPath();
 
   std::ostringstream ostrstreamErrorDesc;
@@ -274,7 +273,7 @@ void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
 //    mp_userinterface->Confirm(
 //        stdstrErrorMsg);
 //    }
-  LOGN_TYPE(stdstrErrorMsg, I_LogFormatter::log_message_typeERROR)
+  LOGN_TYPE(stdstrErrorMsg, LogLevel::log_message_typeERROR)
   #ifdef _DEBUG
   //            //Breakpoint possibility
   //            int i = 0 ;
@@ -310,7 +309,7 @@ void WinRing0_1_3RunTimeDynLinked::GetDriverPath()
     LOGN_TYPE( "function \"" << stdstrFunctionName <<
       "\" does not exist in WinRing0 DLL -> unable to output expected "
       "driver path for diagnosing the initialize error ",
-      I_LogFormatter::log_message_typeWARNING)
+      LogLevel::log_message_typeWARNING)
   }
 }
 
@@ -384,39 +383,39 @@ void WinRing0_1_3RunTimeDynLinked::GetErrorMessageForInitError(
   }
 }
 
-BYTE WinRing0_1_3RunTimeDynLinked::GetNumberOfCPUCores()
-{
-  //return 2 ;
-  BYTE byCoreNumber = 255 ;
-  DWORD dwEAX;
-  DWORD dwEBX;
-  DWORD dwECX;
-  DWORD dwEDX;
-  DEBUG("WRDL--getting number of CPU cores\n");
-  if( CpuidEx(
-    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
-    0x80000008,
-    &dwEAX,
-    &dwEBX,
-    &dwECX,
-    &dwEDX,
-    1
-      ) 
-    )
-  {
-    byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT ) 
-      //"ECX 7:0 NC: number of physical cores - 1. 
-      //The number of cores in the processor is NC+1 (e.g., if
-      //NC=0, then there is one core). 
-      //See also section 2.9.2 [Number of Cores and Core Number]."
-      + 1 ;
-    //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
-    DEBUGN( "WinRing0: Number of CPU cores according to AMDs calculation with "
-      "CPUID: " << (WORD) byCoreNumber );
-  }
-  DEBUG("WRDL--end of getting number of CPU cores\n");
-  return byCoreNumber ;
-}
+//BYTE WinRing0_1_3RunTimeDynLinked::GetNumberOfCPUCores()
+//{
+//  //return 2 ;
+//  BYTE byCoreNumber = 255 ;
+//  DWORD dwEAX;
+//  DWORD dwEBX;
+//  DWORD dwECX;
+//  DWORD dwEDX;
+//  DEBUG("WRDL--getting number of CPU cores\n");
+//  if( CpuidEx(
+//    //AMD: "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
+//    0x80000008,
+//    &dwEAX,
+//    &dwEBX,
+//    &dwECX,
+//    &dwEDX,
+//    1
+//      )
+//    )
+//  {
+//    byCoreNumber = ( dwECX & BITMASK_FOR_LOWMOST_7BIT )
+//      //"ECX 7:0 NC: number of physical cores - 1.
+//      //The number of cores in the processor is NC+1 (e.g., if
+//      //NC=0, then there is one core).
+//      //See also section 2.9.2 [Number of Cores and Core Number]."
+//      + 1 ;
+//    //DEBUG("Number of CPU cores: %u\n", (WORD) byCoreNumber );
+//    DEBUGN( "WinRing0: Number of CPU cores according to AMDs calculation with "
+//      "CPUID: " << (WORD) byCoreNumber );
+//  }
+//  DEBUG("WRDL--end of getting number of CPU cores\n");
+//  return byCoreNumber ;
+//}
 
 BOOL // TRUE: success, FALSE: failure
   WinRing0_1_3RunTimeDynLinked::RdmsrEx(

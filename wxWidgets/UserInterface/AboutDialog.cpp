@@ -85,7 +85,9 @@ void GetAboutMessage(wxString & wxstrMessage,
       wxT("and for other CPUs as dynamic library") ;
   wxstrMessage += _T("\n\n")
     //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
+#ifdef _WIN32
     BUILT_TIME //+ _T("") +
+#endif
     _T("\nbuilt with compiler version:")
     //_T( STRINGIFY(COMPILER_VERSION) )
     //wxT("compiled/ built with:")

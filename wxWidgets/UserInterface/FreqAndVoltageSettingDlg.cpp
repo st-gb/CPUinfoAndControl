@@ -19,6 +19,7 @@
 #endif
 
 #include <windef.h> //for BYTE
+#include <stdlib.h> //EXIT_SUCCESS
 #include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
 //class CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning
 #include <Controller/CPUcontrolBase.hpp>
@@ -36,7 +37,6 @@
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #include <images/cancel16x16.xpm>
 #include <images/decrease16x16.xpm>
-#include <images/find_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/increase16x16.xpm>
 #include <images/pause_service16x16.xpm>
 //#include <images/pause16x16.xpm>
@@ -47,6 +47,7 @@
 #include <images/set_as_minimal_voltage16x16.xpm>
 #include <images/stabilize_voltage.xpm>
 #include <images/standby16x16.xpm>
+#include <images/find_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/stop_finding_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/auto-configure_CPU_core_voltage_settings16x16.xpm>
 //ENable warning
@@ -54,7 +55,6 @@
 #include <ModelData/CPUcoreData.hpp> //class CPUcoreData
 //#include <ModelData/ModelData.hpp> //class Model
 #include <wxWidgets/App.hpp> //for wxGetApp()
-#include <wx/tglbtn.h> //for class wxBitmapToggleButton
 #include <wx/button.h> //for class wxButton
 #include <wx/checkbox.h> //for class wxCheckBox
 #include <wx/choice.h> //class wxChoice
@@ -69,7 +69,10 @@
 //#include <wx/statline.h> //class wxStaticLine
 #include <wx/stattext.h> //for wxStaticText
 #include <wx/textctrl.h> //class wxTextCtrl
-#include <wx/msw/winundef.h> //aviod "GetClassName" -> "GetClassNameA"
+#include <wx/tglbtn.h> //for class wxBitmapToggleButton
+#ifdef _WIN32
+  #include <wx/msw/winundef.h> //aviod "GetClassName" -> "GetClassNameA"
+#endif
 
 #if (wxMAJOR_VERSION > 1 && wxMINOR_VERSION > 8)
   #define USE_WX_BITMAPTOGGLEBUTTON
@@ -99,32 +102,9 @@
 wxString FreqAndVoltageSettingDlg::s_wxstrInstableCPUcoreVoltageWarning =
   CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning;
 
-//An enum guarantees a unique number for each element.
-enum
-{
-  ID_DivisorSlider = 1,
-  ID_PstateSlider ,
-  ID_MultiplierSlider,
-  ID_VoltageSlider
-  , ID_FrequencySlider
-  , ID_SetAsMinVoltage
-  , ID_SetAsWantedVoltage
-  //, ID_SpinVoltageUp
-  //, ID_SpinVoltageDown
-  , ID_SpinVoltage //= 182
-  , ID_SelectPstateViaMousePos
-  , ID_DecreaseVoltage
-  , ID_StabilizeVoltage
-  , ID_Panel
-  , ID_PreventVoltageBelowLowestStableVoltageCheckbox
-  , ID_RestorePerformanceStateAfterResumeCheckbox
-  , ID_PreventVoltageAboveDefaultVoltageCheckbox
-  , ID_findLowestStableVoltage
-  , ID_stopFindingLowestStableVoltage
-  , ID_AutoConfigureVoltageSettings
-  , VoltageTypeListBox
-  , SecondsUntilVoltageDecreaseSpinButton
-};
+#ifdef _WIN32
+  #define COMPILE_WITH_UNSTABLE_CPU_CORE_OPERATION_DETECTION
+#endif
 
 #ifndef MAXWORD
   #define MAXWORD 0xffff
@@ -161,55 +141,38 @@ BEGIN_EVENT_TABLE(KeyEventPanel, wxPanel)
 END_EVENT_TABLE()
 
 DEFINE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE )
+DEFINE_LOCAL_EVENT_TYPE( wxEVT_SET_START_UNSTABLE_CPU_CORE_OPERATION_IMAGE )
 
 BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   EVT_ACTIVATE(FreqAndVoltageSettingDlg::OnActivate) 
   EVT_BUTTON(wxID_APPLY, FreqAndVoltageSettingDlg::OnApplyButton)
-  EVT_BUTTON(ID_AutoConfigureVoltageSettings, FreqAndVoltageSettingDlg::
-    OnAutoConfigureVoltageSettingsButton)
-  EVT_BUTTON(ID_findLowestStableVoltage,
-      FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton)
-  EVT_BUTTON(ID_stopFindingLowestStableVoltage,
-      FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton)
+
   EVT_BUTTON(ID_SetAsMinVoltage, 
     FreqAndVoltageSettingDlg::OnSetAsMinVoltageButton)
   EVT_BUTTON(ID_SetAsWantedVoltage, 
     FreqAndVoltageSettingDlg::OnSetAsWantedVoltageButton)
   EVT_BUTTON(ID_StabilizeVoltage,
     FreqAndVoltageSettingDlg::OnStabilizeVoltageButton)
-#if wxUSE_SPINBTN
-  //EVT_SPIN_UP(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageUp)
-  //EVT_SPIN_DOWN(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageDown)
-  EVT_SPIN(SecondsUntilVoltageDecreaseSpinButton,
-    FreqAndVoltageSettingDlg::OnSpinSecondsUntilVoltageDecreaseSpinButton)
-#endif
-  EVT_BUTTON( ID_DecreaseVoltage, FreqAndVoltageSettingDlg::OnDecVoltage)
-  EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
-  //"EVT_COMMAND" expands to "wxEventTableEntry(
-  //  wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxID_ANY, wxID_ANY,
-  //(wxObjectEventFunction)(wxEventFunction)static_cast<wxCommandEventFunction>
-  // (&FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel), 0),
-  EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE,
-    FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel)
-//  wx__DECLARE_EVT1(wxEVT_COMMAND_BUTTON_CLICKED, winid, wxCommandEventHandler(func)
-  // EVT_CUSTOM(event, winid, func)
-//  EVT_CUSTOM( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxID_ANY,
-//    FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel )
-  //EVT_BUTTON expands to:
-    //wxEventTableEntry(wxEVT_COMMAND_BUTTON_CLICKED,
-    //ID_stopFindingLowestStableVoltage, wxID_ANY,
-    //(wxObjectEventFunction)(wxEventFunction)static_cast<
-    //  wxCommandEventFunction>(&
-    //  FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton), 0),
-  TOGGLE_BUTTON_OR_BUTTON_EVENT_MACRO( ID_SelectPstateViaMousePos,
-    FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos)
 
-  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
-    ID_PreventVoltageAboveDefaultVoltageCheckbox,
-    FreqAndVoltageSettingDlg::OnPreventVoltageAboveDefaultVoltageCheckbox)
-  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
-    ID_PreventVoltageBelowLowestStableVoltageCheckbox,
-    FreqAndVoltageSettingDlg::OnPreventVoltageBelowLowestStableVoltageCheckbox)
+//#if wxUSE_SPINBTN
+//  //EVT_SPIN_UP(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageUp)
+//  //EVT_SPIN_DOWN(ID_SpinVoltage, FreqAndVoltageSettingDlg::OnSpinVoltageDown)
+//  EVT_SPIN(SecondsUntilVoltageDecreaseSpinButton,
+//    FreqAndVoltageSettingDlg::OnSpinSecondsUntilVoltageDecreaseSpinButton)
+//#endif
+  EVT_BUTTON( ID_DecreaseVoltage, FreqAndVoltageSettingDlg::OnDecVoltage)
+//  EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
+
+//  TOGGLE_BUTTON_OR_BUTTON_EVENT_MACRO( ID_SelectPstateViaMousePos,
+//    FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos)
+//
+//  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
+//    ID_PreventVoltageAboveDefaultVoltageCheckbox,
+//    FreqAndVoltageSettingDlg::OnPreventVoltageAboveDefaultVoltageCheckbox)
+//  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
+//    ID_PreventVoltageBelowLowestStableVoltageCheckbox,
+//    FreqAndVoltageSettingDlg::OnPreventVoltageBelowLowestStableVoltageCheckbox)
+
   //see http://www.wxwidgets.org/docs/faqgtk.htm#charinframe:
   //"In wxGTK, the frames never get focus and so can never receive CHAR nor
   //KEY events so an EVT_CHAR handler for a frame will be never called.
@@ -224,1125 +187,43 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   EVT_POWER_RESUME(FreqAndVoltageSettingDlg::OnResume)
 #endif //#ifdef wxHAS_POWER_EVENTS
   EVT_SCROLL(FreqAndVoltageSettingDlg::OnScroll)
+#ifdef BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
+  //"EVT_COMMAND" expands to "wxEventTableEntry(
+  //  wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxID_ANY, wxID_ANY,
+  //(wxObjectEventFunction)(wxEventFunction)static_cast<wxCommandEventFunction>
+  // (&FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel), 0),
+  EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE,
+    FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel)
+//  wx__DECLARE_EVT1(wxEVT_COMMAND_BUTTON_CLICKED, winid, wxCommandEventHandler(func)
+  // EVT_CUSTOM(event, winid, func)
+//  EVT_CUSTOM( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxID_ANY,
+//    FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel )
+  EVT_CUSTOM( wxEVT_SET_START_UNSTABLE_CPU_CORE_OPERATION_IMAGE //event
+    ,SetStartUnstableCPUcoreOperationImage, //id
+    FreqAndVoltageSettingDlg::OnSetStartUnstableCPUcoreOperationImage)
+  //EVT_BUTTON expands to:
+    //wxEventTableEntry(wxEVT_COMMAND_BUTTON_CLICKED,
+    //ID_stopFindingLowestStableVoltage, wxID_ANY,
+    //(wxObjectEventFunction)(wxEventFunction)static_cast<
+    //  wxCommandEventFunction>(&
+    //  FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton), 0),
+
+  //  EVT_BUTTON(ID_AutoConfigureVoltageSettings, FreqAndVoltageSettingDlg::
+  //    OnAutoConfigureVoltageSettingsButton)
+  //  EVT_BUTTON(ID_findLowestStableVoltage,
+  //      FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton)
+  //  EVT_BUTTON(ID_stopFindingLowestStableVoltage,
+  //      FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton)
+  EVT_BUTTON(ID_AutoConfigureVoltageSettings, FreqAndVoltageSettingDlg::
+    OnAutoConfigureVoltageSettingsButton)
+  EVT_BUTTON(ID_findLowestStableVoltage,
+    FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton)
+  EVT_BUTTON(ID_stopFindingLowestStableVoltage,
+    FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton)
+#endif
 END_EVENT_TABLE()
 
-inline void FreqAndVoltageSettingDlg::AddCPUcoreCheckBoxSizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  wxSizer * p_wxboxsizerCPUcoreCheckBox = new wxBoxSizer(wxHORIZONTAL);
-  wxStaticText * p_wxstatictext = new wxStaticText(
-    this,
-    wxID_ANY,
-    wxT("affected\ncores:")
-    ) ;
-  p_wxstatictext->SetToolTip( wxT("the CPU cores the frequency and voltage "
-    "should be applied to ") ) ;
-  p_wxboxsizerCPUcoreCheckBox->Add(
-    p_wxstatictext
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT |
-    wxALIGN_TOP
-    , 5 //Determines the border width
-    );
-
-  WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
-  m_ar_p_wxcheckbox = new wxCheckBox * [ wNumCPUcores ] ;
-
-  if( m_ar_p_wxcheckbox ) //Allocating the array succeeded.
-    for( WORD wCoreID = 0 ; wCoreID < wNumCPUcores ; ++ wCoreID )
-    {
-      m_ar_p_wxcheckbox[ wCoreID ] = new wxCheckBox(
-        this,
-        wxID_ANY,
-        //const wxString& label,
-        wxString::Format( wxT("%u"), wCoreID),
-        wxDefaultPosition,
-        wxDefaultSize, //const wxSize& size = wxDefaultSize,
-        //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-        // "If you need to use this style in order to get the arrows or etc., but
-        // would still like to have normal keyboard navigation take place, you
-        // should create and send a wxNavigationKeyEvent in response to the key
-        // events for Tab and Shift-Tab."
-        //To get EVT_CHAR events when the button is focused.
-        wxWANTS_CHARS
-      ) ;
-      if( mp_model->m_userinterfaceattributes.m_bSelectAllCPUcores )
-        m_ar_p_wxcheckbox[ wCoreID ]->SetValue(true) ; //Set the check.
-      p_wxboxsizerCPUcoreCheckBox->Add(
-        m_ar_p_wxcheckbox[ wCoreID ]
-        , 1
-        //,wxEXPAND | wxALL
-        , wxLEFT | wxRIGHT
-        , 5 );
-    }
-  p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
-    p_wxboxsizerCPUcoreCheckBox ,
-//    1 ,
-    0 ,//0=the control should not take more space if the sizer is enlarged
-    wxEXPAND //| //wxALL
-//      wxBOTTOM
-    ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"Determines the border width, if the flag  parameter is set to
-    //include any border flag."
-    //10
-    2
-    );
-}
-
-inline void FreqAndVoltageSettingDlg::AddAlsoSetWantedVoltageControls(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton(
-    this, wxID_ANY,
-    wxBitmap( set_as_desired_voltage16x16_xpm )
-    ) ;
-  wxString wxstrAlsoSetWantedVoltageToolTip = wxString::Format(
-    wxT("If setting a minimum/ lowest stable voltage:\n"
-      "adds an operating safety margin of %f Volt\n"
-      "and sets the resulting voltage as voltage for the frequency slider's "
-      "frequency in MHz to use for\n"
-      "Dynamic Voltage and Frequency Scaling"),
-    mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt
-    );
-  m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage->SetToolTip(
-    wxstrAlsoSetWantedVoltageToolTip) ;
-  AddWindowToSizer(
-    m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage,
-    p_wxsizerSuperordinate
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //[...]can change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable[...]W
-    , 1
-    , //wxEXPAND |
-    wxFIXED_MINSIZE | wxALL
-    , 0 //Determines the border width
-    );
-}
-
-inline void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer * m_p_wxboxsizerOK_Cancel;
-  m_p_wxboxsizerOK_Cancel = new //wxBoxSizer(wxHORIZONTAL);
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer(
-      //number of columns: zero, it will be calculated to form the total
-      //number of children in the sizer
-      0
-      );
-
-  AddWritePstateButton(m_p_wxboxsizerOK_Cancel);
-
-//  m_p_wxboxsizerOK_Cancel->Add( m_p_wxbuttonFindLowestStableVoltage ) ;
-
-  //  mp_wxcheckboxSetAsCurrentAfterApplying = new wxCheckBox(this, wxID_ANY,
-  //      //_T("Set as current after apply") ) ;
-  //      _T("Set as current p-state after write") ) ;
-  //  m_p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
-
-  AddPauseServiceCheckbox(m_p_wxboxsizerOK_Cancel) ;
-  AddRestorePerformanceStateAfterResumeButton(m_p_wxboxsizerOK_Cancel) ;
-  AddCancelButton(m_p_wxboxsizerOK_Cancel);
-
-  AddAutoConfigureVoltageSettingsButton(m_p_wxboxsizerOK_Cancel) ;
-  CreateFindLowestStableCPUcoreVoltageButton();
-  m_p_wxboxsizerOK_Cancel->Add(m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage);
-
-//  CreateStopFindingLowestStableCPUcoreVoltageButton();
-//  m_p_wxboxsizerOK_Cancel->Add(
-//    m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage);
-
-  //wxSpinCtrl * p_wx = new
-
-  AddSecondsUntilNextVoltageDecreaseTextControl(m_p_wxboxsizerOK_Cancel);
-
-//  m_p_wxspinbuttonSecondsUntilVoltageDecrease = new wxSpinButton (
-//      this,
-////      NULL,
-//      SecondsUntilVoltageDecreaseSpinButton
-//      );
-  m_p_wxspinbuttonSecondsUntilVoltageDecrease = NULL;
-//  m_p_wxboxsizerOK_Cancel->Add(m_p_wxspinbuttonSecondsUntilVoltageDecrease);
-
-  m_p_wxstatictextSecondsUntilNextVoltageDecrease = new wxStaticText( this,
-    wxID_ANY, wxT("     s") );
-  m_p_wxboxsizerOK_Cancel->Add(m_p_wxstatictextSecondsUntilNextVoltageDecrease);
-
-  //  mp_wxcheckboxOnlySafeRange = new wxCheckBox(this, wxID_ANY,
-  //    wxT("only safe range") ) ;
-  //  m_p_wxboxsizerOK_Cancel->Add( mp_wxcheckboxOnlySafeRange) ;
-  LOGN("before adding the OK etc. sizer")
-  p_wxsizerSuperordinate->Add(
-    m_p_wxboxsizerOK_Cancel,
-    0 ,
-    wxFIXED_MINSIZE,
-    //Determines the border width, if the flag  parameter is set to include
-    //any border flag.
-    2
-    );
-  LOGN( FULL_FUNC_NAME << "--end")
-}
-
-inline void FreqAndVoltageSettingDlg::AddAutoConfigureVoltageSettingsButton(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  wxString wxstrToolTip = wxT("auto-configure CPU core voltage settings:\n"
-    "find lowest stable CPU core voltage and set the desired voltage based on it");
-  m_p_wxbitmapbuttonAutoConfigureVoltageSettings = new wxBitmapButton(
-    (wxWindow * ) this , // wxWindow *    parent,
-    // wxWindowID id,
-    (wxWindowID) ID_AutoConfigureVoltageSettings,
-    //const wxBitmap & label,
-    wxBitmap( auto_configure_CPU_core_voltage_settings16x16_xpm )
-    );
-  m_p_wxbitmapbuttonAutoConfigureVoltageSettings->SetToolTip(
-    wxstrToolTip ) ;
-  p_wxsizerSuperordinate->Add(
-    m_p_wxbitmapbuttonAutoConfigureVoltageSettings,
-    0 ,//0=the control should not take more space if the sizer is enlarged
-    wxLEFT | wxRIGHT,
-    0);
-}
-
-inline void FreqAndVoltageSettingDlg::AddCancelButton(
-  wxSizer * p_wxsizerSuperordinate )
-{
-//  wxButton * p_wxbuttonCancel = new wxButton(
-//    this,
-//    wxID_CANCEL //,
-//  //    wxEmptyString ,
-//  //    wxDefaultPosition ,
-//  //    wxDefaultSize ,
-//  //    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-//  //    // "If you need to use this style in order to get the arrows or etc., but
-//  //    // would still like to have normal keyboard navigation take place, you
-//  //    // should create and send a wxNavigationKeyEvent in response to the key
-//  //    // events for Tab and Shift-Tab."
-//  //    //To get EVT_CHAR events when the button is focused.
-//  //    wxWANTS_CHARS
-//    ) ;
-
-  #ifndef USE_EXTERNAL_ICONS
-  wxBitmap wxbitmapCancel( cancel16x16_xpm ) ;
-  #else
-  wxBitmap wxbitmapCancel ( m_wxstrIconFilesPrefix +
-    wxT("cancel16x16.png") ) ;
-   if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
-       // #b825460a217d250db53df0c9ca293068:
-       // "Returns true if bitmap data is present."
-     ! wxbitmapCancel.IsOk()
-     )
-     wxbitmapCancel = wxBitmap( cancel16x16_xpm ) ;
-  #endif
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-    this
-    , wxID_CANCEL
-  //    , wxT("&-")
-    , wxbitmapCancel
-    , wxDefaultPosition
-  //    , wxsizeMinimal
-    , wxDefaultSize
-  //    , wxButton::GetDefaultSize()
-    , wxBU_AUTODRAW |
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-  p_wxbitmapbutton->SetToolTip( wxT("cancel/ close dialog") ) ;
-
-//  p_wxbuttonCancel->SetWindowStyle(wxWANTS_CHARS) ;
-//  p_wxbitmapbutton->SetWindowStyle(wxWANTS_CHARS) ;
-
-  p_wxsizerSuperordinate->Add( //p_wxbuttonCancel
-    p_wxbitmapbutton);
-}
-
-inline void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  p_wxboxsizerCPUcoreFrequencyInMHz = new wxBoxSizer(wxHORIZONTAL);
-  //p_wxboxsizerCPUcoreFrequencyMultiplier->Add(//p_wxsliderCPUcoreFrequencyMultiplier
-  //  mp_wxsliderCPUcoreFrequencyMultiplier, 1
-  //  //, wxEXPAND | wxALL,
-  //  , wxLEFT | wxRIGHT
-  //  , 5);
-
-  //p_wxboxsizerCPUcoreFrequencyInMHz->Add(new wxStaticText(this, wxID_ANY,
-  //  //_T("core frequency in MHz: ")));
-  //  _T("->resulting core frequency in MHz: ")));
-  //mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T(""));
-  //p_wxboxsizerCPUcoreFrequencyInMHz->Add(mp_wxstatictextFreqInMHz, 1 ,
-  //  wxEXPAND | wxALL, 0);
-  //sizerTop->Add(p_wxboxsizerCPUcoreFrequencyInMHz,
-  //  0 //proportion parameter: if "0" it takes the least space
-  //  , wxFIXED_MINSIZE | wxALL,
-  //  //Determines the border width, if the flag  parameter is set to include
-  //  //any border flag.
-  //  2);
-//  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
-//    new wxStaticText(this, wxID_ANY,
-//    //_T("core frequency in MHz: ")));
-//    wxT("CPU core\nfrequency"//\nin MHz"
-//      ":")
-//      )
-//    , 0 //0=the control should not take more space if the sizer is enlarged
-//    , wxLEFT | wxRIGHT
-//      //| wxALIGN_TOP
-//      | wxALIGN_CENTER_VERTICAL
-//    , 5 //Determines the border width
-//    );
-  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
-    mp_wxsliderFreqInMHz
-    , 1
-    //,wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-      | wxALIGN_CENTER_VERTICAL
-    , 0 //Determines the border width
-    );
-  mp_wxsliderFreqInMHz->SetToolTip( wxT("CPU core multiplier/ frequency") );
-
-  mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T("") );
-  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
-    mp_wxstatictextFreqInMHz
-//    , 1
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT
-      | wxALIGN_CENTER_VERTICAL
-    , 5 //Determines the border width
-    );
-  p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
-    p_wxboxsizerCPUcoreFrequencyInMHz ,
-    //proportion: "change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable"
-    0 ,
-    wxEXPAND //| //wxALL
-//      wxBOTTOM
-    ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"Determines the border width, if the flag  parameter is set to
-    //include any border flag."
-    //10
-    //2
-    0
-    );
-}
-
-inline void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-//  wxButton * p_wxbuttonDecBy1VoltageStep ;
-//  wxButton * p_wxbuttonIncBy1VoltageStep ;
-//  wxBitmapButton * p_wxbitmapbutton ;
-  wxBoxSizer * p_wxboxsizerCPUcoreVoltage = new wxBoxSizer(wxHORIZONTAL);
-  //  wxFlexGridSizer * p_wxflexgridsizerCPUcoreVoltageInVolt = new
-  //    wxFlexGridSizer(
-  //    //number of columns: zero, it will be calculated to form the total
-  //    //number of children in the sizer
-  //    0 );
-  //p_wxboxsizerCPUcoreVoltageInVolt->Add(
-  //p_wxboxsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( mp_wxstatictextVoltageInVolt
-//    , 1
-//    , wxEXPAND | wxALL
-//    , 0 );
-  //mp_wxspinbuttonVoltageInVolt = new wxSpinButton(this, //wxID_ANY
-  //  ID_SpinVoltage ) ;
-  //mp_wxspinbuttonVoltageInVolt->SetRange(
-  //  mp_i_cpucontroller->GetMinimumVoltageInVolt() //-> Millivolt
-  //    * 1000 ,
-  //  mp_i_cpucontroller->GetMaximumVoltageInVolt() //-> Millivolt
-  //    * 1000
-  //  );
-  //mp_wxspinbuttonVoltageInVolt->SetValue(
-  //    mp_i_cpucontroller->GetMinimumVoltageInVolt() * 1000 );
-
-//  p_wxbuttonIncBy1VoltageStep = new wxButton( this
-//    , ID_SpinVoltage
-//    , wxT("&+")
-//    ) ;
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonIncBy1VoltageStep
-//    , 0
-//    , //wxEXPAND |
-//    wxALL
-//    , 0 );
-//  p_wxbuttonDecBy1VoltageStep = new wxButton( this
-//    , ID_DecreaseVoltage
-//    , wxT("&-")
-//    ) ;
-//  p_wxflexgridsizerCPUcoreVoltageInVolt->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonDecBy1VoltageStep
-//    , 1
-//    , wxEXPAND | wxALL
-//    , 0 );
-//  p_wxboxsizerCPUcoreVoltage->Add(
-//    new wxStaticText(this, wxID_ANY, wxT("CPU core\nvoltage" //\nIDentifier
-//      ":" ))
-//    , 0 //0=the control should not take more space if the sizer is enlarged
-//    //These flags are used to specify which side(s) of the sizer item the
-//    //border width will apply to.
-//    , //wxEXPAND |
-//    //wxALL,
-//    wxLEFT | wxRIGHT
-//    | wxALIGN_CENTER_VERTICAL
-////    //The label and the adjustable value should be at the same vertical
-////    //position, so place at the top.
-////    | wxALIGN_TOP
-//    , 3 //Determines the border width
-//    );
-  p_wxboxsizerCPUcoreVoltage->Add(//p_wxsliderCPUcoreVoltage
-    mp_wxsliderCPUcoreVoltage,
-    1
-    //,wxEXPAND | wxALL
-    , //wxLEFT | wxRIGHT |
-      wxALIGN_CENTER_VERTICAL
-    //http://docs.wxwidgets.org/2.8.10/wx_wxsizer.html#wxsizeradd
-    // "Determines the border width, if the flag parameter is set to include
-    // any border flag."
-//    , 2
-    );
-  mp_wxsliderCPUcoreVoltage->SetToolTip( wxT("CPU core voltage") );
-
-  mp_wxstatictextVoltageInVolt = new wxStaticText(this, wxID_ANY, wxT("") );
-  p_wxboxsizerCPUcoreVoltage->Add(
-    mp_wxstatictextVoltageInVolt ,
-    0 //0=the control should not take more space if the sizer is enlarged
-    //,wxEXPAND | wxALL
-    , //wxLEFT | wxRIGHT |
-      wxALIGN_CENTER_VERTICAL
-    //http://docs.wxwidgets.org/2.8.10/wx_wxsizer.html#wxsizeradd
-    // "Determines the border width, if the flag parameter is set to include
-    // any border flag."
-//    , 5
-    );
-//  AddIncreaseVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
-//  AddDecreaseVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
-//  AddPreventVoltageBelowLowestStableVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
-//  AddPreventVoltageAboveDefaultVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
-//  AddStabilizeVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
-  p_wxsizerSuperordinate->Add(
-    p_wxboxsizerCPUcoreVoltage,
-    //proportion: "change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable"
-    0 ,
-    wxEXPAND //| //wxALL
-      //wxBOTTOM
-    ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"Determines the border width, if the flag  parameter is set to
-    //include any border flag."
-    //10
-    //2
-    0
-    );
-}
-
-void FreqAndVoltageSettingDlg::AddDecreaseVoltageButton( wxSizer * p_wxsizer )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  //  p_wxbuttonDecBy1VoltageStep = new wxButton(
-  //Avoid to show up an error dialog under _Windows_ if the image file could not
-  //be load.
-  //#ifdef _WIN32
-  #ifndef USE_EXTERNAL_ICONS
-  wxBitmap wxbitmapDecreaseVoltage( decrease16x16_xpm ) ;
-  #else
-  wxBitmap wxbitmapDecreaseVoltage ( m_wxstrIconFilesPrefix +
-    wxT("decrease16x16.png") ) ;
-   if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
-       // #b825460a217d250db53df0c9ca293068:
-       // "Returns true if bitmap data is present."
-     ! wxbitmapDecreaseVoltage.IsOk()
-     )
-     wxbitmapDecreaseVoltage = wxBitmap( decrease16x16_xpm ) ;
-  #endif
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-    this
-    , ID_DecreaseVoltage
-  //    , wxT("&-")
-    , wxbitmapDecreaseVoltage
-    , wxDefaultPosition
-  //    , wxsizeMinimal
-    , wxDefaultSize
-  //    , wxButton::GetDefaultSize()
-    , wxBU_AUTODRAW |
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-  p_wxbitmapbutton->SetToolTip( wxT("decrease voltage by 1 step (press '-')") ) ;
-  p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
-  //    p_wxbuttonDecBy1VoltageStep
-    p_wxbitmapbutton
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT
-    , 0 );
-}
-
-void FreqAndVoltageSettingDlg::AddIncreaseVoltageButton( wxSizer * p_wxsizer )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  //  wxSize wxsizeMinimal(-1,-1) ;
-  //  p_wxbuttonIncBy1VoltageStep = new wxButton(
-//  wxBitmap wxbitmapIncreaseVoltage( m_wxstrIconFilesPrefix +
-//     wxT("increase16x16.png") , wxBITMAP_TYPE_PNG ) ;
-  wxBitmap wxbitmapIncreaseVoltage ;
-//Avoid to show up an error dialog under _Windows_ if the image file could not
-//be load.
-//#ifndef _WIN32
-#ifdef USE_EXTERNAL_ICONS
-   if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
-       // #b825460a217d250db53df0c9ca293068:
-       // "Returns true if bitmap data is present."
-//     ! wxbitmapIncreaseVoltage.IsOk()
-     ! wxbitmapIncreaseVoltage.
-       //http://docs.wxwidgets.org/2.6/wx_wxbitmap.html#wxbitmaploadfile:
-       // "true if the operation succeeded, false otherwise."
-       LoadFile(  m_wxstrIconFilesPrefix +
-         wxT("increase16x16.png") , wxBITMAP_TYPE_PNG )
-     )
-#endif
-     wxbitmapIncreaseVoltage = wxBitmap( increase16x16_xpm ) ;
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-    this
-    , ID_SpinVoltage
-//    , wxT("&+")
-    , wxbitmapIncreaseVoltage
-    , wxDefaultPosition,
-    wxDefaultSize,
-    wxBU_AUTODRAW |
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-  p_wxbitmapbutton->SetToolTip( wxT("increase voltage by 1 step (press '+')") ) ;
-  p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonIncBy1VoltageStep
-    p_wxbitmapbutton
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT
-    , 0 );
-}
-
-void FreqAndVoltageSettingDlg::AddSecondsUntilNextVoltageDecreaseTextControl(
-  wxSizer * p_wxsizer )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  wxSize wxsize(40, 20);
-  m_p_wxtextctrlSecondsUntilNextVoltageDecrease = new wxTextCtrl(
-    this,
-    wxID_ANY,
-    wxString::Format( wxT("%u"), mp_model->
-      m_instablecpucorevoltagedetection.
-      m_uiNumberOfSecondsToWaitUntilVoltageIsReduced ),
-    wxDefaultPosition,
-    wxsize
-    );
-  m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetToolTip(
-    wxT("For detecting an instable CPU core voltage:\n"
-      "seconds until the voltage is decreased") );
-  p_wxsizer->Add(m_p_wxtextctrlSecondsUntilNextVoltageDecrease//,
-    //1
-    );
-  LOGN( FULL_FUNC_NAME << "--end")
-}
-
-void FreqAndVoltageSettingDlg::AddSelectPstateViaMousePositionButton(
-  wxSizer * p_wxsizer )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  wxBitmap wxbitmapSelectPstateViaMousePosition ;
-  wxString wxstrTooltip = wxT("select voltage&frequency via left mouse "
-    "click into mainframe");
-  wxbitmapSelectPstateViaMousePosition = wxBitmap(
-    select_pstate_via_mouse_position16x16_xpm ) ;
-#ifdef wxHAS_BITMAPTOGGLEBUTTON
-  m_p_wxbitmaptogglebuttonSelectPstateViaMouseClick = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton( this,
-      ID_SelectPstateViaMousePos,
-      wxbitmapSelectPstateViaMousePosition
-      );
-  m_p_wxbitmaptogglebuttonSelectPstateViaMouseClick->SetToolTip( wxstrTooltip ) ;
-  AddWindowToSizer( m_p_wxbitmaptogglebuttonSelectPstateViaMouseClick,
-    p_wxsizer);
-#else
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-   this
-   , ID_SelectPstateViaMousePos
-  //    , wxT("&+")
-   , wxbitmapSelectPstateViaMousePosition
-   , wxDefaultPosition,
-   wxDefaultSize,
-   wxBU_AUTODRAW |
-   //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-   // "If you need to use this style in order to get the arrows or etc., but
-   // would still like to have normal keyboard navigation take place, you
-   // should create and send a wxNavigationKeyEvent in response to the key
-   // events for Tab and Shift-Tab."
-   //To get EVT_CHAR events when the button is focused.
-   wxWANTS_CHARS
-   ) ;
-  p_wxbitmapbutton->SetToolTip( wxstrTooltip ) ;
-  p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
-  //    p_wxbuttonIncBy1VoltageStep
-   p_wxbitmapbutton
-   , 0 //0=the control should not take more space if the sizer is enlarged
-   , wxLEFT | wxRIGHT
-   , 0 );
-#endif //wxHAS_BITMAPTOGGLEBUTTON
-}
-
-void FreqAndVoltageSettingDlg::AddPauseServiceCheckbox(wxSizer * p_wxsizer )
-{
-#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
-  wxString wxstrPauseToolTip =
-    wxT("pauses the Dynamic Voltage and Frequency Scaling\n"
-    "that is done by the service"
-    "after writing CPU core voltage and/or multiplier\n"
-    "(else the voltage and/ or multiplier may be changed by the service "
-    "immediately afterwards)") ;
-  m_p_wxbitmaptogglebuttonPauseService = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton(
-    this, wxID_ANY,
-    wxBitmap( pause_service16x16_xpm )
-    ) ;
-  m_p_wxbitmaptogglebuttonPauseService->
-    //http://docs.wxwidgets.org/2.8/wx_wxcheckbox.html#wxcheckboxsetvalue:
-    //"If true, the check is on, otherwise it is off."
-    SetValue(true) ;
-  m_p_wxbitmaptogglebuttonPauseService->SetToolTip( wxstrPauseToolTip) ;
-  AddWindowToSizer(m_p_wxbitmaptogglebuttonPauseService, p_wxsizer);
-#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
-}
-
-inline void FreqAndVoltageSettingDlg::AddPerformanceStateSizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  p_wxboxsizerCPUcorePstate = new wxBoxSizer(wxHORIZONTAL);
-//  wxStaticText * p_wxstatictextPerformanceState = new wxStaticText(
-//    this,
-//    wxID_ANY,
-//    wxT("performance\nstate:")
-//    ) ;
-//  p_wxstatictextPerformanceState->SetToolTip(
-//    wxT("combination of CPU core voltage and frequency") ) ;
-  p_wxboxsizerCPUcorePstate->Add(
-//    p_wxstatictextPerformanceState
-    m_p_wxchoiceVoltageType
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    //"These flags are used to specify which side(s) of the sizer item the
-    //border width will apply to."
-    , wxLEFT | wxRIGHT
-      | wxALIGN_CENTER_VERTICAL
-    //The label and the adjustable value should be at the same vertical
-    //position, so place at the top.
-//    | wxALIGN_TOP
-    , 5 //Determines the border width
-    );
-  p_wxboxsizerCPUcorePstate->Add(//p_wxsliderCPUcoreDivisorID
-    mp_wxsliderCPUcorePstate
-    , 1
-    //, wxEXPAND | wxALL
-    , wxLEFT | wxRIGHT
-      | wxALIGN_CENTER_VERTICAL
-    , 5);
-  p_wxsizerSuperordinate->Add(
-    p_wxboxsizerCPUcorePstate,
-    //proportion: "change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable"
-    0 ,
-    wxEXPAND //| //wxALL
-//      wxBOTTOM
-    ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"Determines the border width, if the flag  parameter is set to
-    //include any border flag."
-    //10
-    2
-    );
-}
-
-void FreqAndVoltageSettingDlg::AddPreventVoltageAboveDefaultVoltageButton(
-  wxSizer * p_wxsizer )
-{
-  wxString wxstrToolTip = wxT("prevent voltage above\ndefault voltage");
-  m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton(
-    this ,
-    ID_PreventVoltageAboveDefaultVoltageCheckbox ,
-    wxBitmap( prevent_voltage_above_default_voltage16x16_xpm )
-    ) ;
-  m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage->SetToolTip(
-    wxstrToolTip);
-  //Possibly Check the checkbox.
-  m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage->SetValue(
-    mp_model->m_userinterfaceattributes.m_bPreventVoltageAboveDefaultVoltage );
-  AddWindowToSizer(
-    m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage, p_wxsizer);
-}
-
-void FreqAndVoltageSettingDlg::AddPreventVoltageBelowLowestStableVoltageButton(
-  wxSizer * p_wxsizer )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  wxString wxstrToolTip = wxT("prevent voltage below\nlowest stable voltage");
-  //from wxWidgets ver. 2.9.1
-//#ifdef wxUSE_TOGGLEBTN
-//#ifdef wxHAS_BITMAPTOGGLEBUTTON
-#ifdef USE_BITMAP_TOGGLE_BTN
-  m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton(
-    (wxWindow * ) this , // wxWindow *    parent,
-    // wxWindowID id,
-    (wxWindowID) ID_PreventVoltageBelowLowestStableVoltageCheckbox,
-    //const wxBitmap & label,
-    wxBitmap( prevent_voltage_below_lowest_stable_voltage16x16_xpm )
-    );
-  m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage->SetToolTip(
-    wxstrToolTip ) ;
-  m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage->SetValue(
-    mp_model->
-    m_userinterfaceattributes.m_bPreventVoltageBelowLowestStableVoltage ) ;
-  AddWindowToSizer(
-    m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage, p_wxsizer);
-//  m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage->SetText()
-#else
-//  wxBitmapToggleButton
-#endif
-  LOGN( FULL_FUNC_NAME << "--end")
-}
-
-void FreqAndVoltageSettingDlg::AddRestorePerformanceStateAfterResumeButton(
-  wxSizer * p_wxsizer )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-  wxString wxstrToolTip = wxT("restore selected voltage and multiplier\n"
-    "after resuming from standy or hibernate\n"
-    "(else either\n"
-    "-the performance state (0) set via ACPI\n"
-    "-a CPU core voltage and frequency combination set via the Operating system"
-    "may be used)");
-  m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton(
-    this ,
-    ID_RestorePerformanceStateAfterResumeCheckbox ,
-    wxBitmap( standby16x16_xpm )
-    ) ;
-  m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume->SetToolTip(
-    wxstrToolTip);
-  //Possibly Check the checkbox.
-  m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume->SetValue(
-    mp_model->m_userinterfaceattributes.m_bPreventVoltageAboveDefaultVoltage);
-  AddWindowToSizer(m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume,
-    p_wxsizer);
-  LOGN( FULL_FUNC_NAME << "--end")
-}
-
-void FreqAndVoltageSettingDlg::AddSetAsDesiredVoltageButton(
-  wxSizer * p_wxsizer )
-{
-  //  wxSize wxsizeMinimal(-1,-1) ;
-  //  p_wxbuttonIncBy1VoltageStep = new wxButton(
-//  wxBitmap wxbitmapIncreaseVoltage( m_wxstrIconFilesPrefix +
-//     wxT("increase16x16.png") , wxBITMAP_TYPE_PNG ) ;
-  wxBitmap wxbitmapSetAsDesiredVoltage ;
-//Avoid to show up an error dialog under _Windows_ if the image file could not
-//be load.
-//#ifndef _WIN32
-#ifdef USE_EXTERNAL_ICONS
-   if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
-       // #b825460a217d250db53df0c9ca293068:
-       // "Returns true if bitmap data is present."
-//     ! wxbitmapIncreaseVoltage.IsOk()
-     ! wxbitmapSetAsDesiredVoltage.
-       //http://docs.wxwidgets.org/2.6/wx_wxbitmap.html#wxbitmaploadfile:
-       // "true if the operation succeeded, false otherwise."
-       LoadFile(  m_wxstrIconFilesPrefix +
-         wxT("set_as_desired_voltage16x16.png") , wxBITMAP_TYPE_PNG )
-     )
-#endif
-     wxbitmapSetAsDesiredVoltage = wxBitmap( set_as_desired_voltage16x16_xpm ) ;
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-    this
-    , ID_SetAsWantedVoltage
-//    , wxT("&+")
-    , wxbitmapSetAsDesiredVoltage
-    , wxDefaultPosition,
-    wxDefaultSize,
-    wxBU_AUTODRAW |
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-  p_wxbitmapbutton->SetToolTip( wxT("Set the voltage sliders's CPU core "
-    "voltage\n"
-    "as the voltage for the frequency slider's frequency in MHz\n"
-    "to use for Dynamic Voltage and Frequency Scaling") ) ;
-  p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonIncBy1VoltageStep
-    p_wxbitmapbutton
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT
-    , 0 );
-}
-
-void FreqAndVoltageSettingDlg::AddSetAsMinVoltageButton( wxSizer * p_wxsizer )
-{
-  //  wxSize wxsizeMinimal(-1,-1) ;
-  //  p_wxbuttonIncBy1VoltageStep = new wxButton(
-//  wxBitmap wxbitmapIncreaseVoltage( m_wxstrIconFilesPrefix +
-//     wxT("increase16x16.png") , wxBITMAP_TYPE_PNG ) ;
-  wxBitmap wxbitmapSetAsMinVoltage ;
-//Avoid to show up an error dialog under _Windows_ if the image file could not
-//be load.
-//#ifndef _WIN32
-#ifdef USE_EXTERNAL_ICONS
-   if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
-       // #b825460a217d250db53df0c9ca293068:
-       // "Returns true if bitmap data is present."
-//     ! wxbitmapIncreaseVoltage.IsOk()
-     ! wxbitmapSetAsMinVoltage.
-       //http://docs.wxwidgets.org/2.6/wx_wxbitmap.html#wxbitmaploadfile:
-       // "true if the operation succeeded, false otherwise."
-       LoadFile(  m_wxstrIconFilesPrefix +
-         wxT("set_as_minimal_voltage16x16.png") , wxBITMAP_TYPE_PNG )
-     )
-#endif
-     wxbitmapSetAsMinVoltage = wxBitmap( set_as_minimal_voltage16x16_xpm ) ;
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-    this
-    , ID_SetAsMinVoltage
-//    , wxT("&+")
-    , wxbitmapSetAsMinVoltage
-    , wxDefaultPosition,
-    wxDefaultSize,
-    wxBU_AUTODRAW |
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-  p_wxbitmapbutton->SetToolTip( wxT("Set the voltage sliders's CPU core "
-    "voltage\n"
-    "as the lowest stable voltage\n"
-    "for the frequency slider's frequency in MHz\n"
-    "to avoid setting a too low voltage") ) ;
-  p_wxsizer->Add( //mp_wxspinbuttonVoltageInVolt
-//    p_wxbuttonIncBy1VoltageStep
-    p_wxbitmapbutton
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT
-    , 0 );
-}
-
-inline void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  LOGN( FULL_FUNC_NAME << "--begin")
-//  wxFlexGridSizer *
-  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer *
-    p_wxflexgridsizerSetAsMinVoltage = new //wxFlexGridSizer(
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer(
-    //number of columns: zero, it will be calculated to form the total
-    //number of children in the sizer
-    0 );
-  AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
-    this, wxID_ANY, //_T("")
-    //Insert spaces so that there is enough room for displaying the "wanted
-    //voltage in Volt" if the checkbox "also set wanted voltage in Volt" is
-    //checked. a label text may have 5 characters, e.g. "1.0370"
-    wxT("         ")
-    ) ;
-//  mp_wxbuttonSetAsMinVoltage = new wxButton(
-//    this,
-//    ID_SetAsMinVoltage,
-//    wxT("set as minimum voltage") ,
-//    wxDefaultPosition ,
-//    wxDefaultSize ,
-//    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-//    // "If you need to use this style in order to get the arrows or etc., but
-//    // would still like to have normal keyboard navigation take place, you
-//    // should create and send a wxNavigationKeyEvent in response to the key
-//    // events for Tab and Shift-Tab."
-//    //To get EVT_CHAR events when the button is focused.
-//    wxWANTS_CHARS //| wxTAB_TRAVERSAL
-//    ) ;
-//  mp_wxbuttonSetAsMinVoltage->SetToolTip( wxT("This should be the lowest "
-//    "stable voltage for a specific frequency to avoid setting a too low "
-//    "voltage") ) ;
-  AddSetAsDesiredVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddSetAsMinVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddAlsoSetWantedVoltageControls(p_wxflexgridsizerSetAsMinVoltage);
-
-  //p_wxboxsizerSetAsMinVoltage->Add(
-//  p_wxflexgridsizerSetAsMinVoltage->Add(
-//    mp_wxbuttonSetAsMinVoltage
-//    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-//    //[...]can change its size in the main orientation of the wxBoxSizer -
-//    //where 0 stands for not changeable[...]
-//    , 1
-//    , //wxEXPAND |
-//    wxFIXED_MINSIZE | wxALL
-//    , 0
-//    );
-  //p_wxboxsizerSetAsMinVoltage->Add(
-  AddPreventVoltageBelowLowestStableVoltageButton(
-    p_wxflexgridsizerSetAsMinVoltage) ;
-  AddPreventVoltageAboveDefaultVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddStabilizeVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-//  AddAutoConfigureVoltageSettingsButton(p_wxflexgridsizerSetAsMinVoltage);
-
-  //  p_wxboxsizerSetAsMinVoltage->Add(
-  p_wxflexgridsizerSetAsMinVoltage->Add(
-    mp_wxstatictextWantedVoltageInVolt
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //[...]can change its size in the main orientation of the wxBoxSizer -
-    //where 0 stands for not changeable[...]
-    , 1
-    , //wxEXPAND |
-    wxFIXED_MINSIZE | wxALL
-    , 0
-    );
-  LOGN("before adding the set as min voltage sizer")
-  p_wxsizerSuperordinate->Add(
-    //mp_wxbuttonSetAsMinVoltage,
-    //p_wxboxsizerSetAsMinVoltage ,
-    p_wxflexgridsizerSetAsMinVoltage ,
-    //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"If you would rather have a window item stay the size it started with
-    //then use wxFIXED_MINSIZE. "
-    //wxEXPAND |
-    wxFIXED_MINSIZE |
-    wxALL,
-    //Determines the border width, if the flag  parameter is set to include
-    //any border flag.
-    2);
-}
-
-// The "Add" function of a "wxSizer"-derived class object is not called
-// when it was casted to the base class "wxSizer")--possibly because the
-// wxSizer::"Add" function is not declared "virtual" but as "inline"
-// (for polymorphism "Virtual method tables" are needed which seems to be
-// hardly possible with "inline"--inlining avoids functions).
-// So this member function is provided
-void FreqAndVoltageSettingDlg::AddWindowToSizer(
-  wxWindow * p_window,
-  wxSizer * p_wxsizer,
-  int proportion, int flag, int border, wxObject* userData
-  )
-{
-  LOGN( FULL_FUNC_NAME << "--class name of window to add: \"" << GetStdString(
-    std::tstring(p_window->GetClassInfo()->GetClassName() )) << "\"")
-#ifndef USE_WX_BITMAPTOGGLEBUTTON
-  //from http://en.wikipedia.org/wiki/RTTI#C.2B.2B_Example:
-  // to find whether abc_pointer is pointing to xyz type of object
-  wx2_9compatibility::wxFlexGridSizer * p_wx2_9compatibility_wxFlexGridSizer =
-    dynamic_cast<wx2_9compatibility::wxFlexGridSizer *> (p_wxsizer);
-  if( p_wx2_9compatibility_wxFlexGridSizer )
-  {
-    LOGN( FULL_FUNC_NAME << "--sizer is wx2_9compatibility::wxFlexGridSizer)")
-//    p_wxsizer = (wxSizer *) p_wx2_9compatibility_wxFlexGridSizer;
-    p_wx2_9compatibility_wxFlexGridSizer->Add(
-      p_window
-      , proportion //0=the control should not take more space if the sizer is enlarged
-      , flag //wxLEFT | wxRIGHT
-      , border
-      );
-  }
-  else
-#endif //USE_WX_BITMAPTOGGLEBUTTON
-  {
-    LOGN( FULL_FUNC_NAME << "--sizer <> wx2_9compatibility::wxFlexGridSizer)")
-    p_wxsizer->Add(
-      p_window
-      , proportion //0=the control should not take more space if the sizer is enlarged
-      , flag //wxLEFT | wxRIGHT
-      , border
-      );
-  }
-}
-
-void FreqAndVoltageSettingDlg::AddWritePstateButton(wxSizer * p_wxsizer)
-{
-  mp_wxbuttonApply = new wxButton(
-    this,
-    wxID_APPLY,
-    wxT("&Write"
-      //" p-state"
-      ) ,
-    wxDefaultPosition ,
-    wxDefaultSize ,
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-
-  bool bSetToolTip = false ;
-  if( ! mp_model->m_cpucoredata.m_arfAvailableMultipliers )
-  {
-    m_wxstrWriteVoltageAndMultiplierToolTip += wxT("no multipliers are available") ;
-    bSetToolTip = true ;
-  }
-  if( ! mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt )
-  {
-    bSetToolTip = true ;
-    if( //! wxstrToolTip.Empty()
-        bSetToolTip )
-      m_wxstrWriteVoltageAndMultiplierToolTip += wxT(" and ") ;
-    m_wxstrWriteVoltageAndMultiplierToolTip += wxT("no voltages are available") ;
-  }
-  if( bSetToolTip )
-  {
-    //If disabled then no tooltip is visible.
-    //mp_wxbuttonApply->Enable(false) ;
-
-    DisableWritingVoltageAndMultiplier(m_wxstrWriteVoltageAndMultiplierToolTip);
-  }
-  else
-  {
-    m_bAllowWritingVoltageAndFrequency = true;
-    m_wxstrWriteVoltageAndMultiplierToolTip = wxT(">>w<<rite/ set (both) the "
-      "configured multiplier/ frequency AND voltage") ;
-    mp_wxbuttonApply->SetToolTip( m_wxstrWriteVoltageAndMultiplierToolTip ) ;
-  }
-
-  p_wxsizer->Add( mp_wxbuttonApply ) ;
-}
-
-inline void FreqAndVoltageSettingDlg::AddSetAsWantedVoltageSizer(
-  wxSizer * p_wxsizerSuperordinate )
-{
-  WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer *
-    p_wxflexgridsizerSetAsWantedVoltage = new
-    WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer(
-    //number of columns: zero, it will be calculated to form the total
-    //number of children in the sizer
-    0 );
-//  mp_wxbuttonSetAsWantedVoltage = new wxButton(
-//    this,
-//    ID_SetAsWantedVoltage,
-//    wxT("set as wanted voltage") ,
-//    wxDefaultPosition ,
-//    wxDefaultSize ,
-//    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-//    // "If you need to use this style in order to get the arrows or etc., but
-//    // would still like to have normal keyboard navigation take place, you
-//    // should create and send a wxNavigationKeyEvent in response to the key
-//    // events for Tab and Shift-Tab."
-//    //To get EVT_CHAR events when the button is focused.
-//    wxWANTS_CHARS
-//    ) ;
-//  mp_wxbuttonSetAsWantedVoltage->SetToolTip(
-//    wxT("this is the voltage that should be used for Dynamic Voltage and "
-//      "Frequency Scaling") ) ;
-//  p_wxflexgridsizerSetAsWantedVoltage->Add(
-//    mp_wxbuttonSetAsWantedVoltage
-//    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-//    //[...]can change its size in the main orientation of the wxBoxSizer -
-//    //where 0 stands for not changeable[...]
-//    , 1
-//    , //wxEXPAND |
-//    wxFIXED_MINSIZE | wxALL
-//    , 0
-//    );
-  AddPauseServiceCheckbox(p_wxflexgridsizerSetAsWantedVoltage) ;
-  p_wxsizerSuperordinate->Add(
-    p_wxflexgridsizerSetAsWantedVoltage,
-    //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
-    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
-    //"If you would rather have a window item stay the size it started with
-    //then use wxFIXED_MINSIZE. "
-    //wxEXPAND |
-    wxFIXED_MINSIZE |
-    wxALL,
-    //Determines the border width, if the flag  parameter is set to include
-    //any border flag.
-    2 );
-}
-
-void FreqAndVoltageSettingDlg::AddStabilizeVoltageButton( wxSizer * p_wxsizer )
-{
-  //  wxButton * p_wxbutton = new wxButton(
-  //Avoid to show up an error dialog under _Windows_ if the image file could not
-  //be load.
-//  #ifdef _WIN32
-#ifndef USE_EXTERNAL_ICONS
-  wxBitmap wxbitmapStabilizeVoltage( stabilize_voltage_xpm ) ;
-#else
-  wxBitmap wxbitmapStabilizeVoltage( m_wxstrIconFilesPrefix +
-    wxT("stabilize_voltage.png") ) ;
-  if( //http://docs.wxwidgets.org/trunk/classwx_bitmap.html
-      // #b825460a217d250db53df0c9ca293068:
-      // "Returns true if bitmap data is present."
-    ! wxbitmapStabilizeVoltage.IsOk()
-    )
-    wxbitmapStabilizeVoltage = wxBitmap( stabilize_voltage_xpm ) ;
-#endif
-  wxBitmapButton * p_wxbitmapbutton = new wxBitmapButton(
-    this
-    , ID_StabilizeVoltage
-  //   , wxT("stabilize voltage")
-    , wxbitmapStabilizeVoltage
-    , wxDefaultPosition,
-    wxDefaultSize,
-    wxBU_AUTODRAW |
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    ) ;
-  //p_wxbutton->SetToolTip(
-  p_wxbitmapbutton->SetToolTip( wxT(">>s<<tabilize voltage / ") +
-    wxString::Format(
-    wxT("add %f Volt to the current "
-      "voltage slider voltage"),
-      mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt
-      )
-    ) ;
-  p_wxsizer->Add(
-  //    p_wxbutton
-    p_wxbitmapbutton
-    , 0 //0=the control should not take more space if the sizer is enlarged
-    , wxLEFT | wxRIGHT
-    , 0 );
-}
+#include "VolnFreqSettingDlg_Create.hpp"
 
 FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   wxWindow * p_wxwindowParent
@@ -1440,7 +321,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 
   AddCPUcoreVoltageSizer(p_wxboxsizerTop) ;
 
-  AddVoltageSettingsSizer(p_wxboxsizerTop );
+//  AddVoltageSettingsSizer(p_wxboxsizerTop );
 
 //  AddSetAsWantedVoltageSizer(p_wxboxsizerTop );
     //sizerTop->AddSpacer(50) ;
@@ -1639,254 +520,6 @@ void FreqAndVoltageSettingDlg::CPUcoreVoltageChanged()
   //mp_mainframe->Refresh() ;//rm_timer.
   mp_mainframe->m_wxtimer.Stop() ;
   mp_mainframe->m_wxtimer.Start(mp_mainframe->m_dwTimerIntervalInMilliseconds);
-}
-
-void FreqAndVoltageSettingDlg::CreateFindLowestStableCPUcoreVoltageButton()
-{
-  wxBitmap wxbitmapFindLowestStableCPUcoreVoltage = wxBitmap(
-    find_lowest_stable_CPU_core_voltage16x16_xpm
-//    stop_finding_lowest_stable_CPU_core_voltage16x16_xpm
-    ) ;
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage =
-    new wxBitmapButton(
-   this
-   , ID_findLowestStableVoltage
-  //    , wxT("&+")
-   , wxbitmapFindLowestStableCPUcoreVoltage
-   , wxDefaultPosition,
-   wxDefaultSize,
-   wxBU_AUTODRAW |
-   //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-   // "If you need to use this style in order to get the arrows or etc., but
-   // would still like to have normal keyboard navigation take place, you
-   // should create and send a wxNavigationKeyEvent in response to the key
-   // events for Tab and Shift-Tab."
-   //To get EVT_CHAR events when the button is focused.
-   wxWANTS_CHARS
-   ) ;
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetToolTip( wxT("start "
-    "finding the lowest stable CPU core voltage beginning with the multiplier "
-    "and voltage set in this dialog") );
-}
-
-void FreqAndVoltageSettingDlg::CreateStopFindingLowestStableCPUcoreVoltageButton()
-{
-//  //Setting an bitmap button after creation failed with wxWidgets 2.8.10.
-//  //So create a second button for stopping the low CPU core voltage detection.
-//  wxBitmap wxbitmapStopFindingLowestStableCPUcoreVoltage = wxBitmap(
-//    stop_finding_lowest_stable_CPU_core_voltage16x16_xpm
-//    ) ;
-//  m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage =
-//    new wxBitmapButton(
-//   this
-//   , ID_stopFindingLowestStableVoltage
-//  //    , wxT("&+")
-//   , wxbitmapStopFindingLowestStableCPUcoreVoltage
-//   , wxDefaultPosition,
-//   wxDefaultSize,
-//   wxBU_AUTODRAW |
-//   //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-//   // "If you need to use this style in order to get the arrows or etc., but
-//   // would still like to have normal keyboard navigation take place, you
-//   // should create and send a wxNavigationKeyEvent in response to the key
-//   // events for Tab and Shift-Tab."
-//   //To get EVT_CHAR events when the button is focused.
-//   wxWANTS_CHARS
-//   ) ;
-//  m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage->SetToolTip(
-//    wxT("stop finding the lowest stable CPU core voltage") );
-}
-
-void FreqAndVoltageSettingDlg::CreateSliders()
-{
-  BYTE byPstateIDtoShowSettingsFor = 0 ;
-  VoltageAndFreq voltageandfreq ;
-  LOGN("voltage and freq dialog creating sliders")
-
-  wxString ar_wxstrVoltageTypes [] = { wxT("minimum"), wxT("wanted"),
-    wxT("maximum") };
-  m_p_wxchoiceVoltageType = new wxChoice(
-    this,
-    //wxID_ANY,
-    VoltageTypeListBox,
-    wxDefaultPosition, //const wxPoint& pos = wxDefaultPosition,
-    wxDefaultSize, //const wxSize& size = wxDefaultSize,
-    3, //int n = 0,
-    ar_wxstrVoltageTypes, //const wxString choices[] = NULL
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    wxWANTS_CHARS
-    );
-  m_p_wxchoiceVoltageType->Select(maximum_voltage);
-  m_p_wxchoiceVoltageType->SetToolTip( wxT("type of voltage for the voltage/"
-    "frequency pair slider") );
-
-  mp_wxsliderCPUcorePstate = new wxSlider(
-    this
-    //wxID_ANY, 
-    , ID_PstateSlider 
-    //Initial position for the slider.
-    , //1 
-    byPstateIDtoShowSettingsFor
-    //see
-    //http://en.wikipedia.org/wiki/Advanced_Configuration_and_Power_Interface
-    // #Performance_states: "[...]P0 max power and frequency"
-    //Slider minimum value.
-    , 0 
-    //Slider maximum value. If e.g. 2 p-states: 1st is "0", 2nd & last is "1"
-    //, NUMBER_OF_PSTATES - 1 
-    , mp_cpucontroller->GetNumberOfPstates() - 1
-    //, 2
-    //If the default point (-1, -1) is specified then a default point is chosen.
-//    , wxPoint(-1, -1)
-    , wxDefaultPosition
-    //If the default size (-1, -1) is specified then a default size is chosen.
-//    , wxSize(-1, -1)
-    , wxDefaultSize
-    , wxSL_AUTOTICKS | wxSL_LABELS
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    | wxWANTS_CHARS
-    ) ;
-  mp_wxsliderCPUcorePstate->SetToolTip(
-    wxT("voltage/frequency pair slider: combination of CPU core voltage and "
-      "frequency") ) ;
-  //wxSlider * p_wxsliderCPUcoreFrequencyMultiplier = new wxSlider(this, 
-  //m_byPreviousMultiplierValue =
-  //    m_pstate.m_byFreqID ;
-  //mp_wxsliderCPUcoreFrequencyMultiplier = new wxSlider(
-  //  this
-  //  //wxID_ANY, 
-  //  , ID_MultiplierSlider
-  //  //, 2  //value
-  //  , m_byPreviousMultiplierValue
-  //  //Slider minimum value.
-  //      //, 0
-  //  //Slider max value.
-  //      //, MAX_VALUE_FOR_FID 
-  //  //If the default point (-1, -1) is specified then a default point is chosen.
-  //  , wxPoint(-1, -1)
-  //  //If the default size (-1, -1) is specified then a default size is chosen.
-  //  , wxSize(-1, -1)
-  //  , wxSL_AUTOTICKS //	Displays tick marks.
-  //  | wxSL_LABELS //Displays minimum, maximum and value labels.
-  //  ) ;
-  BYTE byPstateExists = mp_cpucontroller->GetPstate(
-    mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault, 0, voltageandfreq);
-  //If the p-state "0" does not exist.
-  if( ! byPstateExists )
-  {
-    //TODO reactivate
-//    //Disable the write button.
-//    mp_wxbuttonApply->Enable( //p_cpucontroller->GetPstateSafefy() ==
-//      //SETTING_VOLTAGE_IS_SAFE
-//      false
-//      ) ;
-  }
-  WORD wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.
-      size() ;
-  if( wMaxValue )
-    //If just 1 element, min and max should be "0".
-    -- wMaxValue ;
-  LOGN("voltage and freq dialog before creating CPU core frequency slider")
-  mp_wxsliderFreqInMHz = new wxSlider(
-    this
-    //wxID_ANY, 
-    , ID_FrequencySlider
-    //, 2  //value
-    , //Initial position for the slider.
-      //mp_i_cpucontroller->GetMinimumFrequencyInMHz()
-      //voltageandfreq.m_wFreqInMHz
-      0
-      //Slider minimum value.
-    , //lowest adjustable frequency:
-//    mp_cpucontroller->GetMinimumFrequencyInMHz()
-    0
-    //Slider max value.
-//    , mp_cpucontroller->GetMaximumFrequencyInMHz()
-    , wMaxValue
-    //If the default point (-1, -1) is specified then a default point is chosen.
-//    , wxPoint(-1, -1)
-    , wxDefaultPosition
-    //If the default size (-1, -1) is specified then a default size is chosen.
-//    , wxSize(-1, -1)
-    , wxDefaultSize
-    , 
-    //wxSL_AUTOTICKS //	Displays tick marks.
-    //| 
-//    wxSL_LABELS //Displays minimum, maximum and value labels.
-    wxSL_TICKS
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    | wxWANTS_CHARS
-    ) ;
-  LOGN("voltage and freq dialog after creating CPU core frequency slider")
-//  m_wPreviousFrequencyInMHz = //mp_wxsliderFreqInMHz->GetValue();
-//      GetCPUcoreFrequencyFromSliderValue() ;
-  //HandleMultiplierValueChanged();
-  //HandlePstateMayHaveChanged() ;
-  //WORD wVoltageID
-
-//  m_wVoltageID = mp_cpucontroller->GetVoltageID(
-//    voltageandfreq.m_fVoltageInVolt ) ;
-  //wxSlider * p_wxsliderCPUcoreVoltage = new wxSlider(this, 
-
-  wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.
-      size() ;
-  //Prevent value wrap to 65535
-  if( wMaxValue )
-    //If just 1 element, min and max should be "0".
-    -- wMaxValue ;
-
-  LOGN("voltage and freq dialog before creating voltage slider")
-  mp_wxsliderCPUcoreVoltage = new wxSlider(
-    this, 
-    //wxID_ANY, 
-    ID_VoltageSlider 
-    , //Initial position for the slider.
-      //mp_i_cpucontroller->GetMinimumVoltageID()
-      //wVoltageID
-      //m_wVoltageID
-      0
-      //slider minimum value
-      //, 0
-//    , mp_cpucontroller->GetMinimumVoltageID()
-    , 0
-    //slider max value
-    //, MAX_VALUE_FOR_VID
-//    , mp_cpucontroller->GetMaximumVoltageID()
-    , wMaxValue
-    //If the default point (-1, -1) is specified then a default point is chosen.
-//    , wxPoint(-1, -1)
-    , wxDefaultPosition
-//    //If the default size (-1, -1) is specified then a default size is chosen.
-    // "wxSize(-1, -1)" causes assertion 'width >= -1' failed ?!
-//    , wxSize(-1, -1)
-    , wxDefaultSize
-    , wxSL_AUTOTICKS //| wxSL_LABELS
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    | wxWANTS_CHARS
-    ) ;
-  ////Possibly force calc of wanted voltage.
-  //VoltageIDchanged(wVoltageID) ;
-  LOGN("voltage and freq dialog end of creating sliders")
 }
 
 float FreqAndVoltageSettingDlg::GetCPUcoreFrequencyFromSliderValue()
@@ -2678,6 +1311,10 @@ void FreqAndVoltageSettingDlg::SetSecondsUntilNextVoltageDecreaseLabel(
     wxString::Format( wxT("%us"), //(WORD)
       seconds)
     );
+//  m_p_wxstatictextCPUloadPercentageForInstableCPUoperationThread->SetLabel(
+////            m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetLabel(
+//    wxString::Format( wxT("%f%"), m)
+//    );
 }
 
 /**
@@ -2691,6 +1328,14 @@ void FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel( wxCommandEvent
     GetInt();
   LOGN( FULL_FUNC_NAME << "" << seconds )
   SetSecondsUntilNextVoltageDecreaseLabel(seconds);
+}
+
+void FreqAndVoltageSettingDlg::OnSetStartUnstableCPUcoreOperationImage(
+  //wxCommandEvent
+  wxEvent
+  & event )
+{
+  SetStartFindingLowestStableVoltageButton();
 }
 
 void FreqAndVoltageSettingDlg::OnSetVoltageType(wxCommandEvent & wxcmd)
@@ -2738,17 +1383,6 @@ void FreqAndVoltageSettingDlg::OnStabilizeVoltageButton(
   SetVoltageSliderToClosestValue(fVoltageInVolt) ;
   CPUcoreVoltageChanged() ;
   PossiblyWriteVoltageAndMultiplier_Inline(fVoltageInVolt) ;
-}
-
-void FreqAndVoltageSettingDlg::
-  ChangeToStopFindingLowestStableCPUcoreVoltageButton()
-{
-  wxBitmap wxbitmapStopFindingLowestStableCPUcoreVoltage = wxBitmap(
-    stop_finding_lowest_stable_CPU_core_voltage16x16_xpm ) ;
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetImageLabel(
-    wxbitmapStopFindingLowestStableCPUcoreVoltage);
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetToolTip(
-    wxT("stop finding the lowest stable CPU core voltage") );
 }
 
 void FreqAndVoltageSettingDlg::ChangeVoltageSliderValue(int nNewSliderValue)
@@ -2872,405 +1506,21 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
   }
 }
 
-void StartFindingLowestStableVoltageAndWaitForItsTermination(
-  FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg,
-  float fVoltageInVolt, float fMultiplier
-  )
-{
-  //Reset to initial value in order to differentiate between whether the
-  //voltage was too low later.
-  wxGetApp().m_bVoltageWasTooLowCalled = false;
-  p_freqandvoltagesettingdlg->FindLowestStableVoltage(
-    fVoltageInVolt, fMultiplier );
-  LOGN( FULL_FUNC_NAME << " waiting for the termination of the \"find "
-      "lowest stable voltage by decreasing voltage\" thread.")
-  wxGetApp().m_x86iandc_threadFindLowestStableVoltage.WaitForTermination();
-  LOGN( FULL_FUNC_NAME << " after waiting for the termination of the \""
-    "find lowest stable voltage by decreasing voltage\" thread.")
-}
-
-DWORD THREAD_FUNCTION_CALLING_CONVENTION
-  AutoConfigureVoltageSettings_ThreadFunc(void * p_v)
-{
-  FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg =
-    (FreqAndVoltageSettingDlg *) p_v;
-  LOGN( FULL_FUNC_NAME << " begin--" << p_freqandvoltagesettingdlg)
-  if( p_freqandvoltagesettingdlg)
-  {
-    Model * p_model = p_freqandvoltagesettingdlg->mp_model;
-    //::wxMessageBox( s_wxstrInstableCPUcoreVoltageWarning);
-    CPUcoreData & c_r_cpucoredata = p_freqandvoltagesettingdlg->
-      mp_model->m_cpucoredata;
-
-    float fMultiplier, fLowestMultiplierWhereInstabilityWasReached = 0.0f,
-      fHighestMultiplierWhereInstabilityCouldntBeReached = 0.0f;
-    float fVoltageInVolt = c_r_cpucoredata.
-      GetStartVoltageForHighestMultiplierForFindingLowestCPUcoreVoltage(
-        fMultiplier
-        );
-    fHighestMultiplierWhereInstabilityCouldntBeReached = fMultiplier;
-    if( fVoltageInVolt != 0.0f )
-    {
-      StartFindingLowestStableVoltageAndWaitForItsTermination(
-        p_freqandvoltagesettingdlg, fVoltageInVolt, fMultiplier);
-    //    wxGetApp().m_conditionFindLowestStableVoltage.Wait();
-      if( wxGetApp().m_bVoltageWasTooLowCalled )
-      {
-        fLowestMultiplierWhereInstabilityWasReached = fMultiplier;
-        LOGN( FULL_FUNC_NAME << " \"VoltageTooLow\" was called so "
-          " LowestMultiplierWhereInstabilityWasReached ^="
-          << fMultiplier)
-      }
-    }
-    LOGN( FULL_FUNC_NAME << //" wxGetApp().m_vbExitFindLowestStableVoltage:"
-      //<< wxGetApp().m_vbExitFindLowestStableVoltage
-      "m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI: "
-      << wxGetApp().m_model.m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI
-      )
-    if( ! //wxGetApp().m_vbExitFindLowestStableVoltage
-        p_model->m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI
-        )
-    {
-      fVoltageInVolt = c_r_cpucoredata.
-        GetStartVoltageForLowestMultiplierForFindingLowestCPUcoreVoltage(
-          fMultiplier
-          );
-//      fLowestMultiplierWhereInstabilityWasReached = fMultiplier;
-      if( fVoltageInVolt == 0.0f )
-      {
-        //Use default or lowest stable voltage from max. FID as starting voltage
-        //for finding the lowest stable voltage for the min FID.
-        fVoltageInVolt = p_model->m_instablecpucorevoltagedetection.
-          m_lastSetCPUcoreVoltageInVolt;
-      }
-      if( fVoltageInVolt != 0.0f )
-      {
-//        LOGN( FULL_FUNC_NAME << " waiting for \"VoltageTooLow()\" to be finished")
-//        //Wait for the ::VoltageTooLow() to be ended.
-//        wxGetApp().m_conditionFindLowestStableVoltage.Wait();
-//        LOGN( FULL_FUNC_NAME << " after waiting for \"VoltageTooLow()\" to be finished")
-
-      //    const VoltageAndFreq & lowestMultiInsertedByCPUcontroller =
-      //      voltageandfreqInsertedByCPUcontroller.front();
-      //    fVoltageInVolt = lowestMultiInsertedByCPUcontroller.m_fVoltageInVolt;
-      //    fMultiplier = mp_cpucontroller->GetClosestMultiplier(
-      //      lowestMultiInsertedByCPUcontroller.m_wFreqInMHz);
-
-        StartFindingLowestStableVoltageAndWaitForItsTermination(
-          p_freqandvoltagesettingdlg, fVoltageInVolt, fMultiplier);
-
-        //Didn't reach the lowest stable voltage for the lowest multiplier
-        if( ! wxGetApp().m_bVoltageWasTooLowCalled )
-        {
-          LOGN( FULL_FUNC_NAME << " \"VoltageTooLow\" has not been called"
-            ", so the instable voltage for the lowest multiplier could not be "
-            "found.")
-          fHighestMultiplierWhereInstabilityCouldntBeReached = fMultiplier;
-          LOGN( FULL_FUNC_NAME << " adding lowest voltage for multiplier \""
-            << fMultiplier << "\" as " //lowest stable
-            "wanted "
-            "CPU core voltage")
-          c_r_cpucoredata.//m_stdsetvoltageandfreqLowestStable.
-            m_stdsetvoltageandfreqWanted.
-            insert( VoltageAndFreq(
-              c_r_cpucoredata.m_arfAvailableVoltagesInVolt[0]
-                , (WORD) (fMultiplier *
-                p_freqandvoltagesettingdlg->mp_cpucontroller->
-                m_fReferenceClockInMHz)
-                )
-              );
-          bool bArentDirectlyNeighbouredMultipliers;
-          do
-          {
-            fVoltageInVolt = c_r_cpucoredata.
-              GetStartVoltageForMultiplierForFindingLowestCPUcoreVoltage(
-                //float & fPercentOfMinAndMaxMultiplier
-                fHighestMultiplierWhereInstabilityCouldntBeReached,
-                fLowestMultiplierWhereInstabilityWasReached,
-                fMultiplier
-                );
-            StartFindingLowestStableVoltageAndWaitForItsTermination(
-              p_freqandvoltagesettingdlg, fVoltageInVolt, fMultiplier);
-            if( wxGetApp().m_bVoltageWasTooLowCalled )
-            {
-              fLowestMultiplierWhereInstabilityWasReached = fMultiplier;
-              LOGN( FULL_FUNC_NAME << " \"VoltageTooLow\" was called so "
-                " LowestMultiplierWhereInstabilityWasReached ^="
-                << fMultiplier)
-            }
-            //TODO "VoltageTooLow" is also not called when 2 voltage steps below
-            //lowest stable volatge / highest instable voltage from
-            // previous config data.
-            else
-            {
-              LOGN( FULL_FUNC_NAME << " \"VoltageTooLow\" was NOT called so "
-                " HighestMultiplierWhereInstabilityCouldntBeReached ^="
-                << fMultiplier)
-              fHighestMultiplierWhereInstabilityCouldntBeReached = fMultiplier;
-            }
-            bArentDirectlyNeighbouredMultipliers = c_r_cpucoredata.
-              ArentDirectlyNeighbouredMultipliers(
-              fLowestMultiplierWhereInstabilityWasReached,
-              fHighestMultiplierWhereInstabilityCouldntBeReached);
-            LOGN( FULL_FUNC_NAME << "bArentDirectlyNeighbouredMultipliers:"
-              << bArentDirectlyNeighbouredMultipliers)
-          }
-          while( bArentDirectlyNeighbouredMultipliers);
-          LOGN( FULL_FUNC_NAME << " after binary search for lowest multiplier "
-            "with lowest stable voltage loop")
-
-          WORD wLowestFreqInMHz = c_r_cpucoredata.m_arfAvailableMultipliers[0]
-            * p_freqandvoltagesettingdlg->mp_cpucontroller->
-            m_fReferenceClockInMHz;
-
-          //For a Pentium M 745: not for 600 MHz, but beginning with 800 MHz
-          // the lowest stable voltage was found.
-          const VoltageAndFreq & lowestStableVoltageForLowestMultiFound = *
-            c_r_cpucoredata.m_stdsetvoltageandfreqLowestStable.begin();
-
-          VoltageAndFreq lowestStableVoltageForLowestMulti;
-          float fLowestStableVoltageInVoltForLowestMulti = c_r_cpucoredata.
-            AddLowestStableVoltageForLowestAvailableMulti(
-              lowestStableVoltageForLowestMultiFound,
-              wLowestFreqInMHz,
-              lowestStableVoltageForLowestMulti);
-
-          c_r_cpucoredata.AddWantedVoltageForLowestAvailableMulti(
-            fLowestStableVoltageInVoltForLowestMulti, wLowestFreqInMHz);
-
-          WORD wExtrapolatedWantedFreqForMinVoltage = c_r_cpucoredata.
-            AddWantedVoltageForLowestVoltage(
-            lowestStableVoltageForLowestMultiFound);
-
-//          p_model->m_cpucoredata.AddWantedVoltageForMinVoltage(
-//            wExtrapolatedWantedFreqForMinVoltage);
-
-          if( wExtrapolatedWantedFreqForMinVoltage > wLowestFreqInMHz )
-            c_r_cpucoredata.AddMinVoltageForLowestMulti(wLowestFreqInMHz);
-
-          wxGetApp().mp_frame->RedrawEverything() ;
-          wxGetApp().mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
-//          //extrapolate lowest multi with wanted voltage &
-//          //  highest multi with wanted voltage
-//          //  wanted voltage for lowest multi
-//          p_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.rbegin()->
-//            GetLinearExtrapolatedVoltage(
-//              * p_model->m_cpucoredata.m_stdsetvoltageandfreqWanted.begin(),
-//            (WORD) (fMultiplier * p_freqandvoltagesettingdlg->
-//                mp_cpucontroller->m_fReferenceClockInMHz),
-//            fVoltageInVolt);
-        }
-      }
-    }
-  }
-  //Important: else unstable voltage can not be detected after Prime95 torture
-  //test ended.
-  wxGetApp().ExitFindLowestStableVoltageThread();
-  LOGN( FULL_FUNC_NAME << " return 0")
-  return 0;
-}
-
-void FreqAndVoltageSettingDlg::OnAutoConfigureVoltageSettingsButton(
-  wxCommandEvent & r_wxcommandevent )
-{
-  LOGN( FULL_FUNC_NAME << " begin")
-  mp_model->m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI = false;
-
-//  if( wxGetApp().StartInstableCPUcoreVoltageDetection(this) == 0 )
-//    ShowInstableCPUcoreVoltageWarning();
-  x86IandC::thread_type x86IandC_thread_typeAutoConfigureVoltageSettingsButton;
-  //Must start in another thread because it should be executed in UI thread
-  // to be able to stop the voltage search.
-  //Or send a "lowest CPU core voltage reached" event
-  x86IandC_thread_typeAutoConfigureVoltageSettingsButton.start(
-    AutoConfigureVoltageSettings_ThreadFunc, this);
-
-  StartedInstableCPUcoreVoltageDetection();
-//  AutoConfigureVoltageSettings_ThreadFunc(this);
-}
-
-#include <preprocessor_macros/thread_proc_calling_convention.h>
-
-void FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton(
-    wxCommandEvent & //WXUNUSED(event)
-    r_wxcommandevent )
-{
-  StopFindingLowestStableCPUcoreVoltage();
-}
-
-void FreqAndVoltageSettingDlg::HideInstableCPUcoreVoltageWarning()
-{
-  p_wxboxsizerTop->//Remove(//
-    Detach(
-      //1
-      m_p_wxtextctrlInstableCPUcoreVoltageWarning
-    );
-  p_wxboxsizerTop->Insert(0, p_wxboxsizerCPUcorePstate);
-  //"lay out the window and its children"
-  Layout();
-}
-
-void FreqAndVoltageSettingDlg::ShowInstableCPUcoreVoltageWarning()
-{
-  LOGN(FULL_FUNC_NAME << " begin")
-  if( ! m_p_wxtextctrlInstableCPUcoreVoltageWarning)
-  {
-    m_p_wxtextctrlInstableCPUcoreVoltageWarning = new wxTextCtrl(
-      this //wxWindow* parent
-      , wxID_ANY //wxWindowID id
-      , s_wxstrInstableCPUcoreVoltageWarning //const wxString& value = ""
-      , wxDefaultPosition //const wxPoint& pos = wxDefaultPosition,
-      , wxDefaultSize //const wxSize& size = wxDefaultSize
-      , wxTE_READONLY | wxTE_MULTILINE //long style = 0
-      );
-    m_p_wxtextctrlInstableCPUcoreVoltageWarning->SetForegroundColour( * wxRED);
-  }
-//  p_wxboxsizerTop->Remove(p_wxboxsizerCPUcorePstate);
-  p_wxboxsizerTop->Detach(p_wxboxsizerCPUcorePstate);
-  p_wxboxsizerTop->Insert(0, //m_p_wxstatictextInstableCPUcoreVoltageWarning
-    m_p_wxtextctrlInstableCPUcoreVoltageWarning,
-    1 //proportion
-    , wxEXPAND //flags
-    );
-  //"lay out the window and its children"
-  Layout();
-  //http://docs.wxwidgets.org/2.8/wx_wxsizer.html#wxsizerdetach:
-  //"call wxSizer::Layout to update the layout "on screen" after removing a
-  //child from the sizer."
-  p_wxboxsizerTop->Layout();
-}
-
-void FreqAndVoltageSettingDlg::StopFindingLowestStableCPUcoreVoltage()
-{
-  LOGN( FULL_FUNC_NAME << " begin")
-  mp_model->m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI = true;
-  wxGetApp().StopInstableCPUcoreVoltageDetection();
-//  HideInstableCPUcoreVoltageWarning();
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetBitmapLabel(
-    wxBitmap(find_lowest_stable_CPU_core_voltage16x16_xpm) );
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetToolTip( wxT("start "
-    "finding the lowest stable CPU core voltage") );
-//  SetStopFindingLowestStableCPUcoreVoltageButton();
-  LOGN( FULL_FUNC_NAME << " end")
-}
-
-void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
-    wxCommandEvent & //WXUNUSED(event)
-    r_wxcommandevent )
-{
-  LOGN( FULL_FUNC_NAME << " begin")
-//  if( wxGetApp().StartInstableCPUcoreVoltageDetection(this) == 0 )
-//    ShowInstableCPUcoreVoltageWarning();
-  if( wxGetApp().m_x86iandc_threadFindLowestStableVoltage.IsRunning() )
-    StopFindingLowestStableCPUcoreVoltage();
-  else
-  {
-    mp_model->m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI = false;
-    //Multipliers can also be floats: e.g. "5.5" for AMD Griffin.
-    const float fMultiplierFromSliderValue = GetMultiplierFromSliderValue();
-    mp_model->m_instablecpucorevoltagedetection.
-      m_lastSetCPUcoreMultiplier = fMultiplierFromSliderValue;
-
-    const float fVoltageInVoltFromSliderValue =
-      GetVoltageInVoltFromSliderValue() ;
-    mp_model->m_instablecpucorevoltagedetection.
-      m_lastSetCPUcoreVoltageInVolt = fVoltageInVoltFromSliderValue;
-    FindLowestStableVoltage();
-  }
-  LOGN( FULL_FUNC_NAME << " end")
-}
-
-void FreqAndVoltageSettingDlg::FindLowestStableVoltage(
-  const float fVoltageInVolt,
-  const float fMultiplier
-  )
-{
-  LOGN(FULL_FUNC_NAME << " " << fMultiplier << "," << fVoltageInVolt << "V")
-  mp_model->m_instablecpucorevoltagedetection.m_lastSetCPUcoreMultiplier =
-    fMultiplier;
-  mp_model->m_instablecpucorevoltagedetection.m_lastSetCPUcoreVoltageInVolt =
-    fVoltageInVolt;
-//  SetMultiplierSliderToClosestValue(fMultiplier);
-//  SetVoltageSliderToClosestValue(fVoltageInVolt);
-
-  FindLowestStableVoltage();
-}
-
-void FreqAndVoltageSettingDlg::StartedInstableCPUcoreVoltageDetection()
-{
-  //      ShowInstableCPUcoreVoltageWarning();
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetBitmapLabel(
-    wxBitmap(stop_finding_lowest_stable_CPU_core_voltage16x16_xpm) );
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetToolTip(
-    wxT("stop finding the lowest stable CPU core voltage") );
-}
-
-/**
- * Should be called from the GUI thread because UI cotrols are being accessed.
- */
-void FreqAndVoltageSettingDlg::FindLowestStableVoltage()
-{
-  LOGN( FULL_FUNC_NAME << " begin")
-  const wxString & wxstrSecondsUntilNextVoltageDecrease =
-    m_p_wxtextctrlSecondsUntilNextVoltageDecrease->GetLabel();
-  unsigned long ulSecondsUntilNextVoltageDecrease;
-  //TODO program crash when "§" is entered.
-  if( wxstrSecondsUntilNextVoltageDecrease.ToULong(
-    & ulSecondsUntilNextVoltageDecrease, 10) )
-  {
-    LOGN(FULL_FUNC_NAME << " seconds to wait until voltage decrease:"
-      << ulSecondsUntilNextVoltageDecrease)
-    mp_model->m_instablecpucorevoltagedetection.
-      m_uiNumberOfSecondsToWaitUntilVoltageIsReduced =
-      ulSecondsUntilNextVoltageDecrease;
-    if( wxGetApp().StartInstableCPUcoreVoltageDetection(this) == ERROR_SUCCESS )
-    {
-      StartedInstableCPUcoreVoltageDetection();
-//      LOGN( FULL_FUNC_NAME << " waking up  \"VoltageTooLow()\" to be finished")
-//      //Wake up all threads (the thread that started "VoltageTooLow()")
-//      //waiting on the condition.
-//      wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
-    }
-//      wxGetApp().StopInstableCPUcoreVoltageDetection();
-//      }
-//      else
-//      {
-//      }
-
-//  m_p_wxboxsizerOK_Cancel->Replace(
-//    m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage,
-//    m_p_wxstatictextSecondsUntilNextVoltageDecrease );
-
-//  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->Hide();
-//  m_p_wxstatictextSecondsUntilNextVoltageDecrease->Show();
-//  //http://docs.wxwidgets.org/stable/wx_wxsizer.html#wxsizerreplace:
-//  //"[...] call wxSizer::Layout to update the layout "on screen" after
-//  //replacing a child from the sizer."
-//  m_p_wxboxsizerOK_Cancel->Layout();
-//  Layout();
-  }
-  else
-  {
-    std::wstring std_wstr = L"For getting the number of seconds unstable CPU core voltage detection:"
-      "can't convert \"" +
-      ::GetStdWstring( wxstrSecondsUntilNextVoltageDecrease) + L"\" to int";
-    wxGetApp().MessageWithTimeStamp( std_wstr);
-  }
-  LOGN( FULL_FUNC_NAME << " end")
-}
-
 void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS(
   wxString & r_wxstrMessageFromService)
 {
+  LOGN(FULL_FUNC_NAME << " begin")
   mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   if( m_p_wxbitmaptogglebuttonPauseService->GetValue() )
+  {
     wxGetApp().PauseService( r_wxstrMessageFromService,
       mp_model->m_userinterfaceattributes.
       m_bTryToPauseViaServiceControlManagerIfViaIPCfails
       ) ;
+  }
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
-
+  LOGN(FULL_FUNC_NAME << " end")
 }
 
 inline void FreqAndVoltageSettingDlg::SetMessage(const wxString &
@@ -3280,9 +1530,9 @@ inline void FreqAndVoltageSettingDlg::SetMessage(const wxString &
   mp_wxstatictextMessage->SetToolTip(c_r_wxstrMessage);
 }
 
-//Must provide a voltage parameter because this function is called from
-// -OnStabilizeVoltageButton(...)
-// -OnApplyButton(...)
+/** Must provide a voltage parameter because this function is called from
+* -OnStabilizeVoltageButton(...)
+* -OnApplyButton(...) */
 void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
   float fVoltageInVolt)
 {
@@ -3388,6 +1638,7 @@ void FreqAndVoltageSettingDlg::ResumendFromStandByOrHibernate()
       //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ;
     }
   } // if( mp_i_cpucontroller )
+  LOGN( FULL_FUNC_NAME << "--end" )
 }
 
 void FreqAndVoltageSettingDlg::SetAttention(
@@ -3478,12 +1729,17 @@ void FreqAndVoltageSettingDlg::SetStartFindingLowestStableVoltageButton()
 //  // NOT evt->SetString(str) as this would be a shallow copy
 //  evt->SetString(str.c_str()); // make a deep copy
 //  wxGetApp().QueueEvent( evt );
+  //TODO: test
+  wxCommandEvent wxevent(wxEVT_SET_START_UNSTABLE_CPU_CORE_OPERATION_IMAGE);
+  //wxPostEvent(this, wxevent);
+  AddPendingEvent(wxevent);
 
 //  //from http://wiki.wxwidgets.org/Inter-Thread_and_Inter-Process_communication
 //  // notify the main thread
 //  wxCommandEvent event( wxEVT_COMMAND_TEXT_UPDATED, NUMBER_UPDATE_ID );
 //  event.SetInt(n);  // pass some data along the event, a number in this case
 //  GetEventHandler()->AddPendingEvent( event );
+//  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->
 }
 
 void FreqAndVoltageSettingDlg::SetMultiplierSliderToClosestValue(

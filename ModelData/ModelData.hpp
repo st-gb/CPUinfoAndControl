@@ -11,10 +11,14 @@
 #include <set> //for class std::set
 #include <string> //class std::string
 #include <vector> //for class std::vector
+//from http://stackoverflow.com/questions/3243454/what-is-the-linux-equivalent-to-maxdword
+#include <limits.h> //UINT_MAX
 
-#include "CPUcoreData.hpp"
+#include "CPUcoreData.hpp" //class CPUcoreData
+#include "LogFileAttributes.hpp" //class LogFileAttributes
 #include "VoltageAndFreq.hpp"
 #include <Controller/character_string/stdtstr.hpp>
+#include <stdint.h> //uint16_t
 
 #if defined COMPILE_AS_GUI
   #include <ModelData/UserInterfaceAttributes.hpp>
@@ -34,16 +38,16 @@
   #include "InstableCPUcoreVoltageDetection.hpp"
 #endif
 
+//Forward declarations:
 //class MSRdata ;
 //class ValueTables ;
-
 class I_CPUcontroller ;
-class CPUcoreData ;
+//class CPUcoreData ;
 
-//The member variables/ functions that differ between GUI and service _must_
-//be situated at the _end_ of _this_ class because all members that are used
-//in the attached (CPU controller) dynamic library must be aligned as in the
-//(CPU controller) executable (Graphical User Interface/ service!)
+/** The member variables/ functions that differ between GUI and service _must_
+* be situated at the _end_ of _this_ class because all members that are used
+* in the attached (CPU controller) dynamic library must be aligned as in the
+* (CPU controller) executable (Graphical User Interface/ service!) */
 class Model
 {
 public:
@@ -51,23 +55,21 @@ public:
   CPUcoreData m_cpucoredata ;
 
 #ifdef COMPILE_AS_EXECUTABLE
+  LogFileAttributes m_logfileattributes;
   //TODO all member that are needed by both the dyn libs and the executables
   //must be on top.
   BYTE m_byNumberOfCPUCores ;
-  bool m_bAppendProcessID ;
   volatile bool m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI;
   volatile bool m_bCollectPstatesAsDefault ;
   bool m_bEnableOvervoltageProtection ;
   bool m_bSkipCPUtypeCheck ;
   bool m_bSyncGUIshowDataWithService ;
-  bool m_bTruncateLogFileForEveryStartup ;
 //  bool m_bUseDefaultFormulaForOvervoltageProtection ;
 //  bool m_bUsePstate0AsMaxFreq ;
 //  double m_dPreviousPERF_CTRvalue ;
   I_CPUcontroller * mp_cpucontroller ;
 
   std::string m_strProcessorName ;
-  std::string m_stdstrLogFilePath ;
   std::tstring m_stdtstrProgramName ;
 
   std::string m_std_strDefaultCPUcoreUsageGetter;
@@ -86,7 +88,6 @@ public:
   //->Insert/ change additional data here.
 
   std::string m_std_strConfigFilePath;
-  std::string m_std_strLogFilePath;
   InstableCPUcoreVoltageDetection m_instablecpucorevoltagedetection;
   uint16_t m_StableCPUcoreVoltageWaitTimeInMillis;
 
@@ -108,8 +109,23 @@ public:
   ServiceAttributes m_serviceattributes ;
 #endif //#ifdef COMPILE_AS_SERVICE
 
-  Model( ) ;
-
+  Model( )
+    //C++ style inits:
+    :
+    //Initialize in the same order as textual in the declaration?
+    //(to avoid g++ warnings)
+    m_cpucoredata( * this)
+    , m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI(false)
+    , m_bCollectPstatesAsDefault(false)
+    , m_bEnableOvervoltageProtection(true)
+    , m_bSkipCPUtypeCheck(false)
+    , m_bSyncGUIshowDataWithService ( false )
+  //  , m_bTruncateLogFileForEveryStartup(true)
+    , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
+    , mp_cpucontroller (NULL)
+    , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
+    , m_std_strConfigFilePath( CONFIG_FILE_PATH )
+  {}
 //  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
   void AddValueTableRow(std::vector<std::string [2]>
     stdvecstdstrAttributeNameAndValue) ;
@@ -125,7 +141,8 @@ public:
 //      m_fOperatingSafetyMarginInVolt);
     WORD index = m_cpucoredata.GetIndexForClosestVoltage(fVoltageInVolt
       + m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt);
-    if( index != MAXWORD)
+    if( index != //MAXWORD
+        USHRT_MAX)
     {
       float fVoltageWithOperatingSafetyMargin = m_cpucoredata.
         m_arfAvailableVoltagesInVolt[index];
@@ -133,10 +150,11 @@ public:
           m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt )
         return fVoltageWithOperatingSafetyMargin;
       else
-        if( index + 1 < m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.
-          size() )
+        if( index + 1 < (WORD) m_cpucoredata.
+            m_stdset_floatAvailableVoltagesInVolt.size() )
           return m_cpucoredata.m_arfAvailableVoltagesInVolt[index + 1];
     }
+    return 0.0f;
   }
 #endif //#ifdef COMPILE_AS_GUI
 

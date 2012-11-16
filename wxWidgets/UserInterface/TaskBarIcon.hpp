@@ -80,10 +80,12 @@ public:
 
     virtual wxMenu * CreatePopupMenu();
     wxMenu * CreatePowerSchemesMenu() ;
+#ifdef _WIN32
     void CreatePowerSchemeMenuByNamesFromMemory(
       wxMenu * p_wxmenuPowerSchemes);
     void CreatePowerSchemeMenuByRetrieving(
       wxMenu * p_wxmenuPowerSchemes);
+#endif
     wxMenu * CreateSetMaximumCPUcoreMultiplierMenu();
     wxMenu * CreateSetThrottleTemperatureMenu();
     void DisconnectEventHandlers();

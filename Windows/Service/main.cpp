@@ -13,6 +13,9 @@
 // sein
 //for int ::CallFromMainFunction(int argc, char * argv[])
 #include <Windows/Service/CallFromMainFunction.h>
+ //std::tstring, GetStdWstring(...)
+#include <Controller/character_string/stdtstr.hpp>
+#include <Windows/Service/CPUcontrolService.hpp> //class CPUcontrolService
 
 #ifdef USE_VISUAL_LEAK_DETECTOR
   //Visual Leak Detector--detects memory leaks.
@@ -25,6 +28,8 @@
 #include <Controller/character_string/stdtstr.hpp>
 #include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
 
+extern CPUcontrolBase * gp_cpucontrolbase ;
+
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
 int main
@@ -35,14 +40,30 @@ int main
 {
   TCHAR ** ar_tchProgramArguments = ::GetTCHARarray_Inline(
     (const char **) ar_p_chProgramArguments, argc);
-  bool logFileIsOpen = ::OpenLogFile(//ar_p_chProgramArguments
+  LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
+  std::tstring std_tstrProgramName(ptstrProgramName) ;
+  std::wstring std_wstrProgramName = GetStdWstring( std_tstrProgramName ) ;
+  CPUcontrolService cpucontrolservice(
+    argc,
+    GetTCHARarray_Inline( (const char **) ar_p_chProgramArguments, argc),
+//            Get_wchar_t_Array_Inline( (const char **) argv, argc),
+//            std_tstrProgramName
+    std_wstrProgramName
+//            , xerces_ipc_data_handler
+    ) ;
+//          Xerces::IPCdataHandler xerces_ipc_data_handler(
+//            cpucontrolservice.m_model ) ;
+  gp_cpucontrolbase = & cpucontrolservice ;
+//  ::OpenLogFile
+  bool logFileIsOpen = cpucontrolservice.OpenLogFile(//ar_p_chProgramArguments
     ar_tchProgramArguments);
   int n = 2;
   if( logFileIsOpen )
   {
     CPUcontrolBase::OutputLinkageWarning();
     n = ::CallFromMainFunction(argc, //ar_p_chProgramArguments
-      ar_tchProgramArguments, NULL);
+      ar_tchProgramArguments, //NULL
+      & cpucontrolservice);
     if( (const char **) ar_tchProgramArguments != ar_p_chProgramArguments)
       ::DeleteTCHARarray(argc, ar_tchProgramArguments);
   }

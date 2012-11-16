@@ -220,66 +220,51 @@ void CPUcoreData::ClearCPUcontrollerSpecificAtts()
   m_stdsetvoltageandfreqAvailableFreq.clear() ;
 }
 
-CPUcoreData::CPUcoreData(Model & r_model)
-  //C++ style initializations:
-  : m_r_model (r_model),
-  m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
-  //This reserve is e.g. useful for watching TV: so the TV application does not
-  // stop showing an image when the time slices for the app wouldn't be
-  // sufficient.
-  , m_fCPUcoreFreqInMHzReserve(300.0f)
-  //, m_fCPUcoreFreqIncreaseFactor(1.5f)
-  //, m_fVoltageForMaxCPUcoreFreq(1.05f)
-  //, m_arfCPUcoreLoadInPercent(NULL)
-  //, m_arwCurrentFreqInMHz(NULL)
-  //, m_byMaxVoltageID(MAX_VALUE_FOR_VID)
-  //, m_byMinVoltageID(0)
-  //, m_byMainPLLoperatingFrequencyIDmax(CPU_CORE_DATA_NOT_SET)
+//CPUcoreData::CPUcoreData(Model & r_model)
+//  //C++ style initializations:
+//  : m_r_model (r_model),
+//  m_fCPUcoreLoadThresholdForIncreaseInPercent(80.0f)
+//  //This reserve is e.g. useful for watching TV: so the TV application does not
+//  // stop showing an image when the time slices for the app wouldn't be
+//  // sufficient.
+//  , m_fCPUcoreFreqInMHzReserve(300.0f)
+//  //, m_fCPUcoreFreqIncreaseFactor(1.5f)
+//  //, m_fVoltageForMaxCPUcoreFreq(1.05f)
+//  //, m_arfCPUcoreLoadInPercent(NULL)
+//  //, m_arwCurrentFreqInMHz(NULL)
+//  //, m_byMaxVoltageID(MAX_VALUE_FOR_VID)
+//  //, m_byMinVoltageID(0)
+//  //, m_byMainPLLoperatingFrequencyIDmax(CPU_CORE_DATA_NOT_SET)
+//
+////  , m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
+////  , m_conditionDVFSthreadMayChangeData( m_mutexDVFSthreadMayChangeData )
+//  {
+//    //LOGN("CPU attributes ctor")
+//    //TODO get the actual number of CPU cores and set THIS one.
+//    //SetCPUcoreNumber(2);
+//    //SetMaxFreqInMHz(2200);
+//    Init() ;
+//  }
 
-//  , m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
-//  , m_conditionDVFSthreadMayChangeData( m_mutexDVFSthreadMayChangeData )
-  {
-    //LOGN("CPU attributes ctor")
-    //TODO get the actual number of CPU cores and set THIS one.
-    //SetCPUcoreNumber(2);
-    //SetMaxFreqInMHz(2200);
-    Init() ;
-  }
+//CPUcoreData::CPUcoreData(
+//  Model & r_model,
+//  BYTE byNumberOfCPUcores,
+//  WORD wMaxFreqInMHz
+//  )
+//  //C++ style initializations:
+//  :
+//    m_r_model (r_model)
+//  //m_wMaxFreqInMHz(wMaxFreqInMHz)
+//
+////  m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
+//{
+//  Construct_Inline();
+//}
 
-CPUcoreData::CPUcoreData(
-  Model & r_model,
-  BYTE byNumberOfCPUcores,
-  WORD wMaxFreqInMHz
-  )
-  //C++ style initializations:
-  :
-    m_r_model (r_model)
-  //m_wMaxFreqInMHz(wMaxFreqInMHz)
-
-//  m_conditionCPUdataCanBeSafelyRead( m_mutexCPUdataCanBeSafelyRead )
-{
-  //LOGN("CPU attributes ctor 2")
-  //Call default constructor.
-  //CPUcoreData();
-  Init() ;
-  SetMaxFreqInMHz(wMaxFreqInMHz) ;
-  SetCPUcoreNumber(byNumberOfCPUcores);
-}
-
-CPUcoreData::~CPUcoreData()
-{
-  if( m_arfAvailableMultipliers )
-  {
-    delete [] m_arfAvailableMultipliers ;
-    m_arfAvailableMultipliers = NULL ;
-  }
-  if( m_arfAvailableVoltagesInVolt )
-  {
-    delete [] m_arfAvailableVoltagesInVolt ;
-    m_arfAvailableVoltagesInVolt = NULL ;
-  }
-  PossiblyReleaseMemForCoreNumAffectedData();
-}
+//CPUcoreData::~CPUcoreData()
+//{
+//  Destruct();
+//}
 
 //This method should be called by every c'tor.
 void CPUcoreData::Init()

@@ -252,6 +252,7 @@ public :
   bool OnInit();
   void OnServerEvent(wxSocketEvent & event);
   void OnSocketEvent(wxSocketEvent & event);
+  bool OpenLogFile(TCHAR * argv[]);
 
   bool Pause() ;
   SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;

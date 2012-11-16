@@ -83,7 +83,7 @@ public:
     r_fFrequencyInMHz =
       wHigherFreqInMHz -
       // (f / U) * U = f
-      fMHzPerVolt * fVoltageAboveMinusDesiredVoltage
+      (WORD) (fMHzPerVolt * fVoltageAboveMinusDesiredVoltage)
       ;
   }
   void GetInterpolatedVoltage(

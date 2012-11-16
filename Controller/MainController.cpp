@@ -132,8 +132,8 @@ void MainController::CreateBuiltInCPUcontrollerAndUsageGetter(
 //}
 }
 
-//May be called from GUI object or console's main() function.
-//Implements the factory software pattern.
+/** May be called from GUI object or console's main() function.
+* Implements the factory software pattern. */
 BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   I_CPUcontroller * & r_p_cpucontroller
   ,ICPUcoreUsageGetter * & r_p_icpucoreusagegetter)
@@ -178,7 +178,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
 //#endif
   }
   else
-    LOGN("number of CPU cores:"
+    LOGN( FULL_FUNC_NAME << "--number of CPU cores:"
       <<
       //Cast to integer to not output the value as character
       (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores )

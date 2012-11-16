@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * PerCPUcoreAttributes.hpp
  *
@@ -24,12 +31,12 @@ namespace wxWidgets
 }
 #endif
 
-//creating a special class for data for a single CPU core has the advantage:
-// if an attribute is added that exists for all CPU cores then we do not need
-// to allocate a dynamically created array (because the array size is unknown
-// at compile time) for _each_ attribute.
-// Instead, an array of the size >>number of logical CPU cores<< must exist
-//only once for _this_ class.
+/** creating a special class for data for a single CPU core has the advantage:
+* if an attribute is added that exists for all CPU cores then we do not need
+* to allocate a dynamically created array (because the array size is unknown
+* at compile time) for _each_ attribute.
+* Instead, an array of the size >>number of logical CPU cores<< must exist
+* only once for _this_ class. */
 class PerCPUcoreAttributes
 {
 //Sort the attributes  lexicographically for simplification of:

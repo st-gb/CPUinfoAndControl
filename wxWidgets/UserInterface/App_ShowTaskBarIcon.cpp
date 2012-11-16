@@ -164,9 +164,18 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
     CreateTaskBarIcon(m_p_CPUcoresMultipliersTaskbarIcon,
       "CPU cores multipliers in % of min and max");
 
-  if( ! CreateTaskBarIcon(m_p_HighestCPUcoreTemperatureTaskBarIcon,
+  if( CreateTaskBarIcon(m_p_HighestCPUcoreTemperatureTaskBarIcon,
       "highest CPU core temperature") )
   {
+    if( m_p_HighestCPUcoreTemperatureTaskBarIcon->m_p_wxicon_drawer )
+    {
+      wxDC & r_wxdc = m_p_HighestCPUcoreTemperatureTaskBarIcon->
+        m_p_wxicon_drawer->GetDC();
+      wxFont & wxfont = (wxFont &) r_wxdc.GetFont();
+      wxfont.SetPointSize(m_model.m_userinterfaceattributes.
+        m_nCPUcoreTempTaskBarIconFontSizeInPoint);
+      r_wxdc.SetFont(wxfont);
+    }
   //    #if defined(__WXCOCOA__)
   //      m_dockIcon = new TaskBarIcon(wxTaskBarIcon::DOCK);
   //    #endif

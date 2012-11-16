@@ -50,7 +50,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 AssignPointersToExportedExeMSRfunctions.h>
 
 #include <float.h> //for FLT_MIN
-//#include <sstream> //std::stringstream
+#include <sstream> //class std::stringstream
 #include <tchar.h> //_T()
 #include <windef.h> //for APIENTRY
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)

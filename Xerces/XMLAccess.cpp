@@ -197,7 +197,7 @@ inline void OutputXMLExceptionErrorMessage(
   getUTF8string_inline(stdwstrMessage, std_strMessage);
 //  LOGN_TYPE( "XMLException", )
   g_logger.Log_inline( std_strMessage,
-    I_LogFormatter::log_message_typeERROR);
+    LogLevel::log_message_typeERROR);
   p_userinterface->Confirm(
     stdwstrMessage
     );
@@ -239,7 +239,7 @@ inline void OutputSAXParseExceptionErrorMessage(
   std::string std_strMessage;
   getUTF8string_inline(stdwstrMessage, std_strMessage);
   g_logger.Log_inline( std_strMessage,
-    I_LogFormatter::log_message_typeERROR);
+    LogLevel::log_message_typeERROR);
   p_userinterface->MessageWithTimeStamp(stdwstrMessage);
 }
 
@@ -248,7 +248,7 @@ inline void OutputSAXExceptionErrorMessage(
   XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
   UserInterface *& p_userinterface)
 {
-  LOGN_TYPE( "SAXException", I_LogFormatter::log_message_typeERROR);
+  LOGN_TYPE( "SAXException", LogLevel::log_message_typeERROR);
   //Use wide string because maybe Chinese file names.
   std::wstring stdwstrMessage = L"SAX exception in document \""
     + GET_WCHAR_STRING_FROM_XERCES_STRING( r_inputsource.getSystemId() ) +
@@ -270,26 +270,26 @@ inline void OutputSAXExceptionErrorMessage(
   std::string std_strMessage;
   getUTF8string_inline(stdwstrMessage, std_strMessage);
   g_logger.Log_inline( std_strMessage,
-    I_LogFormatter::log_message_typeERROR);
+    LogLevel::log_message_typeERROR);
   //          return FAILURE;
 }
 
 char ReadXMLdocument(
-    XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
+  XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
 //	  Model & model,
-	  UserInterface * p_userinterface ,
+  UserInterface * p_userinterface ,
    //Base class of implementing Xerces XML handlers.
    //This is useful because there may be more than one XML file to read.
    //So one calls this functions with different handlers passed.
-	  XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
-    )
-	{
+  XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
+  )
+{
     LOGN( FULL_FUNC_NAME << "--begin" );
     BYTE byReturn = FAILURE ;
       //DEBUG("ReadXMLfileInitAndTermXerces begin--filename:%s\n",xmlFile);
     //Initialize to NULL just to avoid (g++) compiler warning.
-	  XERCES_CPP_NAMESPACE::SAX2XMLReader * p_sax2xmlreader = NULL ;
-	  p_sax2xmlreader = XMLReaderFactory::createXMLReader();
+    XERCES_CPP_NAMESPACE::SAX2XMLReader * p_sax2xmlreader = NULL ;
+    p_sax2xmlreader = XMLReaderFactory::createXMLReader();
     if( p_sax2xmlreader )
     {
       p_sax2xmlreader->setFeature(XMLUni::fgSAX2CoreValidation, true);
@@ -324,7 +324,7 @@ char ReadXMLdocument(
           << GetStdString_Inline(GET_WCHAR_STRING_FROM_XERCES_STRING(
               r_inputsource.getSystemId() )
             ) << "\"",
-            I_LogFormatter::log_message_typeSUCCESS
+            LogLevel::log_message_typeSUCCESS
           )
 //          if( model.m_bTruncateLogFileForEveryStartup )
 //              g_logger.TruncateFileToZeroAndRewrite() ;
@@ -348,7 +348,7 @@ char ReadXMLdocument(
       }
       catch (...)
       {
-        LOGN_TYPE( "Unexpected Exception at parsing XML", I_LogFormatter::
+        LOGN_TYPE( "Unexpected Exception at parsing XML", LogLevel::
           log_message_typeERROR ) ;
         p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
 //	        return FAILURE;
@@ -369,9 +369,9 @@ char ReadXMLdocument(
       //delete that parser object, once they no longer need it."
       delete p_sax2xmlreader;
     }
-    else
+    else //if( p_sax2xmlreader )
       p_userinterface->Confirm( "Xerces failed to create an XML reader" );
 //	  return SUCCESS;
     return byReturn ;
-	}
+  }
 //#endif //#ifdef COMPILE_WITH_XERCES

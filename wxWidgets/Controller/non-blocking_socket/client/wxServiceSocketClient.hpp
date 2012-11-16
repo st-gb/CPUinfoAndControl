@@ -10,7 +10,9 @@
 #include <wx/event.h> //wxEvtHandler
 #include <Controller/IPC/I_IPC.hpp>
 #include <windef.h> //BYTE, DWORD
-#include <wx/msw/winundef.h>
+#ifdef _WIN32
+  #include <wx/msw/winundef.h>
+#endif //#ifdef _WIN32
 
 #undef SendMessageA
 

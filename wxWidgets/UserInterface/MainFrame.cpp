@@ -139,7 +139,11 @@ wxString MainFrame::s_wxstrHighestCPUcoreTemperative ;
 wxString MainFrame::s_wxstrTaskBarIconToolTip =
   wxT("x86IandC--highest CPU core temperature [°C]") ;
 
+DEFINE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_REDRAW_EVERYTHING )
+
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
+  EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_REDRAW_EVERYTHING,
+    MainFrame::OnRedrawEverything)
   //"Cross-Platform GUI Programming with wxWidgets"
   // (Copyright © 2006 Pearson Education, Inc.)
   // ISBN 0-13-147381-6  "First printing, July 2005"
@@ -530,6 +534,7 @@ MainFrame::MainFrame(
 {
   LOGN("begin of main frame creation"//\n"
     )
+
   wxIcon wxicon;
   if( p_wxx86infoandcontrolapp->GetX86IandCiconFromFile(wxicon) )
   {
@@ -544,7 +549,8 @@ MainFrame::MainFrame(
     wxIcon wxiconThisDialog( x86IandC_xpm ) ;
     SetIcon(x86IandC_xpm);
   }
-  LOGN("# CPU cores: " << (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores)
+  LOGN(FULL_FUNC_NAME << " # CPU cores: " <<
+    (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores)
 //  m_p_wxtimer = new wxTimer( this ) ;
   mp_ar_voltage_and_multi = new VoltageAndMulti[
     mp_model->m_cpucoredata.m_byNumberOfCPUCores ] ;
@@ -1137,7 +1143,7 @@ BYTE MainFrame::CreateDynamicMenus()
 //  WORD wMenuID = ID_LastStaticEventID;
   //m_vecwxstring.push_back(wxString)
 //  wxMenu * p_wxmenuCore ;
-  LOGN("CPU core menu creation--number of CPU cores: " <<
+  LOGN(FULL_FUNC_NAME << " CPU core menu creation--number of CPU cores: " <<
     (WORD) mp_cpucoredata->m_byNumberOfCPUCores )
 //  byReturnValue =
 //  CreateDialogAndMenuForEveryCore() ;
@@ -1433,49 +1439,16 @@ void MainFrame::OnFindDifferentPstates( wxCommandEvent & WXUNUSED(event) )
 
 void MainFrame::OnLoadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event)
 {
-  wxString wxstrDynLibExtension = wxDynamicLibrary::GetDllExt();
-  wxString wxstrDynLibFilePath = ::wxFileSelector(
-    wxT("Select dynamic library for detecting an instable CPU core volatage")
-    //"default_path"
-    , //wxEmptyString
-    mp_wxx86infoandcontrolapp->
-      m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib
-    , wxEmptyString
-    , wxDynamicLibrary::GetDllExt()
-    , wxT("*") + wxstrDynLibExtension
-    , wxFD_OPEN
-    ) ;
-  if ( ! wxstrDynLibFilePath.empty() )
-  {
-    mp_wxx86infoandcontrolapp->
-      m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib =
-      wxstrDynLibFilePath.Left(
-        //0-based index of path separator = # of chars before it.
-        wxstrDynLibFilePath.rfind(
-        wxFileName::GetPathSeparator() )
-        );
-    //Unload attached dyn lib at first.
-    mp_wxx86infoandcontrolapp->UnloadDetectInstableCPUcoreVoltageDynLib();
-//    std::wstring std_wstrInstableCPUcoreVoltageDynLibPath = ::GetStdWstring(
-//      wxstrDynLibFilePath);
-    mp_wxx86infoandcontrolapp->//m_std_wstrInstableCPUcoreVoltageDynLibPath =
-      m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath =
-      ::GetStdWstring(wxstrDynLibFilePath);
-
-    if( mp_wxx86infoandcontrolapp->//LoadDetectInstableCPUcoreVoltageDynLib(
-      //std_wstrInstableCPUcoreVoltageDynLibPath);
-      InitUnstableVoltageDetectionDynLibAccess() == 0)
-//      m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib->SetHelp(
-//        wxstrDynLibFilePath);
-    { //By using a block/ braces: avoid g++ warning "Suspicious semicolon"
-      ;
-    }
-  }
+#ifdef _WIN32
+  mp_wxx86infoandcontrolapp->LoadDetectInstableCPUcoreVoltageDynLib();
+#endif
 }
 
 void MainFrame::OnUnloadDetectInstableCPUcoreVoltageDynLib(wxCommandEvent & event)
 {
+#ifdef _WIN32
   mp_wxx86infoandcontrolapp->UnloadDetectInstableCPUcoreVoltageDynLib();
+#endif
 }
 
 void MainFrame::OnMinimizeToSystemTray(wxCommandEvent & WXUNUSED(event))
@@ -1594,11 +1567,11 @@ void MainFrame::OnAttachCPUcontrollerDLL (wxCommandEvent & event)
   //Get rid of the leading ".".
   wxstrExtension = wxstrExtension.Right( wxstrExtension.length() - 1 ) ;
   wxString wxstrCPUcontrollerDynLibFilePath = ::wxFileSelector(
-    wxT("Select CPU controlling dynamic library") 
-    , wxEmptyString
-    , wxEmptyString
-    , wxstrExtension
-    , wxT("*.") + wxstrExtension
+    wxT("Select dynamic library for CPU info and/or control")
+    , wxEmptyString //default_path
+    , wxEmptyString //default_filename
+    , wxstrExtension //default_extension
+    , wxT("Dynamic Library files|*.") + wxstrExtension + wxT("|all files|*.*")//wildcard
     , wxFD_OPEN
     ) ;
   if ( ! wxstrCPUcontrollerDynLibFilePath.empty() )
@@ -1676,7 +1649,7 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
     , wxEmptyString
     , wxEmptyString
     , wxstrExtension
-    , wxT("*.") + wxstrExtension
+    , wxT("Dynamic Library files|*.") + wxstrExtension + wxT("|all files|*.*")//wildcard
     , wxFD_OPEN
     ) ;
   if ( ! wxstrFilePath.empty() )
@@ -1709,6 +1682,8 @@ void MainFrame::OnAttachCPUcoreUsageGetterDLL (wxCommandEvent & event)
 
         CPUcoreUsageGetterAttached(wxstrFilePath) ;
 
+        //TODO necessary? (because the CPU core number got from the usage
+        //getter may change )
         RedrawEverything() ;
       }
     }
@@ -1779,13 +1754,17 @@ void MainFrame::CPUcoreUsageGetterAttached(const wxString & wxstrFilePath)
       , //const bool enable
       true ) ;
 
+  //TODO do the folowing in base class (CPUcontrolBase)
   WORD wNumberOfLogicalCPUcores = mp_wxx86infoandcontrolapp->
     mp_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
-  if( wNumberOfLogicalCPUcores == 0 )
+  if( wNumberOfLogicalCPUcores == 0 && ! mp_cpucoredata->m_byNumberOfCPUCores )
+  {
     wNumberOfLogicalCPUcores = 1 ;
-  //TODO correct CPU core number
-  //Set -> allocate array for OnPaint()
-  mp_cpucoredata->SetCPUcoreNumber(wNumberOfLogicalCPUcores) ;
+    LOGN(FULL_FUNC_NAME << " setting # CPU cores to " << wNumberOfLogicalCPUcores)
+    //TODO correct CPU core number
+    //Set -> allocate array for OnPaint()
+    mp_cpucoredata->SetCPUcoreNumber(wNumberOfLogicalCPUcores) ;
+  }
 }
 void MainFrame::CPUcoreUsageGetterDeleted()
 {
@@ -1897,6 +1876,7 @@ void MainFrame::OnVoltageAndFrequencySettingsDialog( wxCommandEvent &
 #endif //#ifdef USE_CRIT_SEC_FOR_FREQ_AND_VOLT_SETTINGS_DLG_CONTAINER
 
       p_freqandvoltagesettingdlg->Show(true);
+      LOGN( FULL_FUNC_NAME << " after showing the volt n freq dialog")
     }
 #endif
   }
@@ -2331,6 +2311,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
       p_cpucontroller )
   {
     int nWidth ;
+    PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
+      m_arp_percpucoreattributes ;
 //    WORD wFreqInMHz = 0 ;
     wxCoord wxcoordWidth, wxcoordHeight ;
     wxString wxstr ;
@@ -2352,22 +2334,36 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
 //      if( mp_i_cpucontroller->GetCurrentPstate(wFreqInMHz, fVoltageInVolt,
 //          byCPUcoreID )
       if( //mp_i_cpucontroller->GetCurrentVoltageAndFrequency(
-          p_cpucontroller->GetCurrentVoltageAndFrequency(
-          fVoltageInVolt
-          , fMultiplier
-          , fReferenceClockInMHz
-          , wCPUcoreID
+          p_cpucontroller->//GetCurrentVoltageAndFrequency(
+          //Storing in the array is needed for showing the multis in the task
+          //bar icon.
+          GetCurrentVoltageAndFrequencyAndStoreValues(
+//          fVoltageInVolt
+//          , fMultiplier
+//          , fReferenceClockInMHz
+          //,
+          wCPUcoreID
           )
         )
       {
+        fVoltageInVolt = arp_percpucoreattributes[wCPUcoreID].m_fVoltageInVolt;
+        fMultiplier = arp_percpucoreattributes[wCPUcoreID].m_fMultiplier;
+        fReferenceClockInMHz = arp_percpucoreattributes[wCPUcoreID].
+          m_fReferenceClockInMhz;
+
         wFrequencyInMHz = (WORD) ( fReferenceClockInMHz * fMultiplier ) ;
+//          arp_percpucoreattributes[wCPUcoreID].GetFreqInMHz();
         if( wFrequencyInMHz > m_wMaximumCPUcoreFrequency )
           m_wMaximumCPUcoreFrequency = wFrequencyInMHz ;
         LOGN("StoreCurrentVoltageAndFreqInArray--fMultiplier:" << fMultiplier )
         mp_ar_voltage_and_multi[wCPUcoreID ].m_fMultiplier = fMultiplier ;
         mp_ar_voltage_and_multi[wCPUcoreID ].m_fVoltageInVolt = fVoltageInVolt;
-        if( fMultiplier == 0.0 || fReferenceClockInMHz == 0.0 )
-          r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxT("? MHz ") ;
+        if( fMultiplier == 0.0f)
+          r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
+            wxT("?*%.3fMHz=? MHz "), fReferenceClockInMHz);
+        else if( fReferenceClockInMHz == 0.0f )
+          r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
+            wxT("%.3f*?MHz=? MHz "), fMultiplier);
         else
           r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
             //Use wxT() to enable to compile with both unicode and ANSI.
@@ -2418,7 +2414,7 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
       {
         LOGN_TYPE("error getting the current CPU core voltage and frequency "
           "CPU controller via the CPU controller->not using their results",
-          I_LogFormatter::log_message_typeERROR)
+          LogLevel::log_message_typeERROR)
       }
       fTempInCelsius = //mp_i_cpucontroller->
         p_cpucontroller->
@@ -3453,10 +3449,12 @@ void MainFrame::GetCPUcoreInfoFromDataProvider(
 //    }
 //    if( ::wxGetApp().m_ipcclient.m_arbyIPCdata )
 //    {
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   p_cpucontroller = & mp_wxx86infoandcontrolapp->
       m_sax2_ipc_current_cpu_data_handler ;
   p_cpucoreusagegetter = & mp_wxx86infoandcontrolapp->
       m_sax2_ipc_current_cpu_data_handler ;
+#endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   //Prevent the modification of in-program data of either the the CPU core usage
   // or CPU controller data
   // else this may happen:
@@ -3526,6 +3524,7 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
     mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
     LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
   }
+//  LOGN( FULL_FUNC_NAME << p_cpucoreusagegetter << p_cpucontroller)
   //  DEBUGN("DrawCurrentCPUcoreInfo CPU controller address:" << mp_i_cpucontroller )
    //::wxGetApp().mp_cpucoreusagegetter->
   if( //mp_wxx86infoandcontrolapp->mp_cpucoreusagegetter
@@ -3910,12 +3909,15 @@ void MainFrame::PossiblyReleaseMemForCPUcontrollerUIcontrols()
 
 void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
 {
+  LOGN(FULL_FUNC_NAME << " begin")
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-  if( 
+  bool bOtherDVFSisEnabled =
     //mp_i_cpucontroller->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
     //mp_i_cpucontroller->OtherPerfCtrlMSRwriteIsActive()
-    mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->OtherDVFSisEnabled()
-    )
+    mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->OtherDVFSisEnabled();
+  LOGN(FULL_FUNC_NAME << " bOtherDVFSisEnabled: " << bOtherDVFSisEnabled)
+  if( bOtherDVFSisEnabled )
+  {
     if (::wxMessageBox(
         //We need a _T() macro (wide char-> L"", char->"") for EACH 
         //line to make it compatible between char and wide char.
@@ -3932,7 +3934,9 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
       //mp_i_cpucontroller->DisableFrequencyScalingByOS();
       mp_wxx86infoandcontrolapp->mp_dynfreqscalingaccess->
         DisableFrequencyScalingByOS() ;
+  }
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+  LOGN(FULL_FUNC_NAME << " end")
 }
 
 //#ifdef _TEST_PENTIUM_M
@@ -4163,6 +4167,12 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
 }
 #endif //#ifdef PRIVATE_RELEASE //hide the other possibilities
 
+  void MainFrame::OnRedrawEverything(wxCommandEvent & evt )
+  {
+    LOGN( FULL_FUNC_NAME << "--begin")
+    RedrawEverything();
+  }
+
 #ifdef wxHAS_POWER_EVENTS
   void MainFrame::OnResume(wxPowerEvent & WXUNUSED(event) )
   {
@@ -4214,13 +4224,14 @@ void MainFrame::OnSize( wxSizeEvent & //WXUNUSED(
                      sizeevent//)
                      )
 {
-  LOGN("OnSize")
+  LOGN( //"OnSize"
+    FULL_FUNC_NAME )
   RedrawEverything() ;
 }
 
 void MainFrame::OnSizing(wxSizeEvent & wxSizeEvent)
 {
-
+  LOGN(FULL_FUNC_NAME)
 }
 
 #ifdef wxHAS_POWER_EVENTS
@@ -4323,16 +4334,21 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
     if( //m_bAllowCPUcontrollerAccess 
       bAllowCPUcontrollerAccess )
     {
+      static bool isIconized, isVisible;
+      isIconized = IsIconized();
+      //TODO: returns true even if not visible (hidden bei other frames) ->
+      // get window client update regions to decide whether to redraw.
+      isVisible = IsVisible();
       //Even if this window is not visible (iconized/ hidden) the highest
       //temperature should be shown in the task bar/ system tray.
       if( //If the window is hidden, "IsIconized()" returns "false"?
-          IsIconized() ||
+          isIconized ||
 //          !
 //          //"Returns true if this window is currently active, i.e. if the user
 //          //is currently working with it."
 //          IsActive()
           ! //IsVisible() returns true (even) if the window is iconized.
-          IsVisible()
+          isVisible
         )
       {
         //If this window is iconized then OnPaint(...) isn't called and so
@@ -4355,20 +4371,32 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
             )
           )
         {
-          //respect # of cpu cores
-          for ( WORD wCPUcoreID = 0 ; wCPUcoreID <
-            mp_cpucoredata->m_byNumberOfCPUCores ; ++ wCPUcoreID )
-          {
-            s_arfTemperatureInDegreesCelsius[ wCPUcoreID ] = p_cpucontroller->
-              GetTemperatureInCelsius(wCPUcoreID) ;
-          }
           LOGN("DrawCurrentCPUcoreData leaving IPC 2 in-program data crit sec")
           mp_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
           LOGN("DrawCurrentCPUcoreData after leaving IPC 2 in-program data crit sec")
-
-          ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+          if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon )
+          {
+            //respect # of cpu cores
+            for ( WORD wCPUcoreID = 0 ; wCPUcoreID <
+              mp_cpucoredata->m_byNumberOfCPUCores ; ++ wCPUcoreID )
+            {
+              s_arfTemperatureInDegreesCelsius[ wCPUcoreID ] = p_cpucontroller->
+                GetTemperatureInCelsius(wCPUcoreID) ;
+            }
+            ShowHighestCPUcoreTemperatureInTaskBar(p_cpucontroller) ;
+          }
+#endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
           ShowCPUcoreUsagesInTaskBar(p_cpucontroller);
-          ShowCPUcoresMultipliersInTaskBar(p_cpucontroller);
+          if( mp_model->m_userinterfaceattributes.m_bShowCPUcoreUsagesIconInTaskBar )
+          {
+            //respect # of cpu cores
+            for ( WORD wCPUcoreID = 0 ; wCPUcoreID <
+              mp_cpucoredata->m_byNumberOfCPUCores ; ++ wCPUcoreID )
+              p_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(
+                wCPUcoreID);
+            ShowCPUcoresMultipliersInTaskBar(p_cpucontroller);
+          }
         }
       }
       else // !IsIconized() && IsVisible()
@@ -4401,6 +4429,8 @@ void MainFrame::OnTimerEvent(wxTimerEvent & event)
           //Note that repainting doesn't happen immediately but only during the
           //next event loop iteration, if you need to update the window
           //immediately you should use Update() instead."
+
+          // -> EVT_PAINT -> MainFrame::OnPaint(...) is called.
           Refresh() ;
       }
     }
@@ -4730,6 +4760,18 @@ void MainFrame::ShowCPUcoreUsagesInTaskBar(
           s_wxiconCPUcoreUsages, wxT("x86IandC--CPU cores usages") )
         )
       {
+#ifdef _DEBUG
+        wxBitmap & wxbmp //(s_wxiconCPUcoreUsages);
+          = * mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon->
+          m_p_wxicon_drawer->m_p_wxbitmapToDrawOn;
+        wxbmp.SaveFile(
+          // const wxString& name
+          wxT("CPUcoreUsages.bmp")
+          //wxBitmapType type
+          , //wxBITMAP_TYPE_XPM  did work on Windows
+          wxBITMAP_TYPE_BMP
+          );
+#endif
 //        if( ! mp_wxmenuFile->IsEnabled() )
           //The menu item may be disabled if setting the icon failed for the
           //1st time (if started via the service on logon and the the task bar
@@ -4780,9 +4822,9 @@ void MainFrame::ShowCPUcoresMultipliersInTaskBar(
 
         float fMaxMultiMinusMinMulti = fMaximumCPUcoreMultiplier -
           fMinimumCPUcoreMultiplier;
-        float fVoltageInVolt;
+//        float fVoltageInVolt;
         float fMultiplier;
-        float fReferenceClockInMHz;
+//        float fReferenceClockInMHz;
 //        WORD wCPUcoreID;
         float currentMultiMinusMinMulti;
         float CPUcoreMultiplierInPercentOfMinAndMax;
@@ -4792,13 +4834,14 @@ void MainFrame::ShowCPUcoresMultipliersInTaskBar(
           fMultiplier = mp_cpucoredata->m_arp_percpucoreattributes[
             wCPUcoreID].m_fMultiplier;
 
-          if( p_i_cpucontroller->GetCurrentVoltageAndFrequency(
-              fVoltageInVolt
-              , fMultiplier
-              , fReferenceClockInMHz
-              , wCPUcoreID
-              )
-            )
+          //GetCurrentVoltageAndFrequency(...) should have been called right before.
+//          if( p_i_cpucontroller->GetCurrentVoltageAndFrequency(
+//              fVoltageInVolt
+//              , fMultiplier
+//              , fReferenceClockInMHz
+//              , wCPUcoreID
+//              )
+//            )
           {
             //possible_multis: [min_multi ... max_multi].
             //current_multi is_element_of possible_multis.
@@ -4836,9 +4879,21 @@ void MainFrame::ShowCPUcoresMultipliersInTaskBar(
       }
       if( mp_wxx86infoandcontrolapp->m_p_CPUcoresMultipliersTaskbarIcon->
           SetIcon(s_wxiconCPUcoresMultipliers,
-          wxT("x86IandC--CPU cores multipliers") )
+            wxT("x86IandC--CPU cores multipliers in % of max - min multiplier") )
         )
       {
+#ifdef _DEBUG
+        wxBitmap & wxbmp //(s_wxiconCPUcoreUsages);
+          = * mp_wxx86infoandcontrolapp->m_p_CPUcoresMultipliersTaskbarIcon->
+          m_p_wxicon_drawer->m_p_wxbitmapToDrawOn;
+        wxbmp.SaveFile(
+          // const wxString& name
+          wxT("CPUcoreMultipliers.bmp")
+          //wxBitmapType type
+          , //wxBITMAP_TYPE_XPM  did work on Windows
+          wxBITMAP_TYPE_BMP
+          );
+#endif
   //        if( ! mp_wxmenuFile->IsEnabled() )
           //The menu item may be disabled if setting the icon failed for the
           //1st time (if started via the service on logon and the the task bar
