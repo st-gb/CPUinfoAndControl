@@ -70,8 +70,8 @@ AssignPointerToExportedExeReadPCIconfig.h>
 //  #include <global.h> //logging
   #include <Controller/CPU-related/AMD/Griffin/GetAvailableMultipliers.hpp>
 
-  extern ReadMSR_func_type g_pfnreadmsr ;
-  extern WriteMSR_func_type g_pfn_write_msr ;
+//  extern ReadMSR_func_type g_pfnreadmsr ;
+//  extern WriteMSR_func_type g_pfn_write_msr ;
 //  extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
   ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
   extern float g_fReferenceClockInMHz ;
@@ -105,13 +105,15 @@ AssignPointerToExportedExeReadPCIconfig.h>
       ;
     std::string stdstrFilename = strExeFileNameWithoutDirs +
         ("GriffinControllerDLL_log.txt") ;
-    if( g_logger.OpenFile2( stdstrFilename ) )
+#ifdef _DEBUG
+    if( g_logger.OpenFileA( stdstrFilename ) )
   //        SHOW_VIA_GUI("log file is open")
   //      else
   //        SHOW_VIA_GUI("log file is closed")
 
   //      g_logger.Log("this Log file is open");
     g_logger.CreateFormatter("htm");
+#endif
   //      if( g_logger.GetFormatter() )
   //        g_logger.Log("m_p_log_formatter is not NULL");
   //      std::string std_str = "std::string";

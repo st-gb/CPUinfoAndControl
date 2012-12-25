@@ -9,6 +9,7 @@
 #define AMD_NPT_FAMILY_0FH_REGISTERS_H_
 
 #include "AMD_NPT_family_0Fh_FIDVID_STATUS_register.h"
+#include <Controller/CPU-related/AMD/AMD_MSR_adresses.h>
 
 //10.5 Processor Performance States:
 //MSR C001_0041h (FIDVID_CTL) and MSR C001_0042h (FIDVID_STATUS) are used for
@@ -17,9 +18,6 @@
 // "EventSelect 07Fh [L2 Fill/Writeback]"
 #define EVENT_SELECT 07Fh //[L2 Fill/Writeback],
 // "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
-
-#define FIDVID_CTL_MSR_ADDRESS 0xC0010041
-#define FIDVID_CTL_VOLTAGE_ID_START_BIT 8
 
 //Thermtrip Status Register Function 3: Offset E4h
 #define CPU_TEMPERATURE_OFFSET 0xE4

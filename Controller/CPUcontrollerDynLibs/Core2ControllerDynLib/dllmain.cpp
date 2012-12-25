@@ -25,7 +25,9 @@
 #endif //#ifdef INSERT_DEFAULT_P_STATES
 //#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 //  #include <Controller/CPU-related/Intel/Intel_registers.h>
-#include <Controller/CPU-related/Intel/Core/Core.hpp>
+#include <Controller/CPU-related/Intel/Core2/Core2.hpp>
+// Intel::Pentium_M::GetAvailableMultipliers(...)
+#include <Controller/CPU-related/Intel/Core/CoreAndCore2.hpp>
 //  #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 //  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include <Controller/AssignPointersToExportedExeFunctions/\
@@ -60,6 +62,9 @@ AssignPointersToExportedExeMSRfunctions.h>
 #ifndef APIENTRY
   #define APIENTRY
 #endif
+
+float g_fReferenceClockInMHz;
+BYTE g_byValue1;
 
 #ifdef COMPILE_WITH_LOG
 //g_logger, DEBUGN()
@@ -116,7 +121,7 @@ bool Init()
 #endif
     return FALSE ;
   }
-  GetReferenceClockFromMSR_FSB_FREQ() ;
+  Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
   DEBUGN( FULL_FUNC_NAME << "ref. clock in MHz:" << g_fReferenceClockInMHz)
 
   //      //Force the cond. "< min. time diff" to become true.
@@ -132,14 +137,11 @@ bool Init()
 }
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-//For exporting this function with the same name as here in the source file.
-//Especially for MinGW this line is needed in order to be called automatically
-//for DLL attach / detach etc. actions.
-EXPORT
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-           )
+EXPORT BOOL APIENTRY DllMain(
+  HMODULE hModule,
+  DWORD  ul_reason_for_call,
+  LPVOID lpReserved
+  )
 {
   switch (ul_reason_for_call)
   {
@@ -154,14 +156,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 }
 #endif //#ifdef _WIN32
 
-//#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
-#define NEHALEM_DLL_CALLING_CONVENTION
+//#define DLL_CALLING_CONVENTION __stdcall
+#define DLL_CALLING_CONVENTION
 
-EXPORT
-//The array pointed to by the return value must be freed by the caller (i.e.
-//x86I&C GUI or service) of this function.
-float *
-  NEHALEM_DLL_CALLING_CONVENTION
+/** The array pointed to by the return value must be freed by the caller (i.e.
+* x86I&C GUI or service) of this function. */
+EXPORT float * DLL_CALLING_CONVENTION
   //The reference clock might change, also during runtime.
   //This is why it is a good idea to get the possible multipliers.
   GetAvailableMultipliers(
@@ -189,17 +189,14 @@ float *
 
 //  * p_wNumberOfArrayElements = 0 ;
 //  return NULL ;
-  return GetAvailableMultipliersIntelCore( * p_wNumberOfArrayElements ) ;
+  return Intel::Core2::GetAvailableMultipliers( * p_wNumberOfArrayElements ) ;
 }
 
-EXPORT
-//The array pointed to by the return value must be freed by the caller (i.e.
-//x86I&C GUI or service) of this function.
-float *
-  NEHALEM_DLL_CALLING_CONVENTION
-  GetAvailableVoltagesInVolt(
-    WORD wCoreID
-    , WORD * p_wNum )
+/** The array pointed to by the return value must be freed by the caller (i.e.
+* x86I&C GUI or service) of this function. */
+EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
+  WORD wCoreID
+  , WORD * p_wNum )
 {
   //See "Intel® Core™2 Duo Mobile Processor, Intel® Core™2 Solo Mobile
   //Processor and Intel® Core™2 Extreme Mobile Processor on 45-nm Process
@@ -210,22 +207,19 @@ float *
 
 //  * p_wNum = 0 ;
 //  return NULL ;
-  return GetAvailableVoltagesInVoltIntelCore( * p_wNum ) ;
+  return Intel::Core2::GetAvailableVoltagesInVolt( * p_wNum ) ;
 }
 
-EXPORT
-  BYTE
-  NEHALEM_DLL_CALLING_CONVENTION
-  GetCurrentVoltageAndFrequency(
-    float * p_fVoltageInVolt
-    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-    , float * p_fMultiplier
-    , float * p_fReferenceClockInMHz
-    , WORD wCoreID
+EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
+  float * p_fVoltageInVolt
+  //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+  , float * p_fMultiplier
+  , float * p_fReferenceClockInMHz
+  , WORD wCoreID
   )
 {
   DEBUGN( FULL_FUNC_NAME << "--begin")
-  return GetCurrentVoltageAndFrequencyIntelCore(
+  return Intel::Core2::GetCurrentVoltageAndFrequency(
     p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
     , p_fMultiplier
@@ -235,14 +229,11 @@ EXPORT
 //    return byRet ;
 }
 
-EXPORT
-float
-  NEHALEM_DLL_CALLING_CONVENTION
-  GetTemperatureInCelsius ( WORD wCoreID
+EXPORT float DLL_CALLING_CONVENTION GetTemperatureInCelsius ( WORD wCoreID
   )
 {
   return //(float) byTempInDegCelsius ;
-    GetTemperatureInDegCelsiusIntel( wCoreID ) ;
+    Intel::CoreAndCore2::GetTemperatureInDegCelsius( wCoreID ) ;
 }
 
 #ifdef INSERT_DEFAULT_P_STATES
@@ -253,7 +244,7 @@ void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
   float fVoltageForHighestMulti ;
   float fHighestMulti ;
 
-  if( GetDefaultPstates(
+  if( Intel::Core2::GetDefaultPstates(
       fVoltageForMiddleMulti,
       fMiddleMulti,
       fVoltageForHighestMulti,
@@ -298,9 +289,7 @@ void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
 }
 #endif //INSERT_DEFAULT_P_STATES
 
-EXPORT
-void
-  NEHALEM_DLL_CALLING_CONVENTION
+EXPORT void DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
 #ifdef INSERT_DEFAULT_P_STATES
   /** CPUaccess object inside the exe.*/
@@ -318,9 +307,7 @@ void
 #endif
 }
 
-EXPORT
-  BYTE
-  NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
+EXPORT BYTE DLL_CALLING_CONVENTION //can be omitted.
   SetCurrentVoltageAndMultiplier(
     float fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -331,7 +318,6 @@ EXPORT
   DEBUGN( FULL_FUNC_NAME << "--begin")
 //    g_byValue1 = SetCurrentVoltageAndMultiplierIntelCore(
 //      fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
-  return //g_byValue1 ;
-    SetCurrentVoltageAndMultiplierIntelCore(
+  return Intel::Core2::SetCurrentVoltageAndMultiplier(
       fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
 }

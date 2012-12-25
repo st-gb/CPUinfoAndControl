@@ -33,6 +33,8 @@
 #include <Controller/CPU-related/PerformanceCounterValueDiff.h>
 //for IA32_PERF_STATUS etc.
 #include <Controller/CPU-related/Intel/Intel_registers.h>
+//Intel::Pentium_M::GetVoltage(...)
+#include <Controller/CPU-related/Intel/PentiumM/PentiumM_GetVoltage.hpp>
 #include <winnt.h> //ULONGLONG
 #include "PentiumM_registers.h" //MAXIMUM_PERFORMANCE_COUNTER_VALUE
 
@@ -52,7 +54,7 @@ extern bool gs_b2ndTimeOrLaterReadTSCandFIDchange ;
 #endif //GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
 
 //Forward declarations of functions.
-inline float GetVoltage(BYTE byVoltageID) ;
+//inline float GetVoltage(BYTE byVoltageID) ;
 inline float GetVoltageID_PentiumM_asFloat(float fVoltage ) ;
 
 //Purpose of this function: converting from float to integer causes rounding
@@ -111,7 +113,7 @@ inline BYTE GetCurrentVoltageAndFrequencyPentium_M(
 //      r_wFreqInMHz = r_wFreqInMHz ;
 //#endif
 //    BYTE byVoltageID = ( g_ui32LowmostBits & 255 ) ;
-    r_fVoltageInVolt = GetVoltage( //byVoltageID
+    r_fVoltageInVolt = Intel::Pentium_M::GetVoltage( //byVoltageID
       ( g_ui32LowmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
 #ifdef _DEBUG
 //    byVoltageID = byVoltageID ;
@@ -134,57 +136,6 @@ inline BYTE GetCurrentVoltageAndFrequencyPentium_M(
 #endif
   return 0 ;
 //  return bySuccess ;
-}
-
-/** Pentium M has default voltages for min and max multiplier stored in
- * MSRegister */
-inline BYTE GetDefaultPstates(
-  float & fVoltageForLowestMulti,
-  float & fLowestMulti,
-  float & fVoltageForHighestMulti,
-  float & fHighestMulti
-  )
-{
-  if( ReadMSR(
-    //MIN_AND_MAX_FID ,
-    //According to the MSR walker of CrystalCPUID:
-    //for Pentium M reg. addr. 0x198:
-    //Bit 24-32 showed hex "0E" for a max. multipl. "14" for 1.86 133 MHz FSB.
-    //Bit 24-32 showed hex "0C" for a max. multipl. "12" for 1.6 133 MHz FSB.
-    IA32_PERF_STATUS ,
-    & g_ui32LowmostBits, // bits 0-31 (register "EAX")
-    & g_ui32HighmostBits,
-    //m_dwAffinityMask
-//    1 << wCoreID
-    1
-    )
-  )
-  {
-    //CrystalCPUID's MSR walker:
-    //00000198 : 06120C26 06000C26
-    //           06 : min multi
-    //             12: default voltage for min multi
-    //               0C : max multi
-    //                 26: default voltage for max multi
-    fVoltageForHighestMulti = GetVoltage(
-      ( g_ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
-    DEBUGN("fVoltageForHighestMulti: " << fVoltageForHighestMulti )
-
-    g_ui32HighmostBits >>= 8 ;
-    fHighestMulti = ( g_ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ;
-    DEBUGN("fHighestMulti: " << fHighestMulti )
-
-    g_ui32HighmostBits >>= 8 ;
-    fVoltageForLowestMulti = GetVoltage(
-      ( g_ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
-    DEBUGN("fVoltageForLowestMulti: " << fVoltageForLowestMulti )
-
-    g_ui32HighmostBits >>= 8 ;
-    fLowestMulti = ( g_ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ;
-    DEBUGN("fLowestMulti: " << fLowestMulti )
-    return 1 ;
-  }
-  return 0 ;
 }
 
 inline void SelectClocksNotHaltedPerformanceCounterEvent_Pentium_M(
@@ -257,14 +208,6 @@ inline float GetTemperatureInDegCelsiusPentiumM()
     : //30.0
     CPU_TEMP_IS_BELOW_CRITICAL
     ;
-}
-
-inline float GetVoltage(BYTE byVoltageID)
-{
-  //Pentium M datasheet: Table 3-1: 0.016 Volt diff = 1 VID step
-  //Examined following values :
-  //Voltage ID 0 = 0.7V 1=0.716 V,...40=1.340 Volt
-  return 0.7 + 0.016 * byVoltageID ;
 }
 
 inline float GetVoltageID_PentiumM_asFloat(float fVoltageInVolt)

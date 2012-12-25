@@ -95,13 +95,13 @@ inline BYTE CPUID(
    DWORD_PTR affinityMask  // Thread Affinity Mask
     )
   {
-    DEBUGN("inline WriteMSR("
-      << dwRegisterIndex
-      << "low:" << getBinaryRepresentation(dwEAX)
-      << "high:" << getBinaryRepresentation(dwEDX)
-      << affinityMask
-      << ")"
-      )
+//    DEBUGN("inline WriteMSR("
+//      << dwRegisterIndex
+//      << "low:" << getBinaryRepresentation(dwEAX)
+//      << "high:" << getBinaryRepresentation(dwEDX)
+//      << affinityMask
+//      << ")"
+//      )
     BOOL _bool = ( * g_pfn_write_msr)(
       dwRegisterIndex ,
       dwEAX ,

@@ -9,8 +9,6 @@
 //#include "RegisterData.hpp" //class MSRdata
 #include <Controller/MSVC_adaption/tchar.h>
 
-#define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
-#define CONFIG_FILE_PATH "configuration"
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
 //Model::Model()

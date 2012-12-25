@@ -26,7 +26,14 @@
 
   #include <string> //std::string
   #include <sstream> //for std::istringstream
-	
+
+#ifdef __linux__
+  #define OS_NAME "Linux"
+#endif
+#ifdef _WIN32
+  #define OS_NAME "Windows"
+#endif
+
 	//#define MB_CUR_MAX 1 
 //  extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
 	
@@ -221,23 +228,6 @@
       LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
         << std_strAttributeName << "\" failed",
         LogLevel::log_message_typeINFO)
-    std_strAttributeName = "default_CPU_core_usage_getter";
-    if( XercesAttributesHelper::GetAttributeValue
-        (
-          cr_xercesc_attributes,
-          std_strAttributeName,
-          m_p_model->m_std_strDefaultCPUcoreUsageGetter
-        ) == XercesAttributesHelper::getting_attribute_value_succeeded
-      )
-    {
-      LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
-        << std_strAttributeName << "\" succeeded",
-        LogLevel::log_message_typeSUCCESS)
-    }
-    else
-      LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
-        << std_strAttributeName << "\" failed",
-        LogLevel::log_message_typeINFO)
   }
 
   void SAX2MainConfigHandler::startElement
@@ -246,12 +236,12 @@
     const XMLCh * const cpc_xmlchLocalName,
     const XMLCh * const cpc_xmlchQualifiedName,
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
-	  )
-	{
-	  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-	    cpc_xmlchLocalName);
-	  if( pchXMLelementName )
-	  {
+    )
+  {
+    char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
+      cpc_xmlchLocalName);
+    if( pchXMLelementName )
+    {
 //	    if( m_strTopmostXMLelement.empty() )
 //	    {
 //	      m_strTopmostXMLelement = std::string(pchXMLelementName);
@@ -272,6 +262,26 @@
         "etc" )
       {
         HandleTopmostXMLelement(cr_xercesc_attributes) ;
+      }
+      else if(m_strElementName == OS_NAME)
+      {
+        std::string std_strAttributeName = "default_CPU_core_usage_getter";
+        if( XercesAttributesHelper::GetAttributeValue
+            (
+              cr_xercesc_attributes,
+              std_strAttributeName,
+              m_p_model->m_std_strDefaultCPUcoreUsageGetter
+            ) == XercesAttributesHelper::getting_attribute_value_succeeded
+          )
+        {
+          LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
+            << std_strAttributeName << "\" succeeded",
+            LogLevel::log_message_typeSUCCESS)
+        }
+        else
+          LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
+            << std_strAttributeName << "\" failed",
+            LogLevel::log_message_typeINFO)
       }
       else if( m_strElementName == "resume_from_standby_or_hibernation")
         HandleResumeFromStandbyOrHibernationXMLelement(cr_xercesc_attributes);

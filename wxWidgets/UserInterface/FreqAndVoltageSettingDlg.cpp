@@ -140,6 +140,9 @@ BEGIN_EVENT_TABLE(KeyEventPanel, wxPanel)
   EVT_CHAR(KeyEventPanel::OnChar)
 END_EVENT_TABLE()
 
+#ifdef _WIN32
+  #define COMPILE_WITH_UNSTABLE_CPU_OPERATION_DETECTION
+#endif
 DEFINE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE )
 DEFINE_LOCAL_EVENT_TYPE( wxEVT_SET_START_UNSTABLE_CPU_CORE_OPERATION_IMAGE )
 
@@ -161,17 +164,17 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
 //    FreqAndVoltageSettingDlg::OnSpinSecondsUntilVoltageDecreaseSpinButton)
 //#endif
   EVT_BUTTON( ID_DecreaseVoltage, FreqAndVoltageSettingDlg::OnDecVoltage)
-//  EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
+  EVT_BUTTON( ID_SpinVoltage, FreqAndVoltageSettingDlg::OnIncVoltage)
 
-//  TOGGLE_BUTTON_OR_BUTTON_EVENT_MACRO( ID_SelectPstateViaMousePos,
-//    FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos)
-//
-//  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
-//    ID_PreventVoltageAboveDefaultVoltageCheckbox,
-//    FreqAndVoltageSettingDlg::OnPreventVoltageAboveDefaultVoltageCheckbox)
-//  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
-//    ID_PreventVoltageBelowLowestStableVoltageCheckbox,
-//    FreqAndVoltageSettingDlg::OnPreventVoltageBelowLowestStableVoltageCheckbox)
+  TOGGLE_BUTTON_OR_BUTTON_EVENT_MACRO( ID_SelectPstateViaMousePos,
+    FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos)
+
+  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
+    ID_PreventVoltageAboveDefaultVoltageCheckbox,
+    FreqAndVoltageSettingDlg::OnPreventVoltageAboveDefaultVoltageCheckbox)
+  WX_BITMAP_TOGGLE_BUTTON_EVENT_MACRO(
+    ID_PreventVoltageBelowLowestStableVoltageCheckbox,
+    FreqAndVoltageSettingDlg::OnPreventVoltageBelowLowestStableVoltageCheckbox)
 
   //see http://www.wxwidgets.org/docs/faqgtk.htm#charinframe:
   //"In wxGTK, the frames never get focus and so can never receive CHAR nor
@@ -207,7 +210,7 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
     //(wxObjectEventFunction)(wxEventFunction)static_cast<
     //  wxCommandEventFunction>(&
     //  FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton), 0),
-
+#ifdef BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
   //  EVT_BUTTON(ID_AutoConfigureVoltageSettings, FreqAndVoltageSettingDlg::
   //    OnAutoConfigureVoltageSettingsButton)
   //  EVT_BUTTON(ID_findLowestStableVoltage,
@@ -220,6 +223,7 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
     FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton)
   EVT_BUTTON(ID_stopFindingLowestStableVoltage,
     FreqAndVoltageSettingDlg::OnStopFindingLowestStableCPUcoreVoltageButton)
+  #endif //BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
 #endif
 END_EVENT_TABLE()
 
@@ -262,6 +266,12 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   , mp_model ( p_cpucontroller->mp_model )
   , m_wxstrIconFilesPrefix( wxT("icons/") )
   , m_p_wxtextctrlInstableCPUcoreVoltageWarning(NULL)
+#ifdef _DEBUG
+  , mp_wxbuttonApply (NULL)
+  , m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage(NULL)
+  , m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage(NULL)
+  , m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage(NULL)
+#endif
 {
   LOGN("voltage and freq dialog begin")
 //  //http://docs.wxwidgets.org/trunk/classwx_tool_tip.html
@@ -321,7 +331,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 
   AddCPUcoreVoltageSizer(p_wxboxsizerTop) ;
 
-//  AddVoltageSettingsSizer(p_wxboxsizerTop );
+  AddVoltageSettingsSizer(p_wxboxsizerTop );
 
 //  AddSetAsWantedVoltageSizer(p_wxboxsizerTop );
     //sizerTop->AddSpacer(50) ;
@@ -335,26 +345,22 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   //  ) );
   AddApplyOrCancelSizer(p_wxboxsizerTop) ;
 
-  m_p_wxboxsizerMessage = new wxBoxSizer(wxHORIZONTAL);
-
-  mp_wxstatictextMessage = new wxStaticText(this, wxID_ANY, wxT("") );
-  m_p_wxboxsizerMessage->Add( mp_wxstatictextMessage ) ;
-
-  p_wxboxsizerTop->Add(
-      m_p_wxboxsizerMessage,
-      0 ,
-      wxFIXED_MINSIZE,
-      //Determines the border width, if the flag  parameter is set to include
-      //any border flag.
-      2
-      );
+  AddMessageControl(p_wxboxsizerTop);
 
   LOGN("before adding to the outer sizer")
 //  wxPanel * p_wxpanel = new wxPanel( this, ID_Panel ) ;
+
+#ifdef _WIN32
+  //Linux version crashes when these 2 lines are uncommented?!
   KeyEventPanel * p_wxpanel = new KeyEventPanel( * this ) ;
+//  AddChild( p_wxpanel ) ;
+  p_wxboxsizerTop->Add(p_wxpanel);
+#endif
+
   SetSizer(p_wxboxsizerTop);
+
 //  p_wxpanel->SetSizer(p_wxboxsizerTop);
-  AddChild( p_wxpanel ) ;
+//  AddChild( p_wxpanel ) ;
 //  Connect(
 ////    ID_Panel ,
 //    ID_SetAsMinVoltage ,
@@ -467,31 +473,34 @@ void FreqAndVoltageSettingDlg::CPUcoreVoltageChanged()
   //    mp_cpucontroller->GetVoltageInVolt(nNewValue) ;
   //      mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ nNewValue] ;
     GetVoltageInVoltFromSliderValue() ;
-  if( m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage->GetValue() )
-  {
-    //float fStableVoltageToSet = mp_cpucontroller->GetVoltageInVolt(
-      //nNewSliderValue )
-    m_fWantedVoltageInVolt =
-      mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings
-      //Add 0.07 V for stability safety
-      //+ 0.07 ;
-      + mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt ;
-  //    WORD wVoltageID = //In order to get the voltage in Volt that corresponds
-  //      //to a voltage ID boundary first convert to the corresponding
-  //      //(possibly rounded) voltage ID.
-  //      mp_cpucontroller->GetVoltageID(
-  //      fStableVoltageToSet ) ;
-  //    //Store value in member for OnSetAsMinimumVoltage().
-  //    m_fWantedVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(
-  //      wVoltageID ) ;
-    mp_wxstatictextWantedVoltageInVolt->SetLabel(
-      wxString::Format(
-        //We need a _T() macro (wide char-> L"", char->"") for EACH
-        //line to make it compatible between char and wide char.
-        wxT("%f"), //PState::GetVoltageInVolt(
-        m_fWantedVoltageInVolt
-        )
-      ) ;
+#ifdef _DEBUG
+  if(m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage)
+#endif
+    if( m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage->GetValue() )
+    {
+      //float fStableVoltageToSet = mp_cpucontroller->GetVoltageInVolt(
+        //nNewSliderValue )
+      m_fWantedVoltageInVolt =
+        mp_mainframe->m_fVoltageInVoltOfCurrentActiveCoreSettings
+        //Add 0.07 V for stability safety
+        //+ 0.07 ;
+        + mp_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt ;
+    //    WORD wVoltageID = //In order to get the voltage in Volt that corresponds
+    //      //to a voltage ID boundary first convert to the corresponding
+    //      //(possibly rounded) voltage ID.
+    //      mp_cpucontroller->GetVoltageID(
+    //      fStableVoltageToSet ) ;
+    //    //Store value in member for OnSetAsMinimumVoltage().
+    //    m_fWantedVoltageInVolt = mp_cpucontroller->GetVoltageInVolt(
+    //      wVoltageID ) ;
+      mp_wxstatictextWantedVoltageInVolt->SetLabel(
+        wxString::Format(
+          //We need a _T() macro (wide char-> L"", char->"") for EACH
+          //line to make it compatible between char and wide char.
+          wxT("%f"), //PState::GetVoltageInVolt(
+          m_fWantedVoltageInVolt
+          )
+        ) ;
   }
 //  else
 //    mp_wxstatictextWantedVoltageInVolt->SetLabel( wxT("bla")) ;
@@ -602,8 +611,11 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
         RemoveAttention(mp_wxstatictextVoltageInVolt);
         //The button might have been disabled (e.g. because of overvoltage
         //protection) .
-        EnableWritingVoltageAndMultiplier(
-          m_wxstrWriteVoltageAndMultiplierToolTip);
+#ifdef _DEBUG
+        if( mp_wxbuttonApply )
+#endif
+          EnableWritingVoltageAndMultiplier(
+            m_wxstrWriteVoltageAndMultiplierToolTip);
     }
     else //The button may be disabled before. So enable it.
     {
@@ -621,9 +633,10 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
       //Showing a tool tip is not possible while the button is disabled (at least
       //under Windows).
 //      mp_wxbuttonApply->SetToolTip( wxT("This button") + wxstrToolTip) ;
-      SetAttention( mp_wxstatictextVoltageInVolt ,
-        wxT("The \"") + mp_wxbuttonApply->GetLabel() + wxT("\" button") +
-        wxstrToolTip );
+      if( mp_wxbuttonApply )
+        SetAttention( mp_wxstatictextVoltageInVolt ,
+          wxT("The \"") + mp_wxbuttonApply->GetLabel() + wxT("\" button") +
+          wxstrToolTip );
     }
   } //if( VoltageIsWithinValidRange )
   else
@@ -642,8 +655,11 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
       wxstrToolTip);
 
 //    mp_wxbuttonApply->SetToolTip( wxT("This button ") + wxstrToolTip ) ;
-    SetAttention( mp_wxstatictextVoltageInVolt , wxT("The \"") +
-      mp_wxbuttonApply->GetLabel() + wxT("\" button") +wxstrToolTip );
+#ifdef _DEBUG
+    if( mp_wxbuttonApply )
+      SetAttention( mp_wxstatictextVoltageInVolt , wxT("The \"") +
+        mp_wxbuttonApply->GetLabel() + wxT("\" button") + wxstrToolTip );
+#endif
   }
   //p_wxwindow->SetFocus();
   mp_mainframe->m_wFreqInMHzOfCurrentActiveCoreSettings =
@@ -1618,6 +1634,7 @@ void FreqAndVoltageSettingDlg::RemoveAttention(wxWindow * p_wxwindow)
   p_wxwindow->SetToolTip( wxT("") );
 }
 
+#ifdef wxHAS_POWER_EVENTS
 void FreqAndVoltageSettingDlg::ResumendFromStandByOrHibernate()
 {
   LOGN( FULL_FUNC_NAME << "--this object:" << this )
@@ -1640,31 +1657,37 @@ void FreqAndVoltageSettingDlg::ResumendFromStandByOrHibernate()
   } // if( mp_i_cpucontroller )
   LOGN( FULL_FUNC_NAME << "--end" )
 }
+#endif
 
 void FreqAndVoltageSettingDlg::SetAttention(
   wxWindow * p_wxwindow, 
   const wxString & wxstr // = _T("")
   )
 {
-  //p_wxwindow->ClearBackground();
-  p_wxwindow->SetOwnBackgroundColour(*wxRED);
-  //http://docs.wxwidgets.org/2.9/classwx_window.html
-  // #37219df52734626e23401fd83b25d8a0:
-  //"Note that setting the background colour does not cause an immediate
-  //refresh, so you may wish to call wxWindow::ClearBackground or
-  //wxWindow::Refresh after calling this function."
-  //ClearBackground did not draw the foreground text under Windows 7 (64 bit)!
-//  p_wxwindow->ClearBackground () ;
-  //force repaint the "dirty" way: hide and show immediately.
-  //because ClearBackground(),Refresh() and Update() didn't bring the 
-  //desired IMMEDIATE FULL repaint.
-  p_wxwindow->Show(false);
-  p_wxwindow->Show(true);
-      ////After hiding a window it looses the focus.
-      //p_wxwindow->SetFocus();
-  //p_wxwindow->Refresh();
-//  p_wxwindow->Update();
-  p_wxwindow->SetToolTip(wxstr);
+#ifdef _DEBUG
+  if(p_wxwindow)
+  {
+    //p_wxwindow->ClearBackground();
+    p_wxwindow->SetOwnBackgroundColour(*wxRED);
+    //http://docs.wxwidgets.org/2.9/classwx_window.html
+    // #37219df52734626e23401fd83b25d8a0:
+    //"Note that setting the background colour does not cause an immediate
+    //refresh, so you may wish to call wxWindow::ClearBackground or
+    //wxWindow::Refresh after calling this function."
+    //ClearBackground did not draw the foreground text under Windows 7 (64 bit)!
+  //  p_wxwindow->ClearBackground () ;
+    //force repaint the "dirty" way: hide and show immediately.
+    //because ClearBackground(),Refresh() and Update() didn't bring the
+    //desired IMMEDIATE FULL repaint.
+    p_wxwindow->Show(false);
+    p_wxwindow->Show(true);
+        ////After hiding a window it looses the focus.
+        //p_wxwindow->SetFocus();
+    //p_wxwindow->Refresh();
+  //  p_wxwindow->Update();
+    p_wxwindow->SetToolTip(wxstr);
+  }
+#endif
 }
 
 WORD FreqAndVoltageSettingDlg::SetNearestHigherPossibleFreqInMHz(
@@ -1769,7 +1792,8 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
   {
     BYTE byVoltageIsEqualLessDefaultVoltage = I_CPUcontroller::in_safe_range;
     BYTE byVoltageIsEqualGreaterLowestStableVoltage = I_CPUcontroller::in_safe_range;
-    if( m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage->GetValue() )
+    if( m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage &&
+        m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage->GetValue() )
     {
 //      float fCPUcoreFrequencyinMHz = GetCPUcoreFrequencyFromSliderValue() ;
       byVoltageIsEqualLessDefaultVoltage = mp_cpucontroller->
@@ -1780,6 +1804,7 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
 //      bVoltageIsValid = byRet ;
     }
     if( //mp_wxcheckboxPreventVoltageBelowLowestStableVoltage->IsChecked()
+        m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage &&
         m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage->
         GetValue()
       )

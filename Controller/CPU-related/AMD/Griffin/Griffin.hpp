@@ -136,6 +136,13 @@ inline void GetMultiplier(BYTE byFrequencyID, BYTE byDivisorID,
   * p_fMultiplier = GET_MULTIPLIER(byFrequencyID, byDivisorID) ;
 }
 
+inline float GetMultiplier(BYTE byFrequencyID, BYTE byDivisorID)
+{
+  float fMultiplier;
+  GetMultiplier(byFrequencyID, byDivisorID, & fMultiplier);
+  return fMultiplier;
+}
+
 inline void GetMultiplierfromCOFVIDstatusRegisterBits(
   DWORD dwMSRlowmost, float * p_fMultiplier)
 {
@@ -417,23 +424,26 @@ inline void GetFreqIDandDivisorIDfromMulti(
   //e.g. MaxMultiplier = 11, multiplier = 2,5:
   // -> multiplierAboveMaxMultiplier = 2,5 * 2 * 2 * 2 = 2,5 * 8 = 20;
   // DivisorID = 3 = log2(8)
-  while( fMultiplier <= g_fMaxMultiplier )
+  while( fMultiplier <= //g_fMaxMultiplier
+      g_fMaxMultiDiv2)
   {
     fMultiplier *= 2.0f ;
     ++ r_byDivisorID ;
   }
+  //multiplier is in range ]1/2 max_multi...max_multi] now
   r_byFreqID =
     //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
     //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))."
-    (BYTE) fMultiplier - 8 ;
+    (BYTE) (fMultiplier * 2.0f) - 8 ;
   DEBUGN("GetFreqIDandDivisorIDfromMulti(...)"
     << "FID:" << (WORD) r_byFreqID
     << "DID:" << (WORD) r_byDivisorID
     //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
     //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))"
-    << "test: multi=FID+8/divisor=" << (r_byFreqID + 8) << "/"
-    << pow(2.0,r_byDivisorID)
-    << "=" << (r_byFreqID + 8)/pow(2.0,r_byDivisorID)
+    << "test (FID,DID)->multi: multi="//"FID+8/divisor=" << (r_byFreqID + 8) << "/"
+//    << pow(2.0,r_byDivisorID)
+//    << "=" << (r_byFreqID + 8)/pow(2.0,r_byDivisorID)
+    << GetMultiplier(r_byFreqID, r_byDivisorID)
     )
   //multi = FID / 2^DID  divisor=2^DID   multi = FID / divisor | * divisor
   // FID=multi* divisor

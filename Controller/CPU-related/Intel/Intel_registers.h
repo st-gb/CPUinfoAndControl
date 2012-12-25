@@ -53,8 +53,8 @@
 #define IA32_PERFEVTSEL2 0x188 //392; (PERFEVTSEL2) 
 //Performance Event Select Register 3 (R/W):available If CPUID.0AH: EAX[15:8] > 3
 #define IA32_PERFEVTSEL3 0x189 //393; (PERFEVTSEL3) 
-#define IA32_PERF_STATUS 0x198 //408 decimal, (ReadOnly), gibt es seit 0F_03H
-#define IA32_PERF_CTL 0x199 //409 (Read/Write); gibt es seit 0F_03H 
+#define IA32_PERF_STATUS 0x198 //408 decimal,(ReadOnly);since fam. 0F, model 3
+#define IA32_PERF_CTL 0x199 //409 (Read/Write); since family 0F, model 03H
 //Thermal Status Information (ReadOnly)
 #define IA32_THERM_STATUS 0x19C //412 
 #define IA32_CLOCK_MODULATION_REG_ADDR 0x19A

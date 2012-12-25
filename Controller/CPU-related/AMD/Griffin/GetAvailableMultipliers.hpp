@@ -15,11 +15,12 @@
 //For divisor ID 0 other FIDs than max. FID cause a crash -> so don't use all
 //FIDs for this divisor ID.
 #define NUM_DIVISOR_IDS_EXCLUDING_DIVISOR_ID_0 3
+#define NUM_USABLE_DIVISOR_IDS 2 //multis 1/2max-1/4max,1/4max-1/8max
 
 inline float * CreateMultiplierArray(
   BYTE byNumMultis,
 //  BYTE byMaxMultiDiv2
-  float fMaxMultiplier
+  const float fMaxMultiplier
   )
 {
   DEBUGN( FULL_FUNC_NAME << "--begin--# multis:" << (WORD) byNumMultis
@@ -49,11 +50,25 @@ inline float * CreateMultiplierArray(
         ( 1 << byDivisorIDIndex ) ;
       DEBUGN("fDivisor:" << fDivisor )
       for( float fMultiplierForDID0 = //byMaxMultiDiv2 ;
-        fMaxMultiplier; //Start with max multi because it is guaranteed to be
+        //If max multi is max freq in MHz / 200 MHz
+        //-e.g. max. multi 11 for max. 2200 MHz: 11 + 1 = 12 ->
+        // -lst multi for DivisorID 2 (fDivisor=4): 12/4=3
+        // -last multiplier for DivisorID 2 (fDivisor=4): 22/4=5.5
+        // last multiplier for DivisorID 3 (fDivisor=8): 22/8=2.75
+        // -[3...5.5] -> steps in "0.5"
+        //-e.g. max. multi 10.5 for max. 2100 MHz:10.5 + 1 = 11.5 ->
+        // -lst multi for DivisorID 2 (fDivisor=4): 11.5/4=2.875
+        // -last multiplier for DivisorID 2 (fDivisor=4): 21/4=5.25
+        // -last multiplier for DivisorID 3 (fDivisor=8): 21/8=2.625
+        // -[2.875...5.25] -> steps in "0.5"
+        fMaxMultiplier + 1.0f; //Start with max multi because it is guaranteed to be
           //a natural number.
         fMultiplierForDID0 <= fDoubleOfMaxMulti
+        //fMultiplierForDID0 > fHalfOfMaxMulti
         //< fMaxMultiplier
-        ; ++ fMultiplierForDID0 )
+        ; ++ fMultiplierForDID0
+        //-- fMultiplierForDID0
+        )
       {
 //      8:6 CpuDid: core divisor ID. Read-write.
 //      Specifies the CPU frequency divisor; see CpuFid.
@@ -90,9 +105,9 @@ inline BYTE GetNumberOfMultipliers(float fMaxMultiplier)
   //>50% of and <= 100% of the frequency specified by
   //F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
 
-  //E.g. Max multi = 10.5 -> double: 21
-  while( byMaxMultiplier <= fMaxMultiplier )
-    ++ byMaxMultiplier ;
+//  //E.g. Max multi = 10.5 -> double: 21
+//  while( byMaxMultiplier <= fMaxMultiplier )
+//    ++ byMaxMultiplier ;
 
   BYTE byNumMultisPerDivisor = (BYTE)
     // e.g. 21-11+1 = 10+1=11
@@ -103,7 +118,8 @@ inline BYTE GetNumberOfMultipliers(float fMaxMultiplier)
     //e.g. 22 - 12 + 1 = 11 multipliers (12,13,14,15,16,17,18,19,20,21,22)
     byNumMultisPerDivisor *
     //Number of divisor IDs excluding divisor ID "0".
-    NUM_DIVISOR_IDS_EXCLUDING_DIVISOR_ID_0
+//    NUM_DIVISOR_IDS_EXCLUDING_DIVISOR_ID_0
+    NUM_USABLE_DIVISOR_IDS
     //For divisor ID 0 other FIDs than max. FID cause a crash.
     + 1 ;
   DEBUGN("byMaxMultiDiv2: " << (WORD) byMaxMultiplier

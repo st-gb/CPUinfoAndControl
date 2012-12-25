@@ -738,13 +738,13 @@ void wxX86InfoAndControlApp::EndDVFS()
 //In particular, do not destroy them from application class' destructor!"
 int wxX86InfoAndControlApp::OnExit()
 {
-  LOGN("OnExit() begin")
+  LOGN_DEBUG("OnExit() begin")
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 
 //    //Also deleted in the tbtest sample (not automatically deleted?!).
 //    delete m_p_HighestCPUcoreTemperatureTaskBarIcon;
   DeleteTaskBarIcons();
-  LOGN("OnExit() after deleting the system tray icon(s)")
+  LOGN_DEBUG("OnExit() after deleting the system tray icon(s)")
 
 #endif //#ifdef COMPILE_WITH_TASKBAR
 
@@ -1505,7 +1505,7 @@ bool wxX86InfoAndControlApp::OnInit()
       MessageWithTimeStamp(L"loading \"" +
         GetStdWstring( std::string(c_ar_chXMLfileName) ) +
         L"\" failed" ) ;
-      LOGN("loading \"" << c_ar_chXMLfileName << "\" failed")
+      LOGN_ERROR("loading \"" << c_ar_chXMLfileName << "\" failed")
 //      OUTPUT_WITH_TIMESTAMP
     }
 //    std::string std_strLogFile;
@@ -1751,7 +1751,8 @@ void wxX86InfoAndControlApp::CreateLogFileFormatter(
 bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
   /** Should be wide string because of non-English languages.*/
   std::wstring & r_std_wstrLogFilePath,
-  bool bAppendProcessID)
+  bool bAppendProcessID,
+  bool bRolling)
 {
 //  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("After reading file\""
 //    << c_ar_chXMLfileName << "\"")
@@ -1781,7 +1782,8 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
   r_std_tstrLogFilePath += GetStdTstring_Inline(//std_strFileExt
     m_model.m_logfileattributes.m_std_strFormat);
 
-  bool fileIsOpen = g_logger.OpenFileA( GetStdString(r_std_tstrLogFilePath) );
+  bool fileIsOpen = g_logger.OpenFileA( GetStdString(r_std_tstrLogFilePath),
+    bRolling);
   if( fileIsOpen )
   {
     g_logger.CreateFormatter(//std_strFileExt.c_str()

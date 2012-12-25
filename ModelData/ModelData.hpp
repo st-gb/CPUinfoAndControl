@@ -20,6 +20,8 @@
 #include <Controller/character_string/stdtstr.hpp>
 #include <stdint.h> //uint16_t
 
+#define _T_LITERAL_PROGRAM_NAME _T("x86InfoAndControl")
+#define CONFIG_FILE_PATH "configuration"
 #if defined COMPILE_AS_GUI
   #include <ModelData/UserInterfaceAttributes.hpp>
   //because vector needs to know class MSRdata (else: build error)

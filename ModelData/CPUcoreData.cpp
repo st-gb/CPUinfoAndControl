@@ -498,10 +498,10 @@ void CPUcoreData::InterpolateDefaultVoltages()
 //    m_criticalsectionThreads.Leave() ;
 //  }
 
-  BYTE CPUcoreData::GetNumberOfCPUcores()
-  {
-    return m_byNumberOfCPUCores ;
-  }
+//  BYTE CPUcoreData::GetNumberOfCPUcores()
+//  {
+//    return m_byNumberOfCPUCores ;
+//  }
 
   float CPUcoreData::GetVoltageInVolt(WORD wVoltageInVoltIndex)
   {
