@@ -1,39 +1,31 @@
-/* Do not remove this header/ copyright information.
- *
- * Copyright © Trilobyte Software Engineering GmbH (=Trilobyte SE), Berlin,
- * Germany 2012.
- * You are allowed to modify and use the source code from
- * Trilobyte SE for free if you are not
- * making profit directly or indirectly with it or its adaption.
- * Else you may contact Trilobyte SE.
- */
 /*
- * dllmain.cpp
+ * dynlib_main.cpp
  *
- *  Created on: 03.05.2012
+ *  Created on: 22.11.2012
  *      Author: Stefan
  */
-  #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
-  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
-  //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
-  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
 
+  #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
+  #include <Controller/CPU-related/AMD/K7/AMD_K7.hpp>
+  //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
+  #include <Controller/CPU-related/AMD/K7/AMD_K7_SetVoltage.hpp>
+
+  #include <preprocessor_macros/bitmasks.h> //BITMASK_FOR_LOWMOST_3BIT
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
   #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
-  #include <Controller/AssignPointersToExportedExeFunctions/\
-AssignPointerToExportedExeReadPCIconfig.h>
-//  #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
+//  #include <Controller/AssignPointersToExportedExeFunctions/\
+//AssignPointerToExportedExeReadPCIconfig.h>
 
   #include <typeinfo> //for typeid<>
 #ifdef _WIN32
   #include <windows.h> //for
   #include <winuser.h> //MessageBox
-  static HMODULE g_hModule;
   #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
   #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
 #ifdef _DEBUG
+  static HMODULE gs_hModule;
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 #endif
@@ -96,7 +88,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     case DLL_PROCESS_ATTACH:
 #ifdef _DEBUG
       //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll:
-      g_hModule = hModule;
+      gs_hModule = hModule;
 #endif //#ifdef _DEBUG
 //      //Force the cond. "< min. time diff" to become true.
 //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
@@ -132,7 +124,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
       )
   {
     DEBUGN("DLL's GetAvailableMultipliers")
-    return GetAvailableMultipliersAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
+    return GetAvailableMultipliersAMD_K7( * p_wNumberOfArrayElements) ;
   }
 
   EXPORT
@@ -142,7 +134,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements )
   {
-    return GetAvailableVoltagesAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
+    return GetAvailableVoltagesAMD_K7( * p_wNumberOfArrayElements) ;
   }
 
   EXPORT
@@ -157,15 +149,15 @@ AssignPointerToExportedExeReadPCIconfig.h>
     )
   {
     static BYTE byRet;
-    byRet = GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
-      p_fVoltageInVolt,
-      p_fMultiplier ,
-      p_fReferenceClockInMHz ,
-      wCoreID
-      ) ;
-    DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) byRet << " ref.clock:"
-      << * p_fReferenceClockInMHz << "MHz multi:" << * p_fMultiplier
-      << " " << * p_fVoltageInVolt << "V")
+    static BYTE byCurrentFrequencyID, byCurrentVoltageID;
+    byRet = GetCurrentVoltageAndFrequency_AMD_K7(
+      p_fVoltageInVolt
+      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+      , p_fMultiplier
+      , p_fReferenceClockInMHz,
+      byCurrentVoltageID,
+      byCurrentFrequencyID
+      );
     return byRet;
   }
 
@@ -177,8 +169,8 @@ AssignPointerToExportedExeReadPCIconfig.h>
   {
 //    DEBUGN( FULL_FUNC_NAME << "--begin ")
     return //fTempInDegCelsius ;
-      //0.0 ;
-      GetTemperatureInDegCelsiusAMD_NPT_family0F();
+      0.0 ;
+      //GetTemperatureInDegCelsiusAMD_NPT_family0F();
   }
 
   //#define DLL_CALLING_CONVENTION __stdcall
@@ -198,17 +190,17 @@ AssignPointerToExportedExeReadPCIconfig.h>
       );
     //"Startup VID (StartVID)—Bits 45–40."
     BYTE StartupVID = (highmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
-    float fVoltageInVolt = GetVoltageInVolt_AMD_NPT_family_0FH( StartupVID);
+    float fVoltageInVolt = GetVoltageInVolt_AMD_K7( StartupVID);
 
     //"Startup FID (StartFID)—Bit 13–8"
     BYTE StartupFID = (lowmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
 #ifdef USE_STARTUP_FID_AS_MIN_FID
     s_minimumFID = StartupFID;
 #endif //#ifdef USE_STARTUP_FID_AS_MIN_FID
-    float fMultiplier = GetMultiplier_AMD_NPT_family_0FH(StartupFID);
+    float fMultiplier = GetMultiplier_AMD_K7(StartupFID);
     pi_cpuaccess->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.insert(
       VoltageAndFreq(fVoltageInVolt, (WORD) ( fMultiplier * //g_fReferenceClockInMHz
-        200.0f)
+        100.0f)
         )
       );
 
@@ -245,7 +237,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
   void AssignPointersToExportedExefunctions()
   {
     AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
-    AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
+//    AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
     DEBUGN( "g_pfnReadPCIconfigSpace:" << (void *) g_pfnReadPCIconfigSpace )
 
     if( ! g_pfnreadmsr || ! g_pfn_write_msr )
@@ -280,7 +272,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 #endif
     std::tstring std_tstrDLLfileName
 #ifdef _WIN32 //win 32 or 64 bit
-    = GetDLLfileName(g_hModule, fileName)
+    = GetDLLfileName(gs_hModule, fileName)
 #endif //#ifdef _WIN32
 #ifdef __linux__
     = "AMD_NPT_family_0F"
@@ -289,7 +281,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
     std::string strExeFileNameWithoutDirs
 #ifdef _WIN32
-    = GetExeFileNameWithoutDirs()
+      = GetExeFileNameWithoutDirs()
 #endif
       ;
     std::string stdstrFilename;
@@ -303,7 +295,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     stdstrFilename = std_tstrDLLfileName + strExeFileNameWithoutDirs +
       "_log.txt";
 //      g_logger.OpenFile2( stdstrFilename ) ;
-    g_logger.OpenFile2(stdstrFilename);
+    g_logger.OpenFileA(stdstrFilename);
 
 //    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
 //          << strExeFileNameWithoutDirs )
@@ -356,8 +348,8 @@ AssignPointerToExportedExeReadPCIconfig.h>
     //  DEBUGN()
 #endif
 
-  g_s_stepping = GetStepping();
-  GetAdvancedPowerManagementInformationViaCPUID();
+//  g_s_stepping = GetStepping();
+//  GetAdvancedPowerManagementInformationViaCPUID();
 //  s_maxVoltageInVolt = GetMaxVoltage();
 
   //  g_pi_cpuaccess = pi_cpuaccess ;
@@ -416,11 +408,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
     // see "10.5 Processor Performance States"
         //10.5.1.1 P-state Recognition Algorithm
     //"10.5.7.2 P-state Transition Algorithm"
-
     //"Note: Software must hold the FID constant when changing the VID."
 
-    //"Odd FID values are supported in revision G and later revisions"
-    SetCurrentVoltageAndMultiplier_AMD_NPT_family_0FH( fVoltageInVolt ,
+    SetCurrentVoltageAndMultiplier_AMD_K7( fVoltageInVolt ,
       fMultiplier ,
       wCoreID ) ;
     return 1 ;

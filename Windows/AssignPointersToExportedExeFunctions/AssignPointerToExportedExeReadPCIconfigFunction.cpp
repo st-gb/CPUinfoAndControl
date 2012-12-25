@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * AssignPointerToExportedExeReadPCIconfigFunction.cpp
  *  (file extension must _not_ be ".c" because the include path for the C++
@@ -9,12 +16,4 @@
 #include <windows.h> //for GetProcAddress(...)
 #include <Controller/ExportedExeFunctions.h> //ReadMSR_func_type etc.
 
-void AssignPointerToExportedExeReadPCIconfig(
-  ReadPCIconfigSpace_func_type & pfn_readpciconfigspace_func
-  )
-{
-  //g_pfnReadPCIconfigSpace =
-  pfn_readpciconfigspace_func = (ReadPCIconfigSpace_func_type) ::GetProcAddress(
-    ::GetModuleHandle(NULL),
-    "ReadPCIconfigSpace");
-}
+#include "AssignPointerToExportedExeReadPCIconfigFunction.h"

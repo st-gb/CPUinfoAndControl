@@ -124,13 +124,13 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
   //      _T("Set as current p-state after write") ) ;
   //  m_p_wxboxsizerOK_Cancel->Add(mp_wxcheckboxSetAsCurrentAfterApplying);
 
-//  AddPauseServiceCheckbox(m_p_wxboxsizerOK_Cancel) ;
+  AddPauseServiceCheckbox(m_p_wxboxsizerOK_Cancel) ;
 #ifdef wxHAS_POWER_EVENTS
   AddRestorePerformanceStateAfterResumeButton(m_p_wxboxsizerOK_Cancel) ;
 #endif
   AddCancelButton(m_p_wxboxsizerOK_Cancel);
 
-#ifdef COMPILE_WITH_UNSTABLE_CPU_CORE_OPERATION_DETECTION
+#ifdef BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
   AddAutoConfigureVoltageSettingsButton(m_p_wxboxsizerOK_Cancel) ;
   CreateFindLowestStableCPUcoreVoltageButton();
   m_p_wxboxsizerOK_Cancel->Add(m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage);
@@ -142,7 +142,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
   //wxSpinCtrl * p_wx = new
 
   AddSecondsUntilNextVoltageDecreaseTextControl(m_p_wxboxsizerOK_Cancel);
-#endif //#ifdef COMPILE_WITH_UNSTABLE_CPU_CORE_OPERATION_DETECTION
+#endif //#ifdef BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
 
 //  m_p_wxspinbuttonSecondsUntilVoltageDecrease = new wxSpinButton (
 //      this,
@@ -152,9 +152,9 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
   m_p_wxspinbuttonSecondsUntilVoltageDecrease = NULL;
 //  m_p_wxboxsizerOK_Cancel->Add(m_p_wxspinbuttonSecondsUntilVoltageDecrease);
 
-  m_p_wxstatictextSecondsUntilNextVoltageDecrease = new wxStaticText( this,
-    wxID_ANY, wxT("     s") );
-  m_p_wxboxsizerOK_Cancel->Add(m_p_wxstatictextSecondsUntilNextVoltageDecrease);
+//  m_p_wxstatictextSecondsUntilNextVoltageDecrease = new wxStaticText( this,
+//    wxID_ANY, wxT("     s") );
+//  m_p_wxboxsizerOK_Cancel->Add(m_p_wxstatictextSecondsUntilNextVoltageDecrease);
 
   //  mp_wxcheckboxOnlySafeRange = new wxCheckBox(this, wxID_ANY,
   //    wxT("only safe range") ) ;
@@ -386,11 +386,13 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
     // any border flag."
 //    , 5
     );
+
 //  AddIncreaseVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
 //  AddDecreaseVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
 //  AddPreventVoltageBelowLowestStableVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
 //  AddPreventVoltageAboveDefaultVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
 //  AddStabilizeVoltageButton(p_wxboxsizerCPUcoreVoltage) ;
+
   p_wxsizerSuperordinate->Add(
     p_wxboxsizerCPUcoreVoltage,
     //proportion: "change its size in the main orientation of the wxBoxSizer -
@@ -548,6 +550,23 @@ void FreqAndVoltageSettingDlg::AddSelectPstateViaMousePositionButton(
 #endif //wxHAS_BITMAPTOGGLEBUTTON
 }
 
+void FreqAndVoltageSettingDlg::AddMessageControl(wxSizer * p_wxsizer)
+{
+  m_p_wxboxsizerMessage = new wxBoxSizer(wxHORIZONTAL);
+
+  mp_wxstatictextMessage = new wxStaticText(this, wxID_ANY, wxT("") );
+  m_p_wxboxsizerMessage->Add( mp_wxstatictextMessage ) ;
+
+  p_wxsizer->Add(
+    m_p_wxboxsizerMessage,
+    0 ,
+    wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2
+    );
+}
+
 void FreqAndVoltageSettingDlg::AddPauseServiceCheckbox(wxSizer * p_wxsizer )
 {
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
@@ -669,6 +688,7 @@ void FreqAndVoltageSettingDlg::AddPreventVoltageBelowLowestStableVoltageButton(
   LOGN( FULL_FUNC_NAME << "--end")
 }
 
+#ifdef wxHAS_POWER_EVENTS
 void FreqAndVoltageSettingDlg::AddRestorePerformanceStateAfterResumeButton(
   wxSizer * p_wxsizer )
 {
@@ -694,6 +714,7 @@ void FreqAndVoltageSettingDlg::AddRestorePerformanceStateAfterResumeButton(
     p_wxsizer);
   LOGN( FULL_FUNC_NAME << "--end")
 }
+#endif
 
 void FreqAndVoltageSettingDlg::AddSetAsDesiredVoltageButton(
   wxSizer * p_wxsizer )
@@ -840,7 +861,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
 
   AddSetAsDesiredVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
   AddSetAsMinVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-//  AddAlsoSetWantedVoltageControls(p_wxflexgridsizerSetAsMinVoltage);
+  AddAlsoSetWantedVoltageControls(p_wxflexgridsizerSetAsMinVoltage);
 
   //p_wxboxsizerSetAsMinVoltage->Add(
 //  p_wxflexgridsizerSetAsMinVoltage->Add(
@@ -855,9 +876,9 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
 //    );
   //p_wxboxsizerSetAsMinVoltage->Add(
 
-//  AddPreventVoltageBelowLowestStableVoltageButton(
-//    p_wxflexgridsizerSetAsMinVoltage) ;
-//  AddPreventVoltageAboveDefaultVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  AddPreventVoltageBelowLowestStableVoltageButton(
+    p_wxflexgridsizerSetAsMinVoltage) ;
+  AddPreventVoltageAboveDefaultVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
   AddStabilizeVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
 //  AddAutoConfigureVoltageSettingsButton(p_wxflexgridsizerSetAsMinVoltage);
 

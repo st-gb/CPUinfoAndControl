@@ -309,7 +309,8 @@ void FreqAndVoltageSettingDlg::CreateFindLowestStableCPUcoreVoltageButton()
    //To get EVT_CHAR events when the button is focused.
    wxWANTS_CHARS
    ) ;
-  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetToolTip( START_UNSTABLE_CPU_CORE_OPERATION_DETECTION_LABEL );
+  m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetToolTip(
+    START_UNSTABLE_CPU_CORE_OPERATION_DETECTION_LABEL );
 }
 
 void FreqAndVoltageSettingDlg::CreateStopFindingLowestStableCPUcoreVoltageButton()
@@ -414,7 +415,9 @@ void FreqAndVoltageSettingDlg::StopFindingLowestStableCPUcoreVoltage()
 {
   LOGN( FULL_FUNC_NAME << " begin")
   mp_model->m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI = true;
+#ifdef _WIN32
   wxGetApp().StopInstableCPUcoreVoltageDetection();
+#endif
 //  HideInstableCPUcoreVoltageWarning();
   m_p_wxbitmapbuttonFindLowestStableCPUcoreVoltage->SetBitmapLabel(
     wxBitmap(find_lowest_stable_CPU_core_voltage16x16_xpm) );
@@ -432,6 +435,7 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
   LOGN( FULL_FUNC_NAME << " begin")
 //  if( wxGetApp().StartInstableCPUcoreVoltageDetection(this) == 0 )
 //    ShowInstableCPUcoreVoltageWarning();
+#ifdef _WIN32
   if( wxGetApp().m_x86iandc_threadFindLowestStableVoltage.IsRunning() )
     StopFindingLowestStableCPUcoreVoltage();
   else
@@ -448,6 +452,7 @@ void FreqAndVoltageSettingDlg::OnFindLowestStableVoltageButton(
       m_lastSetCPUcoreVoltageInVolt = fVoltageInVoltFromSliderValue;
     FindLowestStableVoltage();
   }
+#endif
   LOGN( FULL_FUNC_NAME << " end")
 }
 
@@ -494,6 +499,7 @@ void FreqAndVoltageSettingDlg::FindLowestStableVoltage()
     mp_model->m_instablecpucorevoltagedetection.
       m_uiNumberOfSecondsToWaitUntilVoltageIsReduced =
       ulSecondsUntilNextVoltageDecrease;
+#ifdef _WIN32
     if( wxGetApp().StartInstableCPUcoreVoltageDetection(this) == //ERROR_SUCCESS
         EXIT_SUCCESS )
     {
@@ -503,6 +509,7 @@ void FreqAndVoltageSettingDlg::FindLowestStableVoltage()
 //      //waiting on the condition.
 //      wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
     }
+#endif
 //      wxGetApp().StopInstableCPUcoreVoltageDetection();
 //      }
 //      else

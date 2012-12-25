@@ -275,8 +275,6 @@ public:
     //  ;
   }
   virtual BYTE Init() { return 1 ; } ;
-  //virtual bool IsLowerVoltageThan( float fValueToProof, float fValueToCompare) ;
-  virtual bool VIDisLowerVoltageThan( WORD wVIDisLessThan, WORD wVIDvalueToCompare) ;
   BYTE OtherPerfCtrlMSRwriteIsActive() ;
 
   virtual void PrepareForNextPerformanceCounting(

@@ -56,6 +56,7 @@ class wxBoxSizer ;
 class wxCheckBox ;
 class wxChoice;
 class wxControl ;
+class wxSlider;
 //class wxDialog ;
 class wxStaticText ;
 class wxSpinButton ;
@@ -71,7 +72,7 @@ class VoltageAndFreq;
 //   typename _Alloc = std::allocator<_Key> > class set;
 //}
 
-#ifdef _WIN32
+#ifdef _WIN32_
   #define BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
 #endif
 
@@ -175,8 +176,10 @@ public:
   wxBitmapButton *
     m_p_wxbitmapbuttonAutoConfigureVoltageSettings;
 private:
+#ifdef wxHAS_POWER_EVENTS
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
     m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume;
+#endif
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
     m_p_wxbitmaptogglebuttonSelectPstateViaMouseClick;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
@@ -225,13 +228,16 @@ private:
   CREATE_DIALOG_INLINED void AddSelectPstateViaMousePositionButton(
     wxSizer * p_wxsizer );
   CREATE_DIALOG_INLINED void AddPauseServiceCheckbox(wxSizer * p_wxsizer ) ;
+  CREATE_DIALOG_INLINED void AddMessageControl(wxSizer * p_wxsizer);
   CREATE_DIALOG_INLINED void AddPerformanceStateSizer(
     wxSizer * p_wxsizerSuperordinate ) ;
   CREATE_DIALOG_INLINED void AddPreventVoltageAboveDefaultVoltageButton(
     wxSizer * p_wxsizer ) ;
   CREATE_DIALOG_INLINED void AddPreventVoltageBelowLowestStableVoltageButton(
     wxSizer * p_wxsizer ) ;
+#ifdef wxHAS_POWER_EVENTS
   CREATE_DIALOG_INLINED void AddRestorePerformanceStateAfterResumeButton(wxSizer * p_wxsizer ) ;
+#endif
   CREATE_DIALOG_INLINED void AddSetAsDesiredVoltageButton( wxSizer * p_wxsizer ) ;
   CREATE_DIALOG_INLINED void AddSetAsMinVoltageButton( wxSizer * p_wxsizer ) ;
   CREATE_DIALOG_INLINED void AddVoltageSettingsSizer( wxSizer * p_wxsizerSuperordinate ) ;
@@ -337,7 +343,9 @@ public:
   inline void PossiblyWriteVoltageAndMultiplier_Inline(
     float fVoltageInVolt) ;
   void RemoveAttention(wxWindow * p_wxwindow);
+#ifdef wxHAS_POWER_EVENTS
   void ResumendFromStandByOrHibernate();
+#endif
   void SetAttention(wxWindow * p_wxwindow, const wxString & wxstr = _T("")) ;
   void HideInstableCPUcoreVoltageWarning();
   void ShowInstableCPUcoreVoltageWarning();

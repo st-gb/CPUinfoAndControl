@@ -1027,5 +1027,4 @@ inline BYTE
   return MSRaccessRetVal;
 }
 
-
 #endif /* AMD_NPT_FAMILY_0FH_SETVOLTAGEANDMULTI_HPP_ */

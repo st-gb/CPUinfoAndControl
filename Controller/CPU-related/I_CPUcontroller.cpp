@@ -278,7 +278,7 @@ BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
   LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues("
     << wCoreID << ") begin" )
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
-    m_arp_percpucoreattributes  ;
+    m_arp_percpucoreattributes ;
 //  LOGN(" I_CPUcontroller:GetCurrentVoltageAndFrequencyAndStoreValues")
   return GetCurrentVoltageAndFrequency(
     arp_percpucoreattributes[wCoreID].m_fVoltageInVolt,

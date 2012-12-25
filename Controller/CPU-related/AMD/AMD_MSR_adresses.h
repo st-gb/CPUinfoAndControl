@@ -1,0 +1,30 @@
+/*
+ * AMD_MSR_adresses.h
+ *
+ *  Created on: 23.11.2012
+ *      Author: Stefan
+ */
+
+#ifndef AMD_MSR_ADRESSES_H_
+#define AMD_MSR_ADRESSES_H_
+
+//for K7, K8:
+#define FIDVID_CTL_MSR_ADDRESS 0xC0010041
+#define FIDVID_STATUS_MSR_ADDRESS 0xC0010042
+// "37–32 CurrVID Current VID"
+#define CURRENT_VID_START_ADDRESS_IN_BIT 32
+// 31 FidVidPending FID/VID Change Pending
+// "5–0 CurrFID Current FID"
+#define CURRENT_FID_START_BIT 0
+#define CURRENT_FID_END_BIT 5
+//21–16 MaxFID Max FID
+#define MAX_FID_START_ADDRESS_IN_BIT 16
+
+//"53–48 MaxVID Max VID"
+#define MAX_VID_START_ADDRESS_IN_BIT 48
+#define MAX_VID_START_ADDRESS_IN_BIT_IN_HIGHMOST_BYTES 16
+
+#define FIDVID_CTL_VOLTAGE_ID_START_BIT 8
+
+
+#endif /* AMD_MSR_ADRESSES_H_ */
