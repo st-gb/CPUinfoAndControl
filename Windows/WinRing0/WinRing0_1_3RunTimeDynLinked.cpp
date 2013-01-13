@@ -61,7 +61,7 @@ WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
 //#ifdef _DEBUG
 //  std::stringstream stdstrstream ;
   //For checking if the members are on the same RAM address between MSVC and MinGW:
-  LOGN( "WinRing0_1_3RunTimeDynLinked c'tor (...)--Address of this:"
+  LOGN_DEBUG( "WinRing0_1_3RunTimeDynLinked c'tor (...)--Address of this:"
     << this
     << "address of I_CPUaccess::mp_model: " << & mp_model <<"\n"
     << "address in I_CPUaccess::mp_model: " << mp_model
@@ -92,7 +92,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
   if( dwDllStatus == OLS_DLL_NO_ERROR )
   {
      LOGN_TYPE("WinRing0 successfully initialized",
-       LogLevel::log_message_typeSUCCESS)
+       LogLevel::success)
      //UIconfirm("WinRing0 successfully initialized") ;
   }
   else
@@ -112,7 +112,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
     BYTE revision;
     BYTE release ;
     std::string strFuncName ;
-    LOGN_TYPE( "InitOpenLibSys succeeded", LogLevel::log_message_typeSUCCESS )
+    LOGN_TYPE( "InitOpenLibSys succeeded", LogLevel::success )
 
     GetDllVersion (& major, & minor, & revision, & release);
     LOGN("using WinRing0 DLL version "
@@ -131,7 +131,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 
 void WinRing0_1_3RunTimeDynLinked::InitOpenLibSysFailed()
 {
-  LOGN_TYPE("InitOpenLibSys failed", LogLevel::log_message_typeERROR)
+  LOGN_TYPE("InitOpenLibSys failed", LogLevel::error)
   //Is NULL if the WinRing0 DLL could not be loaded.
   //m_hModuleWinRing0DLL == NULL (WinRing0 DLL could not be loaded)
   if( m_hModuleWinRing0DLL )
@@ -151,7 +151,7 @@ void WinRing0_1_3RunTimeDynLinked::InitOpenLibSysFailed()
       "should not work properly, especially when it is not connected to"
       " the service.";
     LOGN_TYPE("Throwing a CPUaccessException:" << pchErrorMessage,
-      LogLevel::log_message_typeERROR )
+      LogLevel::error )
     //When throwing an exception by creating the exception object on the
     //stack VS 2005 reported an "stack buffer error"?.
     //Oh, that was rather because the exception was not caught.
@@ -250,7 +250,7 @@ BOOL WinRing0_1_3RunTimeDynLinked::CpuidEx(
 void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
 {
   LOGN_TYPE("WinRing0 failed to initialize (DLL status <> 0)",
-    LogLevel::log_message_typeERROR)
+    LogLevel::error)
   GetDriverPath();
 
   std::ostringstream ostrstreamErrorDesc;
@@ -273,7 +273,7 @@ void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
 //    mp_userinterface->Confirm(
 //        stdstrErrorMsg);
 //    }
-  LOGN_TYPE(stdstrErrorMsg, LogLevel::log_message_typeERROR)
+  LOGN_TYPE(stdstrErrorMsg, LogLevel::error)
   #ifdef _DEBUG
   //            //Breakpoint possibility
   //            int i = 0 ;
@@ -309,7 +309,7 @@ void WinRing0_1_3RunTimeDynLinked::GetDriverPath()
     LOGN_TYPE( "function \"" << stdstrFunctionName <<
       "\" does not exist in WinRing0 DLL -> unable to output expected "
       "driver path for diagnosing the initialize error ",
-      LogLevel::log_message_typeWARNING)
+      LogLevel::warning)
   }
 }
 

@@ -144,6 +144,7 @@ END_EVENT_TABLE()
   #define COMPILE_WITH_UNSTABLE_CPU_OPERATION_DETECTION
 #endif
 DEFINE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE )
+DEFINE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_STARTED_INSTABLE_CPU_CORE_OPERATION_DETECTION )
 DEFINE_LOCAL_EVENT_TYPE( wxEVT_SET_START_UNSTABLE_CPU_CORE_OPERATION_IMAGE )
 
 BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
@@ -196,7 +197,9 @@ BEGIN_EVENT_TABLE(FreqAndVoltageSettingDlg, wxDialog)
   //(wxObjectEventFunction)(wxEventFunction)static_cast<wxCommandEventFunction>
   // (&FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel), 0),
   EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE,
-    FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel)
+    FreqAndVoltageSettingDlg::OnUpdateInstableCPUdetection)
+  EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_STARTED_INSTABLE_CPU_CORE_OPERATION_DETECTION,
+    FreqAndVoltageSettingDlg::StartedInstableCPUcoreVoltageDetection)
 //  wx__DECLARE_EVT1(wxEVT_COMMAND_BUTTON_CLICKED, winid, wxCommandEventHandler(func)
   // EVT_CUSTOM(event, winid, func)
 //  EVT_CUSTOM( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxID_ANY,
@@ -992,14 +995,17 @@ void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
     << bFindLowestCPUcoreVoltageThreadIsRunning)
    if( bFindLowestCPUcoreVoltageThreadIsRunning )
    {
+//     const wchar_t * msg =
+     const std::wstring msg = L"The thread for detecting an "
+       "instable CPU core voltage is still running.\n"
+       //"Close the dialog anyway?"),
+       "You should stop the instable CPU core voltage detection before "
+       "in order to close the dialog.";
      wxGetApp().MessageWithTimeStamp(
 //     if(
          //::wxMessageBox( wxT(
-         L"The thread for detecting an "
-           "instable CPU core voltage is still running.\n"
-           //"Close the dialog anyway?"),
-             "You should stop the instable CPU core voltage detection before "
-             "in order to close the dialog."//)
+//         (const wchar_t *)
+         msg//)
 //           wxT("question")//,
   //         wxYES_NO
            );
@@ -1336,14 +1342,19 @@ void FreqAndVoltageSettingDlg::SetSecondsUntilNextVoltageDecreaseLabel(
 /**
  *  event is sent from CountSecondsDown(...)
  */
-void FreqAndVoltageSettingDlg::OnSetSecondsCountDownLabel( wxCommandEvent
+void FreqAndVoltageSettingDlg::OnUpdateInstableCPUdetection( wxCommandEvent
   //wxEvent
   & event )
 {
   unsigned seconds = event.//GetId()
     GetInt();
+  InstableCPUoperationDetectionData * p_data =
+    (InstableCPUoperationDetectionData *) event.GetClientData();
   LOGN( FULL_FUNC_NAME << "" << seconds )
-  SetSecondsUntilNextVoltageDecreaseLabel(seconds);
+  SetSecondsUntilNextVoltageDecreaseLabel(//seconds
+    p_data->seconds);
+  m_p_wxtextctrlInstableCPUdetectDynLibCPUcoreUsagePercentage->SetLabel(
+    wxString::Format( wxT("%f"), p_data->CPUusageInPercent) );
 }
 
 void FreqAndVoltageSettingDlg::OnSetStartUnstableCPUcoreOperationImage(
@@ -1552,6 +1563,7 @@ inline void FreqAndVoltageSettingDlg::SetMessage(const wxString &
 void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
   float fVoltageInVolt)
 {
+  LOGN( FULL_FUNC_NAME << " begin")
 //  float fFreq = GetCPUcoreFrequencyFromSliderValue() ;
   float fMultiplierFromSliderValue = GetMultiplierFromSliderValue();
 //  if( //fVoltageInVolt > 0.0

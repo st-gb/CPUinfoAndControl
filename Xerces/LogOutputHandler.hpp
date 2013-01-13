@@ -8,7 +8,8 @@
 #ifndef LOGOUTPUTHANDLER_HPP_
 #define LOGOUTPUTHANDLER_HPP_
 
-#include <xercesc/sax2/DefaultHandler.hpp> //base class DefaultHandler
+//base class XERCES_CPP_NAMESPACE::DefaultHandler
+#include <xercesc/sax2/DefaultHandler.hpp>
 
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * IPCdataHandler.hpp
  *
@@ -12,8 +19,10 @@
 #include <xercesc/util/XercesVersion.hpp> //for XERCES_CPP_NAMESPACE
 
 //Forward declarations
+class CPUcontrolServiceBase;
 class CPUcoreData ;
 class I_CPUcontroller;
+class PerCPUcoreAttributes;
 class Model ;
 namespace XERCES_CPP_NAMESPACE
 {
@@ -36,12 +45,19 @@ namespace Xerces
     BYTE * m_arbyData ;
     I_CPUcontroller * m_p_i_cpucontroller;
     Model & mr_model ;
+    CPUcontrolServiceBase & m_r_cpucontrolservicebase;
 
+    IPCdataHandler( Model & r_model, CPUcontrolServiceBase & ) ;
+    virtual ~IPCdataHandler( ) ;
+
+    inline void CreateCPUcoreXMLelements(
+      XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document,
+      PerCPUcoreAttributes * arp_percpucoreattributes);
+    inline void CreateDVFS_XMLelement(XERCES_CPP_NAMESPACE::DOMDocument * );
+    inline void CreateTooHotXMLelement(XERCES_CPP_NAMESPACE::DOMDocument * );
     inline void CreateXMLdocumentChildren(
       XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document ) ;
     inline void EnterReadByIPCthreadCriticalSection() ;
-    IPCdataHandler( Model & r_model ) ;
-    ~IPCdataHandler( ) ;
     BYTE * GetCurrentCPUcoreAttributeValues(DWORD & r_dwByteSize,
       bool bThreadSafe) ;
     DWORD GetResponse(BYTE byCommand,

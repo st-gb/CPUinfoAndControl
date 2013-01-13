@@ -142,6 +142,11 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
   //wxSpinCtrl * p_wx = new
 
   AddSecondsUntilNextVoltageDecreaseTextControl(m_p_wxboxsizerOK_Cancel);
+  AddInstableCPUdetectDynLibCPUcoreUsagePercentageTextControl(m_p_wxboxsizerOK_Cancel);
+
+  m_p_wxstatictextSecondsUntilNextVoltageDecrease = new wxStaticText( this,
+    wxID_ANY, wxT("     s") );
+  m_p_wxboxsizerOK_Cancel->Add(m_p_wxstatictextSecondsUntilNextVoltageDecrease);
 #endif //#ifdef BUILD_WITH_INSTABLE_CPU_CORE_OPERATION_DETECTION
 
 //  m_p_wxspinbuttonSecondsUntilVoltageDecrease = new wxSpinButton (
@@ -151,10 +156,6 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddApplyOrCancelSizer(
 //      );
   m_p_wxspinbuttonSecondsUntilVoltageDecrease = NULL;
 //  m_p_wxboxsizerOK_Cancel->Add(m_p_wxspinbuttonSecondsUntilVoltageDecrease);
-
-//  m_p_wxstatictextSecondsUntilNextVoltageDecrease = new wxStaticText( this,
-//    wxID_ANY, wxT("     s") );
-//  m_p_wxboxsizerOK_Cancel->Add(m_p_wxstatictextSecondsUntilNextVoltageDecrease);
 
   //  mp_wxcheckboxOnlySafeRange = new wxCheckBox(this, wxID_ANY,
   //    wxT("only safe range") ) ;
@@ -832,7 +833,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
     //number of children in the sizer
     0 );
   AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-//  AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
   AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
   mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
     this, wxID_ANY, //_T("")

@@ -226,7 +226,7 @@ DWORD CPUcontrolServiceBase::Initialize(
       SAX2ServiceConfigHandler sax2serviceconfighandler(
         m_model ,
         & m_dummyuserinterface );
-      if( ReadXMLfileWithoutInitAndTermXercesInline(
+      if( Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
           stdstrServiceCfgFile.c_str()
 //          , m_model
 //          , p_userinterface
@@ -362,9 +362,11 @@ DWORD CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(//bool & bContinue
   assert ( // <> NULL
     mp_dynfreqscalingthreadbase ) ;
   DWORD dwRet = m_x86iandc_thread_typeDVFSthread.start(
-    DynFreqScalingThreadBaseNameSpace::ThreadFunction,
+    //DynFreqScalingThreadBaseNameSpace::ThreadFunction,
+    DynFreqScalingThreadBase::ThreadFunction,
     mp_dynfreqscalingthreadbase ) ;
-  if( dwRet ==  EXIT_SUCCESS )
+  if( dwRet == //EXIT_SUCCESS
+      I_Thread::no_error)
   {
     LOGN( "Successfully started the Dynamic Voltage and Frequency Scaling "
         "thread.")

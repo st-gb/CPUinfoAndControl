@@ -97,6 +97,8 @@ public:
   //but non-virtual destructor" .
   virtual ~CPUcontrolBase() ;
 
+  void CreateDynLibCPUcontroller_DynLibName(
+    const std::string & CPUcontrollerDynLibName);
   void CreateDynLibCPUcontroller(
     const std::string & stdstrCPUtypeRelativeDirPath
 //    , I_CPUcontroller * & r_p_cpucontroller

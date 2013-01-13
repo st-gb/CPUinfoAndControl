@@ -47,7 +47,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     if( m_wxdynamiclibraryCPUcoreUsage.IsLoaded() )
     {
       LOGN_TYPE("CPU core usage getter Dyn lib successfully loaded",
-        LogLevel::log_message_typeSUCCESS)
+        LogLevel::success)
       m_pfngetcpucoreusage = (_GetCPUcoreUsage) 
         m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
           //Use wxT() macro to enable to compile with both unicode and ANSI.
@@ -74,7 +74,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         if( ! mp_cpuaccess )
           LOGN_TYPE( FULL_FUNC_NAME << " pointer to hardware access object is "
             "0->may crash when dyn lib's \"" << INIT_LITERAL << "\" function "
-            "derefers it", LogLevel::log_message_typeWARNING)
+            "derefers it", LogLevel::warning)
         BYTE byRet = (*m_pfn_dll_init_type) ( //p_cpuaccess
         //p_cpuacces->wNumLogicalCPUcores 
         //cpucoredata.m_byNumberOfCPUCores
@@ -102,7 +102,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
           << " function:" << (WORD) byRet)
         if( byRet )
           LOGN_TYPE( FULL_FUNC_NAME << "--DLL's " << INIT_LITERAL
-            << " function failed", LogLevel::log_message_typeERROR)
+            << " function failed", LogLevel::error)
       }
       LOGN("after calling DLL's " << INIT_LITERAL <<  "function")
       if( m_pfngetcpucoreusage //&& m_pfn_dll_init_type
@@ -130,7 +130,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
 #else
 #endif //#ifdef _WIN32
     LOGN_TYPE("loading CPU core usage getter dynamic library failed:" <<
-        stdstrErrMsg, LogLevel::log_message_typeERROR)
+        stdstrErrMsg, LogLevel::error)
     //It does not make a sense to use this class instance because the 
     //initialisation failed. So throw an exception.
     throw CPUaccessException(stdstrErrMsg) ;

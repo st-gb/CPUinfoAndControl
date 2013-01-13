@@ -176,7 +176,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
         + std_strXMLattributeName
         + L"\" attribute name";
       LOGN_TYPE( GetStdString(std_wstrMessage),
-        LogLevel::log_message_typeWARNING)
+        LogLevel::warning)
       mp_userinterface->MessageWithTimeStamp(std_wstrMessage);
     }
   }
@@ -186,7 +186,7 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
       + std_strXMLattributeName
       + L"\" attribute name";
     LOGN_TYPE( GetStdString(std_wstrMessage),
-      LogLevel::log_message_typeWARNING)
+      LogLevel::warning)
     std::wstring std_wstrDocumentIDandLocation;
     GetDocumentIDandLocation(std_wstrDocumentIDandLocation);
     mp_userinterface->MessageWithTimeStamp(std_wstrMessage +
@@ -537,5 +537,5 @@ void SAX2_CPUspecificHandler::fatalError(
   LOGN_TYPE( FULL_FUNC_NAME << ": fatal Error: " << XercesHelper::ToStdString(
     r_xercesc_sax_parse_exception.getMessage() )
    << " at line: " << r_xercesc_sax_parse_exception.getLineNumber()
-   , LogLevel::log_message_typeERROR )
+   , LogLevel::error )
 }

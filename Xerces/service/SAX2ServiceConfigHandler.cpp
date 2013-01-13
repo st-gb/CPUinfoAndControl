@@ -56,7 +56,7 @@
     //I_CPUcontroller * p_cpucontroller
 	  )
 	{
-	  LOGN("SAX2ServiceConfigHandler c'tor--address of model:" << & model )
+	  LOGN_DEBUG("SAX2ServiceConfigHandler c'tor--address of model:" << & model )
 	  m_p_model = & model ;
 	  m_p_userinterface = p_userinterface ;
     //p_cpucontroller = p_cpucontroller ;
@@ -86,19 +86,19 @@
         LOGWN_WSPRINTF(L"Before setting current dir for GUI to \"%ls\"" ,
           stdwstrValue.c_str()
           )
-        LOGN(//"SAX2ServiceConfigHandler"
+        LOGN_DEBUG(//"SAX2ServiceConfigHandler"
           FULL_FUNC_NAME << "--address of model:" << m_p_model)
-        LOGN(//"SAX2ServiceConfigHandler"
+        LOGN_DEBUG(//"SAX2ServiceConfigHandler"
           FULL_FUNC_NAME << "--address of service attributes:"
           << & m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo )
-        LOGN(//"SAX2ServiceConfigHandler"
+        LOGN_DEBUG(//"SAX2ServiceConfigHandler"
           FULL_FUNC_NAME << "--address of GUI current dir:"
           << & m_p_model->m_serviceattributes.
           m_stdwstrGUICurrentDirFullPathTo )
-        LOGN(//"SAX2ServiceConfigHandler"
-          FULL_FUNC_NAME << "--address of GUI current dir char ptr:"
-          << m_p_model->m_serviceattributes.
-          m_stdwstrGUICurrentDirFullPathTo.c_str() )
+//        LOGN(//"SAX2ServiceConfigHandler"
+//          FULL_FUNC_NAME << "--address of GUI current dir char ptr:"
+//          << m_p_model->m_serviceattributes.
+//          m_stdwstrGUICurrentDirFullPathTo.c_str() )
   //          LOGN("SAX2ServiceConfigHandler--model->m_strProcessorName :"
   //            << m_p_model->m_strProcessorName )
   //          LOGN("m_p_model->m_serviceattributes.m_stdstrPathToGUIexe:"

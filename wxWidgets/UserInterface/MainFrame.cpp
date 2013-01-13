@@ -29,6 +29,7 @@
 #include "wx/frame.h" //for base class wxFrame
 //#include <wx/icon.h> //for class wxIcon
 #include <wx/menu.h> //for class wxMenu, class wxMenuBar
+#include <wx/menuitem.h> //class wxMenuItem
 #include <wx/numdlg.h> //for ::wxGetNumberFromUser(...)
 #include <wx/stattext.h> //for wxStaticText
 #include <wx/string.h> //for wxString::Format(...)
@@ -313,7 +314,9 @@ inline void MainFrame::CreateFileMenu()
     mp_wxmenuFile->Enable( ID_DetachCPUusageGetterDynLib, false ) ;
   mp_wxmenuFile->AppendSeparator();
   mp_wxmenuFile->Append( ID_SaveAsDefaultPstates,
-    _T("Save &performance states settings...") );
+    //wxT("Save &performance states settings...")
+    wxT("Save \"&voltage at/for frequency\" settings...")
+    );
   //Only add menu item if creating the system tray icon succeeded: else one
   // can hide the window but can not restore it: if this process started
   //elevated one can't even close it!
@@ -794,11 +797,21 @@ void MainFrame::CreateServiceMenuItems()
 {
   wxString wxstrConnectOrDisconnect ;
   p_wxmenuService = new wxMenu ;
+  //TODO: set bitmap for item
+  //http://docs.wxwidgets.org/trunk/classwx_menu_item.html#a2b5d6bcb820b992b1e4709facbf6d4fb:
+  //"SetBitmap() must be called before the item is appended to the menu"
+//  wxMenuItem * p_wxmenuitem = new wxMenuItem();
+//  p_wxmenuitem->SetBitmap();
   if( ServiceBase::CanStartService() )
   {
     p_wxmenuService->Append( ID_StartService , wxT("&start"),
       wxT("start the x86I&C service via the Service Control Manager") ) ;
   }
+  else
+    p_wxmenuService->Append( ID_StartService , wxT("&start"),
+      wxT("insufficient rights to start the x86I&C service via the Service "
+      "Control Manager") ) ;
+
   //Stopping a service can be done via Inter Process Communication. (Else if
   //via Service Control manager then needs the same? rights/ privileges as
   //starting a service).
@@ -1273,12 +1286,12 @@ void MainFrame::OnContinueService(wxCommandEvent & WXUNUSED(event))
   //  "CPUcontrolService" );
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   wxString wxstrMessageFromDataProvider;
-  if( mp_wxx86infoandcontrolapp->
+  if( ! mp_wxx86infoandcontrolapp->
       ContinueServiceViaIPC(wxstrMessageFromDataProvider)
     )
-    ::wxMessageBox( wxT("message from the service:\n") +
-        wxstrMessageFromDataProvider ) ;
-  else
+//    ::wxMessageBox( wxT("message from the service:\n") +
+//        wxstrMessageFromDataProvider ) ;
+//  else
     ::wxMessageBox(
       //Use wxT() to enable to compile with both unicode and ANSI.
       wxT("could not continue because not connected to the service")
@@ -1506,8 +1519,8 @@ void MainFrame::OnPauseService(wxCommandEvent & WXUNUSED(event))
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   wxString wxstrMessageFromService;
   mp_wxx86infoandcontrolapp->PauseService(wxstrMessageFromService);
-  ::wxMessageBox( wxT("message from the service:\n") + wxstrMessageFromService
-    ) ;
+//  ::wxMessageBox( wxT("message from the service:\n") + wxstrMessageFromService
+//    ) ;
   #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 }
 
@@ -2412,9 +2425,8 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
       }
       else
       {
-        LOGN_TYPE("error getting the current CPU core voltage and frequency "
-          "CPU controller via the CPU controller->not using their results",
-          LogLevel::log_message_typeERROR)
+        LOGN_ERROR("error getting the current CPU core voltage and frequency "
+          "CPU controller via the CPU controller->not using their results" )
       }
       fTempInCelsius = //mp_i_cpucontroller->
         p_cpucontroller->
@@ -3462,7 +3474,7 @@ void MainFrame::GetCPUcoreInfoFromDataProvider(
   //  or even the CPU usage may be from previous and so not match the CPU
   //   controller data
   LOGN("DrawCurrent CPU core info: entering IPC 2 in-program data crit sec")
-  //Prevent the concurrent modification of the # of log. cores in the
+  //Prevent the concurrent modification of the # of log(ical?). cores in the
   //IPC data 2 in-program data thread.
   mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
 
@@ -3472,8 +3484,11 @@ void MainFrame::GetCPUcoreInfoFromDataProvider(
   LOGN("DrawCurrentCPUcoreData after GetNumberOfLogicalCPUcores" )
 //      if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
     mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
-  SetTitle( m_wxstrTitle + //wxT("--values from service")
-    wxT("--") + mp_wxx86infoandcontrolapp->m_wxstrDataProviderURL ) ;
+  SetTitle( //wxT("--values from service")
+    mp_wxx86infoandcontrolapp->m_wxstrDataProviderURL + (p_cpucontroller->
+      m_bDVFSfromServiceIsRunning ? wxT(" [DVFS]--") : wxT(" [no DVFS]--") ) +
+    + m_wxstrTitle
+    ) ;
 }
 
 bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
@@ -3671,6 +3686,10 @@ void MainFrame::OnPaint(wxPaintEvent & r_wx_paint_event)
 //    bool bAllowCPUcontrollerAccess  = IsCPUcontrollerAccessAllowedThreadSafe() ;
 //    if( //m_bAllowCPUcontrollerAccess
 //      bAllowCPUcontrollerAccess )
+
+    //TODO http://docs.wxwidgets.org/2.8/wx_wxbuffereddc.html:
+    //"GTK+ 2.0 as well as OS X provide double buffering themselves natively"
+    //if( IsDoubleBuffered() )
 
     wxPaintDC * p_wxpaintdc = new wxPaintDC(this);
       

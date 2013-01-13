@@ -120,7 +120,14 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
   //TODO seems to cause a program crashf
 //  wxCommandEvent wxcommand_event(wxEVT_COMMAND_REDRAW_EVERYTHING);
 //  wxPostEvent(mp_frame, wxcommand_event);
-  mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
+//  mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
+
+  LOGN( FULL_FUNC_NAME << "--adding size event (in order to redraw everything)"
+    " to the event queue to execute the redraw in the GUI thread")
+  //Don't execute GUI functions in non-GUI thread.
+  wxSizeEvent evt;
+  wxPostEvent(//MainFrame::OnSize
+    mp_frame, evt);
   LOGN( FULL_FUNC_NAME << "--end")
 }
 
@@ -157,7 +164,8 @@ void VoltageTooLow()
     wxT("Highest unstable voltage: %f Volt found for "
         "multiplier %f"), fVoltageInVolt, fMultiplier);
 //  ::wxMessageBox( wxstrMessage )
-  wxGetApp().MessageWithTimeStamp( GetStdTstring_Inline(wxstrMessage) );
+  //TODO exec in GUI thread
+//  wxGetApp().MessageWithTimeStamp( GetStdTstring_Inline(wxstrMessage) );
   LOGN( FULL_FUNC_NAME << " waking up threads that wait for "
     "\"VoltageTooLow()\" to be finished")
   LOGN( FULL_FUNC_NAME << "--signalling the condition to end finding the"
@@ -851,7 +859,7 @@ void //wxX86InfoAndControlApp::
 //          std_strXML.length();
 
 //      ReadXMLdocumentInitAndTermXerces(
-      if( ReadXMLdocumentWithoutInitAndTermXerces(
+      if( Apache_Xerces::ReadXMLdocumentWithoutInitAndTermXerces(
   //        membufinputsource,
 //        r_namedpipeclient.m_arbyIPCdata ,
         p_i_ipcclient->m_arbyIPCdata ,
@@ -861,7 +869,7 @@ void //wxX86InfoAndControlApp::
         p_wxx86infoandcontrolapp->m_model ,
         p_wxx86infoandcontrolapp ,
         p_wxx86infoandcontrolapp->m_sax2_ipc_current_cpu_data_handler
-        ) == FAILURE
+        ) == Apache_Xerces::readingXMLdocFailed
         )
       {
         //exception-> leave crit sec (endDocument(), where Leave() is
@@ -1220,7 +1228,7 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
   //      wxCriticalSectionLocker locker( m_sax2_ipc_current_cpu_data_handler.
   //        m_wxcriticalsection ) ;
   //      ReadXMLdocumentInitAndTermXerces(
-    if( ReadXMLdocumentWithoutInitAndTermXerces(
+    if( Apache_Xerces::ReadXMLdocumentWithoutInitAndTermXerces(
 //        membufinputsource,
       //m_ipcclient.m_arbyIPCdata ,
       m_p_i_ipcclient->m_arbyIPCdata ,
@@ -1232,7 +1240,7 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
       this ,
 //      m_sax2_ipc_current_cpu_data_handler
       sax2voltages_for_frequency_handler
-      ) == FAILURE
+      ) == Apache_Xerces::readingXMLdocFailed
       )
     {
       //exception-> leave crit sec (endDocument(), where Leave() is
@@ -1290,7 +1298,6 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
       << wFrequencyInMHz << " MHz for wanted voltage")
     SetAsWantedVoltage( fStableVoltageInVolt, wFrequencyInMHz) ;
   }
-
 }
 
 void wxX86InfoAndControlApp::IPCclientDisconnect()
@@ -1394,7 +1401,7 @@ void wxX86InfoAndControlApp::MessageWithTimeStamp(
   //const LPWSTR
   const wchar_t * cp_lpwstrMessage,
   unsigned flags //=0
-  )
+  ) const
 {
 //  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
 //    ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
@@ -1407,7 +1414,7 @@ void wxX86InfoAndControlApp::MessageWithTimeStamp(
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
   const std::wstring & c_r_std_wstrMessage,
   unsigned flags //=0
-  )
+  ) const
 {
 //  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
 //    ::wxNow() + wxT(" ") + getwxString( c_r_std_wstrMessage),
@@ -1492,13 +1499,13 @@ bool wxX86InfoAndControlApp::OnInit()
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Before reading file \""
       << c_ar_chXMLfileName << "\"")
     if( //return value: 0 = success
-      ReadXMLfileWithoutInitAndTermXercesInline(
+      Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
         //"UserInterface.xml" ,
         c_ar_chXMLfileName,
 //        m_model ,
         this,
         sax2userinterfaceconfighandler
-        )
+        ) == Apache_Xerces::readingXMLdocFailed
       )
     {
 //      Confirm( "loading UserInterface.xml failed" ) ;
@@ -1524,7 +1531,7 @@ bool wxX86InfoAndControlApp::OnInit()
 ////    else
 ////      std_strLogFile = std_wstrLogFilePath;
     if( OpenLogFile(std_wstrLogFilePath,
-        m_model.m_logfileattributes.m_bAppendProcessID) )
+        m_model.m_logfileattributes.m_bAppendProcessID, false) )
 #ifdef _WIN32
       HideMinGWconsoleWindow();
 #else //#ifdef _WIN32

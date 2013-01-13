@@ -216,7 +216,7 @@ CPUcontrolService::CPUcontrolService()
 #ifdef COMPILE_WITH_IPC
   //  , mr_ipc_datahandler(r_ipc_datahandler)
   ,
-  m_ipc_datahandler(m_model),
+  m_ipc_datahandler(m_model, * this),
   m_ipcserver(this),
   m_wxservicesocketserver(this)
 #endif //#ifdef COMPILE_WITH_IPC
@@ -241,14 +241,14 @@ CPUcontrolService::CPUcontrolService(
     std::wstring & r_stdwstrProgramName
 //  std::tstring & r_stdtstrProgramName
 //  , I_IPC_DataHandler & r_ipc_datahandler
-)
-//C++ style inits:
-:
+  )
+  //C++ style inits:
+  :
   CPUcontrolServiceBase(& m_dummyuserinterface),
   //    m_bSyncGUIshowDataWithService ( false ) ,
 #ifdef COMPILE_WITH_IPC
       //    mr_ipc_datahandler(r_ipc_datahandler) ,
-      m_ipc_datahandler(m_model), m_ipcserver(this), m_wxservicesocketserver(
+      m_ipc_datahandler(m_model, * this), m_ipcserver(this), m_wxservicesocketserver(
           this)
 #endif //#ifdef COMPILE_WITH_IPC
       //m_bProcess ( true )
@@ -282,7 +282,7 @@ CPUcontrolService::CPUcontrolService(
 #ifdef COMPILE_WITH_IPC
       //  , mr_ipc_datahandler(r_ipc_datahandler)
       ,
-      m_ipc_datahandler(m_model),
+      m_ipc_datahandler(m_model, * this),
       m_ipcserver(this),
       m_wxservicesocketserver(this)
 #endif //#ifdef COMPILE_WITH_IPC
@@ -2009,9 +2009,10 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION CPUcontrolService::
       argv
   );
 #else
-  LOGN("Before starting service ctrl dispatcher--current thread id:" <<
+  LOGN_WARNING("Before starting service ctrl dispatcher--current thread id:" <<
       ::GetCurrentThreadId()
-      << "\nNote: it may take 2 minutes or even more until the service control "
+      << "\nNote: it may take 2 minutes or even more (especially for a debug "
+      "version) until the service control "
       "dispatcher has finished to start")
   //The StartServiceCtrlDispatcher function connects the main thread of a 
   //service process to the service control manager, which causes the thread 

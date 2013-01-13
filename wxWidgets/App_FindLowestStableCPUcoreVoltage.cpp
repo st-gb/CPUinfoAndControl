@@ -29,6 +29,8 @@
 #endif
 //class FreqAndVoltageSettingDlg
 #include <wxWidgets/UserInterface/FreqAndVoltageSettingDlg.hpp>
+//class wxTextControlDialog
+#include <wxWidgets/UserInterface/wxTextControlDialog.hpp>
 //::getwxString(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp> //class MainFrame
@@ -142,6 +144,7 @@ inline void updateUIforCountSecondsDown(
   //      new wxThreadEvent(wxEVT_COMMAND_MYTHREAD_UPDATE));
 
   wxcommand_eventCountSecondsDown.SetInt(uiSeconds - 1);
+//  wxcommand_eventCountSecondsDown.SetClientData();
   wxPostEvent(p_freqandvoltagesettingdlg, wxcommand_eventCountSecondsDown);
   //    //http://docs.wxwidgets.org/2.8/wx_wxthreadoverview.html:
   //    wxEvtHandler::AddPendingEvent();
@@ -244,9 +247,8 @@ float GetCPUcoreUsageForUnstableCPUcoreOperationDetectionThread(
         << fCPUcoreUsage)
     }
     else
-      LOGN_TYPE( " calling GetThreadTimes failed: "
-        << ::GetErrorMessageFromLastErrorCodeA(),
-        LogLevel::log_message_typeWARNING)
+      LOGN_WARNING( " calling GetThreadTimes failed: "
+        << ::GetErrorMessageFromLastErrorCodeA() )
   }
 //  userTimeBefore = userTimeAfter;
   ul64ThreadTimeBefore = ul64ThreadTimeAfter;
@@ -298,9 +300,8 @@ ULONG64 GetThreadStartTime(HANDLE hThread)
     }
     else
     {
-      LOGN_TYPE( " calling GetThreadTimes failed: "
-        << ::GetErrorMessageFromLastErrorCodeA(),
-        LogLevel::log_message_typeWARNING)
+      LOGN_WARNING( " calling GetThreadTimes failed: "
+        << ::GetErrorMessageFromLastErrorCodeA() )
     }
   }
 //  else
@@ -345,6 +346,8 @@ void CountSecondsDown(FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg,
           wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE
     //      uiSeconds - 1 //int winid = 0
           );
+  wxcommand_eventCountSecondsDown.SetClientData(& p_freqandvoltagesettingdlg->
+    m_instablecpuoperationdetectiondata);
   const float fMinCPUcoreUsage = wxGetApp().m_model.
       m_instablecpucorevoltagedetection.m_fMinCPUcoreUsage;
   for( unsigned uiSeconds = p_freqandvoltagesettingdlg->mp_model->
@@ -381,6 +384,13 @@ void CountSecondsDown(FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg,
         dwMilliSecondsToWait);
 //      LOGN( FULL_FUNC_NAME << " CPU core usage for instable CPU core operation "
 //          "detection DLL thread:" << fCPUcoreUsage * 100.0f )
+      p_freqandvoltagesettingdlg->m_instablecpuoperationdetectiondata.seconds
+        = uiSeconds;
+      p_freqandvoltagesettingdlg->m_instablecpuoperationdetectiondata.
+        CPUusageInPercent = fCPUcoreUsage;
+      updateUIforCountSecondsDown(wxcommand_eventCountSecondsDown,
+        uiSeconds,
+        p_freqandvoltagesettingdlg);
       if( fCPUcoreUsage < //0.95
           fMinCPUcoreUsage)
       {
@@ -390,8 +400,6 @@ void CountSecondsDown(FreqAndVoltageSettingDlg * p_freqandvoltagesettingdlg,
       else
       {
         -- uiSeconds;
-        updateUIforCountSecondsDown(wxcommand_eventCountSecondsDown, uiSeconds,
-          p_freqandvoltagesettingdlg);
       }
 #endif
     }
@@ -552,8 +560,9 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage_ThreadProc(
 //      GetVoltageInVoltFromSliderValue() ;
 
     wxString wxstrMessageFromService;
-    p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS(
-      wxstrMessageFromService);
+    //TODO exec in GUI thread.
+//    p_freqandvoltagesettingdlg->DisableOSesDVFSandServiceDVFS(
+//      wxstrMessageFromService);
 
     const std::set<float> & c_r_stdset_floatAvailableVoltagesInVolt =
       p_freqandvoltagesettingdlg->mp_model->m_cpucoredata.
@@ -645,6 +654,12 @@ DWORD THREAD_PROC_CALLING_CONVENTION FindLowestStableVoltage_ThreadProc(
   return 1;
 }
 
+void wxX86InfoAndControlApp::InitUnstableCPUcoreOperationDetection()
+{
+  PossiblyAskForOSdynFreqScalingDisabling();
+  InitUnstableVoltageDetectionDynLibAccess();
+}
+
 BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 {
   LOGN( FULL_FUNC_NAME << " --begin")
@@ -652,11 +667,21 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 //    //"UnstableVoltageDetection.dll"
 //      "InstableCPUcoreVoltageDetection.dll"
 //      );
+//  MessageWithTimeStamp();
+  wxTextControlDialog wxtextcontroldialog( wxNow() +
+    wxT(" loading the dynamic library ") +
+    m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath,
+    wxT("current action"), 0, 0);
+  //Loading may take some seconds depending on e.g. DLL size and CPU speed so
+  //inform the user by via user interface.
+  wxtextcontroldialog.Show(true);
   if(m_hmoduleUnstableVoltageDetectionDynLib == NULL)
     m_hmoduleUnstableVoltageDetectionDynLib = //::LoadLibrary(
       //lptstrUnstableVoltageDetectionDynLib
     ::LoadLibraryW( //m_std_wstrInstableCPUcoreVoltageDynLibPath.c_str()
       m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath.c_str() );
+  LOGN( FULL_FUNC_NAME << " --after loading the dyn lib")
+  wxtextcontroldialog.Show(false);
   std::string std_strUnstableVoltageDetectionDynLib = GetStdString_Inline(
 //    GetStdTstring_Inline(lptstrUnstableVoltageDetectionDynLib)
 //    m_std_wstrInstableCPUcoreVoltageDynLibPath
@@ -714,8 +739,9 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
       wxString wxstrDynLibFilePath = ::getwxString(
 //        m_std_wstrInstableCPUcoreVoltageDynLibPath
         m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath );
-      mp_frame->m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib->
-        SetHelp(wxstrDynLibFilePath);
+      //TODO should only be called in GUI thread
+//      mp_frame->m_p_wxmenuitemUnloadDetectInstableCPUcoreVoltageDynLib->
+//        SetHelp(wxstrDynLibFilePath);
       return 0;
     }
   }
@@ -745,7 +771,7 @@ BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
   LOGN( FULL_FUNC_NAME << " begin")
   BYTE ret = 1;
   //wxGetApp().
-    InitUnstableVoltageDetectionDynLibAccess();
+//    InitUnstableVoltageDetectionDynLibAccess();
 
   if( //wxGetApp().
       m_hmoduleUnstableVoltageDetectionDynLib )
@@ -759,6 +785,8 @@ BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
            m_x86iandc_threadFindLowestStableVoltage.IsRunning()
          )
       {
+        LOGN( "Finding the lowest stable voltage has already "
+          "been started.")
         MessageWithTimeStamp(
           wxT("Finding the lowest stable voltage has already "
            "been started.") );

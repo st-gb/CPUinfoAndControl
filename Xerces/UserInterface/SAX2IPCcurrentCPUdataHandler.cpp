@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * SAX2IPCcurrentCPUdataHandler.cpp
  *
@@ -274,6 +281,28 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
       )
     {
       HandleCoreXMLelement_Inline(cr_xerces_attributes);
+    }
+    if( //If strings equal.
+        ! Xerces::ansi_or_wchar_string_compare(
+        //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
+        //(wchar_t *)
+          cp_xmlchLocalName, ANSI_OR_WCHAR("DVFS")
+        )
+      )
+    {
+      wxCriticalSectionLocker wxcriticalsectionlocker(m_wxcriticalsection) ;
+//      bool bRunning;
+      if( ConvertXercesAttributesValue<bool>(
+          cr_xerces_attributes
+          //This value is the last timecode of the last overheat at the time
+          //on the machine with the service.
+          , m_bDVFSfromServiceIsRunning
+          , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+          (const XMLCh *) L"running" )
+        )
+      {
+
+      }
     }
     if( //If strings equal.
         ! Xerces::ansi_or_wchar_string_compare(

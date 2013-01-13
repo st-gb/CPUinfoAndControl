@@ -108,7 +108,7 @@ namespace Xerces
         //"     * @exception DOMException"
         appendChild( mp_dom_elementFreqnVolt);
 
-      LOGN("appended " << FREQ_AND_VOLTAGE_LITERAL << "to the XML DOM tree" )
+      LOGN_DEBUG("appended " << FREQ_AND_VOLTAGE_LITERAL << " to the XML DOM tree" )
       mp_dom_elementFreqnVolt->
         //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMElement.html
         // #1a607d8c619c4aa4a59bc1a7bc5d4692
@@ -123,7 +123,7 @@ namespace Xerces
         //attribute value
         XERCES_STRING_FROM_ANSI_STRING( convertToStdString<WORD>(wFreq).c_str() )
         );
-      LOGN("Successfully set attribute value " << wFreq << " for "
+      LOGN_DEBUG("Successfully set attribute value " << wFreq << " for "
         FREQUENCY_IN_MHZ_ANSI_LITERAL )
     }
     catch( const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception )
@@ -178,18 +178,19 @@ namespace Xerces
     //  (jedes wohlgeformte XML-Dokument hat genau ein Wurzel-Element)
 //    char * archXPath = XPATH_EXPRESSION_FREQ_AND_VOLTAGE ;
 //    XMLCh * p_xmlchXpath = XMLString::transcode(archXPath);
-    LOGN("mp_dom_document:" << mp_dom_document)
+    LOGN_DEBUG("mp_dom_document:" << mp_dom_document)
     //DOMElement * p_dom_elementRoot = p_dom_document->getDocumentElement();
     mp_dom_elementRoot = mp_dom_document->getDocumentElement();
-    LOGN("mp_dom_elementRoot: " << mp_dom_elementRoot )
+    LOGN_DEBUG("mp_dom_elementRoot: " << mp_dom_elementRoot )
     p_dom_xpath_ns_resolver = mp_dom_document->createNSResolver(
       mp_dom_elementRoot);
-    LOGN("p_dom_xpath_ns_resolver: " << p_dom_xpath_ns_resolver )
+    LOGN_DEBUG("p_dom_xpath_ns_resolver: " << p_dom_xpath_ns_resolver )
     //DOMXPathResult * p_domxpathresult = p_dom_document->evaluate(
     PossiblyReleaseDOM_XPathResult() ;
     try
     {
-      LOGWN_WSPRINTF(L"evaluating %ls", XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR)
+//      LOGWN_WSPRINTF(L"evaluating %ls", XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR)
+      LOGN_DEBUG("evaluating \"" << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << "\"")
       //Gets NULL on failure/ exception.
       mp_domxpathresult = mp_dom_document->
         //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMXPathEvaluator.html
@@ -214,8 +215,8 @@ namespace Xerces
         //"XPathException   TYPE_ERR: raised if resultType is not
         //UNORDERED_NODE_SNAPSHOT_TYPE or ORDERED_NODE_SNAPSHOT_TYPE. "
         mp_domxpathresult->getSnapshotLength();
-      LOGN("Number of " << //archXPath
-        XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << " elements: "
+      LOGN_INFO("Number of \"" << //archXPath
+        XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << "\" elements: "
         << nDOMqueryResultsetLength )
 //      //Use "[]" rather than "char *" to avoid g++ Linux compiler warning
 //      // "deprecated conversion from string constant to ‘char*’ "
@@ -235,7 +236,7 @@ namespace Xerces
         WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
         wResultSetIndex ++ )
       {
-        LOGN( FULL_FUNC_NAME << "--at \""
+        LOGN_DEBUG( FULL_FUNC_NAME << "--at \""
           << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
           << "\" element # " << wResultSetIndex )
         //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
@@ -261,7 +262,7 @@ namespace Xerces
           cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
           std::string stdstr = //XercesHelper::ToStdString(cp_xmlchAttrValue) ;
             Xerces::ToStdString(cp_xmlchAttrValue) ;
-          LOGN(FULL_FUNC_NAME << "--attribute value for " << //arp_chAttributeName
+          LOGN_DEBUG(FULL_FUNC_NAME << "--attribute value for " << //arp_chAttributeName
             FREQUENCY_IN_MHZ_ANSI_LITERAL
             << ": " << stdstr )
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
@@ -295,7 +296,7 @@ namespace Xerces
         Xerces::ToStdString(cr_xercesc_dom_exception.getMessage() )
         )
     }
-    LOGN("mp_domxpathresult: " << mp_domxpathresult )
+    LOGN_DEBUG("mp_domxpathresult: " << mp_domxpathresult )
 
     LOGN(FULL_FUNC_NAME << "--end")
     return p_dom_xpath_ns_resolver ;
@@ -627,7 +628,7 @@ namespace Xerces
     , bool bOnlySimulate
     )
   {
-    LOGN("begin of PossiblyAddVoltages(" << cpc_XMLAttrName << ")")
+    LOGN("begin of PossiblyAddVoltages(\"" << cpc_XMLAttrName << "\")")
     bool bDOMtreeDifferedFromModelData = false ;
 
     bool bCreateVoltageAttribute = false ;
@@ -659,7 +660,7 @@ namespace Xerces
           m_stdmapFreqInMHzInDOMtree2DOMindex.end()
         )
       {
-        LOGN("The frequency " << wFreq << " does not exist in the DOM tree.")
+        LOGN_DEBUG("The frequency " << wFreq << " does not exist in the DOM tree.")
         //AddToDOM(
         //p_dom_document->
         //wFreq = c_iterator->m_wFreqInMHz ;
@@ -681,11 +682,11 @@ namespace Xerces
 //        const XMLCh * cp_xmlchAttrName ;
         if( citer_stdset_voltageandfreq->m_fVoltageInVolt != 0.0 )
         {
-          LOGN("voltage from main memory <> 0")
+          LOGN_DEBUG("voltage from main memory <> 0")
           //If config. file already exists.
           if( mp_domxpathresult )
           {
-            LOGN("DOM XPath result <> NULL")
+            LOGN_DEBUG("DOM XPath result <> NULL")
 //            DOMNamedNodeMap * p_dom_namednodemap ;
             //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
             //"If index is greater than or equal to the number of nodes in the
@@ -747,10 +748,14 @@ namespace Xerces
                 //difference.
                 WORD voltageInVoltArrayIndex = mp_model->m_cpucoredata.
                   GetIndexForClosestVoltage(fVoltageFromDOMtree);
-                fVoltageFromDOMtree = mp_model->m_cpucoredata.
+                //Must check array index: else program may crash.
+                if( voltageInVoltArrayIndex != MAXWORD )
+                {
+                  fVoltageFromDOMtree = mp_model->m_cpucoredata.
                     m_arfAvailableVoltagesInVolt[voltageInVoltArrayIndex];
-                fVoltageFromProgramMemory = mp_model->m_cpucoredata.
-                  GetClosestVoltage(fVoltageFromProgramMemory);
+                  fVoltageFromProgramMemory = mp_model->m_cpucoredata.
+                    GetClosestVoltage(fVoltageFromProgramMemory);
+                }
                 if( fVoltageFromDOMtree != fVoltageFromProgramMemory )
                 {
                   m_bDOMtreeDiffersOrDifferedFromModelData = true ;
@@ -775,6 +780,7 @@ namespace Xerces
                     bDOMtreeDifferedFromModelData ,
                     fVoltageFromProgramMemory ) ;
                 }
+//                }
               }
               else //Attribute does not exist in file/ DOM tree.
               {

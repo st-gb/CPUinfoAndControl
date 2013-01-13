@@ -132,7 +132,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       //<< GetStdString( wxstrFuncName ) <<
       EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
       "\" exists",
-      LogLevel::log_message_typeSUCCESS)
+      LogLevel::success)
   //#ifdef _DEBUG
   //      wxMessageBox( wxString::Format( "CPU access address: %x "
   //        ", adress of ReadMSR fct:%x"
@@ -161,7 +161,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       " incompatible structure definitions between executable and dyn lib) "
       "or when accessing the hardware access object when the pointer to it "
       "is invalid/ its value is \"0\" "
-      , LogLevel::log_message_typeWARNING
+      , LogLevel::warning
       )
   //      //TODO
   //      p_cpuaccess->mp_cpucontroller = NULL ;
@@ -191,7 +191,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       //<< ::GetStdString( wxstrFuncName ) <<
       EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
       "\" function",
-      LogLevel::log_message_typeSUCCESS
+      LogLevel::success
       )
     LOGN("# of available default voltages:" << p_cpuaccess->mp_model->
       m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
@@ -258,7 +258,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsGetTemperatureInCelsiusFunctio
       << stdstringFunctionName
       << "\" exists in the dynamic library "
       //<< r_wxstrFilePath << "\""
-      , LogLevel::log_message_typeSUCCESS
+      , LogLevel::success
       )
     m_pfngettemperatureincelsius = (dll_GetTemperatureInCelsius_type)
       m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ,
@@ -278,7 +278,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsGetTemperatureInCelsiusFunctio
       << GetStdString(wxstrFuncName)
       << "\" does _not_ exist in the dynamic library "
       //<< r_wxstrFilePath << "\""
-      , LogLevel::log_message_typeWARNING
+      , LogLevel::warning
       )
     m_pfngettemperatureincelsius = NULL ;
   }
@@ -703,7 +703,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
       )
     if( ! byReturn )
       LOGN_TYPE("warning/ error:DLL's \"GetCurrentVoltageAndFrequency\" "
-        "function returned 0", LogLevel::log_message_typeERROR)
+        "function returned 0", LogLevel::error)
      if( r_fReferenceClockInMHz )
      {
        if( mp_model->m_bCollectPstatesAsDefault )

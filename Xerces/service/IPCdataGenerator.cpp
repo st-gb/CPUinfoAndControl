@@ -18,6 +18,7 @@
 //format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
+#include <Controller/CPUcontrolServiceBase.hpp>
 //#include <global.h> //LOGN
 #include <ModelData/ModelData.hpp> //class ModelData
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
@@ -35,17 +36,42 @@
 
 namespace Xerces
 {
-  //throws DOMException
-  void IPCdataHandler::CreateXMLdocumentChildren(
-    XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document )
+  IPCdataHandler::IPCdataHandler(Model & r_model,
+    CPUcontrolServiceBase & cpucontrolservicebase)
+    :
+//    m_bThreadSafe ( true) ,
+    m_dwByteSize(0) ,
+    m_arbyData ( NULL ) ,
+    m_p_i_cpucontroller(NULL) ,
+    mr_model (r_model ),
+    m_r_cpucontrolservicebase(cpucontrolservicebase)
+  {
+    LOGN( FULL_FUNC_NAME << "--begin")
+    //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"
+    //: program crash if more than 1 thread entered
+    //"GetCurrentCPUcoreAttributeValues" and so more than 1 time Initalize() was
+    // called.
+    m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
+    LOGN( FULL_FUNC_NAME << "--end")
+  }
+
+  IPCdataHandler::~IPCdataHandler()
+  {
+  //  if( m_arbyData )
+  //    delete [] m_arbyData ;
+    PossiblyReleaseMemoryThreadSafe() ;
+    x86InfoAndControl::TerminateXerces();
+  }
+
+  void IPCdataHandler::CreateCPUcoreXMLelements(
+    XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document,
+    PerCPUcoreAttributes * arp_percpucoreattributes)
   {
     std::string stdstr ;
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementCore ;
     XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementRoot =
       p_dom_document->getDocumentElement();
     WORD wNumCPUcores = mr_model.m_cpucoredata.m_byNumberOfCPUCores ;
-    PerCPUcoreAttributes * arp_percpucoreattributes =
-      mr_model.m_cpucoredata.m_arp_percpucoreattributes ;
-    XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementCore ;
     for( WORD wCPUcoreIndex = 0 ; wCPUcoreIndex < wNumCPUcores ;
       ++ wCPUcoreIndex )
     {
@@ -78,7 +104,7 @@ namespace Xerces
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       stdstr = convertToStdString<float>(
-          arp_percpucoreattributes[wCPUcoreIndex].m_fVoltageInVolt ) ;
+        arp_percpucoreattributes[wCPUcoreIndex].m_fVoltageInVolt ) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
         (const XMLCh *) L"voltage_in_Volt" ,
@@ -107,55 +133,77 @@ namespace Xerces
 
       p_dom_elementRoot->appendChild(p_dom_elementCore);
     }
-//    if( mr_model.m_cpucoredata.m_bTooHot )
-    {
-      //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMDocument.html
-      // #f5e93a6b757adb2544b3f6dffb4b461a:
-      // throws DOMException
-      p_dom_elementCore = p_dom_document->createElement(
-        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
-        (const XMLCh *) L"too_hot" );
+  }
 
-      stdstr = convertToStdString<wxLongLong_t>( //::wxNow()
+  inline void IPCdataHandler::CreateDVFS_XMLelement(
+    XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document)
+  {
+    std::string stdstr ;
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementRoot =
+      p_dom_document->getDocumentElement();
+
+    //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMDocument.html
+    // #f5e93a6b757adb2544b3f6dffb4b461a:  throws DOMException
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_element = p_dom_document->
+      createElement(
+      //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+      (const XMLCh *) L"DVFS" );
+    stdstr = convertToStdString<bool>(
+      m_r_cpucontrolservicebase.m_x86iandc_thread_typeDVFSthread.IsRunning() );
+    //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMElement.html
+    // #1a607d8c619c4aa4a59bc1a7bc5d4692:  exception DOMException
+    p_dom_element->setAttribute(
+      //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+      (const XMLCh *) L"running" ,
+      XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
+    p_dom_elementRoot->appendChild( p_dom_element ) ;
+  }
+
+  inline void IPCdataHandler::CreateTooHotXMLelement(
+    XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document)
+  {
+    std::string stdstr ;
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementRoot =
+      p_dom_document->getDocumentElement();
+
+    //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMDocument.html
+    // #f5e93a6b757adb2544b3f6dffb4b461a:  throws DOMException
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_element = p_dom_document->
+      createElement(
+      //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+      (const XMLCh *) L"too_hot" );
+
+    stdstr = convertToStdString<wxLongLong_t>( //::wxNow()
 //        ::wxGetLocalTimeMillis().GetValue()
-         //mr_model.m_cpucoredata.m_llLastTimeTooHot
-         m_p_i_cpucontroller->m_llLastTimeTooHot
-         ) ;
-      //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMElement.html
-      // #1a607d8c619c4aa4a59bc1a7bc5d4692:
-      // exception DOMException
-      p_dom_elementCore->setAttribute(
-        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
-        (const XMLCh *) L"last_time_too_hot" ,
-        XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
-
-      p_dom_elementRoot->appendChild( p_dom_elementCore ) ;
-    }
+       //mr_model.m_cpucoredata.m_llLastTimeTooHot
+       m_p_i_cpucontroller->m_llLastTimeTooHot
+       ) ;
+    //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMElement.html
+    // #1a607d8c619c4aa4a59bc1a7bc5d4692:  exception DOMException
+    p_dom_element->setAttribute(
+      //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+      (const XMLCh *) L"last_time_too_hot" ,
+      XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
+    p_dom_elementRoot->appendChild( p_dom_element ) ;
   }
 
-  IPCdataHandler::IPCdataHandler(Model & r_model )
-    :
-//    m_bThreadSafe ( true) ,
-    m_dwByteSize(0) ,
-    m_arbyData ( NULL ) ,
-    m_p_i_cpucontroller(NULL) ,
-    mr_model (r_model )
+  /** throws DOMException */
+  void IPCdataHandler::CreateXMLdocumentChildren(
+    XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document )
   {
-    LOGN( FULL_FUNC_NAME << "--begin")
-    //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"
-    //: program crash if more than 1 thread entered
-    //"GetCurrentCPUcoreAttributeValues" and so more than 1 time Initalize() was
-    // called.
-    m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
-    LOGN( FULL_FUNC_NAME << "--end")
-  }
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementRoot =
+      p_dom_document->getDocumentElement();
+    XERCES_CPP_NAMESPACE::DOMElement * p_dom_element ;
+    PerCPUcoreAttributes * arp_percpucoreattributes =
+      mr_model.m_cpucoredata.m_arp_percpucoreattributes ;
+    std::string stdstr ;
 
-  IPCdataHandler::~IPCdataHandler()
-  {
-  //  if( m_arbyData )
-  //    delete [] m_arbyData ;
-    PossiblyReleaseMemoryThreadSafe() ;
-    x86InfoAndControl::TerminateXerces();
+    CreateCPUcoreXMLelements(p_dom_document, arp_percpucoreattributes);
+//    if( mr_model.m_cpucoredata.m_bTooHot )
+//    {
+    CreateTooHotXMLelement(p_dom_document);
+//    }
+    CreateDVFS_XMLelement(p_dom_document);
   }
 
   inline void IPCdataHandler::EnterReadByIPCthreadCriticalSection()

@@ -353,7 +353,7 @@ void CPUcoreData::InterpolateDefaultVoltages()
               //, i.e. more and more frequency-voltage pairs are inserted
               //because the frequency depends on the reference clock.
               stdsetvoltageandfreqDefault.insert(
-                VoltageAndFreq(fVoltageInVolt,fFreqInMHz)
+                VoltageAndFreq(fVoltageInVolt, (WORD) fFreqInMHz)
                 ) ;
             }
           }
@@ -761,7 +761,8 @@ void CPUcoreData::InterpolateDefaultVoltages()
       const float maxMulti = m_arfAvailableMultipliers[
         m_stdset_floatAvailableMultipliers.size() - 1];
       const VoltageAndFreq voltageandfreqMaxMultAndMaxVoltage(
-        maxVoltage, maxMulti * mp_cpucontroller->m_fReferenceClockInMHz);
+        maxVoltage,
+        (WORD) (maxMulti * mp_cpucontroller->m_fReferenceClockInMHz) );
       if( ! p_voltageandfreqHigher)
         p_voltageandfreqHigher = & voltageandfreqMaxMultAndMaxVoltage;
       LOGN( FULL_FUNC_NAME << "--higher volt & freq:" << * p_voltageandfreqHigher)
