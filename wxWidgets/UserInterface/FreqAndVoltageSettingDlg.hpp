@@ -78,37 +78,43 @@ class VoltageAndFreq;
 
 #define CREATE_DIALOG_INLINED /*inline*/
 
+struct InstableCPUoperationDetectionData
+{
+  unsigned seconds;
+  float CPUusageInPercent;
+};
+
 class FreqAndVoltageSettingDlg
   : public wxDialog
 {
 private:
-    //An enum guarantees a unique number for each element.
-    enum
-    {
-      ID_DivisorSlider = 1,
-      ID_PstateSlider ,
-      ID_MultiplierSlider,
-      ID_VoltageSlider
-      , ID_FrequencySlider
-      , ID_SetAsMinVoltage
-      , ID_SetAsWantedVoltage
-      //, ID_SpinVoltageUp
-      //, ID_SpinVoltageDown
-      , ID_SpinVoltage //= 182
-      , ID_SelectPstateViaMousePos
-      , ID_DecreaseVoltage
-      , ID_StabilizeVoltage
-      , ID_Panel
-      , ID_PreventVoltageBelowLowestStableVoltageCheckbox
-      , ID_RestorePerformanceStateAfterResumeCheckbox
-      , ID_PreventVoltageAboveDefaultVoltageCheckbox
-      , ID_findLowestStableVoltage
-      , ID_stopFindingLowestStableVoltage
-      , ID_AutoConfigureVoltageSettings
-      , VoltageTypeListBox
-      , SecondsUntilVoltageDecreaseSpinButton
-      , SetStartUnstableCPUcoreOperationImage
-    };
+  //An enum guarantees a unique number for each element.
+  enum
+  {
+    ID_DivisorSlider = 1,
+    ID_PstateSlider ,
+    ID_MultiplierSlider,
+    ID_VoltageSlider
+    , ID_FrequencySlider
+    , ID_SetAsMinVoltage
+    , ID_SetAsWantedVoltage
+    //, ID_SpinVoltageUp
+    //, ID_SpinVoltageDown
+    , ID_SpinVoltage //= 182
+    , ID_SelectPstateViaMousePos
+    , ID_DecreaseVoltage
+    , ID_StabilizeVoltage
+    , ID_Panel
+    , ID_PreventVoltageBelowLowestStableVoltageCheckbox
+    , ID_RestorePerformanceStateAfterResumeCheckbox
+    , ID_PreventVoltageAboveDefaultVoltageCheckbox
+    , ID_findLowestStableVoltage
+    , ID_stopFindingLowestStableVoltage
+    , ID_AutoConfigureVoltageSettings
+    , VoltageTypeListBox
+    , SecondsUntilVoltageDecreaseSpinButton
+    , SetStartUnstableCPUcoreOperationImage
+  };
 
   bool m_bAllowWritingVoltageAndFrequency;
   //The core ID is needed for setting p-state.
@@ -117,6 +123,7 @@ private:
   BYTE m_byPreviousMultiplierValue ;
   float m_fWantedVoltageInVolt ;
 public:
+  InstableCPUoperationDetectionData m_instablecpuoperationdetectiondata;
   static wxString s_wxstrInstableCPUcoreVoltageWarning;
   enum voltageTypes
   {
@@ -154,6 +161,7 @@ public:
   wxStaticText * m_p_wxstatictextSecondsUntilNextVoltageDecrease;
 //  wxStaticText * m_p_wxstatictextInstableCPUcoreVoltageWarning;
   wxTextCtrl * m_p_wxtextctrlSecondsUntilNextVoltageDecrease;
+  wxTextCtrl * m_p_wxtextctrlInstableCPUdetectDynLibCPUcoreUsagePercentage;
 //  wxBitmapButton * m_p_wxbitmapbuttonStopFindingLowestStableCPUcoreVoltage;
 private:
 //  wxBoxSizer * m_p_wxboxsizerOK_Cancel;
@@ -223,7 +231,9 @@ private:
   CREATE_DIALOG_INLINED void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
   CREATE_DIALOG_INLINED void AddIncreaseVoltageButton( wxSizer * p_wxsizer ) ;
   //CREATE_DIALOG_INLINED
-    void AddSecondsUntilNextVoltageDecreaseTextControl(
+  CREATE_DIALOG_INLINED void AddSecondsUntilNextVoltageDecreaseTextControl(
+    wxSizer * p_wxsizer );
+  void AddInstableCPUdetectDynLibCPUcoreUsagePercentageTextControl(
     wxSizer * p_wxsizer );
   CREATE_DIALOG_INLINED void AddSelectPstateViaMousePositionButton(
     wxSizer * p_wxsizer );
@@ -333,7 +343,7 @@ public:
   void OnSpinSecondsUntilVoltageDecreaseSpinButton(
     wxSpinEvent & event);
   void OnStabilizeVoltageButton(wxCommandEvent & wxcmd ) ;
-  void OnSetSecondsCountDownLabel( wxCommandEvent
+  void OnUpdateInstableCPUdetection( wxCommandEvent
     //wxEvent
     & event );
   void OnSetStartUnstableCPUcoreOperationImage(wxEvent &);
@@ -362,7 +372,7 @@ public:
   void SetStartFindingLowestStableVoltageButton();
   void SetMultiplierSliderToClosestValue(float fMultiplier);
   BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
-  void StartedInstableCPUcoreVoltageDetection();
+  void StartedInstableCPUcoreVoltageDetection(wxCommandEvent & event );
   void StopFindingLowestStableCPUcoreVoltage();
   inline BYTE VoltageIsWithinValidRange(float fVoltageInVolt
     , float fCPUcoreFrequencyinMHz) ;
@@ -371,6 +381,7 @@ public:
 };
   BEGIN_DECLARE_EVENT_TYPES()
     DECLARE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxNewEventType() )
+    DECLARE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_STARTED_INSTABLE_CPU_CORE_OPERATION_DETECTION, wxNewEventType() )
   //"EVT_BUTTON" also expands to "DECLARE_EVENT_TYPE"
   //  DECLARE_EVENT_TYPE(wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, 7777)
   END_DECLARE_EVENT_TYPES()

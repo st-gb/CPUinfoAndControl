@@ -284,6 +284,7 @@ public:
     std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName,
     uint16_t & r_ui16ActivePowerSchemeIndex
     );
+  void InitUnstableCPUcoreOperationDetection();
   BYTE InitUnstableVoltageDetectionDynLibAccess();
   bool SetPowerSchemeViaIPC(
     const std::wstring & r_std_wstrPowerSchemeName);
@@ -333,9 +334,9 @@ public:
       1,
     BYTE ar_byDataToSend [] = NULL);
   void MessageWithTimeStamp(const std::wstring & cr_stdwstr,
-    unsigned flags = 0);
+    unsigned flags = 0) const;
   void MessageWithTimeStamp(//const LPWSTR
-      const wchar_t * cp_lpwstrMessage, unsigned flags = 0);
+      const wchar_t * cp_lpwstrMessage, unsigned flags = 0) const;
   bool OpenLogFile(//std::tstring & r_std_tstrLogFilePath
     std::wstring & r_std_wstrLogFilePath, bool bAppendProcessID, bool bRolling);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION

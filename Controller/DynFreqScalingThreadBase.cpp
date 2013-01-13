@@ -416,7 +416,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
 //    DWORD dwCurrentTimeInMillis ;
     while( m_vbRun )
     {
-      LOGN("DVFS thread running")
+      LOGN_DEBUG("DVFS thread running")
       //DEBUG("begin of scaling thread loop\n");
 //      if( ! m_bCalledInit )
 //      {
@@ -1039,9 +1039,11 @@ DWORD //__stdcall is important for Windows' ::CreateThread()
 #ifdef _WIN32 //under Linux g++ error if "__stdcall"
   __stdcall
 #endif
-  DynFreqScalingThreadBaseNameSpace::ThreadFunction( void * pv )
+  //DynFreqScalingThreadBaseNameSpace::ThreadFunction( void * pv )
+  DynFreqScalingThreadBase::ThreadFunction( void * pv )
 {
-  LOGN("DynFreqScalingThreadBaseNameSpace::ThreadFunction begin--pv:" << pv )
+  LOGN_DEBUG("DynFreqScalingThreadBase::ThreadFunction begin--pointer to "
+    "DynFreqScalingThreadBase object:" << pv )
   DynFreqScalingThreadBase * p_dynfreqscalingthreadbase =
     (DynFreqScalingThreadBase *) pv ;
   if( p_dynfreqscalingthreadbase )

@@ -98,6 +98,7 @@ public:
   bool m_b1CPUcorePowerPlane ;
   //For notifying via user interface if the CPU is too hot/ being throttled.
   long long m_llLastTimeTooHot;
+  bool m_bDVFSfromServiceIsRunning;
   int m_byNumberOfCmdLineArgs;
   TCHAR ** m_arartcharCmdLineArg ;
   //std::vector<std::string> m_stdvecstdstringCmdLineArg ;

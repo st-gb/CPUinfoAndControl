@@ -41,6 +41,8 @@
 #include <Xerces/SAX2MainConfigHandler.hpp> //class SAX2MainConfigHandler
 //class SAX2VoltagesForFrequencyHandler
 #include <Xerces/SAX2VoltagesForFrequencyHandler.hpp>
+//class Xerces::SAX2CPUcontrollerConfiguration
+#include <Xerces/SAX2CPUcontrollerConfiguration.hpp>
 #include <Xerces/XMLAccess.hpp> //ReadXMLfileInitAndTermXerces(...)
 
 ////compiling with pre-declarations is faster than with "#include"s 
@@ -141,15 +143,37 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   r_p_cpucontroller = NULL ;
   r_p_icpucoreusagegetter = NULL ;
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
+  const CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
 
   std::string stdstrCPUtypeRelativeDirPath ;
   if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
   {
     stdstrCPUtypeRelativeDirPath += "/" ;
-    gp_cpucontrolbase->CreateDynLibCPUcontroller(
-      stdstrCPUtypeRelativeDirPath
-//        , r_p_cpucontroller
-      ) ;
+    Xerces::SAX2CPUcontrollerConfiguration sax2cpucontrollerconfiguration(
+      * mp_userinterface, * mp_model);
+    if( Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
+        (mp_model->m_std_strConfigFilePath + "/CPUmodelConfig.xml").c_str(),
+        mp_userinterface, sax2cpucontrollerconfiguration)
+        == Apache_Xerces::readingXMLdocSucceeded )
+    {
+      LOGN_INFO("most suitable CPU controller for "
+        << r_cpucoredata.m_strVendorID
+        << ",family " << r_cpucoredata.m_wFamily
+        << ",model " << (WORD) r_cpucoredata.m_byModel
+        << ",stepping " << (WORD) r_cpucoredata.m_byStepping
+        << ":" << sax2cpucontrollerconfiguration.
+        m_mostSuitableCPUinfoGetterAndOrController )
+    }
+    if( sax2cpucontrollerconfiguration.
+        m_mostSuitableCPUinfoGetterAndOrController.empty() )
+      gp_cpucontrolbase->CreateDynLibCPUcontroller(
+        stdstrCPUtypeRelativeDirPath
+  //        , r_p_cpucontroller
+        ) ;
+    else
+      gp_cpucontrolbase->CreateDynLibCPUcontroller_DynLibName(
+        sax2cpucontrollerconfiguration.
+        m_mostSuitableCPUinfoGetterAndOrController);
     r_p_cpucontroller = gp_cpucontrolbase->m_p_cpucontrollerDynLib ;
     gp_cpucontrolbase->CreateDynLibCPUcoreUsageGetter(
       stdstrCPUtypeRelativeDirPath
@@ -346,20 +370,21 @@ BYTE MainController::ReadPstateConfig(
     ReadRegisterDataConfig( strFamilyAndModelFilePath, p_userinterface ) ;
     #endif //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
 
-    if( ! ReadXMLfileWithoutInitAndTermXercesInline(
-        //const char* xmlFile
-        strProcessorFilePath.c_str()
+    byRet = Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
+      //const char* xmlFile
+      strProcessorFilePath.c_str()
 //        , model
-        , p_userinterface
-        //Base class of implementing Xerces XML handlers.
-        //This is useful because there may be more than one XML file to read.
-        //So one calls this functions with different handlers passed.
-        //DefaultHandler & r_defaulthandler
-        , sax2voltages_for_frequency_handler
-        )
+      , p_userinterface
+      //Base class of implementing Xerces XML handlers.
+      //This is useful because there may be more than one XML file to read.
+      //So one calls this functions with different handlers passed.
+      //DefaultHandler & r_defaulthandler
+      , sax2voltages_for_frequency_handler
+      );
+    if( byRet == Apache_Xerces::readingXMLdocFailed
       )
     {
-      byRet = 1 ;
+//      byRet = 1 ;
     }
     else
     {
@@ -370,7 +395,7 @@ BYTE MainController::ReadPstateConfig(
       //tstr += _T(")") ;
       //throw VoltageSafetyException(
       //  tstr ) ;
-      byRet = 1 ;
+//      byRet = 1 ;
     }
     //mp_i_cpucontroller->mp_model = & model ;
     //if( mp_i_cpucontroller )
@@ -411,7 +436,7 @@ void MainController::ReadMainConfig(
 #ifdef COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
   //DEBUGN( "number of Trie nodes: " << g_logger.GetTrie().m_dwNumberOfNodes )
 #endif //COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
-  ReadXMLfileInitAndTermXerces(
+  Apache_Xerces::ReadXMLfileInitAndTermXerces(
     //const char* xmlFile
     stdstrMainConfigFileName.c_str()
     , model

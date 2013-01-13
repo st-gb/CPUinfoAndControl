@@ -83,7 +83,7 @@ namespace wxWidgets
         << "\"" << mr_cpucontrolbase.m_model.m_stdstrCPUcontrollerDynLibPath
         << "\""
         << ": successfully loaded and function pointers assigned to it.",
-        LogLevel::log_message_typeSUCCESS)
+        LogLevel::success)
   //        gp_cpucontrolbase->SetCPUcontroller( //p_wxdynlibcpucontroller
   //           //mp_wxdynlibcpucontroller
   //           gp_cpucontrolbase->mp_wxdynlibcpucontroller  ) ;

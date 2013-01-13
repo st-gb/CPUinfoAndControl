@@ -66,12 +66,12 @@ public:
   virtual void CurrenCPUfreqAndVoltageUpdated() {} ;
   virtual void DynVoltnFreqScalingEnabled() {}
   virtual void EndAllAccessToCPUcontroller() {};
-  //The following function are for ease to not need to create the time stamp
-  //string on our own in order to display it.
+  /** The following function are for ease to not need to create the time stamp
+  * string on our own in order to display it. */
   virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr
     //Flag like "OK_BUTTON"
-    , unsigned flags = 0) {}
-  virtual void MessageWithTimeStamp(const wchar_t * cp_wch) {}
+    , unsigned flags = 0) const {}
+  virtual void MessageWithTimeStamp(const wchar_t * cp_wch) const {}
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};
   virtual void RedrawEverything() {} ;

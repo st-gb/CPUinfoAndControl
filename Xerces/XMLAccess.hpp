@@ -39,6 +39,9 @@
   class Model ;
   class UserInterface ;
 
+namespace Apache_Xerces
+{
+//  namespace
   char ReadXMLfileInitAndTermXerces(
     const char * xmlFile,//PStates & pstates
     Model & model,
@@ -59,7 +62,9 @@
    //So one calls this functions with different handlers passed.
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     ) ;
-  char ReadXMLdocument(
+  enum ReadXMLdocumentRetCodes { readingXMLdocSucceeded = 0,
+    readingXMLdocFailed};
+  /*char*/ enum Apache_Xerces::ReadXMLdocumentRetCodes ReadXMLdocument(
     XERCES_CPP_NAMESPACE::InputSource & r_inputsource, //PStates & pstates
 //    Model & model,
     UserInterface * p_userinterface ,
@@ -70,7 +75,8 @@
     ) ;
 
   /** Warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been
-  * called before calling this function. */
+  * called before calling this function.
+  * @return readingXMLdocSucceeded, readingXMLdocFailed*/
   inline char ReadXMLdocumentWithoutInitAndTermXerces(
     BYTE arbyXMLdata [] ,
     DWORD dwDataSizeInByte ,
@@ -100,7 +106,7 @@
       r_defaulthandler
       ) ;
   }
-  //return: 0=success
+  /** @return: readingXMLdocSucceeded, readingXMLdocFailed */
   inline BYTE ReadXMLfileWithoutInitAndTermXercesInline(
     const char * cp_chXMLfilePath,
 //    Model & model,
@@ -111,7 +117,7 @@
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     )
   {
-    BYTE byReturn = 1 ;
+    BYTE byReturn = Apache_Xerces::readingXMLdocFailed ;
 //    LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
     WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
       "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" )
@@ -123,7 +129,7 @@
     {
       XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
         p_xmlchXMLfilePath ) ;
-      byReturn = ! ReadXMLdocument(
+      byReturn = ReadXMLdocument(
         xerces_localfileinputsource ,
 //        model,
         p_userinterface ,
@@ -134,5 +140,6 @@
     LOGN( FULL_FUNC_NAME << "--after reading config file")
     return byReturn ;
   }
+}
 //#endif //#ifdef COMPILE_WITH_XERCES
 #endif //#ifndef _XMLACCESS_HPP

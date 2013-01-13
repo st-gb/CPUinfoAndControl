@@ -223,11 +223,11 @@
       LOGN_TYPE( FULL_FUNC_NAME << "--got attribute value for \""
         << std_strAttributeName << "\":" << m_p_model->m_logfileattributes.
         m_std_wstrLogFilePath,
-        LogLevel::log_message_typeSUCCESS)
+        LogLevel::success)
     else
       LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
         << std_strAttributeName << "\" failed",
-        LogLevel::log_message_typeINFO)
+        LogLevel::info)
   }
 
   void SAX2MainConfigHandler::startElement
@@ -276,12 +276,12 @@
         {
           LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
             << std_strAttributeName << "\" succeeded",
-            LogLevel::log_message_typeSUCCESS)
+            LogLevel::success)
         }
         else
           LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
             << std_strAttributeName << "\" failed",
-            LogLevel::log_message_typeINFO)
+            LogLevel::info)
       }
       else if( m_strElementName == "resume_from_standby_or_hibernation")
         HandleResumeFromStandbyOrHibernationXMLelement(cr_xercesc_attributes);

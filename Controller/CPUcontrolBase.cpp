@@ -132,6 +132,80 @@ CPUcontrolBase::~CPUcontrolBase()
   LOGN("~CPUcontrolBase() end")
 }
 
+void CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
+  const std::string & std_strCPUcontrollerDynLibName)
+{
+  std::string stdstrFilePath = "CPUcontrollerDynLibs/" +
+    std_strCPUcontrollerDynLibName ;
+//    std::string stdstrFullFilePath =
+  m_model.m_stdstrCPUcontrollerDynLibPath = m_dynlibhandler.
+    GetDynLibPath(stdstrFilePath) ;
+  LOGN("should load/ attach \""
+//      << stdstrFullFilePath
+    << m_model.m_stdstrCPUcontrollerDynLibPath
+    << "\" as CPU controller" )
+
+  std::set<VoltageAndFreq> std_set_voltageandfreqDefaultBeforeAttach =
+    m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
+
+  m_dynlibhandler.CreateDynLibCPUcontroller(
+//      stdstrFullFilePath //,
+    m_model.m_stdstrCPUcontrollerDynLibPath
+//      mp_i_cpuaccess,
+//      mp_userinterface
+    ) ;
+
+  std::set<VoltageAndFreq> std_set_voltageandfreqDefaultAfterAttach =
+    m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
+
+  LOGN( FULL_FUNC_NAME << "--before getting the difference of between the "
+    "default voltages before:"
+    << std_set_voltageandfreqDefaultBeforeAttach.size()
+    << " and after:" << std_set_voltageandfreqDefaultAfterAttach.size()
+    << " an attached CPU controller.")
+
+  //TODO the following code before the 2nd else branch can obviously be
+  //deleted because the error was the missing vector size.
+  std::vector<VoltageAndFreq> &
+    r_std_vec_voltageandfreqInsertedByCPUcontroller =
+    m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller;
+  std::set<VoltageAndFreq> * p_std_setToCopy = NULL;
+  if( std_set_voltageandfreqDefaultBeforeAttach.empty() )
+    p_std_setToCopy = & std_set_voltageandfreqDefaultAfterAttach;
+  else
+    if( std_set_voltageandfreqDefaultAfterAttach.empty() )
+      p_std_setToCopy = & std_set_voltageandfreqDefaultBeforeAttach;
+  if( p_std_setToCopy )
+  {
+    r_std_vec_voltageandfreqInsertedByCPUcontroller.resize(
+      p_std_setToCopy->size() );
+    std::copy(
+      p_std_setToCopy->begin(),
+      p_std_setToCopy->end(),
+      r_std_vec_voltageandfreqInsertedByCPUcontroller.begin() );
+  }
+  else
+  {
+    //Must reserve enough space for std::set_difference(...), else program
+    //crash.
+    m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller.
+      reserve(std_set_voltageandfreqDefaultAfterAttach.size() );
+    LOGN( FULL_FUNC_NAME << " both sets are not empty")
+    //http://www.cplusplus.com/reference/algorithm/set_difference/:
+    //"The difference of two sets is formed by the elements that are present
+    //in the first set, but not in the second one. "
+    // Crashed when at least 1 of the containers were empty.
+    std::set_difference(
+      std_set_voltageandfreqDefaultAfterAttach.begin(),
+      std_set_voltageandfreqDefaultAfterAttach.end(),
+      std_set_voltageandfreqDefaultBeforeAttach.begin(),
+      std_set_voltageandfreqDefaultBeforeAttach.end(),
+      m_model.m_cpucoredata.
+      m_std_vec_voltageandfreqInsertedByCPUcontroller.begin()
+      );
+  }
+}
+
 void CPUcontrolBase::CreateDynLibCPUcontroller(
   const std::string & stdstrCPUtypeRelativeDirPath
 //  , I_CPUcontroller * & r_p_cpucontroller
@@ -140,10 +214,10 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
   std::string stdstrFilePath ;
   stdstrFilePath = GetCPUcontrollerConfigFilePath(
     stdstrCPUtypeRelativeDirPath ) ;
-  std::string stdstr = stdstrFilePath ;
-  if( ReadFileContent( stdstr ) )
+  std::string std_strCPUcontrollerDynLibName = stdstrFilePath ;
+  if( ReadFileContent( std_strCPUcontrollerDynLibName ) )
   {
-    if( stdstr.empty() )
+    if( std_strCPUcontrollerDynLibName.empty() )
       LOGN("Do not load/ attach CPU core usage getter because string read "
         "from file \"" << stdstrFilePath
         << " that should contain the dynamic libary name seems to be empty" )
@@ -151,75 +225,8 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
     {
       //Linux text editors like "gedit" automatically add a carriage return
       //character at the end of the (last) line.
-      RemoveCarriageReturn(stdstr) ;
-      std::string stdstrFilePath = "CPUcontrollerDynLibs/" + stdstr ;
-  //    std::string stdstrFullFilePath =
-      m_model.m_stdstrCPUcontrollerDynLibPath = m_dynlibhandler.
-        GetDynLibPath(stdstrFilePath) ;
-      LOGN("should load/ attach \""
-  //      << stdstrFullFilePath
-        << m_model.m_stdstrCPUcontrollerDynLibPath
-        << "\" as CPU controller" )
-
-      std::set<VoltageAndFreq> std_set_voltageandfreqDefaultBeforeAttach =
-        m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
-
-      m_dynlibhandler.CreateDynLibCPUcontroller(
-  //      stdstrFullFilePath //,
-        m_model.m_stdstrCPUcontrollerDynLibPath
-  //      mp_i_cpuaccess,
-  //      mp_userinterface
-        ) ;
-
-      std::set<VoltageAndFreq> std_set_voltageandfreqDefaultAfterAttach =
-        m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
-
-      LOGN( FULL_FUNC_NAME << "--before getting the difference of between the "
-        "default voltages before:"
-        << std_set_voltageandfreqDefaultBeforeAttach.size()
-        << " and after:" << std_set_voltageandfreqDefaultAfterAttach.size()
-        << " an attached CPU controller.")
-
-      //TODO the following code before the 2nd else branch can obviously be
-      //deleted because the error was the missing vector size.
-      std::vector<VoltageAndFreq> &
-        r_std_vec_voltageandfreqInsertedByCPUcontroller =
-        m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller;
-      std::set<VoltageAndFreq> * p_std_setToCopy = NULL;
-      if( std_set_voltageandfreqDefaultBeforeAttach.empty() )
-        p_std_setToCopy = & std_set_voltageandfreqDefaultAfterAttach;
-      else
-        if( std_set_voltageandfreqDefaultAfterAttach.empty() )
-          p_std_setToCopy = & std_set_voltageandfreqDefaultBeforeAttach;
-      if( p_std_setToCopy )
-      {
-        r_std_vec_voltageandfreqInsertedByCPUcontroller.resize(
-          p_std_setToCopy->size() );
-        std::copy(
-          p_std_setToCopy->begin(),
-          p_std_setToCopy->end(),
-          r_std_vec_voltageandfreqInsertedByCPUcontroller.begin() );
-      }
-      else
-      {
-        //Must reserve enough space for std::set_difference(...), else program
-        //crash.
-        m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller.
-          reserve(std_set_voltageandfreqDefaultAfterAttach.size() );
-        LOGN( FULL_FUNC_NAME << " both sets are not empty")
-        //http://www.cplusplus.com/reference/algorithm/set_difference/:
-        //"The difference of two sets is formed by the elements that are present
-        //in the first set, but not in the second one. "
-        // Crashed when at least 1 of the containers were empty.
-        std::set_difference(
-          std_set_voltageandfreqDefaultAfterAttach.begin(),
-          std_set_voltageandfreqDefaultAfterAttach.end(),
-          std_set_voltageandfreqDefaultBeforeAttach.begin(),
-          std_set_voltageandfreqDefaultBeforeAttach.end(),
-          m_model.m_cpucoredata.
-          m_std_vec_voltageandfreqInsertedByCPUcontroller.begin()
-          );
-      }
+      RemoveCarriageReturn(std_strCPUcontrollerDynLibName) ;
+      CreateDynLibCPUcontroller_DynLibName(std_strCPUcontrollerDynLibName);
     }
   }
   LOGN( FULL_FUNC_NAME << "--end")
@@ -529,7 +536,9 @@ void CPUcontrolBase::OutputLinkageWarning()
 {
   LOGN_TYPE( "note: this program may crash (immediately) after this output if "
     "it was built with an incompatible combination of \"wx\\setup.h\" and "
-    "linked wxWidgets libraries", LogLevel::log_message_typeWARNING)
+    "linked wxWidgets libraries", LogLevel::warning)
+  LOGN_WARNING( "note: this program may crash "
+    "if it tries to execute GUI stuff in a non-GUI thread")
 }
 
 void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
@@ -645,12 +654,12 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
     + "/logging.xml";
   const char * c_ar_chXMLfileName = std_strFilePath.c_str();
   if( //return value: 0 = success
-    ReadXMLfileWithoutInitAndTermXercesInline(
+    Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
       c_ar_chXMLfileName,
       //this,
       mp_userinterface,
       logoutputhandler
-      )
+      ) == Apache_Xerces::readingXMLdocFailed
     )
   {
   //      Confirm( "loading UserInterface.xml failed" ) ;
@@ -945,14 +954,14 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
       LOGN_TYPE( FULL_FUNC_NAME << "--# of preferred voltages < 2 and # of "
         " available voltages > 1->can only "
         "use default/max voltages for DVFS if there are at least 2 of them",
-        LogLevel::log_message_typeWARNING)
+        LogLevel::warning)
       if( m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault//.empty()
           .size() < 2
         )
       {
         LOGN_TYPE(FULL_FUNC_NAME << "--# of default voltages < 2"
           "->no Dynamic Voltage and Frequency Scaling at all possible "
-          , LogLevel::log_message_typeWARNING
+          , LogLevel::warning
           )
     //        return CPUcontrolBase::no_preferred_voltages_specified ;
 //      dwReturnValue = CPUcontrolBase::no_preferred_voltages_specified ;

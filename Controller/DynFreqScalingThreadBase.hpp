@@ -122,16 +122,22 @@ public:
     LOGN("DynFreqScalingThreadBase::WaitForTermination")
     return 0 ;
   }
-};
-
-namespace DynFreqScalingThreadBaseNameSpace
-{
-  DWORD //__stdcall is important for Windows' ::CreateThread()
+  static DWORD //__stdcall is important for Windows' ::CreateThread()
   //Built-in preprocessor macro for MSVC, MinGW (also for 64 bit)
   #ifdef _WIN32 //under Linux g++ error if "__stdcall"
     __stdcall
   #endif
     ThreadFunction( void * pv ) ;
+};
+
+namespace DynFreqScalingThreadBaseNameSpace
+{
+//  DWORD //__stdcall is important for Windows' ::CreateThread()
+//  //Built-in preprocessor macro for MSVC, MinGW (also for 64 bit)
+//  #ifdef _WIN32 //under Linux g++ error if "__stdcall"
+//    __stdcall
+//  #endif
+//    ThreadFunction( void * pv ) ;
 }
 
 #endif //DYNFREQSCALINGTHREADBASE_HPP

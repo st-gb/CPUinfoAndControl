@@ -36,7 +36,7 @@ using namespace xercesc;
 
 //extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
 
-char ReadXMLfileInitAndTermXerces(
+char Apache_Xerces::ReadXMLfileInitAndTermXerces(
   const char * cp_chXMLfilePath,
   Model & model,
   UserInterface * p_userinterface ,
@@ -86,7 +86,7 @@ char ReadXMLfileInitAndTermXerces(
       XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
         p_xmlchXMLfilePath ) ;
       LOGN( FULL_FUNC_NAME << "--after creating a LocalFileInputSource obj");
-      ReadXMLdocument(
+      Apache_Xerces::ReadXMLdocument(
         xerces_localfileinputsource ,
 //        model,
         p_userinterface ,
@@ -152,7 +152,7 @@ char ReadXMLdocumentInitAndTermXerces(
   }
   if( bXercesSuccessfullyInitialized )
   {
-    ReadXMLdocumentWithoutInitAndTermXerces(
+    Apache_Xerces::ReadXMLdocumentWithoutInitAndTermXerces(
       arbyXMLdata ,
       dwSizeInByte ,
       lpwstrBufferIdentifier ,
@@ -197,7 +197,7 @@ inline void OutputXMLExceptionErrorMessage(
   getUTF8string_inline(stdwstrMessage, std_strMessage);
 //  LOGN_TYPE( "XMLException", )
   g_logger.Log_inline( std_strMessage,
-    LogLevel::log_message_typeERROR);
+    LogLevel::error);
   p_userinterface->Confirm(
     stdwstrMessage
     );
@@ -239,7 +239,7 @@ inline void OutputSAXParseExceptionErrorMessage(
   std::string std_strMessage;
   getUTF8string_inline(stdwstrMessage, std_strMessage);
   g_logger.Log_inline( std_strMessage,
-    LogLevel::log_message_typeERROR);
+    LogLevel::error);
   p_userinterface->MessageWithTimeStamp(stdwstrMessage);
 }
 
@@ -248,7 +248,7 @@ inline void OutputSAXExceptionErrorMessage(
   XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
   UserInterface *& p_userinterface)
 {
-  LOGN_TYPE( "SAXException", LogLevel::log_message_typeERROR);
+  LOGN_TYPE( "SAXException", LogLevel::error);
   //Use wide string because maybe Chinese file names.
   std::wstring stdwstrMessage = L"SAX exception in document \""
     + GET_WCHAR_STRING_FROM_XERCES_STRING( r_inputsource.getSystemId() ) +
@@ -270,11 +270,12 @@ inline void OutputSAXExceptionErrorMessage(
   std::string std_strMessage;
   getUTF8string_inline(stdwstrMessage, std_strMessage);
   g_logger.Log_inline( std_strMessage,
-    LogLevel::log_message_typeERROR);
+    LogLevel::error);
   //          return FAILURE;
 }
 
-char ReadXMLdocument(
+/** @return readingXMLdocSucceeded, readingXMLdocFailed*/
+enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
   XERCES_CPP_NAMESPACE::InputSource & r_inputsource,
 //	  Model & model,
   UserInterface * p_userinterface ,
@@ -285,7 +286,9 @@ char ReadXMLdocument(
   )
 {
     LOGN( FULL_FUNC_NAME << "--begin" );
-    BYTE byReturn = FAILURE ;
+//    BYTE byReturn = readingXMLdocFailed ;
+    enum Apache_Xerces::ReadXMLdocumentRetCodes returnCode =
+      readingXMLdocFailed;
       //DEBUG("ReadXMLfileInitAndTermXerces begin--filename:%s\n",xmlFile);
     //Initialize to NULL just to avoid (g++) compiler warning.
     XERCES_CPP_NAMESPACE::SAX2XMLReader * p_sax2xmlreader = NULL ;
@@ -324,11 +327,12 @@ char ReadXMLdocument(
           << GetStdString_Inline(GET_WCHAR_STRING_FROM_XERCES_STRING(
               r_inputsource.getSystemId() )
             ) << "\"",
-            LogLevel::log_message_typeSUCCESS
+            LogLevel::success
           )
 //          if( model.m_bTruncateLogFileForEveryStartup )
 //              g_logger.TruncateFileToZeroAndRewrite() ;
-        byReturn = SUCCESS;
+//        byReturn = SUCCESS;
+        returnCode = readingXMLdocSucceeded;
       }
       catch ( const XMLException & cr_xmlexception )
       {
@@ -349,7 +353,7 @@ char ReadXMLdocument(
       catch (...)
       {
         LOGN_TYPE( "Unexpected Exception at parsing XML", LogLevel::
-          log_message_typeERROR ) ;
+          error ) ;
         p_userinterface->Confirm("Unexpected Exception parsing the XML document\n");
 //	        return FAILURE;
       }
@@ -372,6 +376,7 @@ char ReadXMLdocument(
     else //if( p_sax2xmlreader )
       p_userinterface->Confirm( "Xerces failed to create an XML reader" );
 //	  return SUCCESS;
-    return byReturn ;
+    return //byReturn ;
+      returnCode;
   }
 //#endif //#ifdef COMPILE_WITH_XERCES
