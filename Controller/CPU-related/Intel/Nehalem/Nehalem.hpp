@@ -18,12 +18,12 @@
   #include <preprocessor_macros/bitmasks.h>
   #include <Controller/CPU-related/Intel/Intel_registers.h>
 
-//  extern DWORD g_dwValue1, g_dwValue2 ;
+//  extern DWORD g_ui32Value1, g_dwValue2 ;
 //from http://stackoverflow.com/questions/911035/uint32-int16-and-the-like-are-they-standard-c:
 #include <stdint.h>
 
 //Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
-extern uint32_t g_dwValue1, g_ui32Value2 ;
+extern uint32_t g_ui32Value1, g_ui32Value2 ;
 extern DWORD g_dwPreviousTickCountInMilliseconds;
 
 #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
@@ -32,17 +32,37 @@ extern DWORD g_dwPreviousTickCountInMilliseconds;
   //(e.g. Intel Core, Nehalem) CPU header file may be included, so 1 name like
   //"GetMaximumMultiplier()" in both files could be misleading.
 
+namespace Intel
+{
+  namespace Nehalem
+  {
+    inline unsigned GetLowestMultiplier()
+    {
+      //Westmere i5 450: 000000CE : 00000900 20011200
+      BOOL boolReturnValue = ReadMSR(
+        0xCE ,
+        & g_ui32Value1,// bit  0-31 (register "EAX")
+        & g_ui32Value2,
+        1 //m_dwAffinityMask
+        ) ;
+      if(boolReturnValue)
+        return g_ui32Value2 >> 8;
+      return 0;
+    }
+  }
+}
+
   inline BOOL GetMaximumMultiplier_Nehalem(WORD wCoreID, BYTE & byMaxMulti)
   {
     static BOOL boolReturnValue = FALSE;
     boolReturnValue = ReadMSR(
       MSR_TURBO_RATIO_LIMIT ,
-      & g_dwValue1,// bit  0-31 (register "EAX")
+      & g_ui32Value1,// bit  0-31 (register "EAX")
       & g_ui32Value2,
       1 << wCoreID //m_dwAffinityMask
       ) ;
     //Maximum  multiplier
-    byMaxMulti = (BYTE) ( g_dwValue1 & 255 ) ;
+    byMaxMulti = (BYTE) ( g_ui32Value1 & 255 ) ;
     return boolReturnValue;
   }
 
@@ -56,7 +76,7 @@ extern DWORD g_dwPreviousTickCountInMilliseconds;
     //(Contd.)(Nehalem)" (page "B-74" / 690)
     if( ReadMSR(
       0xCE, //MSR_PLATFORM_INFO
-      & g_dwValue1,
+      & g_ui32Value1,
       & //g_ui32Value2
       ui32Value,
       1 //scope: package
@@ -67,7 +87,7 @@ extern DWORD g_dwPreviousTickCountInMilliseconds;
         // The is the ratio of the frequency that invariant TSC runs at.
         // The invariant TSC frequency can be computed by multiplying this ratio
         // by 133.33 MHz."
-        (g_dwValue1 >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
+        (g_ui32Value1 >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
     return 0.0 ;
   }
 

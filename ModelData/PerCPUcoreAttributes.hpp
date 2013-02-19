@@ -56,6 +56,8 @@ public:
   float m_fTempInDegCelsius ;
   float m_fVoltageInVolt ;
   float m_fVoltageInVoltCalculatedFromCPUload ;
+  /** [0.0 ... 1.0] 1.0: not throttled; 0.25: throttled by 75% */
+  float m_fThrottleLevel;
 private:
   I_CPUcontroller * mp_cpucontroller ;
   ICPUcoreUsageGetter * mp_icpucoreusagegetter ;

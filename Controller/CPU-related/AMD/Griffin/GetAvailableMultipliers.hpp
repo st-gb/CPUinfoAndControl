@@ -40,7 +40,7 @@ inline float * CreateMultiplierArray(
 
     static float fDoubleOfMaxMulti ;
     fDoubleOfMaxMulti = fMaxMultiplier * 2.0f;
-    const float fHalfOfMaxMulti = fMaxMultiplier / 2.0f;
+//    const float fHalfOfMaxMulti = fMaxMultiplier / 2.0f;
 //    const float fLowestMultiplieForDID0 = fMaxMultiplier - ;
     for( BYTE byDivisorIDIndex = 3 ; byDivisorIDIndex > 1
       ; -- byDivisorIDIndex )

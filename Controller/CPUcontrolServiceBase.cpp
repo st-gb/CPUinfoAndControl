@@ -49,8 +49,8 @@ extern I_CPUaccess * g_p_cpuaccess ;
 
 CPUcontrolServiceBase::CPUcontrolServiceBase(UserInterface * p_userinterface)
   :
-  CPUcontrolBase(p_userinterface) ,
-  m_maincontroller( & m_dummyuserinterface )
+  CPUcontrolBase(p_userinterface) //,
+//  m_maincontroller( & m_dummyuserinterface )
 //  , m_wxthreadbasedi_thread(
 //  , m_x86iandc_thread_typeDVFSthread(
 //    //wxThread::Wait() only works for joinable threads
@@ -130,7 +130,7 @@ bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread(
       //to create a separate thread object.
       mp_dynfreqscalingthreadbase )
   {
-    return StartDVFSviaThreadType_Inline(//bContinue
+    return StartDVFSviaThreadType(//bContinue
       ) ;
   }
   else
@@ -207,17 +207,18 @@ DWORD CPUcontrolServiceBase::Initialize(
       )
 //    SetInitHardwareAccessWaitHint() ;
     CreateHardwareAccessObject() ;
-    g_p_cpuaccess = mp_i_cpuaccess ;
-    DEBUGN("Initialize() CPU access address: " << mp_i_cpuaccess )
+//    g_p_cpuaccess = mp_i_cpuaccess ;
+//    DEBUGN("Initialize() CPU access address: " << mp_i_cpuaccess )
 //    LOGN("Address of service attributes: " << mp_modelData)
+    if( mp_i_cpuaccess)
     {
       //Important! because the DLLs assign their pointers to the model
       //from the I_CPUaccess::mp_model
-      mp_i_cpuaccess->mp_model = & m_model ;
+//      mp_i_cpuaccess->mp_model = & m_model ;
 
       //This assignment is needed for "CPUID" calls
-      m_maincontroller.SetCPUaccess( //mp_winring0dynlinked) ;
-        mp_i_cpuaccess ) ;
+//      m_maincontroller.SetCPUaccess( //mp_winring0dynlinked) ;
+//        mp_i_cpuaccess ) ;
       m_maincontroller.ReadMainAndPstateConfig(
         m_model
         , & m_dummyuserinterface );
@@ -301,7 +302,7 @@ DWORD CPUcontrolServiceBase::Initialize(
 //        //are changed/ set due to an error.
 //        dwReturnValue = NO_ERROR ;
       dwReturnValue = NO_ERROR ;
-      }
+    }
   }
   //catch(DLLnotLoadedException e)
   catch( const CPUaccessException & cr_cpuaccessexception)
@@ -312,6 +313,7 @@ DWORD CPUcontrolServiceBase::Initialize(
     ShowMessage( cr_cpuaccessexception.m_stdstrErrorMessage ) ;
     //delete e ;
   }
+  LOGN(FULL_FUNC_NAME << "-return " << dwReturnValue)
   return dwReturnValue;
 }
 
@@ -341,7 +343,7 @@ bool CPUcontrolServiceBase::StartDynVoltnFreqScaling()
       bAlreadyContinued = true ;
     else
 //      mp_dynfreqscalingthreadbase->Start() ;
-      StartDVFSviaThreadType_Inline(//bContinue
+      StartDVFSviaThreadType(//bContinue
         ) ;
 
   }
@@ -350,7 +352,7 @@ bool CPUcontrolServiceBase::StartDynVoltnFreqScaling()
 
 //bool
 //void
-DWORD CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(//bool & bContinue
+DWORD CPUcontrolServiceBase::StartDVFSviaThreadType(//bool & bContinue
   )
 {
 //  bool bContinue = false ;
@@ -374,7 +376,7 @@ DWORD CPUcontrolServiceBase::StartDVFSviaThreadType_Inline(//bool & bContinue
   }
   else
   {
-    LOGN( "Error starting Dynamic Voltage and Frequency Scaling thread :"
+    LOGN_ERROR( "Error starting Dynamic Voltage and Frequency Scaling thread :"
   //        << LocalLanguageMessageFromErrorCodeA(dwRet)
       << GetErrorMessageFromErrorCodeA(dwRet)
       )

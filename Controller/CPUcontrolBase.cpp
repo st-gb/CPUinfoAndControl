@@ -18,6 +18,8 @@
 //class DynFreqScalingThreadBase
 #include <Controller/DynFreqScalingThreadBase.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
+#include <Controller/Logger/Appender/RollingFileOutput.hpp>
+#include <Controller/Logger/OutputHandler/StdOfStreamLogWriter.hpp>
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //class PowerProfDynLinked
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
@@ -31,7 +33,7 @@
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <preprocessor_macros/make_widestring.h> //EXPAND_TO_WIDESTRING
-#include <preprocessor_macros/path_seperator.hpp> //for PATH_SEPERATOR_CHAR
+#include <preprocessor_macros/path_seperator.hpp> //for PATH_SEPERATOR_CHAR_ANSI
 #include <UserInterface/UserInterface.hpp>
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 #include <Xerces/LogOutputHandler.hpp> //class LogOutputHandler
@@ -91,6 +93,7 @@ extern std::basic_string<LOGGING_CHARACTER_TYPE> g_std_basicstring_log_char_type
 
 CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
   :
+  m_ar_ar_ch_programArgs(NULL),
   m_dynlibhandler ( * this ) ,
   m_maincontroller( //Avoid Linux g++ error "invalid conversion from ‘const
     //UserInterface*’ to ‘UserInterface*’
@@ -132,7 +135,7 @@ CPUcontrolBase::~CPUcontrolBase()
   LOGN("~CPUcontrolBase() end")
 }
 
-void CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
+I_CPUcontroller * CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
   const std::string & std_strCPUcontrollerDynLibName)
 {
   std::string stdstrFilePath = "CPUcontrollerDynLibs/" +
@@ -148,7 +151,7 @@ void CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
   std::set<VoltageAndFreq> std_set_voltageandfreqDefaultBeforeAttach =
     m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
 
-  m_dynlibhandler.CreateDynLibCPUcontroller(
+  I_CPUcontroller * p_cpucontroller = m_dynlibhandler.CreateDynLibCPUcontroller(
 //      stdstrFullFilePath //,
     m_model.m_stdstrCPUcontrollerDynLibPath
 //      mp_i_cpuaccess,
@@ -204,6 +207,7 @@ void CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
       m_std_vec_voltageandfreqInsertedByCPUcontroller.begin()
       );
   }
+  return p_cpucontroller;
 }
 
 void CPUcontrolBase::CreateDynLibCPUcontroller(
@@ -241,7 +245,11 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
   std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
     "CPUcoreUsageGetter.cfg" ;
   std::string stdstr = stdstrFilePath ;
-  if( ! ReadFileContent( stdstr ) )
+  if( ReadFileContent( stdstr ) )
+    //Linux text editors like "gedit" automatically add a carriage return
+    //character at the end of the (last) line.
+    RemoveCarriageReturn(stdstr) ;
+  else
   {
     stdstr = m_model.m_std_strDefaultCPUcoreUsageGetter;
     LOGN( FULL_FUNC_NAME << "--using default CPU core usage getter \""
@@ -254,9 +262,6 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
         << " that should contain the dynamic libary name seems to be empty" )
     else
     {
-      //Linux text editors like "gedit" automatically add a carriage return
-      //character at the end of the (last) line.
-      RemoveCarriageReturn(stdstr) ;
       std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstr ;
       std::string stdstrFullFilePath = m_dynlibhandler.
         GetDynLibPath(stdstrFilePath) ;
@@ -274,29 +279,38 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
   }
 }
 
-void CPUcontrolBase::CreateHardwareAccessObject()
-{
-  try //catch CPUaccessexception
-  {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+void CPUcontrolBase::CreateHardwareAccessObject_Windows()
+{
   //WinRing0dynLinked winring0dynlinked(p_frame) ;
   //If allocated statically within this block / method the object
   //gets invalid after leaving the block where it was declared.
   //mp_winring0dynlinked
   //mp_i_cpuaccess = new WinRing0dynLinked(//p_frame
-#ifdef _MSC_VER_ //possible because the import library is for MSVC
+  #ifdef _MSC_VER_ //possible because the import library is for MSVC
   mp_i_cpuaccess = new WinRing0_1_3LoadTimeDynLinked(
     this ) ;
-#else //Use runtime dynamic linking because no import library is available for
+  #else //Use runtime dynamic linking because no import library is available for
   //MinGW.
   mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked(
-//    this
+  //    this
     mp_userinterface
     ) ;
-#endif
+  #endif
   //m_maincontroller.SetCPUaccess( //mp_winring0dynlinked
   //  mp_i_cpuaccess ) ;
-#else
+}
+#endif
+
+void CPUcontrolBase::CreateHardwareAccessObject()
+{
+  LOGN_INFO( FULL_FUNC_NAME << "--begin")
+  try //catch CPUaccessexception
+  {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+    CreateHardwareAccessObject_Windows();
+#endif
+#ifdef __linux__ //Pre-defined by Linux' g++ compiler?
     //m_maincontroller.SetCPUaccess(NULL) ;
     //m_MSRdeviceFile.SetUserInterface(this) ;
     mp_i_cpuaccess = new MSRdeviceFile(//this,
@@ -305,7 +319,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
       m_model
       ) ;
     //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
-  #endif
+#endif
     //Assign to the global variable so that the functions (ReadMSR(...) etc.)
     //that are exported by this executable can access the CPU registers.
     g_p_cpuaccess = mp_i_cpuaccess ;
@@ -322,7 +336,8 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //    LOGN_TYPE("caught a CPUaccessException:"
 //      << r_cpuaccessexception.m_stdstrErrorMessage,
 //      I_LogFormatter::log_message_typeERROR )
-    LOGN("mp_i_cpuaccess:" << mp_i_cpuaccess)
+    LOGN_DEBUG("mp_i_cpuaccess:" << mp_i_cpuaccess)
+    LOGN_ERROR( FULL_FUNC_NAME << r_cpuaccessexception.m_stdstrErrorMessage)
     g_p_cpuaccess = NULL;
     //Important: show the message to the user so that he knows that there is
     //a problem.
@@ -333,6 +348,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     //already be NULL.
 //        mp_i_cpuaccess = NULL ;
   }
+  LOGN_INFO( FULL_FUNC_NAME << "--end")
 }
 
 
@@ -426,9 +442,9 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   }
 
   bool CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
-    std::string & std_strLogFileName)
+    std::string & std_strLogFilePath)
   {
-    std::wstring std_wstrLogFilePath = GetStdWstring(std_strLogFileName);
+    std::wstring std_wstrLogFilePath = GetStdWstring(std_strLogFilePath);
     ReadLogConfig(//r_std_tstrLogFilePath
       std_wstrLogFilePath
       );
@@ -441,18 +457,48 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //    std::string std_strLogLevelString;
 //    CPUcontrolBase::GetLogLevel(std_strLogLevelString);
 
-    std_strLogFileName += std_strFileExt;
+    std_strLogFilePath += std_strFileExt;
   #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
   #endif
 
-    bool logFileIsOpen = g_logger.OpenFileA( std_strLogFileName );
+//    Windows_API::LogEntryOutputter * logentryoutputter = new Windows_API::
+//      LogEntryOutputter();
+    StdOfStreamLogWriter * logentryoutputter = new StdOfStreamLogWriter();
+//    I_LogFormatter logformatter = new I_LogFormatter::CreateFormatter();
+  //  AppendingFileOutput * logfileappender = new AppendingFileOutput(
+    RollingFileOutput * logfileappender = new RollingFileOutput(
+      g_logger,
+      std_strLogFilePath,
+      logentryoutputter,
+  //    new I_LogFormatter(),
+//      "txt",
+      std_strFileExt,
+      m_model.m_logfileattributes.m_maxNumberOfLines,
+//      LogLevel::info
+      LogLevel::GetAsNumber(m_model.m_logfileattributes.m_std_strLevel)
+      );
+//    LogFormatter LogFormatter = new
+//    AppendingFileOutput * logfileappender = new AppendingFileOutput(
+//      std_strLogFilePath, logentryoutputter)
+//    logfileappender->CreateFormatter(
+//      std_strFileExt.c_str(), std_strLogTimeFormatString);
+//    g_logger.AddFormattedLogEntryProcessor( logfileappender);
+//    std::string actualFilepath;
+    bool logFileIsOpen = //logentryoutputter->OpenA( std_strLogFileName );
+      logfileappender->Open(/*actualFilepath*/ std_strLogFilePath);
     if( logFileIsOpen )
     {
+      logfileappender->CreateFormatter(std_strFileExt.c_str(),
+        std_strLogTimeFormatString);
+      logfileappender->GetFormatter()->/*WriteHeader()*/Init();
+    //  logfileappender->CreateFormatter(
+    //    std_strFileExt.c_str(), std_strLogTimeFormatString);
+      g_logger.AddFormattedLogEntryProcessor( logfileappender);
       //I_LogFormatter * p_log_formatter =
-        g_logger.CreateFormatter(
-        std_strFileExt.c_str(), std_strLogTimeFormatString);
+//        g_logger.
 //      g_logger.SetLogLevel(std_strLogLevelString);
+      logfileappender->SetLogLevel(m_model.m_logfileattributes.m_std_strLevel);
     }
     //TODO show message to user and/ or create window event log or return
     //error code for starting the service
@@ -666,7 +712,7 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
     mp_userinterface->MessageWithTimeStamp(L"loading \"" +
       GetStdWstring( std::string(c_ar_chXMLfileName) ) +
       L"\" failed" ) ;
-    LOGN("loading \"" << c_ar_chXMLfileName << "\" failed")
+    LOGN("loading \"" << c_ar_chXMLfileName << "\" failed") }
   //      OUTPUT_WITH_TIMESTAMP
 //    r_std_tstrLogFilePath = m_model.m_logfileattributes.m_std_wstrLogFilePath +
 //      r_std_tstrLogFilePath;
@@ -675,7 +721,7 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
     if( ! std_wstrLogFilePathFromConfig.empty() )
     {
 //      wchar_t wch =
-//        wxstr(PATH_SEPERATOR_CHAR );
+//        wxstr(PATH_SEPERATOR_CHAR_ANSI );
       //if relative path
 //      if( IsRelativePath(r_std_wstrLogFilePath) != L'/' )
       platformstl::basic_path<wchar_t> platformstl_basic_path(r_std_wstrLogFilePath);
@@ -684,7 +730,7 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
       {
         std::wstring::size_type lastBackSlashCharIndex =
           r_std_wstrLogFilePath.rfind(
-          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR )
+          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI )
           //std::basic_string::npos
           , r_std_wstrLogFilePath.length()
           );
@@ -693,14 +739,14 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
           r_std_wstrLogFilePath.substr(0, lastBackSlashCharIndex + 1)
           + m_model.m_logfileattributes.
           m_std_wstrLogFilePath + //L"/";
-          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR );
+          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
       }
       else
         r_std_wstrLogFilePath = m_model.m_logfileattributes.
           m_std_wstrLogFilePath + //L"/";
-          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR );
+          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
     }
-  }
+//  }
 }
 
 //see http://stackoverflow.com/questions/2094427/dll-export-as-a-c-c-function
@@ -900,12 +946,13 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
   {
     if( ! mp_cpucoreusagegetter )
     {
-      LOGN("No CPU controller and no usage getter->should exit.");
+      LOGN_ERROR_AND_STD_ERR("No CPU controller and no usage getter->should exit.");
 //      return 1 ;
     }
     else
     {
-      LOGN("No CPU controller->should exit.");
+      LOGN_ERROR("No CPU controller->should exit.");
+      std::cerr <<  "No CPU controller->should exit." << std::endl;
     }
     //Without getting the CPU usage no CPU _load_ based scaling is
     //possible.

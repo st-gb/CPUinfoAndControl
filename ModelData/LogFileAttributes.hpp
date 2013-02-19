@@ -14,8 +14,10 @@ class LogFileAttributes
 {
 public:
   bool m_bAppendProcessID ;
+  unsigned m_maxNumberOfLines;
   std::wstring m_std_wstrLogFilePath;
   std::string m_std_strFormat;
+  std::string m_std_strLevel;
   std::string m_std_strTimeFormat;
 //  bool m_bTruncateLogFileForEveryStartup ;
 

@@ -27,12 +27,7 @@
   #include <string> //std::string
   #include <sstream> //for std::istringstream
 
-#ifdef __linux__
-  #define OS_NAME "Linux"
-#endif
-#ifdef _WIN32
-  #define OS_NAME "Windows"
-#endif
+  #include <preprocessor_macros/operating_system_name.h> //OS_NAME
 
 	//#define MB_CUR_MAX 1 
 //  extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
@@ -251,7 +246,12 @@
       m_strElementName = std::string(pchXMLelementName) ;
       //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
       //  << endl );
-      if( PossiblyHandleLoggingExclusionFilter_Inline(
+      if(
+#ifdef _DEBUG //for breakpoints need real function with a stack.
+          PossiblyHandleLoggingExclusionFilter(
+#else
+          PossiblyHandleLoggingExclusionFilter_Inline(
+#endif
         cpc_xmlchLocalName,
         cr_xercesc_attributes)
         )
@@ -274,14 +274,13 @@
             ) == XercesAttributesHelper::getting_attribute_value_succeeded
           )
         {
-          LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
-            << std_strAttributeName << "\" succeeded",
-            LogLevel::success)
+          LOGN_INFO( FULL_FUNC_NAME << "--getting attribute value for \""
+            << std_strAttributeName << "\" succeeded:"
+            << m_p_model->m_std_strDefaultCPUcoreUsageGetter)
         }
         else
-          LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
-            << std_strAttributeName << "\" failed",
-            LogLevel::info)
+          LOGN_WARNING( FULL_FUNC_NAME << "--getting attribute value for \""
+            << std_strAttributeName << "\" failed")
       }
       else if( m_strElementName == "resume_from_standby_or_hibernation")
         HandleResumeFromStandbyOrHibernationXMLelement(cr_xercesc_attributes);

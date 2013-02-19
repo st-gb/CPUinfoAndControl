@@ -11,6 +11,7 @@
 
 LogFileAttributes::LogFileAttributes()
   : m_bAppendProcessID(true)
+  , m_maxNumberOfLines(400)
   , m_std_wstrLogFilePath( LOG_FILE_PATH )
   , m_std_strFormat("html")
   , m_std_strTimeFormat("%year%-%month%-%day%&nbsp;%hour%:%minute%:%second%s"

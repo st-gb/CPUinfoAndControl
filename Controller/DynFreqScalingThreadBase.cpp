@@ -18,7 +18,7 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF(...)
 #include <UserInterface/UserInterface.hpp> //for UserInterface.m_bConfirmedYet
-#include <algorithms/binary_search/binary_search.cpp> //GetClosestLess()
+#include <algorithms/binary_search/binary_search.hpp> //GetClosestLess()
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
 #include <preprocessor_macros/suppress_unused_variable.h>
 //#include <global.h> //LOGN
@@ -374,6 +374,13 @@ BYTE DynFreqScalingThreadBase::GetCPUcoreWithHighestLoad(
 void DynFreqScalingThreadBase::HandleCPUnotTooHot()
 {
   LOGN("DynFreqScalingThreadBase::HandleCPUnotTooHot()")
+  BYTE by;
+  for( unsigned coreID = 0 ; coreID < m_wNumCPUcores ; ++ coreID )
+  {
+    by = mp_cpucontroller->SetThrottleLevel(1.0, coreID);
+    if(by == I_CPUcontroller::not_implemented )
+      LOGN_DEBUG(FULL_FUNC_NAME << "SetThrottleLevel is not implemented")
+  }
 }
 
 ExitCode DynFreqScalingThreadBase::Entry()
@@ -478,7 +485,7 @@ ExitCode DynFreqScalingThreadBase::Entry()
           m_bGotCPUcoreDataAtLeast1Time = true ;
         }
         else
-          DEBUGN("DynFSB::Entry()--GetPercentalUsageForAllCores() failed()")
+          DEBUGN("DynFSB::Entry()-GetPercentalUsageForAllCores() failed()")
       }//m_bConfirmedYet
       else
         {
@@ -855,7 +862,7 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
         "for core " << (WORD) byCoreID
         )
       if( //If temperature did not decrease.
-          m_ar_fPreviousMinusCurrentTemperature[byCoreID] <= 0
+          m_ar_fPreviousMinusCurrentTemperature[byCoreID] <= 0.0f
           && m_wMilliSecondsPassed > m_wMilliSecondsToWaitForCoolDown
   //                  DidNotCoolDownInTime()
           )
@@ -938,37 +945,49 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
 //    << "core ID:" << (WORD) byCoreID
 //    << "current multiplier:" <<
 //    arp_percpucoreattributes[ byCoreID].m_fMultiplier )
+  const float currentMulti = arp_percpucoreattributes[ byCoreID].m_fMultiplier;
   //fLowerMultiplier = //mp_cpucoredata->GetLowerMultiplier(
-  WORD wArrayIndexOfLowerValue =
-    ::GetClosestLess(
-    mp_cpucoredata->m_arfAvailableMultipliers
-    , mp_cpucoredata->m_stdset_floatAvailableMultipliers.size()
-    , arp_percpucoreattributes[ byCoreID].m_fMultiplier
+  MANUFACTURER_ID_NAMESPACE::BinarySearch::arrayIndexType wArrayIndexOfLowerValue =
+    MANUFACTURER_ID_NAMESPACE::BinarySearch::GetClosestLess(
+    mp_cpucoredata->m_arfAvailableMultipliers,
+    mp_cpucoredata->m_stdset_floatAvailableMultipliers.size(),
+    currentMulti
     ) ;
-  if( wArrayIndexOfLowerValue < MAXWORD )
+  LOGN( FULL_FUNC_NAME << " array index for closest multiplier to "
+    << currentMulti << ":" << wArrayIndexOfLowerValue)
+  const float lowestMulti = mp_cpucoredata->m_arfAvailableMultipliers[ 0 ];
+  if( wArrayIndexOfLowerValue < MANUFACTURER_ID_NAMESPACE::BinarySearch::no_element )
+  {
     fLowerMultiplier = mp_cpucoredata->m_arfAvailableMultipliers[
      wArrayIndexOfLowerValue ] ;
+    LOGN( FULL_FUNC_NAME << " closest multiplier to " << currentMulti << ":"
+      << fLowerMultiplier)
+  }
   else
-    fLowerMultiplier = mp_cpucoredata->m_arfAvailableMultipliers[ 0 ] ;
+  {
+    fLowerMultiplier = lowestMulti ;
+    LOGN( FULL_FUNC_NAME << " closest multiplier to " << currentMulti
+      << "= lowest multiplier (" << fLowerMultiplier << ")")
+  }
 //  LOGN("DynFreqScalingThreadBase::SetLowerFrequency "
 //    "closest lower multi:" << fLowerMultiplier
-////    << " multi from load(mult" << arp_percpucoreattributes[ byCoreID].m_fMultiplier
+////    << " multi from load(mult" << currentMulti
 ////    << "*" << )":" << fNextMultiplierCalculatedFromCurrentLoad
 //    )
   //TODO m_fReferenceClockInMhz  may be 0 / unknown
-  fNextMultiplierCalculatedFromCurrentLoad =
-    arp_percpucoreattributes[ byCoreID].m_fMultiplier
+  fNextMultiplierCalculatedFromCurrentLoad = currentMulti
     //the load may be ~0 or even < 0 (depends on CPU core usage getter code)
     * ar_fCPUcoreLoadInPercent[byCoreID] ;
   LOGN("DynFreqScalingThreadBase::SetLowerFrequency core "
     << (WORD) byCoreID
-    << " multiplier: " << arp_percpucoreattributes[ byCoreID].m_fMultiplier
+    << " current multiplier: " << currentMulti
     << ", next lower multiplier:" << fLowerMultiplier
     << " multi from load="
-    << "multi(" << arp_percpucoreattributes[ byCoreID].m_fMultiplier
+    << "multi(" << currentMulti
     << ")*load(" << ar_fCPUcoreLoadInPercent[byCoreID]
     << ")=" << fNextMultiplierCalculatedFromCurrentLoad )
   float fCPUcoreMultiplierToUse;
+  //NextMultiplierCalculatedFromCurrentLoad may be < lowest multi
   if(   //                    fFreqInMHz * ar_fCPUcoreLoadInPercent[byCoreID] <
       fNextMultiplierCalculatedFromCurrentLoad
          <
@@ -977,13 +996,21 @@ inline void DynFreqScalingThreadBase::SetLowerFrequencyFromAvailableMultipliers(
     )
   {
     fCPUcoreMultiplierToUse = fNextMultiplierCalculatedFromCurrentLoad;
+    if( fCPUcoreMultiplierToUse < lowestMulti )
+      fCPUcoreMultiplierToUse = lowestMulti;
   }
   else
   {
     fCPUcoreMultiplierToUse = fLowerMultiplier;
   }
-  if( fCPUcoreMultiplierToUse > mp_cpucoredata->m_fMaximumCPUcoreMultiplier)
-    fCPUcoreMultiplierToUse = mp_cpucoredata->m_fMaximumCPUcoreMultiplier;
+  LOGN( FULL_FUNC_NAME << " multiplier to use:" << fCPUcoreMultiplierToUse)
+  //If already at lowest multiplier.
+  if( currentMulti == fCPUcoreMultiplierToUse )
+    mp_cpucontroller->SetNextLowerThrottleLevel(byCoreID,
+      fCPUcoreMultiplierToUse);
+
+//  if( fCPUcoreMultiplierToUse > mp_cpucoredata->m_fMaximumCPUcoreMultiplier)
+//    fCPUcoreMultiplierToUse = mp_cpucoredata->m_fMaximumCPUcoreMultiplier;
   fFreqInMHz = fCPUcoreMultiplierToUse *
       arp_percpucoreattributes[ byCoreID].m_fReferenceClockInMhz ;
 //    LOGN("DynFreqScalingThreadBase::SetLowerFrequency "

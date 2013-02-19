@@ -33,6 +33,7 @@
 #include <ios> //std::iosbase
 #include <sstream> //for class std::stringstream
 #include <stdlib.h> //system(...)
+#include <sys/io.h> //outl(...), iopl(...)
 #include <unistd.h> // execvp(...)
 ////from www.xml.com/ldd/...:
 //#include <linux/kmod.h> //must be from an appropriate directory
@@ -67,6 +68,8 @@ MSRdeviceFile::MSRdeviceFile(UserInterface * pui)
   Init(pui) ;
 }
 
+#define USER_MODE 3
+
 MSRdeviceFile::MSRdeviceFile(
   UserInterface * pui ,
   BYTE byNumberOfLogicalCPUcores ,
@@ -79,6 +82,32 @@ MSRdeviceFile::MSRdeviceFile(
   mp_model = & r_model ;
   m_byNumberOfLogicalCPUcores = byNumberOfLogicalCPUcores ;
   InitPerCPUcoreAccess( byNumberOfLogicalCPUcores) ;
+
+  int n = 0;
+  //Change IO privilege. level to "user mode" to avoid a Segmentation fault
+  //when calling "outl".
+  n = iopl(USER_MODE);
+  LOGN_DEBUG("return value of iopl():" << n )
+  if( n != 0)
+  {
+    int errorCode = errno;
+//    std::cout << "iopl succeeded" << std::endl;
+    //printf("iopl: %d\n", n);
+    std::ostringstream oss;
+    oss << "setting IO privilege to level \"" << USER_MODE << "\" failed:" <<
+      GetErrorMessageFromErrorCodeA(errorCode) << std::endl;
+    switch(errorCode)
+    {
+    case EPERM:
+      oss << " possible solution: start the program as root/ superuser/ "
+        "administrator" << std::endl;
+      break;
+    }
+    LOGN_ERROR( FULL_FUNC_NAME << oss.str() )
+    std::cerr << oss.str();
+    throw CPUaccessException(oss.str() );
+  }
+
   LOGN("MSRdeviceFile end")
 }
 
@@ -189,7 +218,7 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
           break;
         default:      stdstrMessage += "Unknown error.\n"; break;
       }
-      LOGN(stdstrMessage)
+      LOGN_ERROR(stdstrMessage)
 //      UIconfirm( stdstrMessage ) ;
       throw CPUaccessException(stdstrMessage) ;
     }
@@ -227,7 +256,7 @@ BOOL MSRdeviceFile::CpuidEx(
     DWORD_PTR dwAffinityMask
   )
 {
-  BOOL bReturn = FAILURE ;
+  int bReturn = FAILURE ;
   //__get_cpuid_max() ;
 //  unsigned int uiEAX ;
 //  unsigned int uiEBX ;
@@ -236,6 +265,7 @@ BOOL MSRdeviceFile::CpuidEx(
   //TODO set CPU (core) affinity,
   //TODO use parameters _directly_ for "__get_cpuid(...)"
   bReturn = __get_cpuid (
+//    __cpuid(
     dwFunctionIndex //unsigned int __level,
 //    , & uiEAX //
     , (unsigned int *) p_dwEAX //unsigned int *__eax,
@@ -246,12 +276,16 @@ BOOL MSRdeviceFile::CpuidEx(
 //    , & uiEDX //
     , (unsigned int *) p_dwEDX //unsigned int *__edx
     ) ;
+//  if( bReturn == 0 )
+//    LOGN_ERROR("Calling \"__get_cpuid\" with index" << dwFunctionIndex
+//        << "failed")
 //  * p_dwEAX = uiEAX ;
 //  * p_dwEBX = uiEBX ;
 //  * p_dwECX = uiECX ;
 //  * p_dwEDX = uiEDX ;
 
   return bReturn ;
+    //SUCCESS;
 }
 
 //const char *
@@ -377,7 +411,10 @@ BOOL // TRUE: success, FALSE: failure
     //http://lkml.org/lkml/1997/2/27/59:
     //"To read/write, you open the device and seek to the index of the
     //needed register. E.g. for register Nr.10, this becomes "lseek(f,10,0);"
-    lseek( //"int fildes" ("file descriptor")
+    //lseek
+    //"lseek64" is needed especially for AMD where addresses exceed the value
+    // 2^31 (~ 2*10^9 ) (then error: "EINVAL" (INvalid VALue /parameter).
+    lseek64( //"int fildes" ("file descriptor")
       m_arnFileHandle[m_byCoreID], dwIndex, SEEK_SET) ==
     //http://www.opengroup.org/onlinepubs/009695399/functions/lseek.html:
     //"Upon successful completion, the resulting offset, as measured in bytes
@@ -393,7 +430,7 @@ BOOL // TRUE: success, FALSE: failure
       + "to offset" + convertToStdString(dwIndex) + ":"
       + GetErrorMessageFromLastErrorCodeA() ;
     LOGN(stdstrErrMsg)
-//    UIconfirm( stdstrErrMsg );
+    UIconfirm( stdstrErrMsg );
     return FAILURE;
   }
   m_ssize_t =
@@ -413,7 +450,9 @@ BOOL // TRUE: success, FALSE: failure
   {
     std::string std_strMessage = std::string("Reading failed from file \"") +
       getMSRdeviceFilePath(m_byCoreID) + //_T("\":")
-      "\":" + GetErrorMessageFromLastErrorCodeA() + std::string("\n");
+      "\":"
+      + "at offset " + convertToStdString(dwIndex)
+      + GetErrorMessageFromLastErrorCodeA() + std::string("\n");
     UIconfirm( std_strMessage
       );
 //    mp_userinterface->MessageWithTimeStamp(std_strMessage);
@@ -440,13 +479,21 @@ inline BOOL MSRdeviceFile::RdpmcEx(
 }
 
 BOOL MSRdeviceFile::ReadPciConfigDwordEx(
-  DWORD dwPCIaddress
-  , DWORD dwRegAddress
+  DWORD dwPCIaddress //15:8 :8-bit PCI bus", 7:3: 5-bit device, 0:2: 3-bit function
+  , DWORD dwRegAddress //offset
   , PDWORD p_dwValue
   )
 {
-  BOOL bReturn = FAILURE ;
+  BOOL bReturn = SUCCESS ;
 
+  //From http://lxr.linux.no/#linux/arch/x86/pci/early.c via link from
+  // http://en.wikipedia.org/wiki/PCI_configuration_space
+  const unsigned config_address = //0x80000000 | bus << 16 | device << 11 | function << 8 | offset;
+    0x80000000 | dwPCIaddress << 8 | dwRegAddress;
+  outl_p(config_address, 0xcf8);
+  * p_dwValue = inl_p(0xcfc);
+//    float tempInDegCelsius = float ( value >> 21 ) / 8.0f;
+//    std::cout << "value: " << value << "temp:" << tempInDegCelsius << std::endl;
   return bReturn ;
 }
 
@@ -497,7 +544,10 @@ MSRdeviceFile::WrmsrEx(
     //http://lkml.org/lkml/1997/2/27/59:
     //"To read/write, you open the device and seek to the index of the
     //needed register. E.g. for register Nr.10, this becomes "lseek(f,10,0);"
-    lseek( m_arnFileHandle[m_byCoreID], dwIndex, SEEK_SET) ==
+    //lseek
+    //"lseek64" is needed especially for AMD where addresses exceed the value
+    // 2^31 (~ 2*10^9 ) (then error: "EINVAL" (INvalid VALue /parameter).
+    lseek64( m_arnFileHandle[m_byCoreID], dwIndex, SEEK_SET) ==
     //http://www.opengroup.org/onlinepubs/009695399/functions/lseek.html:
     //"Upon successful completion, the resulting offset, as measured in bytes
     //from the beginning of the file, shall be returned.
@@ -531,7 +581,8 @@ MSRdeviceFile::WrmsrEx(
     UIconfirm( //EnglishMessageFromErrorCode(errno)
       std::string("Writing to file ")
       + getMSRdeviceFilePath(m_byCoreID)
-      + std::string("failed:")
+      + " at offset " + convertToStdString(dwIndex)
+      + std::string(" failed:\n")
       + GetErrorMessageFromLastErrorCodeA()
       + std::string("\n")
       + std::string(POSSIBLE_SOLUTION_LITERAL)

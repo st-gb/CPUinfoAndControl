@@ -31,15 +31,20 @@
 //from daemon_functions.cpp
 extern CPUcontrolBase * gp_cpucontrolbase ;
 extern wxConditionBasedI_Condition g_wxconditionbasedi_conditionKeepRunning ;
+CommandLineArgs<char> g_commandlineargs;
 
-void init_logger(int argc, char *  argv[] )
+bool init_logger(int argc, char *  argv[] )
 {
-  std::string stdstrLogFileName = std::string( argv[0] ) +
-    std::string( "_log.txt" ) ;
-  if( ! g_logger.OpenFileA( //std::string("x86IandC_service_log.txt")
-    stdstrLogFileName ) )
-    std::cerr << "Failed to open log file \"" << stdstrLogFileName << "\":"
-      << GetErrorMessageFromLastErrorCodeA();
+  std::string std_strLogFileName = std::string( argv[0] ) +
+    std::string( "_log." ) ;
+//  if( ! g_logger.OpenFileA( //std::string("x86IandC_service_log.txt")
+//    stdstrLogFileName ) )
+  bool logFileIsOpen = gp_cpucontrolbase->GetLogFilePropertiesAndOpenLogFile(
+    std_strLogFileName);
+  if( ! logFileIsOpen )
+    std::cerr << "Failed to open log file \"" << std_strLogFileName << "\":"
+      << GetErrorMessageFromLastErrorCodeA() << std::endl;
+  return logFileIsOpen;
 }
 
 //    WaitForTermination()
@@ -65,25 +70,31 @@ void init_logger(int argc, char *  argv[] )
 //void
 int main( int argc, char *  argv[] )
 {
+  g_commandlineargs.Set(argc, argv);
   int nRetVal = EXIT_FAILURE ;
-  init_logger(argc, argv);
-  std::string stdstrCurrentWorkingDir ;
-  init_daemon(//argc, argv
-    stdstrCurrentWorkingDir ) ;
 
 //  ReadMainConfigFile();
   DummyUserInterface dummyuserinterface ;
   Linux::CPUcontrolDaemon cpucontroldaemon( & dummyuserinterface ) ;
   gp_cpucontrolbase = (CPUcontrolBase *) & cpucontroldaemon ;
+  cpucontroldaemon.m_ar_ar_ch_programArgs = argv;
+  cpucontroldaemon.m_argumentCount = argc;
+  init_logger(argc, argv);
+  std::string stdstrCurrentWorkingDir ;
+  init_daemon(//argc, argv,
+    stdstrCurrentWorkingDir ) ;
   gp_cpucontrolbase->m_model.m_stdstrExecutableStartupPath =
     stdstrCurrentWorkingDir ;
+
   bool bDVFSthreadSuccessfullyStarted = cpucontroldaemon.Start() ;
+  LOGN("main(..)-return value of starting the daemon:" << bDVFSthreadSuccessfullyStarted )
   GetCurrentWorkingDir(stdstrCurrentWorkingDir) ;
-  LOGN("Current working directory:" << stdstrCurrentWorkingDir )
+  LOGN("main(..)-current working directory:" << stdstrCurrentWorkingDir )
   if( bDVFSthreadSuccessfullyStarted )
   {
 //    WaitForTermination();
     g_wxconditionbasedi_conditionKeepRunning.LockAndWait() ;
   }
+  LOGN("main(..)-end return " << nRetVal)
   return nRetVal ;
 }

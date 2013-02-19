@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * SAX2IPCcurrentCPUdataHandler.hpp
  *
@@ -51,13 +58,14 @@ public:
   WORD GetNumberOfLogicalCPUcores() ;
 //  std::set<float> m_stdset_fUsage ;
   std::map<WORD,float> m_stdmap_wCoreNumber2fUsage ;
-  std::map<WORD,float> m_stdmap_wCoreNumber2fMultiplier ;
-  std::map<WORD,float> m_stdmap_wCoreNumber2fReferenceClock ;
+//  std::map<WORD,float> m_stdmap_wCoreNumber2fMultiplier ;
+//  std::map<WORD,float> m_stdmap_wCoreNumber2fReferenceClock ;
   std::map<WORD,float> m_stdmap_wCoreNumber2fTempInDegCelsius ;
-  std::map<WORD,float> m_stdmap_wCoreNumber2fVoltageInVolt ;
-  std::map<WORD,VoltageAndMultiAndRefClock>
-    m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock ;
+//  std::map<WORD,float> m_stdmap_wCoreNumber2fVoltageInVolt ;
+  std::map<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>
+    m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency ;
   float GetTemperatureInCelsius( WORD wCoreID ) ;
+  float GetThrottleLevel(unsigned int);
   inline void HandleCoreXMLelement_Inline(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes);
   void startDocument();

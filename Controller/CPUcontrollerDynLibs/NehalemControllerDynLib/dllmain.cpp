@@ -14,6 +14,8 @@
 //For GetCurrentReferenceClock(...)
 #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 #include <Controller/CPU-related/Intel/Intel_registers.h>
+//GetODCMdutyCyclePercentage(...)
+#include <Controller/CPU-related/Intel/Pentium4/ODCM.hpp>
 //A I_CPUaccess pointer is passed as parameter in Init(...)
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
 #include <preprocessor_macros/show_via_GUI.h> //SHOW_VIA_GUI(...)
@@ -70,18 +72,30 @@ AssignPointersToExportedExeMSRfunctions.h>
 
 //defined in "/Windows/AssignPointersToExportedExeFunctions/
 // AssignPointersToExportedExeMSRfunctions.cpp
-extern ReadMSR_func_type g_pfnreadmsr ;
-extern WriteMSR_func_type g_pfn_write_msr ;
+ReadMSR_func_type g_pfnreadmsr ;
+WriteMSR_func_type g_pfn_write_msr ;
 
 //  extern float g_fReferenceClockInMHz ;
 //Init to the default reference clock in MHz.
 float g_fReferenceClockInMHz = 133.3 ;
 float gs_fTimeStampCounterMultiplier = 0.0 ;
+bool g_IsHyperThreaded = false;
+
+#ifdef WESTMERE
+  float lowestMultiplier = 9.0; //The minimum multiplier for Westmere is 9.
+#else
+  float lowestMultiplier = 7.0 ; //The minimum multiplier for Nehalem is 7.
+#endif
+#ifdef USE_ODCM
+  #define ARRAY_INDEX_FOR_FIRST_MULTIPLIER NUMBER_OF_ODCM_VALUES
+#else
+  #define ARRAY_INDEX_FOR_FIRST_MULTIPLIER 0
+#endif
 
 //Use global vars instead of allocating them for each function call (->faster)
 BYTE g_byValue1 , g_byValue2 ;
 //Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
-uint32_t g_dwValue1 , g_ui32Value2 ;
+uint32_t g_ui32Value1 , g_ui32Value2 ;
 
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT
 #include <preprocessor_macros/dll_main_front_signature.h> //DLLMAIN_FRONT_SIGNATURE
@@ -150,6 +164,61 @@ float *
   NEHALEM_DLL_CALLING_CONVENTION
   //The reference clock might change, also during runtime.
   //This is why it is a good idea to get the possible multipliers.
+  GetAvailableThrottleLevels(
+  WORD wCoreID
+  , WORD * p_wNumberOfArrayElements
+  )
+{
+  float * ar_f = new float[NUMBER_OF_ODCM_VALUES] ;
+  //If allocating the array on the heap succeeded.
+  if( ar_f )
+  {
+    * p_wNumberOfArrayElements = NUMBER_OF_ODCM_VALUES ;
+    AddODCMdutyCyclesAsMultipliers(ar_f, /*lowestMultiplier*/ 1.0f);
+  }
+  else
+    * p_wNumberOfArrayElements = 0.0f;
+  return ar_f;
+}
+
+EXPORT
+//The array pointed to by the return value must be freed by the caller (i.e.
+//x86I&C GUI or service) of this function.
+float
+  NEHALEM_DLL_CALLING_CONVENTION
+  //The reference clock might change, also during runtime.
+  //This is why it is a good idea to get the possible multipliers.
+  GetThrottleLevel(WORD wCoreID)
+{
+  float fThrottleLevel = /*1.0f -*/ GetODCMdutyCyclePercentage(wCoreID);
+  return fThrottleLevel;
+}
+
+/** @param fThrottleLevel [0.0...1.0]:1.0:not throttled at all;0.25:75%throttled
+ * @param coreID: unsigned-> same width as CPU arch->fast */
+EXPORT BYTE NEHALEM_DLL_CALLING_CONVENTION
+  SetThrottleLevel(float fThrottleLevel, unsigned coreID)
+{
+  //"If the programmed duty cycle is not identical for all the logical
+  //processors, the processor clock will modu-late to the highest duty cycle
+  //programmed."
+  if( g_IsHyperThreaded)
+  {
+    if( coreID % 2 == 0  )
+      SetODCMdutyCycle(fThrottleLevel, coreID + 1);
+    else
+      SetODCMdutyCycle(fThrottleLevel, coreID - 1);
+  }
+  return SetODCMdutyCycle(fThrottleLevel, coreID);
+}
+
+EXPORT
+//The array pointed to by the return value must be freed by the caller (i.e.
+//x86I&C GUI or service) of this function.
+float *
+  NEHALEM_DLL_CALLING_CONVENTION
+  //The reference clock might change, also during runtime.
+  //This is why it is a good idea to get the possible multipliers.
   GetAvailableMultipliers(
   WORD wCoreID
   , WORD * p_wNumberOfArrayElements
@@ -180,18 +249,21 @@ float *
     BYTE byNumMultis = byMaxMulti -
       //min. multi - 1
       6 ;
+#ifdef USE_ODCM
+    byNumMultis += NUMBER_OF_ODCM_VALUES; //for OCDM cycles
+#endif
     float * ar_f = new float[byNumMultis] ;
     //If allocating the array on the heap succeeded.
     if( ar_f )
     {
       * p_wNumberOfArrayElements = byNumMultis ;
-#ifdef WESTMERE
-      float fMulti = 9.0 ; //The minimum multiplier for Westmere is 9.
-#else
-      float fMulti = 7.0 ; //The minimum multiplier for Nehalem is 7.
+#ifdef USE_ODCM
+      AddODCMdutyCyclesAsMultipliers(ar_f, lowestMultiplier);
 #endif
+      unsigned lowestMultiplier = Intel::Nehalem::GetLowestMultiplier();
+      float fMulti = lowestMultiplier;
 //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
-      for( BYTE by = 0 ; by < byNumMultis ; ++ by )
+      for( BYTE by = ARRAY_INDEX_FOR_FIRST_MULTIPLIER; by < byNumMultis ; ++ by )
       {
         DEBUGN( FULL_FUNC_NAME << "--adding multplier " << fMulti )
         ar_f[by] = fMulti ++ ;
@@ -281,7 +353,7 @@ EXPORT
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
-  static float fReferenceClockInMHz = 0.0;
+//  static float fReferenceClockInMHz = 0.0;
   static uint32_t ui32Value = 0;
 
 //  SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency begin") )
@@ -291,7 +363,7 @@ EXPORT
 //    g_pi_cpuaccess->RdmsrEx(
     (* g_pfnreadmsr) (
     IA32_PERF_STATUS,
-    & g_dwValue1,// lowmost bit 0-31 (register "EAX")
+    & g_ui32Value1,// lowmost bit 0-31 (register "EAX")
     & ui32Value, //highmost bit 32-63
     1 << wCoreID //m_dwAffinityMask
     ) ;
@@ -299,10 +371,16 @@ EXPORT
 
   if( g_byValue1 )
   {
-    * p_fVoltageInVolt = 0 ;
+    * p_fVoltageInVolt = 0.0f ;
+#ifdef USE_ODCM
+    float fODCMdutyCyclePercentage = GetODCMdutyCyclePercentage(wCoreID);
     //Intel: "15:0 Current performance State Value"
     //   "63:16 Reserved"
-    * p_fMultiplier = ( g_dwValue1 & 255 ) ;
+    * p_fMultiplier = ( g_ui32Value1 & 255 ) * fODCMdutyCyclePercentage;
+//    if( fODCMdutyCyclePercentage)
+#else //#ifdef USE_ODCM
+    * p_fMultiplier = (float) g_ui32Value1;
+#endif //#ifdef USE_ODCM
     DEBUGN(//"dyn lib GetCurrentVoltageAndFrequency"
       FULL_FUNC_NAME
       << "--multiplier:"
@@ -325,13 +403,13 @@ EXPORT
 //      12.0 ,
       gs_fTimeStampCounterMultiplier ,
 //      * p_fReferenceClockInMHz ,
-      fReferenceClockInMHz,
+      * p_fReferenceClockInMHz,
       1000 , //min. timespan in ms
       10000 ) ;
 
     SHOW_VIA_GUI( _T("GetCurrentVoltageAndFrequency after "
       "GetCurrentReferenceClock") )
-    * p_fReferenceClockInMHz = fReferenceClockInMHz;
+//    * p_fReferenceClockInMHz = fReferenceClockInMHz;
 //    * p_fReferenceClockInMHz = 133.0;
 #endif //#ifdef STATIC_133MHZ_REFERENCE_CLOCK
     std::stringstream std_strstream;
@@ -388,7 +466,7 @@ float
 ////    DWORD dwHighmostBits ;
 //    (*g_pfnreadmsr) (
 //       MSR_TEMPERATURE_TARGET , //Intel "B-12Vol. 3"
-//       & g_dwValue1, // bits 0-31 (register "EAX")
+//       & g_ui32Value1, // bits 0-31 (register "EAX")
 //       & g_dwValue2, // bits 32-63 (register "EDX")
 //       //m_dwAffinityMask
 //       1 << wCoreID
@@ -396,11 +474,11 @@ float
 //    //Intel B-76Vol. 3 : "23:16 Temperature Target. (R)"
 //    // "The minimum temperature at which PROCHOT# will be asserted.
 //    //  The value is degree C."
-//    byTempTarget = ( g_dwValue1 >> 16 ) & 255 ;
+//    byTempTarget = ( g_ui32Value1 >> 16 ) & 255 ;
 
   g_byValue1 = (*g_pfnreadmsr) (
      IA32_THERM_STATUS , //Address: 1A2H
-     & g_dwValue1, // bits 0-31 (register "EAX")
+     & g_ui32Value1, // bits 0-31 (register "EAX")
      & //g_ui32Value2,
      ui32Value,
      //m_dwAffinityMask
@@ -409,10 +487,10 @@ float
   if( g_byValue1 )
   {
     //Intel: "22:16 Digital Readout (RO)"
-    g_byValue1 = ( g_dwValue1 >> 16 ) & BITMASK_FOR_LOWMOST_7BIT ;
+    g_byValue1 = ( g_ui32Value1 >> 16 ) & BITMASK_FOR_LOWMOST_7BIT ;
 
 //    //Intel: "30:27 Resolution in Degrees Celsius (RO)"
-//    byResolutionInDegreesCelsius = ( g_dwValue1 >> 27 ) &
+//    byResolutionInDegreesCelsius = ( g_ui32Value1 >> 27 ) &
 //      BITMASK_FOR_LOWMOST_5BIT ;
 
     // TemperatureTarget - "Digital Readout"
@@ -438,11 +516,7 @@ void
 #ifdef INSERT_DEFAULT_P_STATES
   BYTE byMaxMulti;
   float fVoltageInVolt = 0.65;
-#ifdef WESTMERE
-  float fFrequencyInMHz = 9 * 133.0 ;
-#else
-  float fFrequencyInMHz = 7 * 133.0 ;
-#endif
+  float fFrequencyInMHz = lowestMultiplier * 133.0 ;
 
   DEBUGN("adding default voltage " << fVoltageInVolt << " V for "
     << (WORD) fFrequencyInMHz << " MHz" )
@@ -452,7 +526,7 @@ void
   //was added to CPUcoreData class whose instance is a member of ModelData
   //and only the executable included this change.
   pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
-    AddDefaultVoltageForFreq( fVoltageInVolt,
+    AddDefaultVoltageForFreq_inline( fVoltageInVolt,
       (WORD) ( fFrequencyInMHz )
       ) ;
   fVoltageInVolt = 1.1;
@@ -461,10 +535,11 @@ void
   DEBUGN("adding default voltage " << fVoltageInVolt << " for "
     << (WORD) fFrequencyInMHz << "MHz" )
   pi_cpuaccess->mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault.insert() ;
-    AddDefaultVoltageForFreq( fVoltageInVolt,
+    AddDefaultVoltageForFreq_inline( fVoltageInVolt,
       (WORD) ( fFrequencyInMHz )
       ) ;
 #endif //INSERT_DEFAULT_P_STATES
+  g_IsHyperThreaded = Intel::IsHyperThreaded();
 }
 
 //  extern "C" __declspec(dllexport)
@@ -527,29 +602,48 @@ EXPORT
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
-  static uint32_t ui32Value = 0;
+  static const uint32_t ui32Zero = 0;
 //    std::stringstream ss ;
 //    ss << "multiplier to set: " << fMultiplier << "lowmost bits:"
-//        << g_dwValue1 ;
+//        << g_ui32Value1 ;
 //    MessageBox(NULL,ss.str().c_str(), "info" , MB_OK ) ;
   DEBUGN("before calling Exe's WriteMSR function")
-  g_byValue1 =
-    //g_pi_cpuaccess->WrmsrEx(
-    (*g_pfn_write_msr) (
-    //Intel: "199H 409 IA32_PERF_CTL  (R/W)"
-    // "15:0  Target performance State Value"
-    //  "31:16  Reserved"
-    //  "32  IDA Engage. (R/W) When set to 1: disengages IDA since:
-    //     06_0FH (Mobile)
-    //  "63:33 Reserved"
-    IA32_PERF_CTL,
-    (BYTE) fMultiplier , // bits 0-31 (register "EAX")
-    //bits 0-31 (register "EDX")
-    //g_ui32Value2,
-    ui32Value,
-    //m_dwAffinityMask
-    1 << wCoreID
-    ) ;
+  if( fMultiplier < lowestMultiplier )
+  {
+#ifdef USE_ODCM
+    //e.g. 6.125/7 = 0.875 = 87.5% ODCM duty cycle 0.875 * 8 = ODCM value "7"
+    // for 87.5% ODCM duty cycle
+    const float ODCMdutyCycle = fMultiplier / lowestMultiplier / 0.125f;
+    SetODCMdutyCycle(ODCMdutyCycle, wCoreID);
+#endif //#ifdef USE_ODCM
+    g_byValue1 = WriteMSR(IA32_PERF_CTL, (BYTE) lowestMultiplier, ui32Zero,
+        1 << wCoreID);
+    DEBUGN("after calling Exe's WriteMSR function. return value: "
+      << (WORD) g_byValue1 )
+  }
+  else
+  {
+#ifdef USE_ODCM
+    DisableODCM(wCoreID);
+#endif //#ifdef USE_ODCM
+    g_byValue1 =
+      //g_pi_cpuaccess->WrmsrEx(
+      WriteMSR(
+      //Intel: "199H 409 IA32_PERF_CTL  (R/W)"
+      // "15:0  Target performance State Value"
+      //  "31:16  Reserved"
+      //  "32  IDA Engage. (R/W) When set to 1: disengages IDA since:
+      //     06_0FH (Mobile)
+      //  "63:33 Reserved"
+      IA32_PERF_CTL,
+      (BYTE) fMultiplier , // bits 0-31 (register "EAX")
+      //bits 0-31 (register "EDX")
+      //g_ui32Value2,
+      ui32Zero,
+      //m_dwAffinityMask
+      1 << wCoreID
+      ) ;
+  }
   DEBUGN("after calling Exe's WriteMSR function. return value: "
     << (WORD) g_byValue1 )
   return g_byValue1 ;

@@ -15,7 +15,7 @@
 //from http://stackoverflow.com/questions/3243454/what-is-the-linux-equivalent-to-maxdword
 #include <limits.h> //UINT_MAX
 //GetArrayIndexForClosestValue(...)
-#include <algorithms/binary_search/binary_search.cpp>
+#include <algorithms/binary_search/binary_search.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD etc.
 
 #define CPU_CORE_DATA_NOT_SET 255
@@ -103,6 +103,7 @@ public:
   BYTE m_byStepping ;
 
   float * m_arfAvailableMultipliers ;
+  float * m_arfAvailableThrottleLevels ;
   float * m_arfAvailableVoltagesInVolt ;
 
   float * m_arfCPUcoreLoadInPercent ;
@@ -115,6 +116,7 @@ public:
   I_CPUcontroller * mp_cpucontroller ;
   std::map<float,VoltageAndFreq> m_stdmap_fMultiplier2voltageandfreq ;
   std::set<float> m_stdset_floatAvailableMultipliers ;
+  std::set<float> m_stdset_floatAvailableThrottleLevels;
   std::set<float> m_stdset_floatAvailableVoltagesInVolt ;
   std::set<VoltageAndFreq> m_stdsetvoltageandfreqAvailableFreq ;
 
@@ -182,6 +184,7 @@ public:
     WORD wExtrapolatedWantedFreqForMinVoltage);
   void AddMinVoltageForLowestMulti(WORD wLowestFreqInMHz);
   void AvailableMultipliersToArray() ;
+  void AvailableThrottleLevelsToArray();
   void AvailableVoltagesToArray() ;
   void ClearCPUcontrollerSpecificAtts() ;
   void CopyDefaultVoltageToPreferredVoltages()
@@ -286,6 +289,7 @@ public:
     return p_voltageandfreqLower;
   }
   float GetLowerMultiplier( float fMulti ) ;
+  float GetNextLowerThrottleLevel(unsigned coreID);
   float GetNextVoltageAbove(float fVoltageInVolt);
   float GetMinimumMultiplier();
   //Can't be inline, else g++ warning

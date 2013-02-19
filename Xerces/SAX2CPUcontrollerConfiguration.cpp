@@ -52,7 +52,7 @@ namespace Xerces
     bool bCPUcoreUsageGetterSpecified = false;
     m_SuitabilityLevel = 0;
     if( Xerces::ansi_or_wchar_string_compare(cpc_xmlchLocalName,
-      L"CPUID" ) == 0)
+        ANSI_OR_WCHAR("CPUID") ) == 0)
     {
       LOGN_DEBUG("CPUinfoGetterAndOrController element")
       std::string std_strAttributeName, std_str,
@@ -144,7 +144,7 @@ namespace Xerces
             {
               std::ostringstream std_oss;
               std_oss << "at least the \"" << std_strAttributeName
-                << "\ attribute value must be specified";
+                << "\" attribute value must be specified";
               LOGN_ERROR(std_oss.str())
               std::wstring std_wstrDocumentIDandLocation;
               GetDocumentIDandLocation(std_wstrDocumentIDandLocation);

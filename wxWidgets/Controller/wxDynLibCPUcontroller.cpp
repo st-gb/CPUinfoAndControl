@@ -26,7 +26,7 @@
 #include <wx/msgdlg.h> //for ::wxMessageBox(...)
 #include <wx/stopwatch.h> //::wxGetLocalTimeMillis()
 //GetClosestLessOrEqual(...), GetClosestGreaterOrEqual(...)
-#include <algorithms/binary_search/binary_search.cpp>
+#include <algorithms/binary_search/binary_search.hpp>
 #ifdef _MSC_VER
   #include <float.h> //FLT_MIN
 #else
@@ -85,24 +85,26 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   else
   {
     DWORD dw = OperatingSystem::GetLastErrorCode() ;
-    std::string stdstrErrMsg = //EnglishMessageFromLastErrorCode() ;
-      "loading the CPU controller dynamic library\n\""
-      + GetStdString( r_wxstrFilePath )
-      + "\"\nfailed:"
-      + GetErrorMessageFromErrorCodeA(dw) ;
+//    std::basic_string<wxStringBase::char_type> wxchar_str;
+    std::wstring std_wstrErrMsg = //EnglishMessageFromLastErrorCode() ;
+      L"loading the CPU controller dynamic library\n\""
+      + GetStdWstring( r_wxstrFilePath/*.ToUTF8()*/ )
+      + L"\"\nfailed:"
+      + GetStdWstring(GetErrorMessageFromErrorCodeA(dw) );
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    DWORD dw = ::GetLastError() ;
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
 //    std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
-    stdstrErrMsg += DLLloadError::GetPossibleSolution( dw ) ;
+    std_wstrErrMsg += GetStdWstring(DLLloadError::GetPossibleSolution( dw ) );
 #else //#ifdef _WIN32
 #endif //#ifdef _WIN32
-    LOGN( stdstrErrMsg )
+    std::string std_strErrMsg = GetStdString(std_wstrErrMsg);
+    LOGN_ERROR( std_wstrErrMsg )
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) ,
 //    wxT("loading DLL failed") ) ;
-    mp_userinterface->Confirm(stdstrErrMsg) ;
-    throw CPUaccessException(stdstrErrMsg) ;
+    mp_userinterface->MessageWithTimeStamp(std_wstrErrMsg);
+    throw CPUaccessException( std_strErrMsg);
   }
   LOGN( FULL_FUNC_NAME << "--end")
 }
@@ -284,6 +286,16 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsGetTemperatureInCelsiusFunctio
   }
 }
 
+template <typename func_type> void wxDynLibCPUcontroller::PossiblyAssign(
+  const wxString & wxstrFuncName, func_type & p_function//, func_type functyp
+  )
+{
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+    p_function = (func_type) m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName );
+  else
+    p_function = NULL ;
+}
+
 void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
   I_CPUaccess * p_cpuaccess)
 {
@@ -385,9 +397,25 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
   if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
 //        m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
     m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetNumberOfCPUcores") ) ;
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
   else
     m_pfnGetNumberOfCPUcores = NULL ;
+
+  wxstrFuncName = wxT("SetThrottleLevel") ;
+  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
+//        m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
+    m_pfnSetThrottleLevel = (pfnSetThrottleLevel_type)
+      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
+  else
+    m_pfnSetThrottleLevel = NULL ;
+  PossiblyAssign//<pfnGetAvailableMultipliers_type>
+    (wxT("GetAvailableThrottleLevels"),
+    m_pfnGetAvailableThrottleLevels//, pfnGetAvailableMultipliers_type
+    );
+  PossiblyAssign//<pfnGetAvailableMultipliers_type>
+    (wxT("GetThrottleLevel"),
+    m_pfngethrottlelevel//, pfnGetAvailableMultipliers_type
+    );
 
 //  AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
   wxstrFuncName = wxT("moreThan1CPUcorePowerPlane") ;
@@ -405,6 +433,15 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
 //        wxT("Error ")
 //        ) ;*/
 
+  AssignAvailableMultipliers();
+  AssignAvailableThrottleLevels();
+//      LOGN("")
+  AssignAvailableVoltages();
+  LOGN( FULL_FUNC_NAME << "--end")
+}
+
+void wxDynLibCPUcontroller::AssignAvailableMultipliers()
+{
   //Because this may not be the 1st time a controller is attached, clear
   // previous multipliers, else the result is the intersection of the
   //current and the next multipliers.
@@ -414,7 +451,7 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
     mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers) ;
   mp_model->m_cpucoredata.AvailableMultipliersToArray() ;
 
-//      LOGN("after DLL::GetAvailableMultipliers")
+  //      LOGN("after DLL::GetAvailableMultipliers")
   LOGN("Available multipliers:")
   for( WORD wIndex = 0 ; wIndex < mp_model->m_cpucoredata.
     m_stdset_floatAvailableMultipliers.size() ; ++ wIndex )
@@ -422,7 +459,29 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
     LOGN( mp_model->m_cpucoredata.m_arfAvailableMultipliers[ wIndex ]
       << " " )
   }
-//      LOGN("")
+}
+
+void wxDynLibCPUcontroller::AssignAvailableThrottleLevels()
+{
+  std::set<float> & availableThrottleLevels =
+    mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels;
+  //Because this may not be the 1st time a controller is attached, clear
+  // previous multipliers, else the result is the intersection of the
+  //current and the next multipliers.
+  availableThrottleLevels.clear() ;
+  LOGN(FULL_FUNC_NAME << " before DLL::GetAvailableMultipliers")
+  GetAvailableThrottleLevels(availableThrottleLevels) ;
+  mp_model->m_cpucoredata.AvailableThrottleLevelsToArray() ;
+  LOGN(FULL_FUNC_NAME << " Available throttle levels:")
+  for( WORD wIndex = 0 ; wIndex < availableThrottleLevels.size() ; ++ wIndex )
+  {
+    LOGN( mp_model->m_cpucoredata.m_arfAvailableThrottleLevels[ wIndex ]
+      << " " )
+  }
+}
+
+void wxDynLibCPUcontroller::AssignAvailableVoltages()
+{
   //Because this may not be the 1st time a controller is attached, clear
   // previous voltages, else the result is the intersection of the
   //current and the next voltages.
@@ -437,7 +496,6 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
     LOGN( mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ wIndex ]
       << " " )
   }
-  LOGN( FULL_FUNC_NAME << "--end")
 }
 
 void wxDynLibCPUcontroller::DecreaseVoltageBy1Step(float & r_fVoltage)
@@ -479,6 +537,37 @@ void wxDynLibCPUcontroller::GetAvailableMultipliers(
   }
 }
 
+void wxDynLibCPUcontroller::GetAvailableThrottleLevels(
+  std::set<float> & r_stdset_float)
+{
+  if( m_pfnGetAvailableThrottleLevels )
+  {
+    LOGN( FULL_FUNC_NAME << " getting available ThrottleLevels")
+    float * ar_fThrottleLevels ;
+    WORD wNum ;
+    ar_fThrottleLevels = (* m_pfnGetAvailableThrottleLevels) (
+        0 ,
+        & wNum
+        ) ;
+    LOGN(FULL_FUNC_NAME << " float array address allocated by DLL:"
+      << ar_fThrottleLevels  << "num eles:" << wNum )
+    //If alloc. by DLL succeeded.
+    if( ar_fThrottleLevels )
+    {
+      for( WORD wIndex = 0 ; wIndex < wNum ; ++ wIndex )
+      {
+        r_stdset_float.insert(ar_fThrottleLevels[wIndex]) ;
+      }
+      LOGN(FULL_FUNC_NAME << " Before deleting the array that should have "
+        "been allocated by the dynamic (link) library")
+      //Was dyn. allocated by the DLL.
+      delete [] ar_fThrottleLevels ;
+      LOGN(FULL_FUNC_NAME << " After deleting the array that should have been "
+        "allocated by the DLL")
+    }
+  }
+}
+
 void wxDynLibCPUcontroller::GetAvailableVoltagesInVolt(
   //Use a std::set because: in this set the elements are sorted, also:
   //not the releasing memory problem when using this container.
@@ -505,8 +594,8 @@ void wxDynLibCPUcontroller::GetAvailableVoltagesInVolt(
       LOGN("Before deleting the array that should have been allocated by the DLL")
       //Was dyn. allocated by the DLL.
       delete [] arfVoltagesInVolt ;
+      LOGN("After deleting the array that should have been allocated by the DLL")
     }
-    LOGN("After deleting the array that should have been allocated by the DLL")
   }
 }
 
@@ -844,6 +933,15 @@ float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 #endif
 }
 
+float wxDynLibCPUcontroller::GetThrottleLevel(unsigned coreID)
+{
+  LOGN(FULL_FUNC_NAME << coreID << ") func ptr:" <<
+    (void *) m_pfngethrottlelevel )
+  if( m_pfngethrottlelevel)
+    return ( * m_pfngethrottlelevel ) ( coreID ) ;
+  return -1.0f;
+}
+
 float wxDynLibCPUcontroller::GetVoltageInVolt(WORD wVoltageID )
 {
 //  if( m_pfn_GetVoltageInVolt )
@@ -892,6 +990,27 @@ BYTE wxDynLibCPUcontroller::SetCurrentVoltageAndMultiplier(
       wCoreID
       ) ;
 //  }
+}
+
+/** @return enum DynLibCPUcontroller::state */
+BYTE wxDynLibCPUcontroller::SetThrottleLevel(float level, unsigned coreID)
+{
+  LOGN_DEBUG( FULL_FUNC_NAME << "-level:" << level << " func. pointer:"
+    << (void *) m_pfnSetThrottleLevel )
+  if( m_pfnSetThrottleLevel )
+  {
+    BYTE by = ( * m_pfnSetThrottleLevel)(level, coreID);
+    if( by == I_CPUaccess::hardware_access_succeeded)
+    {
+      mp_model->m_cpucoredata.m_arp_percpucoreattributes[coreID].m_fThrottleLevel
+        = level;
+      return DynLibCPUcontroller::success;
+    }
+//    else
+    mp_userinterface->MessageWithTimeStamp(L"setting throttle state for core failed");
+      return DynLibCPUcontroller::hw_access_failed;
+  }
+  return DynLibCPUcontroller::function_pointer_unassigned;
 }
 
 BYTE wxDynLibCPUcontroller::
@@ -971,7 +1090,7 @@ BYTE wxDynLibCPUcontroller::
 
 BYTE wxDynLibCPUcontroller::GetCPUcoreTooHot() 
 { 
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( FULL_FUNC_NAME << " begin")
   BYTE by = 0 ;
   float fTemperatureInCelsius ;
   m_wNumberOfLogicalCPUcores = mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
@@ -1007,7 +1126,7 @@ BYTE wxDynLibCPUcontroller::GetCPUcoreTooHot()
 #endif
     }
   }
-  LOGN( FULL_FUNC_NAME << "--return " << (WORD) by)
+  LOGN( FULL_FUNC_NAME << " return " << (WORD) by)
   return by ;
 }
 

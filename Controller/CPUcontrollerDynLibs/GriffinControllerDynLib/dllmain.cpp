@@ -19,13 +19,13 @@
   #include "stdafx.h"
   #endif
 
-  //For "GetCurrentReferenceClock(...)" .
-  #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
   #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
 
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
+  #include <preprocessor_macros/show_via_GUI.h> //SHOW_VIA_GUI
   #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
+  #include <windef.h> //BOOL
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
   #include <Controller/AssignPointersToExportedExeFunctions/\
@@ -63,8 +63,10 @@ AssignPointerToExportedExeReadPCIconfig.h>
 //Logger g_logger ;
 #endif
 
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   #include <windows.h> //for
   #include <winuser.h> //MessageBox
+#endif
   #include <sstream> //std::stringstream
   #include <tchar.h> //_T()
 //  #include <global.h> //logging
@@ -74,7 +76,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 //  extern WriteMSR_func_type g_pfn_write_msr ;
 //  extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
   ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
-  extern float g_fReferenceClockInMHz ;
+//  extern float g_fReferenceClockInMHz ;
 
   BYTE g_byFreqID, g_byDivisorID ;
   BYTE g_byValue1 ;
@@ -142,6 +144,36 @@ AssignPointerToExportedExeReadPCIconfig.h>
   //  DEBUGN()
   }
 
+void Init()
+{
+#ifdef _DEBUG
+  InitializeLogger();
+#endif
+  AssignPointersToExportedExeMSRfunctions_inline(g_pfnreadmsr, g_pfn_write_msr) ;
+//#ifdef _WIN32
+  AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
+//#endif
+//      LOGN("after GetMainPllOpFreqIdMax")
+  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
+  {
+#ifdef _WIN32
+    MessageBox(NULL,
+      "Pointers could not be assigned to the execu-tables export functions\n"
+      "Does the executable that loads this DLL have ReadMSR and WriteMSR"
+      "export functions at all?(analyze this with a tool)"
+      //Title
+      ,"error"
+      , MB_OK) ;
+    return FALSE ;
+#endif //#ifdef _WIN32
+  }
+  //Pointers to Exe's fct must be assigned prior to the call of
+  //GetMainPllOpFreqIdMax() !
+  GetMainPllOpFreqIdMax() ;
+  DEBUGN("after GetMainPllOpFreqIdMax")
+}
+
+#ifdef _WIN32
   EXPORT BOOL APIENTRY DllMain(
     HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -151,27 +183,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-#ifdef _DEBUG
-      InitializeLogger();
-#endif
-      AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
-      AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
-      //Pointers to Exe's fct must be assigned prior to the call of
-      //GetMainPllOpFreqIdMax() !
-      GetMainPllOpFreqIdMax() ;
-      DEBUGN("after GetMainPllOpFreqIdMax")
-//      LOGN("after GetMainPllOpFreqIdMax")
-      if( ! g_pfnreadmsr || ! g_pfn_write_msr )
-      {
-        MessageBox(NULL,
-          "Pointers could not be assigned to the execu-tables export functions\n"
-          "Does the executable that loads this DLL have ReadMSR and WriteMSR"
-          "export functions at all?(analyze this with a tool)"
-          //Title
-          ,"error"
-          , MB_OK) ;
-        return FALSE ;
-      }
+      Init();
 //      g_pfnreadmsr(
 //        HARDWARE_CONFIGURATION_REGISTER,
 //        g_dwLowmostBits ,
@@ -194,6 +206,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     }
     return TRUE;
   }
+#endif
 
   //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
   #define NEHALEM_DLL_CALLING_CONVENTION
@@ -212,6 +225,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
   {
     DEBUGN("DLL's GetAvailableMultipliers")
     return GetAvailableMultipliersAMDfamilyFh(p_wNumberOfArrayElements) ;
+//    return 0;
   }
 
   EXPORT
@@ -222,6 +236,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
       , WORD * p_wNumberOfArrayElements )
   {
     return GetAvailableVoltagesAMDfamilyFh(*p_wNumberOfArrayElements) ;
+//    return 0;
   }
 
   EXPORT
@@ -242,8 +257,10 @@ AssignPointerToExportedExeReadPCIconfig.h>
       p_fReferenceClockInMHz ,
       wCoreID
       ) ;
+//    return 0;
   }
 
+//#ifdef _WIN32 //Under Linux accessing the PCI config space does not work yet.
   EXPORT
   float
     NEHALEM_DLL_CALLING_CONVENTION
@@ -269,6 +286,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     return fTempInDegCelsius ;
 //      0.0 ;
   }
+//#endif
 
   //#define DLL_CALLING_CONVENTION __stdcall
   #define DLL_CALLING_CONVENTION
@@ -289,11 +307,12 @@ AssignPointerToExportedExeReadPCIconfig.h>
   {
   //  g_pi_cpuaccess = pi_cpuaccess ;
 #ifdef __linux__
-    AssignPointersToExportedExeMSRfunctions(
-      g_pfnreadmsr , g_pfn_write_msr ) ;
+//    AssignPointersToExportedExeMSRfunction_inline(
+//      g_pfnreadmsr , g_pfn_write_msr ) ;
+    Init();
 #endif
-    std::string stdstrFilename = //strExeFileNameWithoutDirs +
-      ("PentiumM_DLL_log.txt") ;
+//    std::string stdstrFilename = //strExeFileNameWithoutDirs +
+//      ("PentiumM_DLL_log.txt") ;
   #ifdef _DEBUG
     //ReadMSR_func_type rdmsr = (ReadMSR_func_type) (void*) & pi_cpuaccess->RdmsrEx ;
     std::stringstream stdstrstream ;
@@ -306,8 +325,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
         & pi_cpuaccess->mp_cpu_controller <<"\n"
       << "address in I_CPUaccess::mp_cpu_controller: " <<
         pi_cpuaccess->mp_cpu_controller ;
-    MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
-      "", MB_OK) ;
+    SHOW_VIA_GUI(stdstrstream.str().c_str() )
   #endif
   #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
     g_pi_cpuaccess = pi_cpuaccess ;

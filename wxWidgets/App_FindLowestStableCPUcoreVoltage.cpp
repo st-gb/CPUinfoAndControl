@@ -14,7 +14,7 @@
 
 //GetArrayIndexForClosestGreaterOrEqual(...)
 //#include <algorithms/binary_search/binary_search.h>
-#include <algorithms/binary_search/binary_search.cpp>
+#include <algorithms/binary_search/binary_search.hpp>
 //::GetErrorMessageFromLastErrorCodeA();
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 //unsigned long int SetThreadAffinityMask(DWORD dwThreadAffinityMask)

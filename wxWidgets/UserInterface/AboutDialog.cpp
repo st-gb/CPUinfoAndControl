@@ -83,12 +83,14 @@ void GetAboutMessage(wxString & wxstrMessage,
       + stdtstr +
       wxT( "\n")
       wxT("and for other CPUs as dynamic library") ;
-  wxstrMessage += _T("\n\n")
+  wxstrMessage += wxT("\n\n")
     //"Build: " __DATE__ " " __TIME__ "GMT\n\n"
-#ifdef _WIN32
-    BUILT_TIME //+ _T("") +
-#endif
-    _T("\nbuilt with compiler version:")
+//#ifdef _WIN32
+//    BUILT_TIME //+ _T("") +
+    wxT("Build:")
+    wxT(__DATE__) wxT(" ") wxT(__TIME__) wxT(" GMT + 1")
+//#endif
+    wxT("\nbuilt with compiler version:")
     //_T( STRINGIFY(COMPILER_VERSION) )
     //wxT("compiled/ built with:")
 #ifdef __MINGW32__
@@ -101,7 +103,7 @@ void GetAboutMessage(wxString & wxstrMessage,
     wxT( COMPILER_VERSION_NUMBER )
     wxT("\nusing wxWidgets " ) wxVERSION_NUM_DOT_STRING_T
     //COMPILER_VERSION
-    _T("\n\n");
+    wxT("\n\n");
     //"AMD--smarter choice than Intel?\n\n"
     //"To ensure a stable operation:\n"
 //    _T("To give important information (that already may be contained in ")
@@ -113,13 +115,13 @@ void GetAboutMessage(wxString & wxstrMessage,
     wxstrMessage +=
       CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning;
     wxstrMessage +=
-    _T("\n\n")
-    _T("If the system is instable, heighten the voltage(s).\n")
-    _T("Note that the OS may freeze if changing voltages, so you may ")
-    _T("encounter data loss.\n->save all of your work before.\n\n")
+    wxT("\n\n")
+    wxT("If the system is instable, heighten the voltage(s).\n")
+    wxT("Note that the OS may freeze if changing voltages, so you may ")
+    wxT("encounter data loss.\n->save all of your work before.\n\n")
     //" -when switching from power supply operation to battery,\n"
     //_T("Licence/ info: http://amd.goexchange.de / http://sw.goexchange.de")
-    _T("Licence/ info: http://www.trilobyte-se.de/x86iandc")
+    wxT("Licence/ info: http://www.trilobyte-se.de/x86iandc")
     wxT("\n\n")
     + GetRandomWorldlyWisdom(c_r_std_vec_WisdomStrings)
     ;

@@ -415,8 +415,8 @@ void CPUregisterReadAndWriteDialog::OnRegisterListBoxSelection(
   wxCommandEvent & evt )
 {
   wxArrayInt wxarrintSelections ;
-  int nNumberOfSelections =
-      p_wxlistbox->GetSelections(wxarrintSelections) ;
+//  int nNumberOfSelections =
+    p_wxlistbox->GetSelections(wxarrintSelections) ;
   if( wxarrintSelections.GetCount () > 0 )
   {
     int nIndex = wxarrintSelections.Last () ;

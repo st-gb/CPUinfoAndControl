@@ -17,6 +17,7 @@
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
 //THREAD_FUNCTION_CALLING_CONVENTION
 #include <Controller/multithread/thread_function_calling_convention.h>
+#include <Process/CommandLineArgs.hpp> //class CommandLineArgs
 //#include <ModelData/ModelData.hpp>
 //Member variable of class DummyUserInterface
 #include <UserInterface/DummyUserInterface.hpp>
@@ -92,6 +93,8 @@ class CPUcontrolService
   , public wxApp
 {
 public:
+  enum getch_ret_codes { error_reading_from_STD_IN = -1};
+  CommandLineArgs<TCHAR> m_cmdlineargs;
   static std::wstring s_std_wstrProgramName;
   DWORD m_dwArgCount ;
 private :
@@ -209,8 +212,9 @@ public :
   //  virtual functions but non-virtual destructor"
   virtual ~CPUcontrolService() ;
 
+  static void AddConsoleLogEntryWriter();
   bool Continue() ;
-  void CreateHardwareAccessObject() ;
+//  void CreateHardwareAccessObject() ;
   static void CreateService( const TCHAR * const cpc_tchServiceName) ;
   //"static" because: there needn't be an object for putting this info out.
   static void CreateStringVector(
@@ -223,6 +227,8 @@ public :
   void DisableOtherVoltageOrFrequencyChange() ;
   void EndAlterCurrentCPUcoreIPCdata() ;
   static void FillCmdLineOptionsList() ;
+  const CommandLineArgs<TCHAR> & GetCommandLineArgs() const
+    { return m_cmdlineargs; }
   inline BYTE * GetCurrentCPUcoreData_Inline(DWORD & dwByteSize);
   inline BYTE * GetIPCdataThreadSafe(DWORD & r_dwByteSize) ;
   std::string GetLogFilePath() ;
@@ -256,6 +262,7 @@ public :
 
   bool Pause() ;
   SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
+  void RenameLogOutputNames();
   static int requestOption(
     //Make as parameter as reference: more resource-saving than
     //to return (=a copy).

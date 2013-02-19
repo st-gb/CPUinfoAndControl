@@ -93,6 +93,8 @@ public:
     No2PstatesForVoltageInterpolationFound ,
     VoltageIsOutsideSafeRange
   };
+  enum exec_state { success, not_implemented};
+//  enum register_access_state{ success, failure};
   const std::set<VoltageAndFreq> * m_p_std_set_voltageandfreqUseForDVFS;
   float m_fReferenceClockInMHz ;
   bool m_b1CPUcorePowerPlane ;
@@ -160,6 +162,8 @@ public:
 //  virtual void GetAllPossibleFrequencies(std::set<VoltageAndFreq> &
 //    r_stdsetvoltageandfreq) {} ;
   virtual void GetAvailableMultipliers(std::set<float> &
+    r_stdset_float) {} ;
+  virtual void GetAvailableThrottleLevels(std::set<float> &
     r_stdset_float) {} ;
   //MUST be declared virtual ("virtual ...") else 
   //GetCurrentPstate() of the derived class is NOT called.
@@ -253,6 +257,7 @@ public:
     __FLT_MIN__ ;
 #endif
   }
+  virtual float GetThrottleLevel(unsigned coreID) = 0;
   virtual float GetVoltageInVolt(WORD wVoltageID )
     //= 0 ;
     {
@@ -305,6 +310,7 @@ public:
     //By using a pointer instead of a reference one can pass NULL 
     //to show that there is no object.
     Model * p_model ) ;
+  void SetNextLowerThrottleLevel(unsigned coreID, float fCPUcoreMultiplierToUse);
 #ifdef COMPILE_WITH_CALC_THREAD
   void SetCalculationThread( 
     //By using a pointer instead of a reference one can pass NULL 
@@ -357,6 +363,8 @@ public:
     , WORD wCoreID
     )
   {return 0 ; }
+  virtual BYTE SetThrottleLevel(float level, unsigned coreID) { return
+    not_implemented; }
       //= 0 ;
   //If this method should be implemented in a derived class it should check for
   // MSR indices and value for validity.

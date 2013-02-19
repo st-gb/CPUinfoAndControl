@@ -39,13 +39,15 @@ namespace wxWidgets
     // TODO Auto-generated destructor stub
   }
 
-  bool DynLibHandler::CreateDynLibCPUcontroller(
+  /** @return: on success : <> NULL */
+  I_CPUcontroller * DynLibHandler::CreateDynLibCPUcontroller(
     std::string & r_stdstrDynLibFilePath
 //    ,
 //    I_CPUaccess * p_i_cpuaccess,
 //    I_UserInterface * mp_userinterface
     )
   {
+    I_CPUcontroller * p_cpucontroller = NULL;
     LOGN( FULL_FUNC_NAME << "--begin")
     bool bSuccess = false ;
     wxString wxstrFilePath = getwxString( r_stdstrDynLibFilePath );
@@ -64,6 +66,7 @@ namespace wxWidgets
         ) ;
       if( mr_cpucontrolbase.m_p_cpucontrollerDynLib )
       {
+        p_cpucontroller = mr_cpucontrolbase.m_p_cpucontrollerDynLib;
         mr_cpucontrolbase.m_model.m_cpucoredata.mp_cpucontroller =
           mr_cpucontrolbase.m_p_cpucontrollerDynLib;
 //        mr_cpucontrolbase.m_model.m_cpucoredata.InterpolateDefaultVoltages();
@@ -113,22 +116,23 @@ namespace wxWidgets
     //Catch because: if executed from GUI it can continue.
     catch( ... )
     {
-      LOGN("exception when creating the CPU controller. "
+      LOGN_ERROR("exception when creating the CPU controller. "
         "mr_cpucontrolbase.m_p_cpucontrollerDynLib"
         << mr_cpucontrolbase.m_p_cpucontrollerDynLib )
 //      r_p_cpucontroller = NULL ;
     }
-    LOGN( FULL_FUNC_NAME << "--return " << bSuccess)
-    return bSuccess ;
+    LOGN( FULL_FUNC_NAME << "--return " << p_cpucontroller)
+    return p_cpucontroller ;
   }
 
-  bool DynLibHandler::CreateDynLibCPUcoreUsageGetter(
+  ICPUcoreUsageGetter * DynLibHandler::CreateDynLibCPUcoreUsageGetter(
     std::string & r_stdstrDynLibFilePath
 //    ,
 //    I_CPUaccess * p_i_cpuaccess,
 //    I_UserInterface * mp_userinterface
     )
   {
+    ICPUcoreUsageGetter * p_icpucoreusagegetter = NULL;
     bool bSuccess = false ;
     try
     {
@@ -166,7 +170,9 @@ namespace wxWidgets
     {
 //      r_p_icpucoreusagegetter = NULL ;
     }
-    return bSuccess ;
+//    return bSuccess ;
+    LOGN( FULL_FUNC_NAME << "--return " << p_icpucoreusagegetter)
+    return p_icpucoreusagegetter;
   }
 
   std::string DynLibHandler::GetDynLibPath(const std::string & cr_strFileName )

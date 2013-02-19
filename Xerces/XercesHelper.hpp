@@ -159,8 +159,8 @@ public:
     ) ;
 };
 
-//@return true = "log_file_filter" element occured
-//Called by both user interface configuration handler and main config handler.
+/** @return true = "log_file_filter" element occured
+* Called by both user interface configuration handler and main config handler. */
 inline bool PossiblyHandleLoggingExclusionFilter_Inline(
   const XMLCh * const cpc_xmlchLocalName ,
   const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
@@ -191,4 +191,7 @@ inline bool PossiblyHandleLoggingExclusionFilter_Inline(
   return bRet ;
 }
 
+bool PossiblyHandleLoggingExclusionFilter(
+  const XMLCh * const cpc_xmlchLocalName ,
+  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes);
 #endif	/* _XERCESHELPER_HPP */
