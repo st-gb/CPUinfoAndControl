@@ -36,11 +36,11 @@ public:
   std::string m_stdstrErrorMessage ;
   DWORD m_dwErrorAsSystemError ; 
   CPUaccessException() {};
-  CPUaccessException(char * p_ch) 
+  CPUaccessException(const char * p_ch)
   {
     m_stdstrErrorMessage = std::string(p_ch) ;
   }
-  CPUaccessException(std::string & r_stdstr )
+  CPUaccessException(const std::string & r_stdstr )
   {
     m_stdstrErrorMessage = r_stdstr ;
   }

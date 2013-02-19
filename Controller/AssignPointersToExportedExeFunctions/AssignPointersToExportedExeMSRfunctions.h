@@ -25,13 +25,13 @@
   #include <Windows/AssignPointersToExportedExeFunctions/AssignPointersToExportedExeMSRfunctions.h>
 #endif
 #ifdef __linux__
-//  #include<Linux/AssignPointersToExportedExeMSRfunctions.h>
-
-//Implementation/ definition of this function should be in a source file within
-//the appropriate folder ( "[...]/Windows[...]" / "[...]/Linux[...]" etc.)
-void AssignPointersToExportedExeMSRfunctions(
-  ReadMSR_func_type & readmsr_func_type ,
-  WriteMSR_func_type & writemsr_func_type ) ;
+  #include <Linux/AssignPointersToExportedExefunctions/AssignPointersToExportedExeMSRfunctions_inline.h>
 #endif
+
+///** Implementation/ definition of this function should be in a source file within
+//* the appropriate folder ( "[...]/Windows[...]" / "[...]/Linux[...]" etc.) */
+//void AssignPointersToExportedExeMSRfunctions(
+//  ReadMSR_func_type & readmsr_func_type ,
+//  WriteMSR_func_type & writemsr_func_type ) ;
 
 #endif /* ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTIONS_H_ */

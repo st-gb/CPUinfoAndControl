@@ -39,7 +39,8 @@ void CPUcoreLoadBasedDynVoltnFreqScaling::HandleCPUnotTooHot()
 {
   //Assign for the next time it gets too hot.
   m_b1stTimeInRowTooHot = true ;
-  LOGN("too hot:no")
+  LOGN( /*" too hot:no"*/ FULL_FUNC_NAME << " begin")
+  DynFreqScalingThreadBase::HandleCPUnotTooHot();
   //        if( mp_icpu->//GetPercentalUsageForBothCores
   //            GetPercentalUsageForAllCores(mp_cpucoredata->
   //            m_arfCPUcoreLoadInPercent)

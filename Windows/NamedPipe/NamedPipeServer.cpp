@@ -12,6 +12,7 @@
 #include <Controller/character_string/format_as_string.hpp>
 #include <Windows/access_rights/DiscretionaryAccessControlList.h>
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+#include <Windows/Service/CPUcontrolService.hpp> //class CPUcontrolService
 //For "::GetErrorMessageFromLastErrorCodeA()"
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #ifdef __CYGWIN__
@@ -27,18 +28,25 @@
 //  HANDLE hPipe
 //  mp_serverprocess
 //};
+
+//class CPUcontrolService;
+extern CPUcontrolBase * gp_cpucontrolbase ;
+
 class PipeClientThreadAttributes
 {
 public:
   HANDLE m_handlePipe ;
   NamedPipeServer * mp_namedpipeserver ;
+  CPUcontrolService * m_p_cpucontrolservice;
   PipeClientThreadAttributes(
     HANDLE handlePipe
     , NamedPipeServer * p_namedpipeserver
+    , CPUcontrolService * p_cpucontrolservice
     )
     :
       m_handlePipe ( handlePipe)
       , mp_namedpipeserver ( p_namedpipeserver )
+      , m_p_cpucontrolservice(p_cpucontrolservice)
   {
 
   }
@@ -439,6 +447,8 @@ VOID PipeClientThread(LPVOID lpvParam)
     HANDLE handlePipe;
     NamedPipeServer * p_namedpipeserver =
       p_pipeclientthreadattributes->mp_namedpipeserver ;
+    CPUcontrolService * p_cpucontrolservice = p_pipeclientthreadattributes->
+      m_p_cpucontrolservice;
 //     std::wstring stdwstrMessage ;
 //     hPipe = p_namedpipeserver->m_handlePipe ;
     handlePipe = p_pipeclientthreadattributes->m_handlePipe ;
@@ -504,10 +514,12 @@ VOID PipeClientThread(LPVOID lpvParam)
 //           & dwNumBytesWritten,   // number of bytes written
 //           NULL
 //           );
-    } while( byReadOrWritePipeReturnCode == I_IPC_Server::WritingIPCdataSucceeded );
+    } while( byReadOrWritePipeReturnCode == I_IPC_Server::WritingIPCdataSucceeded
+        && p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC );
+    LOGN("PipeClientThread(...)-after loop")
     if( byReadOrWritePipeReturnCode == I_IPC_Server::WritingIPCdataFailed )
-      LOGN("PipeClientThread(...)--Writing data size, the command and "
-        "data belonging to command from pipe failed.")
+    LOGN("PipeClientThread(...)-Writing data size, the command and "
+      "data belonging to command from pipe failed.")
     //was created on heap by thread for "create pipe client thread "
     delete p_pipeclientthreadattributes ;
   // Flush the pipe to allow the client to read the pipe's contents 
@@ -735,7 +747,8 @@ BYTE NamedPipeServer::Init(
               PipeClientThreadAttributes * pcta = new
                 PipeClientThreadAttributes(
                 m_handlePipe
-                , this) ;
+                , this
+                , (CPUcontrolService *) gp_cpucontrolbase) ;
             // Create a thread for this client.
               HANDLE hThread = ::CreateThread(
                   NULL,              // no security attribute

@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /* 
  * File:   XercesHelper.cpp
  * Author: Stefan
@@ -67,6 +74,13 @@ XercesHelper::XercesHelper(const XercesHelper& orig) {
 XercesHelper::~XercesHelper() {
 }
 
+bool PossiblyHandleLoggingExclusionFilter(
+  const XMLCh * const cpc_xmlchLocalName ,
+  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
+{
+  return PossiblyHandleLoggingExclusionFilter_Inline(cpc_xmlchLocalName,
+    cr_xercesc_attributes);
+}
 //BYTE //SAX2MainConfigHandler::
 //    XercesHelper::GetAttributeValue(
 //  const Attributes & attrs,

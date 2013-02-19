@@ -155,6 +155,12 @@ typedef BYTE (
     , float fMultiplier
     , WORD wCoreID
   ) ;
+/** unsigned = same bit size as CPU arch -> fast */
+typedef BYTE ( * pfnSetThrottleLevel_type) (
+    float fThrottleLevel
+    //[0.0f ... 1.0f]
+    , unsigned coreID
+  ) ;
 
 typedef float * (
   DYN_LIB_CALLING_CONVENTION

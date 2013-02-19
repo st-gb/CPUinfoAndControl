@@ -667,18 +667,23 @@ WinRing0_1_3RunTimeDynLinked::WrmsrEx(
     DWORD dwErrorCode = ::GetLastError( ) ;
     std::string strErrorMessage = GetHardwareAccessErrorDescription(
       dwErrorCode, "MSR" , dwIndex) ;
-    mp_userinterface->Confirm( L"writing to MSR failed. "
+    std::wstring std_wstrMessage = L"writing to MSR failed. "
       + GetStdWstring(strErrorMessage) +
       L"possible causes:\n"
       //This happened when wanted to write to a read-only status register.
       L"-all or some bits within the register of this address are only readable\n"
       L"-this program needs elevated privileges for ring 0 "
-      L"access. So run it as administrator.\n"
+      L"access. So run it as administrator.\n";
+    LOGN_ERROR( std_wstrMessage)
+#ifdef COMPILE_AS_GUI
+    mp_userinterface->Confirm(
+      std_wstrMessage
 //      "This program uses "
 //      "a DLL to communicate with the CPU for higher privileges. Does the "
 //      "file \"WinRing0[...].sys\" lay within the same directory as "
 //      "\"WinRing0[...].dll\"?\n"
       );
+#endif
   }
   return bReturn ? hardware_access_succeeded : hardware_access_failed;
 }

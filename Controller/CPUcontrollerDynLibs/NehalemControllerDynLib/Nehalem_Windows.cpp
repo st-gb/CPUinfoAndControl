@@ -13,6 +13,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 #include <tchar.h> //_T()
 
 //GetTimeStampCounterMultiplier(...)
+//MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF
 #include <Controller/CPU-related/Intel/Nehalem/Nehalem.hpp>
 
 //_WIN32: Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -26,6 +27,7 @@ GetCurrentProcessExeFileNameWithoutDirs.hpp>
 //extern ReadMSR_func_type g_pfnreadmsr ;
 //extern WriteMSR_func_type g_pfn_write_msr ;
 extern float gs_fTimeStampCounterMultiplier;
+DWORD g_dwPreviousTickCountInMilliseconds;
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 bool InitWindows()
@@ -49,7 +51,7 @@ bool InitWindows()
     ("NehalemControllerDLL_log.txt") ;
 #endif
 //  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
-  g_logger.OpenFile2( stdstrFilename ) ;
+  g_logger.OpenFileA( stdstrFilename ) ;
   DEBUGN_LOGGER_NAME(//g_loggerDynLib
     g_logger , "Windows version--this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )

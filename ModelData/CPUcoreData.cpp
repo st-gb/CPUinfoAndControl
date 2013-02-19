@@ -9,7 +9,7 @@
 //Must inlude ".cpp" because of "inline" , else if including ".h": g++ error
 //"undefined reference".
 //GetArrayIndexForClosestValue(...)
-#include <algorithms/binary_search/binary_search.cpp>
+#include <algorithms/binary_search/binary_search.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
@@ -177,6 +177,34 @@ void CPUcoreData::AvailableMultipliersToArray()
   }
 }
 
+void CPUcoreData::AvailableThrottleLevelsToArray()
+{
+//  float * const availableThrottleLevels =
+//    m_arfAvailableThrottleLevels;
+  if( m_arfAvailableThrottleLevels )
+  {
+    delete [ ] m_arfAvailableThrottleLevels ;
+    m_arfAvailableThrottleLevels = NULL ;
+  }
+  if( ! m_stdset_floatAvailableThrottleLevels.empty() )
+  {
+    m_arfAvailableThrottleLevels = new float [
+      m_stdset_floatAvailableThrottleLevels.size() ] ;
+    //If allocation succeeded.
+    if( m_arfAvailableThrottleLevels )
+    {
+      WORD wArrayIndex = 0 ;
+      for( std::set<float>::const_iterator c_iter =
+          m_stdset_floatAvailableThrottleLevels.begin() ;
+          c_iter != m_stdset_floatAvailableThrottleLevels.end() ;
+          ++ c_iter , ++ wArrayIndex )
+      {
+        m_arfAvailableThrottleLevels[ wArrayIndex ] = *c_iter ;
+      }
+    }
+  }
+}
+
 void CPUcoreData::AvailableVoltagesToArray()
 {
   if( m_arfAvailableVoltagesInVolt )
@@ -274,6 +302,7 @@ void CPUcoreData::Init()
 //  m_mutexCPUdataCanBeSafelyRead.Lock();
 
   m_arfAvailableMultipliers = NULL ;
+  m_arfAvailableThrottleLevels = NULL;
   m_arfAvailableVoltagesInVolt = NULL ;
   m_b1CPUcorePowerPlane = true ;
   m_fCPUcoreLoadThresholdForIncreaseInPercent =
@@ -552,6 +581,18 @@ void CPUcoreData::InterpolateDefaultVoltages()
       return *c_iter_stdset_fVoltages ;
     }
     return 0.0 ;
+  }
+
+  float CPUcoreData::GetNextLowerThrottleLevel(unsigned coreID)
+  {
+    UINT arrayIndex = MANUFACTURER_ID_NAMESPACE::BinarySearch::GetClosestLess(
+      m_arfAvailableThrottleLevels,
+      m_stdset_floatAvailableThrottleLevels.size(),
+      m_arp_percpucoreattributes[coreID].m_fThrottleLevel
+      );
+    if( arrayIndex != MANUFACTURER_ID_NAMESPACE::BinarySearch::no_element )
+      return m_arfAvailableThrottleLevels[arrayIndex];
+    return -1.0f;
   }
 
   float CPUcoreData::GetNextVoltageAbove(float fVoltageInVolt)

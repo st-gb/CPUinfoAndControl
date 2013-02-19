@@ -176,12 +176,12 @@
       m_strElementName = std::string(pchXMLelementName) ;
       /** The log exclusion filter exists for possibility of different entries
        * between UI and service. */
-      if( PossiblyHandleLoggingExclusionFilter_Inline(
+      /*if(*/ PossiblyHandleLoggingExclusionFilter_Inline(
         cpc_xmlchLocalName,
         cr_xercesc_attributes)
-        )
+        //)
         ;
-      else
+//      else
         HandleGUIpathesXMLelement(cr_xercesc_attributes) ;
       //LOG( "uri:" << uri << " localname:" << localname << " qname:" << qname
       // << endl );

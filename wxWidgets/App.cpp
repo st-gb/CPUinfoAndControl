@@ -236,6 +236,8 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //    ( error if  "logger.OpenFile( std::string("bla");"  )
 #endif
   m_external_caller.m_pfnVoltageTooLow = & VoltageTooLow;
+  I_Thread::SetCurrentThreadName("main");
+//  g_logger.SetCurrentThreadName("main");
 }
 
 wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
@@ -311,12 +313,13 @@ bool wxX86InfoAndControlApp::Confirm(const std::string & str)
   if( m_bConfirmedYet )
   {
     m_bConfirmedYet = false ;
-    #ifdef wxUSE_WCHAR_T
-      std::wstring wstr(str.begin(), str.end() ) ;
-      wxString wxstr( wstr.c_str() ) ;
-    #else
-      wxString wxstr(( const unsigned char * ) str.c_str() ) :
-    #endif
+//    #ifdef wxUSE_WCHAR_T
+//      std::wstring wstr(str.begin(), str.end() ) ;
+//      wxString wxstr( wstr.c_str() ) ;
+//    #else
+//      wxString wxstr(( const unsigned char * ) str.c_str() ) :
+//    #endif
+    wxString wxstr = GetwxString_Inline(str);
     ::wxMessageBox( 
       #ifdef _DEBUG_
       wxT("gg"), wxT("bla"),wxOK
@@ -917,6 +920,7 @@ DWORD THREAD_PROC_CALLING_CONVENTION
   GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
 {
   LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc begin")
+  I_Thread::SetCurrentThreadName("IPC");
   wxX86InfoAndControlApp * p_wxx86infoandcontrolapp =
     ( wxX86InfoAndControlApp * ) p_v ;
   if( p_wxx86infoandcontrolapp )
@@ -1530,6 +1534,10 @@ bool wxX86InfoAndControlApp::OnInit()
 //    }
 ////    else
 ////      std_strLogFile = std_wstrLogFilePath;
+    std::tstring std_tstrProgramPath(argv[0] );
+    std::wstring std_wstrProgramPath = GetStdWstring(std_tstrProgramPath);
+    std::wstring::size_type lastBackSlash = std_wstrProgramPath.rfind(L'\\');
+    std_wstrLogFilePath += std_wstrProgramPath.substr(lastBackSlash + 1);
     if( OpenLogFile(std_wstrLogFilePath,
         m_model.m_logfileattributes.m_bAppendProcessID, false) )
 #ifdef _WIN32
@@ -1617,10 +1625,12 @@ bool wxX86InfoAndControlApp::OnInit()
   	  LOGN("initializing IPC (for connection to the service) succeeded")
 #endif
     //if( mp_modelData )
-    {
+//    {
   	  //TODO program malfunction when the IPC thread is started.
 //      m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc , this ) ;
-  	  CreateHardwareAccessObject() ;
+    CreateHardwareAccessObject() ;
+//    if(mp_i_cpuaccess)
+//    {
       m_maincontroller.SetAttributeData( mp_modelData ) ;
       //m_winring0dynlinked.SetUserInterface(p_frame);
      
@@ -1697,10 +1707,10 @@ bool wxX86InfoAndControlApp::OnInit()
         ::FetchCPUcoreDataFromIPC( this ) ;
 #ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
         if( m_sax2_ipc_current_cpu_data_handler.
-          m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.size() > 0 )
+          m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.size() > 0 )
           m_sax2_ipc_current_cpu_data_handler.m_fReferenceClockInMHz =
             m_sax2_ipc_current_cpu_data_handler.
-            m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.begin()->second.
+            m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.begin()->second.
             m_fReferenceClock ;
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windowss
       }
@@ -1734,11 +1744,16 @@ bool wxX86InfoAndControlApp::OnInit()
 //        return FALSE ;
 //      }
     //TODO program hangs when message that DLL function is missing
+    const char * const threadName = "IPC";
     m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc ,
-      this ) ;
+      (void *) this /*(const char * const) "IPC"*/
+//      , threadName
+//      , I_Thread::default_priority
+      ) ;
+
     if( m_model.m_userinterfaceattributes.m_bStartDVFSatStartup )
       StartDynamicVoltageAndFrequencyScaling() ;
-    }// if (mp_modelData)
+//    }// if (mp_modelData) if(mp_i_cpuaccess)
   }
   else
     return FALSE ;
@@ -1777,6 +1792,7 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 
     //g_logger.RenameFile( GetStdString_Inline( r_std_tstrLogFilePath) );
   }
+
   r_std_tstrLogFilePath += _T("_log.") ;
 //  r_std_wstrLogFilePath += L"_log.";
 
@@ -1786,20 +1802,22 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //  std::string std_strLogTimeFormatString;
 //  GetLogTimeFormatString(std_strLogTimeFormatString);
 
-  r_std_tstrLogFilePath += GetStdTstring_Inline(//std_strFileExt
-    m_model.m_logfileattributes.m_std_strFormat);
+//  r_std_tstrLogFilePath += GetStdTstring_Inline(//std_strFileExt
+//    m_model.m_logfileattributes.m_std_strFormat);
 
-  bool fileIsOpen = g_logger.OpenFileA( GetStdString(r_std_tstrLogFilePath),
-    bRolling);
+  std::string std_strLogFilePath = GetStdString(r_std_tstrLogFilePath);
+  bool fileIsOpen = //g_logger.OpenFileA( ,
+    //bRolling);
+    GetLogFilePropertiesAndOpenLogFile(std_strLogFilePath );
   if( fileIsOpen )
   {
-    g_logger.CreateFormatter(//std_strFileExt.c_str()
-      m_model.m_logfileattributes.m_std_strFormat.c_str(),
-      //std_strLogTimeFormatString
-      m_model.m_logfileattributes.m_std_strTimeFormat
-      );
-    if( typeid(g_logger) == typeid(Logger) )
-      LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
+//    g_logger.CreateFormatter(//std_strFileExt.c_str()
+//      m_model.m_logfileattributes.m_std_strFormat.c_str(),
+//      //std_strLogTimeFormatString
+//      m_model.m_logfileattributes.m_std_strTimeFormat
+//      );
+//    if( typeid(g_logger) == typeid(Logger) )
+//      LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
 //    if( typeid(g_logger.GetFormatter() ) == typeid(I_LogFormatter *) )
 //      LOGN(FULL_FUNC_NAME << " formatter is I_LogFormatter" )
 //    else if( typeid(g_logger.GetFormatter() ) == typeid(HTMLlogFormatter *) )
@@ -1809,7 +1827,7 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
   else
   {
     MessageWithTimeStamp( L"Failed to open log file \n\"" +
-      GetStdWstring(r_std_tstrLogFilePath) + L"\":\n"
+      GetStdWstring(/*r_std_tstrLogFilePath*/ std_strLogFilePath) + L"\":\n"
       //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
       + GetErrorMessageFromLastErrorCodeA() );
   }

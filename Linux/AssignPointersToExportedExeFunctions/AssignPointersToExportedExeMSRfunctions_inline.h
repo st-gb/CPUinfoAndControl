@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * AssignPointersToExportedExeMSRfunctions.h
  *
@@ -5,8 +12,8 @@
  *      Author: sgebauer
  */
 
-#ifndef ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTIONS_H_
-#define ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTIONS_H_
+#ifndef ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTION_INLINE_H_
+#define ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTIONS_INLINE_H_
 
 #ifdef __linux__
   #include <dlfcn.h> //for dlopen(...)
@@ -15,7 +22,7 @@
 
 //http://z505.com/cgi-bin/qkcont/qkcont.cgi?p=Export%20Functions%20from%20Executables:
 
-inline void AssignPointersToExportedExeMSRfunctions(
+inline void AssignPointersToExportedExeMSRfunctions_inline(
   ReadMSR_func_type & readmsr_func_type ,
   WriteMSR_func_type & writemsr_func_type )
 {
@@ -47,4 +54,4 @@ inline void AssignPointersToExportedExeMSRfunctions(
   }
 }
 
-#endif /* ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTIONS_H_ */
+#endif /* ASSIGNPOINTERSTOEXPORTEDEXEMSRFUNCTIONS_INLINE_H_ */

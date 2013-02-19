@@ -38,8 +38,9 @@ PerCPUcoreAttributes::PerCPUcoreAttributes()
     mp_dynfreqscalingthread(NULL)
   ,
 #endif
-  m_fPreviousCPUusage(-1.0)
+  m_fPreviousCPUusage(-1.0f)
   , mp_icpucoreusagegetter(NULL)
+  , m_fThrottleLevel(1.0f)
   , m_wCurrentFreqInMHz (0)
   {
   }

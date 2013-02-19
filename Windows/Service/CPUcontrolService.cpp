@@ -16,14 +16,21 @@
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
 //class DynFreqScalingThreadBase
 #include <Controller/DynFreqScalingThreadBase.hpp>
+#include <Controller/character_string/ConvertStdStringToTypename.hpp>
 //::format_output_data
 #include <Controller/character_string/format_as_string.hpp>
 #include <Controller/character_string/stdtstr.hpp> //class std::tstring
 #ifdef COMPILE_WITH_IPC
 #include <Controller/IPC/I_IPC.hpp> //for enum "IPCcontrolCodes"
 #endif //#ifdef COMPILE_WITH_IPC
+//class Logger::StdCoutLogWriter
+#include <Controller/Logger/OutputHandler/StdCoutLogWriter.hpp>
+#include <Controller/Logger/Formatter/ConsoleFormatter.hpp>
+#include <Controller/Logger/Appender/RollingFileOutput.hpp>
 //DEBUG(...), DEBUGN(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+//template<typename charType> class CommandLineArgs
+#include <Process/CommandLineArgs.hpp>
 //for LocalLanguageMessageFromErrorCode(...)
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 //for int ::CallFromMainFunction(int argc, char * argv[])
@@ -120,7 +127,7 @@ GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v)
       //    LOGN("GetCurrentCPUcoreDataInLoopThreadFunc retrieve CPU core data?"
       //      << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
       while ( //break condition
-      p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
+          p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
         {
           LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after the loop condition")
           p_cpucontrolservice->m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
@@ -277,7 +284,8 @@ CPUcontrolService::CPUcontrolService(
 )
   //C++ style init.
   :
-  CPUcontrolServiceBase(&m_dummyuserinterface),
+    CPUcontrolServiceBase(& m_dummyuserinterface),
+      m_cmdlineargs(argc, argv),
       m_dwArgCount(argc)
 #ifdef COMPILE_WITH_IPC
       //  , mr_ipc_datahandler(r_ipc_datahandler)
@@ -339,15 +347,15 @@ CPUcontrolService::Continue()
   return bAlreadyContinued;
 }
 
-void
-CPUcontrolService::CreateHardwareAccessObject()
-{
-  //Use parameterized constructor, because there were runtime errors with
-  //parameterless c'tor.
-  //mp_winring0dynlinked = new //WinRing0dynLinked(
-  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked( & m_dummyuserinterface);
-  LOGN( FULL_FUNC_NAME << "--end")
-}
+//void
+//CPUcontrolService::CreateHardwareAccessObject()
+//{
+//  //Use parameterized constructor, because there were runtime errors with
+//  //parameterless c'tor.
+//  //mp_winring0dynlinked = new //WinRing0dynLinked(
+//  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked( & m_dummyuserinterface);
+//  LOGN( FULL_FUNC_NAME << "--end")
+//}
 
 void
 CPUcontrolService::CreateService(const TCHAR * const cpc_tchServiceName)
@@ -437,7 +445,8 @@ CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
           std::string stdstrPossibleSolution;
           ServiceBase::GetPossibleSolution(dwErrorCodeFor1stError,
               cp_tchServiceName, stdstrPossibleSolution);
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+//          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+          LOGN_ERROR(
               stdstr
               << std_strSpecificErrorMessage << ":"
               << ::LocalLanguageMessageAndErrorCodeA(dwErrorCodeFor1stError)
@@ -445,7 +454,7 @@ CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
           );
         }
     }
-      else
+    else
       WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
       << GetStdString_Inline(cp_tchServiceName)
       << "\" succeeded." )
@@ -481,10 +490,14 @@ CPUcontrolService::EndAlterCurrentCPUcoreIPCdata()
   LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
       "LockedBroadcast")
   m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.LockedBroadcast();
+  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
+      "waiting for termination of \"get current CPU core data\" thread")
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"you must Wait() for a joinable thread or the system resources used by it
   //will never be freed,
   m_x86iandc_threadGetCurrentCPUcoreData.WaitForTermination();
+  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata after "
+      "waiting for termination of \"get current CPU core data\" thread")
   LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Delete")
   m_x86iandc_threadGetCurrentCPUcoreData.Delete();
   LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata end")
@@ -652,6 +665,7 @@ CPUcontrolService::InitializeMemberVariables()
   //  mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService";
 
+  LOGN(FULL_FUNC_NAME << " creating the \"end service\" event")
   m_hEndProcessingEvent = ::CreateEvent(NULL, // default security attributes
       TRUE, // manual-reset event
       FALSE, // initial state is non-signaled
@@ -991,6 +1005,7 @@ CPUcontrolService::IPC_Message(
 
 SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
 {
+  LOGN(FULL_FUNC_NAME << " begin")
   DWORD dwLastError;
   //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
   //"The ServiceMain function should immediately call the
@@ -1094,9 +1109,9 @@ CPUcontrolService::CreateStringVector(
   LOG( "whole string length: " << stdstrInput.length() //<< "\n"
   )
   for (WORD wIndex = 0; wIndex < stdstrInput.length(); ++wIndex)
+  {
+    switch (stdstrInput[wIndex])
     {
-      switch (stdstrInput[wIndex])
-        {
       case ' ':
       case '\t':
         bWhitespace = true;
@@ -1134,7 +1149,8 @@ CPUcontrolService::CreateStringVector(
         bStringSeperator = false;
         if (wBeginOfSubstring == NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE)
           wBeginOfSubstring = wIndex;
-        }
+        break;
+    }// switch (stdstrInput[wIndex])
       //DEBUG("character: %c index:%u\n", stdstrInput[ wIndex ], wIndex ) ;
       LOG( "character: " << stdstrInput[ wIndex ] << "index:" << wIndex <<
           "\n" );
@@ -1148,16 +1164,16 @@ CPUcontrolService::CreateStringVector(
         //Only if NOT the 1st of 2 AnfZeichen take a substring.
         //(-> a anf-zeichen is there to allow a single string that
         //even includes white spaces)
-        if (!bAnfZeichen)
-          {
-            DEBUG("string seperator or end of whole string\n");
-            vecstdstrParams.push_back(stdstrInput.substr(wBeginOfSubstring, //wNumberOfChanrs
-                //wIndex - wBeginOfSubstring + 1
-                wNumberOfSubstringChars));
-            wBeginOfSubstring = NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE;
-            wNumberOfSubstringChars = 0;
-          }
-    }
+        if ( ! bAnfZeichen)
+        {
+          DEBUG("string seperator or end of whole string\n");
+          vecstdstrParams.push_back(stdstrInput.substr(wBeginOfSubstring, //wNumberOfChanrs
+              //wIndex - wBeginOfSubstring + 1
+              wNumberOfSubstringChars));
+          wBeginOfSubstring = NO_BEGIN_OF_STRING_FOR_16BIT_UNSIGNED_DATATYPE;
+          wNumberOfSubstringChars = 0;
+        }
+  } // "for" loop
 }
 
 std::string
@@ -1291,6 +1307,47 @@ void CPUcontrolService::OnSocketEvent(wxSocketEvent & event)
   LOGN( FULL_FUNC_NAME)
 }
 
+void CPUcontrolService::AddConsoleLogEntryWriter()
+{
+//  /*Logger::*/StdCoutLogWriter * logentryoutputter = new
+//    /*Logger::*/StdCoutLogWriter();
+////    I_LogFormatter logformatter = new I_LogFormatter::CreateFormatter();
+//  RollingFileOutput * logfileappender = new RollingFileOutput(
+//    g_logger,
+//    logentryoutputter,
+//    //logformatter,
+//    NULL,
+//    100,
+//    LogLevel::warning
+////      LogLevel::GetAsNumber(m_model.m_logfileattributes.m_std_strLevel)
+//    );
+////    logfileappender->CreateFormatter("txt"/*, std_strLogTimeFormatString*/ );
+//  /*Logger::*/ConsoleFormatter * logformatter = new /*Logger::*/ConsoleFormatter(
+//    logfileappender);
+//  logfileappender->SetFormatter(logformatter);
+//  g_logger.AddFormattedLogEntryProcessor( logfileappender);
+
+  std::string std_strDummyLogFilePath = "dummy.txt";
+  /*Logger::*/StdCoutLogWriter * std_cout_logentryoutputter = new
+    /*Logger::*/StdCoutLogWriter();
+  //    I_LogFormatter logformatter = new I_LogFormatter::CreateFormatter();
+  RollingFileOutput * consoleappender = new RollingFileOutput(
+    g_logger,
+    std_strDummyLogFilePath,
+    std_cout_logentryoutputter,
+    "txt",
+  //      consoleformatter,
+    100,
+    LogLevel::warning /*success*/
+  //      LogLevel::GetAsNumber(m_model.m_logfileattributes.m_std_strLevel)
+    );
+  //    logfileappender->CreateFormatter("txt"/*, std_strLogTimeFormatString*/ );
+  /*Logger::*/ConsoleFormatter * consoleformatter = new /*Logger::*/ConsoleFormatter(
+    consoleappender);
+  consoleappender->Open(std_strDummyLogFilePath);
+  consoleappender->SetFormatter(consoleformatter);
+  g_logger.AddFormattedLogEntryProcessor( consoleappender);
+}
 
 bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
 {
@@ -1316,7 +1373,7 @@ bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
   else
     std_strLogFileName += //std::string( argv[0]) +
       //to not use the same log file as the possibly running service.
-      std::string("_execute_actions_log.") ;
+      std::string("_TUI_log.") ; //Textual User Interface
   //    std_tstrLogFileName = std::tstring( argv[0]) +
   //      std::tstring(L"_execute_actions_log.txt") ;
   #else
@@ -1335,6 +1392,10 @@ bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
 
   bool logFileIsOpen = CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
     std_strLogFileName);
+  if( logFileIsOpen)
+  {
+    AddConsoleLogEntryWriter();
+  }
   return logFileIsOpen;
 }
 
@@ -1342,6 +1403,7 @@ bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
 bool
 CPUcontrolService::Pause()
 {
+  LOGN( FULL_FUNC_NAME << " begin")
   bool bAlreadyPaused = false;
   m_servicestatus.dwCurrentState = SERVICE_PAUSED;
   m_bProcess = false;
@@ -1444,6 +1506,34 @@ CPUcontrolService::Pause()
 //}
 //}
 
+void CPUcontrolService::RenameLogOutputNames()
+{
+  const std::vector<FormattedLogEntryProcessor *> & formattedLogEntryProcessors
+    = g_logger.GetFormattedLogEntryProcessors();
+  std::vector<FormattedLogEntryProcessor *>::const_iterator c_iter =
+    formattedLogEntryProcessors.begin();
+  //    g_logger.
+  std::tstring std_tstrLogFileName(m_cmdlineargs.GetStringArray()
+    /*m_stringArray*/[0]);
+  std_tstrLogFileName += _T("_TUI_log");
+  std::string std_strLogFileName;
+  std::string::size_type lastDot;
+  FormattedLogEntryProcessor * p_formattedlogentryprocessor;
+  while( c_iter != formattedLogEntryProcessors.end() )
+  {
+    p_formattedlogentryprocessor = (* c_iter);
+    std_strLogFileName = GetStdString(std_tstrLogFileName);
+    lastDot = p_formattedlogentryprocessor->GetFilePath().rfind('.');
+    if( lastDot != std::string::npos )
+      std_strLogFileName += p_formattedlogentryprocessor->GetFilePath().substr(
+        lastDot);
+    //Rename to ->"[...]TUI" so that the log file is not overwritten by the
+    //service after starting this program as a service.
+    p_formattedlogentryprocessor->RenameThreadSafe( std_strLogFileName);
+    ++ c_iter;
+  }
+}
+
 int
 CPUcontrolService::requestOption(
   //Make as parameter as reference: more ressource-saving than
@@ -1466,7 +1556,14 @@ CPUcontrolService::requestOption(
     "[s/S]tart (this) service\n"
     "Sto[p/P] (this) service\n"
     "[q/Q]uit\n";
+  std::cout.flush();
+#ifdef _DEBUG
+  char ch;// = 'R';
+  std::cin >> ch;
+  int nChar = ch;
+#else
   int nChar = ::getche();
+#endif
   std::cout << "\n";
   switch ( ::toupper(nChar))
     {
@@ -1529,7 +1626,8 @@ CPUcontrolService::requestOption(
     break;
   default:
     std::cout << "You did not input a valid option.\n";
-    }
+    break;
+  }
   if (bContinue)
     {
       //std::cin >> stdstrInput ;
@@ -1591,10 +1689,23 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
     );
 
 #if defined( _DEBUG ) && !defined(EMULATE_EXECUTION_AS_SERVICE)
-  //Give time to attach a debugger to THIS process if it was not started 
-  //from Visual Studio.
-  ::Sleep( //wait time in milliseconds
-      100000);
+//  if( argc > 2 )
+  {
+//    CommandLineArgs<TCHAR> cmdlineargs(argc, argv);
+    unsigned index = s_p_cpucontrolservice->m_cmdlineargs.contains(
+      (TCHAR *) _T("-delay") );
+    if( index != UINT_MAX && ++ index < argc)
+    {
+      std::tstring std_tstrDelay(argv[index]);
+      std::string std_strDelay = GetStdString(std_tstrDelay);
+      DWORD dwSleepTimeInMs;
+      if( ConvertStdStringToTypename(dwSleepTimeInMs, std_strDelay) )
+        //Give time to attach a debugger to THIS process if it was not started
+        //from Visual Studio.
+        ::Sleep( //wait time in milliseconds
+          dwSleepTimeInMs);
+    }
+  }
 #endif
   //DEBUG("ServiceMain--argument count: %u\n",argc)
   LOGN( "Service main--argument count: " << argc //<< "\n"
@@ -2059,17 +2170,16 @@ void CPUcontrolService::StartService()
   //  EndAlterCurrentCPUcoreIPCdata() ;
 }
 
-//This method is called by the Windows Service Control Manager.
-//It is executed in the same thread that called 
-//"StartServiceCtrlDispatcher".
+/** This method is called by the Windows Service Control Manager.
+* It is executed in the same thread that called
+* "StartServiceCtrlDispatcher". */
 DWORD WINAPI
 CPUcontrolService::ServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType,
     LPVOID lpEventData, LPVOID lpContext)
 {
-  LOGN("service ctrl handler--begin control code:" << dwControl
-      << " current thread id:" << ::GetCurrentThreadId() );
+  LOGN("service control handler begin control code:" << dwControl
+    /* << " current thread id:" << ::GetCurrentThreadId() */ );
   //  LOGN("service ctrl handler--current thread id:" << ::GetCurrentThreadId() )
-
   //DWORD status;
   // Local variables.
   static DWORD CachedState;
@@ -2264,6 +2374,7 @@ CPUcontrolService::Stop()
 
   //Inform the Service Control Manager that we have stopped.
   SetServiceStatus();
+  EndAlterCurrentCPUcoreIPCdata();
 
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Leaving service" );
 }

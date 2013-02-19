@@ -145,10 +145,8 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
   CPUcoreData * p_cpucoredata = & mp_model->m_cpucoredata ;
   const CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
 
-  std::string stdstrCPUtypeRelativeDirPath ;
-  if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
+  if( GetCPUvendorFamilyModelStepping() )
   {
-    stdstrCPUtypeRelativeDirPath += "/" ;
     Xerces::SAX2CPUcontrollerConfiguration sax2cpucontrollerconfiguration(
       * mp_userinterface, * mp_model);
     if( Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
@@ -166,22 +164,35 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     }
     if( sax2cpucontrollerconfiguration.
         m_mostSuitableCPUinfoGetterAndOrController.empty() )
-      gp_cpucontrolbase->CreateDynLibCPUcontroller(
-        stdstrCPUtypeRelativeDirPath
-  //        , r_p_cpucontroller
-        ) ;
+    {
+      std::string stdstrCPUtypeRelativeDirPath ;
+      if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
+      {
+        stdstrCPUtypeRelativeDirPath += "/" ;
+        gp_cpucontrolbase->CreateDynLibCPUcontroller(
+          stdstrCPUtypeRelativeDirPath
+    //        , r_p_cpucontroller
+          ) ;
+        r_p_cpucontroller = gp_cpucontrolbase->m_p_cpucontrollerDynLib ;
+      } //if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
+    }
     else
-      gp_cpucontrolbase->CreateDynLibCPUcontroller_DynLibName(
+    {
+      r_p_cpucontroller = gp_cpucontrolbase->CreateDynLibCPUcontroller_DynLibName(
         sax2cpucontrollerconfiguration.
         m_mostSuitableCPUinfoGetterAndOrController);
-    r_p_cpucontroller = gp_cpucontrolbase->m_p_cpucontrollerDynLib ;
-    gp_cpucontrolbase->CreateDynLibCPUcoreUsageGetter(
-      stdstrCPUtypeRelativeDirPath
-//        , r_p_icpucoreusagegetter
-      ) ;
-    r_p_icpucoreusagegetter = gp_cpucontrolbase->
-        m_p_cpucoreusagegetterDynLib ;
-  } //if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
+    }
+    std::string stdstrCPUtypeRelativeDirPath ;
+    if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
+    {
+      gp_cpucontrolbase->CreateDynLibCPUcoreUsageGetter(
+        stdstrCPUtypeRelativeDirPath
+    //        , r_p_icpucoreusagegetter
+        ) ;
+      r_p_icpucoreusagegetter = gp_cpucontrolbase->
+          m_p_cpucoreusagegetterDynLib ;
+    }
+  }
 
 //  LOGN("number of CPU cores:"
 //    << mp_model->m_cpucoredata.m_byNumberOfCPUCores )
@@ -243,16 +254,17 @@ void MainController::SetCPUaccess(
   mp_cpuaccess = p_cpuaccessmethod ;
 }
 
-//This method is also used for save file dialog.
-BYTE MainController::GetPstatesDirPath(
-  std::string & r_strCPUtypeRelativeDirPath )
+bool MainController::GetCPUvendorFamilyModelStepping()
 {
-  BYTE byRet = 0 ;
+  LOGN( FULL_FUNC_NAME << "--begin")
   std::string strVendorID ;
   if( //May be NULL
-      mp_cpuaccess && mp_cpuaccess->
-    GetVendorID(strVendorID)
-    )
+     ! mp_cpuaccess )
+  {
+    LOGN_ERROR( FULL_FUNC_NAME << "mp_cpuaccess is NULL")
+    return false;
+  }
+  if(mp_cpuaccess->GetVendorID(strVendorID) )
   {
     BYTE byModel ;
     BYTE byStepping ;
@@ -275,34 +287,48 @@ BYTE MainController::GetPstatesDirPath(
       r_cpucoredata.m_wFamily = wFamily ;
       r_cpucoredata.m_byModel = byModel ;
       r_cpucoredata.m_byStepping = byStepping ;
-      WORD wModel = (WORD) byModel ;
-      WORD wStepping = (WORD) byStepping ;
-      r_strCPUtypeRelativeDirPath = 
-        //"configuration/"
-        mp_model->m_std_strConfigFilePath + "/"
-        + strVendorID 
-        + "/" 
-        + //strFamily 
-        convertToStdString<WORD>( wFamily //, std::hex
-          ) 
-        + "/" +
-        convertToStdString<WORD>( //(WORD) byModel 
-          wModel //, std::hex
-          ) 
-        + "/" +
-        //The stepping should be included because e.g. the Phenom 965 exists
-        //in Stepping C2 and  C3--the C3 has lower voltages, so the
-        //"default_voltage_in_Volt"
-        //attribute values are lower than the ones of the C2 stepping.
-        convertToStdString<WORD>( //(WORD) byModel 
-          wStepping //, std::hex
-          ) 
-        ;
-      byRet = 1 ;
+      return true;
     }
   }
   else
-    LOGN("Getting vendor ID failed")
+    LOGN_ERROR("Getting vendor ID failed")
+  return false;
+}
+
+/** This method is also used for save file dialog. */
+BYTE MainController::GetPstatesDirPath(
+  std::string & r_strCPUtypeRelativeDirPath )
+{
+  LOGN( FULL_FUNC_NAME << "--begin")
+  BYTE byRet = 0 ;
+//  if( GetCPUvendorFamilyModelStepping() )
+  {
+    const CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
+    unsigned wModel = (unsigned) r_cpucoredata.m_byModel ;
+    unsigned wStepping = (unsigned) r_cpucoredata.m_byStepping ;
+    r_strCPUtypeRelativeDirPath =
+      //"configuration/"
+      mp_model->m_std_strConfigFilePath + "/"
+      + r_cpucoredata.m_strVendorID
+      + "/"
+      + //strFamily
+      convertToStdString<WORD>( r_cpucoredata.m_wFamily //, std::hex
+        )
+      + "/" +
+      convertToStdString<WORD>( //(WORD) byModel
+        wModel //, std::hex
+        )
+      + "/" +
+      //The stepping should be included because e.g. the Phenom 965 exists
+      //in Stepping C2 and  C3--the C3 has lower voltages, so the
+      //"default_voltage_in_Volt"
+      //attribute values are lower than the ones of the C2 stepping.
+      convertToStdString<WORD>( //(WORD) byModel
+        wStepping //, std::hex
+        )
+      ;
+    byRet = 1 ;
+  }
   return byRet ;
 }
 
@@ -328,24 +354,26 @@ BYTE MainController::ReadPstateConfig(
   , UserInterface * p_userinterface 
   )
 {
+  LOGN( FULL_FUNC_NAME << " begin")
   BYTE byRet = 0 ;
   std::string strCPUtypeRelativeDirPath ;
-  if( GetPstatesDirPath(strCPUtypeRelativeDirPath) )
+  if( GetCPUvendorFamilyModelStepping() &&
+      GetPstatesDirPath(strCPUtypeRelativeDirPath) )
   {
-    BYTE byModel ;
-    BYTE byStepping ;
+//    BYTE byModel ;
+//    BYTE byStepping ;
     //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
     std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
     std::string strProcessorName ;
-    WORD wFamily ;
-    if( mp_cpuaccess->GetFamilyAndModelAndStepping(
-        wFamily , byModel , byStepping )
-      )
-    {
-      mp_model->m_cpucoredata.m_byModel = byModel ;
-      mp_model->m_cpucoredata.m_wFamily = wFamily ;
-      mp_model->m_cpucoredata.m_byStepping = byStepping ;
-    }
+//    WORD wFamily ;
+//    if( mp_cpuaccess->GetFamilyAndModelAndStepping(
+//        wFamily , byModel , byStepping )
+//      )
+//    {
+//      mp_model->m_cpucoredata.m_byModel = byModel ;
+//      mp_model->m_cpucoredata.m_wFamily = wFamily ;
+//      mp_model->m_cpucoredata.m_byStepping = byStepping ;
+//    }
     if( mp_cpuaccess->
         //Because file name must not begin with spaces in NTFS.
         GetProcessorNameWithoutLeadingSpaces( //byFamily
@@ -425,6 +453,7 @@ void MainController::ReadMainConfig(
   , UserInterface * p_userinterface
   )
 {
+  LOGN( FULL_FUNC_NAME << "--begin")
   std::string stdstrMainConfigFileName = model.m_std_strConfigFilePath + "/" +
     GetStdString(model.m_stdtstrProgramName ) + "_config.xml" ;
   WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME <<

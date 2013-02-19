@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * x86IandCservice.cpp
  *
@@ -54,7 +61,8 @@ namespace wxWidgets
   {
 #ifdef __LINUX__
     std::string stdstrCurrentWorkingDir ;
-    init_daemon(stdstrCurrentWorkingDir) ;
+    init_daemon(//argc, argv,
+      stdstrCurrentWorkingDir) ;
 #endif
     return true ;
   }

@@ -111,6 +111,13 @@ namespace Xerces
         XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
 
       stdstr = convertToStdString<float>(
+          arp_percpucoreattributes[wCPUcoreIndex].m_fThrottleLevel ) ;
+      p_dom_elementCore->setAttribute(
+        //Cast to "const XMLCh *" to avoid Linux' g++ warning.
+        (const XMLCh *) L"throttle_ratio" ,
+        XERCES_STRING_FROM_ANSI_STRING(stdstr.c_str() ));
+
+      stdstr = convertToStdString<float>(
           arp_percpucoreattributes[wCPUcoreIndex].m_fMultiplier ) ;
       p_dom_elementCore->setAttribute(
         //Cast to "const XMLCh *" to avoid Linux' g++ warning.
@@ -490,7 +497,7 @@ namespace Xerces
         xmlsize_tBufferLength ,
         100 ) ;
 //       LOGN(
-    DEBUGN(
+    LOGN_DEBUG(
       "XML data: " << stdstrAllXMLdata
 //           //should be NULL-terminated
 //           cp_xmlbyteBuffer

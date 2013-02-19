@@ -280,6 +280,9 @@ BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
     m_arp_percpucoreattributes ;
 //  LOGN(" I_CPUcontroller:GetCurrentVoltageAndFrequencyAndStoreValues")
+  arp_percpucoreattributes[wCoreID].m_fThrottleLevel = GetThrottleLevel(wCoreID);
+  LOGN_INFO( FULL_FUNC_NAME << "throttle_ratio:"
+    << arp_percpucoreattributes[wCoreID].m_fThrottleLevel )
   return GetCurrentVoltageAndFrequency(
     arp_percpucoreattributes[wCoreID].m_fVoltageInVolt,
     arp_percpucoreattributes[wCoreID].m_fMultiplier,
@@ -891,6 +894,43 @@ void I_CPUcontroller::SetModelData(
   WORD w = GetNumberOfCPUcores() ;
   if( w )
     p_model->SetNumberOfCPUCores( w ) ;
+}
+
+void I_CPUcontroller::SetNextLowerThrottleLevel(unsigned coreID,
+  float fCPUcoreMultiplierToUse)
+{
+  float fThrottleLevel = mp_model->m_cpucoredata.GetNextLowerThrottleLevel(coreID);
+  LOGN( FULL_FUNC_NAME << "-next lower throttle level:" << fThrottleLevel)
+  if( fThrottleLevel != -1.0f)
+  {
+    const std::set<VoltageAndFreq> & r_std_set_voltageandfreqDefault =
+      mp_model->m_cpucoredata.//m_stdsetvoltageandfreqDefault;
+      m_stdsetvoltageandfreqAvailableFreq;
+    std::set<VoltageAndFreq>::const_iterator c_iter =
+      r_std_set_voltageandfreqDefault.begin();
+    const float resultingFreqInMHZ = fThrottleLevel * fCPUcoreMultiplierToUse *
+      m_fReferenceClockInMHz;
+    LOGN_DEBUG( FULL_FUNC_NAME << "-resulting effective frequency is "
+      << fThrottleLevel << "*" << fCPUcoreMultiplierToUse << "*"
+      << m_fReferenceClockInMHz << "=" << resultingFreqInMHZ)
+    if( c_iter != r_std_set_voltageandfreqDefault.end() )
+    {
+      if( resultingFreqInMHZ >= c_iter->m_wFreqInMHz  )
+      {
+        SetThrottleLevel(fThrottleLevel, coreID);
+      }
+      else
+      {
+        LOGN_DEBUG(FULL_FUNC_NAME << "-not setting throttle ratio to "
+          << fThrottleLevel <<
+          " because the effective frequency (" << resultingFreqInMHZ
+          << "MHz)  would be < lowest frequency with default voltage set ("
+          << c_iter->m_wFreqInMHz << "MHz)" )
+      }
+    }
+    else
+      LOGN_WARNING(FULL_FUNC_NAME << "-no default voltage available")
+  }
 }
 
 #ifdef COMPILE_WITH_CALC_THREAD

@@ -14,18 +14,23 @@
 
 class DynLibCPUcontroller
 {
+public:
+  enum state { success, function_pointer_unassigned, hw_access_failed};
 protected:
   pfn_GetCurrentVoltageAndFrequency_type m_pfnGetCurrentVoltageAndFrequency ;
   dll_GetNumberOfCPUcores_type m_pfnGetNumberOfCPUcores ;
 //  dll_SetCurrentPstate_type m_pfnsetcurrentpstate ;
   pfnSetCurrentVoltageAndMultiplier_type m_pfnSetCurrentVoltageAndMultiplier ;
   pfnGetAvailableMultipliers_type m_pfnGetAvailableMultipliers ;
+  pfnGetAvailableMultipliers_type m_pfnGetAvailableThrottleLevels ;
   pfnGetAvailableMultipliers_type m_pfnGetAvailableVoltages ;
+  pfnSetThrottleLevel_type m_pfnSetThrottleLevel;
 //  dll_GetMaximumFrequencyInMHz_type m_pfnGetMaximumFrequencyInMHz ;
 //  dll_GetMaximumVoltageID_type m_pfnGetMaximumVoltageID ;
 //  dll_GetMinimumVoltageID_type m_pfnGetMinimumVoltageID ;
 //  dll_GetMaximumFrequencyInMHz_type m_pfnGetMinimumFrequencyInMHz ;
   dll_GetTemperatureInCelsius_type m_pfngettemperatureincelsius ;
+  dll_GetTemperatureInCelsius_type m_pfngethrottlelevel;
   dll_PrepareForNextPerformanceCounting
     m_pfn_preparefornextperformancecounting ;
   dll_GetVoltageInVolt_type m_pfn_GetVoltageInVolt ;
@@ -37,5 +42,4 @@ protected:
   //CPU controller DLL is the knowledge that knows writing to which MSR registers
   //may be harmful-
   dll_WriteMSR_type m_pfn_write_msr ;
-
 };

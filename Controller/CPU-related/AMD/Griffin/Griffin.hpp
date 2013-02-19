@@ -27,7 +27,12 @@
 #include <Controller/AssignPointersToExportedExeFunctions/\
 inline_register_access_functions.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
+#include <stdlib.h> //EXIT_SUCCESS, EXIT_FAILURE
 
+#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
+  //For "GetCurrentReferenceClock(...)" .
+  #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
+#endif //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
 #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
   #include "GetMaxMultiIfGreaterCurrentPstateLimitMulti.hpp"
 #endif
@@ -159,6 +164,7 @@ inline void GetMultiplierfromCOFVIDstatusRegisterBits(
     << * p_fMultiplier)
 }
 
+#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
 inline void GetSameReferenceClockForAllCPUcores(float * p_fReferenceClockInMHz)
 {
   //TODO "41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG",
@@ -208,6 +214,7 @@ inline void GetSameReferenceClockForAllCPUcores(float * p_fReferenceClockInMHz)
     //Save the current reference clock as last retrieved reference clock.
     g_fReferenceClockInMHz = * p_fReferenceClockInMHz ;
 }
+#endif //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
 
 inline void GetVoltageFromCOFVIDstatusRegisterBits(
   DWORD dwMSRlowmost, float * p_fVoltageInVolt)
@@ -218,7 +225,7 @@ inline void GetVoltageFromCOFVIDstatusRegisterBits(
   GetVoltageFromVoltageID(byVoltageID, p_fVoltageInVolt);
 }
 
-inline void GetReferenceClock(float * p_fReferenceClockInMHz)
+inline void GetReferenceClock(float * p_fReferenceClockInMHz, unsigned coreID)
 {
   //TODO better use APIC Timer Operation?
   //BIOS and Kernel Developer’s Guide (BKDG) For AMD Family 11h Processors:
@@ -226,7 +233,12 @@ inline void GetReferenceClock(float * p_fReferenceClockInMHz)
   //obtain a time base for the timer."
 
 #ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
-  GetSameReferenceClockForAllCPUcores(p_fReferenceClockInMHz);
+  //Only get ref. clock if 1st core (else may be too small because the time
+  //diff between core 0 and 1 may be taken)
+  if( coreID == 0)
+    GetSameReferenceClockForAllCPUcores(p_fReferenceClockInMHz);
+  else
+    * p_fReferenceClockInMHz = g_fReferenceClockInMHz;
 #else //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
   #ifdef MAX_MULTI_IS_MAIN_PLL_OP_FREQ_ID_MAX_PLUS_8
   * p_fReferenceClockInMHz = 100.0f ;
@@ -260,7 +272,7 @@ inline BYTE GetCurrentVoltageAndFrequencyAMDGriffin(
   GetMultiplierfromCOFVIDstatusRegisterBits(g_dwMSRlowmost, p_fMultiplier);
   GetVoltageFromCOFVIDstatusRegisterBits(g_dwMSRlowmost, p_fVoltageInVolt);
 
-  GetReferenceClock(p_fReferenceClockInMHz);
+  GetReferenceClock(p_fReferenceClockInMHz, wCoreID);
   DEBUGN( FULL_FUNC_NAME << "--reference clock:" << * p_fReferenceClockInMHz )
   DEBUGN( FULL_FUNC_NAME << "--returning" << (WORD) byReadMSRreturnValue )
   return byReadMSRreturnValue ;

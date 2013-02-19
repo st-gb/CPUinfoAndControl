@@ -1,3 +1,10 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 /*
  * CPUcontrolDaemon.cpp
  *
@@ -25,16 +32,17 @@ namespace Linux
 //  {
 //  }
 
-  //Called by the base class.
-  void CPUcontrolDaemon::CreateHardwareAccessObject()
-  {
-    mp_i_cpuaccess = new MSRdeviceFile(
-      & m_dummyuserinterface ,
-      GetNumberOfLogicalCPUcores() ,
-      m_model
-      ) ;
-  }
+//  //Called by the base class.
+//  void CPUcontrolDaemon::CreateHardwareAccessObject()
+//  {
+//    mp_i_cpuaccess = new MSRdeviceFile(
+//      & m_dummyuserinterface ,
+//      GetNumberOfLogicalCPUcores() ,
+//      m_model
+//      ) ;
+//  }
 
+  /** @return true; success false: otherwise */
   bool CPUcontrolDaemon::Start()
   {
     BYTE byVoltageAndFrequencyScalingType;
@@ -44,7 +52,7 @@ namespace Linux
       )
     {
 //      if( mp_cpucoreusagegetter )
-        return HandleStartDynVoltAndFreqScalingThread() ;
+        return ! HandleStartDynVoltAndFreqScalingThread() ;
           //HandleStartCPUcoreLoadBasedDynVoltAndFreqScalingThread() ;
 //      else
 //        return HandleStartGetCPUcoreInformationThread() ;

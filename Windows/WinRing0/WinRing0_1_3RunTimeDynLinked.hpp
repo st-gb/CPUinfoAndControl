@@ -66,7 +66,9 @@ private:
 public:
   WinRing0_1_3RunTimeDynLinked(UserInterface * pui) ;
   WinRing0_1_3RunTimeDynLinked() ;
-  ~WinRing0_1_3RunTimeDynLinked() ;
+  //use "virtual" to avoid "Class 'WinRing0_1_3RunTimeDynLinked' has virtual
+  //method 'WritePciConfigDwordEx' but non-virtual destructor"
+  virtual ~WinRing0_1_3RunTimeDynLinked() ;
 
   void UIconfirm(const std::string & str) ;
   BOOL CpuidEx(

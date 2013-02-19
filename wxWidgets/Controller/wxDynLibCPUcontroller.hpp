@@ -52,6 +52,9 @@ public:
     ) ;
   ~wxDynLibCPUcontroller() ;
 
+  inline void AssignAvailableMultipliers();
+  inline void AssignAvailableThrottleLevels();
+  inline void AssignAvailableVoltages();
   inline void AssignPointersToDynLibFunctions(I_CPUaccess * p_cpuaccess);
   inline void AssignPointerToDynLibsInitFunction(I_CPUaccess * p_cpuaccess);
   inline void AssignPointerToDynLibsGetAvailableMultipliersFunction();
@@ -63,6 +66,7 @@ public:
     //Use a std::set because: in this set the elements are sorted, also:
     //not the releasing memory problem when using this container.
     std::set<float> & r_stdset_float ) ;
+  void GetAvailableThrottleLevels(std::set<float> & r_stdset_float);
   void GetAvailableVoltagesInVolt(
     //Use a std::set because: in this set the elements are sorted, also:
     //not the releasing memory problem when using this container.
@@ -92,11 +96,15 @@ public:
   WORD GetNumberOfCPUcores() ;
   float GetVoltageInVolt(WORD wVoltageID ) ;
   float GetTemperatureInCelsius(WORD wVoltageID ) ;
+  float GetThrottleLevel(unsigned coreID);
   WORD GetVoltageID(float fVoltageInVolt ) ;
   void PrepareForNextPerformanceCounting(
      DWORD dwAffinityBitMask
      , BYTE byPerformanceEventSelectRegisterNumber
      ) ;
+  template <typename func_type> void PossiblyAssign(
+    const wxString & wxstrFuncName, func_type & p_function//, func_type
+    );
   //inline for call from SetVoltageAndFrequency(...)
   //inline
   BYTE SetCurrentVoltageAndMultiplier(
@@ -105,6 +113,7 @@ public:
     , float fMultiplier
     , WORD wCoreID
     ) ;
+  BYTE SetThrottleLevel(float level, unsigned coreID);
   BYTE 
     //Let voltage be the first element from name because the same in
     //"Dyn Voltage And Freq. Scaling"

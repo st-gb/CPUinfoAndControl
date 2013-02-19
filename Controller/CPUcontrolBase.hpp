@@ -51,6 +51,8 @@ class UserInterface ;
 class CPUcontrolBase
 {
 public:
+  int m_argumentCount;
+  char ** m_ar_ar_ch_programArgs;
   static TCHAR s_ar_tchInstableCPUcoreVoltageWarning[];
   enum
   {
@@ -97,7 +99,7 @@ public:
   //but non-virtual destructor" .
   virtual ~CPUcontrolBase() ;
 
-  void CreateDynLibCPUcontroller_DynLibName(
+  I_CPUcontroller * CreateDynLibCPUcontroller_DynLibName(
     const std::string & CPUcontrollerDynLibName);
   void CreateDynLibCPUcontroller(
     const std::string & stdstrCPUtypeRelativeDirPath
@@ -111,6 +113,9 @@ public:
   //access .
   //inline
     virtual void CreateHardwareAccessObject() ;
+#ifdef _WIN32
+    inline void CreateHardwareAccessObject_Windows();
+#endif
   inline bool GetUsageAndVoltageAndFreqForAllCores(
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores
@@ -183,14 +188,14 @@ public:
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores )
   {
-    LOGN( FULL_FUNC_NAME << "--begin")
+    LOGN( FULL_FUNC_NAME << " begin")
     bool b ;
     m_criticalsection_typeCPUcoreData.Enter() ;
     b = //GetUsageAndVoltageAndFreqAndTempForAllCores(
       GetUsageAndVoltageAndFreqForAllCores(
       ar_fCPUcoreLoadInPercent , wNumCPUcores ) ;
     m_criticalsection_typeCPUcoreData.Leave() ;
-    LOGN( FULL_FUNC_NAME << "--return " << (b ? "true" : "false") )
+    LOGN( FULL_FUNC_NAME << " return " << (b ? "true" : "false") )
     return b ;
   }
 //  BYTE CreateCPUcontrollerAndUsageGetter(

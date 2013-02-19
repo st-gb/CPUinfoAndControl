@@ -29,6 +29,7 @@ namespace Xerces
     : public XERCES_CPP_NAMESPACE::DefaultHandler
   {
   private:
+    bool m_bSuitableFileFormat;
     Model & m_r_model;
     UserInterface & m_r_userinterface;
   public:
@@ -38,6 +39,11 @@ namespace Xerces
       );
     virtual
     ~LogOutputHandler();
+    void endElement(
+      const XMLCh* const uri,
+      const XMLCh* const localname,
+      const XMLCh* const qname );
+    void HandleLoggingXMLelement(const XERCES_CPP_NAMESPACE::Attributes & );
 //    void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException & exception) ;
     void startElement(
       const XMLCh * const cpc_xmlchURI ,

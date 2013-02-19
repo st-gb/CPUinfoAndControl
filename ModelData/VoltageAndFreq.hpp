@@ -147,6 +147,13 @@ public:
   bool operator < (const VoltageAndFreq & _Right) const ;
 };
 
+class CPUcoreVoltageAndFrequency
+  : public VoltageAndMultiAndRefClock
+{
+public:
+  float m_fThrottleRatio;
+};
+
 class MaxVoltageForFreq
 {
 public:

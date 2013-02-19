@@ -91,6 +91,7 @@ bool NamedPipeClient::GetConnectionStateViaGetNamedPipeHandleState()
 //  )
 BYTE NamedPipeClient::ConnectToDataProvider(std::string & r_stdstrMessage)
 {
+  LOGN( FULL_FUNC_NAME)
   m_bConnected = false ;
   LPTSTR lptstrPipename ;
   if( m_r_model.m_stdwstrPipeName.empty() )
@@ -416,10 +417,10 @@ inline BYTE NamedPipeClient::WriteCommand(BYTE byCommand)
 {
   static DWORD dwNumberOfBytesWritten;
   LOGN("before write message to pipe "
-  #ifdef _DEBUG //because the own logger can only filter strings that match
+//  #ifdef _DEBUG //because the own logger can only filter strings that match
     //full log messages
     << m_handleClientPipe
-  #endif
+//  #endif
     )
   // Send a message to the pipe server.
   BOOL fSuccess = //::WriteFile(
@@ -504,7 +505,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
    //TODO Maybe use asynchronous read or write to a avoid blocking thread while
    // waiting for reading from or writing to the pipe
 
-   LOGN("before read message size from pipe "
+   LOGN("before reading message size from pipe "
 #ifdef _DEBUG //because the own logger can only filter strings that matcb
      //full log messages
      << m_handleClientPipe
@@ -549,11 +550,11 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
      if( m_arbyIPCdata )
        delete [] m_arbyIPCdata ;
      m_arbyIPCdata = new BYTE[ m_dwIPCdataSizeInByte ] ;
-     LOGN("before read "
-#ifdef _DEBUG //because the own logger can only filter strings that matcb
+     LOGN(FULL_FUNC_NAME <<  " before reading "
+//#ifdef _DEBUG //because the own logger can only filter strings that match
     //full log messages
        << m_dwIPCdataSizeInByte
-#endif
+//#endif
        << " bytes from pipe ")
      fSuccess =
 //     ::ReadFile(
@@ -567,18 +568,19 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
         & dwNumBytesRead,  // number of bytes read
         NULL // NULL = not overlapped
         );
-     LOGN( (fSuccess ? "successfully got" : "failed to read")
-#ifdef _DEBUG //because the own logger can only filter strings that matcb
+     LOGN( FULL_FUNC_NAME << " " << (fSuccess ? "successfully got" :
+       "failed to read")
+//#ifdef _DEBUG //because the own logger can only filter strings that matcb
     //full log messages
         << dwNumBytesRead
-#endif
-      << " bytes from pipe")
+//#endif
+       << " bytes from pipe")
      if( fSuccess )
      {
        m_vbIsGettingCPUcoreData = true ;
        std::string stdstrBytes //( (char *) m_arbyIPCdata, m_dwIPCdataSizeInByte )
          = format_output_data( m_arbyIPCdata, m_dwIPCdataSizeInByte, 100) ;
-       DEBUGN("data from pipe:" << stdstrBytes ) ;
+       LOGN_DEBUG("data from pipe:" << stdstrBytes ) ;
 //       //Term. NULL char
 //       arby [dwNumberOfBytes ] = 0 ;
 //       arby [dwNumberOfBytes + 1 ] = 0 ;

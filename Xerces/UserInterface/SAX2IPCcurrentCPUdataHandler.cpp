@@ -58,9 +58,10 @@ BYTE SAX2IPCcurrentCPUdataHandler::GetCurrentVoltageAndFrequency(
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
   LOGN("SAX2IPCcurrentCPUdataHandler GetCurrentVoltageAndFrequency after entering "
     "critical section")
-  std::map<WORD,VoltageAndMultiAndRefClock>::const_iterator c_iter =
-      m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.find(wCoreID) ;
-  if( c_iter != m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.end() )
+  std::map<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>::
+    const_iterator c_iter =
+      m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.find(wCoreID) ;
+  if( c_iter != m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.end() )
   {
     r_fMultiplier = c_iter->second.m_fMultiplier ;
     r_fReferenceClockInMHz = c_iter->second.m_fReferenceClock ;
@@ -132,6 +133,21 @@ float SAX2IPCcurrentCPUdataHandler::GetTemperatureInCelsius( WORD wCoreID )
   return __FLT_MIN__ ;
 }
 
+float SAX2IPCcurrentCPUdataHandler::GetThrottleLevel(unsigned coreID)
+{
+  LOGN(FULL_FUNC_NAME <<  " before entering critical section")
+  wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
+  LOGN(FULL_FUNC_NAME <<  " after entering critical section")
+  std::map<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>::
+    const_iterator c_iter =
+      m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.find(coreID) ;
+  if( c_iter != m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.end() )
+  {
+    return c_iter->second.m_fThrottleRatio;
+  }
+  return 0.0f;
+}
+
 inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
   const XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes
   )
@@ -179,7 +195,18 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
       m_stdmap_wCoreNumber2fTempInDegCelsius.insert( std::pair<WORD,float> (
           wValue, fValue ) ) ;
     }
-    VoltageAndMultiAndRefClock voltageandmultiandrefclock ;
+    //VoltageAndMultiAndRefClock voltageandmultiandrefclock ;
+    CPUcoreVoltageAndFrequency cpucorevoltageandfrequency;
+    if( ConvertXercesAttributesValue<float>(
+      cr_xerces_attributes
+      , fValue
+      , //Explicitly cast to "const XMLCh *" to avoid Linux g++ warning.
+      (const XMLCh *) L"throttle_ratio" )
+      )
+    {
+      /*voltageandmultiandrefclock*/cpucorevoltageandfrequency.m_fThrottleRatio
+        = fValue ;
+    }
     if( ConvertXercesAttributesValue<float>(
       cr_xerces_attributes
       , fValue
@@ -189,7 +216,8 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
     {
   //          m_stdmap_wCoreNumber2fMultiplier.insert( std::pair<WORD,float> (
   //              wValue, fValue ) ) ;
-      voltageandmultiandrefclock.m_fMultiplier = fValue ;
+      /*voltageandmultiandrefclock*/cpucorevoltageandfrequency.m_fMultiplier
+        = fValue ;
     }
     if( ConvertXercesAttributesValue<float>(
       cr_xerces_attributes
@@ -205,7 +233,8 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
         )
   //          m_stdmap_wCoreNumber2fReferenceClock.insert( std::pair<WORD,float> (
   //              wValue, fValue ) ) ;
-      voltageandmultiandrefclock.m_fReferenceClock = fValue ;
+        /*voltageandmultiandrefclock*/cpucorevoltageandfrequency.
+          m_fReferenceClock = fValue ;
     }
     if( ConvertXercesAttributesValue<float>(
       cr_xerces_attributes
@@ -217,13 +246,13 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
       LOGN("SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute")
   //          m_stdmap_wCoreNumber2fVoltageInVolt.insert( std::pair<WORD,float> (
   //              wValue, fValue ) ) ;
-      voltageandmultiandrefclock.m_fVoltageInVolt = fValue ;
+    /*voltageandmultiandrefclock*/cpucorevoltageandfrequency.m_fVoltageInVolt
+      = fValue ;
     }
     LOGN("SAX2IPCcurrentCPUdataHandler before inserting into container")
-    m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.insert(
-      std::pair<WORD,VoltageAndMultiAndRefClock>( wValue ,
-          voltageandmultiandrefclock )
-      ) ;
+    m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.insert(
+      std::pair<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>
+      ( wValue, /*voltageandmultiandrefclock*/ cpucorevoltageandfrequency ) );
     LOGN("SAX2IPCcurrentCPUdataHandler startElement before leaving "
       "critical section")
     m_wxcriticalsection.Leave() ;
@@ -251,17 +280,23 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
   LOGN("SAX2IPCcurrentCPUdataHandler startDocument: before entering IPC to "
     "in-program data crit sec")
   m_cpc_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
-  //While modifying the map prevent the concurrent reading of the map.
-  wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
   LOGN("SAX2IPCcurrentCPUdataHandler startDocument: after entering IPC to "
     "in-program data crit sec")
+  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: before locking "
+    "data crit sec")
+  //While modifying the map prevent the concurrent reading of the map.
+  wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
+  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: after locking "
+    "the data crit sec")
 
   m_stdmap_wCoreNumber2fUsage.clear() ;
-  m_stdmap_wCoreNumber2fMultiplier.clear() ;
-  m_stdmap_wCoreNumber2fReferenceClock.clear() ;
+//  m_stdmap_wCoreNumber2fMultiplier.clear() ;
+//  m_stdmap_wCoreNumber2fReferenceClock.clear() ;
   m_stdmap_wCoreNumber2fTempInDegCelsius.clear() ;
-  m_stdmap_wCoreNumber2fVoltageInVolt.clear() ;
-  m_stdmap_wCoreNumber2VoltageAndMultiAndRefClock.clear() ;
+//  m_stdmap_wCoreNumber2fVoltageInVolt.clear() ;
+  m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.clear() ;
+  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: before destroying the  "
+    "data crit sec locking object")
 }
 
   void SAX2IPCcurrentCPUdataHandler::startElement

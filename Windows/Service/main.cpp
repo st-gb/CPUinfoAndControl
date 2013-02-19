@@ -30,11 +30,12 @@
 
 extern CPUcontrolBase * gp_cpucontrolbase ;
 
+typedef char mainFunctionArgType;
 //MinGW's g++: ../../Windows/main.cpp:168: error: `main' must return `int'
 //void
 int main
   //_tmain
-  ( int argc, char * ar_p_chProgramArguments[]
+  ( int argc, mainFunctionArgType * ar_p_chProgramArguments[]
   //TCHAR * ar_p_chProgramArguments[]
   )
 {

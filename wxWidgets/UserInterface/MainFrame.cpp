@@ -2332,7 +2332,7 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
     wxSize wxsize ;
     float fVoltageInVolt = 0.0f ;
     float fTempInCelsius ;
-
+    float fThrottleLevel;
     float fMultiplier ;
     float fReferenceClockInMHz ;
     WORD wFrequencyInMHz ;
@@ -2360,6 +2360,7 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
         )
       {
         fVoltageInVolt = arp_percpucoreattributes[wCPUcoreID].m_fVoltageInVolt;
+        fThrottleLevel = arp_percpucoreattributes[wCPUcoreID].m_fThrottleLevel;
         fMultiplier = arp_percpucoreattributes[wCPUcoreID].m_fMultiplier;
         fReferenceClockInMHz = arp_percpucoreattributes[wCPUcoreID].
           m_fReferenceClockInMhz;
@@ -2371,22 +2372,51 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
         LOGN("StoreCurrentVoltageAndFreqInArray--fMultiplier:" << fMultiplier )
         mp_ar_voltage_and_multi[wCPUcoreID ].m_fMultiplier = fMultiplier ;
         mp_ar_voltage_and_multi[wCPUcoreID ].m_fVoltageInVolt = fVoltageInVolt;
-        if( fMultiplier == 0.0f)
-          r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
-            wxT("?*%.3fMHz=? MHz "), fReferenceClockInMHz);
-        else if( fReferenceClockInMHz == 0.0f )
-          r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
-            wxT("%.3f*?MHz=? MHz "), fMultiplier);
+        if(fThrottleLevel == -1.0f)
+          r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxT("?*");
         else
           r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
-            //Use wxT() to enable to compile with both unicode and ANSI.
-//            wxT("%u MHz "),
-//            wFreqInMHz ) ;
-            wxT("%.3f*%.3fMHz=%.3fMHz "),
-//            wxT("%.3g*%.3gMHz=%.3gMHz "),
-            fMultiplier , fReferenceClockInMHz , fMultiplier *
-            fReferenceClockInMHz
-            ) ;
+            wxT("%.3f*") );
+
+        {
+          if( fMultiplier == 0.0f)
+            r_ar_wxstrFreqInMHz[ wCPUcoreID ] += wxString::Format(
+              wxT("?*%.3fMHz=? MHz "),
+              fThrottleLevel,
+              fReferenceClockInMHz);
+          else if( fReferenceClockInMHz == 0.0f )
+            r_ar_wxstrFreqInMHz[ wCPUcoreID ] += wxString::Format(
+              wxT("%.3f*?MHz=? MHz "),
+              fThrottleLevel,
+              fMultiplier);
+          else
+          {
+            if(fThrottleLevel == -1.0f)
+              r_ar_wxstrFreqInMHz[ wCPUcoreID ] += wxString::Format(
+                //Use wxT() to enable to compile with both unicode and ANSI.
+    //            wxT("%u MHz "),
+    //            wFreqInMHz ) ;
+                wxT("%.3f*%.3fMHz=%.3f?MHz "),
+    //            wxT("%.3g*%.3gMHz=%.3gMHz "),
+    //            fThrottleLevel,
+                fMultiplier ,
+                fReferenceClockInMHz ,
+                fMultiplier * fReferenceClockInMHz
+                ) ;
+            else
+              r_ar_wxstrFreqInMHz[ wCPUcoreID ] += wxString::Format(
+                //Use wxT() to enable to compile with both unicode and ANSI.
+    //            wxT("%u MHz "),
+    //            wFreqInMHz ) ;
+                wxT("%.3f*%.3fMHz=%.3fMHz "),
+    //            wxT("%.3g*%.3gMHz=%.3gMHz "),
+    //            fThrottleLevel,
+                fMultiplier ,
+                fReferenceClockInMHz ,
+                fThrottleLevel * fMultiplier * fReferenceClockInMHz
+                ) ;
+          }
+        }
         LOGN( FULL_FUNC_NAME << "--frequency string:\"" << GetStdString(
           r_ar_wxstrFreqInMHz[ wCPUcoreID ]) << "\"")
 //        LOGN("r_ar_wxstrFreqInMHz[ wCPUcoreID ]:" << GetStdString(
@@ -3477,8 +3507,8 @@ void MainFrame::GetCPUcoreInfoFromDataProvider(
   //Prevent the concurrent modification of the # of log(ical?). cores in the
   //IPC data 2 in-program data thread.
   mp_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
-
   LOGN("DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec")
+
   //The number of CPU cores is known if the IPC data were got at first.
   WORD wNumCPUcores = p_cpucoreusagegetter->GetNumberOfLogicalCPUcores() ;
   LOGN("DrawCurrentCPUcoreData after GetNumberOfLogicalCPUcores" )
@@ -3579,6 +3609,8 @@ bool MainFrame::GetCPUcoreInfoDirectlyOrFromService(
       && mp_cpucoredata->m_byNumberOfCPUCores
     )
   {
+    LOGN_WARNING( "before recreating the temperature array: mustn't be from another "
+      "thread accessed during this time")
     if( s_arfTemperatureInDegreesCelsius )
       delete [] s_arfTemperatureInDegreesCelsius ;
     s_arfTemperatureInDegreesCelsius = new float[ mp_cpucoredata->
@@ -4956,8 +4988,9 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
       <<  p_i_cpucontroller->m_llLastTimeTooHot << "="
       << llDiffInMillis
       )
-    g_logger.Log_inline( //FULL_FUNC_NAME,
-      str);
+//    g_logger.Log_inline( //FULL_FUNC_NAME,
+//      str);
+    LOGN_DEBUG( FULL_FUNC_NAME << str)
 
     //Adapted from http://www.cppreference.com/wiki/valarray/max:
     std::valarray<float> stdvalarray_float(s_arfTemperatureInDegreesCelsius,
@@ -5016,6 +5049,7 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
       mp_wxmenuFile->Enable(ID_MinimizeToSystemTray, false);
     }
   }
+  LOGN("MainFrame::ShowHighestCPUcoreTemperatureInTaskBar end")
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 }
 

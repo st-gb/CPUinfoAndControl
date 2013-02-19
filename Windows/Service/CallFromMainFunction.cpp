@@ -18,8 +18,11 @@
 //#include <Controller/Logger/log4cplus/log4cplus_Logger.hpp>
 // ::GetErrorMessageFromLastErrorCodeA()
 //#include <Windows/ErrorCode/GetErrorMessageFromLastErrorCode.h>
+#include <Controller/CommandLineParams.h> //IsWithinCmdLineArgs(...)
 #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
-#define wxCHECK_W32API_VERSION(maj, min) (0) //for "StartDoc" in "winundef.h"
+#ifndef wxCHECK_W32API_VERSION
+  #define wxCHECK_W32API_VERSION(maj, min) (0) //for "StartDoc" in "winundef.h"
+#endif //wxCHECK_W32API_VERSION
 #include <wx/msw/winundef.h> // undefine "CreateServiceA" etc. for the
 // CPUcontrolService class
 #include "Windows/Service/CPUcontrolService.hpp"
@@ -41,31 +44,6 @@ CPUcontrolBase * gp_cpucontrolbase ;
 //#else
 //  #define TCHAR char
 //#endif
-
-bool IsWithinCmdLineArgs( int argc, //char
-  TCHAR * argv[], //LPCTSTR p_tstr
-  //LPCSTR
-  TCHAR * pc_chCompareTo )
-{
-    bool bIsWithinCmdLineArgs = false ;
-    BYTE byIndex = 1 ;
-    for( ; byIndex < argc ; ++ byIndex )
-    {
-      if (
-#if defined(_UNICODE) || defined(UNICODE)
-        ::wcscmp(
-#else
-        ::strcmp(
-#endif
-          argv[byIndex], pc_chCompareTo) == 0
-        )
-        {
-            bIsWithinCmdLineArgs = true ;
-            break ;
-        }
-    }
-    return bIsWithinCmdLineArgs ;
-}
 
 bool ShouldCreateService(int argc, //char
     TCHAR * argv[] )
@@ -229,40 +207,49 @@ void PossiblyInteractWithUser(int argc, TCHAR * argv[],
 //  std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
 //    + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
   int nOptionInUpperCase = 0;
-  do
+  nChar = CPUcontrolService::requestOption( vec_std_strParams
+    , std_tstrProgramName );
+  //LOGN("character entered:" << nChar )
+//        //The vector is empty when this program was executed/ invoked via the
+//        //service control manager.
+//        if( vecstdstrParams.empty() )
+  //The character is "-1" (error reading from std::in because standard IO was
+  //dropped) when this program was executed/ invoked via the service control manager.
+  if( nChar == /*-1*/ CPUcontrolService::error_reading_from_STD_IN )
   {
-    nChar = CPUcontrolService::requestOption( vec_std_strParams
-      , std_tstrProgramName );
-    //LOGN("character entered:" << nChar )
-  //        //The vector is empty when this program was executed/ invoked via the
-  //        //service control manager.
-  //        if( vecstdstrParams.empty() )
-    //The character is "-1" when this program was executed/ invoked via the
-    //service control manager.
-    if( nChar == -1 )
+    LOGN("This executable is started as service (and not "//"as installer)"
+      "for executing actions)");
+    bStartServiceWithinThisProcess = true ;
+//    break ; //Leave this loop.
+  }
+  else
+  {
+    nOptionInUpperCase = ::toupper( nChar );
+    p_cpucontrolservice->RenameLogOutputNames();
+    while( nOptionInUpperCase != 'Q' && nOptionInUpperCase != 'A')
     {
-      LOGN("This exe is started as service (and not "//"as installer)"
-        "for executing actions)");
-      bStartServiceWithinThisProcess = true ;
-      break ; //Leave this loop.
-    }
-    else
-    {
-      DEBUG("Entered strings: ")
+      //LOGN("character entered:" << nChar )
+    //        //The vector is empty when this program was executed/ invoked via the
+    //        //service control manager.
+    //        if( vecstdstrParams.empty() )
+      //The character is "-1" when this program was executed/ invoked via the
+      //service control manager.
+      DEBUG_COUTN("Entered strings: ")
       for ( BYTE by = 0 ; by < vec_std_strParams.size() ; ++ by )
           //DEBUG("\"%s\" ", vecstdstrParams.at(by).c_str() );
           LOG("\"" << vec_std_strParams.at(by).c_str() << "\" " );
-      DEBUG("\n" );
+      DEBUG_COUTN("\n" );
+      //nRet =
+        HandleProgramOptions(vec_std_strParams, std_tstrProgramName,
+        p_cpucontrolservice) ;
+      //Clear the vector for the next call to CPUcontrolService::
+      //requestOption(...).
+      vec_std_strParams.clear() ;
+      nChar = CPUcontrolService::requestOption( vec_std_strParams
+        , std_tstrProgramName );
+      nOptionInUpperCase = ::toupper( nChar );
     }
-    //nRet =
-      HandleProgramOptions(vec_std_strParams, std_tstrProgramName,
-      p_cpucontrolservice) ;
-    //Clear the vector for the next call to CPUcontrolService::
-    //requestOption(...).
-    vec_std_strParams.clear() ;
-    nOptionInUpperCase = ::toupper( nChar );
   }
-  while( nOptionInUpperCase != 'Q' && nOptionInUpperCase != 'A') ;
 }
 
 void NoProgramArgumentsSpecified(int argc, TCHAR * argv[],

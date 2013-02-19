@@ -281,6 +281,7 @@ void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
       p_wxsocketbase->Destroy();
       break;
     }
-    default: ;
+    default:
+      break;
   }
 }

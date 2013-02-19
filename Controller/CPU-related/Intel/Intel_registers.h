@@ -57,7 +57,7 @@
 #define IA32_PERF_CTL 0x199 //409 (Read/Write); since family 0F, model 03H
 //Thermal Status Information (ReadOnly)
 #define IA32_THERM_STATUS 0x19C //412 
-#define IA32_CLOCK_MODULATION_REG_ADDR 0x19A
+
 //Critical Temperature Status (bit 4, RO): 1 << 4 = 2^4 = 16dec = 10000bin
 #define CRITICAL_TEMPERATURE_STATUS_BIT_MASK 16
 //Thermal Threshold #1 Status (bit 6, RO): 1 << 6 = 2^6 = 64dec = 1000000bin
@@ -95,15 +95,3 @@
 
 #define MSR_EBC_FREQUENCY_ID 0x2C
 
-/** ar_f must have at least 8 elements
- *  baseMultiplier: e.g. "6" -> */
-void AddODCMdutyCyclesAsMultipliers(float ar_f[], float baseMultiplier)
-{
-  unsigned num = 0;
-  const float OneEighthOfBaseMulti = 0.125f * baseMultiplier;
-  do
-  {
-    ar_f[num] = (float) (num+1) * OneEighthOfBaseMulti; //e.g. 23/ 8 = 3,3525
-  }
-  while( num ++ < 7);
-}
