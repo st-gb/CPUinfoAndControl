@@ -19,7 +19,7 @@
   #include "stdafx.h"
   #endif
 
-  #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
+//  #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
 
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
@@ -149,7 +149,8 @@ void Init()
 #ifdef _DEBUG
   InitializeLogger();
 #endif
-  AssignPointersToExportedExeMSRfunctions_inline(g_pfnreadmsr, g_pfn_write_msr) ;
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr, g_pfn_write_msr) ;
 //#ifdef _WIN32
   AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
 //#endif
@@ -164,12 +165,12 @@ void Init()
       //Title
       ,"error"
       , MB_OK) ;
-    return FALSE ;
+    return /*FALSE*/;
 #endif //#ifdef _WIN32
   }
   //Pointers to Exe's fct must be assigned prior to the call of
   //GetMainPllOpFreqIdMax() !
-  GetMainPllOpFreqIdMax() ;
+  AMD::K10_and_K11::GetMainPllOpFreqIdMax() ;
   DEBUGN("after GetMainPllOpFreqIdMax")
 }
 
@@ -251,7 +252,7 @@ void Init()
     )
   {
     DEBUGN( FULL_FUNC_NAME << "--begin")
-    return GetCurrentVoltageAndFrequencyAMDGriffin(
+    return AMD::K10_and_K11::GetCurrentVoltageAndFrequency(
       p_fVoltageInVolt,
       p_fMultiplier ,
       p_fReferenceClockInMHz ,
@@ -362,6 +363,7 @@ void Init()
     )
   {
     DEBUGN("DLL fct SetCurrentVoltageAndMultiplier")
-    SetVoltageAndMultiplier( fVoltageInVolt , fMultiplier , (BYTE) wCoreID ) ;
+    AMD::K10_and_K11::SetVoltageAndMultiplier( fVoltageInVolt , fMultiplier ,
+      (BYTE) wCoreID ) ;
     return 0 ;
   }

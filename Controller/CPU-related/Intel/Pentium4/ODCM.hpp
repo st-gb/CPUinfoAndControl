@@ -98,7 +98,7 @@ inline BYTE SetODCMdutyCycle(const float ODCMdutyCycle, unsigned coreID)
     ui32Value1 |= ( (BYTE) num1EightDutyCycles << 1);
     //see "Table 14-1.  On-Demand Clock Modulation Duty Cycle Field Encoding":
     // 0 = "Reserved" value
-    if( (ui32Value1 >> 1 ) & BITMASK_FOR_LOWMOST_3BIT == 0)
+    if( ( (ui32Value1 >> 1 ) & BITMASK_FOR_LOWMOST_3BIT ) == 0)
       ui32Value1 = 1;
     ui32Value1 |= ENABLE_ON_DEMAND_CLOCK_MODULATION_BIT_MASK;
   }

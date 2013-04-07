@@ -197,26 +197,32 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //      int i = e.type ;
       std::string stdstrMessage = std::string("Failed to open the file \"") +
         stdstrMSRfilePath + "\" cause: " ;//" + e.what() ;
-      //TODO exchange i by errno
-//      int nErrno = 0 ;
+      int errorNumber = errno ;
+      stdstrMessage += GetErrorMessageFromErrorCodeA(errorNumber);
       switch ( errno
         //nErrno
         )
       {
-        case EACCES:  stdstrMessage += "Permission denied.\n"
+        case EPERM:
+        case EACCES:
+          stdstrMessage += //"Permission denied."
+          "\n"
           "possible solution: run this program as administrator/root\n"
           "do this e.g. via \"sudo\"";
           break;
         //case EINVACC: stdstrMsg += "Invalid access mode.\n"; break;
-        case EMFILE:  stdstrMessage += "No file handle available.\n"; break;
+//        case EMFILE:  stdstrMessage += "No file handle available.\n";
+//          break;
         case ENOENT:  
-          stdstrMessage += " File or path not found.\n"
+          stdstrMessage += //" File or path not found."
+            "\n"
             "possible solution:\n"
             "If module \"msr\" is not installed: e.g. install via package manager\n"
             "If module \"msr\" is installed: try \"modprobe msr\" "
             "(with elevated rights/as root) \n";
           break;
-        default:      stdstrMessage += "Unknown error.\n"; break;
+//        default:
+//          stdstrMessage += "Unknown error.\n"; break;
       }
       LOGN_ERROR(stdstrMessage)
 //      UIconfirm( stdstrMessage ) ;

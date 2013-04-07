@@ -109,12 +109,12 @@ void InitOtherOSthanWindows()
   std::string stdstrFilename = strExeFileNameWithoutDirs +
     ("NehalemControllerDLL_log.txt") ;
 //  g_loggerDynLib.OpenFile2( stdstrFilename ) ;
-  g_logger.OpenFile2( stdstrFilename ) ;
+  g_logger.OpenFileA( stdstrFilename ) ;
   DEBUGN_LOGGER_NAME(//g_loggerDynLib,
     g_logger, "this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif //#ifdef _DEBUG
-  AssignPointersToExportedExeMSRfunctions(
+  AssignPointersToExportedExeMSRfunctions_inline(
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;

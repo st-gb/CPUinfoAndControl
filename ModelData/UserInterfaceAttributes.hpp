@@ -41,6 +41,7 @@ namespace Attributes
 
     unsigned short m_wToolTipDelay ;
 
+    static int s_defaultFontSizeInPoint;
     int m_nVoltageScaleSizeInPoint;
     int m_nCurrentCPUcoreInfoSizeInPoint;
     int m_nCPUcoreFrequencyScaleSizeInPoint;

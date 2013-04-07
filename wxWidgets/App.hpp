@@ -338,7 +338,9 @@ public:
   void MessageWithTimeStamp(//const LPWSTR
       const wchar_t * cp_lpwstrMessage, unsigned flags = 0) const;
   bool OpenLogFile(//std::tstring & r_std_tstrLogFilePath
-    std::wstring & r_std_wstrLogFilePath, bool bAppendProcessID, bool bRolling);
+    std::wstring & r_std_wstrLogFilePath,
+    std::wstring & std_wstrExecutableFileName,
+    bool bAppendProcessID, bool bRolling);
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   void PauseService(
     wxString & r_wxstrMessageFromService,

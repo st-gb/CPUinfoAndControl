@@ -100,7 +100,7 @@ bool Init()
   #ifdef COMPILE_WITH_LOG
   OpenLogFile() ;
   #endif
-  AssignPointersToExportedExeMSRfunctions(
+  AssignPointersToExportedExeMSRfunctions_inline(
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;

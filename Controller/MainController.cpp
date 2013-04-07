@@ -336,7 +336,7 @@ BYTE MainController::GetPstateSettingsFileName(
   std::string & r_strPstateSettingsFileName )
 {
   BYTE byRet = 0 ;
-  if( mp_cpuaccess->
+  if( mp_cpuaccess && mp_cpuaccess->
     //Because file name must not begin with spaces in NTFS.
     GetProcessorNameWithoutLeadingSpaces( //byFamily
       r_strPstateSettingsFileName 

@@ -44,8 +44,12 @@ namespace Xerces
       );
     virtual
     ~SAX2UserInterfaceConfigHandler();
-    //The following functions are only called _once_. So the code is _not_
-    //pasted _multiple_ times because it is declared "inline".
+    void GetFontSizeAttributeValue(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes,
+      const std::string & attrName,
+      int & nFontSize);
+    /* The following functions are only called _once_. So the code is _not_
+    /* pasted _multiple_ times because it is declared "inline". */
     inline void HandleDynamicVoltageAndFrequencyScalingXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleLogFileNameXMLelement(

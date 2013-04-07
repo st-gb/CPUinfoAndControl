@@ -18,6 +18,8 @@
 
 namespace Attributes
 {
+  //definition for static variable.
+  int UserInterfaceAttributes::s_defaultFontSizeInPoint;
 
   UserInterfaceAttributes::UserInterfaceAttributes()
     :
@@ -42,9 +44,10 @@ namespace Attributes
     m_wMainFrameTopLeftCornerXcoordinateInPixels( 50) ,
     m_wMainFrameTopLeftCornerYcoordinateInPixels( 50) ,
     m_wToolTipDelay( MAXWORD) ,
-    m_nVoltageScaleSizeInPoint(0),
-    m_nCurrentCPUcoreInfoSizeInPoint(0),
-    m_nCPUcoreFrequencyScaleSizeInPoint(0),
+    m_nVoltageScaleSizeInPoint(8),
+    m_nCurrentCPUcoreInfoSizeInPoint(10),
+    m_nCPUcoreFrequencyScaleSizeInPoint(9),
+    m_nCPUcoreTempTaskBarIconFontSizeInPoint(10),
     //TODO change to ~ "\\\\.\\pipe\\x86IandC_service"
     m_std_wstrServiceAddress(L"\\\\.\\pipe\\CPUcontrollerService")
   {

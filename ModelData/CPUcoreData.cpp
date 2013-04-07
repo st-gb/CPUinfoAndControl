@@ -327,7 +327,10 @@ void CPUcoreData::Init()
   m_wMilliSecondsWaitBetweenDFVS = 200 ;
   m_byUpdateViewOnDVFS = 0 ;
   m_bEnableDVFS = false ;
-  LOGN("Initialisation of CPU attributes")
+  /** Do not log here because both logger and model are global variables and
+  * there is no guarantee that the logger object is constructed before the
+  * model object. */
+//  LOGN("Initialisation of CPU attributes")
   //mp_stdsetvoltageandfreqAvailableFreq = new std::set<VoltageAndFreq>() ;
   //mp_stdsetvoltageandfreqWanted = new std::set<VoltageAndFreq> ();
   //mp_setloweststablevoltageforfreq = new std::set<VoltageAndFreq> () ;

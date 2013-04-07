@@ -90,12 +90,24 @@
 
   #define GET_MULTIPLIER_DID(frequencyID, divisorID) \
     ( (float) (frequencyID + 8) / (float) ( 1 << divisorID ) )
+  namespace AMD { namespace family17 {
+     float GetMultiplier2(unsigned frequencyID, unsigned divisorID)
+     {
+       return (float) (frequencyID + 8) / (float) ( 1 << divisorID );
+     }
+  } }
   //multi = Frequency IDentifier + 8 / 2 ^ "Divisor IDentifier"
 //  #ifdef MAX_MULTI_IS_FREQUENCY_ID_PLUS_8
   #ifdef MAX_MULTI_IS_MAIN_PLL_OP_FREQ_ID_MAX_PLUS_8
     #define GET_MULTIPLIER(frequencyID, divisorID) \
       /*( (float) (frequencyID + 8) / (float) ( 1 << divisorID ) ) */ \
       GET_MULTIPLIER_DID(frequencyID, divisorID )
+    namespace AMD { namespace family17 {
+      float GetMultiplier(unsigned frequencyID, unsigned divisorID)
+      {
+        return GetMultiplier2(frequencyID, divisorID);
+      }
+    } }
 //    #define GET_MAX_MULTIPLIER(frequencyID) GET_MULTIPLIER( frequencyID + 8, 1)
     #define GET_FREQUENCY_ID(multiplier, max_multiplier) ( \
       (max_multiplier / multiplier) - 8
@@ -107,6 +119,12 @@
     #define GET_MULTIPLIER(frequencyID, divisorID) \
       /*( (float) (frequencyID + 8) / (float) ( 1 << (divisorID + 1) ) )*/ \
       GET_MULTIPLIER_DID(frequencyID, (divisorID + 1))
+    namespace AMD { namespace family17 {
+      float GetMultiplier(unsigned frequencyID, unsigned divisorID)
+      {
+        return GetMultiplier2(frequencyID, divisorID + 1);
+      }
+    } }
   #endif
   #define GET_MAX_MULTIPLIER(frequencyID) GET_MULTIPLIER( frequencyID, 0)
 

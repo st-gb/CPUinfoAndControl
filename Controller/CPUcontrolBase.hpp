@@ -206,10 +206,13 @@ public:
 
   virtual void EndDVFS() ; //{}
   virtual void FreeRessources() ;
+  static std::wstring GetExecutableFileName( const wchar_t * const
+    executableFilePath );
   static void GetLogFileExtension(std::string & std_strFileExt);
   //static
     bool GetLogFilePropertiesAndOpenLogFile(
-    std::string & std_strLogFileName);
+    std::wstring & std_wstrLogFilePath,
+    std::wstring & std_wstrLogFileName);
 
   static void GetLogLevel(std::string & std_strLogLevels);
   static void GetLogTimeFormatString(std::string & std_strLogTimeFormatString);

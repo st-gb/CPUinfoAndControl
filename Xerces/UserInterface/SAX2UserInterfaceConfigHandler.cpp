@@ -12,9 +12,12 @@
  *      Author: Stefan
  */
 
+//ConvertStdStringToTypename(...)
+#include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
 #include <preprocessor_macros/suppress_unused_variable.h>
+#include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <Xerces/UserInterface/SAX2UserInterfaceConfigHandler.hpp>
 //PossiblyHandleLoggingExclusionFilter_Inline(...)
 #include <Xerces/XercesHelper.hpp>
@@ -104,6 +107,52 @@ namespace Xerces
       LOGN("Getting bool value for \"" << p_chXMLattributeName << "\"failed.")
   }
 
+  void SAX2UserInterfaceConfigHandler::GetFontSizeAttributeValue(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes,
+    const std::string & attrName,
+    int & nFontSize)
+  {
+    std::string std_strAttributeValue;
+    if( XercesAttributesHelper::GetAttributeValue(
+      cr_xercesc_attributes,
+      attrName.c_str(),
+      std_strAttributeValue
+      ) == XercesAttributesHelper::getting_attribute_value_succeeded )
+    {
+      if( std_strAttributeValue.length() > 0 && std_strAttributeValue.at(0)
+          == '+' )
+      {
+        int nAddToFontSize;
+        if( ConvertStdStringToTypename(nAddToFontSize,
+            std_strAttributeValue.substr(1) ) )
+          nFontSize =
+            m_p_model->m_userinterfaceattributes.s_defaultFontSizeInPoint +
+            nAddToFontSize;
+        else
+          LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
+            << std_strAttributeValue)
+      }
+      else if( std_strAttributeValue.length() > 0 && std_strAttributeValue.at(0)
+          == '-' )
+      {
+        int nSubtractFromFontSize;
+        if( ConvertStdStringToTypename(nSubtractFromFontSize,
+            std_strAttributeValue.substr(1) ) )
+          nFontSize =
+            m_p_model->m_userinterfaceattributes.s_defaultFontSizeInPoint -
+            nSubtractFromFontSize;
+        else
+          LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
+            << std_strAttributeValue)
+      }
+      else
+        if( ! ConvertStdStringToTypename(nFontSize,
+            std_strAttributeValue.substr(1) ) )
+          LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
+            << std_strAttributeValue)
+    }
+  }
+
   void SAX2UserInterfaceConfigHandler::HandleMainFrameXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
@@ -140,12 +189,14 @@ namespace Xerces
      )
       m_p_model->m_userinterfaceattributes.
         m_wMainFrameTopLeftCornerYcoordinateInPixels = w ;
-    ConvertXercesAttributesValue<int>(
+//    ConvertXercesAttributesValue<int>(
+    GetFontSizeAttributeValue(
       cr_xercesc_attributes
        ,"CPU_core_voltage_scale_point_size"
        ,m_p_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint
      );
-    ConvertXercesAttributesValue<int>(
+//    ConvertXercesAttributesValue<int>(
+    GetFontSizeAttributeValue(
       cr_xercesc_attributes
        ,"current_CPU_core_info_point_size"
        ,m_p_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint

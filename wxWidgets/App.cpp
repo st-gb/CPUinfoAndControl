@@ -23,6 +23,8 @@
 #include "wx/wx.h" //for wxMessageBox(...) (,etc.)
 //#include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
+#include <wx/filefn.h> //::wxGetCwd()
+
 #include <wx/thread.h> //wxThread::GetCPUcount()
 
 #include "App.hpp"
@@ -52,6 +54,7 @@ GetFilenameWithoutExtension.hpp>
 #include <ModelData/ModelData.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/BuildTimeString.h> //"BUILT_TIME" macro
+//#include <preprocessor_macros/make_widestring.h> //EXPAND_TO_WIDESTRING(...)
 //getwxString(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
@@ -1438,6 +1441,19 @@ void wxX86InfoAndControlApp::MessageWithTimeStamp(
   wxtextcontroldialog.ShowModal();
 }
 
+int GetDefaultFontSizeInPoint()
+{
+  const wxFont & font = /*r_wxdc.GetFont();*/
+    //http://docs.wxwidgets.org/trunk/classwx_font.html:
+    //"You can retrieve the current system font settings with wxSystemSettings."
+    wxSystemSettings::GetFont(
+      //"System font.
+      //By default, the system uses the system font to draw menus, dialog box
+      //controls, and text."
+      wxSYS_SYSTEM_FONT);
+  return font.GetPointSize();
+}
+
 bool wxX86InfoAndControlApp::OnInit()
 {
   //Init to NULL for "CPUcontrollerChanged()"
@@ -1467,6 +1483,7 @@ bool wxX86InfoAndControlApp::OnInit()
   //If allocation succeeded.
   if( m_arartchCmdLineArgument && mp_modelData )
   {
+    wxString wxCurrentWorkingDir = wxGetCwd();
     std::string std_strUserInterfaceFilePath = m_model.m_std_strConfigFilePath
       + "/UserInterface.xml";
     const char * c_ar_chXMLfileName = std_strUserInterfaceFilePath.c_str();
@@ -1490,11 +1507,17 @@ bool wxX86InfoAndControlApp::OnInit()
         ) ;
     std::tstring std_tstrLogFilePrefix = std_tstrLogFilePath;
     std::wstring std_wstrLogFilePath = GetStdWstring(std_tstrLogFilePath);
-    ReadLogConfig(//r_std_tstrLogFilePath
-      std_wstrLogFilePath);
+//    ReadLogConfig(//r_std_tstrLogFilePath
+//      std_wstrLogFilePath);
 //    if( OpenLogFile(std_wstrLogFilePath) )
 //      HideMinGWconsoleWindow();
 
+    Attributes::UserInterfaceAttributes::s_defaultFontSizeInPoint =
+      //Get default font to ensure it matches the user's needs. (if
+      //people can only recognize large letters then they may specify a
+      //font point size that is relative to the current system font size, e.g.
+      //"-1" <=> 1 point smaller than the current system font size.
+      GetDefaultFontSizeInPoint();
     Xerces::SAX2UserInterfaceConfigHandler sax2userinterfaceconfighandler(
       m_model , this
       ) ;
@@ -1534,11 +1557,13 @@ bool wxX86InfoAndControlApp::OnInit()
 //    }
 ////    else
 ////      std_strLogFile = std_wstrLogFilePath;
-    std::tstring std_tstrProgramPath(argv[0] );
-    std::wstring std_wstrProgramPath = GetStdWstring(std_tstrProgramPath);
-    std::wstring::size_type lastBackSlash = std_wstrProgramPath.rfind(L'\\');
-    std_wstrLogFilePath += std_wstrProgramPath.substr(lastBackSlash + 1);
-    if( OpenLogFile(std_wstrLogFilePath,
+    std::wstring std_wstrExecutableFileName = GetExecutableFileName(argv[0]);
+
+//    std_wstrLogFilePath += std_wstrProgramPath.substr(lastBackSlash + 1);
+    std::wstring std_wstrLogFileDirPath = GetStdWstring(wxCurrentWorkingDir)
+      + wxFILE_SEP_PATH;
+//      +  std_wstrProgramPath.substr(lastBackSlash + 1);
+    if( OpenLogFile(std_wstrLogFileDirPath, std_wstrExecutableFileName,
         m_model.m_logfileattributes.m_bAppendProcessID, false) )
 #ifdef _WIN32
       HideMinGWconsoleWindow();
@@ -1769,10 +1794,12 @@ void wxX86InfoAndControlApp::CreateLogFileFormatter(
 
 /**
  * r_std_tstrLogFilePath: file name before the file extension separator.
+ * @param std_wstrLogFileName: input is e.g. "x86IandC_GUI.elf"
  */
 bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
   /** Should be wide string because of non-English languages.*/
   std::wstring & r_std_wstrLogFilePath,
+  std::wstring & std_wstrLogFileName,
   bool bAppendProcessID,
   bool bRolling)
 {
@@ -1780,7 +1807,7 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //    << c_ar_chXMLfileName << "\"")
 //  GetLogFilePropertiesAndOpenLogFile();
 
-  std::tstring r_std_tstrLogFilePath = Getstdtstring(r_std_wstrLogFilePath);
+//  std::tstring r_std_tstrLogFilePath = Getstdtstring(r_std_wstrLogFilePath);
   if( //mp_modelData->m_logfileattributes.m_bAppendProcessID
       bAppendProcessID )
   {
@@ -1788,12 +1815,12 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //      std::tstring std_tstrOldLogFilePath = stdtstrLogFilePath;
     //Because more than 1 GUI is possible at a time: append a process ID.
     //So the log files are not overwritten by the GUI instances.
-    r_std_tstrLogFilePath += Getstdtstring( convertToStdString<DWORD>(dwProcID) ) ;
+    std_wstrLogFileName += GetStdWstring( convertToStdString<DWORD>(dwProcID) ) ;
 
     //g_logger.RenameFile( GetStdString_Inline( r_std_tstrLogFilePath) );
   }
 
-  r_std_tstrLogFilePath += _T("_log.") ;
+  std_wstrLogFileName += _T("_log.") ;
 //  r_std_wstrLogFilePath += L"_log.";
 
 //  std::string std_strFileExt;
@@ -1805,10 +1832,11 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //  r_std_tstrLogFilePath += GetStdTstring_Inline(//std_strFileExt
 //    m_model.m_logfileattributes.m_std_strFormat);
 
-  std::string std_strLogFilePath = GetStdString(r_std_tstrLogFilePath);
+//  std::string std_strLogFilePath = GetStdString(r_std_tstrLogFilePath);
   bool fileIsOpen = //g_logger.OpenFileA( ,
     //bRolling);
-    GetLogFilePropertiesAndOpenLogFile(std_strLogFilePath );
+    GetLogFilePropertiesAndOpenLogFile(//std_strLogFilePath
+      r_std_wstrLogFilePath, std_wstrLogFileName);
   if( fileIsOpen )
   {
 //    g_logger.CreateFormatter(//std_strFileExt.c_str()
@@ -1827,7 +1855,8 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
   else
   {
     MessageWithTimeStamp( L"Failed to open log file \n\"" +
-      GetStdWstring(/*r_std_tstrLogFilePath*/ std_strLogFilePath) + L"\":\n"
+//      GetStdWstring(/*r_std_tstrLogFilePath*/ std_strLogFilePath)
+      r_std_wstrLogFilePath + L"\":\n"
       //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
       + GetErrorMessageFromLastErrorCodeA() );
   }
