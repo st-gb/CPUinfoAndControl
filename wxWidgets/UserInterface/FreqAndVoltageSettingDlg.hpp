@@ -96,6 +96,7 @@ private:
     ID_MultiplierSlider,
     ID_VoltageSlider
     , ID_FrequencySlider
+    , ID_throttleRatio
     , ID_SetAsMinVoltage
     , ID_SetAsWantedVoltage
     //, ID_SpinVoltageUp
@@ -172,6 +173,7 @@ private:
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
   wxBoxSizer * p_wxboxsizerCPUcorePstate;
+  wxBoxSizer * m_p_wxboxsizerCPUcoreThrottleRatio;
 
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxBitmapToggleButton *
     m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage ;
@@ -202,8 +204,10 @@ private:
   wxSlider * mp_wxsliderFreqInMHz ;
   wxSlider * mp_wxsliderCPUcoreFrequencyMultiplier ;
   wxSlider * mp_wxsliderCPUcoreVoltage ;
+  wxSlider * mp_wxsliderCPUcoreThrottleRatio;
   wxSpinButton * mp_wxspinbuttonVoltageInVolt ;
   wxStaticText * mp_wxstatictextFreqInMHz ;
+  wxStaticText * mp_wxstatictextThrottleRatio;
   wxStaticText * mp_wxstatictextVoltageInVolt ;
   wxStaticText * mp_wxstatictextMessage;
   wxStaticText * mp_wxstatictextWantedVoltageInVolt ;
@@ -226,6 +230,8 @@ private:
     wxSizer * p_wxsizerSuperordinate ) ;
   CREATE_DIALOG_INLINED void AddCPUcoreFrequencySizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
+  CREATE_DIALOG_INLINED void AddCPUcoreThrottlingSizer(
+    wxSizer * p_wxsizerSuperordinate );
   CREATE_DIALOG_INLINED void AddCPUcoreVoltageSizer(
     wxSizer * p_wxsizerSuperordinate  ) ;
   CREATE_DIALOG_INLINED void AddDecreaseVoltageButton( wxSizer * p_wxsizer ) ;
@@ -310,6 +316,7 @@ public:
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   //inline
     float GetMultiplierFromSliderValue() ;
+  float GetThrottleRatioFromSliderValue();
   const std::set<VoltageAndFreq> & GetSelectedVoltageTypeStdSet();
   //inline
     float GetVoltageInVoltFromSliderValue() ;
@@ -350,6 +357,7 @@ public:
   void OnSetVoltageType(wxCommandEvent & wxcmd);
   void OutputFrequencyByControlValues() ;
   void OutputVoltageByControlValues() ;
+  void PossiblySetThrottleRatio();
   inline void PossiblyWriteVoltageAndMultiplier_Inline(
     float fVoltageInVolt) ;
   void RemoveAttention(wxWindow * p_wxwindow);

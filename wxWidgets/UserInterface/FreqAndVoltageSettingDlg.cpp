@@ -18,7 +18,7 @@
     #include "wx/wx.h"
 #endif
 
-#include <windef.h> //for BYTE
+//#include <windef.h> //for BYTE
 #include <stdlib.h> //EXIT_SUCCESS
 #include "FreqAndVoltageSettingDlg.hpp" //class FreqAndVoltageSettingDlg
 //class CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning
@@ -38,7 +38,9 @@
 #include <images/cancel16x16.xpm>
 #include <images/decrease16x16.xpm>
 #include <images/increase16x16.xpm>
+#ifdef COMPILE_WITH_IPC
 #include <images/pause_service16x16.xpm>
+#endif
 //#include <images/pause16x16.xpm>
 #include <images/prevent_voltage_above_default_voltage16x16.xpm>
 #include <images/prevent_voltage_below_lowest_stable_voltage16x16.xpm>
@@ -46,10 +48,14 @@
 #include <images/set_as_desired_voltage16x16.xpm>
 #include <images/set_as_minimal_voltage16x16.xpm>
 #include <images/stabilize_voltage.xpm>
+#ifdef wxHAS_POWER_EVENTS
 #include <images/standby16x16.xpm>
+#endif
+#ifdef COMPILE_WITH_AUTO_INSTABLE_CPU_CORE_VOLTAGE_DETECTION
 #include <images/find_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/stop_finding_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/auto-configure_CPU_core_voltage_settings16x16.xpm>
+#endif
 //ENable warning
 #pragma GCC diagnostic warning "-Wwrite-strings"
 #include <ModelData/CPUcoreData.hpp> //class CPUcoreData
@@ -268,13 +274,13 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   , mp_mainframe( (MainFrame *) p_wxwindowParent )
   , mp_model ( p_cpucontroller->mp_model )
   , m_wxstrIconFilesPrefix( wxT("icons/") )
-  , m_p_wxtextctrlInstableCPUcoreVoltageWarning(NULL)
 #ifdef _DEBUG
   , mp_wxbuttonApply (NULL)
+  , m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage(NULL)
   , m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage(NULL)
   , m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage(NULL)
-  , m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage(NULL)
 #endif
+  , m_p_wxtextctrlInstableCPUcoreVoltageWarning(NULL)
 {
   LOGN("voltage and freq dialog begin")
 //  //http://docs.wxwidgets.org/trunk/classwx_tool_tip.html
@@ -330,9 +336,15 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   CreateSliders();
   AddPerformanceStateSizer(p_wxboxsizerTop) ;
 
-  AddCPUcoreFrequencySizer(p_wxboxsizerTop) ;
+  if( mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.size() > 1 )
+    AddCPUcoreFrequencySizer(p_wxboxsizerTop) ;
 
-  AddCPUcoreVoltageSizer(p_wxboxsizerTop) ;
+  //if(mp_cpucontroller->HasThrootle() )
+  if( mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.size() > 1)
+    AddCPUcoreThrottlingSizer(p_wxboxsizerTop) ;
+
+  if( mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.size() > 1 )
+    AddCPUcoreVoltageSizer(p_wxboxsizerTop) ;
 
   AddVoltageSettingsSizer(p_wxboxsizerTop );
 
@@ -580,6 +592,29 @@ float FreqAndVoltageSettingDlg::GetMultiplierFromSliderValue()
     float fMultiplier = r_cpucoredata.m_arfAvailableMultipliers[ wMultiplierIndex ];
     LOGN("multiplier corresponding to slider value:" << fMultiplier )
     return fMultiplier ;
+  }
+  return 0.0 ;
+}
+
+float FreqAndVoltageSettingDlg::GetThrottleRatioFromSliderValue()
+{
+  WORD wThrottleIndex = mp_wxsliderCPUcoreThrottleRatio->GetValue() ;
+  CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
+//  LOGN("throttle slider value:" << wThrottleIndex
+//    << " number of multis in attribute data:" <<
+//    r_cpucoredata.m_stdset_floatAvailableThrottleLevels.size()
+//    << " address of avail. multis array: "
+//    << r_cpucoredata.m_arfAvailableThrottleLevels
+//    )
+  if( wThrottleIndex <
+      r_cpucoredata.m_stdset_floatAvailableThrottleLevels.size()
+      && r_cpucoredata.m_arfAvailableThrottleLevels
+    )
+  {
+    float fThrottleRatio = r_cpucoredata.m_arfAvailableThrottleLevels[
+      wThrottleIndex ];
+    LOGN(" corresponding to slider value:" << fThrottleRatio )
+    return fThrottleRatio ;
   }
   return 0.0 ;
 }
@@ -1159,6 +1194,7 @@ void FreqAndVoltageSettingDlg::
   }
 #endif // wxHAS_POWER_EVENTS
 
+/** Called when a slider is moved. */
 void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent) 
   wxscrollevent )
 {
@@ -1180,6 +1216,15 @@ void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent
   //    //calls HandleCPUcoreFrequencyOrVoltageChanged(...)
   //    HandleMultiplierValueChanged();
   //    break;
+  case ID_throttleRatio:
+    {
+    float throttleRatio = mp_model->m_cpucoredata.
+      m_arfAvailableThrottleLevels[mp_wxsliderCPUcoreThrottleRatio->GetValue()];
+    mp_wxstatictextThrottleRatio->SetLabel( wxString::Format(wxT("%f"),
+      throttleRatio) );
+    //The freq label may need more space now, so recalc its size.
+    m_p_wxboxsizerCPUcoreThrottleRatio->RecalcSizes() ;
+    }
   case ID_FrequencySlider:
       {
 //      WORD wSliderValue = //mp_wxsliderFreqInMHz->GetValue() ;
@@ -1513,9 +1558,35 @@ void FreqAndVoltageSettingDlg::OnActivate(wxActivateEvent & r_activateevent )
     mp_mainframe->m_vbAnotherWindowIsActive = false ;
 }
 
+void FreqAndVoltageSettingDlg::PossiblySetThrottleRatio()
+{
+  float fThrottleRatio = GetThrottleRatioFromSliderValue();
+  I_CPUcontroller * p_cpucontroller = wxGetApp().mp_cpucontroller;
+  LOGN( FULL_FUNC_NAME << "--CPU controller:" << p_cpucontroller )
+  if( p_cpucontroller )
+  {
+    WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
+    if( wNumCPUcores > 1 )
+    {
+      for( WORD wCPUcore = 0 ; wCPUcore < wNumCPUcores ; ++ wCPUcore )
+        if( m_ar_p_wxcheckbox[wCPUcore]->IsChecked() )
+          //TODO the confirmation of e.g. wxWidgets seems to happen in
+          //ANOTHER thread->synchronize here (by e.g. using critical sections)
+          p_cpucontroller->SetThrottleLevel(fThrottleRatio, wCPUcore);
+    }
+    else
+      p_cpucontroller->SetThrottleLevel(
+        fThrottleRatio ,
+        //Only 1 logical CPU core-> use CPU core ID "0"
+        0
+        ) ;
+  }
+}
+
 void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event) 
   r_wxcommandevent )
 {
+  PossiblySetThrottleRatio();
   if( m_bAllowWritingVoltageAndFrequency)
   {
   //  int i = 0 ;

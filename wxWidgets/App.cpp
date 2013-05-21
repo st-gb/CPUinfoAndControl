@@ -82,8 +82,9 @@ GetFilenameWithoutExtension.hpp>
   //#include <Windows/WinRing0dynlinked.hpp>
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
-#else
+#elif defined(__linux__)
   #include <Linux/MSRdeviceFile.hpp> //class MSRdeviceFile
+  #include <Linux/ControlOS_DVFSviaShell.hpp>
 #endif
 //class NonBlocking::wxServiceSocketClient
 #include <wxWidgets/Controller/non-blocking_socket/client/\
@@ -120,7 +121,7 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
   //Should only be executed in main thread, else program exit?
   //mp_frame->RedrawEverything() ;
   //send "RedrawEverything" event because this is not the GUI thread.
-  //TODO seems to cause a program crashf
+  //TODO seems to cause a program crash
 //  wxCommandEvent wxcommand_event(wxEVT_COMMAND_REDRAW_EVERYTHING);
 //  wxPostEvent(mp_frame, wxcommand_event);
 //  mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
@@ -1666,7 +1667,7 @@ bool wxX86InfoAndControlApp::OnInit()
       DEBUGN("after creating Windows power prof access")
       #else
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-      mp_dynfreqscalingaccess = NULL ;
+      mp_dynfreqscalingaccess = new ControlOS_DVFSviaShell() ;
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
       #endif
       //mp_i_cpucontroller = //CPUcontrollerFactory::

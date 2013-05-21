@@ -299,6 +299,73 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
     );
 }
 
+CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreThrottlingSizer
+  (wxSizer * p_wxsizerSuperordinate)
+{
+  mp_wxsliderCPUcoreThrottleRatio = new wxSlider(
+    this,
+    //wxID_ANY//,
+    ID_throttleRatio
+    //, 2  //value
+    , //Initial position for the slider.
+      //mp_i_cpucontroller->GetMinimumFrequencyInMHz()
+      //voltageandfreq.m_wFreqInMHz
+      0
+      //Slider minimum value.
+    , //lowest adjustable frequency:
+    0
+    //* mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.begin()
+    //Slider max value.
+    , //* mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.rbegin()
+      mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.size()
+    //If the default point (-1, -1) is specified then a default point is chosen.
+//    , wxPoint(-1, -1)
+    , wxDefaultPosition
+    //If the default size (-1, -1) is specified then a default size is chosen.
+//    , wxSize(-1, -1)
+    , wxDefaultSize
+    ,
+    //wxSL_AUTOTICKS // Displays tick marks.
+    //|
+//    wxSL_LABELS //Displays minimum, maximum and value labels.
+    wxSL_TICKS
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    | wxWANTS_CHARS
+    ) ;
+  m_p_wxboxsizerCPUcoreThrottleRatio = new wxBoxSizer(wxHORIZONTAL);
+  m_p_wxboxsizerCPUcoreThrottleRatio->Add(
+    mp_wxsliderCPUcoreThrottleRatio
+    , 1
+    //,wxEXPAND | wxALL
+    , wxLEFT | wxRIGHT
+      | wxALIGN_CENTER_VERTICAL
+    , 0 //Determines the border width
+    );
+  mp_wxsliderCPUcoreThrottleRatio->SetToolTip( wxT("CPU core throttling ratio") );
+  mp_wxstatictextThrottleRatio = new wxStaticText(this, wxID_ANY, wxT("") );
+  m_p_wxboxsizerCPUcoreThrottleRatio->Add(mp_wxstatictextThrottleRatio);
+  p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
+    m_p_wxboxsizerCPUcoreThrottleRatio ,
+    //proportion: "change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable"
+    0 ,
+    wxEXPAND //| //wxALL
+//      wxBOTTOM
+    ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"Determines the border width, if the flag  parameter is set to
+    //include any border flag."
+    //10
+    //2
+    0
+    );
+}
+
 CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
   wxSizer * p_wxsizerSuperordinate )
 {
@@ -832,9 +899,14 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
     //number of columns: zero, it will be calculated to form the total
     //number of children in the sizer
     0 );
-  AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  if(mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.size() )
+  {
+    //AddMultipleConfigurableVoltagesControls();
+    AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+    AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage);
+    AddStabilizeVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  }
   AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
   mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
     this, wxID_ANY, //_T("")
     //Insert spaces so that there is enough room for displaying the "wanted
@@ -880,7 +952,6 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
   AddPreventVoltageBelowLowestStableVoltageButton(
     p_wxflexgridsizerSetAsMinVoltage) ;
   AddPreventVoltageAboveDefaultVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddStabilizeVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
 //  AddAutoConfigureVoltageSettingsButton(p_wxflexgridsizerSetAsMinVoltage);
 
   //  p_wxboxsizerSetAsMinVoltage->Add(
@@ -900,8 +971,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
     //p_wxboxsizerSetAsMinVoltage ,
     p_wxflexgridsizerSetAsMinVoltage ,
     //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
+    0 , //1 ,
     //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
     //"If you would rather have a window item stay the size it started with
     //then use wxFIXED_MINSIZE. "
@@ -1274,7 +1344,6 @@ void FreqAndVoltageSettingDlg::CreateSliders()
       //m_wVoltageID
       0
       //slider minimum value
-      //, 0
 //    , mp_cpucontroller->GetMinimumVoltageID()
     , 0
     //slider max value

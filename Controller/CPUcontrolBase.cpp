@@ -557,8 +557,8 @@ void CPUcontrolBase::InitMemberVariables()
   #ifdef _WIN32
 //    mp_dynfreqscalingaccess = new PowerProfDynLinked( ) ;
   #else
-    mp_dynfreqscalingaccess = //NULL ;
-      new ControlOS_DVFSviaShell();
+//    mp_dynfreqscalingaccess = //NULL ;
+      //new ControlOS_DVFSviaShell();
   #endif
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  mp_userinterface = NULL ;
