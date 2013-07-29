@@ -336,7 +336,7 @@ BYTE MainController::GetPstateSettingsFileName(
   std::string & r_strPstateSettingsFileName )
 {
   BYTE byRet = 0 ;
-  if( mp_cpuaccess->
+  if( mp_cpuaccess && mp_cpuaccess->
     //Because file name must not begin with spaces in NTFS.
     GetProcessorNameWithoutLeadingSpaces( //byFamily
       r_strPstateSettingsFileName 
@@ -395,7 +395,9 @@ BYTE MainController::ReadPstateConfig(
 
     //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
     #ifdef COMPILE_WITH_MSR_EXAMINATION
-    ReadRegisterDataConfig( strFamilyAndModelFilePath, p_userinterface ) ;
+    ReadRegisterDataConfig( //strFamilyAndModelFilePath
+      //mp_model->m_mostSuitableCPUregisterDataFile, p_userinterface
+      ) ;
     #endif //#ifdef COMPILE_WITH_REGISTER_EXAMINATION
 
     byRet = Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
@@ -478,17 +480,18 @@ void MainController::ReadMainConfig(
     ) ;
 }
 
-//Called by MainController::Init() and by the CPU register dialog(s)
+/** Called by MainController::Init() and by the CPU register dialog(s) */
 void MainController::ReadRegisterDataConfig(
   std::string & strFamilyAndModelFilePath
   , UserInterface * p_userinterface
   )
 {
+  //TODO crash when opening non-existing file path like "/CPUregisterData"
 #ifdef COMPILE_WITH_MSR_EXAMINATION
+  //strFamilyAndModelFilePath = "CPUregisterData/" + strFamilyAndModelFilePath;
   SAX2_CPUspecificHandler sax2_cpu_specific_handler( * p_userinterface, * mp_model );
-
-   if( //ReadXMLfileInitAndTermXerces(
-     ReadXMLfileWithoutInitAndTermXercesInline(
+    if( //ReadXMLfileInitAndTermXerces(
+      ReadXMLfileWithoutInitAndTermXercesInline(
       //const char* xmlFile
       strFamilyAndModelFilePath.c_str()
 //      , * mp_model
@@ -499,10 +502,21 @@ void MainController::ReadRegisterDataConfig(
       //DefaultHandler & r_defaulthandler
       //, sax2mainconfighandler
       , sax2_cpu_specific_handler
-      )
+      ) == Apache_Xerces::readingXMLdocFailed
     )
-	  {
-
+    {
+      LOGN_ERROR(FULL_FUNC_NAME << " reading XML document \"" +
+        strFamilyAndModelFilePath + "\" failed")
     }
 #endif //#ifdef COMPILE_AS_SERVICE
+}
+
+void MainController::ReadRegisterDataConfig()
+{
+  const std::string & relFilePath = "CPUregisterData/" +
+    mp_model->m_mostSuitableCPUregisterDataFile;
+  ReadRegisterDataConfig(
+    (std::string & ) relFilePath,
+    mp_userinterface
+    );
 }

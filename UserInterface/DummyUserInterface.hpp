@@ -10,7 +10,7 @@
 #include "UserInterfaceBase.hpp"
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <Controller/character_string/getUTF8string.hpp> //getUTF8string(...)
-#include <conio.h>
+//#include <conio.h>
 
 //This class is not a real userinterface: instead, it logs the messages.
 class DummyUserInterface

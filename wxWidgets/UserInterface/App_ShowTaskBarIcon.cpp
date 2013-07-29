@@ -19,12 +19,12 @@
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 //#include <wx/bitmap.h> //wxBITMAP_DEFAULT_TYPE
 
-//http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
-// : "I believe passing -Wno-write-strings to gcc will suppress this warning."
-#pragma GCC diagnostic ignored "-Wwrite-strings"
+#include <preprocessor_macros/enable_disable_write_strings_warning.h>
+
+IGNORE_WRITE_STRINGS_WARNING
   #include <images/x86IandC.xpm>
-//ENable g++ "deprecated conversion from string constant to 'char*'" warning
-#pragma GCC diagnostic warning "-Wwrite-strings"
+//#pragma GCC diagnostic warning "-Wwrite-strings"
+ENABLE_WRITE_STRINGS_WARNING
 
 #include <wxWidgets/App.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)

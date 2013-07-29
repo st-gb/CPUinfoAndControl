@@ -11,6 +11,7 @@
 //#include <strstream> //for std::ostrstream
 #include <sstream> //for std::ostringstream
 #include <string>
+#include <Controller/character_string/stdtstr.hpp>
 
 //Use C comment, else compiler warning: multi-line comment because of "\" at
 // line end. Or append another char like "_" to "\".  _
@@ -71,9 +72,26 @@ public:
   virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr
     //Flag like "OK_BUTTON"
     , unsigned flags = 0) const /*{}*/ = 0;
+  void MessageWithTimeStamp(const std::string & message) const
+  {
+    const std::wstring & std_wstrMessage = GetStdWstring(message);
+    MessageWithTimeStamp(std_wstrMessage);
+  }
+
   virtual void MessageWithTimeStamp(const wchar_t * cp_wch) const {}
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};
   virtual void RedrawEverything() {} ;
   void showHelp(){};
+  virtual void StabilizeVoltageAndShowVoltageSettingsChanges(
+    const float fVoltageInVolt,
+    const float fMultiplier,
+    const float fReferenceClockInMHz
+    ) = 0;
+  //TODO undefined if more than 1 inst detect. at the same time.
+  //More than 1 inst detect. at the same time could make sense for multi plane
+  // voltage CPUs (e.g. Phenom 1, AMD K11).
+  /** E.g. update number of seconds until the voltage is reduced. */
+  virtual void UpdateInstableCPUcoreOpDetectInfo(
+    /*InstableCPUcoreOperationDetection &*/) = 0;
 };

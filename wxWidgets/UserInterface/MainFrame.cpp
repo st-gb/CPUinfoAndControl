@@ -102,7 +102,9 @@ wxServiceSocketClient.hpp>
 #include <wxWidgets/DynFreqScalingThread.hpp>
 #include <wxWidgets/icon/CreateTextIcon.hpp> //CreateTextIcon(...)
 #include <wxWidgets/ModelData/wxCPUcoreID.hpp>
+//#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 #include <wxWidgets/UserInterface/TaskBarIcon.hpp>//class TaskBarIcon
+//#endif
 #include <wxWidgets/UserInterface/AboutDialog.hpp> //class AboutDialog
 #include <wxWidgets/UserInterface/DynFreqScalingDlg.hpp>
 #include <Xerces/XMLAccess.hpp>
@@ -118,6 +120,8 @@ wxServiceSocketClient.hpp>
 #include <set> //std::set
 #include <valarray> //class std::valarray
 //#include <xercesc/framework/MemBufInputSource.hpp>
+
+#include <fastest_data_type.h>
 
 #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
   #include "SystemTrayAccess.hpp"
@@ -169,8 +173,8 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_MinimizeToSystemTray, MainFrame::OnMinimizeToSystemTray)
 #endif
 #ifdef COMPILE_WITH_MSR_EXAMINATION
-  EVT_MENU(ID_MSR, MainFrame::OnMSR)
-  EVT_MENU(ID_WriteToMSRdialog, MainFrame::OnWriteToCPUregister)
+  EVT_MENU(ID_ShowExamineCPUregistersDialog, MainFrame::OnShowExamineCPUregistersDialog)
+  EVT_MENU(ID_WriteToMSRdialog, MainFrame::OnShowCPUregistersReadAndWriteDialog)
 #endif
   //EVT_MENU( ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq ,
   //  MainFrame::OnDynamicallyCreatedUIcontrol )
@@ -448,7 +452,8 @@ inline void MainFrame::CreateGUImenuItems()
   #ifdef COMPILE_WITH_MSR_EXAMINATION
     if( ! m_p_wxmenuGUI )
       m_p_wxmenuGUI = new wxMenu;
-    m_p_wxmenuGUI->Append(ID_MSR, wxT("e&xamine CPUID and MSR CPU registers...")
+    m_p_wxmenuGUI->Append(ID_ShowExamineCPUregistersDialog,
+      wxT("e&xamine CPUID and MSR CPU registers...")
         );
     m_p_wxmenuGUI->Append(ID_WriteToMSRdialog,
         wxT("read from and write to MSR dialog...") );
@@ -2376,7 +2381,7 @@ void MainFrame::StoreCurrentVoltageAndFreqInArray(
           r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxT("?*");
         else
           r_ar_wxstrFreqInMHz[ wCPUcoreID ] = wxString::Format(
-            wxT("%.3f*") );
+            wxT("%.3f*"), fThrottleLevel);
 
         {
           if( fMultiplier == 0.0f)
@@ -2673,6 +2678,7 @@ void MainFrame::DrawCurrentCPUcoreInfo(
   {
 //    DEBUGN("DrawCurrentCPUcoreInfo--Number of CPU cores:" <<
 //        (WORD) mp_cpucoredata->m_byNumberOfCPUCores  )
+    //TODO do not create arrays every time this func is called
     wxString ar_wxstrCPUcoreVoltage [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrCPUcoreTemperature [ mp_cpucoredata->m_byNumberOfCPUCores] ;
     wxString ar_wxstrCPUcoreFreqInMHz [ mp_cpucoredata->m_byNumberOfCPUCores] ;
@@ -2680,13 +2686,16 @@ void MainFrame::DrawCurrentCPUcoreInfo(
     const wxFont & wxfont = r_wxdc.GetFont();
 
 //     int nFontPointSize = wxfont.GetPointSize();
-    if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
+    if( mp_model->m_userinterfaceattributes.mainframe.
+        m_nCurrentCPUcoreInfoSizeInPoint)
     {
+      //TODO make font a member var and move font creation to the c'to
       wxFont wxfont2(wxfont);
-      wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.
+      wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.mainframe.
         m_nCurrentCPUcoreInfoSizeInPoint);
       r_wxdc.SetFont(wxfont2);
     }
+    //if( m_wxfontCPUcoreInfo.GetPointSize() )
 
     if( //mp_i_cpucontroller
         p_cpucontroller )
@@ -2758,7 +2767,7 @@ void MainFrame::DrawCurrentCPUcoreInfo(
      DrawCPUcoreUsages(r_wxdc, p_cpucoreusagegetter, wxcoordX,
        wxcoordTextHeight);
       //   } //for-loop
-    if( mp_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint)
+    if( mp_model->m_userinterfaceattributes.mainframe.m_nCurrentCPUcoreInfoSizeInPoint)
     {
 //      wxfont.SetPointSize(nFontPointSize);
       r_wxdc.SetFont(wxfont);
@@ -2984,6 +2993,7 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc,
     //0=calculate max height
     WORD & wMaximumYcoordinateForFrequency)
 {
+  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
   WORD wInitialMaximumYcoordinateForFrequency = wMaximumYcoordinateForFrequency;
   wMaximumYcoordinateForFrequency = 0;
   //Initialize to avoid g++ warnings like
@@ -2991,7 +3001,7 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc,
   wxCoord wxcoordWidth = 0 ;
   wxCoord wxcoordHeight = 0 ;
   wxString wxstrFreq ;
-  WORD wLeftEndOfCurrFreqText = 0 ;
+  fastestUnsignedDataType wLeftEndOfCurrFreqText = 0 ;
   WORD wXcoordinate ;
   //Initialize to avoid g++ warning
   //"'wYcoordinate' may be used uninitialized in this function"
@@ -3009,10 +3019,11 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc,
   
   const wxFont & wxfont = r_wxdc.GetFont();
 //  int nFontPointSize = wxfont.GetPointSize();
-  if( mp_model->m_userinterfaceattributes.m_nCPUcoreFrequencyScaleSizeInPoint)
-  {
+  if( mp_model->m_userinterfaceattributes.mainframe.
+      m_nCPUcoreFrequencyScaleSizeInPoint)
+  { //TODO possibly create font in c'tor and not for every call to this function
     wxFont wxfont2(wxfont);
-    wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.
+    wxfont2.SetPointSize(mp_model->m_userinterfaceattributes.mainframe.
       m_nCPUcoreFrequencyScaleSizeInPoint);
     r_wxdc.SetFont(wxfont2);
   }
@@ -3023,14 +3034,16 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc,
 //    , & wxcoordTextHeight
 //    //, wxCoord *descent = NULL, wxCoord *externalLeading = NULL, wxFont *font = NULL
 //    ) ;
-  for( WORD wMultiplierIndex = 0 ; wMultiplierIndex < mp_cpucoredata->
-    m_stdset_floatAvailableMultipliers.size() ; ++ wMultiplierIndex )
+  const fastestSignedDataType numMultipliers = mp_cpucoredata->
+    m_stdset_floatAvailableMultipliers.size();
+  for( fastestUnsignedDataType multiplierArrayIndex = 0 ;
+      multiplierArrayIndex < numMultipliers ; ++ multiplierArrayIndex )
   {
     wFrequencyInMHz =
       //Avoid g++ warning "converting to `WORD' from `float'" .
       (WORD)
       ( mp_cpucoredata->m_arfAvailableMultipliers[
-        wMultiplierIndex ] * fReferenceClockInMHz ) ;
+        multiplierArrayIndex ] * fReferenceClockInMHz ) ;
     LOGN("should draw frequency "
       << wFrequencyInMHz
       << " for frequency scale")
@@ -3058,7 +3071,8 @@ void MainFrame::DrawFrequencyMarksAndLines(wxDC & r_wxdc,
       r_wxdc.SetPen(c_r_penCurrent);
     }
   }
-  if( mp_model->m_userinterfaceattributes.m_nCPUcoreFrequencyScaleSizeInPoint)
+  if( mp_model->m_userinterfaceattributes.mainframe.
+      m_nCPUcoreFrequencyScaleSizeInPoint)
   {
 //    wxfont.SetPointSize(nFontPointSize);
     r_wxdc.SetFont(wxfont);
@@ -3215,23 +3229,26 @@ void MainFrame::DrawVoltageFreqCross(
 
 void MainFrame::DrawVoltageScale(wxDC & r_wxdc )
 {
+  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
   WORD wPreviousYcoordinateForVoltage = MAXWORD ;
 
   const wxPen & c_r_penCurrent = r_wxdc.GetPen();
+  //TODO possibly create pen in c'tor and not for every call to this function
   wxPen penLine( * wxLIGHT_GREY, 1); // pen of width 1
   r_wxdc.SetPen(penLine);
 
   const wxFont & cr_wxfontBefore = r_wxdc.GetFont();
   //wxWidgets runtime error when calling GetPointSize.
 //  int nFontPointSize = cr_wxfontBefore.GetPointSize();
-  if( mp_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint)
+  if( mp_model->m_userinterfaceattributes.mainframe.m_nVoltageScaleSizeInPoint)
   {
 //    cr_wxfontBefore.SetPointSize(mp_model->m_userinterfaceattributes.
 //      m_nVoltageScaleSizeInPoint);
+    //TODO possibly create font in c'tor and not for every call to this function
     //wxFont copy c'tor uses reference counting.
     wxFont wxfont(cr_wxfontBefore//.GetNativeFontInfoDesc()
       );
-    wxfont.SetPointSize(mp_model->m_userinterfaceattributes.
+    wxfont.SetPointSize(mp_model->m_userinterfaceattributes.mainframe.
       m_nVoltageScaleSizeInPoint);
     r_wxdc.SetFont(//cr_wxfontBefore
       wxfont);
@@ -3324,11 +3341,12 @@ void MainFrame::DrawVoltageScale(wxDC & r_wxdc )
       uiBeginOfVoltageString = 0;
   }
   r_wxdc.SetPen(c_r_penCurrent);
-  if( mp_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint)
+  if( mp_model->m_userinterfaceattributes.mainframe.m_nVoltageScaleSizeInPoint)
   {
 //    cr_wxfontBefore.SetPointSize(nFontPointSize);
     r_wxdc.SetFont(cr_wxfontBefore);
   }
+  LOGN_DEBUG( FULL_FUNC_NAME << " end")
 }
 
 float MainFrame::GetClosestMultiplier(int nXcoordionate,
@@ -3992,7 +4010,7 @@ void MainFrame::PossiblyAskForOSdynFreqScalingDisabling()
 
 //#ifdef _TEST_PENTIUM_M
 #ifdef COMPILE_WITH_MSR_EXAMINATION
-  void MainFrame::OnMSR(wxCommandEvent& WXUNUSED(event))
+  void MainFrame::OnShowExamineCPUregistersDialog(wxCommandEvent& WXUNUSED(event))
   {
     ////May be NULL at startup.
     //if( mp_i_cpucontroller )
@@ -4532,10 +4550,12 @@ void MainFrame::OnUpdateViewInterval(wxCommandEvent & WXUNUSED(event))
   }
 }
 
-  void MainFrame::OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) )
+  void MainFrame::OnShowCPUregistersReadAndWriteDialog( wxCommandEvent & WXUNUSED(event) )
   {
+#ifndef _DEBUG
     //May be NULL at startup.
     if( mp_i_cpucontroller )
+#endif
     {
 #ifdef COMPILE_WITH_MSR_EXAMINATION
      CPUregisterReadAndWriteDialog * p_wxdlg = new
@@ -4800,7 +4820,8 @@ void MainFrame::ShowCPUcoreUsagesInTaskBar(
       "--mp_taskbaricon:"
       << mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon )
     if( mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon )
-    {
+    { //TODO make wxIcon (and other params) member variables of class TaskBarIcon
+      //or wxicondrawer
       mp_wxx86infoandcontrolapp->m_p_CPUcoreUsagesTaskbarIcon->
         m_p_wxicon_drawer->DrawColouredBarsIcon(
         s_wxiconCPUcoreUsages,

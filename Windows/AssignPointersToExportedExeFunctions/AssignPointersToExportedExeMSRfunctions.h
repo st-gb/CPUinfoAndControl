@@ -25,4 +25,12 @@ inline void AssignPointersToExportedExeMSRfunctions(
     "WriteMSR");
 }
 
+inline void AssignPointersToExportedExeMSRfunctions_inline(
+  ReadMSR_func_type & pfn_read_msr_func_type ,
+  WriteMSR_func_type & pfn_write_msr_func_type
+  )
+{
+  AssignPointersToExportedExeMSRfunctions(pfn_read_msr_func_type, pfn_write_msr_func_type);
+}
+
 #endif /* ASSIGNPOINTERSTOEXPORTEDEXEFUNCTIONS_H_ */

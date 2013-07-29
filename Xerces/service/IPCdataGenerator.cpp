@@ -198,9 +198,9 @@ namespace Xerces
   void IPCdataHandler::CreateXMLdocumentChildren(
     XERCES_CPP_NAMESPACE::DOMDocument * p_dom_document )
   {
-    XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementRoot =
+    //XERCES_CPP_NAMESPACE::DOMElement * p_dom_elementRoot =
       p_dom_document->getDocumentElement();
-    XERCES_CPP_NAMESPACE::DOMElement * p_dom_element ;
+    //XERCES_CPP_NAMESPACE::DOMElement * p_dom_element ;
     PerCPUcoreAttributes * arp_percpucoreattributes =
       mr_model.m_cpucoredata.m_arp_percpucoreattributes ;
     std::string stdstr ;

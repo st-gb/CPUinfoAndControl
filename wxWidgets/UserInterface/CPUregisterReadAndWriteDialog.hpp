@@ -66,10 +66,12 @@ public:
     MSRdata & r_msrdata ) ;
 private:
   void AddActionButtons();
+  wxListBox * CreateRegisterIDlistBox();
   void OnChangedText(wxCommandEvent & evt ) ;
   void OnPreparePMC( wxCommandEvent & evt ) ;
   void OnReadFromMSR( wxCommandEvent & evt ) ;
   void OnRegisterListBoxSelection( wxCommandEvent & evt ) ;
+  void OnReloadCPUregisterToReadConfig( wxCommandEvent & evt ) ;
   void OnWriteToMSR( wxCommandEvent & evt ) ;
   // any class wishing to process wxWidgets events must use this macro
   DECLARE_EVENT_TABLE()

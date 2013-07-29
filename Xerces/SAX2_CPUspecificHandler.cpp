@@ -167,6 +167,17 @@ void SAX2_CPUspecificHandler::HandleInsideMSRelement(
       RegisterData registerdata(//m_strElementName
         strMSRdataName ) ;
       registerdata.m_bCalculateDiff = bCalculateDiff ;
+      std::string std_strMetricPrefix;
+      if( XercesAttributesHelper::GetAttributeValue(
+          r_xercesc_attributes,//"processor_name"
+          "metric_prefix" ,
+          //strValue
+          std_strMetricPrefix
+          )
+        )
+      {
+        registerdata.SetMetricPrefix(std_strMetricPrefix);
+      }
       registerdata.add(byStartBit,byBitLength) ;
       m_stdvec_msrdata_riter->m_stdvec_registerdata.push_back(registerdata) ;
     }
@@ -352,13 +363,20 @@ void SAX2_CPUspecificHandler::HandleCPUIDelement(
   char archAttributeName [] = "index" ;
   char archCoreIDattributeName [] = "core" ;
 //    std::string stdstrAttributeName = "MSR" ;
-  if( ConvertXercesAttributesValue<DWORD>
-      (
-      r_xercesc_attributes,
-      dwIndex ,
-      archAttributeName
-      )
-    == SUCCESS
+  XercesAttributesHelper xercesattributeshelper;
+  if( //ConvertXercesAttributesValue<DWORD>
+//      (
+//      r_xercesc_attributes,
+//      dwIndex ,
+//      archAttributeName
+//      )
+      xercesattributeshelper.GetAttributeValue(
+        r_xercesc_attributes, //const XERCES_CPP_NAMESPACE::Attributes & attrs,
+  //      archAttributeName, //const char * lpctstrAttrName,
+        archAttributeName,
+        dwIndex //DWORD & r_dwValue
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+    //== SUCCESS
     )
   {
     m_bInsideValidCPUIDelement = true ;
@@ -531,11 +549,23 @@ void SAX2_CPUspecificHandler::startElement
 
 //TODO why is this function called and not the exception handler inside
 //ReadXMLdocument?
+// Because set via XERCES_CPP_NAMESPACE::SAX2XMLReader::setErrorHandler(...)?
 void SAX2_CPUspecificHandler::fatalError(
   const XERCES_CPP_NAMESPACE::SAXParseException & r_xercesc_sax_parse_exception)
 {
-  LOGN_TYPE( FULL_FUNC_NAME << ": fatal Error: " << XercesHelper::ToStdString(
-    r_xercesc_sax_parse_exception.getMessage() )
-   << " at line: " << r_xercesc_sax_parse_exception.getLineNumber()
-   , LogLevel::error )
+  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
+  std::wstring stdwstrDocumentIDandLocation;
+  GetDocumentIDandLocation(stdwstrDocumentIDandLocation);
+//  const std::string & stdstrSAXParseExceptionMessage = XercesHelper::ToStdString(
+//     ) + stdwstrDocumentIDandLocation;
+
+  const std::wstring stdwstrSAXParseExceptionMessage = Xerces::
+    ConvertXercesStringToStdWstring_inline(
+    r_xercesc_sax_parse_exception.getMessage() ) + stdwstrDocumentIDandLocation;
+
+  LOGN_ERROR( FULL_FUNC_NAME << ": fatal error: "
+    << stdwstrSAXParseExceptionMessage
+    << " at line: " << r_xercesc_sax_parse_exception.getLineNumber() )
+  //stdstrSAXParseExceptionMessage;
+  mp_userinterface->MessageWithTimeStamp(stdwstrSAXParseExceptionMessage);
 }

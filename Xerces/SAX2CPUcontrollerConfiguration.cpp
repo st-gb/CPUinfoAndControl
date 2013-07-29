@@ -22,6 +22,7 @@ namespace Xerces
 //      m_r_model(r_model),
       m_c_r_cpucoredata(r_model.m_cpucoredata),
       m_SuitabilityLevel(0),
+      m_r_model( (Model &) r_model),
       m_HighestSuitability(
         //Set the minumum match to model, else if e.g. no controller for
         // Intel Core (fam 6, model 14) and Controller for Pentium M (fam 6, model 13):
@@ -47,9 +48,9 @@ namespace Xerces
     )
   {
     unsigned numItemsSpecified = 0;
-    bool bCPUinfoGetterAndOrControllerSpecified = false;
-    bool bCPUregisterDataSpecified = false;
-    bool bCPUcoreUsageGetterSpecified = false;
+    //bool bCPUinfoGetterAndOrControllerSpecified = false;
+    //bool bCPUregisterDataSpecified = false;
+    //bool bCPUcoreUsageGetterSpecified = false;
     m_SuitabilityLevel = 0;
     if( Xerces::ansi_or_wchar_string_compare(cpc_xmlchLocalName,
         ANSI_OR_WCHAR("CPUID") ) == 0)
@@ -64,7 +65,7 @@ namespace Xerces
           XercesAttributesHelper::getting_attribute_value_succeeded )
       {
         ++ numItemsSpecified;
-        bCPUinfoGetterAndOrControllerSpecified = true;
+        //bCPUinfoGetterAndOrControllerSpecified = true;
       }
       std_strAttributeName = "CPUregisterData";
       if( XercesAttributesHelper::GetAttributeValue(
@@ -72,7 +73,7 @@ namespace Xerces
           XercesAttributesHelper::getting_attribute_value_succeeded )
       {
         ++ numItemsSpecified;
-        bCPUregisterDataSpecified = true;
+        //bCPUregisterDataSpecified = true;
       }
       std_strAttributeName = "CPUcoreUsageGetter";
       if( XercesAttributesHelper::GetAttributeValue(
@@ -80,7 +81,7 @@ namespace Xerces
           XercesAttributesHelper::getting_attribute_value_succeeded )
       {
         ++ numItemsSpecified;
-        bCPUcoreUsageGetterSpecified = true;
+        //bCPUcoreUsageGetterSpecified = true;
       }
       if( numItemsSpecified )
       {
@@ -169,7 +170,7 @@ namespace Xerces
           m_mostSuitableCPUinfoGetterAndOrController =
             std_strCPUinfoGetterAndOrController;
           m_mostSuitableCPUcoreUsageGetter = std_strCPUcoreUsageGetter;
-          m_mostSuitableCPUregisterDataFile = std_strCPUregisterData;
+          m_r_model.m_mostSuitableCPUregisterDataFile = std_strCPUregisterData;
           m_HighestSuitability = m_SuitabilityLevel;
         }
       }

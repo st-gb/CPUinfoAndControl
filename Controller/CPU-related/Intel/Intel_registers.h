@@ -35,6 +35,7 @@
 //maximum qualified frequency of the processor, see Section 30.10.5 for more
 //detail."
 #define IA32_TIME_STAMP_COUNTER 0x10 //16 decimal
+#define IA32_PLATFORM_ID 0x17
 
 //Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3B
 //chapter 30.8.2 Performance Counters (Pentium 4):
@@ -53,11 +54,21 @@
 #define IA32_PERFEVTSEL2 0x188 //392; (PERFEVTSEL2) 
 //Performance Event Select Register 3 (R/W):available If CPUID.0AH: EAX[15:8] > 3
 #define IA32_PERFEVTSEL3 0x189 //393; (PERFEVTSEL3) 
+#define PERFORMANCE_COUNTING_ENABLED_BIT_INDEX 22
+
 #define IA32_PERF_STATUS 0x198 //408 decimal,(ReadOnly);since fam. 0F, model 3
 #define IA32_PERF_CTL 0x199 //409 (Read/Write); since family 0F, model 03H
 //Thermal Status Information (ReadOnly)
 #define IA32_THERM_STATUS 0x19C //412 
 
+//For Intel Core (2) PERF_STATUS MSR (0x198)
+#define BITPOS_FOR_CURRENT_MAX_FID 40
+#define BITPOS_FOR_CURRENT_MIN_FID 56
+
+//#define BITPOS_FOR_CURRENT_MAX_FID 40
+//#define BITPOS_FOR_CURRENT_MIN_FID 56
+
+#define THERMAL_STATUS 1
 //Critical Temperature Status (bit 4, RO): 1 << 4 = 2^4 = 16dec = 10000bin
 #define CRITICAL_TEMPERATURE_STATUS_BIT_MASK 16
 //Thermal Threshold #1 Status (bit 6, RO): 1 << 6 = 2^6 = 64dec = 1000000bin

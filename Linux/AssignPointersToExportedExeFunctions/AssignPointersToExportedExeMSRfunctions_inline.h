@@ -17,6 +17,7 @@
 
 #ifdef __linux__
   #include <dlfcn.h> //for dlopen(...)
+  #include <stddef.h> //NULL
 #endif
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
 

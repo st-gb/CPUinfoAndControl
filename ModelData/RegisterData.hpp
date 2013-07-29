@@ -33,12 +33,16 @@ public:
 class RegisterData
 {
 public:
+  enum metricPrefixes{ none, kilo, Mega, Giga};
   bool m_bCalculateDiff ;
+  /** unsigned is fastest data type. */
+  unsigned m_metricPrefix;
   ULONGLONG m_ullPreviousValue ;
   std::string m_strDataName ;
   std::vector<BitRange> m_stdvec_bitrange ;
   RegisterData(const std::string & str)
     : m_bCalculateDiff (false)
+    , m_metricPrefix(none)
     , m_ullPreviousValue (0)
   {
       m_strDataName = str ;
@@ -46,6 +50,13 @@ public:
   void add(unsigned char byStartBit,  unsigned char byBitLength)
   {
       m_stdvec_bitrange.push_back(BitRange(byStartBit, byBitLength)) ;
+  }
+  void SetMetricPrefix(const std::string & metricPrefix)
+  {
+    if( metricPrefix == "M" )
+      m_metricPrefix = Mega;
+    else if( metricPrefix == "G" )
+      m_metricPrefix = Giga;
   }
   //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
@@ -82,20 +93,37 @@ public:
   }
 };
 
+/** @brief common attributes shared between different CPU register data types
+ *  (MSR, CPUID)*/
+class CPUregisterProperties
+{
+public:
+  /** register index, like MSR number xx, CPUID function/ code xx */
+  unsigned m_dwIndex ;
+  /** name for a CPU register, like "PERF_STATUS" for "0x198" for Intel MSR */
+  std::string m_stdstrRegisterName ;
+  CPUregisterProperties(unsigned index, const std::string & stdstrRegisterName)
+    : m_dwIndex(index)
+    , m_stdstrRegisterName(stdstrRegisterName)
+  {
+
+  }
+};
+
 class CPUIDdata
+  : public CPUregisterProperties
 {
 public:
   BYTE m_byCoreID ;
-  DWORD m_dwIndex ;
-  std::string m_stdstrRegisterName ;
   std::string m_stdstrGenPurposeRegName ;
   std::vector<RegisterData> m_stdvec_registerdata ;
   CPUIDdata(//DWORD
-    unsigned long dwIndex 
+    unsigned /*long*/ dwIndex
     )
-    : m_byCoreID(0)
+    : m_byCoreID(0),
+    CPUregisterProperties(dwIndex, "")
   {
-      m_dwIndex = dwIndex ;
+    //m_dwIndex = dwIndex ;
   }
   CPUIDdata(//DWORD
     unsigned long dwIndex
@@ -109,12 +137,13 @@ public:
     //, std::string & stdstrGenPurposeRegName 
     )
     : m_byCoreID(0)
+    , CPUregisterProperties(dwIndex, stdstrRegisterName)
   {
-    m_dwIndex = dwIndex ;
-    m_stdstrRegisterName = stdstrRegisterName ;
+//    m_dwIndex = dwIndex ;
+//    m_stdstrRegisterName = stdstrRegisterName ;
     //m_stdstrGenPurposeRegName = stdstrGenPurposeRegName ;
   }
-  //The following assignment operator solves the g++ warnings (that appears
+  /** The following assignment operator solves the g++ warnings (that appears
   // because class RegisterData also contains a vector?:
   //see http://cboard.cprogramming.com/cplusplus-programming/
   //  101030-warnings-when-using-vector-vector.html
@@ -132,7 +161,7 @@ public:
   // '__cur' might be used uninitialized in this function
   //C:/MinGW/bin/../lib/gcc/mingw32/3.4.5/../../../../include/c++/3.4.5/bits/
   // stl_uninitialized.h:82:
-  // warning: '__cur' might be used uninitialized in this function
+  // warning: '__cur' might be used uninitialized in this function */
 
   //Assignment ("=") operator adapted from:
   //http://www.cs.caltech.edu/courses/cs11/material/cpp/donnie/cpp-ops.html:
@@ -144,22 +173,22 @@ public:
 } ;
 
 class MSRdata
+  : public CPUregisterProperties
 {
   public:
   BYTE m_byCoreID ;
-  DWORD m_dwIndex ;
-  std::string m_stdstrRegisterName ;
   std::vector<RegisterData> m_stdvec_registerdata ;
   //std::vector<std::string [][]> m_stdvector_ararstdstr ;
   std::vector<RegisterDataTable> m_stdvector_registerdatatable ;
   MSRdata(//DWORD
-    unsigned long dwIndex)
+    unsigned /*long*/ dwIndex)
     : m_byCoreID(0)
+    , CPUregisterProperties(dwIndex, "")
   {
-      m_dwIndex = dwIndex ;
+    //m_dwIndex = dwIndex ;
   }
   MSRdata(//DWORD
-    unsigned long dwIndex
+    unsigned /*long*/ dwIndex
     , std::string & stdstrRegisterName ) ;
   //The following assignment operator solves the g++ warnings (that appears
   // because class RegisterData also contains a vector?:

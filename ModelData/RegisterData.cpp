@@ -1,14 +1,22 @@
+/* Do not remove this header/ copyright information.
+ *
+ * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2011.
+ * You are allowed to modify and use the source code from
+ * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
+ * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ */
 #include "RegisterData.hpp"
 
 MSRdata::MSRdata(//DWORD
-  unsigned long dwIndex
+  unsigned /*long*/ dwIndex
   , std::string & stdstrRegisterName )
   :
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   m_byCoreID(0)
-  , m_dwIndex ( dwIndex )
-  , m_stdstrRegisterName ( stdstrRegisterName )
+//  , m_dwIndex ( dwIndex )
+//  , m_stdstrRegisterName ( stdstrRegisterName )
+  , CPUregisterProperties(dwIndex, stdstrRegisterName)
 {
 }
 

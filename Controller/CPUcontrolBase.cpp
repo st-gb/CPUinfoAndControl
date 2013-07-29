@@ -103,6 +103,8 @@ CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
     (UserInterface *)
     cpc_userinterface )
 {
+  if( LogLevel::s_nodetrieLogLevelStringToNumber.size() == 0)
+    LogLevel::CreateLogLevelStringToNumberMapping();
   LOGN(//"CPUcontrolBase()"
     FULL_FUNC_NAME << "--begin")
     /* E.g. do not log "info" messages if level is "warning". */
@@ -418,6 +420,16 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     LOGN("FreeRessources end")
   }
 
+  std::wstring CPUcontrolBase::GetExecutableFileName(
+    const wchar_t * const executableFilePath )
+  {
+    std::tstring std_tstrProgramPath(executableFilePath );
+    std::wstring std_wstrProgramPath = GetStdWstring(std_tstrProgramPath);
+    std::wstring::size_type lastBackSlash = std_wstrProgramPath.rfind(
+      EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI ) );
+    return std_wstrProgramPath.substr(lastBackSlash + 1);
+  }
+
   /** For the service the path must have been set to the path of the service
    * executable before */
   void CPUcontrolBase::GetLogFileExtension(std::string & std_strFileExt)
@@ -442,12 +454,15 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   }
 
   bool CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
-    std::string & std_strLogFilePath)
+    std::wstring & std_wstrLogFilePath,
+    std::wstring & std_wstrLogFileName)
   {
-    std::wstring std_wstrLogFilePath = GetStdWstring(std_strLogFilePath);
+//    std::wstring std_wstrLogFilePath = GetStdWstring(std_wstrLogFilePath);
     ReadLogConfig(//r_std_tstrLogFilePath
-      std_wstrLogFilePath
+      std_wstrLogFilePath//, std_wstrLogFileName
       );
+    std_wstrLogFilePath += std_wstrLogFileName;
+
     std::string std_strFileExt;
     CPUcontrolBase::GetLogFileExtension(std_strFileExt);
 
@@ -457,7 +472,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //    std::string std_strLogLevelString;
 //    CPUcontrolBase::GetLogLevel(std_strLogLevelString);
 
-    std_strLogFilePath += std_strFileExt;
+    std_wstrLogFilePath += GetStdWstring(std_strFileExt);
   #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
   #endif
@@ -469,7 +484,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   //  AppendingFileOutput * logfileappender = new AppendingFileOutput(
     RollingFileOutput * logfileappender = new RollingFileOutput(
       g_logger,
-      std_strLogFilePath,
+      GetStdString(std_wstrLogFilePath),
       logentryoutputter,
   //    new I_LogFormatter(),
 //      "txt",
@@ -485,8 +500,9 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //      std_strFileExt.c_str(), std_strLogTimeFormatString);
 //    g_logger.AddFormattedLogEntryProcessor( logfileappender);
 //    std::string actualFilepath;
+    std::string actualFilepath = GetStdString(std_wstrLogFilePath);
     bool logFileIsOpen = //logentryoutputter->OpenA( std_strLogFileName );
-      logfileappender->Open(/*actualFilepath*/ std_strLogFilePath);
+      logfileappender->Open(/*actualFilepath*/ actualFilepath );
     if( logFileIsOpen )
     {
       logfileappender->CreateFormatter(std_strFileExt.c_str(),
@@ -538,11 +554,12 @@ void CPUcontrolBase::InitMemberVariables()
   mp_cpucoreusagegetter = NULL ;
   mp_i_cpuaccess = NULL ;
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
-//  #ifdef _WIN32
+  #ifdef _WIN32
 //    mp_dynfreqscalingaccess = new PowerProfDynLinked( ) ;
-//  #else
-    mp_dynfreqscalingaccess = NULL ;
-//  #endif
+  #else
+//    mp_dynfreqscalingaccess = //NULL ;
+      //new ControlOS_DVFSviaShell();
+  #endif
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 //  mp_userinterface = NULL ;
 }
@@ -687,9 +704,12 @@ void CPUcontrolBase::PossiblyDeleteCPUcoreUsageGetter()
   }
 }
 
+/** @param r_std_wstrLogFilePath: input: may be the full program path */
 void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
   /** Should be wide string because of non-English languages.*/
-  std::wstring & r_std_wstrLogFilePath)
+  std::wstring & r_std_wstrLogFilePath//,
+  //std::wstring & std_wstrLogFileName
+  )
 {
   Xerces::LogOutputHandler logoutputhandler(
     //this
@@ -724,25 +744,28 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
 //        wxstr(PATH_SEPERATOR_CHAR_ANSI );
       //if relative path
 //      if( IsRelativePath(r_std_wstrLogFilePath) != L'/' )
-      platformstl::basic_path<wchar_t> platformstl_basic_path(r_std_wstrLogFilePath);
+      platformstl::basic_path<wchar_t> platformstl_basic_path(
+        //r_std_wstrLogFilePath
+        std_wstrLogFilePathFromConfig);
 //      platformstl::path platformstl_basic_path(r_std_wstrLogFilePath);
+
       if( platformstl_basic_path.is_absolute() )
       {
-        std::wstring::size_type lastBackSlashCharIndex =
-          r_std_wstrLogFilePath.rfind(
-          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI )
-          //std::basic_string::npos
-          , r_std_wstrLogFilePath.length()
-          );
-        r_std_wstrLogFilePath =
-          //path without filename
-          r_std_wstrLogFilePath.substr(0, lastBackSlashCharIndex + 1)
-          + m_model.m_logfileattributes.
-          m_std_wstrLogFilePath + //L"/";
+//        std::wstring::size_type lastBackSlashCharIndex =
+//          r_std_wstrLogFilePath.rfind(
+//          EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI )
+//          //std::basic_string::npos
+//          , r_std_wstrLogFilePath.length()
+//          );
+        r_std_wstrLogFilePath = std_wstrLogFilePathFromConfig +
+//          //path without filename
+//          r_std_wstrLogFilePath.substr(0, lastBackSlashCharIndex + 1)
+//          + m_model.m_logfileattributes.
+//          m_std_wstrLogFilePath + //L"/";
           EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
       }
       else
-        r_std_wstrLogFilePath = m_model.m_logfileattributes.
+        r_std_wstrLogFilePath += m_model.m_logfileattributes.
           m_std_wstrLogFilePath + //L"/";
           EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
     }

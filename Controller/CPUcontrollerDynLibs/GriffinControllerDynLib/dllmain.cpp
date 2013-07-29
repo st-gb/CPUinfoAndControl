@@ -19,7 +19,7 @@
   #include "stdafx.h"
   #endif
 
-  #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
+//  #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
 
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
@@ -149,7 +149,8 @@ void Init()
 #ifdef _DEBUG
   InitializeLogger();
 #endif
-  AssignPointersToExportedExeMSRfunctions_inline(g_pfnreadmsr, g_pfn_write_msr) ;
+  AssignPointersToExportedExeMSRfunctions(
+    g_pfnreadmsr, g_pfn_write_msr) ;
 //#ifdef _WIN32
   AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
 //#endif
@@ -164,16 +165,19 @@ void Init()
       //Title
       ,"error"
       , MB_OK) ;
-    return FALSE ;
+    return /*FALSE*/;
 #endif //#ifdef _WIN32
   }
   //Pointers to Exe's fct must be assigned prior to the call of
   //GetMainPllOpFreqIdMax() !
-  GetMainPllOpFreqIdMax() ;
+  AMD::K10_and_K11::GetMainPllOpFreqIdMax() ;
   DEBUGN("after GetMainPllOpFreqIdMax")
 }
 
 #ifdef _WIN32
+  /** According to U. Pohl no time-consuming activities should be done herein
+   *  because this blocks other processes if attach/ detach operations occur
+   *  until this function is left.*/
   EXPORT BOOL APIENTRY DllMain(
     HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -183,7 +187,7 @@ void Init()
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-      Init();
+      //Init();
 //      g_pfnreadmsr(
 //        HARDWARE_CONFIGURATION_REGISTER,
 //        g_dwLowmostBits ,
@@ -211,10 +215,9 @@ void Init()
   //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
   #define NEHALEM_DLL_CALLING_CONVENTION
 
-  EXPORT
-  //The array pointed to by the return value must be freed by the caller (i.e.
-  //x86I&C GUI or service) of this function.
-  float *
+  /** @return the array pointed to by the return value must be freed by the
+  *    caller (i.e. x86I&C GUI or service) of this function. */
+  EXPORT float *
     NEHALEM_DLL_CALLING_CONVENTION
     //The reference clock might change, also during runtime.
     //This is why it is a good idea to get the possible multipliers.
@@ -229,8 +232,8 @@ void Init()
   }
 
   EXPORT
-  //The array pointed to by the return value must be freed by the caller (i.e.
-  //x86I&C GUI or service) of this function.
+  /** @return The array pointed to by the return value must be freed by the
+  *   caller (i.e. x86I&C GUI or service) of this function. */
   float * GetAvailableVoltagesInVolt(
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements )
@@ -251,7 +254,7 @@ void Init()
     )
   {
     DEBUGN( FULL_FUNC_NAME << "--begin")
-    return GetCurrentVoltageAndFrequencyAMDGriffin(
+    return AMD::K10_and_K11::GetCurrentVoltageAndFrequency(
       p_fVoltageInVolt,
       p_fMultiplier ,
       p_fReferenceClockInMHz ,
@@ -273,7 +276,8 @@ void Init()
     DEBUGN("GetTemperatureInCelsius(...) device and function:"
       << (WORD) g_byValue1 )
 //    BYTE byRet = //GetCPUMiscControlDWORD(
-      g_pfnReadPCIconfigSpace(
+
+    g_pfnReadPCIconfigSpace(
       0, //bus number
       //Bus 0, Device number 24, Function 3 is "CPU Miscellaneous Control"
 //      g_byValue1
@@ -344,24 +348,23 @@ void Init()
     //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
   }
 
-  EXPORT
-  //When a function with this name exists in the DLL the dyn volt n freq scal thread
-  //scales per core.
-  void moreThan1CPUcorePowerPlane()
+  /**@brief When a function with this name exists in the DLL the dyn volt n
+  *   freq scal thread scales per core. */
+  EXPORT void moreThan1CPUcorePowerPlane()
   {
   }
 
-  EXPORT
-    BYTE
-    NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
+  /** @param fMultiplier: multipliers can also be floats: e.g. 5.5 for AMD
+   *    Griffin. */
+  EXPORT BYTE NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
     SetCurrentVoltageAndMultiplier(
       float fVoltageInVolt
-      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
       , float fMultiplier
       , WORD wCoreID
     )
   {
     DEBUGN("DLL fct SetCurrentVoltageAndMultiplier")
-    SetVoltageAndMultiplier( fVoltageInVolt , fMultiplier , (BYTE) wCoreID ) ;
+    AMD::K10_and_K11::SetVoltageAndMultiplier( fVoltageInVolt , fMultiplier ,
+      (BYTE) wCoreID ) ;
     return 0 ;
   }

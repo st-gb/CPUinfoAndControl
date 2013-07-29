@@ -22,11 +22,48 @@
 
 namespace Attributes
 {
+  class TaskBarIcon
+  {
+  public:
+    bool show;
+    std::string colour;
+  };
+
+  class VoltnFreqSettingsDialog
+  {
+    bool m_bSelectAllCPUcores ;
+  };
+
+  class MainFrame
+  {
+  public:
+    unsigned short m_heightInPixels ;
+    unsigned short m_widthInPixels ;
+    unsigned short m_topLeftCornerXcoordinateInPixels ;
+    unsigned short m_topLeftCornerYcoordinateInPixels ;
+    int m_nVoltageScaleSizeInPoint;
+    int m_nCurrentCPUcoreInfoSizeInPoint;
+    int m_nCPUcoreFrequencyScaleSizeInPoint;
+    MainFrame()
+      : m_heightInPixels( 400 ) ,
+      m_widthInPixels( 500 ) ,
+      m_topLeftCornerXcoordinateInPixels( 50) ,
+      m_topLeftCornerYcoordinateInPixels( 50) ,
+      m_nVoltageScaleSizeInPoint(8),
+      m_nCurrentCPUcoreInfoSizeInPoint(10),
+      m_nCPUcoreFrequencyScaleSizeInPoint(9)
+    {
+
+    }
+  };
+
   class UserInterfaceAttributes
   {
   public:
     bool m_bPreventVoltageAboveDefaultVoltage ;
     bool m_bPreventVoltageBelowLowestStableVoltage ;
+    bool m_bShowMultiplierControlsIfLessThan2ConfigurableMultipliers;
+    bool m_bShowVoltageControlsIfLessThan2ConfigurableVoltages;
 
     bool m_bSelectAllCPUcores ;
     bool m_bShowMainFrameAtStartup ;
@@ -34,16 +71,12 @@ namespace Attributes
     bool m_bTryToPauseViaServiceControlManagerIfViaIPCfails ;
     float m_fOperatingSafetyMarginInVolt ;
 
-    unsigned short m_wMainFrameHeightInPixels ;
-    unsigned short m_wMainFrameWidthInPixels ;
-    unsigned short m_wMainFrameTopLeftCornerXcoordinateInPixels ;
-    unsigned short m_wMainFrameTopLeftCornerYcoordinateInPixels ;
+    MainFrame mainframe;
 
     unsigned short m_wToolTipDelay ;
 
-    int m_nVoltageScaleSizeInPoint;
-    int m_nCurrentCPUcoreInfoSizeInPoint;
-    int m_nCPUcoreFrequencyScaleSizeInPoint;
+    static int s_defaultFontSizeInPoint;
+
     int m_nCPUcoreTempTaskBarIconFontSizeInPoint;
 
     std::map<uint16_t,std::string> m_std_vec_WisdomStrings;

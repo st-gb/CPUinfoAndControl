@@ -76,18 +76,19 @@ void PossiblyCloseStdInAndOutFiles()
   }
 }
 
-bool PossiblyDeamonize()
+bool PossiblyDeamonize(const char * cp_chLockFileName)
 {
   const bool shouldDeamonize = g_commandlineargs.contains(DAEMONIZE_ARG);
-  LOGN( FULL_FUNC_NAME << "-shouldDeamonize?" << shouldDeamonize)
+  LOGN( FULL_FUNC_NAME << "-should deamonize? (" << DAEMONIZE_ARG
+    << "is specified as command line argument:" << shouldDeamonize)
   if( shouldDeamonize )
   {
-    const char * firstCmdLineArg = gp_cpucontrolbase->m_ar_ar_ch_programArgs[1];
-    LOGN(FULL_FUNC_NAME << "-1st Command line argument: " << firstCmdLineArg)
-    const bool shouldDeamonize = strcmp( firstCmdLineArg,
-      DAEMONIZE_ARG) == 0;
-    LOGN(FULL_FUNC_NAME << "-\"" << DAEMONIZE_ARG << "\" specified as 1st "
-      "command line argument?: " << (shouldDeamonize ? "yes" : "no") )
+//    const char * firstCmdLineArg = gp_cpucontrolbase->m_ar_ar_ch_programArgs[1];
+//    LOGN(FULL_FUNC_NAME << "-1st Command line argument: " << firstCmdLineArg)
+//    const bool shouldDeamonize = strcmp( firstCmdLineArg,
+//      DAEMONIZE_ARG) == 0;
+//    LOGN(FULL_FUNC_NAME << "-\"" << DAEMONIZE_ARG << "\" specified as 1st "
+//      "command line argument?: " << (shouldDeamonize ? "yes" : "no") )
     if( shouldDeamonize )
     {
       LOGN("before daemonizing")
@@ -101,6 +102,11 @@ bool PossiblyDeamonize()
   return shouldDeamonize;
 }
 
+void PossiblyChangeCurrWorkDir()
+{
+
+}
+
 void init_daemon(//int argc, char * argv[],
   std::string & stdstrCurrentWorkingDir )
 {
@@ -111,10 +117,10 @@ void init_daemon(//int argc, char * argv[],
   signal(SIGCONT, child_handler);
   signal(SIGUSR1, child_handler);
 
-  if( ! PossiblyDeamonize() )
+  if( ! PossiblyDeamonize(cp_chLockFileName) )
   {
     PossiblyCloseStdInAndOutFiles();
-    PossiblyChangeCurrWorkDir();
+//    PossiblyChangeCurrWorkDir();
   }
 
   LPTSTR ptstrProgramName = _T("X86_info_and_control") ;

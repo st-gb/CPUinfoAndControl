@@ -61,6 +61,7 @@ public:
   inline void AssignPointerToDynLibsGetAvailableVoltagesFunction();
   inline void AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
 
+  void DeInit();
   void DecreaseVoltageBy1Step(float & r_fVoltage) ;
   void GetAvailableMultipliers(
     //Use a std::set because: in this set the elements are sorted, also:

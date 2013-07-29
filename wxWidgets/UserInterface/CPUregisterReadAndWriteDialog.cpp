@@ -33,6 +33,7 @@
 enum
 {
   ID_RegisterListBox = 1
+  , ID_ReloadCPUregisterToReadConfig
   , ID_WriteToMSR
   , ID_ReadFromMSR
   , ID_PreparePMC
@@ -44,8 +45,9 @@ enum
 BEGIN_EVENT_TABLE(CPUregisterReadAndWriteDialog, wxDialog)
   EVT_LISTBOX(ID_RegisterListBox,CPUregisterReadAndWriteDialog::
     OnRegisterListBoxSelection)
-  EVT_BUTTON(ID_WriteToMSR,CPUregisterReadAndWriteDialog::OnWriteToMSR)
+  EVT_BUTTON(ID_ReloadCPUregisterToReadConfig,CPUregisterReadAndWriteDialog::OnReloadCPUregisterToReadConfig)
   EVT_BUTTON(ID_ReadFromMSR,CPUregisterReadAndWriteDialog::OnReadFromMSR)
+  EVT_BUTTON(ID_WriteToMSR,CPUregisterReadAndWriteDialog::OnWriteToMSR)
   EVT_BUTTON(ID_PreparePMC,CPUregisterReadAndWriteDialog::OnPreparePMC)
 END_EVENT_TABLE()
 
@@ -90,16 +92,47 @@ CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
   mp_sizerRightColumn = new wxBoxSizer(wxVERTICAL);
   //mp_wxgridsizerAttributeNameAndValue = new wxGridSizer( //number of columns 
   //  2 ) ;
+
   mp_wxgridsizerAttributeNameAndValue = new wxFlexGridSizer( 
-    //int cols: number of columns 
-    3 ) ;
+    // int cols: number of columns
+    3); //3 columns: "register ID list box", "
 //  wxButton * p_wxbuttonMSR = new wxButton(
 //      this
 //      , m_wControlID
 //      , _T("write to MSR register")
 //    ) ;
+  wxListBox * p_wxlistbox = CreateRegisterIDlistBox();
 
-  p_wxlistbox = new wxListBox( this, //wxID_ANY 
+  itermsrdata =
+    mp_modeldata->m_stdvector_msrdata.begin() ;
+  if( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
+    ShowRegisterAttributes( *itermsrdata ) ;
+
+  mp_sizerAttributeNameAndValue->Add( p_wxlistbox , 0 , wxEXPAND | wxBOTTOM ) ;
+  //mp_sizerAttributeNameAndValue->Add( mp_sizerLeftColumn );
+  //mp_sizerAttributeNameAndValue->Add( mp_sizerRightColumn ) ;
+  mp_sizerAttributeNameAndValue->Add( mp_wxgridsizerAttributeNameAndValue ) ;
+
+  AddActionButtons();
+
+  //SetSizer(mp_sizerAttributeNameAndValue );
+  //mp_sizerVerticalOuter->Add( mp_sizerAttributeNameAndValue ) ;
+  //SetSizer(mp_sizerVerticalOuter) ;
+  SetSizer( mp_sizerAttributeNameAndValue);
+  //mp_sizerTop->SetSizeHints(this);
+  //mp_sizerTop->Fit(this);
+}
+
+CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
+  const CPUregisterReadAndWriteDialog& orig)
+{
+}
+
+wxListBox * CPUregisterReadAndWriteDialog::CreateRegisterIDlistBox()
+{
+  std::vector<MSRdata>::iterator itermsrdata =
+    mp_modeldata->m_stdvector_msrdata.begin() ;
+  p_wxlistbox = new wxListBox( this, //wxID_ANY
     ID_RegisterListBox ) ;
   //mp_sizerVerticalOuter->Add( p_wxlistbox ) ;
   while( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
@@ -131,29 +164,7 @@ CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
     }
     ++ itermsrdata ;
   }
-  itermsrdata =
-    mp_modeldata->m_stdvector_msrdata.begin() ;
-  if( itermsrdata != mp_modeldata->m_stdvector_msrdata.end() )
-    ShowRegisterAttributes( *itermsrdata ) ;
-
-  mp_sizerAttributeNameAndValue->Add( p_wxlistbox , 0 , wxEXPAND | wxBOTTOM ) ;
-  //mp_sizerAttributeNameAndValue->Add( mp_sizerLeftColumn );
-  //mp_sizerAttributeNameAndValue->Add( mp_sizerRightColumn ) ;
-  mp_sizerAttributeNameAndValue->Add( mp_wxgridsizerAttributeNameAndValue ) ;
-
-  AddActionButtons();
-
-  //SetSizer(mp_sizerAttributeNameAndValue );
-  //mp_sizerVerticalOuter->Add( mp_sizerAttributeNameAndValue ) ;
-  //SetSizer(mp_sizerVerticalOuter) ;
-  SetSizer( mp_sizerAttributeNameAndValue);
-  //mp_sizerTop->SetSizeHints(this);
-  //mp_sizerTop->Fit(this);
-}
-
-CPUregisterReadAndWriteDialog::CPUregisterReadAndWriteDialog(
-  const CPUregisterReadAndWriteDialog& orig)
-{
+  return p_wxlistbox;
 }
 
 void CPUregisterReadAndWriteDialog::AddActionButtons()
@@ -195,10 +206,12 @@ void CPUregisterReadAndWriteDialog::ShowRegisterAttributes( //const
     p_wxsizerAttributeNameAndValue = new wxBoxSizer( wxHORIZONTAL ) ;
     //mp_sizerLeftColumn->Add( 
     //p_wxsizerAttributeNameAndValue->Add(
+    wxStaticText * p_wxstatictext = new wxStaticText(this, wxID_ANY ,
+      getwxString( iter_registerdata->m_strDataName )
+      );
+    p_wxstatictext->SetForegroundColour(*wxBLUE);
     mp_wxgridsizerAttributeNameAndValue->Add(
-      new wxStaticText(this, wxID_ANY ,
-        getwxString( iter_registerdata->m_strDataName )
-        )
+      p_wxstatictext
       , 0 //proportion
       , wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL
       ) ;
@@ -247,11 +260,12 @@ void CPUregisterReadAndWriteDialog::ShowRegisterAttributes( //const
 CPUregisterReadAndWriteDialog::~CPUregisterReadAndWriteDialog() {
 }
 
+//TODO if text control changes, other text controls get false values?!
 void CPUregisterReadAndWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 {
-  if( m_wNumIgnoreChanges )
-    -- m_wNumIgnoreChanges ;
-  else
+//  if( m_wNumIgnoreChanges )
+//    -- m_wNumIgnoreChanges ;
+//  else
   {
     std::vector<RegisterData>::iterator iter_registerdata =
       mp_msrdata->m_stdvec_registerdata.begin() ;
@@ -393,12 +407,15 @@ void CPUregisterReadAndWriteDialog::OnChangedText(wxCommandEvent & wxevent )
                   wxT("%I64u") ), //ullWriteToTextCtrl
                   ullFromTextCtrlToChange ) ;
                 #endif
-                //calling "SetValue()" causes an immediate jump into this
-                //function (OnChangedText() ).
-                //But because this change is made program internal it should
-                //not be processed.
-                ++ m_wNumIgnoreChanges ;
-                (*iter_p_wxtextctrl)->SetValue( wxstrULL ) ;                
+//                //calling "SetValue()" causes an immediate jump into this
+//                //function (OnChangedText() ).
+//                //But because this change is made program internal it should
+//                //not be processed.
+//                ++ m_wNumIgnoreChanges ;
+                (*iter_p_wxtextctrl)->/*SetValue( wxstrULL );*/
+                  //http://docs.wxwidgets.org/stable/wx_wxtextctrl.html:
+                    //does not generate a wxEVT_COMMAND_TEXT_UPDATED
+                  ChangeValue( wxstrULL );
               }
             }
           } //if
@@ -409,6 +426,12 @@ void CPUregisterReadAndWriteDialog::OnChangedText(wxCommandEvent & wxevent )
       }
     }
   }
+}
+
+void CPUregisterReadAndWriteDialog::OnReloadCPUregisterToReadConfig(
+  wxCommandEvent & evt )
+{
+
 }
 
 void CPUregisterReadAndWriteDialog::OnRegisterListBoxSelection(
@@ -497,12 +520,15 @@ void CPUregisterReadAndWriteDialog::OnReadFromMSR(
         #else
         wxstrULL = wxString::Format( wxString( wxT("%I64u") ), ullValue) ;
         #endif
-        //calling "SetValue()" causes an immediate jump into this function
-        //(OnChangedText() ).
-        //But because this change is made program internal it should not be
-        //processed.
-        ++ m_wNumIgnoreChanges ;
-        (*c_iter_p_wxtextctrl)->SetValue( wxstrULL ) ;
+//        //calling "SetValue()" causes an immediate jump into this function
+//        //(OnChangedText() ).
+//        //But because this change is made program internal it should not be
+//        //processed.
+//        ++ m_wNumIgnoreChanges ;
+        (*c_iter_p_wxtextctrl)->//SetValue( wxstrULL ) ;
+          //http://docs.wxwidgets.org/stable/wx_wxtextctrl.html:
+            //does not generate a wxEVT_COMMAND_TEXT_UPDATED
+          ChangeValue( wxstrULL );
       }
       ++ iter_registerdata ;
       ++ c_iter_p_wxtextctrl ;
@@ -513,6 +539,7 @@ void CPUregisterReadAndWriteDialog::OnReadFromMSR(
 void CPUregisterReadAndWriteDialog::OnWriteToMSR(
   wxCommandEvent & evt )
 {
+  LOGN( FULL_FUNC_NAME << " begin")
   if( mp_msrdata )
   {
     ULONGLONG ullWriteToMSR = 0ULL ;

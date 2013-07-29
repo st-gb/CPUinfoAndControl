@@ -103,7 +103,7 @@ public:
 
       , ID_MinimizeToSystemTray
     //#ifdef COMPILE_WITH_MSR_EXAMINATION
-      , ID_MSR
+      , ID_ShowExamineCPUregistersDialog
       , ID_WriteToMSRdialog
       //, ID_MinAndMaxCPUcoreFreqInPercentOfMaxFreq //,
       //This means to disable e.g.:
@@ -465,8 +465,8 @@ public:
     ) ;
   void OnPaint(wxPaintEvent & event) ;
   void OnVoltageAndFrequencySettingsDialog( wxCommandEvent & WXUNUSED(event) ) ;
-  void OnMSR( wxCommandEvent & WXUNUSED(event) ) ;
-  void OnWriteToCPUregister( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnShowExamineCPUregistersDialog( wxCommandEvent & WXUNUSED(event) ) ;
+  void OnShowCPUregistersReadAndWriteDialog( wxCommandEvent & WXUNUSED(event) ) ;
   void OnDynamicallyCreatedUIcontrol(wxCommandEvent & event);
   void OnSaveAsCPUcontrollerDynLibForThisCPU(
     wxCommandEvent & WXUNUSED(event) ) ;

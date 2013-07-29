@@ -232,7 +232,45 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCancelButton(
 CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
   wxSizer * p_wxsizerSuperordinate )
 {
+  LOGN_DEBUG(FULL_FUNC_NAME << " begin")
   p_wxboxsizerCPUcoreFrequencyInMHz = new wxBoxSizer(wxHORIZONTAL);
+  LOGN_DEBUG( FULL_FUNC_NAME << " p_wxboxsizerCPUcoreFrequencyInMHz after creating:"
+    << p_wxboxsizerCPUcoreFrequencyInMHz)
+
+  //Use "unsigned" data type because fastest data type.
+  unsigned wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.
+      size() ;
+  if( wMaxValue )
+    //If just 1 element, min and max should be "0".
+    -- wMaxValue ;
+  LOGN_DEBUG(FULL_FUNC_NAME << " before creating CPU core frequency slider")
+  mp_wxsliderFreqInMHz = new wxSlider(
+    this
+    , ID_FrequencySlider
+    , 0//Initial position for the slider.
+      //voltageandfreq.m_wFreqInMHz
+    ,0 //Slider minimum value.
+    , wMaxValue //Slider max value.
+    //If the default point (-1, -1) is specified then a default point is chosen.
+//    , wxPoint(-1, -1)
+    , wxDefaultPosition
+    //If the default size (-1, -1) is specified then a default size is chosen.
+//    , wxSize(-1, -1)
+    , wxDefaultSize
+    , //wxSL_AUTOTICKS // Displays tick marks.
+    //|
+//    wxSL_LABELS //Displays minimum, maximum and value labels.
+    wxSL_TICKS
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    | wxWANTS_CHARS
+    ) ;
+//  LOGN("voltage and freq dialog after creating CPU core frequency slider")
+
   //p_wxboxsizerCPUcoreFrequencyMultiplier->Add(//p_wxsliderCPUcoreFrequencyMultiplier
   //  mp_wxsliderCPUcoreFrequencyMultiplier, 1
   //  //, wxEXPAND | wxALL,
@@ -251,18 +289,6 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
   //  //Determines the border width, if the flag  parameter is set to include
   //  //any border flag.
   //  2);
-//  p_wxboxsizerCPUcoreFrequencyInMHz->Add(
-//    new wxStaticText(this, wxID_ANY,
-//    //_T("core frequency in MHz: ")));
-//    wxT("CPU core\nfrequency"//\nin MHz"
-//      ":")
-//      )
-//    , 0 //0=the control should not take more space if the sizer is enlarged
-//    , wxLEFT | wxRIGHT
-//      //| wxALIGN_TOP
-//      | wxALIGN_CENTER_VERTICAL
-//    , 5 //Determines the border width
-//    );
   p_wxboxsizerCPUcoreFrequencyInMHz->Add(
     mp_wxsliderFreqInMHz
     , 1
@@ -273,7 +299,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
     );
   mp_wxsliderFreqInMHz->SetToolTip( wxT("CPU core multiplier/ frequency") );
 
-  mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, _T("") );
+  mp_wxstatictextFreqInMHz = new wxStaticText(this, wxID_ANY, wxT("") );
   p_wxboxsizerCPUcoreFrequencyInMHz->Add(
     mp_wxstatictextFreqInMHz
 //    , 1
@@ -284,6 +310,76 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
     );
   p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
     p_wxboxsizerCPUcoreFrequencyInMHz ,
+    0 //proportion: "change its size in the main orientation of the wxBoxSizer -
+    //where 0 stands for not changeable"
+    , wxEXPAND //| //wxALL
+//      wxBOTTOM
+    ,
+    //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
+    //"Determines the border width, if the flag  parameter is set to
+    //include any border flag."
+    //10
+    //2
+    0
+    );
+}
+
+CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreThrottlingSizer
+  (wxSizer * p_wxsizerSuperordinate)
+{
+  LOGN_DEBUG(FULL_FUNC_NAME << " begin")
+  mp_wxsliderCPUcoreThrottleRatio = new wxSlider(
+    this,
+    //wxID_ANY//,
+    ID_throttleRatio
+    //, 2  //value
+    , //Initial position for the slider.
+      //mp_i_cpucontroller->GetMinimumFrequencyInMHz()
+      //voltageandfreq.m_wFreqInMHz
+      0
+      //Slider minimum value.
+    , //lowest adjustable frequency:
+    0
+    //* mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.begin()
+    //Slider max value.
+    , //* mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.rbegin()
+      mp_model->m_cpucoredata.m_stdset_floatAvailableThrottleLevels.size() - 1
+    //If the default point (-1, -1) is specified then a default point is chosen.
+//    , wxPoint(-1, -1)
+    , wxDefaultPosition
+    //If the default size (-1, -1) is specified then a default size is chosen.
+//    , wxSize(-1, -1)
+    , wxDefaultSize
+    ,
+    //wxSL_AUTOTICKS // Displays tick marks.
+    //|
+//    wxSL_LABELS //Displays minimum, maximum and value labels.
+    wxSL_TICKS
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    | wxWANTS_CHARS
+    ) ;
+  m_p_wxboxsizerCPUcoreThrottleRatio = new wxBoxSizer(wxHORIZONTAL);
+  m_p_wxboxsizerCPUcoreThrottleRatio->Add(
+    mp_wxsliderCPUcoreThrottleRatio
+    , 1
+    //,wxEXPAND | wxALL
+    , wxLEFT | wxRIGHT
+      | wxALIGN_CENTER_VERTICAL
+    , 0 //Determines the border width
+    );
+  mp_wxsliderCPUcoreThrottleRatio->SetToolTip( wxT("CPU core throttling ratio") );
+  mp_wxstatictextThrottleRatio = new wxStaticText(this, wxID_ANY, wxT("") );
+  m_p_wxbuttonSetThrottleRatio = new wxButton(this, ID_SetThrottleRatio, wxT("") );
+  m_p_wxbuttonSetThrottleRatio->SetToolTip(wxT("write throttle ratio"));
+  m_p_wxboxsizerCPUcoreThrottleRatio->Add(//mp_wxstatictextThrottleRatio
+    m_p_wxbuttonSetThrottleRatio);
+  p_wxsizerSuperordinate->Add(//mp_wxsliderFreqInMHz,
+    m_p_wxboxsizerCPUcoreThrottleRatio ,
     //proportion: "change its size in the main orientation of the wxBoxSizer -
     //where 0 stands for not changeable"
     0 ,
@@ -302,6 +398,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreFrequencySizer(
 CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
   wxSizer * p_wxsizerSuperordinate )
 {
+  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
 //  wxButton * p_wxbuttonDecBy1VoltageStep ;
 //  wxButton * p_wxbuttonIncBy1VoltageStep ;
 //  wxBitmapButton * p_wxbitmapbutton ;
@@ -347,21 +444,36 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddCPUcoreVoltageSizer(
 //    , 1
 //    , wxEXPAND | wxALL
 //    , 0 );
-//  p_wxboxsizerCPUcoreVoltage->Add(
-//    new wxStaticText(this, wxID_ANY, wxT("CPU core\nvoltage" //\nIDentifier
-//      ":" ))
-//    , 0 //0=the control should not take more space if the sizer is enlarged
-//    //These flags are used to specify which side(s) of the sizer item the
-//    //border width will apply to.
-//    , //wxEXPAND |
-//    //wxALL,
-//    wxLEFT | wxRIGHT
-//    | wxALIGN_CENTER_VERTICAL
-////    //The label and the adjustable value should be at the same vertical
-////    //position, so place at the top.
-////    | wxALIGN_TOP
-//    , 3 //Determines the border width
-//    );
+  WORD wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.
+      size() ;
+  //Prevent value wrap to 65535
+  if( wMaxValue )
+    //If just 1 element, min and max should be "0".
+    -- wMaxValue ;
+
+  LOGN_DEBUG("voltage and freq dialog before creating voltage slider")
+  mp_wxsliderCPUcoreVoltage = new wxSlider(
+    this, //wxID_ANY,
+    ID_VoltageSlider
+    , 0 //Initial position for the slider.
+    , 0 //slider minimum value
+    , wMaxValue //slider max value
+    //If the default point (-1, -1) is specified then a default point is chosen.
+//    , wxPoint(-1, -1)
+    , wxDefaultPosition
+//    //If the default size (-1, -1) is specified then a default size is chosen.
+    // "wxSize(-1, -1)" causes assertion 'width >= -1' failed ?!
+//    , wxSize(-1, -1)
+    , wxDefaultSize
+    , wxSL_AUTOTICKS //| wxSL_LABELS
+    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
+    // "If you need to use this style in order to get the arrows or etc., but
+    // would still like to have normal keyboard navigation take place, you
+    // should create and send a wxNavigationKeyEvent in response to the key
+    // events for Tab and Shift-Tab."
+    //To get EVT_CHAR events when the button is focused.
+    | wxWANTS_CHARS
+    ) ;
   p_wxboxsizerCPUcoreVoltage->Add(//p_wxsliderCPUcoreVoltage
     mp_wxsliderCPUcoreVoltage,
     1
@@ -824,7 +936,7 @@ void FreqAndVoltageSettingDlg::AddSetAsMinVoltageButton( wxSizer * p_wxsizer )
 CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
   wxSizer * p_wxsizerSuperordinate )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN_DEBUG( FULL_FUNC_NAME << "--begin")
 //  wxFlexGridSizer *
   WX_BITMAP_TOGGLE_BUTTON_NAMESPACE::wxFlexGridSizer *
     p_wxflexgridsizerSetAsMinVoltage = new //wxFlexGridSizer(
@@ -832,9 +944,20 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
     //number of columns: zero, it will be calculated to form the total
     //number of children in the sizer
     0 );
-  AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  //The following controls only make sense if > 2 different voltages are
+  // adjustable/ configurable.
+  if(mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.size() > 1)
+  {
+    //AddMultipleConfigurableVoltagesControls();
+    AddDecreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+    AddIncreaseVoltageButton(p_wxflexgridsizerSetAsMinVoltage);
+    AddStabilizeVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
+  }
+  else
+    if(mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.size() > 1)
+    {
+      AddSelectPstateViaMousePositionButton(p_wxflexgridsizerSetAsMinVoltage) ;
+    }
   mp_wxstatictextWantedVoltageInVolt = new wxStaticText(
     this, wxID_ANY, //_T("")
     //Insert spaces so that there is enough room for displaying the "wanted
@@ -880,7 +1003,6 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
   AddPreventVoltageBelowLowestStableVoltageButton(
     p_wxflexgridsizerSetAsMinVoltage) ;
   AddPreventVoltageAboveDefaultVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
-  AddStabilizeVoltageButton(p_wxflexgridsizerSetAsMinVoltage) ;
 //  AddAutoConfigureVoltageSettingsButton(p_wxflexgridsizerSetAsMinVoltage);
 
   //  p_wxboxsizerSetAsMinVoltage->Add(
@@ -900,8 +1022,7 @@ CREATE_DIALOG_INLINED void FreqAndVoltageSettingDlg::AddVoltageSettingsSizer(
     //p_wxboxsizerSetAsMinVoltage ,
     p_wxflexgridsizerSetAsMinVoltage ,
     //proportion parameter: if "0" it takes the least space
-    0 ,
-    //1 ,
+    0 , //1 ,
     //http://docs.wxwidgets.org/2.6/wx_wxsizer.html#wxsizeradd:
     //"If you would rather have a window item stay the size it started with
     //then use wxFIXED_MINSIZE. "
@@ -983,12 +1104,15 @@ void FreqAndVoltageSettingDlg::AddWritePstateButton(wxSizer * p_wxsizer)
   }
   if( ! mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt )
   {
-    bSetToolTip = true ;
     if( //! wxstrToolTip.Empty()
         bSetToolTip )
       m_wxstrWriteVoltageAndMultiplierToolTip += wxT(" and ") ;
+    bSetToolTip = true ;
     m_wxstrWriteVoltageAndMultiplierToolTip += wxT("no voltages are available") ;
   }
+  if( mp_model->m_cpucoredata.m_arfAvailableMultipliers ||
+      mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt )
+    bSetToolTip = false;
   if( bSetToolTip )
   {
     //If disabled then no tooltip is visible.
@@ -1204,48 +1328,6 @@ void FreqAndVoltageSettingDlg::CreateSliders()
 //      false
 //      ) ;
   }
-  WORD wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableMultipliers.
-      size() ;
-  if( wMaxValue )
-    //If just 1 element, min and max should be "0".
-    -- wMaxValue ;
-  LOGN("voltage and freq dialog before creating CPU core frequency slider")
-  mp_wxsliderFreqInMHz = new wxSlider(
-    this
-    //wxID_ANY,
-    , ID_FrequencySlider
-    //, 2  //value
-    , //Initial position for the slider.
-      //mp_i_cpucontroller->GetMinimumFrequencyInMHz()
-      //voltageandfreq.m_wFreqInMHz
-      0
-      //Slider minimum value.
-    , //lowest adjustable frequency:
-//    mp_cpucontroller->GetMinimumFrequencyInMHz()
-    0
-    //Slider max value.
-//    , mp_cpucontroller->GetMaximumFrequencyInMHz()
-    , wMaxValue
-    //If the default point (-1, -1) is specified then a default point is chosen.
-//    , wxPoint(-1, -1)
-    , wxDefaultPosition
-    //If the default size (-1, -1) is specified then a default size is chosen.
-//    , wxSize(-1, -1)
-    , wxDefaultSize
-    ,
-    //wxSL_AUTOTICKS // Displays tick marks.
-    //|
-//    wxSL_LABELS //Displays minimum, maximum and value labels.
-    wxSL_TICKS
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    | wxWANTS_CHARS
-    ) ;
-  LOGN("voltage and freq dialog after creating CPU core frequency slider")
 //  m_wPreviousFrequencyInMHz = //mp_wxsliderFreqInMHz->GetValue();
 //      GetCPUcoreFrequencyFromSliderValue() ;
   //HandleMultiplierValueChanged();
@@ -1256,47 +1338,6 @@ void FreqAndVoltageSettingDlg::CreateSliders()
 //    voltageandfreq.m_fVoltageInVolt ) ;
   //wxSlider * p_wxsliderCPUcoreVoltage = new wxSlider(this,
 
-  wMaxValue = mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt.
-      size() ;
-  //Prevent value wrap to 65535
-  if( wMaxValue )
-    //If just 1 element, min and max should be "0".
-    -- wMaxValue ;
-
-  LOGN("voltage and freq dialog before creating voltage slider")
-  mp_wxsliderCPUcoreVoltage = new wxSlider(
-    this,
-    //wxID_ANY,
-    ID_VoltageSlider
-    , //Initial position for the slider.
-      //mp_i_cpucontroller->GetMinimumVoltageID()
-      //wVoltageID
-      //m_wVoltageID
-      0
-      //slider minimum value
-      //, 0
-//    , mp_cpucontroller->GetMinimumVoltageID()
-    , 0
-    //slider max value
-    //, MAX_VALUE_FOR_VID
-//    , mp_cpucontroller->GetMaximumVoltageID()
-    , wMaxValue
-    //If the default point (-1, -1) is specified then a default point is chosen.
-//    , wxPoint(-1, -1)
-    , wxDefaultPosition
-//    //If the default size (-1, -1) is specified then a default size is chosen.
-    // "wxSize(-1, -1)" causes assertion 'width >= -1' failed ?!
-//    , wxSize(-1, -1)
-    , wxDefaultSize
-    , wxSL_AUTOTICKS //| wxSL_LABELS
-    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
-    // "If you need to use this style in order to get the arrows or etc., but
-    // would still like to have normal keyboard navigation take place, you
-    // should create and send a wxNavigationKeyEvent in response to the key
-    // events for Tab and Shift-Tab."
-    //To get EVT_CHAR events when the button is focused.
-    | wxWANTS_CHARS
-    ) ;
   ////Possibly force calc of wanted voltage.
   //VoltageIDchanged(wVoltageID) ;
   LOGN("voltage and freq dialog end of creating sliders")

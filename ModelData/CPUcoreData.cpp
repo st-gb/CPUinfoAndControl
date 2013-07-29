@@ -14,6 +14,8 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 
+using namespace MANUFACTURER_ID_NAMESPACE;
+
 void CPUcoreData::AddLowestStableVoltageAndFreq(float fValue,WORD wFreqInMHz)
 {
   m_stdsetvoltageandfreqLowestStable.insert( VoltageAndFreq(fValue,wFreqInMHz) ) ;
@@ -28,27 +30,30 @@ float CPUcoreData::AddLowestStableVoltageForLowestAvailableMulti(
   VoltageAndFreq & lowestStableVoltageForLowestMulti
   )
 {
-  float fLowestStableVoltageInVoltForLowestMulti;
-  //Extrapolate lowest multi with lowest stable voltage &
-  //  highest multi with lowest stable voltage to
-  //  lowest stable voltage for lowest multi
-  m_stdsetvoltageandfreqLowestStable.rbegin()->
-    GetLinearExtrapolatedVoltage(
-      lowestStableVoltageForLowestMultiFound,
-      wLowestFreqInMHz,
-      fLowestStableVoltageInVoltForLowestMulti);
-  LOGN( FULL_FUNC_NAME << " extrapolated lowest stable voltage for "
-    << wLowestFreqInMHz << " MHz: "
-    << fLowestStableVoltageInVoltForLowestMulti << " V")
+  float fLowestStableVoltageInVoltForLowestMulti = 0.0f;
+  if( ! m_stdsetvoltageandfreqLowestStable.empty() )
+  {
+    //Extrapolate lowest multi with lowest stable voltage &
+    //  highest multi with lowest stable voltage to
+    //  lowest stable voltage for lowest multi
+    m_stdsetvoltageandfreqLowestStable.rbegin()->
+      GetLinearExtrapolatedVoltage(
+        lowestStableVoltageForLowestMultiFound,
+        wLowestFreqInMHz,
+        fLowestStableVoltageInVoltForLowestMulti);
+    LOGN( FULL_FUNC_NAME << " extrapolated lowest stable voltage for "
+      << wLowestFreqInMHz << " MHz: "
+      << fLowestStableVoltageInVoltForLowestMulti << " V")
 
-  lowestStableVoltageForLowestMulti = VoltageAndFreq(
-    fLowestStableVoltageInVoltForLowestMulti,
-    wLowestFreqInMHz);
-  m_stdsetvoltageandfreqLowestStable.insert(
-    lowestStableVoltageForLowestMulti
-    );
-  LOGN( FULL_FUNC_NAME << " inserted extrapolated lowest stable p-state "
-    << lowestStableVoltageForLowestMulti)
+    lowestStableVoltageForLowestMulti = VoltageAndFreq(
+      fLowestStableVoltageInVoltForLowestMulti,
+      wLowestFreqInMHz);
+    m_stdsetvoltageandfreqLowestStable.insert(
+      lowestStableVoltageForLowestMulti
+      );
+    LOGN( FULL_FUNC_NAME << " inserted extrapolated lowest stable p-state "
+      << lowestStableVoltageForLowestMulti)
+  }
   return fLowestStableVoltageInVoltForLowestMulti;
 }
 
@@ -115,18 +120,23 @@ WORD CPUcoreData::AddWantedVoltageForLowestVoltage(
   //           ^
   //         Schnittpunkt
   //From the schnittpunkt insert to the wanted voltages.
-  WORD wExtrapolatedWantedFreqForMinVoltage;
-  m_stdsetvoltageandfreqWanted.rbegin()-> //last entry
-    GetLinearExtrapolatedFrequency(
-      * m_stdsetvoltageandfreqWanted.find(
-        //E.g. lowest stable voltage was found for lowest freq of 800 MHz,
-        //but lowest freq is 600 MHz.
-        lowestStableVoltageForLowestMultiFound),
-      m_arfAvailableVoltagesInVolt[0],//Lowest possible voltage.
-      wExtrapolatedWantedFreqForMinVoltage);
+  //
+  if( ! m_stdsetvoltageandfreqWanted.empty() &&
+      ! m_stdset_floatAvailableVoltagesInVolt.empty() )
+  {
+    WORD wExtrapolatedWantedFreqForMinVoltage;
+    const VoltageAndFreq & voltnfreq = * m_stdsetvoltageandfreqWanted.find(
+      //E.g. lowest stable voltage was found for lowest freq of 800 MHz,
+      //but lowest freq is 600 MHz.
+      lowestStableVoltageForLowestMultiFound);
+    const VoltageAndFreq & lastWantedVoltnFreq =
+      * m_stdsetvoltageandfreqWanted.rbegin();//last entry
+    lastWantedVoltnFreq.GetLinearExtrapolatedFrequency(
+        /*lowestStableVoltageForLowestMultiFound*/ voltnfreq,
+        m_arfAvailableVoltagesInVolt[0],//Lowest possible voltage.
+        wExtrapolatedWantedFreqForMinVoltage);
   LOGN( FULL_FUNC_NAME << " extrapolated frequency [MHz] for wanted voltages "
-    "for lowest settable"
-    " voltage:" << wExtrapolatedWantedFreqForMinVoltage )
+    "for lowest settable voltage:" << wExtrapolatedWantedFreqForMinVoltage )
 
   if( wExtrapolatedWantedFreqForMinVoltage >
     lowestStableVoltageForLowestMultiFound.m_wFreqInMHz)
@@ -141,6 +151,8 @@ WORD CPUcoreData::AddWantedVoltageForLowestVoltage(
       " voltage:" << voltageandfreq )
   }
   return wExtrapolatedWantedFreqForMinVoltage;
+  }
+  return 0;
 }
 
 void CPUcoreData::AvailableMultipliersToArray()
@@ -327,7 +339,10 @@ void CPUcoreData::Init()
   m_wMilliSecondsWaitBetweenDFVS = 200 ;
   m_byUpdateViewOnDVFS = 0 ;
   m_bEnableDVFS = false ;
-  LOGN("Initialisation of CPU attributes")
+  /** Do not log here because both logger and model are global variables and
+  * there is no guarantee that the logger object is constructed before the
+  * model object. */
+//  LOGN("Initialisation of CPU attributes")
   //mp_stdsetvoltageandfreqAvailableFreq = new std::set<VoltageAndFreq>() ;
   //mp_stdsetvoltageandfreqWanted = new std::set<VoltageAndFreq> ();
   //mp_setloweststablevoltageforfreq = new std::set<VoltageAndFreq> () ;
@@ -426,7 +441,8 @@ void CPUcoreData::InterpolateDefaultVoltages()
 //    m_criticalsectionThreads.Leave() ;
   }
 
-  WORD CPUcoreData::GetIndexForClosestMultiplier(float fMultiplier) const
+  fastestUnsignedDataType CPUcoreData::GetIndexForClosestMultiplier(
+    const float fMultiplier) const
   {
     //TODO
 //    WORD wArrayIndexForClosestLessOrEqual = GetArrayIndexForClosestLessOrEqual(
@@ -440,14 +456,14 @@ void CPUcoreData::InterpolateDefaultVoltages()
 //      m_stdset_floatAvailableMultipliers.size(),
 //      fMultiplier
 //      ) ;
-    WORD wArrayIndexForClosestValue =
-      GetArrayIndexForClosestValue(
-        m_arfAvailableMultipliers,
-        m_stdset_floatAvailableMultipliers.size(),
-        fMultiplier
-        ) ;
+    fastestUnsignedDataType arrayIndexForClosestMultiplier =
+      MANUFACTURER_ID_NAMESPACE::BinarySearch::GetArrayIndexForClosestValue(
+      m_arfAvailableMultipliers,
+      m_stdset_floatAvailableMultipliers.size(),
+      fMultiplier
+      ) ;
 //    if( w )
-    return wArrayIndexForClosestValue ;
+    return arrayIndexForClosestMultiplier ;
 //    float fMultiplierClosestGreaterOrEqual =
 //        m_arfAvailableMultipliers[ArrayIndexForClosestGreaterOrEqual] ;
 //    float fMultiplierClosestLessOrEqual =
@@ -455,17 +471,23 @@ void CPUcoreData::InterpolateDefaultVoltages()
 //    return fMultiplier
   }
 
-  BYTE CPUcoreData::GetIndexForClosestVoltage(float fVoltageInVolt) const
+  /** */
+  fastestUnsignedDataType CPUcoreData::GetIndexForClosestVoltage(
+    const float fVoltageInVolt) const
   {
+    unsigned arrayIndexForClosestValue;
+    if(m_arfAvailableVoltagesInVolt)
     //TODO
-    WORD wArrayIndexForClosestValue =
-      GetArrayIndexForClosestValue(
-        m_arfAvailableVoltagesInVolt,
-        m_stdset_floatAvailableVoltagesInVolt.size(),
-        fVoltageInVolt
-        ) ;
+      arrayIndexForClosestValue =
+        MANUFACTURER_ID_NAMESPACE::BinarySearch::GetArrayIndexForClosestValue(
+          m_arfAvailableVoltagesInVolt,
+          m_stdset_floatAvailableVoltagesInVolt.size(),
+          fVoltageInVolt
+          ) ;
+    else
+      arrayIndexForClosestValue = BinarySearch::no_element;
 //    if( w )
-    return wArrayIndexForClosestValue ;
+    return arrayIndexForClosestValue ;
   }
 
   const VoltageAndFreq * CPUcoreData::GetClosestHigherVoltageAndFreq(
@@ -597,7 +619,7 @@ void CPUcoreData::InterpolateDefaultVoltages()
 
   float CPUcoreData::GetNextVoltageAbove(float fVoltageInVolt)
   {
-    WORD wArrayIndex = ::GetArrayIndexForClosestGreaterOrEqual(
+    WORD wArrayIndex = BinarySearch::GetArrayIndexForClosestGreaterOrEqual(
       m_arfAvailableVoltagesInVolt,
       m_stdset_floatAvailableVoltagesInVolt.size(),
       fVoltageInVolt);

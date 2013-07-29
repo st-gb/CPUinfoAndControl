@@ -28,6 +28,7 @@
 enum
 {
   ID_IntervalCheckbox = 1,
+  ID_PrefixWithRegisterID,
   ID_ReloadCPUregisterToReadConfig
   , ID_Timer
   , ID_Dialog
@@ -70,7 +71,7 @@ wxExamineCPUregistersDialog::wxExamineCPUregistersDialog(//RegisterData
     ID_Dialog ,
     //wxString::Format("MSR register index: %x",
     //r_regdata.m_dwIndex)
-    wxT("ExamineCPUregistersDialog")
+    wxT("Examine CPUID and MSR registers") //wxT("ExamineCPUregistersDialog")
     , wxPoint(30, 30) //A value of (-1, -1) indicates a default size
     , wxSize(400, 200)
     , wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
@@ -116,8 +117,34 @@ wxExamineCPUregistersDialog::~wxExamineCPUregistersDialog()
 inline void wxExamineCPUregistersDialog::InsertIntoLeftColumn(
   const wxString & cr_wxstr)
 {
+  static wxBoxSizer * sizerBitRangeName;
+  static int sizerFlags = wxLEFT | wxRIGHT |
+    //wxALIGN_CENTER_VERTICAL
+    //The label and the adjustable value should be at the same vertical
+    //position, so place at the top.
+    wxALIGN_TOP
+    | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
+    ;
   LOGN( FULL_FUNC_NAME << "--text:" << GetStdString(cr_wxstr) )
-  mp_sizerLeftColumn->Add( new wxStaticText(
+  if(mp_wxcheckboxPrefixWithRegisterID->IsChecked() &&
+      m_p_cpuregisterproperties )
+  {
+    wxString cr_wxstrRegisterName = getwxString(//m_p_msrdataCurrent->m_stdstrRegisterName
+      m_p_cpuregisterproperties->m_stdstrRegisterName);
+    wxStaticText * p_wxstatText = new wxStaticText(this, wxID_ANY,
+      cr_wxstrRegisterName);
+    p_wxstatText->SetForegroundColour(*wxBLUE);
+    wxBoxSizer * sizer = new wxBoxSizer(wxHORIZONTAL);
+    mp_sizerLeftColumn->Add( sizer,
+      //0=the control should not take more space if the sizer is enlarged
+      0, sizerFlags);
+    sizer->Add(p_wxstatText);
+    sizerBitRangeName = sizer;
+  }
+  else
+    sizerBitRangeName = mp_sizerLeftColumn;
+
+  sizerBitRangeName->Add( new wxStaticText(
     this,
     wxID_ANY,
     cr_wxstr
@@ -128,13 +155,8 @@ inline void wxExamineCPUregistersDialog::InsertIntoLeftColumn(
     )
     //0=the control should not take more space if the sizer is enlarged
     , 0
+    , sizerFlags
     //, wxFIXED_MINSIZE,
-    , wxLEFT | wxRIGHT |
-      //wxALIGN_CENTER_VERTICAL
-      //The label and the adjustable value should be at the same vertical
-      //position, so place at the top.
-      wxALIGN_TOP
-      | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
     //Determines the border width, if the flag parameter is set to include
     //any border flag.
     , 2
@@ -196,11 +218,32 @@ inline void wxExamineCPUregistersDialog::AddStatictext( const wxString & cr_wxst
      //The label and the adjustable value should be at the same vertical
      //position, so place at the top.
      wxALIGN_TOP
-     | wxALIGN_LEFT
+     //| wxALIGN_LEFT
+     | m_horizontalAlignment
    //Determines the border width, if the flag  parameter is set to include
    //any border flag.
    , 2
    );
+}
+
+void wxExamineCPUregistersDialog::AddPrefixWithRegisterIDCheckBox()
+{
+  mp_wxcheckboxPrefixWithRegisterID = new wxCheckBox(
+    this
+    , ID_PrefixWithRegisterID
+    , wxT("prefix with reg.ID")
+    ) ;
+  mp_wxcheckboxPrefixWithRegisterID->SetToolTip(
+    wxT("prefix attribute name with register name/address"));
+  //  mp_sizerLeftColumn->Add(
+  p_wxboxsizerOptions->Add(
+    mp_wxcheckboxPrefixWithRegisterID
+    , 0
+    , wxFIXED_MINSIZE,
+    //Determines the border width, if the flag  parameter is set to include
+    //any border flag.
+    2
+    );
 }
 
 void wxExamineCPUregistersDialog::AddIntervalCheckbox()
@@ -278,6 +321,10 @@ void wxExamineCPUregistersDialog::AddCPUIDdataControls()
     c_r_std_vector_cpuiddata.end();
   while( iter_cpuiddata != c_iter_cpuiddataEnd )
   {
+    m_p_stdstrCurrentRegisterDataName = & iter_cpuiddata->m_stdstrRegisterName;
+    m_p_cpuregisterproperties = & (
+      //"*" : iterator to container element
+      * iter_cpuiddata);
     BuildGUI( * iter_cpuiddata ) ,
     ++ iter_cpuiddata ;
   }
@@ -296,6 +343,10 @@ void wxExamineCPUregistersDialog::AddMSRdataControls()
     c_r_std_vector_msrdata.end();
   while( iter_msrdata != c_iter_msrdata )
   {
+    m_p_msrdataCurrent = & (MSRdata &) (* iter_msrdata);
+    //m_p_stdstrCurrentRegisterDataName = & iter_msrdata->m_stdstrRegisterName;
+    m_p_cpuregisterproperties = & (//"*" : iterator to container element
+      * iter_msrdata);
     BuildGUI( * iter_msrdata ) ,
     ++ iter_msrdata ;
   }
@@ -310,9 +361,15 @@ void wxExamineCPUregistersDialog::BuildCPUregisterControls()
   mp_sizerTop->Add( mp_sizerRightColumn );
 
   //  AddTimeStampCounter() ;
+  m_p_cpuregisterproperties = NULL;
   AddStatictext( wxT("TSC") ) ;
   AddStatictext( wxT("TSC diff") ) ;
 
+  m_bAlignRegisterDataRight = mp_wxcheckboxAlignRegisterDataRight->GetValue();
+  if( m_horizontalAlignment)
+    m_horizontalAlignment = wxALIGN_RIGHT;
+  else
+    m_horizontalAlignment = wxALIGN_LEFT;
   AddCPUIDdataControls();
   AddMSRdataControls();
 
@@ -337,11 +394,25 @@ void wxExamineCPUregistersDialog::BuildGUI()
   wxButton * p_wxbuttonReloadCPUregisterToReadConfig = new wxButton(
     this
     , ID_ReloadCPUregisterToReadConfig
-    , _T("reload CPU register to read configuration")
+    , wxT("reload")
     ) ;
+  p_wxbuttonReloadCPUregisterToReadConfig->SetToolTip(
+    wxT("reload configuration file \"")
+    + getwxString(mp_modeldata->m_mostSuitableCPUregisterDataFile)
+    + wxT("\" for CPU registers to read and rebuild GUI")
+    );
   p_wxboxsizerOptions->Add( p_wxbuttonReloadCPUregisterToReadConfig ) ;
 
-  AddIntervalCheckbox();
+  AddPrefixWithRegisterIDCheckBox();
+
+  mp_wxcheckboxAlignRegisterDataRight = new wxCheckBox(
+    this
+    , wxID_ANY
+    , wxT("right")
+    ) ;
+  mp_wxcheckboxAlignRegisterDataRight->SetToolTip(wxT("align register data right"));
+  p_wxboxsizerOptions->Add( mp_wxcheckboxAlignRegisterDataRight ) ;
+
 
 //  wxButton * p_wxbuttonMSR = new wxButton(
 //      this
@@ -356,6 +427,8 @@ void wxExamineCPUregistersDialog::BuildGUI()
 //    //any border flag.
 //    2
 //    );
+
+  AddIntervalCheckbox();
 
   AddUpdateIntervalInMsTextctrl();
 //  AddRebuildGUIonResizeCheckbox();
@@ -518,6 +591,7 @@ void wxExamineCPUregistersDialog::DisplayTSCvalues()
     // "force all previous instructions to complete"
 //    mp_cpuaccess->CpuidEx( 1, & m_dwEAX, & m_dwEBX, & m_dwECX, & m_dwEDX, 1 ) ;
 //    mp_cpuaccess->ReadTSC(m_dwEAX,m_dwEDX) ;
+    //TODO mp_cpuaccess may be NULL
     if( mp_cpuaccess->ReadTSCinOrder(m_dwEAX,m_dwEDX,1) )
     {
       //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
@@ -734,6 +808,25 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(MSRdata & r_msrdata)
           m_ullValue2  = m_ullValue2 - iter_registerdata->m_ullPreviousValue ;
         }
         iter_registerdata->m_ullPreviousValue = m_ullValue ;
+        if( iter_registerdata->m_metricPrefix > RegisterData::none)
+        {
+          switch(iter_registerdata->m_metricPrefix)
+          {
+            case RegisterData::Mega :
+            {
+              float f = m_ullValue2 / 1000000.f;
+              m_wxstrULL = wxString::Format( wxString( wxT("%fM") ), f) ;
+            }
+              break;
+            case RegisterData::Giga :
+            {
+              float f = m_ullValue2 / 1000000000.f;
+              m_wxstrULL = wxString::Format( wxString( wxT("%fG") ), f) ;
+            }
+              break;
+          }
+        }
+        else
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
         #ifdef __CYGWIN__
         m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
@@ -929,18 +1022,17 @@ inline void wxExamineCPUregistersDialog::ReloadCPUregisterToReadConfig()
     clear() ;
   mp_modeldata->m_stdvector_cpuiddata.clear() ;
   //::wxGetApp().m_maincontroller.Init(*mp_modeldata, & ::wxGetApp()) ;
-  std::string strCPUtypeRelativeDirPath ;
-  if( mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
-      strCPUtypeRelativeDirPath)
-    )
+//  std::string strCPUtypeRelativeDirPath ;
+  //if( mp_wxx86infoandcontrolapp->m_maincontroller.GetPstatesDirPath(
+  //    strCPUtypeRelativeDirPath)
+  //  )
   {
-//      BYTE byModel ;
-//      BYTE byStepping ;
     //SAX2_CPUspecificHandler sax2handler( * p_userinterface, model );
-    std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
+//    std::string strFamilyAndModelFilePath = strCPUtypeRelativeDirPath + ".xml" ;
     mp_wxx86infoandcontrolapp->m_maincontroller.ReadRegisterDataConfig(
-      strFamilyAndModelFilePath ,
-      mp_wxx86infoandcontrolapp ) ;
+      /*strFamilyAndModelFilePath*/ //mp_modeldata->m_mostSuitableCPUregisterDataFile,
+      //mp_wxx86infoandcontrolapp
+      ) ;
   }
   ReBuildGUI() ;
 }

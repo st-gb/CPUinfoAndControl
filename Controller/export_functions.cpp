@@ -127,6 +127,27 @@ extern "C"
         //m_dwAffinityMask
         affinityMask
         ) ;
+      if( ! boolRet )
+      {
+        std::ostringstream stdostrstr;
+        stdostrstr <<
+          "From exported ReadMSR function:\n"
+          "Reading from MSR index " << dwIndex << " failed. "
+//          "\nerror message: \"" + strErrorMessage +
+    //      "\"(error code: "
+    //      + convertToStdString<DWORD>( //(WORD) byModel
+    //        dwErrorCode //, std::hex
+    //        )
+//          + ")\n"
+    //      + stdstrAdditionalInfo + "\n"
+          "Possible solutions:\n"
+          "-This MSR index is not readable on this CPU (core) with"
+          "thread affinity mask" << affinityMask << "\n"
+          "-This program needs elevated privileges for ring 0 / CPU "
+          "access. So run it as administrator.\n";
+        g_p_user_interface->MessageWithTimeStamp(L"");
+        LOGN_ERROR("From exported ReadMSR function")
+      }
       DEBUGN( "exe::ReadMSR after g_p_cpuaccess->RdmsrEx(Index,affinityMask): "
         << dwIndex << " "
         << * p_dweax << " "

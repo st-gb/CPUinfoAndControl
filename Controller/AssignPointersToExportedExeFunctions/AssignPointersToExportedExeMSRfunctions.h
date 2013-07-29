@@ -25,7 +25,7 @@
   #include <Windows/AssignPointersToExportedExeFunctions/AssignPointersToExportedExeMSRfunctions.h>
 #endif
 #ifdef __linux__
-  #include <Linux/AssignPointersToExportedExefunctions/AssignPointersToExportedExeMSRfunctions_inline.h>
+  #include <Linux/AssignPointersToExportedExeFunctions/AssignPointersToExportedExeMSRfunctions_inline.h>
 #endif
 
 ///** Implementation/ definition of this function should be in a source file within

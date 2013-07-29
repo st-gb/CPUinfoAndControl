@@ -27,6 +27,8 @@
 
 #define PERFORMANCE_COUNTER_FOR_FID_CHANGE IA32_PMC0
 
+namespace PentiumM
+{
 //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULIPLIER_IF_NO_FID_CHANGE
 inline float GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
 {
@@ -231,6 +233,7 @@ inline float GetBaseClockViaTSCdiffdivMultiplierIfNoFIDchange(BYTE byFID)
   }
   DEBUGN( FULL_FUNC_NAME << "--end")
   return 0.0f;
+}
 }
 
 //inline void NumberOfFreqIDchanges()

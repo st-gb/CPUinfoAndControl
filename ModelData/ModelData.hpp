@@ -36,8 +36,10 @@
 #endif
 
 #ifdef COMPILE_AS_EXECUTABLE
-  //class InstableCPUcoreVoltageDetection
-  #include "InstableCPUcoreVoltageDetection.hpp"
+  //class InstableCPUcoreOperationDetection
+#ifdef _WIN32
+  #include <Windows\InstableCPUcoreOperationDetection.hpp>
+#endif
 #endif
 
 //Forward declarations:
@@ -49,19 +51,24 @@ class I_CPUcontroller ;
 /** The member variables/ functions that differ between GUI and service _must_
 * be situated at the _end_ of _this_ class because all members that are used
 * in the attached (CPU controller) dynamic library must be aligned as in the
-* (CPU controller) executable (Graphical User Interface/ service!) */
+* (CPU controller) executable (Graphical User Interface/ service!)
+* All member that are needed by both the dyn libs and the executables
+*  must be on top.
+* */
 class Model
 {
 public:
-  //This is the last member that is also accessed by the CPU dyn. libs.
+  /**This is the last member that is also accessed by the CPU dyn. libs. */
   CPUcoreData m_cpucoredata ;
+  /** TODO For comparing the attribute versions between CPU info and/ or controller
+   *  dyn lib and executable: use (MD5?/ SHA) checksum?!
+   *  use sizeof(Model) to store the size in dyn libs.
+   *  for exe: use address of "m_logfileattributes"- address of "this". */
+  //unsigned sizeInBytes;
 
 #ifdef COMPILE_AS_EXECUTABLE
   LogFileAttributes m_logfileattributes;
-  //TODO all member that are needed by both the dyn libs and the executables
-  //must be on top.
   BYTE m_byNumberOfCPUCores ;
-  volatile bool m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI;
   volatile bool m_bCollectPstatesAsDefault ;
   bool m_bEnableOvervoltageProtection ;
   bool m_bSkipCPUtypeCheck ;
@@ -90,11 +97,12 @@ public:
   //->Insert/ change additional data here.
 
   std::string m_std_strConfigFilePath;
-  InstableCPUcoreVoltageDetection m_instablecpucorevoltagedetection;
+  Windows::InstableCPUcoreOperationDetection m_instablecpucorevoltagedetection;
   uint16_t m_StableCPUcoreVoltageWaitTimeInMillis;
 
 //  #include "GUI_member_variables.hpp"
-
+  std::string m_mostSuitableCPUinfoGetterAndOrController;
+  std::string m_mostSuitableCPUregisterDataFile;
   //The attributes that differ between GUI and service _must_ be at the _end_
   //of _this_ class because all members that are used in the dynamic
   //library must be aligned as in the executable(!)
@@ -111,13 +119,12 @@ public:
   ServiceAttributes m_serviceattributes ;
 #endif //#ifdef COMPILE_AS_SERVICE
 
-  Model( )
+  Model( /*UserInterface * p_ui*/ )
     //C++ style inits:
     :
     //Initialize in the same order as textual in the declaration?
     //(to avoid g++ warnings)
     m_cpucoredata( * this)
-    , m_bStopFindingLowestStableCPUcoreVoltageRequestedViaUI(false)
     , m_bCollectPstatesAsDefault(false)
     , m_bEnableOvervoltageProtection(true)
     , m_bSkipCPUtypeCheck(false)
@@ -126,6 +133,7 @@ public:
     , mp_cpucontroller (NULL)
     , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
     , m_std_strConfigFilePath( CONFIG_FILE_PATH )
+    , m_instablecpucorevoltagedetection(m_cpucoredata)
     , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
   {}
 //  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
@@ -164,6 +172,7 @@ public:
   {
     mp_cpucontroller = p_cpucontroller ;
     m_cpucoredata.SetCPUcontroller( p_cpucontroller ) ;
+    m_instablecpucorevoltagedetection.m_p_cpucontroller = p_cpucontroller;
   }
   void SetNumberOfCPUCores(BYTE byNumberOfCPUCores) ;
   void SetSkipCPUTypeCheck(bool bSkipCPUtypeCheck) ;

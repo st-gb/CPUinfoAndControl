@@ -516,6 +516,10 @@ inline BYTE
     , WORD wCoreID
   )
 {
+  //AMD Duron™ Processor Model 7 Data Sheet--24310.pdf  "4.3 Clock Control":
+//  "The processor implements a Clock Control (CLK_Ctl) MSR
+//  (address C001_001Bh) that determines the internal clock
+//  divisor when the AMD Duron system bus is disconnected."
   DEBUGN( FULL_FUNC_NAME << "--begin--should set" << fVoltageInVoltToSet
     << "V, multiplier:" << fMultiplierToSet)
 //  DEBUGN_LOGGER_NAME(g_windows_api_logger, FULL_FUNC_NAME << "--begin--"

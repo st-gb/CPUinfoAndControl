@@ -111,9 +111,9 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
 
 wxDynLibCPUcontroller::~wxDynLibCPUcontroller()
 {
-  LOGN("Before Unloading the CPU controller dynamic library")
+  LOGN( FULL_FUNC_NAME << " before unloading the CPU controller dynamic library")
   m_wxdynamiclibraryCPUctl.Unload() ;
-  LOGN("Unloaded the CPU controller dynamic library")
+  LOGN( FULL_FUNC_NAME << " unloaded the CPU controller dynamic library")
 }
 
 void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
@@ -151,10 +151,15 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
       " address of function:" << (void *) pfnInit
       )
-    LOGN("dyn lib: p_cpuaccess: " << p_cpuaccess)
-    LOGN("dyn lib: p_cpuaccess->model: " << p_cpuaccess->mp_model)
+    LOGN( FULL_FUNC_NAME << " p_cpuaccess: " << p_cpuaccess
+      << " size of \"CPUaccess\" class/ structure in byte: "
+      << sizeof(*p_cpuaccess) )
+    LOGN(FULL_FUNC_NAME << " \"attributes\" pointer address: "
+      << p_cpuaccess->mp_model
+      << " size of \"Model\" class/ structure in byte: "
+      << sizeof(*p_cpuaccess->mp_model) )
 
-    LOGN_TYPE("before calling Dyn Lib's \""
+    LOGN_WARNING("before calling Dyn Lib's \""
       //Convert to std::string, else g++ linker error:
       //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
       //<< ::GetStdString( wxstrFuncName ) <<
@@ -162,9 +167,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       "\" function (may fail due to "
       " incompatible structure definitions between executable and dyn lib) "
       "or when accessing the hardware access object when the pointer to it "
-      "is invalid/ its value is \"0\" "
-      , LogLevel::warning
-      )
+      "is invalid/ its value is \"0\" ")
   //      //TODO
   //      p_cpuaccess->mp_cpucontroller = NULL ;
     //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
@@ -286,6 +289,8 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsGetTemperatureInCelsiusFunctio
   }
 }
 
+/** @brief template function for ease to assign function pointers from a dyn lib
+ *  @param p_function must be passed in order to get its type */
 template <typename func_type> void wxDynLibCPUcontroller::PossiblyAssign(
   const wxString & wxstrFuncName, func_type & p_function//, func_type functyp
   )
@@ -408,6 +413,7 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
       m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
   else
     m_pfnSetThrottleLevel = NULL ;
+
   PossiblyAssign//<pfnGetAvailableMultipliers_type>
     (wxT("GetAvailableThrottleLevels"),
     m_pfnGetAvailableThrottleLevels//, pfnGetAvailableMultipliers_type
@@ -495,6 +501,21 @@ void wxDynLibCPUcontroller::AssignAvailableVoltages()
   {
     LOGN( mp_model->m_cpucoredata.m_arfAvailableVoltagesInVolt[ wIndex ]
       << " " )
+  }
+}
+
+/** Calling De-initialization is needed when e.g. at least 1 extra threads is running
+ *  in the CPU controller */
+void wxDynLibCPUcontroller::DeInit()
+{
+  dll_DeInit_type dll_DeInit;
+  PossiblyAssign//<pfnGetAvailableMultipliers_type>
+    (wxT("DeInit"),
+      dll_DeInit//, pfnGetAvailableMultipliers_type
+    );
+  if( dll_DeInit)
+  {
+    (*dll_DeInit)();
   }
 }
 
@@ -762,7 +783,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
 {
   LOGN(//"wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency("
     FULL_FUNC_NAME
-    << wCoreID << ") begin"
+    << " core ID:" << wCoreID << ") begin"
     "--m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
     //see http://stackoverflow.com/questions/2064692/
     //  how-to-print-function-pointers-with-cout:
@@ -935,10 +956,11 @@ float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 
 float wxDynLibCPUcontroller::GetThrottleLevel(unsigned coreID)
 {
-  LOGN(FULL_FUNC_NAME << coreID << ") func ptr:" <<
+  LOGN_DEBUG(FULL_FUNC_NAME << coreID << ") func ptr:" <<
     (void *) m_pfngethrottlelevel )
   if( m_pfngethrottlelevel)
     return ( * m_pfngethrottlelevel ) ( coreID ) ;
+//  LOGN(FULL_FUNC_NAME << coreID << ") func ptr:" <<
   return -1.0f;
 }
 

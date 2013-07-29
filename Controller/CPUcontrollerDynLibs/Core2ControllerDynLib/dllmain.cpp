@@ -32,6 +32,8 @@
 //  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
+#include <Controller/CPU-related/Intel/Core/Core2_GetConfigurableMultipliers.hpp>
+#include <Controller/CPU-related/Intel/HyperThreading.hpp> //Intel::IsHyperThreaded()
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
 #ifdef _DEBUG
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
@@ -55,6 +57,10 @@ AssignPointersToExportedExeMSRfunctions.h>
 
 #ifdef _DEBUG
 //Logger g_logger ;
+std::ofstream g_std_ofstream;
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+  #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
+  static HMODULE g_hModuleThisDLL;
 #endif
 
 //  #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
@@ -64,18 +70,34 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif
 
 float g_fReferenceClockInMHz;
+float g_fReferenceClockMultiplier;
 BYTE g_byValue1;
+ReadMSR_func_type g_pfnreadmsr ;
+WriteMSR_func_type g_pfn_write_msr ;
+//This flag is for ODCM.
+bool g_IsHyperThreaded = false;
 
 #ifdef COMPILE_WITH_LOG
 //g_logger, DEBUGN()
 #include <preprocessor_macros/logging_preprocessor_macros.h>
 void OpenLogFile()
 {
-  std::string strExeFileNameWithoutDirs = //GetExeFileNameWithoutDirs() ;
-    "Intel_Core_controller_log.txt" ;
-  std::string stdstrFilename = strExeFileNameWithoutDirs +
-      ("Core2ControllerDLL_log.txt") ;
-  g_logger.OpenFile2( stdstrFilename ) ;
+#ifdef _WIN32 //win 32 or 64 bit
+  std::tstring stdtstrDLLfileName  = GetDLLfileName(g_hModuleThisDLL);
+#endif //#ifdef _WIN32
+  std::string strCurrentProcessFileNameWithoutDirs //= GetStdString(
+    = CurrentProcess::GetFileNameWithoutDirs_inline();
+  std::string stdstrLogFilename = strCurrentProcessFileNameWithoutDirs +
+    //("PentiumM_DLL_log.txt") ;
+    stdtstrDLLfileName + "_log.txt";
+
+  g_logger.OpenFileA( stdstrLogFilename ) ;
+//  g_logger.AddExcludeFromLogging(
+//    "BYTE ReadMSR(DWORD, uint32_t*, uint32_t*, DWORD_PTR)--index:412");
+
+//  g_std_ofstream.open(logfilename);
+//  g_std_ofstream << "begin";
+//  g_std_ofstream.flush();
   DEBUGN("this Log file is open")
 //  LPSTR lpstrModuleName ;
 //  CHAR ar_strModuleName[100] ;
@@ -88,76 +110,15 @@ void OpenLogFile()
 //     , ar_strModuleName
 //     ,99 //DWORD
 //     ) ;
-  DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
-      << strExeFileNameWithoutDirs )
+//  DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
+//      << strExeFileNameWithoutDirs )
 //  LPSTR = new STR[dwChars] ;
 //  DEBUGN()
 }
 #endif
 
-bool Init()
-{
-  #ifdef COMPILE_WITH_LOG
-  OpenLogFile() ;
-  #endif
-  AssignPointersToExportedExeMSRfunctions(
-    g_pfnreadmsr ,
-    g_pfn_write_msr
-    ) ;
-  DEBUGN( FULL_FUNC_NAME <<  "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
-      << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
-      )
-  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
-  {
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-    ::MessageBox(
-      NULL ,
-      "Pointers could not be assigned to the executables export functions\n"
-      "Does the executable that loads this DLL have ReadMSR and WriteMSR"
-      "export functions at all?(analyze this with a tool)"
-      //Title
-      ,"error"
-      , MB_OK) ;
-#endif
-    return FALSE ;
-  }
-  Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
-  DEBUGN( FULL_FUNC_NAME << "ref. clock in MHz:" << g_fReferenceClockInMHz)
-
-  //      //Force the cond. "< min. time diff" to become true.
-  //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
-  //      g_dwPreviousTickCountInMilliseconds
-  //        //->time diff gets > max. time diff, so it calcs a ref clock.
-  //        -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
-
-  //      //The reference clock is needed for setting the current frequency. So it
-  //      //must be determined prior to any call of this function.
-  //      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-  return true ;
-}
-
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-EXPORT BOOL APIENTRY DllMain(
-  HMODULE hModule,
-  DWORD  ul_reason_for_call,
-  LPVOID lpReserved
-  )
-{
-  switch (ul_reason_for_call)
-  {
-  case DLL_PROCESS_ATTACH:
-    //return Init() ;
-  case DLL_THREAD_ATTACH:
-  case DLL_THREAD_DETACH:
-  case DLL_PROCESS_DETACH:
-    break;
-  }
-  return TRUE;
-}
-#endif //#ifdef _WIN32
-
-//#define DLL_CALLING_CONVENTION __stdcall
 #define DLL_CALLING_CONVENTION
+#define DYN_LIB_CALLING_CONVENTION
 
 /** The array pointed to by the return value must be freed by the caller (i.e.
 * x86I&C GUI or service) of this function. */
@@ -169,6 +130,7 @@ EXPORT float * DLL_CALLING_CONVENTION
     , WORD * p_wNumberOfArrayElements
     )
 {
+  DEBUGN( FULL_FUNC_NAME << " begin")
   //see "Intel(R) 64 and IA-32 Architectures Software Developer's Manual,
   // Volume 3B: System Programming Guide, Part 2"
   //  B-38Vol. 3
@@ -192,12 +154,13 @@ EXPORT float * DLL_CALLING_CONVENTION
   return Intel::Core2::GetAvailableMultipliers( * p_wNumberOfArrayElements ) ;
 }
 
-/** The array pointed to by the return value must be freed by the caller (i.e.
+/** @return The array pointed to by the return value must be freed by the caller (i.e.
 * x86I&C GUI or service) of this function. */
 EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
   WORD wCoreID
   , WORD * p_wNum )
 {
+  DEBUGN( FULL_FUNC_NAME << " begin")
   //See "Intel® Core™2 Duo Mobile Processor, Intel® Core™2 Solo Mobile
   //Processor and Intel® Core™2 Extreme Mobile Processor on 45-nm Process
   //Datasheet Doc#320120-004.32012001
@@ -210,6 +173,8 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
   return Intel::Core2::GetAvailableVoltagesInVolt( * p_wNum ) ;
 }
 
+//for getting ref clock:  Vol 3B
+// "30.10.5 Cycle Counting and Opportunistic Processor Operation"
 EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
   float * p_fVoltageInVolt
   //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -218,12 +183,12 @@ EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN( FULL_FUNC_NAME << "--begin core ID:" << wCoreID)
   return Intel::Core2::GetCurrentVoltageAndFrequency(
-    p_fVoltageInVolt
+    * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-    , p_fMultiplier
-    , p_fReferenceClockInMHz
+    , * p_fMultiplier
+    , * p_fReferenceClockInMHz
     , wCoreID
     ) ;
 //    return byRet ;
@@ -243,6 +208,10 @@ void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
   float fMiddleMulti ;
   float fVoltageForHighestMulti ;
   float fHighestMulti ;
+#ifdef _DEBUG
+      g_std_ofstream << "InsertDefaultPstates:" << std::endl;
+      g_std_ofstream.flush();
+#endif
 
   if( Intel::Core2::GetDefaultPstates(
       fVoltageForMiddleMulti,
@@ -289,6 +258,81 @@ void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
 }
 #endif //INSERT_DEFAULT_P_STATES
 
+float GetReferenceClockMultiplier(DWORD affMask)
+{
+  float multi;
+  static uint32_t h, l;
+//  Intel::Core2::GetVoltageAndMultiplier(//coreID
+//    affMask, & r_fVoltageInVolt,
+//    & multi);
+
+  //see Intel 30.10.5
+  //The multiplier for Intel Celeron 900 whose product with the reference clock
+  // matches its core clock equals :
+  //-MSR_PLATFORM_ID:MaximumQualifiedBusRatio
+  ::ReadMSR(
+    IA32_PLATFORM_ID, & l, & h, affMask
+    );
+  multi = (l >> 8) & BITMASK_FOR_LOWMOST_5BIT;
+  DEBUGN( FULL_FUNC_NAME << " multiplier:" << multi)
+  return multi;
+}
+
+bool Init()
+{
+  //#ifdef COMPILE_WITH_LOG
+#ifdef _DEBUG
+  OpenLogFile() ;
+  #endif
+  //Intel Core 2 CPU aren't hyperthreaded.
+  g_IsHyperThreaded = /*Intel::IsHyperThreaded()*/ false;
+#ifdef _DEBUG
+  g_std_ofstream << "before AssignPointersToExportedExeMSRfunctions_inline(...)"
+    << std::endl;
+  g_std_ofstream.flush();
+#endif
+  AssignPointersToExportedExeMSRfunctions_inline(
+    g_pfnreadmsr ,
+    g_pfn_write_msr
+    ) ;
+  g_fReferenceClockMultiplier = GetReferenceClockMultiplier(1);
+  DEBUGN( FULL_FUNC_NAME <<  "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
+      << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
+      )
+#ifdef _DEBUG
+  g_std_ofstream << "after AssignPointersToExportedExeMSRfunctions_inline(...)"
+    << std::endl;
+  g_std_ofstream.flush();
+#endif
+  if( ! g_pfnreadmsr || ! g_pfn_write_msr )
+  {
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+    ::MessageBox(
+      NULL ,
+      "Pointers could not be assigned to the executables export functions\n"
+      "Does the executable that loads this DLL have ReadMSR and WriteMSR"
+      "export functions at all?(analyze this with a tool)"
+      //Title
+      ,"error"
+      , MB_OK) ;
+#endif
+    return FALSE ;
+  }
+  Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
+  DEBUGN( FULL_FUNC_NAME << "ref. clock in MHz:" << g_fReferenceClockInMHz)
+
+  //      //Force the cond. "< min. time diff" to become true.
+  //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
+  //      g_dwPreviousTickCountInMilliseconds
+  //        //->time diff gets > max. time diff, so it calcs a ref clock.
+  //        -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );
+
+  //      //The reference clock is needed for setting the current frequency. So it
+  //      //must be determined prior to any call of this function.
+  //      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
+  return true ;
+}
+
 EXPORT void DLL_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
 #ifdef INSERT_DEFAULT_P_STATES
@@ -301,9 +345,22 @@ EXPORT void DLL_CALLING_CONVENTION
   //BYTE by
   )
 {
+#ifdef INSERT_DEFAULT_P_STATES
+  #ifdef _DEBUG
+//  g_std_ofstream << "Init(*)--pi_cpuaccess:" << pi_cpuaccess
+//      << " sizeof(*pi_cpuaccess):" << sizeof(*pi_cpuaccess)
+//      md5(*pi_cpuaccess)
+//      << std::endl;
+//  g_std_ofstream.flush();
+  #endif
+#endif
   Init() ;
 #ifdef INSERT_DEFAULT_P_STATES
   InsertDefaultPstates(pi_cpuaccess);
+#endif
+#ifdef _DEBUG
+  g_std_ofstream << "Init(*)--end:" << std::endl;
+  g_std_ofstream.flush();
 #endif
 }
 
@@ -321,3 +378,31 @@ EXPORT BYTE DLL_CALLING_CONVENTION //can be omitted.
   return Intel::Core2::SetCurrentVoltageAndMultiplier(
       fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
 }
+
+#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
+
+#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+EXPORT BOOL APIENTRY DllMain(
+  HMODULE hModule,
+  DWORD  ul_reason_for_call,
+  LPVOID lpReserved
+  )
+{
+  switch (ul_reason_for_call)
+  {
+  case DLL_PROCESS_ATTACH:
+#ifdef _DEBUG
+    g_hModuleThisDLL = hModule;
+#endif
+    break;
+    //return Init() ;
+  case DLL_THREAD_ATTACH:
+  case DLL_THREAD_DETACH:
+  case DLL_PROCESS_DETACH:
+    break;
+  }
+  return TRUE;
+}
+#endif //#ifdef _WIN32
+
+//#define DLL_CALLING_CONVENTION __stdcall
