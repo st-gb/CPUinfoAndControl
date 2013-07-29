@@ -27,6 +27,8 @@ XERCES_CPP_NAMESPACE_BEGIN
   class Attributes;
 XERCES_CPP_NAMESPACE_END
 
+#include <data_structures/Trie/NodeTrie/NodeTrie.hpp>
+
 namespace Xerces
 {
 
@@ -34,9 +36,12 @@ namespace Xerces
     : public XERCES_CPP_NAMESPACE::DefaultHandler
   {
   private:
+    NodeTrie<BYTE> m_trieExcludeFromLogging ;
     Model * m_p_model ;
     uint16_t m_ui16t_WisdomNumber;
     UserInterface * m_p_userinterface ;
+    Attributes::MainFrame & m_mainFrameAttributes;
+    const XERCES_CPP_NAMESPACE::Attributes * m_p_xercesc_attributes;
   public:
     SAX2UserInterfaceConfigHandler(
       Model & model ,
@@ -48,6 +53,9 @@ namespace Xerces
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes,
       const std::string & attrName,
       int & nFontSize);
+    /*template <typename T>*/ void GetAttributeValue(
+      const char * const pchAttributeName, bool & value);
+
     /* The following functions are only called _once_. So the code is _not_
     pasted _multiple_ times because it is declared "inline". */
     inline void HandleDynamicVoltageAndFrequencyScalingXMLelement(
@@ -59,6 +67,8 @@ namespace Xerces
     inline void HandleServiceXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleTaskBarIconXMLelement(
+      const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
+    inline void HandleTaskBarIcon_CPUcoreUsageXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;
     inline void HandleToolTipXMLelement(
       const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes ) ;

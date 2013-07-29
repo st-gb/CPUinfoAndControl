@@ -25,12 +25,14 @@ namespace Xerces
     : public //XERCES_CPP_NAMESPACE::DefaultHandler
       Apache_Xerces::DocumentLocationSAX2Handler
   {
-    enum suitabilityLevel { vendor = 1, family, model, stepping };
+  private:
+    Model & m_r_model;
     const UserInterface & m_r_userinterface;
     const CPUcoreData & m_c_r_cpucoredata;
     unsigned m_SuitabilityLevel, m_HighestSuitability;
 //    const Model & m_r_model;
   public:
+    enum suitabilityLevel { vendor = 1, family, model, stepping };
     std::string m_mostSuitableCPUinfoGetterAndOrController;
     std::string m_mostSuitableCPUcoreUsageGetter;
     std::string m_mostSuitableCPUregisterDataFile;

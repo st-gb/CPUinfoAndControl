@@ -36,7 +36,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 //  extern BYTE g_byValue1 ;
 
 //  extern float g_fReferenceClockInMHz ;
-  float g_fReferenceClockInMHz ;
+//  float g_fReferenceClockInMHz ;
 //  DWORD g_dwValue1, g_dwValue2 ;
   extern uint32_t g_dwValue1, g_dwValue2 ;
   float g_fValue1 ;
@@ -56,6 +56,7 @@ namespace Intel
 
     inline float * GetAvailableVoltagesInVolt(WORD & r_byNumVoltages)
     {
+      DEBUGN( FULL_FUNC_NAME << " begin")
   //    uint32_t lowmostBits, highmostBits;
       float * ar_f = NULL ;
       //For Intel Core T2400: MSR reg.# 0xCE
@@ -78,10 +79,15 @@ namespace Intel
       {
   //      //Lowest voltage ID.
   //      g_byValue2 = ( ( g_dwValue2 >> 16 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
+#ifdef EMULATE_N270
+        BYTE lowestVoltageID = 0xF;
+        BYTE highestVoltageID = 0x1F;
+#else
         BYTE lowestVoltageID = ( (g_dwValue2 >> 16 ) & BITMASK_FOR_LOWMOST_8BIT );
         DEBUGN( "lowest voltage ID:" << (WORD) lowestVoltageID)
         BYTE highestVoltageID = ( (g_dwValue2 >> 24 ) & BITMASK_FOR_LOWMOST_8BIT );
         DEBUGN( "highest voltage ID:" << (WORD) highestVoltageID)
+#endif
         return Intel::CoreAndCore2::AllocateAndFillVoltageArray(
           lowestVoltageID, highestVoltageID, r_byNumVoltages);
       }
@@ -135,6 +141,10 @@ namespace Intel
 
       byFrequencyID = (BYTE)fMultiplier ;
       dwLowmostBits |= ( byFrequencyID << 8 ) ;
+
+      DEBUGN( FULL_FUNC_NAME << " byVoltageID:" << (WORD) byVoltageID
+        << "byFrequencyID:" << (WORD) byFrequencyID
+        << " lowmost bits:" << dwLowmostBits)
 
   #ifdef _DEBUG
       bool bWrite = true ;

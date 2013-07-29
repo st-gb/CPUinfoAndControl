@@ -25,6 +25,8 @@ namespace Attributes
     :
     m_bPreventVoltageAboveDefaultVoltage( true) ,
     m_bPreventVoltageBelowLowestStableVoltage(true) ,
+    m_bShowMultiplierControlsIfLessThan2ConfigurableMultipliers(false),
+    m_bShowVoltageControlsIfLessThan2ConfigurableVoltages(false),
     m_bSelectAllCPUcores ( true) ,
     m_bShowMainFrameAtStartup (true ) ,
     m_bShowCPUcoreUsagesIconInTaskBar (true),
@@ -35,18 +37,14 @@ namespace Attributes
       // service control manager failed:[...]")
       false ) ,
     m_fOperatingSafetyMarginInVolt(
-      //0.07 Volt is a good margin/ minimum for also taking into account (an)
+      //0.1 Volt is a good margin/ minimum for also taking into account (an)
       //attached USB device(s) that else may cause an Operating System freeze/
       //restart.
-      0.07) ,
-    m_wMainFrameHeightInPixels( 400 ) ,
-    m_wMainFrameWidthInPixels( 500 ) ,
-    m_wMainFrameTopLeftCornerXcoordinateInPixels( 50) ,
-    m_wMainFrameTopLeftCornerYcoordinateInPixels( 50) ,
+      //With voltages below, e.g. 0.7 V margin, Ubuntu failed to start on a Pentium
+      //M 745 (1.8 GHz). Possibly because of voltage peeks due to powering on
+      //many devices (CCFL backlight etc.) at the same time at startup.
+      0.1) ,
     m_wToolTipDelay( MAXWORD) ,
-    m_nVoltageScaleSizeInPoint(8),
-    m_nCurrentCPUcoreInfoSizeInPoint(10),
-    m_nCPUcoreFrequencyScaleSizeInPoint(9),
     m_nCPUcoreTempTaskBarIconFontSizeInPoint(10),
     //TODO change to ~ "\\\\.\\pipe\\x86IandC_service"
     m_std_wstrServiceAddress(L"\\\\.\\pipe\\CPUcontrollerService")

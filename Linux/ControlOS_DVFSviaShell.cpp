@@ -8,6 +8,7 @@
 #include "/media/truecrypt1/SourceCodeManagement/X86Info_and_Control/Linux/ControlOS_DVFSviaShell.hpp"
 
 ControlOS_DVFSviaShell::ControlOS_DVFSviaShell()
+  : m_bEnablingDVFSsucceeded(false)
 {
   // TODO Auto-generated constructor stub
 

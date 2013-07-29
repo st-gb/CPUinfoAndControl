@@ -14,11 +14,10 @@
 //For GetCurrentReferenceClock(...)
 #include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 #include <Controller/CPU-related/Intel/Intel_registers.h>
-//GetODCMdutyCyclePercentage(...)
-#include <Controller/CPU-related/Intel/Pentium4/ODCM.hpp>
 //A I_CPUaccess pointer is passed as parameter in Init(...)
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
 #include <preprocessor_macros/show_via_GUI.h> //SHOW_VIA_GUI(...)
+#include <Controller/AssignPointersToExportedExeFunctions/AssignPointersToExportedExeMSRfunctions.h>
 
 //Used by "Nehalem.hpp". The alternative would be:
 // -in "Nehalem.hpp" that may be used in both I_CPUcontroller-derived class and
@@ -37,6 +36,8 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 
 //For PrepareForNextPerformanceCountingNehalem(...) (etc.)
 #include <Controller/CPU-related/Intel/Nehalem/Nehalem.hpp>
+//Intel::IsHyperThreaded()
+#include <Controller/CPU-related/Intel/HyperThreading.hpp>
 #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 #ifdef _DEBUG
   #include <Controller/Logger/Logger.hpp> //class Logger
@@ -157,60 +158,7 @@ DLLMAIN_FRONT_SIGNATURE DllMain(
 //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
 #define NEHALEM_DLL_CALLING_CONVENTION
 
-EXPORT
-//The array pointed to by the return value must be freed by the caller (i.e.
-//x86I&C GUI or service) of this function.
-float *
-  NEHALEM_DLL_CALLING_CONVENTION
-  //The reference clock might change, also during runtime.
-  //This is why it is a good idea to get the possible multipliers.
-  GetAvailableThrottleLevels(
-  WORD wCoreID
-  , WORD * p_wNumberOfArrayElements
-  )
-{
-  float * ar_f = new float[NUMBER_OF_ODCM_VALUES] ;
-  //If allocating the array on the heap succeeded.
-  if( ar_f )
-  {
-    * p_wNumberOfArrayElements = NUMBER_OF_ODCM_VALUES ;
-    AddODCMdutyCyclesAsMultipliers(ar_f, /*lowestMultiplier*/ 1.0f);
-  }
-  else
-    * p_wNumberOfArrayElements = 0.0f;
-  return ar_f;
-}
-
-EXPORT
-//The array pointed to by the return value must be freed by the caller (i.e.
-//x86I&C GUI or service) of this function.
-float
-  NEHALEM_DLL_CALLING_CONVENTION
-  //The reference clock might change, also during runtime.
-  //This is why it is a good idea to get the possible multipliers.
-  GetThrottleLevel(WORD wCoreID)
-{
-  float fThrottleLevel = /*1.0f -*/ GetODCMdutyCyclePercentage(wCoreID);
-  return fThrottleLevel;
-}
-
-/** @param fThrottleLevel [0.0...1.0]:1.0:not throttled at all;0.25:75%throttled
- * @param coreID: unsigned-> same width as CPU arch->fast */
-EXPORT BYTE NEHALEM_DLL_CALLING_CONVENTION
-  SetThrottleLevel(float fThrottleLevel, unsigned coreID)
-{
-  //"If the programmed duty cycle is not identical for all the logical
-  //processors, the processor clock will modu-late to the highest duty cycle
-  //programmed."
-  if( g_IsHyperThreaded)
-  {
-    if( coreID % 2 == 0  )
-      SetODCMdutyCycle(fThrottleLevel, coreID + 1);
-    else
-      SetODCMdutyCycle(fThrottleLevel, coreID - 1);
-  }
-  return SetODCMdutyCycle(fThrottleLevel, coreID);
-}
+#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
 
 EXPORT
 //The array pointed to by the return value must be freed by the caller (i.e.
@@ -225,7 +173,7 @@ float *
   )
 {
   DEBUGN( FULL_FUNC_NAME << "--begin")
-  static BYTE byMaxMulti = 0;
+  static fastestUnsignedDataType maximimMulti = 0;
 //    BYTE byMaxMultiplier = 0 ;
 //  DWORD dwLowmostBits , dwHighmostBits ;
 //  #ifdef _DEBUG
@@ -241,16 +189,20 @@ float *
 //  #endif
    //g_pi_cpuaccess->RdmsrEx(
 
-  g_byValue1 = GetMaximumMultiplier_Nehalem(wCoreID, byMaxMulti);
+  g_byValue1 = Intel::Nehalem::GetMaximumMultiplier(wCoreID, maximimMulti);
   DEBUGN("Dyn Lib--return value of Exe's ReadMSR:" << (WORD) g_byValue1)
   if( g_byValue1 ) //successfully read from MSR
   {
-    DEBUGN("Dyn Lib--max multi:" << (WORD) byMaxMulti)
-    BYTE byNumMultis = byMaxMulti -
+    DEBUGN("Dyn Lib--max multi:" << (WORD) maximimMulti)
+#ifdef JUST1MULTIPLIER
+    BYTE byNumMultis = 1;
+#else
+    BYTE byNumMultis = maximimMulti -
       //min. multi - 1
       6 ;
 #ifdef USE_ODCM
     byNumMultis += NUMBER_OF_ODCM_VALUES; //for OCDM cycles
+#endif
 #endif
     float * ar_f = new float[byNumMultis] ;
     //If allocating the array on the heap succeeded.
@@ -290,8 +242,9 @@ float *
 
 //For exporting this function with the same name as here in the source file.
 EXPORT
-//The array pointed to by the return value must be freed by the caller (i.e.
-//x86I&C GUI or service) of this function.
+/** Returns the _adjustable_ voltages.
+ * The array pointed to by the return value must be freed by the caller (i.e.
+x86I&C GUI or service) of this function. */
 float *
   NEHALEM_DLL_CALLING_CONVENTION
   GetAvailableVoltagesInVolt(
@@ -312,7 +265,7 @@ float *
 //  #endif
    //g_pi_cpuaccess->RdmsrEx(
    BYTE byNumVoltages = 2 ;
-   float * ar_f = new float[byNumVoltages] ;
+   float * ar_f = /*new float[byNumVoltages]*/ NULL;
    //If allocating the array on the heap succeeded.
    if( ar_f )
    {
@@ -582,7 +535,7 @@ WORD
    , BYTE byPerformanceEventSelectRegisterNumber
    )
 {
-  return PrepareForNextPerformanceCountingNehalem(
+  return Intel::Nehalem::PrepareForNextPerformanceCounting(
     dwAffMask,
     byPerformanceEventSelectRegisterNumber) ;
 }

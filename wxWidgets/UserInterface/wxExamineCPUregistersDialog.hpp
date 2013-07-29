@@ -28,6 +28,7 @@
 //Forward declaration instead of include's(=faster)
 //class RegisterData ;
 class CPUIDdata ;
+class CPUregisterProperties;
 class MSRdata ;
 class Model ;
 class wxFrame ;
@@ -43,6 +44,8 @@ class wxX86InfoAndControlApp ;
 class wxExamineCPUregistersDialog
   : public wxDialog 
 {
+  bool m_bAlignRegisterDataRight;
+  unsigned m_horizontalAlignment;
   unsigned short m_wControlID ;
   //These member variables should be used for reading out CPU register data
   //because this is faster than to create local variables on stack.
@@ -53,7 +56,9 @@ class wxExamineCPUregistersDialog
   //I_CPUcontroller * mp_i_cpucontroller ;
   I_CPUaccess * mp_cpuaccess ;
   //RegisterData * mp_regdata ;
-  //MSRdata * mp_msr_data ;
+  MSRdata * m_p_msrdataCurrent;
+  std::string * m_p_stdstrCurrentRegisterDataName;
+  const CPUregisterProperties * m_p_cpuregisterproperties;
   Model * mp_modeldata ;
   //std::map<unsigned short, wxStaticText *> m_stdmap_p_wxstatictext ;
   std::vector<wxStaticText *> m_stdvector_p_wxstatictext ;
@@ -68,8 +73,10 @@ class wxExamineCPUregistersDialog
   wxBoxSizer * mp_sizerTop ;
   wxBoxSizer * mp_sizerLeftColumn ;
   wxBoxSizer * mp_sizerRightColumn ;
+  wxCheckBox * mp_wxcheckboxAlignRegisterDataRight;
   wxCheckBox * mp_wxcheckboxReloadCPUregisterToReadConfig ;
   wxCheckBox * mp_wxcheckboxInterval ;
+  wxCheckBox * mp_wxcheckboxPrefixWithRegisterID;
   wxCheckBox * mp_wxcheckboxRebuildGUIonResize ;
   wxStaticText * mp_wxstatictext ;
   //This member variable should be used for reading out CPU register data
@@ -79,6 +86,7 @@ class wxExamineCPUregistersDialog
   wxTimer m_wxtimer ;
   wxX86InfoAndControlApp * mp_wxx86infoandcontrolapp ;
 
+  void AddPrefixWithRegisterIDCheckBox();
   void AddIntervalCheckbox();
   void AddUpdateIntervalInMsTextctrl();
   void AddRebuildGUIonResizeCheckbox();

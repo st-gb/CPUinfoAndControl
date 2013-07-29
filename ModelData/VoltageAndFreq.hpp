@@ -9,6 +9,7 @@
 
 #include <windef.h> //for BYTE, WORD
 #include <ostream> //class std::ostream
+#include <fastest_data_type.h> //fastestUnsignedDataType
 
 /** Models a performance state */
 class VoltageAndFreq
@@ -44,6 +45,7 @@ public:
     const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
     WORD wFreqInMHzToGetVoltageFrom,
     float & r_fVoltageInVolt) const;
+
   void GetLinearExtrapolatedFrequency(
     const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
     const float fVoltageInVoltToGetFreqInMHzFrom,
@@ -51,31 +53,29 @@ public:
     )
     const
   {
-    WORD wHigherFreqInMHz = m_wFreqInMHz ;
-    WORD wLowerFreqInMHz = c_r_voltageandfreqLowerEqual.m_wFreqInMHz ;
+    //Unsigned is the fastest data type because of same bit width as CPU arch.
+    const unsigned wHigherFreqInMHz = m_wFreqInMHz ;
+    const unsigned wLowerFreqInMHz = c_r_voltageandfreqLowerEqual.m_wFreqInMHz ;
 
-    float fVoltageInVoltFromHigherFreq ;
-    float fVoltageInVoltFromLowerFreq ;
-    fVoltageInVoltFromHigherFreq = m_fVoltageInVolt ;
-
-    fVoltageInVoltFromLowerFreq =
+    const float fVoltageInVoltFromHigherFreq = m_fVoltageInVolt ;
+    const float fVoltageInVoltFromLowerFreq =
       c_r_voltageandfreqLowerEqual.m_fVoltageInVolt ;
 
     //example: 1.148 V - 0.732V = 0,416 V
-    float fVoltageFromHigherAndLowerFreqDiff =
+    const float fVoltageFromHigherAndLowerFreqDiff =
       fVoltageInVoltFromHigherFreq -
       fVoltageInVoltFromLowerFreq ;
 
     //ex.: 1800-800 = 1000
-    WORD wHigherAndLowerFreqDiffInMHz =
+    const fastestUnsignedDataType wHigherAndLowerFreqDiffInMHz =
       wHigherFreqInMHz - wLowerFreqInMHz ;
 
     //ex.: 1000 MHz / 0.416V = 2403.84615384615 MHz/V
-    float fMHzPerVolt = wHigherAndLowerFreqDiffInMHz /
+    const float fMHzPerVolt = wHigherAndLowerFreqDiffInMHz /
       fVoltageFromHigherAndLowerFreqDiff ;
 
     //ex.: 1800 - 600=1200
-    float fVoltageAboveMinusDesiredVoltage =
+    const float fVoltageAboveMinusDesiredVoltage =
       (fVoltageInVoltFromHigherFreq - fVoltageInVoltToGetFreqInMHzFrom
        ) ;
 
@@ -86,6 +86,7 @@ public:
       (WORD) (fMHzPerVolt * fVoltageAboveMinusDesiredVoltage)
       ;
   }
+
   void GetInterpolatedVoltage(
     const VoltageAndFreq & c_r_voltageandfreqLowerEqual,
     WORD wFreqInMHzToGetVoltageFrom,

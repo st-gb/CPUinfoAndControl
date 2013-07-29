@@ -78,12 +78,6 @@ class VoltageAndFreq;
 
 #define CREATE_DIALOG_INLINED /*inline*/
 
-struct InstableCPUoperationDetectionData
-{
-  unsigned seconds;
-  float CPUusageInPercent;
-};
-
 class FreqAndVoltageSettingDlg
   : public wxDialog
 {
@@ -96,6 +90,7 @@ private:
     ID_MultiplierSlider,
     ID_VoltageSlider
     , ID_FrequencySlider
+    , ID_SetThrottleRatio
     , ID_throttleRatio
     , ID_SetAsMinVoltage
     , ID_SetAsWantedVoltage
@@ -124,7 +119,7 @@ private:
   BYTE m_byPreviousMultiplierValue ;
   float m_fWantedVoltageInVolt ;
 public:
-  InstableCPUoperationDetectionData m_instablecpuoperationdetectiondata;
+  //InstableCPUoperationDetectionData m_instablecpuoperationdetectiondata;
   static wxString s_wxstrInstableCPUcoreVoltageWarning;
   enum voltageTypes
   {
@@ -171,6 +166,7 @@ private:
   wxBoxSizer * m_p_wxboxsizerMessage;
 //  wxButton * mp_wxbuttonSetAsMinVoltage ;
   wxButton * mp_wxbuttonSetAsWantedVoltage ;
+  wxButton * m_p_wxbuttonSetThrottleRatio;
 //  wxCheckBox * mp_wxcheckboxSetAsCurrentAfterApplying ;
   wxBoxSizer * p_wxboxsizerCPUcorePstate;
   wxBoxSizer * m_p_wxboxsizerCPUcoreThrottleRatio;
@@ -201,10 +197,10 @@ private:
   wxChoice * m_p_wxchoiceVoltageType;
   wxSlider * mp_wxsliderCPUcoreDivisorID ;
   wxSlider * mp_wxsliderCPUcorePstate ;
-  wxSlider * mp_wxsliderFreqInMHz ;
   wxSlider * mp_wxsliderCPUcoreFrequencyMultiplier ;
   wxSlider * mp_wxsliderCPUcoreVoltage ;
   wxSlider * mp_wxsliderCPUcoreThrottleRatio;
+  wxSlider * mp_wxsliderFreqInMHz ;
   wxSpinButton * mp_wxspinbuttonVoltageInVolt ;
   wxStaticText * mp_wxstatictextFreqInMHz ;
   wxStaticText * mp_wxstatictextThrottleRatio;
@@ -312,7 +308,7 @@ public:
     const float fMultiplier
     );
   inline float GetCPUcoreFrequencyFromSliderValue() ;
-  uint32_t GetCPUcoreMask();
+  uint32_t GetCPUcoreMask() const;
   inline void GetPstateUnsafetyDescription(BYTE byIsSafe, wxString & wxstr) ;
   //inline
     float GetMultiplierFromSliderValue() ;
@@ -344,6 +340,7 @@ public:
   void OnScroll(wxScrollEvent& WXUNUSED(event) ) ;
   void OnSelectPstateViaMousePos(wxCommandEvent & );
   void OnSetAsMinVoltageButton(wxCommandEvent & );
+  void OnSetThrottleRatio(wxCommandEvent & );
   void OnSetAsWantedVoltageButton(wxCommandEvent & );
 //  void OnSpinVoltageDown(wxSpinEvent & event) ;
 //  void OnSpinVoltageUp(wxSpinEvent & event) ;
@@ -378,8 +375,8 @@ public:
   void ChangeToStopFindingLowestStableCPUcoreVoltageButton();
   void ChangeVoltageSliderValue(int nNewValue) ;
   void SetStartFindingLowestStableVoltageButton();
-  void SetMultiplierSliderToClosestValue(float fMultiplier);
-  BYTE SetVoltageSliderToClosestValue(float fVoltageInVolt) ;
+  void SetMultiplierSliderToClosestValue(const float fMultiplier);
+  fastestUnsignedDataType SetVoltageSliderToClosestValue(const float fVoltageInVolt) ;
   void StartedInstableCPUcoreVoltageDetection(wxCommandEvent & event );
   void StopFindingLowestStableCPUcoreVoltage();
   inline BYTE VoltageIsWithinValidRange(float fVoltageInVolt

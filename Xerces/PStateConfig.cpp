@@ -432,7 +432,7 @@ namespace Xerces
 
   void VoltageForFrequencyConfiguration::GetDOM_XPathResultForFrequencies()
   {
-    BYTE retval ;
+    //BYTE retval ;
     // "/*": the root element independent of the name
     //  (every well-formed XML document has exactly 1 root element)
     //Use "[]" rather than "char *" to avoid g++ Linux compiler warning
@@ -482,7 +482,7 @@ namespace Xerces
         << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
           Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
         )
-        retval = 4;
+        //retval = 4;
     }
     XERCES_CPP_NAMESPACE::XMLString::release(&p_xmlchXpath);
     //mp_domxpathresult->release();
@@ -500,7 +500,7 @@ namespace Xerces
     //if( iter != m_stdmapFreqInMHzInDOMtree2DOMindex.end() )
     //  mp_dom_elementFreqnVolt = mp_dom_elementRoot->
 
-    BYTE retval ;
+    //BYTE retval ;
     rp_dom_element = NULL ;
     // "/*": the root element independent of the name
     //  (every well-formed XML document has exactly 1 root element)
@@ -602,7 +602,7 @@ namespace Xerces
           //getMessage() )
           Xerces::ToStdString(cr_xercesc_dom_xpath_exception.getMessage() )
         )
-        retval = 4;
+        //retval = 4;
     }
     catch(const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception)
     {
@@ -611,7 +611,7 @@ namespace Xerces
         << //XercesHelper::ToStdString(cr_xercesc_dom_exception.getMessage() )
           Xerces::ToStdString(cr_xercesc_dom_exception.getMessage() )
         )
-        retval = 4;
+        //retval = 4;
     }
     XERCES_CPP_NAMESPACE::XMLString::release( & p_xmlchAttributeName );
     XERCES_CPP_NAMESPACE::XMLString::release( & p_xmlchXpath );
@@ -642,7 +642,7 @@ namespace Xerces
       r_stdsetvoltageandfreq.begin() ;
     std::string stdstrVoltageInVoltFromDOMtree ;
     WORD wFreq ;
-    const XMLCh * cp_xmlchAttrName ;
+    //const XMLCh * cp_xmlchAttrName ;
     //While the iterator is valid.
     while( citer_stdset_voltageandfreq !=
       r_stdsetvoltageandfreq.end()
@@ -703,8 +703,8 @@ namespace Xerces
             if( p_dom_namednodemap )
             {
 //              DOMNode * p_domnodeAttribute ;
-              cp_xmlchAttrName = XERCES_STRING_FROM_ANSI_STRING(
-                cpc_XMLAttrName) ;
+//              cp_xmlchAttrName = XERCES_STRING_FROM_ANSI_STRING(
+//                cpc_XMLAttrName) ;
               p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
                 //cp_xmlchAttrName
                 XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ) ;

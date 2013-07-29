@@ -9,23 +9,38 @@
 #define COREANDCORE2_HPP_
 
 #include <float.h> //FLT_MIN
+#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+
 extern BYTE g_byValue1;
 extern uint32_t g_dwValue1, g_dwValue2;
 extern float g_fReferenceClockInMHz;
 
-#ifdef COMPILE_FOR_INTEL_CORE
-  #define JUNCTION_TEMPERATURE_IN_DEGREES_CELSIUS 100
-#endif
 #ifdef COMPILE_FOR_INTEL_CORE2
+  //for Intel Core 2 Celeron 900:
+  //Core Temp 1.0 RC3 shows TjMax of 105°C
+  //RealTemp 3.70 and hwmonitor 1.22.0 , driver version 136 assumes 100°C ?
   #define JUNCTION_TEMPERATURE_IN_DEGREES_CELSIUS 105
 #endif
+#ifdef COMPILE_FOR_INTEL_ATOM
+  //mobile-atom-n270-single-core-datasheet-.pdf: May 2008 Document Number: 320032-001
+  // chapter "3.10  Processor DC Specifications"
+  //"Unless specified otherwise, all specifications for the processor are at TJ = 90°C."
+  //http://ark.intel.com/products/36331/Intel-Atom-Processor-N270-512K-Cache-1_60-GHz-533-MHz-FSB:
+  // "TJUNCTION   90°C"
+  #define JUNCTION_TEMPERATURE_IN_DEGREES_CELSIUS 90
+#else
+  #ifdef COMPILE_FOR_INTEL_CORE
+    #define JUNCTION_TEMPERATURE_IN_DEGREES_CELSIUS 100
+  #endif
+#endif
+
 namespace Intel
 {
   namespace CoreAndCore2
   {
     inline float * AllocateAndFillVoltageArray(
-      unsigned lowestVoltageID,
-      unsigned highestVoltageID,
+      fastestUnsignedDataType lowestVoltageID,
+      fastestUnsignedDataType highestVoltageID,
       uint16_t & r_byNumVoltages)
     {
       //Number of different voltages = highest voltage ID-lowest voltage ID + 1
@@ -42,7 +57,8 @@ namespace Intel
       //g_byValue1 = r_byNumVoltages ;
       if( ar_f ) //Allocating memory on heap succeeded.
       {
-        const float minVoltageInVolt = 0.7125 + lowestVoltageID * 0.0125;
+        const float minVoltageInVolt = //0.7125 + lowestVoltageID * 0.0125;
+          GetVoltage(lowestVoltageID);
         DEBUGN( "min voltage in Volt:" << minVoltageInVolt)
         float voltageInVolt;
         //for( -- g_byValue1 ; g_byValue1 > 255 ; -- g_byValue1 )
@@ -146,6 +162,8 @@ namespace Intel
       return wVoltageID ;
     }
 
+    /** for Intel Celeron 900 (max. multiplier 11 at 200 MHz freq)
+     * temperature in hwmonitor): */
 #ifdef DO_NOT_COMPILE_INLINE
 #else
     inline
@@ -153,6 +171,9 @@ namespace Intel
     float GetTemperatureInDegCelsius(
       WORD wCoreID )
     {
+      static unsigned diffToJunctionTemp;
+      static unsigned resolutionInDegCelsius;
+      DEBUGN( FULL_FUNC_NAME << " begin")
       //"23:16 Temperature Target. (R) "
   //    byTempTarget = ( dwLowmostBits >> 16 ) & 255 ;
   //    (*g_pfnreadmsr) (
@@ -165,17 +186,21 @@ namespace Intel
          ) ;
       if( g_byValue1 ) //if successfull
       {
+        //"30:27 Resolution in Degrees Celsius (RO) If CPUID.06H:EAX[0] = 1"
+        resolutionInDegCelsius = (g_dwValue1 >> 27) &
+          BITMASK_FOR_LOWMOST_4BIT;
         //Intel: "22:16 Digital Readout (RO)"
-        g_byValue1 = ( g_dwValue1 >> 16 ) & BITMASK_FOR_LOWMOST_7BIT ;
-
+        diffToJunctionTemp = ( g_dwValue1 >> 16 ) & BITMASK_FOR_LOWMOST_7BIT ;
   //      //Intel: "30:27 Resolution in Degrees Celsius (RO)"
   //      byResolutionInDegreesCelsius = ( dwLowmostBits >> 27 ) &
   //        BITMASK_FOR_LOWMOST_5BIT ;
 
         g_byValue1 = //-56 -
-          //105
           JUNCTION_TEMPERATURE_IN_DEGREES_CELSIUS
-          - g_byValue1 ;
+          //TODO has this calculation correct? e.g.
+          //-junction - diffToJunction * resInDegC e.g. 100 - 20*3=100-60=40
+          //-(junction - diffToJunction) * resInDegC e.g.(100-20)*3=80*3=240
+          - diffToJunctionTemp * resolutionInDegCelsius ;
         return g_byValue1 ;
       }
       return FLT_MIN ;

@@ -36,6 +36,7 @@ inline_register_access_functions.hpp>
 #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
   #include "GetMaxMultiIfGreaterCurrentPstateLimitMulti.hpp"
 #endif
+#include <fastest_data_type.h> //fastestUnsignedDataType
 
 extern BYTE g_byFreqID,g_byDivisorID ;
 extern BYTE g_byValue1 , g_byValue2, g_byValue3 ;
@@ -66,6 +67,14 @@ extern float g_fReferenceClockInMHz;
 #ifdef _DEBUG
 #include <math.h> //pow(...)
 #endif
+
+//http://www.parashift.com/c++-faq-lite/inline-functions.html:
+//"Note: It's imperative that the function's definition (the part between the
+//{...}) be placed in a header file, unless the function is used only in a
+//single .cpp file. In particular, if you put the inline function's definition
+//into a .cpp file and you call it from some other .cpp file, you'll get an
+//"unresolved external" error from the linker. "
+#define INLINE inline
 
   namespace AMD
   {
@@ -430,18 +439,22 @@ namespace AMD
 
     //inline unsigned long GetMSRregisterForPstate(
     //  unsigned char byPstate ) ;
-    inline unsigned long GetMSRregisterForPstate(
-      unsigned char byPstate )
+    /** @return data type must have at least 32 bit: C0010064 has 8 hex digits->
+     *    8*4=32 bit; if compiled for at least 32 bit then "unsigned" data type
+     *    is sufficient */
+    INLINE fastestUnsignedDataType GetMSRregisterForPstate(
+      const fastestUnsignedDataType performanceStateIndex )
     {
       //unsigned long index ;
       return //"AMD: MSR C001_0064 specifies P-state 0"
-        0xC0010064 + byPstate ;
+        0xC0010064 + performanceStateIndex ;
     }
 
-    /**
-     * AMD composes the multiplier from 2 operands: divisor ID and frequency ID
+    /** @brief AMD composes the multiplier from 2 operands: divisor ID and
+     *   frequency ID.
+     *   multiplier=freqID/2^divisorID
      */
-    inline void GetFreqIDandDivisorIDfromMulti(
+    INLINE void GetFreqIDandDivisorIDfromMulti(
       float fMultiplier,
       BYTE & r_byFreqID,
       BYTE & r_byDivisorID
@@ -504,7 +517,7 @@ namespace AMD
     //  BYTE byNewPstate,DWORD dwCoreBitmask);
     //It seems: setting a p-state for more than 1 core at a time does NOT work.
     //so call this method "n" times if you want the same p-state for "n" cores.
-    inline BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitmask)
+    INLINE BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitmask)
     {
       BYTE byReturn = EXIT_FAILURE ;
 
@@ -560,21 +573,16 @@ namespace AMD
     /** AMD K10 doc:
      * 2.4.1.9.2 Software-Initiated CPU Voltage Transitions
      * "NewCpuVid = the destination CPU VID.
-    F3xA0[SlamVidMode]=1:
-    1. Write NewCpuVid to MSRC001_0070[CpuVid].
-    2. Wait the specified F3xD8[VSSlamTime].
-    F3xA0[SlamVidMode]=0:
-    Software must use the sequence for F3xA0[SlamVidMode]=0 defined in section 2.4.1.9.1 [Software-Initiated
-    NB Voltage Transitions] on page 30 to control the single-plane through NbVid."
+      F3xA0[SlamVidMode]=1:
+      1. Write NewCpuVid to MSRC001_0070[CpuVid].
+      2. Wait the specified F3xD8[VSSlamTime].
+      F3xA0[SlamVidMode]=0:
+      Software must use the sequence for F3xA0[SlamVidMode]=0 defined in section 2.4.1.9.1 [Software-Initiated
+      NB Voltage Transitions] on page 30 to control the single-plane through NbVid."
+
+      @return use unsigned data type because it is the fastest data type.
      */
-    //http://www.parashift.com/c++-faq-lite/inline-functions.html:
-    //"Note: It's imperative that the function's definition (the part between the
-    //{...}) be placed in a header file, unless the function is used only in a
-    //single .cpp file. In particular, if you put the inline function's definition
-    //into a .cpp file and you call it from some other .cpp file, you'll get an
-    //"unresolved external" error from the linker. "
-    //inline
-    inline void SetVoltageAndMultiplier(
+    INLINE unsigned SetVoltageAndMultiplier(
       float fVoltageInVolt,
       float fMultiplier ,
       BYTE byCoreID )
@@ -629,14 +637,16 @@ namespace AMD
           )
         {
     //      if(
-            SetPstateViaPstateControlRegister(
-              g_byDivisorID ,
-              1 << byCoreID ) ;
+          SetPstateViaPstateControlRegister(
+            g_byDivisorID ,
+            1 << byCoreID ) ;
     //        )
     //        byRet = true ;
+          return 0;
         }
     //#endif //#ifndef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
       }
+      return 1;
     }
   }
 }

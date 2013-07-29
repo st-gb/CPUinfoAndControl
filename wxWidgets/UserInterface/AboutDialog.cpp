@@ -26,13 +26,12 @@
 #include <wx/statbmp.h> //class wxStaticBitmap
 #include <wx/string.h> //class wxString
 #include <wx/sizer.h> //class wxBoxSizer
-//DISable warning, from
-//http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
-// : "I believe passing -Wno-write-strings to gcc will suppress this warning."
-#pragma GCC diagnostic ignored "-Wwrite-strings"
+
+#include <preprocessor_macros/enable_disable_write_strings_warning.h>
+
+IGNORE_WRITE_STRINGS_WARNING
 #include <images/street_lamp_80x321_256_indexed_colors.xpm>
-//ENable warning
-#pragma GCC diagnostic warning "-Wwrite-strings"
+ENABLE_WRITE_STRINGS_WARNING
 
 //Lebensweisheiten:
 wxString g_ar_wxstrWorldlyWisdom [] = {

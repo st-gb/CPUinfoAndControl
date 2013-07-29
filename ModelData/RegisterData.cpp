@@ -8,14 +8,15 @@
 #include "RegisterData.hpp"
 
 MSRdata::MSRdata(//DWORD
-  unsigned long dwIndex
+  unsigned /*long*/ dwIndex
   , std::string & stdstrRegisterName )
   :
   //Initialize in the same order as textual in the declaration?
   //(to avoid g++ warnings)
   m_byCoreID(0)
-  , m_dwIndex ( dwIndex )
-  , m_stdstrRegisterName ( stdstrRegisterName )
+//  , m_dwIndex ( dwIndex )
+//  , m_stdstrRegisterName ( stdstrRegisterName )
+  , CPUregisterProperties(dwIndex, stdstrRegisterName)
 {
 }
 

@@ -18,30 +18,6 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #define ENABLE_ON_DEMAND_CLOCK_MODULATION_BIT_MASK 16
 #define NUMBER_OF_ODCM_VALUES 8
 
-namespace Intel
-{
-  inline bool IsHyperThreaded()
-  {
-    DWORD dwEAX, dwEBX, dwECX , dwEDX ;
-    bool bRet = CPUID(
-      //http://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits:
-      //EDX bit 28 ht   Hyper-threading
-      0x00000001
-      , & dwEAX
-      , & dwEBX
-      , & dwECX
-      , & dwEDX
-      , 1
-      ) ;
-    if( bRet )
-    {
-      if( (dwEDX >> 28) & 1 )
-        return true;
-    }
-    return false;
-  }
-}
-
 /** @param ar_f must have at least 8 elements
  *  @param baseMultiplier: e.g. "7" -> [0.875...6.125,7.0]*/
 inline void AddODCMdutyCyclesAsMultipliers(float ar_f[], float baseMultiplier)

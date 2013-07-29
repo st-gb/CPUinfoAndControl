@@ -453,10 +453,16 @@ BOOL // TRUE: success, FALSE: failure
   else
   {
     DWORD dwErrorCode = ::GetLastError( ) ;
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Reading from MSR failed.--"
-        "Last error code: " << dwErrorCode ) ;
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE() ;
+    std::ostringstream stdoss;
     std::string strErrorMessage = GetHardwareAccessErrorDescription(
       dwErrorCode, "MSR" , dwIndex ) ;
+    stdoss << "Reading from MSR index " << dwIndex
+      << "with thread affinity mask " << affinityMask << " failed.--"
+      "Last error code: " << dwErrorCode << strErrorMessage;
+    LOGN_ERROR(stdoss.str())
+#ifndef _DEBUG
+
     //Show the detailed error message here because the details
     //(how the access to the MSR is realised: via WinRing0)
     //depend on the implementation.
@@ -477,6 +483,7 @@ BOOL // TRUE: success, FALSE: failure
 //      "file \"WinRing0[...].sys\" lay within the same directory as "
 //      "\"WinRing0[...].dll\"?\n"
       );
+#endif
 //    throw ReadMSRexception() ;
   }
   return bReturn ;
@@ -604,7 +611,8 @@ void WinRing0_1_3RunTimeDynLinked::Sleep(WORD wMillis)
 void WinRing0_1_3RunTimeDynLinked::UIconfirm(const std::string & str)
 {
   if ( mp_userinterface )
-    mp_userinterface->Confirm(str) ;
+    mp_userinterface->//Confirm(str) ;
+      MessageWithTimeStamp(str);
 }
 
 BOOL 
@@ -650,6 +658,11 @@ WinRing0_1_3RunTimeDynLinked::WrmsrEx(
 )
 {
   BOOL bReturn = FAILURE ;
+  LOGN_DEBUG( FULL_FUNC_NAME
+    << " index:" << dwIndex
+    << " EAX (bytes 1-4):" << dwEAX
+    << " EDX (bytes 5-8):" << dwEDX
+    << " affinity mask:" << dwAffinityMask)
   //DEBUG("Directly before writing to MSR\n");
   bReturn =
     //Function pointer "WrmsrTx" is <> NULL if "InitOpenLibSys" succeeded.

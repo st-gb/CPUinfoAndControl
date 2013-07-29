@@ -57,12 +57,17 @@ namespace Intel
         //m_dwAffinityMask
         1
         ) ;
+#ifdef EMULATE_N270
+      BYTE byMinMultiplier = 6;
+      byMaxMultiplier = 0xC;
+#else
        byMaxMultiplier = //(BYTE) ( ui32LowmostBits & 255 ) ;
          ( ui32HighmostBits >> 8 ) & 255 ;
        //According to the MSR walker of CrystalCPUID the min. multi is at the
        //highmost byte: was "06" for every tested CPU (1.6GHz FSB133,
        // 1.86 GHz FSB 133, 1.8GHz FSB 100)
        BYTE byMinMultiplier = (BYTE) ( ui32HighmostBits >> 24 ) & 255 ;
+#endif
        BYTE byNumMultis = byMaxMultiplier - byMinMultiplier
     #ifndef LEAVE_OUT_MULTIPLIER_7
            //add "+1" : if min and max identical, the array size must be "1"
@@ -104,8 +109,8 @@ namespace Intel
       return ar_f ;
     }
 
-    /** Pentium M and Intel Core 1 have default voltages for min and max
-     * multiplier stored in MSRegister */
+    /** @brief Intel Pentium M, Intel Core 1 and Atom have default voltages
+     *  for min and max multiplier stored in MSRegister. */
     inline BYTE GetDefaultPstates(
       float & fVoltageForLowestMulti,
       float & fLowestMulti,
@@ -137,7 +142,7 @@ namespace Intel
         //                 26: default voltage for max multi
         fVoltageForHighestMulti = GetVoltage(
           ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
-        DEBUGN("fVoltageForHighestMulti: " << fVoltageForHighestMulti )
+        DEBUGN("default voltageForHighestMulti: " << fVoltageForHighestMulti )
 
         ui32HighmostBits >>= 8 ;
         fHighestMulti = ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ;
@@ -146,7 +151,7 @@ namespace Intel
         ui32HighmostBits >>= 8 ;
         fVoltageForLowestMulti = GetVoltage(
           ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ) ;
-        DEBUGN("fVoltageForLowestMulti: " << fVoltageForLowestMulti )
+        DEBUGN("default voltage forLowestMulti: " << fVoltageForLowestMulti )
 
         ui32HighmostBits >>= 8 ;
         fLowestMulti = ( ui32HighmostBits & BITMASK_FOR_LOWMOST_8BIT ) ;
@@ -186,6 +191,7 @@ namespace Intel
             (WORD) ( fHighestMulti * g_fReferenceClockInMHz)
             ) ;
       }
+      DEBUGN( FULL_FUNC_NAME << " end")
     }
 #endif //INSERT_DEFAULT_P_STATES
   }//namespace Pentium_M_and_Core1

@@ -283,6 +283,7 @@ enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
    //This is useful because there may be more than one XML file to read.
    //So one calls this functions with different handlers passed.
   XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
+  , XERCES_CPP_NAMESPACE::DefaultHandler * const errorHandler// = NULL
   )
 {
     LOGN( FULL_FUNC_NAME << "--begin" );
@@ -301,11 +302,20 @@ enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
       //DefaultHandler * p_defaultHandler = new DefaultHandler();
       DefaultHandler defaultHandler;
       //p_sax2xmlreader->setContentHandler(defaultHandler);
+      /** The "XERCES_CPP_NAMESPACE::DefaultHandler"(-derived) class whose
+      * callback/ virtual ("startElement" etc.) methods should be called by
+      * the Xerces framework. */
       p_sax2xmlreader->setContentHandler(//&sax2
         & r_defaulthandler );
-      p_sax2xmlreader->setErrorHandler(//p_defaultHandler
-        & //defaultHandler
-        r_defaulthandler);
+      //Calls "XERCES_CPP_NAMESPACE::DefaultHandler"(-derived)
+      // "fatalError(const XERCES_CPP_NAMESPACE::SAXParseException &)" method
+      // instead of throwing an exception within this method.
+      if( errorHandler)
+        p_sax2xmlreader->setErrorHandler(//& r_defaulthandler
+          errorHandler
+          );
+      else
+        p_sax2xmlreader->setErrorHandler(& r_defaulthandler);
       try
       {
         LOGN( FULL_FUNC_NAME << "--before parsing XML document "

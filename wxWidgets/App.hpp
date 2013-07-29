@@ -95,6 +95,14 @@ class I_CPUcontroller ;
 
 #include <InstableCPUcoreVoltageDefintions.h>
 
+DECLARE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_COUNT_SECONDS_DOWN_UPDATE, wxNewEventType() )
+
+enum FindInstableCPUcoreOpRetCodes
+{
+  settingVoltageFailed
+
+};
+
 class wxX86InfoAndControlApp
   : public wxApp
   , public UserInterface
@@ -109,6 +117,8 @@ private:
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  SystemTrayAccess m_systemtrayaccess ;
 public:
+  wxString m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib;
+
   std::vector<std::wstring> m_std_vec_std_wstrPowerSchemeName;
   uint16_t m_ui16ActivePowerSchemeIndex;
 #endif
@@ -120,39 +130,21 @@ private:
   //I_CPUcontroller * mp_cpucontroller ;
   //e.g. point to console or GUI.
 public:
-  volatile bool m_bVoltageWasTooLowCalled;
   MainFrame * mp_frame ;
 private:
 //  UserInterface * mp_userinterface ;
   #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   WinRing0_1_3RunTimeDynLinked * mp_winring0dynlinked ;
 public:
-  //TODO replace with wxDynLib
-  HMODULE m_hmoduleUnstableVoltageDetectionDynLib;
 private:
   #else
     //MSRdeviceFile m_MSRdeviceFile ;
   #endif
-  std::wstring m_std_wstrInstableCPUcoreVoltageDynLibPath;
   ////This member needs to be created on runtime because it may throw
   ////an exception (that should be caught, else runtime error) when it is created.
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
 public:
-  StartInstableVoltageDetectionFunctionPointer
-    m_pfnStartInstableCPUcoreVoltageDetection;
-  StopInstableVoltageDetectionFunctionPointer
-    m_pfnStopInstableCPUcoreVoltageDetection;
-  struct external_caller m_external_caller;
-  //http://forums.wxwidgets.org/viewtopic.php?t=4824:
-//  wxMutex m_wxmutexFindLowestStableVoltage;
-//  wxCondition m_wxconditionFindLowestStableVoltage;
-  //Is set to true when "VoltageTooLow" was called.
-  volatile bool m_vbExitFindLowestStableVoltage;
-  condition_type m_conditionFindLowestStableVoltage;
-  wxString m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib;
-  x86IandC::thread_type m_x86iandc_threadFindLowestStableVoltage;
-  x86IandC::thread_type m_x86iandc_threadFindLowestStableCPUcoreOperationInDLL;
   IPC_data s_ipc_data;
   wxString m_wxstrCPUcontrollerDynLibFilePath ;
 private:
@@ -217,6 +209,7 @@ public:
 //  x86IandC::native_API_event_type
   condition_type m_condition_type_eventIPCthread ;
   x86IandC::thread_type m_x86iandc_threadIPC ;
+  FreqAndVoltageSettingDlg * m_p_freqandvoltagesettingdlgInstCPUcoreDetect;
   Xerces::VoltageForFrequencyConfiguration
     m_xerces_voltage_for_frequency_configuration ;
 #ifdef COMPILE_WITH_CPU_SCALING
@@ -349,6 +342,7 @@ public:
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
   void PossiblyAskForOSdynFreqScalingDisabling() ;
 #endif //#ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
+  bool PreventVoltageBelowLowestStableVoltage();
   void RedrawEverything() ;
   void SaveAsCPUcontrollerDynLibForThisCPU();
   void SaveVoltageForFrequencySettings(
@@ -359,20 +353,35 @@ public:
   bool ShowTaskBarIcon(MainFrame * p_mf) ;
   inline void ShowTaskBarIconViaWindowsAPI();
   inline bool ShowTaskBarIconUsingwxWidgets();
+  void ShowMessageGUIsafe(const wxString &);
+  void ShowMessageGUIsafe(const wchar_t *);
   void StabilizeVoltage(
     const float fVoltageInVolt,
     const float fMultiplier,
     const float fReferenceClockInMHz);
-  void StabilizeVoltageAndRepaintMainFrame(
+  void StabilizeVoltageAndShowVoltageSettingsChanges(
     const float fVoltageInVolt
     ,const float fMultiplier,
     const float fReferenceClockInMHz);
   BYTE StartInstableCPUcoreVoltageDetection(const FreqAndVoltageSettingDlg *);
+  void SetStartFindingLowestStableVoltageButton();
   void StopInstableCPUcoreVoltageDetection();
   void StartService() ;
   void StopService() ;
   void LoadDetectInstableCPUcoreVoltageDynLib();
+  void UpdateInstableCPUcoreOpDetectInfo();
   void UnloadDetectInstableCPUcoreVoltageDynLib();
+
+public:
+  void OnShowMessage(wxCommandEvent &);
+  DECLARE_EVENT_TABLE()
 };
+
+
+
+BEGIN_DECLARE_EVENT_TYPES()
+  DECLARE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_SHOW_MESSAGE, wxNewEventType() )
+//"EVT_BUTTON" also expands to "DECLARE_EVENT_TYPE"
+END_DECLARE_EVENT_TYPES()
 
 DECLARE_APP(wxX86InfoAndControlApp)

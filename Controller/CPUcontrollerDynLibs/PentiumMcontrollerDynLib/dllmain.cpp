@@ -24,6 +24,7 @@ inline_register_access_functions.hpp>
 #include <Controller/CPU-related/Intel/PentiumM/PentiumM.hpp>
 // Intel::Pentium_M::GetAvailableMultipliers(...)
 #include <Controller/CPU-related/Intel/PentiumM/Pentium_M_and_Core1.hpp>
+#include <Controller/CPU-related/Intel/ProcHotDetection.hpp>
 //for EXPORT, APIENTRY preprocessor macros
 #include <Controller/CPUcontrollerDynLibs/function_specifiers.h>
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
@@ -37,6 +38,8 @@ inline_register_access_functions.hpp>
 AssignPointersToExportedExeMSRfunctions.h>
 #ifdef _DEBUG
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+  #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
+  static HMODULE g_hModule;
 #endif
 
 #include <tchar.h> //_T()
@@ -44,8 +47,8 @@ AssignPointersToExportedExeMSRfunctions.h>
   #include <windows.h> //for MessageBox(...), MB_OK
 #endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 
-extern ReadMSR_func_type g_pfnreadmsr ;
-extern WriteMSR_func_type g_pfn_write_msr ;
+/*extern*/ ReadMSR_func_type g_pfnreadmsr ;
+/*extern*/ WriteMSR_func_type g_pfn_write_msr ;
 //extern float g_fReferenceClockInMHz ;
 
 bool gs_b2ndTimeOrLaterReadTSCandFIDchange ;
@@ -61,16 +64,26 @@ uint32_t g_ui32HighmostBits ;
 //Logger g_loggerDynLib ;
 #endif
 
+#define DYN_LIB_CALLING_CONVENTION
+//Pentium Ms are not hyperthreaded.
+bool g_IsHyperThreaded = false;
+#include <Controller/CPUcontrollerDynLibs/Intel/ODCM/ThrottleRatioFunctions.hpp>
+
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 bool InitWindows()
 {
   #ifdef _DEBUG
-  std::string strExeFileNameWithoutDirs //= GetStdString(
-    //::GetExeFileNameWithoutDirs() )
-    ;
-  std::string stdstrFilename = strExeFileNameWithoutDirs +
-    ("PentiumM_DLL_log.txt") ;
-  g_logger.OpenFile2( stdstrFilename ) ;
+#ifdef _WIN32 //win 32 or 64 bit
+  std::tstring stdtstrDLLfileName  = GetDLLfileName(g_hModule);
+#endif //#ifdef _WIN32
+  std::string strCurrentProcessFileNameWithoutDirs //= GetStdString(
+    = CurrentProcess::GetFileNameWithoutDirs_inline();
+  std::string stdstrFilename = strCurrentProcessFileNameWithoutDirs +
+    //("PentiumM_DLL_log.txt") ;
+    stdtstrDLLfileName + "_log.txt";
+  g_logger.OpenFileA( stdstrFilename ) ;
+  g_logger.AddExcludeFromLogging(
+    "BYTE ReadMSR(DWORD, uint32_t*, uint32_t*, DWORD_PTR)--index:412");
   DEBUGN("this Log file is open")
   //  DEBUGN("" << pi_cpuaccess->GetNumberOfCPUCores() )
   #endif
@@ -112,6 +125,10 @@ BOOL APIENTRY DllMain(
 	  //According to Dr. Pohl the DllMain while execution this function is
 	  //blocked for other processes. So execute initializations in Init(...).
   {
+#ifdef _DEBUG
+      //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll:
+      g_hModule = hModule;
+#endif //#ifdef _DEBUG
 //    std::string strExeFileNameWithoutDirs = GetStdString(
 //      GetExeFileNameWithoutDirs() ) ;
 #endif
@@ -130,9 +147,13 @@ BOOL APIENTRY DllMain(
 //    g_pentium_m_controller.Init() ;
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   }
+  break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
+	  break;
 	case DLL_PROCESS_DETACH:
+	  DEBUGN( FULL_FUNC_NAME << " DLL_PROCESS_DETACH")
+	  //EndPROCHOTdetectionThread();
 		break;
 	}
 #endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -143,6 +164,12 @@ BOOL APIENTRY DllMain(
 //function signature that calls this function?!
 //#define DLL_CALLING_CONVENTION __stdcall
 #define DLL_CALLING_CONVENTION
+
+EXPORT void DLL_CALLING_CONVENTION DeInit()
+{
+  DEBUGN( FULL_FUNC_NAME << " begin")
+  EndPROCHOTdetectionThread();
+}
 
 EXPORT
 void
@@ -163,16 +190,16 @@ void
   AssignPointersToExportedExeMSRfunctions(
     g_pfnreadmsr , g_pfn_write_msr ) ;
 #endif //#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  GetReferenceClockAccordingToStepping() ;
+  Intel::Pentium_M::GetReferenceClockAccordingToStepping() ;
 #ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
   SelectMonitorNumberOfFrequencyIDtransitionsPerfEvent() ;
 #endif //#ifdef GET_BASE_CLOCK_VIA_TSC_DIFF_DIV_MULTIPLIER_IF_NO_FID_CHANGE
 //#endif
 //#ifdef _DEBUG
 //  g_pi_cpuaccess = pi_cpuaccess ;
-  AssignPointersToExportedExeMSRfunctions(
-    g_pfnreadmsr , g_pfn_write_msr ) ;
-  GetReferenceClockAccordingToStepping() ;
+//  AssignPointersToExportedExeMSRfunctions(
+//    g_pfnreadmsr , g_pfn_write_msr ) ;
+  //Intel::Pentium_M::GetReferenceClockAccordingToStepping() ;
   std::string stdstrFilename = //strExeFileNameWithoutDirs +
     ("PentiumM_DLL_log.txt") ;
 #ifdef _DEBUG
@@ -190,7 +217,10 @@ void
   MessageBoxA( NULL, stdstrstream.str().c_str() , //TEXT("")
     "", MB_OK) ;
 #endif
+  StartPROCHOTdetectionThread();
+#ifdef INSERT_DEFAULT_P_STATES
   Intel::Pentium_M_and_Core1::InsertDefaultVoltagePstates(pi_cpuaccess);
+#endif
 //  AssignExeFunctionPointers() ;
   //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
   //MSC-generated version has no problems
@@ -207,6 +237,7 @@ void
   //  //Add to the set of default p-states and to the set of avail. p-states.
   //  AddDefaultVoltageForFreq( 0.0 ,931 ) ;
   //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
+  DEBUGN( FULL_FUNC_NAME << " end")
 }
 
 //EXPORT
@@ -239,6 +270,8 @@ float *
     //wCoreID,
     p_wNum );
 }
+
+#include <Controller\CPUcontrollerDynLibs/Intel/ODCM/ThrottleRatioFunctions.hpp>
 
 EXPORT
 //The array pointed to by the return value must be freed by the caller of this
@@ -311,10 +344,7 @@ float *
   return NULL ;
 }
 
-EXPORT
-  BYTE
-  DLL_CALLING_CONVENTION
-  GetCurrentVoltageAndFrequency(
+EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
     float * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
     , float * p_fMultiplier
@@ -325,26 +355,8 @@ EXPORT
   //dll_GetCurrentPstate_type
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
-//  //This call sets g_fReferenceClockInMHz to the current reference clock.
-//  //This update of the value would be senseful for setting the CPU core
-//  //via "frequency" as parameter value the next time.
-//  GetCurrentReferenceClock(
-//    //For Pentium M the TimeStampCounter has the same frequency as the CPU core
-//    //clock-> must divide by the _current_ multiplier.
-//    * p_fMultiplier
-//    , 200 //min timespan in ms for diffs
-//    //If set too high, this may happen (example):
-//    //  1st TSC value reading when TSC freq was 600 MHz: read "10.000.000"
-//    //  shortly before 2nd reading the TSC value the TSC freq is 1800 MHz
-//    //  2nd time value reading after 10 ms is "16.500.000"
-//    // then taking the diff: 16.500.000 - 10.000.000 =
-//    //  6.500.000 -> ~ the TSC for multiplier "6", but the current multiplier
-//    // is 18, so 6.500.000 / 18 = 361,111.1 , 361,111.1 * 100 = 36,111,111.1
-//    //, what would be only 36.1 MHz !!
-//    , 1500 //max. time diff
-//    ) ;
   return //g_pentium_m_controller.GetCurrentVoltageAndFrequency(
-    GetCurrentVoltageAndFrequencyPentium_M(
+    Intel::Pentium_M::GetCurrentVoltageAndFrequency(
     * p_fVoltageInVolt
     , * p_fMultiplier
     , * p_fReferenceClockInMHz
@@ -356,14 +368,31 @@ EXPORT
 //  return byRet ;
 }
 
-EXPORT
-float
-  DLL_CALLING_CONVENTION
-  GetTemperatureInCelsius ( WORD wCoreID
+/** "14.5.5.2  Reading the Digital Sensor"
+* My tests showed:
+* The only reliable test to check if throttle temperature is exceeded is to
+* check bit "Thermal Status" (bit 0, RO) _many_ times per second.
+* Reading 1x/sec is not sufficient (it seems this bit is only set for some
+* micro-/milliseconds), better is ca. 100 times/sec.
+* Neither "Thermal Status Log" (bit 1, R/WC0) nor perf monitoring is reliable
+* because both can be changed via another program:
+* -"Thermal Status Log" can be set to "1" via software, so a maldetection may
+*  occur, also this bit can be set to "0", so it may not be detected. */
+EXPORT float DLL_CALLING_CONVENTION GetTemperatureInCelsius (
+  WORD wCoreID
   )
 {
-  return //(float) byTempInDegCelsius ;
-    GetTemperatureInDegCelsiusPentiumM() ;
+  DEBUGN(FULL_FUNC_NAME << " begin")
+  if( g_vbProcHotIsCurrentlyActive )
+  {
+    DEBUGN(FULL_FUNC_NAME << " g_vbProcHotIsCurrentlyActive")
+    g_vbProcHotIsCurrentlyActive = false;
+    return //CPU_TEMP_IS_PROCHOT;
+      CPU_TEMP_IS_CRITICAL;
+  }
+  return //CPU_TEMP_IS_BELOW_PROCHOT;
+    CPU_TEMP_IS_BELOW_CRITICAL;
+//    GetTemperatureInDegCelsiusPentiumM() ;
 }
 
 //EXPORT
@@ -395,7 +424,7 @@ EXPORT
   //GET_CURRENT_PSTATE_SIG(GetCurrentPstate , )
 {
   return //byRet ;
-    SetCurrentVoltageAndMultiplierPentiumM(
+    Intel::Pentium_M::SetCurrentVoltageAndMultiplier(
       fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
       , fMultiplier

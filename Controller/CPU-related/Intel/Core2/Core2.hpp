@@ -21,48 +21,128 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 // Intel::CoreAndCore2::AllocateAndFillVoltageArray(...)
 #include <Controller/CPU-related/Intel/Core/CoreAndCore2.hpp>
 
+#include "Core2registers.h"
+#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+
 extern float g_fReferenceClockInMHz;
+extern float g_fReferenceClockMultiplier;
 
 namespace Intel
 {
   namespace Core2
   {
+    unsigned GetVoltageAndMultiplier(
+//      unsigned coreID,
+      DWORD affMask,
+      float * p_fVoltageInVolt, float * );
+  }
+}
+//using namespace Intel::Core2;
+
+
+/** @param coreID: unsigned is fastest data type */
+inline float GetVoltageAndMultiplier(
+//  unsigned coreID,
+  DWORD affMask,
+  float & r_fVoltageInVolt
+  )
+{
+  return //multi;
+    g_fReferenceClockMultiplier;
+}
+
+#ifdef BUSY_TSC_DIFF
+#include <Controller/CPU-related/GetCPUclockAndMultiplier.hpp>
+#endif
+
+namespace Intel
+{
+  namespace Core2
+  {
+    /** @brief whether to add 0.5 to the multiplier */
+    inline bool HasHalfMultiplier(fastestUnsignedDataType byFrequencyIDentifier)
+    {
+      return (byFrequencyIDentifier & BITMASK_FOR_HALF_MULTIPLIER);
+    }
+
+    inline BYTE GetFreqID(fastestUnsignedDataType byFrequencyIDentifier)
+    {
+      return ( byFrequencyIDentifier & BITMASK_FOR_LOWMOST_5BIT );
+    }
+
+    /** @brief whether to half (divide by 2) the multiplier */
+    inline bool IsHalfMultiplier(fastestUnsignedDataType byFrequencyIDentifier)
+    {
+      return byFrequencyIDentifier & BITMASK_FOR_SUPER_LOW_FREQUENCY_MODE;
+    }
+
+    inline float GetMultiplier(const fastestUnsignedDataType byFrequencyIDentifier)
+    {
+      //1000 0110 bin (134dec) was multiplier 3
+      //      110 bin=6dec
+      //If multiplier should be divided by "2".
+      //                  73 (0100 1001 bin) was multi/ FID "9"
+      //                      ++   1001 bin = 9dec
+      //                     / |+-----+
+      //                    /  | FreqID
+      //SuperLowFrequencyMode add
+      //(half multiplier)     half multi: 1=yes
+      //-> only the lowmost 4 bits are used?!
+      float fFreqID = (float) GetFreqID(byFrequencyIDentifier);
+      if( IsHalfMultiplier(byFrequencyIDentifier) )
+      {
+        //Intel: "15:0 Current performance State Value"
+        //   "63:16 Reserved"
+        fFreqID /= 2.0 ;
+      }
+      else
+      {
+        if( HasHalfMultiplier(byFrequencyIDentifier) )
+          fFreqID += 0.5 ;
+//        else
+//          //Neither bit 7 nor bit 8 is set.
+//          return byFrequencyIDentifier ;
+      }
+      return fFreqID;
+    }
+
     inline float GetMultiplierAsEncodedInMSR(DWORD dwValue )
     {
       static BYTE byFrequencyIDentifier = 0 ;
       //g_byValue1 =
       byFrequencyIDentifier =
         ( dwValue >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ;
-      //1000 0110 bin (134dec) was multiplier 3
-      //      110 bin=6dec
-      //If multiplier should be divided by "2".
-      //73 (0100 1001 bin) was multi/ FID "9"
-      //         1001 bin = 9dec
-      //-> only the lowmost 4 bits are used?!
-      //g_byValue2 = g_byValue1 & BITMASK_FOR_LOWMOST_5BIT ;
-  //    byFrequencyIDentifier &= BITMASK_FOR_LOWMOST_5BIT ;
-      if( //g_byValue1 & 128
-          byFrequencyIDentifier & 128 //128dec = 1000 0000bin
-        )
+      return GetMultiplier(byFrequencyIDentifier);
+    }
+
+    /** @param coreID: unsigned is fastest data type */
+    inline unsigned GetVoltageAndMultiplier(
+      //unsigned coreID,
+      DWORD affMask,
+      float * p_fVoltageInVolt,
+      float * p_fMultiplier)
+    {
+      static uint32_t lowmostBits , highmostBits ;
+      static unsigned byValue1;
+      //  //Intel: 198H 408 IA32_PERF_STATUS
+      byValue1 =
+      //      (*g_pfnreadmsr) (
+        ReadMSR(
+        IA32_PERF_STATUS,
+        & lowmostBits,// bit  0-31 (register "EAX")
+        & highmostBits,
+        //1 << coreID //m_dwAffinityMask
+        affMask
+        ) ;
+      if( byValue1 ) //success
       {
-        //Intel: "15:0 Current performance State Value"
-        //   "63:16 Reserved"
-        return (float) //g_byValue2 / 2.0 ;
-          ( byFrequencyIDentifier & BITMASK_FOR_LOWMOST_5BIT ) / 2.0 ;
+//        byValue1 = (lowmostBits ) ;
+        * p_fVoltageInVolt = Intel::CoreAndCore2::GetVoltage( lowmostBits &
+          BITMASK_FOR_LOWMOST_8BIT ) ;
+        * p_fMultiplier = GetMultiplierAsEncodedInMSR(lowmostBits) ;
+        DEBUGN("FID:" << byValue1 << "multiplier: " << * p_fMultiplier )
       }
-      else
-      {
-        if( //Half multi
-  //        g_byValue1 & 64
-          byFrequencyIDentifier & 64 //64dec = 0100 0000bin
-          )
-          return (float) //g_byValue2 + 0.5 ;
-            ( byFrequencyIDentifier & BITMASK_FOR_LOWMOST_5BIT ) + 0.5 ;
-        else
-          //Neither bit 7 nor bit 8 is set.
-          return //g_byValue2 ;
-            byFrequencyIDentifier ;
-      }
+      return byValue1;
     }
 
     inline float * GetAvailableVoltagesInVolt(WORD & r_byNumVoltages)
@@ -78,7 +158,7 @@ namespace Intel
   //      (*g_pfnreadmsr) (
         ReadMSR(
   //      IA32_PERF_STATUS,
-        //MSR Address from image: http://img223.imageshack.us/img223/6914/msr.png
+        //MSR address from image: http://img223.imageshack.us/img223/6914/msr.png
         //referred from http://www.techpowerup.com/forums/showthread.php?p=1572128
         0xCE,
         & lowmostBits,// bit  0-31 (register "EAX")
@@ -99,98 +179,50 @@ namespace Intel
       return ar_f ;
     }
 
-    inline float * GetAvailableMultipliers(WORD & r_byNumMultis)
-    {
-      float * ar_f = NULL ;
-      /*BYTE*/ unsigned LFMmultiplier;
-      uint32_t lowmostBits, highmostBits;
-      //                        byte index: 7  6  5  4  3  2  1  0
-      //example: "value at MSR address 408:06 23 73 42 06 00 73 42 "
-      // 6: min. multiplier (if SuperLowFrequencyMode= min. Multi= 6/2=3)
-      // 73: max. multiplier: 73dec = 1001001bin
-      //                                 1001bin = 9dec
-      //  -> max. Multi ~= 9 -> 9 or 9.5
-      // 0xCE byte 4, bits 8-14: 49dec=110001bin 10001bin = 17dec
-      BYTE byValue1 =
-  //      (*g_pfnreadmsr) (
-        ReadMSR(
-        IA32_PERF_STATUS,
-        & lowmostBits,// bits 0-31 (register "EAX")
-        & highmostBits,
-        1 //<< wCoreID //m_dwAffinityMask
-        ) ;
-      if( byValue1 ) //successfully read from MSR.
-      {
-        //LowestFrequencyMode (LFM) multiplier.
-        LFMmultiplier = ( ( highmostBits >> 24 ) & BITMASK_FOR_LOWMOST_8BIT ) ;
-        DEBUGN("LowestFrequencyMode (LFM) multiplier:" << (WORD) LFMmultiplier )
-        float multiplier;
-        //Max multiplier.
-        multiplier = GetMultiplierAsEncodedInMSR( highmostBits ) ;
-        DEBUGN("Max multiplier:" << multiplier )
-        //ex. # multi if LowFrequencyMode (LFM=6-> SuperLowFrequencyMode=3), max.
-        // multi = 9.5: {3,4,5,  6;6.5;7;7.5;8,8.5,9,9.5} = 3 + 8 = 11 multipliers
-        //Number of different multipliers = highest multiplier-lowest multiplier + 1
-  //      g_byValue1 =
-        r_byNumMultis = (WORD) (
-          //# SuperLowFrequencyMode multis
-  //        LFMmultiplier / 2 +
-          //e.g. ( 9.5 - 6 )*2+1 = (3.5)*2 +1 = 7.0+1 = 8
-          //Maximum multiplier.
-          //( ( lowmostBits >> 8 ) & BITMASK_FOR_LOWMOST_8BIT ) -
-          ( multiplier -
-          //SuperLowFrequencyMode: LowFrequencyMode multiplier / 2
-          LFMmultiplier / 2
-          // // lowest LowestFrequencyMode multi
-          // LFMmultiplier
-          ) * 2 + 1 ) ;
-        DEBUGN("# multis:" << (WORD) r_byNumMultis )
-        ar_f = new float [ //g_byValue1
-          r_byNumMultis ] ;
-        if( ar_f ) //Allocating memory on heap succeeded.
-        {
-          unsigned multiplierIndex = 0;
-          //loop "Number of different multipliers" times.
-          //for( -- multiplierIndex ; multiplierIndex > 255 ; -- multiplierIndex )
-          for( ; multiplierIndex < r_byNumMultis ; ++ multiplierIndex )
-          {
-            multiplier = (float) LFMmultiplier / 2.0 ;
-            ar_f[ multiplierIndex ] =
-              //Minimum multi + Index
-  //            ( LFMmultiplier + multiplierIndex )
-              multiplier + (float) multiplierIndex * 0.5 ;
-            DEBUGN("adding multiplier " << ar_f[ multiplierIndex ] )
-          }
-        }
-      }
-      return ar_f ;
-    }
-
     inline BYTE GetCurrentVoltageAndFrequency(
-      float * p_fVoltageInVolt
+      float & r_fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-      , float * p_fMultiplier
-      , float * p_fReferenceClockInMHz
+      , float & r_fMultiplier
+      , float & r_fReferenceClockInMHz
       , WORD wCoreID
       )
     {
-      static uint32_t lowmostBits , highmostBits ;
-      static BYTE byValue1;
-    //  //Intel: 198H 408 IA32_PERF_STATUS
-      byValue1 =
-  //      (*g_pfnreadmsr) (
-        ReadMSR(
-        IA32_PERF_STATUS,
-        & lowmostBits,// bit  0-31 (register "EAX")
-        & highmostBits,
-        1 << wCoreID //m_dwAffinityMask
-        ) ;
-      if( byValue1 ) //success
+      static BYTE retVal;
+#ifdef BUSY_TSC_DIFF
+      static unsigned numTimerSteps;
+      numTimerSteps = 100;
+      static float waitTimeInSeconds = 0.00001;
+      static double CPUclock;
+#ifdef SLEEP_ON_BUSY_WAITING
+      CPUclock = CPU::OneLogicalCore::GetClockWithLoad(
+        1 << wCoreID
+        , r_fMultiplier //float & multiplier
+        , numTimerSteps //unsigned & numMinimumSteps,
+        , waitTimeInSeconds //float & waitTimeInSeconds,
+        , r_fVoltageInVolt //float & r_fVoltageInVolt
+        );
+#else
+      CPUclock = CPU::GetClockWithLoad(
+        1 << wCoreID
+        , r_fMultiplier //float & multiplier
+        , numTimerSteps //unsigned & numMinimumSteps,
+        , waitTimeInSeconds //float & waitTimeInSeconds,
+        , r_fVoltageInVolt //float & r_fVoltageInVolt
+        );
+#endif
+      if( r_fReferenceClockInMHz < 0.0f )
+        r_fReferenceClockInMHz = 0.0f;
+      else
       {
-        byValue1 = (lowmostBits ) ;
-        * p_fVoltageInVolt = Intel::CoreAndCore2::GetVoltage( byValue1 ) ;
-        * p_fMultiplier = GetMultiplierAsEncodedInMSR(lowmostBits) ;
-        DEBUGN("FID:" << byValue1 << "multiplier: " << * p_fMultiplier )
+        r_fReferenceClockInMHz = CPUclock / r_fMultiplier;
+      }
+      return 1;
+//#else
+#endif
+      retVal = GetVoltageAndMultiplier(1 << wCoreID, & r_fVoltageInVolt,
+        & r_fMultiplier);
+      r_fReferenceClockInMHz = g_fReferenceClockInMHz ;
+      return retVal;
 
         //Although (see http://en.wikipedia.org/wiki/Time_Stamp_Counter:
         // paragraph "Implementation in various processors")
@@ -244,11 +276,8 @@ namespace Intel
     //    GetCurrentReferenceClock(12.0 ,
     //      1 , //min. timespan in ms
     //      10000 ) ;
-        * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
-        return 1 ;
-      }
   //    else
-        return 0 ;
+//        return 0 ;
     }
 
     inline BYTE EncodeMultiplierAsInMSR(float fMultiplier)
@@ -339,9 +368,9 @@ namespace Intel
   //    ss << "multiplier to set: " << fMultiplier << "lowmost bits:"
   //        << dwLowmostBits ;
       stdstringstreamMessage << "written voltage would be:"
-        << GetVoltageAsEncodedInMSRIntelCore( dwLowmostBits )
+        << Intel::CoreAndCore2::GetVoltage( dwLowmostBits )
         << "\nwritten multiplier would be:"
-        << GetMultiplierAsEncodedInMSRIntelCore(dwLowmostBits) ;
+        << GetMultiplierAsEncodedInMSR(dwLowmostBits) ;
       std::string stdstrMessage =  stdstringstreamMessage.str() ;
       stdstrMessage += "\nshould be written?" ;
   #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)

@@ -58,6 +58,8 @@ GetFilenameWithoutExtension.hpp>
 //getwxString(...)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp>
+#include <wxWidgets/UserInterface/FreqAndVoltageSettingDlg.hpp>
+#include <wxWidgets/UserInterface/wx2.9compatibility/include_bitmap_toggle_button.hpp>
 //class wxTextControlDialog
 #include <wxWidgets/UserInterface/wxTextControlDialog.hpp>
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
@@ -109,7 +111,19 @@ CPUcontrolBase * gp_cpucontrolbase ;
 //Erzeugt ein wxAppConsole-Object auf dem Heap.
 IMPLEMENT_APP(wxX86InfoAndControlApp)
 
-void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
+DEFINE_LOCAL_EVENT_TYPE( wxEVT_COMMAND_SHOW_MESSAGE )
+
+BEGIN_EVENT_TABLE(wxX86InfoAndControlApp, wxApp)
+  EVT_COMMAND(wxID_ANY, wxEVT_COMMAND_SHOW_MESSAGE,
+    wxX86InfoAndControlApp::OnShowMessage)
+END_EVENT_TABLE()
+
+void wxX86InfoAndControlApp::OnShowMessage(wxCommandEvent & wxcmdevt)
+{
+  MessageWithTimeStamp( GetStdWstring(wxcmdevt.GetString()).c_str() );
+}
+
+void wxX86InfoAndControlApp::StabilizeVoltageAndShowVoltageSettingsChanges(
   const float fVoltageInVolt,
   const float fMultiplier,
   const float fReferenceClockInMHz)
@@ -135,55 +149,6 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndRepaintMainFrame(
   LOGN( FULL_FUNC_NAME << "--end")
 }
 
-void VoltageTooLow()
-{
-  LOGN( FULL_FUNC_NAME << "--called by Dyn lib")
-//  wxGetApp().mp_cpucontroller->GetCurrentVoltageAndFrequency(
-//    fVoltageInVolt,
-//    fMultiplier, fReferenceClockInMHz, 0);
-
-  //Important: else unstable voltage can not be detected after Prime95 torture
-  //test ended.
-  wxGetApp().ExitFindLowestStableVoltageThread();
-
-  const InstableCPUcoreVoltageDetection & c_r_instablecpucorevoltagedetection =
-    wxGetApp().m_model.m_instablecpucorevoltagedetection;
-  float fVoltageInVolt = c_r_instablecpucorevoltagedetection.
-    m_lastSetCPUcoreVoltageInVolt;
-  float fMultiplier = c_r_instablecpucorevoltagedetection.
-    m_lastSetCPUcoreMultiplier;
-  float fReferenceClockInMHz = c_r_instablecpucorevoltagedetection.
-    m_fReferenceClockInMHz;
-  wxGetApp().StabilizeVoltageAndRepaintMainFrame(
-    fVoltageInVolt,
-    fMultiplier,
-    fReferenceClockInMHz
-    );
-  //This flag is important for to know why the find instable CPU core voltage
-  //loop ended.
-  wxGetApp().m_bVoltageWasTooLowCalled = true;
-//  if( ! wxGetApp().m_bAutoConfigureVoltage)
-//  {
-  wxString wxstrMessage = wxString::Format(
-    wxT("Highest unstable voltage: %f Volt found for "
-        "multiplier %f"), fVoltageInVolt, fMultiplier);
-//  ::wxMessageBox( wxstrMessage )
-  //TODO exec in GUI thread
-//  wxGetApp().MessageWithTimeStamp( GetStdTstring_Inline(wxstrMessage) );
-  LOGN( FULL_FUNC_NAME << " waking up threads that wait for "
-    "\"VoltageTooLow()\" to be finished")
-  LOGN( FULL_FUNC_NAME << "--signalling the condition to end finding the"
-      " lowest stable voltage thread")
-  //Wake up all threads (the auto-configure voltages thread) waiting on the
-  //condition.
-  wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
-//  LOGN( FULL_FUNC_NAME << " waiting up the for \"VoltageTooLow()\" to be finished")
-//  //Wake up all threads (the auto-configure voltages thread) waiting on the
-//  //condition.
-//  wxGetApp().m_conditionFindLowestStableVoltage.Wait();
-  LOGN( FULL_FUNC_NAME << "--end")
-}
-
 wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   //C++ style inits:
   //#ifdef COMPILE_WITH_CPU_SCALING
@@ -192,19 +157,13 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
   :
 //      mp_cpucontroller(NULL)
 //    ,
-  m_bVoltageWasTooLowCalled(false),
   CPUcontrolBase(this) ,
   m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib(
     //For a default value for file seperator.
     wxEmptyString),
 //  m_std_wstrInstableCPUcoreVoltageDynLibPath(
-//    L"InstableCPUcoreVoltageDetection.dll"),
-#ifdef _WIN32
-  m_hmoduleUnstableVoltageDetectionDynLib(NULL),
-#endif //#ifdef _WIN32
+//    L"InstableCPUcoreOperationDetection.dll"),
 //  m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
-  m_vbExitFindLowestStableVoltage(false),
-  m_x86iandc_threadFindLowestStableVoltage(I_Thread::detached),
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 //  m_sax2_ipc_current_cpu_data_handler(m_model),
 #endif
@@ -239,8 +198,9 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //has to be declared before. the call
 //    ( error if  "logger.OpenFile( std::string("bla");"  )
 #endif
-  m_external_caller.m_pfnVoltageTooLow = & VoltageTooLow;
+//  m_external_caller.m_pfnVoltageTooLow = & VoltageTooLow;
   I_Thread::SetCurrentThreadName("main");
+  m_model.m_instablecpucorevoltagedetection.m_p_userinterface = this;
 //  g_logger.SetCurrentThreadName("main");
 }
 
@@ -461,19 +421,19 @@ void wxX86InfoAndControlApp::CreateAndShowMainFrame()
   ////The user interface must be created before the controller because
   ////it should show error messages because of e.g. missing privileges.
   //p_frame = new MyFrame(
+  const Attributes::MainFrame & mainframeAttributes = m_model.
+    m_userinterfaceattributes.mainframe;
   mp_frame = new MainFrame(
     //_T(PROGRAM_NAME)
     //m_stdtstrProgramName
   //        mp_modelData->m_stdtstrProgramName +_T(" GUI")
     wxstrMainFrameTitle ,
   //        wxPoint(50,50),
-    wxPoint( m_model.m_userinterfaceattributes.
-      m_wMainFrameTopLeftCornerXcoordinateInPixels ,
-      m_model.m_userinterfaceattributes.
-      m_wMainFrameTopLeftCornerYcoordinateInPixels ) ,
+    wxPoint( mainframeAttributes.m_topLeftCornerXcoordinateInPixels ,
+      mainframeAttributes.m_topLeftCornerYcoordinateInPixels ) ,
     //wxSize(450,340)
-    wxSize( m_model.m_userinterfaceattributes.m_wMainFrameWidthInPixels
-      , m_model.m_userinterfaceattributes.m_wMainFrameHeightInPixels)
+    wxSize( mainframeAttributes.m_widthInPixels
+      , mainframeAttributes.m_heightInPixels)
     , mp_cpucontroller
     //, & m_modelData.m_cpucoredata
     //, & mp_modelData->m_cpucoredata
@@ -682,16 +642,21 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 
 void wxX86InfoAndControlApp::DeleteCPUcontroller( )
 {
-  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() cpu controller:" <<
-      mp_cpucontroller )
+  LOGN_DEBUG("wxX86InfoAndControlApp::DeleteCPUcontroller() cpu controller:"
+    << mp_cpucontroller )
   //if( p_cpucontroller )
   //{
     //Avoid program crash because of the mainframe tries to get the current
     //performance state.
     mp_frame->DenyCPUcontrollerAccess() ;
     if( mp_cpucontroller )
+    {
+      // Calling De-initialization is needed when e.g. at least 1 extra
+      //  thread is running in the CPU controller -> stop thread here ?
+      mp_cpucontroller->DeInit();
       //Release memory.
       delete mp_cpucontroller ;
+    }
     mp_cpucontroller = NULL ;
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
@@ -713,7 +678,7 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
     //Force an update of the canvas.
     mp_frame->RedrawEverything() ;
   //}
-  DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
+  LOGN_DEBUG("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
 }
 
 void wxX86InfoAndControlApp::DynVoltnFreqScalingEnabled()
@@ -1067,13 +1032,7 @@ void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
 void wxX86InfoAndControlApp::ExitFindLowestStableVoltageThread()
 {
   LOGN( FULL_FUNC_NAME << "--begin")
-  //Exit the "find lowest stable voltage" thread.
-  wxGetApp().m_vbExitFindLowestStableVoltage = true;
-//          wxGetApp().m_wxconditionFindLowestStableVoltage.Signal();
-  LOGN( FULL_FUNC_NAME << "--signalling the condition to end finding the"
-      " lowest stable voltage thread")
-  //Wake up all threads waiting on the condition.
-  wxGetApp().m_conditionFindLowestStableVoltage.Broadcast();
+  m_model.m_instablecpucorevoltagedetection.ExitFindLowestStableVoltageThread();
   LOGN( FULL_FUNC_NAME << "--end")
 }
 
@@ -1264,6 +1223,22 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   LOGN("GetConfigDataViaInterProcessCommunication return 2")
   return 2 ;
+}
+
+void wxX86InfoAndControlApp::ShowMessageGUIsafe(const wchar_t * wch)
+{
+  ShowMessageGUIsafe( getwxString(std::wstring(wch) ) );
+}
+
+/** @brief adds an event to the event loop.
+ * So this program does not crash if not called from GUI thread. */
+void wxX86InfoAndControlApp::ShowMessageGUIsafe(const wxString & wxstr)
+{
+  //Send event to redraw everything because calling it from another
+  //thread.
+  wxCommandEvent wxcommand_event(wxEVT_COMMAND_SHOW_MESSAGE);
+  wxcommand_event.SetString( wxstr );
+  wxPostEvent( & wxGetApp(), wxcommand_event);
 }
 
 void wxX86InfoAndControlApp::StabilizeVoltage(
@@ -1513,6 +1488,52 @@ bool wxX86InfoAndControlApp::OnInit()
 //    if( OpenLogFile(std_wstrLogFilePath) )
 //      HideMinGWconsoleWindow();
 
+    std::string std_strAppendProcessID = m_model.m_std_strConfigFilePath + "/appendProcessID.cfg";
+    ReadFileContent(std_strAppendProcessID);
+    if( std_strAppendProcessID == "true")
+      m_model.m_logfileattributes.m_bAppendProcessID = true;
+    else
+      m_model.m_logfileattributes.m_bAppendProcessID = false;
+//      +  std_wstrProgramPath.substr(lastBackSlash + 1);
+    std::wstring std_wstrExecutableFileName = GetExecutableFileName(argv[0]);
+
+//    std_wstrLogFilePath += std_wstrProgramPath.substr(lastBackSlash + 1);
+    std::wstring std_wstrLogFileDirPath = GetStdWstring(wxCurrentWorkingDir)
+      + wxFILE_SEP_PATH;
+    if( OpenLogFile(std_wstrLogFileDirPath, std_wstrExecutableFileName,
+        m_model.m_logfileattributes.m_bAppendProcessID, false) )
+    {
+#ifdef _WIN32
+      HideMinGWconsoleWindow();
+//      NodeTrie & nt = sax2userinterfaceconfighandler.m_trieExcludeFromLogging;
+//      g_logger.setTrie(nt);
+#else //#ifdef _WIN32
+      ;
+#endif //#ifdef _WIN32
+    }
+    else
+      MessageWithTimeStamp( L"creating the log file \"" + //std_strLogFile +
+        std_wstrLogFilePath +
+        "\" failed: " +
+        GetStdWstring( GetErrorMessageFromLastErrorCodeA() ) );
+#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+//    else
+    {
+      m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
+    }
+#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+
+    OutputLinkageWarning();
+//    TCHAR * tstr = BUILT_TIME;
+    std::tstring std_tstr = BUILT_TIME;
+    LOGN( "Built time of this executable:" << GetStdString(std_tstr) )
+    //Time should be output because the log time format may e.g. not contain the
+    //year.
+    LOGN( "current date/time: " << GetStdString(wxNow() ) )
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
+        //std_tstrLogFilePath
+      GetStdString(std_tstrLogFilePath) << "\"")
+
     Attributes::UserInterfaceAttributes::s_defaultFontSizeInPoint =
       //Get default font to ensure it matches the user's needs. (if
       //people can only recognize large letters then they may specify a
@@ -1558,41 +1579,6 @@ bool wxX86InfoAndControlApp::OnInit()
 //    }
 ////    else
 ////      std_strLogFile = std_wstrLogFilePath;
-    std::wstring std_wstrExecutableFileName = GetExecutableFileName(argv[0]);
-
-//    std_wstrLogFilePath += std_wstrProgramPath.substr(lastBackSlash + 1);
-    std::wstring std_wstrLogFileDirPath = GetStdWstring(wxCurrentWorkingDir)
-      + wxFILE_SEP_PATH;
-//      +  std_wstrProgramPath.substr(lastBackSlash + 1);
-    if( OpenLogFile(std_wstrLogFileDirPath, std_wstrExecutableFileName,
-        m_model.m_logfileattributes.m_bAppendProcessID, false) )
-#ifdef _WIN32
-      HideMinGWconsoleWindow();
-#else //#ifdef _WIN32
-      ;
-#endif //#ifdef _WIN32
-    else
-      MessageWithTimeStamp( L"creating the log file \"" + //std_strLogFile +
-        std_wstrLogFilePath +
-        "\" failed: " +
-        GetStdWstring( GetErrorMessageFromLastErrorCodeA() ) );
-#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
-//    else
-    {
-      m_wxstrDataProviderURL = getwxString( m_model.m_stdwstrPipeName ) ;
-    }
-#endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
-
-    OutputLinkageWarning();
-//    TCHAR * tstr = BUILT_TIME;
-    std::tstring std_tstr = BUILT_TIME;
-    LOGN( "Built time of this executable:" << GetStdString(std_tstr) )
-    //Time should be output because the log time format may e.g. not contain the
-    //year.
-    LOGN( "current date/time: " << GetStdString(wxNow() ) )
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("Using log file \"" <<
-        //std_tstrLogFilePath
-      GetStdString(std_tstrLogFilePath) << "\"")
     BYTE & r_byNumberOfCPUCores = m_model.m_cpucoredata.m_byNumberOfCPUCores;
     int nCPUCount = wxThread::GetCPUCount();
     LOGN( FULL_FUNC_NAME << " # CPUs reported by wxWidgets: " << nCPUCount)
@@ -1948,6 +1934,14 @@ void wxX86InfoAndControlApp::PauseService(
   LOGN(FULL_FUNC_NAME << " end")
 }
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
+
+bool wxX86InfoAndControlApp::PreventVoltageBelowLowestStableVoltage()
+{
+  return m_p_freqandvoltagesettingdlgInstCPUcoreDetect->
+    //  //mp_wxcheckboxPreventVoltageBelowLowestStableVoltage->IsChecked()
+    m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage->
+      GetValue();
+}
 
 #ifdef COMPILE_WITH_OTHER_DVFS_ACCESS
 void wxX86InfoAndControlApp::PossiblyAskForOSdynFreqScalingDisabling()

@@ -17,6 +17,7 @@
 //GetArrayIndexForClosestValue(...)
 #include <algorithms/binary_search/binary_search.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD etc.
+#include <fastest_data_type.h>
 
 #define CPU_CORE_DATA_NOT_SET 255
 
@@ -102,6 +103,8 @@ public:
   BYTE m_byModel ;
   BYTE m_byStepping ;
 
+  //TODO rename to "adjustable..."?! because may be readable but not be
+  //writable
   float * m_arfAvailableMultipliers ;
   float * m_arfAvailableThrottleLevels ;
   float * m_arfAvailableVoltagesInVolt ;
@@ -249,12 +252,16 @@ public:
     const float fHighestMultiplierWhereInstabilityCouldntBeReached);
   const VoltageAndFreq * GetClosestHigherVoltageAndFreqInsertedByCPUcontroller(
     float fMultiplier) const;
-  WORD GetIndexForClosestMultiplier(float fMultiplier) const;
+  fastestUnsignedDataType GetIndexForClosestMultiplier(const float fMultiplier) const;
   WORD GetIndexForClosestGreaterEqualMultiplier(float fMultiplier) const
   {
-    return GetArrayIndexForClosestGreaterOrEqual(m_arfAvailableMultipliers,
-      m_stdset_floatAvailableMultipliers.size(), fMultiplier);
+    return MANUFACTURER_ID_NAMESPACE::BinarySearch::
+      GetArrayIndexForClosestGreaterOrEqual(
+        m_arfAvailableMultipliers,
+        m_stdset_floatAvailableMultipliers.size(),
+        fMultiplier);
   }
+
   /** Define a function because of this problem:
   * the calculated float value was 1.0999999
   * the compared float value was 1.1000000
@@ -267,7 +274,8 @@ public:
       return m_arfAvailableVoltagesInVolt[index];
     return 0.0f;
   }
-  BYTE GetIndexForClosestVoltage(float) const;
+  /** unsigned=same bit width as CPU arch=fastest data type */
+  fastestUnsignedDataType GetIndexForClosestVoltage(const float) const;
   const VoltageAndFreq * GetClosestHigherVoltageAndFreq(
     const std::set<VoltageAndFreq> & stdsetvoltageandfreq,
     float fMultiplier) const;

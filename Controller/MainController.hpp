@@ -80,6 +80,7 @@ public:
     std::string & strFamilyAndModelFilePath
     , UserInterface * p_userinterface
     ) ;
+  void ReadRegisterDataConfig();
 };
 
 #endif	/* _MAINCONTROLLER_HPP */

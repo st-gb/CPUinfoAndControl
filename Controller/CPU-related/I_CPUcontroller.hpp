@@ -146,6 +146,11 @@ public:
 //  virtual bool CmdLineParamsContain( TCHAR * ptcharOption,
 //      std::string & strValue );
   virtual void DecreaseVoltageBy1Step(float & r_fVoltage) {}
+  /** Called before unloading a dyn lib CPU controller/ calling this class'
+   * destructor so that resources (that were allocated in the CPU controller)
+   * like threads etc. can be freed.
+   * stopping threads in "DllMain(...) on Windows did not work?->program crash?*/
+  virtual void DeInit() {};
   BYTE DisableFrequencyScalingByOS() ;
 //  BYTE EnableOwnDVFS() ;
   //Some of these frequences may not be applicable.

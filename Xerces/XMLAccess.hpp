@@ -72,6 +72,8 @@ namespace Apache_Xerces
    //This is useful because there may be more than one XML file to read.
    //So one calls this functions with different handlers passed.
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
+    //class for calling its "fatalError" method.
+    , XERCES_CPP_NAMESPACE::DefaultHandler * const errorHandler = NULL
     ) ;
 
   /** Warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been

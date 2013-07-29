@@ -8,6 +8,12 @@
 #ifndef _TASKBARICON_HPP
 #define _TASKBARICON_HPP
 
+#if defined(wxHAS_TASK_BAR_ICON)
+//#if defined(COMPILE_WITH_SYSTEM_TRAY_ICON) && defined(wxHAS_TASK_BAR_ICON)
+#define COMPILE_WITH_SYSTEM_TRAY_ICON
+#endif
+
+#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 #include <wx/taskbar.h>
 #include <wxWidgets/icon/IconDrawer.hpp> //class wxIconDrawer
 
@@ -118,5 +124,6 @@ public:
     void ShowMainFrame();
     DECLARE_EVENT_TABLE()
 };
+#endif //COMPILE_WITH_SYSTEM_TRAY_ICON
 
 #endif //_TASKBARICON_HPP

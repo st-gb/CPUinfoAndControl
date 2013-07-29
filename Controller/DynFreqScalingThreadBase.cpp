@@ -596,7 +596,7 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
     float fFreqInMHz ;
     float fLowerMultiplier ;
     float fNextMultiplierCalculatedFromCurrentLoad ;
-    WORD wCoreWithHighestMultiplier ;
+    //WORD wCoreWithHighestMultiplier ;
     while( m_vbRun )
     {
       //LOGN("DVFS thread running ")
@@ -662,7 +662,7 @@ void DynFreqScalingThreadBase::HandleSameCPUcoreVoltageForAllCPUcores()
             {
               fHighestMultiplier = m_arp_percpucoreattributes[byCoreID].
                 m_fMultiplier ;
-              wCoreWithHighestMultiplier = byCoreID ;
+//              wCoreWithHighestMultiplier = byCoreID ;
             }
           }
           LOGN("highest multi for all cores:" << fHighestMultiplier )

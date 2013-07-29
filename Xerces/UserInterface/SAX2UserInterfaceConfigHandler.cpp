@@ -37,7 +37,9 @@ namespace Xerces
     Model & model ,
     UserInterface * p_userinterface
     )
-    : m_ui16t_WisdomNumber(0)
+    : m_trieExcludeFromLogging(255,0),
+      m_ui16t_WisdomNumber(0),
+      m_mainFrameAttributes(model.m_userinterfaceattributes.mainframe)
   {
     m_p_model = & model ;
     m_p_userinterface = p_userinterface ;
@@ -119,6 +121,9 @@ namespace Xerces
       std_strAttributeValue
       ) == XercesAttributesHelper::getting_attribute_value_succeeded )
     {
+      LOGN_DEBUG( FULL_FUNC_NAME << " successfully got font size for \""
+        << attrName << "\"")
+      bool convertError = false;
       if( std_strAttributeValue.length() > 0 && std_strAttributeValue.at(0)
           == '+' )
       {
@@ -129,8 +134,7 @@ namespace Xerces
             m_p_model->m_userinterfaceattributes.s_defaultFontSizeInPoint +
             nAddToFontSize;
         else
-          LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
-            << std_strAttributeValue)
+          convertError = true;
       }
       else if( std_strAttributeValue.length() > 0 && std_strAttributeValue.at(0)
           == '-' )
@@ -143,68 +147,63 @@ namespace Xerces
             nSubtractFromFontSize;
         else
           LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
-            << std_strAttributeValue)
+            << attrName)
       }
       else
         if( ! ConvertStdStringToTypename(nFontSize,
             std_strAttributeValue.substr(1) ) )
-          LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
-            << std_strAttributeValue)
+          convertError = true;
+      if( convertError )
+        LOGN_ERROR( FULL_FUNC_NAME << " Failed to get font size for \""
+          << attrName << "\"")
     }
-  }
+    else
+      LOGN_ERROR( FULL_FUNC_NAME << " Failed to get XML attr val for \""
+        << attrName << "\"")
+ }
 
   void SAX2UserInterfaceConfigHandler::HandleMainFrameXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
   {
-    unsigned short w ;
-    if( ConvertXercesAttributesValue<WORD>(
+    //unsigned short w ;
+    ConvertXercesAttributesValue<WORD>(
       cr_xercesc_attributes
        ,"width_in_pixels"
-       ,w )
-     )
-     m_p_model->m_userinterfaceattributes.m_wMainFrameWidthInPixels = w ;
-    if( ConvertXercesAttributesValue<WORD>(
+       ,m_mainFrameAttributes.m_widthInPixels );
+    ConvertXercesAttributesValue<WORD>(
       cr_xercesc_attributes
-       ,"height_in_pixels"
-       ,w )
-     )
-     m_p_model->m_userinterfaceattributes.m_wMainFrameHeightInPixels = w ;
+      ,"height_in_pixels"
+      ,m_mainFrameAttributes.m_heightInPixels );
     XercesAttributesHelper::GetAttributeValue(
       cr_xercesc_attributes
-       ,"show_at_startup"
-       ,m_p_model->m_userinterfaceattributes.m_bShowMainFrameAtStartup
+      ,"show_at_startup"
+      ,m_p_model->m_userinterfaceattributes.m_bShowMainFrameAtStartup
       ) ;
-    if( ConvertXercesAttributesValue<WORD>(
+    ConvertXercesAttributesValue<WORD>(
       cr_xercesc_attributes
-       ,"top_left_corner_x_coordinate_in_pixels"
-       ,w )
-     )
-      m_p_model->m_userinterfaceattributes.
-        m_wMainFrameTopLeftCornerXcoordinateInPixels = w ;
-    if( ConvertXercesAttributesValue<WORD>(
+      ,"top_left_corner_x_coordinate_in_pixels"
+      ,m_mainFrameAttributes.m_topLeftCornerXcoordinateInPixels );
+    ConvertXercesAttributesValue<WORD>(
       cr_xercesc_attributes
-       ,"top_left_corner_y_coordinate_in_pixels"
-       ,w )
-     )
-      m_p_model->m_userinterfaceattributes.
-        m_wMainFrameTopLeftCornerYcoordinateInPixels = w ;
+      ,"top_left_corner_y_coordinate_in_pixels"
+      ,m_mainFrameAttributes.m_topLeftCornerYcoordinateInPixels );
 //    ConvertXercesAttributesValue<int>(
     GetFontSizeAttributeValue(
       cr_xercesc_attributes
-       ,"CPU_core_voltage_scale_point_size"
-       ,m_p_model->m_userinterfaceattributes.m_nVoltageScaleSizeInPoint
+      ,"CPU_core_voltage_scale_point_size"
+      ,m_mainFrameAttributes.m_nVoltageScaleSizeInPoint
      );
 //    ConvertXercesAttributesValue<int>(
     GetFontSizeAttributeValue(
       cr_xercesc_attributes
-       ,"current_CPU_core_info_point_size"
-       ,m_p_model->m_userinterfaceattributes.m_nCurrentCPUcoreInfoSizeInPoint
+      ,"current_CPU_core_info_point_size"
+      ,m_mainFrameAttributes.m_nCurrentCPUcoreInfoSizeInPoint
      );
     ConvertXercesAttributesValue<int>(
       cr_xercesc_attributes
-       ,"CPU_core_frequency_scale_point_size"
-       ,m_p_model->m_userinterfaceattributes.m_nCPUcoreFrequencyScaleSizeInPoint
+      ,"CPU_core_frequency_scale_point_size"
+      ,m_mainFrameAttributes.m_nCPUcoreFrequencyScaleSizeInPoint
      );
   }
 
@@ -233,6 +232,54 @@ namespace Xerces
         << "\" failed")
     }
 #endif //#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+  }
+
+  inline void SAX2UserInterfaceConfigHandler::
+    HandleTaskBarIcon_CPUcoreUsageXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
+  {
+    std::string std_strXMLattributeName = "colour" ;
+    bool & r_bAttributeValue = m_p_model->m_userinterfaceattributes.
+      m_bShowCPUcoreUsagesIconInTaskBar;
+    std::string stdstrAttributeValue;
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes
+         , std_strXMLattributeName.c_str()
+         , stdstrAttributeValue
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+      )
+    {
+      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+        std_strXMLattributeName << "\" succeeded: "
+        "value is:" << stdstrAttributeValue )
+//      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
+    }
+    else
+    {
+      LOGN_ERROR(FULL_FUNC_NAME << "--Getting attribute value for \""
+        << std_strXMLattributeName << "\" failed")
+    }
+    std_strXMLattributeName = "show_CPU_cores_multipliers" ;
+    bool & r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue =
+      m_p_model->m_userinterfaceattributes.
+      m_bShowCPUcoresMultipliersIconInTaskBar;
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes
+         , std_strXMLattributeName.c_str()
+         , r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue
+        ) == XercesAttributesHelper::getting_attribute_value_succeeded
+      )
+    {
+      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+        std_strXMLattributeName << "\" succeeded: "
+        "value is:" << r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue )
+//      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
+    }
+    else
+    {
+      LOGN("Getting attribute value for \"" << std_strXMLattributeName <<
+        "\" failed")
+    }
   }
 
   inline void SAX2UserInterfaceConfigHandler::HandleTaskBarIconXMLelement(
@@ -303,6 +350,26 @@ namespace Xerces
     }
   }
 
+  /*template <typename T>*/ void SAX2UserInterfaceConfigHandler::GetAttributeValue(
+    const char * const pchAttributeName, bool & value)
+  {
+    if( XercesAttributesHelper::GetAttributeValue(
+        * m_p_xercesc_attributes, pchAttributeName, value) ==
+        XercesAttributesHelper::getting_attribute_value_succeeded )
+//    if( ConvertXercesAttributesValue(
+//        * m_p_xercesc_attributes
+//       , pchAttributeName
+//       , value )
+//     )
+    {
+      LOGN_DEBUG( FULL_FUNC_NAME << " value for \"" << pchAttributeName
+        << "\":" << value )
+    }
+    else
+      LOGN_WARNING(FULL_FUNC_NAME << " getting value for \""
+        << pchAttributeName << "\" failed ")
+  }
+
   void SAX2UserInterfaceConfigHandler::
     HandleVoltageAndFrequencySettingsDialogXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
@@ -310,11 +377,10 @@ namespace Xerces
   {
     float f ;
     std::string stdstrAttributeName ;
-    XercesAttributesHelper::GetAttributeValue(
-      cr_xercesc_attributes
-       ,"select_all_CPU_cores"
-       ,m_p_model->m_userinterfaceattributes.m_bSelectAllCPUcores
-      ) ;
+    bool * p_bValue;
+    GetAttributeValue("select_all_CPU_cores",
+      m_p_model->m_userinterfaceattributes.m_bSelectAllCPUcores) ;
+
     if( ConvertXercesAttributesValue<float>(
       cr_xercesc_attributes
        ,"operating_safety_margin_in_Volt"
@@ -328,32 +394,27 @@ namespace Xerces
        ,f )
      )
       m_p_model->m_instablecpucorevoltagedetection.m_fMinCPUcoreUsage = f ;
-    stdstrAttributeName = "prevent_voltage_above_default_voltage" ;
-    if( XercesAttributesHelper::GetAttributeValue(
-      cr_xercesc_attributes
-       ,stdstrAttributeName.c_str()
-       ,m_p_model->m_userinterfaceattributes.
-         m_bPreventVoltageAboveDefaultVoltage )
-     )
-    {
-      LOGN("bool value for " << stdstrAttributeName << ":" << m_p_model->
-        m_userinterfaceattributes.m_bPreventVoltageAboveDefaultVoltage )
-    }
-    else
-      LOGN("getting bool value for " << stdstrAttributeName << " failed ")
-    stdstrAttributeName = "prevent_voltage_below_lowest_stable_voltage" ;
-    if( XercesAttributesHelper::GetAttributeValue(
-      cr_xercesc_attributes
-       ,stdstrAttributeName.c_str()
-       ,m_p_model->m_userinterfaceattributes.
-         m_bPreventVoltageBelowLowestStableVoltage )
-     )
-    {
-      LOGN("bool value for " << stdstrAttributeName << ":" << m_p_model->
-        m_userinterfaceattributes.m_bPreventVoltageBelowLowestStableVoltage )
-    }
-    else
-      LOGN("getting bool value for " << stdstrAttributeName << " failed ")
+
+    p_bValue = & m_p_model->m_userinterfaceattributes.
+        m_bPreventVoltageAboveDefaultVoltage;
+    GetAttributeValue( "prevent_voltage_above_default_voltage" , * p_bValue);
+
+    p_bValue = & m_p_model->m_userinterfaceattributes.
+      m_bPreventVoltageBelowLowestStableVoltage;
+    GetAttributeValue( "prevent_voltage_below_lowest_stable_voltage",
+      * p_bValue);
+
+    p_bValue = & m_p_model->m_userinterfaceattributes.
+      m_bShowMultiplierControlsIfLessThan2ConfigurableMultipliers;
+    GetAttributeValue(
+      "show_multipliers_controls_if_less_than_2_configurable_multipliers",
+      * p_bValue);
+
+    p_bValue = & m_p_model->m_userinterfaceattributes.
+      m_bShowVoltageControlsIfLessThan2ConfigurableVoltages;
+    GetAttributeValue(
+      "show_voltage_controls_if_less_than_2_configurable_voltages",
+      * p_bValue);
   }
 
   void SAX2UserInterfaceConfigHandler::
@@ -387,6 +448,7 @@ namespace Xerces
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
     )
   {
+    m_p_xercesc_attributes = & cr_xercesc_attributes;
     std::wstring stdwstr = L"log_file_name" ;
     //_MUST use XMLString::transcode() Linux: a wcscmp comparison does not work
     // here.
@@ -423,6 +485,30 @@ namespace Xerces
     { //Use a block because: to avoid g++ warning "Suspicious semicolon".
       ;
     }
+//    bool bRet = false;
+//    if( //If the strings equal.
+//        ! Xerces::ansi_or_wchar_string_compare( cpc_xmlchLocalName ,
+//        ANSI_OR_WCHAR("log_file_filter")
+//        )
+//      )
+//    {
+//      std::string stdstrValue ;
+//      bRet = true ;
+//      if( XercesAttributesHelper::GetAttributeValue(
+//        cr_xercesc_attributes ,
+//        //Use "( char * )" to avoid g++ Linux compiler warning
+//        // "deprecated conversion from string constant to ‘char*’ "
+//        ( char * ) "exclude" ,
+//        stdstrValue )
+//        )
+//      {
+//        LOGN("string to exclude from logging:" << stdstrValue )
+//  //        g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+//        m_trieExcludeFromLogging.insert_inline(
+//          (unsigned char*) stdstrValue.c_str(), stdstrValue.length()
+//          , FormattedLogEntryProcessor::string_end) ;
+//      }
+//    }
     else
     //TODO inperformant string comparison if multiple strings to compare start
     //with the same prefix: "e.g." "start", "start_at_startup"
@@ -461,6 +547,13 @@ namespace Xerces
       )
     {
       HandleTaskBarIconXMLelement(cr_xercesc_attributes);
+    }
+    else if(
+      ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
+        ANSI_OR_WCHAR("CPU core usage") )
+      )
+    {
+      HandleTaskBarIcon_CPUcoreUsageXMLelement(cr_xercesc_attributes);
     }
     else if( //If strings equal.
       ! ansi_or_wchar_string_compare( cpc_xmlchLocalName,
