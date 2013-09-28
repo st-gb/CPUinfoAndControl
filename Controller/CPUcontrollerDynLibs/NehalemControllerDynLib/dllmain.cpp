@@ -19,6 +19,8 @@
 #include <preprocessor_macros/show_via_GUI.h> //SHOW_VIA_GUI(...)
 #include <Controller/AssignPointersToExportedExeFunctions/AssignPointersToExportedExeMSRfunctions.h>
 
+//#include <Aladdin_Enterprises_md5_imlementation/GenerateMD5checksum.hpp>
+
 //Used by "Nehalem.hpp". The alternative would be:
 // -in "Nehalem.hpp" that may be used in both I_CPUcontroller-derived class and
 // this DLL source code would need to include the appropriate version of
@@ -68,6 +70,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 
 //#define INSERT_DEFAULT_P_STATES
 #ifdef INSERT_DEFAULT_P_STATES
+  #define BUILD_WITH_ATTRIBUTES
   #include <ModelData/ModelData.hpp>
 #endif
 
@@ -122,7 +125,7 @@ void InitOtherOSthanWindows()
   DEBUGN_LOGGER_NAME(//g_loggerDynLib,
     g_logger, "g_pfnreadmsr:" << g_pfnreadmsr
     << "g_pfn_write_msr:" << g_pfn_write_msr)
-  gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
+  gs_fTimeStampCounterMultiplier = Intel::Nehalem::GetTimeStampCounterMultiplier() ;
 }
 
 DLLMAIN_FRONT_SIGNATURE DllMain(
@@ -403,6 +406,11 @@ EXPORT
 //    return wNumberOfCPUcores ;
 //  }
 
+//EXPORT void GetMD5(unsigned char ar_ch [] )
+//{
+////  Aladdin_Enterprises::md5_imlementation::GenerateMD5checkSum(ar_ch;
+//}
+
 EXPORT
 float
   NEHALEM_DLL_CALLING_CONVENTION
@@ -454,10 +462,7 @@ float
   return FLT_MIN ;
 }
 
-EXPORT
-void
-  NEHALEM_DLL_CALLING_CONVENTION
-  Init( //I_CPUcontroller * pi_cpu
+EXPORT void NEHALEM_DLL_CALLING_CONVENTION Init( //I_CPUcontroller * pi_cpu
   //CPUaccess object inside the exe.
   I_CPUaccess * pi_cpuaccess
 //  void * p_v
@@ -466,8 +471,26 @@ void
   )
 {
 //  InitOtherOSthanWindows() ;
+//  mp_model->m_cpucoredata.m_MD5checksum;
+#ifdef BUILD_WITH_ATTRIBUTES
+//  unsigned numberOfModelDataBytes = //sizeof(*pi_cpuaccess->mp_model);
+//    pi_cpuaccess->mp_model->GetSizeForCPUcontroller();
+  //TODO call function "GenerateMD5checksum" within executable (as exported
+  //function or as a member of class "I_CPUaccess".
+  BYTE MD5checkSum[16];
+//  Aladdin_Enterprises::md5_implementation::GenerateMD5checkSum(
+//    pi_cpuaccess->mp_model, numberOfModelDataBytes, MD5checkSum );
+//  I_CPUaccess::GetMD5checkSum( (void*) pi_cpuaccess->mp_model, numberOfModelDataBytes,
+//    MD5checkSum);
+  pi_cpuaccess->mp_model->GetCPUcontrollerModelMD5checkSum(MD5checkSum);
+  int md5comparison = memcmp(
+    pi_cpuaccess->mp_model->m_cpucoredata.m_MD5checksum, MD5checkSum, 16);
+  memcpy( pi_cpuaccess->mp_model->m_cpucoredata.m_MD5checksum, MD5checkSum, 16);
+  if( md5comparison != 0 )
+    return;
+#endif
 #ifdef INSERT_DEFAULT_P_STATES
-  BYTE byMaxMulti;
+  /*BYTE*/ fastestUnsignedDataType byMaxMulti;
   float fVoltageInVolt = 0.65;
   float fFrequencyInMHz = lowestMultiplier * 133.0 ;
 
@@ -483,7 +506,7 @@ void
       (WORD) ( fFrequencyInMHz )
       ) ;
   fVoltageInVolt = 1.1;
-  g_byValue1 = GetMaximumMultiplier_Nehalem(0,byMaxMulti);
+  g_byValue1 = Intel::Nehalem::GetMaximumMultiplier(0, byMaxMulti);
   fFrequencyInMHz = byMaxMulti * 133.3 ;
   DEBUGN("adding default voltage " << fVoltageInVolt << " for "
     << (WORD) fFrequencyInMHz << "MHz" )

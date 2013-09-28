@@ -139,7 +139,7 @@ namespace Apache_Xerces
         ) ;
       XERCES_CPP_NAMESPACE::XMLString::release( & p_xmlchXMLfilePath);
     }
-    LOGN( FULL_FUNC_NAME << "--after reading config file")
+    LOGN( "after reading config file")
     return byReturn ;
   }
 }

@@ -44,14 +44,14 @@
 //for x86IandC::thread_type
 //#include <wxWidgets/multithread/wxThreadBasedI_Thread.hpp>
 
-//Under Linux an error message (~"no image handler for type 3 defined") is shown
-#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  #define COMPILE_WITH_SYSTEM_TRAY_ICON
-#endif
+////Under Linux an error message (~"no image handler for type 3 defined") is shown
+//#ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
+//  #define COMPILE_WITH_SYSTEM_TRAY_ICON
+//#endif
 
-#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
+//#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #include <wxWidgets/UserInterface/TaskBarIcon.hpp>
-#endif
+//#endif
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include "SystemTrayAccess.hpp"
@@ -369,7 +369,9 @@ public:
   void StartService() ;
   void StopService() ;
   void LoadDetectInstableCPUcoreVoltageDynLib();
+#ifdef _WIN32
   void UpdateInstableCPUcoreOpDetectInfo();
+#endif
   void UnloadDetectInstableCPUcoreVoltageDynLib();
 
 public:

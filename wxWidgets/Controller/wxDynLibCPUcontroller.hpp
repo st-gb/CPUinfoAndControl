@@ -106,6 +106,7 @@ public:
   template <typename func_type> void PossiblyAssign(
     const wxString & wxstrFuncName, func_type & p_function//, func_type
     );
+  bool PossiblyCompareMD5checkSums();
   //inline for call from SetVoltageAndFrequency(...)
   //inline
   BYTE SetCurrentVoltageAndMultiplier(

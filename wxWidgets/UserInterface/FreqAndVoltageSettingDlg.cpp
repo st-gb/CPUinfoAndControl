@@ -30,7 +30,8 @@
 //  , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
 //  );
 #include <Controller/CPU-related/GetInterpolatedVoltageFromFreq.hpp>
-#include <preprocessor_macros/enable_disable_write_strings_warning.h>
+#include <compiler/GCC/enable_disable_write_strings_warning.h>
+#include <fastest_data_type.h>
 
 IGNORE_WRITE_STRINGS_WARNING
 #include <images/cancel16x16.xpm>
@@ -115,7 +116,7 @@ public:
   }
   void OnChar(wxKeyEvent & r_wxkeyevent )
   {
-    LOGN("KeyEventPanel::OnChar")
+    LOGN(/*"KeyEventPanel::OnChar"*/ "begin" )
     mr_freqandvoltagesettingdlg.HandleKeyEvent_Inline(r_wxkeyevent) ;
   }
   //Necessary in order to get scroll events; to avoid compilation errors.
@@ -266,7 +267,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 #endif
   , m_p_wxtextctrlInstableCPUcoreVoltageWarning(NULL)
 {
-  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
+  LOGN_DEBUG( "begin")
 //  //http://docs.wxwidgets.org/trunk/classwx_tool_tip.html
 //  // #527208d12631dfb3e6dea71011b887d6:
 //  // "Enable or disable tooltips globally."
@@ -355,7 +356,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
 
   AddMessageControl(p_wxboxsizerTop);
 
-  LOGN(FULL_FUNC_NAME << "--before adding to the outer sizer")
+  LOGN("before adding to the outer sizer")
 //  wxPanel * p_wxpanel = new wxPanel( this, ID_Panel ) ;
 
 #ifdef _WIN32
@@ -403,7 +404,7 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   ConnectCharEvent(this);
   //For possibly disabling the "write p-state" button at the beginning.
   HandleCPUcoreFrequencyOrVoltageChanged(NULL) ;
-  LOGN(FULL_FUNC_NAME << "--end")
+  LOGN("end")
 }
 
 FreqAndVoltageSettingDlg::~FreqAndVoltageSettingDlg()
@@ -441,8 +442,8 @@ void FreqAndVoltageSettingDlg::ConnectCharEvent(
   wxWindow * p_wxWindowThatMayContainChildren
   )
 {
-  LOGN("FreqAndVoltageSettingDlg::ConnectCharEvent("
-    << p_wxWindowThatMayContainChildren << ")" )
+  LOGN(//"FreqAndVoltageSettingDlg::ConnectCharEvent(" <<
+    p_wxWindowThatMayContainChildren << ")" )
   if(p_wxWindowThatMayContainChildren )
   {
 //    switch( p_wxWindowThatMayContainChildren->GetId() )
@@ -541,7 +542,7 @@ void FreqAndVoltageSettingDlg::CPUcoreVoltageChanged()
 
 float FreqAndVoltageSettingDlg::GetCPUcoreFrequencyFromSliderValue()
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
   float fMultiplier = GetMultiplierFromSliderValue() ;
   if( fMultiplier > 0.0 )
   {
@@ -586,8 +587,7 @@ float FreqAndVoltageSettingDlg::GetMultiplierFromSliderValue()
       )
     {
       float fMultiplier = r_cpucoredata.m_arfAvailableMultipliers[ multiplierIndex ];
-      LOGN_DEBUG( FULL_FUNC_NAME <<
-        " multiplier corresponding to slider value:" << fMultiplier )
+      LOGN_DEBUG( "multiplier corresponding to slider value:" << fMultiplier )
       return fMultiplier ;
     }
   }
@@ -620,7 +620,7 @@ float FreqAndVoltageSettingDlg::GetThrottleRatioFromSliderValue()
 void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
     wxWindow * p_wxwindow )
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
     //mp_wxstatictextPercentageOfDefaultVoltage->SetText( 
     //    wxString("percent of default voltage") + ) ;
 
@@ -629,7 +629,7 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
 //      mp_wxsliderFreqInMHz->GetValue()
 //      ) ;
   float fFreq = GetCPUcoreFrequencyFromSliderValue() ;
-  LOGN(FULL_FUNC_NAME << " CPU core freq from slider :" << fFreq )
+  LOGN("CPU core freq from slider :" << fFreq )
   if( mp_wxstatictextVoltageInVolt) //At least 2 configurable voltages.
   {
     float fVoltage = GetVoltageInVoltFromSliderValue() ;
@@ -712,7 +712,7 @@ void FreqAndVoltageSettingDlg::HandleCPUcoreFrequencyOrVoltageChanged(
   //Force redraw of the client area.
   mp_mainframe->//ReDraw() ;
     Refresh() ;
-  LOGN( FULL_FUNC_NAME << " end")
+  LOGN( "end")
 }
 
 const std::set<VoltageAndFreq> & FreqAndVoltageSettingDlg::
@@ -853,7 +853,7 @@ void FreqAndVoltageSettingDlg::HandleMultiplierValueChanged()
 
 void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
 {
-  LOGN(FULL_FUNC_NAME << "--begin")
+  LOGN("begin")
   VoltageAndFreq voltageandfreq ;
   const std::set<VoltageAndFreq> & c_r_std_set_voltages =
     GetSelectedVoltageTypeStdSet();
@@ -881,18 +881,18 @@ void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
     {
       float fMultiplier = voltageandfreq.m_wFreqInMHz /
           mp_cpucontroller->m_fReferenceClockInMHz ;
-      BYTE byMultiIndex = mp_model->m_cpucoredata.GetIndexForClosestMultiplier(
-        fMultiplier ) ;
+      const fastestUnsignedDataType multiplierIndex = mp_model->m_cpucoredata.
+        GetIndexForClosestMultiplier( fMultiplier ) ;
       float fVoltageInVolt ;
       WORD wFreqInMHz =
         (WORD)
         ( (float) mp_model->m_cpucoredata.m_arfAvailableMultipliers[
-        byMultiIndex ] * mp_cpucontroller->m_fReferenceClockInMHz ) ;
+        multiplierIndex ] * mp_cpucontroller->m_fReferenceClockInMHz ) ;
       //The multiplier for the calculated multiplier can be far away
       //from the closest available multiplier. E.g. maybe 1.0 V for 1600 MHz
       //for AMD Griffin where only 1100 and 2200 MHz are possible. So calc.
       //the voltage for 1100 MHz:
-//      mp_cpucontroller->GetVoltageFromMultiplier(byMultiIndex) ;
+//      mp_cpucontroller->GetVoltageFromMultiplier(multiplierIndex) ;
       if( //mp_cpucontroller->
           GetInterpolatedVoltageFromFreq(
           wFreqInMHz
@@ -905,7 +905,7 @@ void FreqAndVoltageSettingDlg::HandlePstateMayHaveChanged()
       {
         if(mp_wxsliderFreqInMHz)
           mp_wxsliderFreqInMHz->SetValue( //m_pstate.GetFreqInMHz()
-            byMultiIndex ) ;
+            multiplierIndex ) ;
         HandleMultiplierValueChanged() ;
         BYTE byIndexForClosestVoltage = SetVoltageSliderToClosestValue(
           fVoltageInVolt) ;
@@ -930,7 +930,7 @@ void FreqAndVoltageSettingDlg::HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent)
 {
 //  wxChar wxch = r_wxkeyevent.GetUnicodeKey() ;
   int nKeyEvent = r_wxkeyevent.GetKeyCode() ;
-  LOGN("FreqAndVoltageSettingDlg::HandleKeyEvent_Inline--key pressed:"
+  LOGN(/*"FreqAndVoltageSettingDlg::HandleKeyEvent_Inline--"*/ "key pressed:"
     << (char) //wxch
     nKeyEvent )
   switch( //wxch
@@ -938,14 +938,14 @@ void FreqAndVoltageSettingDlg::HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent)
     )
   {
   case wxT('+'):
-    LOGN("OnChar--\'+\' key pressed")
+    LOGN(/*"OnChar--"*/ "\'+\' key pressed")
     {
       wxCommandEvent wxcommandevent ;
       OnIncVoltage( wxcommandevent ) ;
     }
     break ;
   case wxT('-'):
-    LOGN("OnChar--\'+\' key pressed")
+    LOGN(/*"OnChar--"*/ "\'+\' key pressed")
     {
       wxCommandEvent wxcommandevent ;
       OnDecVoltage( wxcommandevent ) ;
@@ -953,7 +953,7 @@ void FreqAndVoltageSettingDlg::HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent)
     break ;
   case wxT('s'):
   case wxT('S'):
-    LOGN("OnChar--\'s\' or \'S\' key pressed")
+    LOGN(/*"OnChar--"*/ "\'s\' or \'S\' key pressed")
     {
       wxCommandEvent wxcommandevent ;
       OnStabilizeVoltageButton( wxcommandevent ) ;
@@ -961,14 +961,14 @@ void FreqAndVoltageSettingDlg::HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent)
     break ;
   case wxT('w'):
   case wxT('W'):
-    LOGN("OnChar--\'w\' or \'W\' key pressed")
+    LOGN(/*"OnChar--"*/ "\'w\' or \'W\' key pressed")
     {
       wxCommandEvent wxcommandevent ;
       OnApplyButton( wxcommandevent ) ;
     }
     break ;
   case wxT('\t'): //tabulator
-    LOGN("OnChar--tab key pressed")
+    LOGN(/*"OnChar--"*/ "tab key pressed")
 
 //    //http://docs.wxwidgets.org/2.6/wx_wxwindow.html#wxwindow:
 //    // "If you need to use this style in order to get the arrows or etc., but
@@ -1016,13 +1016,13 @@ void FreqAndVoltageSettingDlg::HandleKeyEvent_Inline( wxKeyEvent & r_wxkeyevent)
 
 void FreqAndVoltageSettingDlg::OnChar( wxKeyEvent & r_wxkeyevent)
 {
-  LOGN("FreqAndVoltageSettingDlg::OnChar")
+  LOGN(/*"FreqAndVoltageSettingDlg::OnChar"*/ "begin")
   HandleKeyEvent_Inline(r_wxkeyevent) ;
 }
 
 void FreqAndVoltageSettingDlg::OnCharHook( wxKeyEvent & r_wxkeyevent)
 {
-  LOGN("FreqAndVoltageSettingDlg::OnCharHook")
+  LOGN(/*"FreqAndVoltageSettingDlg::OnCharHook"*/ "begin")
 //  ProcessPendingEvents()
 }
 
@@ -1033,10 +1033,11 @@ void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
     mp_mainframe->m_p_freqandvoltagesettingsdialog = NULL;
     mp_mainframe->SetCursor(wxNullCursor);
   }
+#ifdef _WIN32
   bool bFindLowestCPUcoreVoltageThreadIsRunning = mp_model->
     m_instablecpucorevoltagedetection.
     m_x86iandc_threadFindLowestStableVoltage.IsRunning();
-  LOGN_INFO( FULL_FUNC_NAME << " FindLowestCPUcoreVoltageThreadIsRunning:"
+  LOGN_INFO( "FindLowestCPUcoreVoltageThreadIsRunning:"
     << bFindLowestCPUcoreVoltageThreadIsRunning)
    if( bFindLowestCPUcoreVoltageThreadIsRunning )
    {
@@ -1058,6 +1059,7 @@ void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
 //       )
    }
    else
+#endif
    {
 //     mp_mainframe->m_crit_secVoltAndFreqDlgs.Enter();
 //     mp_mainframe->m_stdvec_p_freqandvoltagesettingdlg.delete(this);
@@ -1124,16 +1126,16 @@ void FreqAndVoltageSettingDlg::OnDecVoltage( wxCommandEvent & wxcmd )
 
 void FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos( wxCommandEvent & wxcmd )
 {
-  LOGN(FULL_FUNC_NAME << " begin")
+  LOGN("begin")
   if( mp_mainframe->m_p_freqandvoltagesettingsdialog == this)
   {
-    LOGN(FULL_FUNC_NAME << " setting to default cursor")
+    LOGN("setting to default cursor")
     mp_mainframe->m_p_freqandvoltagesettingsdialog = NULL;
     mp_mainframe->SetCursor(wxNullCursor);
   }
   else
   {
-    LOGN(FULL_FUNC_NAME << " setting to cross cursor")
+    LOGN("setting to cross cursor")
     wxCursor wxcursorCross(wxCURSOR_CROSS);
     mp_mainframe->SetCursor( wxcursorCross
       //* wxCROSS_CURSOR
@@ -1141,7 +1143,7 @@ void FreqAndVoltageSettingDlg::OnSelectPstateViaMousePos( wxCommandEvent & wxcmd
     //::wxSetCursor( * wxCROSS_CURSOR);
     mp_mainframe->m_p_freqandvoltagesettingsdialog = this;
   }
-  LOGN(FULL_FUNC_NAME << " end")
+  LOGN("end")
 }
 
 void FreqAndVoltageSettingDlg::OnIncVoltage( wxCommandEvent & wxcmd )
@@ -1201,7 +1203,7 @@ void FreqAndVoltageSettingDlg::
 #ifdef wxHAS_POWER_EVENTS
   void FreqAndVoltageSettingDlg::OnResume(wxPowerEvent & WXUNUSED(event) )
   {
-    LOGN( FULL_FUNC_NAME << "--(object:" << this <<
+    LOGN( "(object:" << this <<
         ")--resumed from standby/ hibernate")
     ResumendFromStandByOrHibernate();
   }
@@ -1211,7 +1213,7 @@ void FreqAndVoltageSettingDlg::
 void FreqAndVoltageSettingDlg::OnScroll(wxScrollEvent & //WXUNUSED(wxscrollevent) 
   wxscrollevent )
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
 //  int i = 0 ;
   //int nValue = mp_wxsliderCPUcoreVoltage->GetValue() ;
   switch(wxscrollevent.GetId())
@@ -1423,13 +1425,14 @@ void FreqAndVoltageSettingDlg::OnUpdateInstableCPUdetection( wxCommandEvent
   //wxEvent
   & event )
 {
+#ifdef _WIN32
   InstableCPUoperationDetectionData * p_data =
     (InstableCPUoperationDetectionData *) event.GetClientData();
   if( p_data)
   {
     unsigned secondsUntilCPUcoreVoltageDecrease = p_data->
       m_secondsUntilCPUcoreVoltageDecrease;
-    LOGN( FULL_FUNC_NAME << " # ~ seconds until voltage is decreased if CPU core "
+    LOGN( "# ~ seconds until voltage is decreased if CPU core "
       " usage for instable CPU core operation detection is > min:" <<
       secondsUntilCPUcoreVoltageDecrease )
 
@@ -1442,6 +1445,7 @@ void FreqAndVoltageSettingDlg::OnUpdateInstableCPUdetection( wxCommandEvent
     //Is allocated before.
     delete p_data;
   }
+#endif
 }
 
 void FreqAndVoltageSettingDlg::OnSetStartUnstableCPUcoreOperationImage(
@@ -1480,7 +1484,7 @@ void FreqAndVoltageSettingDlg::OnSetVoltageType(wxCommandEvent & wxcmd)
 void FreqAndVoltageSettingDlg::OnSpinSecondsUntilVoltageDecreaseSpinButton(
   wxSpinEvent & event)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
 //  if( event.GetInt() )
 //  m_p_wxtextctrlSecondsUntilNextVoltageDecrease->SetLabel( //wxString::Format(
 //    //wxT("%u"), event.GetPosition() )
@@ -1501,7 +1505,7 @@ void FreqAndVoltageSettingDlg::OnStabilizeVoltageButton(
 
 void FreqAndVoltageSettingDlg::ChangeVoltageSliderValue(int nNewSliderValue)
 {
-  LOGN(FULL_FUNC_NAME << "--begin")
+  LOGN("begin")
   if( mp_wxsliderCPUcoreVoltage)
     mp_wxsliderCPUcoreVoltage->SetValue(nNewSliderValue) ;
 //  float fMinVoltage = mp_cpucontroller->GetMinimumVoltageInVolt() ;
@@ -1543,7 +1547,7 @@ void FreqAndVoltageSettingDlg::ChangeVoltageSliderValue(int nNewSliderValue)
 
 void FreqAndVoltageSettingDlg::OutputFrequencyByControlValues()
 {
-  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
+  LOGN_DEBUG( "begin")
   //TODO Does not show the "... MHz" when the multiplier has at leat 1 digit
   // more than the previous multiplier AND the value come from the service
   if( mp_cpucontroller && mp_wxsliderFreqInMHz )
@@ -1553,13 +1557,13 @@ void FreqAndVoltageSettingDlg::OutputFrequencyByControlValues()
       //GetCPUcoreFrequencyFromSliderValue() ;
       ;
     float fMultiplier = GetMultiplierFromSliderValue() ;
-    LOGN_DEBUG( FULL_FUNC_NAME << " mp_cpucontroller:" << mp_cpucontroller)
+    LOGN_DEBUG( "mp_cpucontroller:" << mp_cpucontroller)
     fFreq = fMultiplier * mp_cpucontroller->m_fReferenceClockInMHz ;
     m_wPreviousFrequencyInMHz =
       //"(WORD)" to avoid g++ compiler warning
       // "converting to `WORD' from `float'"
       (WORD) fFreq ;
-    LOGN_DEBUG( FULL_FUNC_NAME << " mp_wxstatictextFreqInMHz:"
+    LOGN_DEBUG( "mp_wxstatictextFreqInMHz:"
       << mp_wxstatictextFreqInMHz)
     mp_wxstatictextFreqInMHz->SetLabel(
       wxString::Format(
@@ -1569,14 +1573,14 @@ void FreqAndVoltageSettingDlg::OutputFrequencyByControlValues()
         fMultiplier, fFreq
         )
       );
-    LOGN_DEBUG( FULL_FUNC_NAME << " p_wxboxsizerCPUcoreFrequencyInMHz:"
+    LOGN_DEBUG( "p_wxboxsizerCPUcoreFrequencyInMHz:"
       << p_wxboxsizerCPUcoreFrequencyInMHz)
     //The freq label may need more space now, so recalc its size.
     //TODO uncomment
     //"RecalcSizes" causes a program crash?
     //p_wxboxsizerCPUcoreFrequencyInMHz->RecalcSizes() ;
   }
-  LOGN_DEBUG( FULL_FUNC_NAME << " end")
+  LOGN_DEBUG( "end")
 }
 
 void FreqAndVoltageSettingDlg::OutputVoltageByControlValues()
@@ -1615,7 +1619,7 @@ void FreqAndVoltageSettingDlg::PossiblySetThrottleRatio()
 {
   float fThrottleRatio = GetThrottleRatioFromSliderValue();
   I_CPUcontroller * p_cpucontroller = wxGetApp().mp_cpucontroller;
-  LOGN( FULL_FUNC_NAME << "--CPU controller:" << p_cpucontroller )
+  LOGN( "CPU controller:" << p_cpucontroller )
   if( p_cpucontroller )
   {
     WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
@@ -1664,7 +1668,7 @@ void FreqAndVoltageSettingDlg::OnApplyButton(wxCommandEvent & //WXUNUSED(event)
 void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS(
   wxString & r_wxstrMessageFromService)
 {
-  LOGN(FULL_FUNC_NAME << " begin")
+  LOGN("begin")
   mp_mainframe->PossiblyAskForOSdynFreqScalingDisabling() ;
 #ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
   if( m_p_wxbitmaptogglebuttonPauseService->GetValue() )
@@ -1675,7 +1679,7 @@ void FreqAndVoltageSettingDlg::DisableOSesDVFSandServiceDVFS(
       ) ;
   }
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
-  LOGN(FULL_FUNC_NAME << " end")
+  LOGN("end")
 }
 
 inline void FreqAndVoltageSettingDlg::SetMessage(const wxString &
@@ -1691,7 +1695,7 @@ inline void FreqAndVoltageSettingDlg::SetMessage(const wxString &
 void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
   float fVoltageInVolt)
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
 //  float fFreq = GetCPUcoreFrequencyFromSliderValue() ;
   float fMultiplierFromSliderValue = GetMultiplierFromSliderValue();
 //  if( //fVoltageInVolt > 0.0
@@ -1713,7 +1717,7 @@ void FreqAndVoltageSettingDlg::PossiblyWriteVoltageAndMultiplier_Inline(
     //opened -> pointer assigned to it and afterwards a dynamic link
     //library (file's) CPU controller.
     I_CPUcontroller * p_cpucontroller = wxGetApp().mp_cpucontroller;
-    LOGN( FULL_FUNC_NAME << "--CPU controller:" << p_cpucontroller )
+    LOGN( "CPU controller:" << p_cpucontroller )
     if( p_cpucontroller )
     {
       WORD wNumCPUcores = mp_model->m_cpucoredata.GetNumberOfCPUcores() ;
@@ -1777,14 +1781,14 @@ void FreqAndVoltageSettingDlg::RemoveAttention(wxWindow * p_wxwindow)
 #ifdef wxHAS_POWER_EVENTS
 void FreqAndVoltageSettingDlg::ResumendFromStandByOrHibernate()
 {
-  LOGN( FULL_FUNC_NAME << "--this object:" << this )
+  LOGN( "this object:" << this )
   bool bRestorePerformanceStateAfterResume =
     m_p_wxbitmaptogglebuttonRestorePerformanceStateAfterResume->GetValue();
-  LOGN( FULL_FUNC_NAME << "(" << this << ")--should restore after standby?:"
+  LOGN( "(" << this << ")--should restore after standby?:"
     << ( bRestorePerformanceStateAfterResume ? "yes" : "no") )
   if( bRestorePerformanceStateAfterResume )
   {
-    LOGN( FULL_FUNC_NAME << "(" << this << ")--writing voltage and multiplier "
+    LOGN( "(" << this << ")--writing voltage and multiplier "
       "is allowed?:" << (m_bAllowWritingVoltageAndFrequency ? "yes" : "no") )
     if( m_bAllowWritingVoltageAndFrequency)
     {
@@ -1795,7 +1799,7 @@ void FreqAndVoltageSettingDlg::ResumendFromStandByOrHibernate()
       //mp_mainframe->SetMenuItemLabel(m_byCoreID, byPstateNumber, pstate ) ;
     }
   } // if( mp_i_cpucontroller )
-  LOGN( FULL_FUNC_NAME << "--end" )
+  LOGN( "end" )
 }
 #endif
 
@@ -1930,7 +1934,7 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
   float fVoltageInVolt, float fCPUcoreFrequencyinMHz)
 {
   BYTE bVoltageIsValid = 1 ;
-  LOGN("VoltageIsValid(" << fVoltageInVolt << " " << fCPUcoreFrequencyinMHz
+  LOGN( /*"VoltageIsValid(" <<*/ fVoltageInVolt << " " << fCPUcoreFrequencyinMHz
     << ")--begin")
   if( fVoltageInVolt > 0.0 )
   {
@@ -1943,7 +1947,7 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
       byVoltageIsEqualLessDefaultVoltage = mp_cpucontroller->
         CheckWhetherVoltageIsAboveDefaultVoltage(
         fVoltageInVolt, fCPUcoreFrequencyinMHz) ;
-      LOGN("VoltageIsValid--byVoltageIsEqualLessDefaultVoltage:" <<
+      LOGN(/*"VoltageIsValid--"*/ "byVoltageIsEqualLessDefaultVoltage:" <<
         (WORD) byVoltageIsEqualLessDefaultVoltage)
 //      bVoltageIsValid = byRet ;
     }
@@ -1957,10 +1961,8 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
       byVoltageIsEqualGreaterLowestStableVoltage = mp_cpucontroller->
         CheckWhetherVoltageIsBelowLowestStableVoltage(
         fVoltageInVolt, fCPUcoreFrequencyinMHz) ;
-      LOGN(//"VoltageIsValid"
-        FULL_FUNC_NAME <<
-          "--byVoltageIsEqualGreaterLowestStableVoltage:" <<
-          (WORD) byVoltageIsEqualGreaterLowestStableVoltage)
+      LOGN(/*"VoltageIsValid"*/ "byVoltageIsEqualGreaterLowestStableVoltage:"
+        << (WORD) byVoltageIsEqualGreaterLowestStableVoltage)
       //If no lowest stable voltage but voltage=default voltage.
       if( byVoltageIsEqualGreaterLowestStableVoltage ==
           I_CPUcontroller::No2PstatesForVoltageInterpolationFound
@@ -1986,6 +1988,6 @@ BYTE FreqAndVoltageSettingDlg::VoltageIsWithinValidRange(
 //    bVoltageIsValid = false ;
   }
 
-  LOGN( FULL_FUNC_NAME << " return " << (WORD) bVoltageIsValid)
+  LOGN( "return " << (WORD) bVoltageIsValid)
   return bVoltageIsValid ;
 }

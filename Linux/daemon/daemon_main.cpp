@@ -35,15 +35,29 @@ CommandLineArgs<char> g_commandlineargs;
 
 bool init_logger(int argc, char *  argv[] )
 {
-  std::string std_strLogFileName = std::string( argv[0] ) +
-    std::string( "_log." ) ;
+//  std::string std_strLogFileName = std::string(
+//    //argv[CommandLineArgs::FullProgramPathArgIndex]
+//    //g_commandlineargs.GetFullProgramPath() ) +
+//    gp_cpucontrolbase->GetExecutableFileName(g_commandlineargs.GetFullProgramPath() ) +
+//    std::string( "_log." ) ;
+
+  std::wstring std_wstrFullProgramPath = GetStdWstring(
+    g_commandlineargs.GetFullProgramPath() );
+
+  std::wstring std_wstrLogFilePath = L".";
+  std::wstring std_wstrLogFileName = //GetStdWstring(std_strLogFileName);
+    gp_cpucontrolbase->GetExecutableFileName(std_wstrFullProgramPath.c_str() );
+
 //  if( ! g_logger.OpenFileA( //std::string("x86IandC_service_log.txt")
 //    stdstrLogFileName ) )
   bool logFileIsOpen = gp_cpucontrolbase->GetLogFilePropertiesAndOpenLogFile(
-    std_strLogFileName);
+    //std_strLogFileName
+    std_wstrLogFilePath,
+    std_wstrLogFileName);
   if( ! logFileIsOpen )
-    std::cerr << "Failed to open log file \"" << std_strLogFileName << "\":"
-      << GetErrorMessageFromLastErrorCodeA() << std::endl;
+    std::wcerr << L"Failed to open log file \"" << //std_strLogFileName
+      std_wstrLogFilePath << L"\":"
+      << GetStdWstring(::GetErrorMessageFromLastErrorCodeA()) << std::endl;
   return logFileIsOpen;
 }
 
@@ -87,14 +101,15 @@ int main( int argc, char *  argv[] )
     stdstrCurrentWorkingDir ;
 
   bool bDVFSthreadSuccessfullyStarted = cpucontroldaemon.Start() ;
-  LOGN("main(..)-return value of starting the daemon:" << bDVFSthreadSuccessfullyStarted )
+  LOGN(/*"main(..)-"*/ "return value of starting the daemon:"
+    << bDVFSthreadSuccessfullyStarted )
   GetCurrentWorkingDir(stdstrCurrentWorkingDir) ;
-  LOGN("main(..)-current working directory:" << stdstrCurrentWorkingDir )
+  LOGN(/*"main(..)-"*/ "current working directory:" << stdstrCurrentWorkingDir )
   if( bDVFSthreadSuccessfullyStarted )
   {
 //    WaitForTermination();
     g_wxconditionbasedi_conditionKeepRunning.LockAndWait() ;
   }
-  LOGN("main(..)-end return " << nRetVal)
+  LOGN(/*"main(..)-"*/ "end return " << nRetVal)
   return nRetVal ;
 }

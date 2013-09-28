@@ -39,6 +39,8 @@
   #include <Controller/multithread/mutex_type.hpp>
 #endif
 
+  using namespace MANUFACTURER_ID_NAMESPACE;
+
 /** Forward decl. */
   class PerCPUcoreAttributes;
 
@@ -85,6 +87,7 @@ public:
     return bInserted ;
   }
   BYTE m_byNumberOfCPUCores ;
+  unsigned char m_MD5checksum[16];
   BYTE GetNumberOfCPUcores()
   {
     return m_byNumberOfCPUCores;
@@ -253,7 +256,8 @@ public:
   const VoltageAndFreq * GetClosestHigherVoltageAndFreqInsertedByCPUcontroller(
     float fMultiplier) const;
   fastestUnsignedDataType GetIndexForClosestMultiplier(const float fMultiplier) const;
-  WORD GetIndexForClosestGreaterEqualMultiplier(float fMultiplier) const
+  BinarySearch::arrayIndexType GetIndexForClosestGreaterEqualMultiplier(
+    float fMultiplier) const
   {
     return MANUFACTURER_ID_NAMESPACE::BinarySearch::
       GetArrayIndexForClosestGreaterOrEqual(

@@ -53,7 +53,8 @@ namespace Intel
       return 0;
     }
 
-    inline BOOL GetMaximumMultiplier(WORD wCoreID,
+    inline BOOL GetMaximumMultiplier(
+      WORD wCoreID,
       fastestUnsignedDataType & byMaxMulti)
     {
       static BOOL boolReturnValue = FALSE;

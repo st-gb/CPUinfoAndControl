@@ -34,7 +34,7 @@ namespace Xerces
 
   LogOutputHandler::~LogOutputHandler()
   {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME )
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "")
   }
 
   void LogOutputHandler::endElement(

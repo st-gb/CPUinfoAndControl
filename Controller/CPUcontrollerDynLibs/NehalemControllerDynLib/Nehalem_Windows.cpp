@@ -74,7 +74,7 @@ bool InitWindows()
       , MB_OK) ;
     return FALSE ;
   }
-  gs_fTimeStampCounterMultiplier = GetTimeStampCounterMultiplier() ;
+  gs_fTimeStampCounterMultiplier = Intel::Nehalem::GetTimeStampCounterMultiplier();
   //Force the cond. "< min. time diff" to become true.
   g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
   g_dwPreviousTickCountInMilliseconds

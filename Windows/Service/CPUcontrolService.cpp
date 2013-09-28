@@ -25,7 +25,7 @@
 #endif //#ifdef COMPILE_WITH_IPC
 //class Logger::StdCoutLogWriter
 #include <Controller/Logger/OutputHandler/StdCoutLogWriter.hpp>
-#include <Controller/Logger/Formatter/ConsoleFormatter.hpp>
+#include <Windows/Logger/ConsoleFormatter.hpp>
 #include <Controller/Logger/Appender/RollingFileOutput.hpp>
 //DEBUG(...), DEBUGN(...)
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
@@ -89,85 +89,87 @@ std::vector<std::string> CPUcontrolService::m_vecstrCmdLineOptions;
 
 extern CPUcontrolBase * gp_cpucontrolbase;
 
-//This function should be executed in a separate thread.
-DWORD WINAPI
-GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v)
+/** This function should be executed in a separate thread. */
+DWORD WINAPI GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v)
 {
-  LOGN("GetCurrentCPUcoreDataInLoopThreadFunc begin")
+  LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "begin")
   CPUcontrolService * p_cpucontrolservice = (CPUcontrolService *) p_v;
   if (p_cpucontrolservice)
-    {
-      DWORD dwByteSize;
-      LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before Lock")
-      //Wait until another function calls Leave().
-      //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
-      //    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
-      //    //Let the other thread continue at its "Enter()"
-      //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+  {
+    DWORD dwByteSize;
+    LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "before Lock")
+    //Wait until another function calls Leave().
+    //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
+    //    DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
+    //    //Let the other thread continue at its "Enter()"
+    //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
 
-      //    if( p_wxx86infoandcontrolapp->m_wxmutexIPCthread.TryLock() ==
-      //        //http://docs.wxwidgets.org/2.6/wx_wxmutex.html#wxmutextrylock:
-      //        //"The mutex is already locked by another thread."
-      //        wxMUTEX_BUSY )
-      //      return 0 ;
+    //    if( p_wxx86infoandcontrolapp->m_wxmutexIPCthread.TryLock() ==
+    //        //http://docs.wxwidgets.org/2.6/wx_wxmutex.html#wxmutextrylock:
+    //        //"The mutex is already locked by another thread."
+    //        wxMUTEX_BUSY )
+    //      return 0 ;
+    //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
+    //"it must be locked prior to calling Wait"
+    p_cpucontrolservice->m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree. Lock();
+    //    Sleep(4000) ;
+    LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "after Lock()")
+    //http://docs.wxwidgets.org/stable/wx_wxcondition.html:
+    // "Waits until the condition is signaled.
+    // This method atomically releases the lock on the mutex associated with
+    // this condition (this is why it must be locked prior to calling Wait)
+    // and puts the thread to sleep until Signal or Broadcast is called.
+    // It then locks the mutex again and returns."
+    p_cpucontrolservice->m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree. Wait();
+    LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/
+        "before the loop condition")
+    //ok, at least 1 client thread wants to get CPU core data.
+    //    LOGN(//"GetCurrentCPUcoreDataInLoopThreadFunc
+    //      "retrieve CPU core data?"
+    //      << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
+    while ( //break condition
+        p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
+    {
+      LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/
+        "after the loop condition")
+      p_cpucontrolservice->m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
+          dwByteSize, true);
+      //Wake up all client threads waiting for IPC data.
+      p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished. Broadcast();
+
+      //      p_cpucontrolservice->m_vbGotCPUcoreData = true ;
+      //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
+      //      //Wait until another function calls Leave().
+      //      p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
+      //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
+      //      //Let the other thread continue at its "Enter()"
+      //      p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+      //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
+      //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before TryLock")
+      //      //MainFrame::Onclose() locks the mutex
+      //      if( p_wxx86infoandcontrolapp->m_wxmutexIPCthread.TryLock() ==
+      //          //http://docs.wxwidgets.org/2.6/wx_wxmutex.html#wxmutextrylock:
+      //          //"The mutex is already locked by another thread."
+      //          wxMUTEX_BUSY )
+      //        return 0 ;
+
+      //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
+      LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "before Lock" )
       //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
       //"it must be locked prior to calling Wait"
-      p_cpucontrolservice->m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree. Lock();
-      //    Sleep(4000) ;
-      LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after Lock()")
-      //http://docs.wxwidgets.org/stable/wx_wxcondition.html:
-      // "Waits until the condition is signaled.
-      // This method atomically releases the lock on the mutex associated with
-      // this condition (this is why it must be locked prior to calling Wait)
-      // and puts the thread to sleep until Signal or Broadcast is called.
-      // It then locks the mutex again and returns."
-      p_cpucontrolservice->m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree. Wait();
-      LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before the loop condition")
-      //ok, at least 1 client thread wants to get CPU core data.
-      //    LOGN("GetCurrentCPUcoreDataInLoopThreadFunc retrieve CPU core data?"
-      //      << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
-      while ( //break condition
-          p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
-        {
-          LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after the loop condition")
-          p_cpucontrolservice->m_ipc_datahandler.GetCurrentCPUcoreAttributeValues(
-              dwByteSize, true);
-          //Wake up all client threads waiting for IPC data.
-          p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtreeFinished. Broadcast();
+      p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock();
+      if ( ! p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
+        break;
+      //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
+      LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "before Wait()" )
 
-          //      p_cpucontrolservice->m_vbGotCPUcoreData = true ;
-          //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
-          //      //Wait until another function calls Leave().
-          //      p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Enter() ;
-          //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Leave")
-          //      //Let the other thread continue at its "Enter()"
-          //      p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
-          //    p_wxx86infoandcontrolapp->m_wxcriticalsectionIPCthread.Leave() ;
-          //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before TryLock")
-          //      //MainFrame::Onclose() locks the mutex
-          //      if( p_wxx86infoandcontrolapp->m_wxmutexIPCthread.TryLock() ==
-          //          //http://docs.wxwidgets.org/2.6/wx_wxmutex.html#wxmutextrylock:
-          //          //"The mutex is already locked by another thread."
-          //          wxMUTEX_BUSY )
-          //        return 0 ;
-
-          //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock")
-          LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before Lock")
-          //http://docs.wxwidgets.org/2.6/wx_wxcondition.html#wxconditionwait:
-          //"it must be locked prior to calling Wait"
-          p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock();
-          if ( ! p_cpucontrolservice->m_vbAlterCPUcoreDataForIPC)
-            break;
-          //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
-          LOGN("GetCurrentCPUcoreDataInLoopThreadFunc before Wait()")
-
-          p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Wait();
-          LOGN("GetCurrentCPUcoreDataInLoopThreadFunc after Wait()")
-        }
-      LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
+      p_cpucontrolservice-> m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Wait();
+      LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "after Wait()")
     }
-    else
-    LOGN("GetCurrentCPUcoreDataInLoopThreadFunc app pointer == NULL")
+    LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
+  }
+  else
+    LOGN(/*"GetCurrentCPUcoreDataInLoopThreadFunc "*/ "app pointer == NULL")
   return 0;
 }
 
@@ -175,7 +177,7 @@ GetCurrentCPUcoreDataInLoopThreadFunc(void * p_v)
 DWORD WINAPI
 IPC_ServerThread(LPVOID lpParam)
 {
-  LOGN("IPC_ServerThread");
+  LOGN("IPC_ServerThread begin");
   I_IPC_Server * p_i_ipc_server = (I_IPC_Server *) lpParam;
   if (p_i_ipc_server)
     //while(1)
@@ -236,7 +238,7 @@ CPUcontrolService::CPUcontrolService()
   m_x86iandc_threadGetCurrentCPUcoreData(I_Thread::joinable)
 {
 //  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   m_stdtstrProgramName = Getstdtstring(s_std_wstrProgramName);
   //Calling the ctor inside another ctor created the object 2 times!
   //CPUcontrolService() ;
@@ -269,8 +271,7 @@ CPUcontrolService::CPUcontrolService(
       //    , m_stdtstrProgramName ( r_stdtstrProgramName)
       , m_x86iandc_threadGetCurrentCPUcoreData(I_Thread::joinable)
 {
-  LOGN(//"CPUcontrolService::CPUcontrolService()"
-      FULL_FUNC_NAME << "--begin")
+  LOGN(/*"CPUcontrolService::CPUcontrolService()"*/ "begin")
   m_stdtstrProgramName = Getstdtstring(r_stdwstrProgramName);
   InitializeMemberVariables();
 }
@@ -306,7 +307,7 @@ CPUcontrolService::CPUcontrolService(
   //contain year.
   LOGN( "current date/time: " << GetStdString(wxNow() ) )
   //  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   m_stdtstrProgramName = Getstdtstring(r_stdwstrProgramName);
   //Calling the ctor inside another ctor created the object 2 times!
   //CPUcontrolService() ;
@@ -315,12 +316,12 @@ CPUcontrolService::CPUcontrolService(
 
 CPUcontrolService::~CPUcontrolService()
 {
-  LOGN("~CPUcontrolService() begin")
+  LOGN(/*"~CPUcontrolService() "*/ "begin")
   //Already called in ~CPUcontrolBase()
   //  FreeRessources() ;
   ::DeleteTCHARarray(m_dwArgCount, m_p_ptstrArgument);
   EndAlterCurrentCPUcoreIPCdata();
-  LOGN("~CPUcontrolService() end")
+  LOGN(/*"~CPUcontrolService() "*/ "end")
 }
 
 /**@ return true: already continued*/
@@ -354,15 +355,14 @@ CPUcontrolService::Continue()
 //  //parameterless c'tor.
 //  //mp_winring0dynlinked = new //WinRing0dynLinked(
 //  mp_i_cpuaccess = new WinRing0_1_3RunTimeDynLinked( & m_dummyuserinterface);
-//  LOGN( FULL_FUNC_NAME << "--end")
+//  LOGN( "end")
 //}
 
 void
 CPUcontrolService::CreateService(const TCHAR * const cpc_tchServiceName)
 {
-  LOGN("CPUcontrolService::CreateService(" <<
-      GetStdString_Inline(cpc_tchServiceName)
-      << ")--begin" )
+  LOGN( //"CPUcontrolService::CreateService(" <<
+    GetStdString_Inline(cpc_tchServiceName) << ")--begin" )
   try
     {
       BYTE by;
@@ -374,7 +374,7 @@ CPUcontrolService::CreateService(const TCHAR * const cpc_tchServiceName)
           //LOG("Creating the service failed: error number:" << dwLastError
           //    << "\n" );
           //std::cout
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+          /*WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE*/ LOGN_ERROR(
               "Creating the service failed: error number:" <<
               dwLastError << "\nError: " << //"\n"
               LocalLanguageMessageFromErrorCodeA( dwLastError )
@@ -398,23 +398,24 @@ CPUcontrolService::CreateService(const TCHAR * const cpc_tchServiceName)
         }
       else
         //printf("Creating service succeeded\n");
-        std::cout << "Creating the service succeeded.\n";
+        /*std::cout*/ LOGN_SUCCESS("Creating the service succeeded.");
     }
   catch (ConnectToSCMerror & ctscme)
     {
       WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("");
     }
-  LOGN("CPUcontrolService::CreateService(...)--end")
+  LOGN("end")
 }
 
-void
-CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
-    const std::tstring & cr_std_tstrProgramName)
+void CPUcontrolService::DeleteService(
+  const TCHAR * cp_tchServiceName,
+  const std::tstring & cr_std_tstrProgramName)
 {
   DWORD dwErrorCodeFor1stError;
-  BYTE by = ServiceBase::DeleteService(//"GriffinStateService"
+  /*BYTE by*/ fastestUnsignedDataType deleteServiceRetCode = ServiceBase::
+    DeleteService(//"GriffinStateService"
       cp_tchServiceName, dwErrorCodeFor1stError);
-  if (by)
+  if (deleteServiceRetCode)
     {
       //    HandleErrorPlace(by, "for deleting the service:") ;
       //    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
@@ -422,7 +423,7 @@ CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
       //      ) ;
       std::string stdstr = "for deleting the service:";
       std::string std_strSpecificErrorMessage;
-      switch (by)
+      switch (deleteServiceRetCode)
         {
       case ServiceBase::OpenSCManagerFailed:
         std_strSpecificErrorMessage = "opening the service control manager "
@@ -455,56 +456,56 @@ CPUcontrolService::DeleteService(const TCHAR * cp_tchServiceName,
         }
     }
     else
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Deleting the service \""
-      << GetStdString_Inline(cp_tchServiceName)
-      << "\" succeeded." )
+      /*WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE*/ LOGN_SUCCESS(
+      "Deleting the service \"" << GetStdString_Inline(cp_tchServiceName)
+      << "\" succeeded.")
   std::wstring std_wstrProgramName = GetStdWstring(cr_std_tstrProgramName);
   PowerProfDynLinked powerprofdynlinked( //stdtstrProgramName
-      std_wstrProgramName);
+    std_wstrProgramName);
   powerprofdynlinked.DeletePowerScheme(//cr_std_tstrProgramName
-      std_wstrProgramName);
+    std_wstrProgramName);
   powerprofdynlinked.OutputAllPowerSchemes();
 }
 
-void
-CPUcontrolService::DisableOtherVoltageOrFrequencyChange()
+void CPUcontrolService::DisableOtherVoltageOrFrequencyChange()
 {
   m_powerprofdynlinked.DisableFrequencyScalingByOS();
 }
 
-void
-CPUcontrolService::EndAlterCurrentCPUcoreIPCdata()
+void CPUcontrolService::EndAlterCurrentCPUcoreIPCdata()
 {
-  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata begin")
+  LOGN(/*"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "*/ "begin")
   m_vbAlterCPUcoreDataForIPC = false;
-  //  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Lock")
+  //  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "
+  //    "before Lock")
   //Lock the mutex so that the thread that called Wait() on the condition
   // receives the wakeup by Signal() (else Signal may be called while the
   // other thread is not Wait() ing and so does not wake up.
   //  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Lock() ;
-  //  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Signal")
+  //  LOGN(//"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "
+  //    "before Signal")
   //  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Signal() ;
-  //  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
-  //    "WaitForTermination of GetCurrentCPUcoreData")
+  //  LOGN(//"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "
+  //    "before WaitForTermination of GetCurrentCPUcoreData")
   //  m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.Unlock() ;
-  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
-      "LockedBroadcast")
+  LOGN(/*"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "*/ "before "
+    "LockedBroadcast")
   m_wxconditionbasedi_conditionAlterCPUcoreDataDOMtree.LockedBroadcast();
-  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before "
-      "waiting for termination of \"get current CPU core data\" thread")
+  LOGN(//"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "
+    "before waiting for termination of \"get current CPU core data\" thread")
   //http://docs.wxwidgets.org/2.6/wx_wxthread.html#wxthreadwait:
   //"you must Wait() for a joinable thread or the system resources used by it
   //will never be freed,
   m_x86iandc_threadGetCurrentCPUcoreData.WaitForTermination();
-  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata after "
-      "waiting for termination of \"get current CPU core data\" thread")
-  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata before Delete")
+  LOGN(//"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "
+    "after waiting for termination of \"get current CPU core data\" thread")
+  LOGN(//"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "
+    "before Delete")
   m_x86iandc_threadGetCurrentCPUcoreData.Delete();
-  LOGN("CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata end")
+  LOGN(/*"CPUcontrolService()::EndAlterCurrentCPUcoreIPCdata "*/ "end")
 }
 
-void
-CPUcontrolService::HandleInitServiceFailed(DWORD dwStatus)
+void CPUcontrolService::HandleInitServiceFailed(DWORD dwStatus)
 {
   // Handle error condition
   if (dwStatus == NO_ERROR)
@@ -530,9 +531,8 @@ CPUcontrolService::HandleInitServiceFailed(DWORD dwStatus)
     }
 }
 
-void
-CPUcontrolService::HandleLogonEvent(
-    PWTSSESSION_NOTIFICATION pwtssession_notification)
+void CPUcontrolService::HandleLogonEvent(
+  const PWTSSESSION_NOTIFICATION & pwtssession_notification) const
 {
   LOGN("unlock or logon event--session ID is:" <<
       pwtssession_notification->dwSessionId )
@@ -543,25 +543,24 @@ CPUcontrolService::HandleLogonEvent(
       s_p_cpucontrolservice->m_model.m_serviceattributes;
   LOGWN_WSPRINTF(L"GUI exe to start:%ls",
       r_service_attributes.m_stdwstrPathToGUIexe.c_str() )
-  if (!r_service_attributes.m_stdwstrPathToGUIexe.empty())
-    {
-      //    StartGUIprocessDelayedSynchronous(r_security_attributes);
-      StartGUIprocessDelayedAsync(r_service_attributes,
-          pwtssession_notification->dwSessionId);
-    }
+  if( ! r_service_attributes.m_stdwstrPathToGUIexe.empty() )
+  {
+    //    StartGUIprocessDelayedSynchronous(r_security_attributes);
+    StartGUIprocessDelayedAsync(
+      r_service_attributes,
+      pwtssession_notification->dwSessionId);
+  }
 }
 
-void
-CPUcontrolService::HandlePowerEvent(DWORD dwEventType)
+void CPUcontrolService::HandlePowerEvent(DWORD dwEventType)
 {
-  LOGN("power event")
+  LOGN("power event--type:" << dwEventType)
   //"If dwControl is SERVICE_CONTROL_POWEREVENT, this parameter can be one of
   //the values specified in the wParam parameter of the WM_POWERBROADCAST
   //message."
   //http://msdn.microsoft.com/en-us/library/aa373247%28v=VS.85%29.aspx:
-  switch ( //(int)
-  dwEventType)
-    {
+  switch ( /*(int)*/  dwEventType)
+  {
   //case PBT_APMPOWERSTATUSCHANGE:
   //http://msdn.microsoft.com/en-us/library/aa372720%28v=VS.85%29.aspx:
   //"Notifies applications that the system has resumed operation after being
@@ -609,7 +608,7 @@ CPUcontrolService::HandlePowerEvent(DWORD dwEventType)
     //  ::Sleep(400);
     //}
     if (s_p_cpucontrolservice->m_bProcess)
-      s_p_cpucontrolservice->mp_cpucontroller-> ResumeFromS3orS4();
+      s_p_cpucontrolservice->mp_cpucontroller->ResumeFromS3orS4();
     //After ACPI S3/ S4 the performance event select
     //is cleared and has to be written again.
     s_p_cpucontrolservice->mp_cpucoreusagegetter->Init();
@@ -637,11 +636,10 @@ CPUcontrolService::HandlePowerEvent(DWORD dwEventType)
     }
 }
 
-//This method should be called by each constructor.
-void
-CPUcontrolService::InitializeMemberVariables()
+/** This method should be called by each constructor. */
+void CPUcontrolService::InitializeMemberVariables()
 {
-  LOGN("CPUcontrolServiceBase::InitializeMemberVariables()--begin")
+  LOGN(/*"CPUcontrolServiceBase::InitializeMemberVariables()--"*/ "begin")
   m_bStartedAsService = false;
   gp_cpucontrolbase = this;
   m_vbAlterCPUcoreDataForIPC = true;
@@ -665,7 +663,7 @@ CPUcontrolService::InitializeMemberVariables()
   //  mp_modelData = NULL ;
   m_stdstrSharedMemoryName = "CPUcontrolService";
 
-  LOGN(FULL_FUNC_NAME << " creating the \"end service\" event")
+  LOGN("creating the \"end service\" event")
   m_hEndProcessingEvent = ::CreateEvent(NULL, // default security attributes
       TRUE, // manual-reset event
       FALSE, // initial state is non-signaled
@@ -683,8 +681,7 @@ CPUcontrolService::InitializeMemberVariables()
   LOGN("before starting thread for GetCurrentCPUcoreDataInLoopThreadFunc")
 }
 
-void
-CPUcontrolService::FillCmdLineOptionsList()
+void CPUcontrolService::FillCmdLineOptionsList()
 {
   if (m_vecstrCmdLineOptions.empty())
     {
@@ -702,8 +699,8 @@ inline BYTE *
 CPUcontrolService::GetCurrentCPUcoreData_Inline(DWORD & dwByteSize)
 {
   BYTE * ar_byPipeDataToSend = NULL;
-  LOGN("IPC: get_current_CPU_data--mp_dynfreqscalingthreadbase:"
-      << mp_dynfreqscalingthreadbase )
+  LOGN(/*"IPC: get_current_CPU_data--"*/ "mp_dynfreqscalingthreadbase:"
+    << mp_dynfreqscalingthreadbase )
   if (mp_dynfreqscalingthreadbase && mp_dynfreqscalingthreadbase-> IsStopped() )
   { //The DVFS thread does not collect CPU info-> collect it ourselves.
     //      r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData ;
@@ -752,12 +749,12 @@ CPUcontrolService::GetIPCdataThreadSafe(DWORD & r_dwByteSize)
   //      Unlock( ) ;
 
   //Protect
-  LOGN("get IPC data: before entering critical section for concurrent "
-      "modification by in-program data to IPC data thread")
+  LOGN(/* "get IPC data: "*/ "before entering critical section for concurrent "
+    "modification by in-program data to IPC data thread")
   //Assign the array pointer and array byte size _inside_ the critical section.
   m_model.m_cpucoredata.m_wxcriticalsectionIPCdata.Enter();
 
-  LOGN("get IPC data: after entering critical section for concurrent "
+  LOGN(/*"get IPC data: " */ "after entering critical section for concurrent "
       "modification by in-program data to IPC data thread")
   BYTE * r_arbyPipeDataToSend = m_ipc_datahandler.m_arbyData;
   //  DWORD dwByteSize = m_ipc_datahandler.m_dwByteSize ;
@@ -775,12 +772,12 @@ CPUcontrolService::GetIPCdataThreadSafe(DWORD & r_dwByteSize)
     }
   else
     r_arbyPipeDataToSend = NULL;
-  LOGN("get IPC data: before leaving critical section for concurrent "
-      "modification by in-program data to IPC data thread")
+  LOGN(/*"get IPC data: "*/ "before leaving critical section for concurrent "
+    "modification by in-program data to IPC data thread")
 
   m_model.m_cpucoredata.m_wxcriticalsectionIPCdata.Leave();
-  LOGN("get IPC data: after leaving critical section for concurrent "
-      "modification by in-program data to IPC data thread")
+  LOGN(/*"get IPC data: "*/ "after leaving critical section for concurrent "
+    "modification by in-program data to IPC data thread")
   return r_arbyPipeDataToSend;
 }
 
@@ -793,8 +790,8 @@ CPUcontrolService::IPC_Message(
     IPC_data & r_ipc_data)
 {
   DWORD dwByteSize = 0;
-  LOGN("CPUcontrolService::IPC_Message(...)--size of data to read in byte:"
-      << r_ipc_data.m_wPipeDataReadSizeInByte )
+  LOGN(/*"CPUcontrolService::IPC_Message(...)--"*/
+    "size of data to read in byte:" << r_ipc_data.m_wPipeDataReadSizeInByte )
 
   //  LOGN("IPC message: " << (WORD) byCommand )
   //wide string because the power scheme may need it (e.g. for Chinese power
@@ -923,7 +920,7 @@ CPUcontrolService::IPC_Message(
   case getAvailablePowerSchemeNames:
     {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-      LOGN( FULL_FUNC_NAME << "--getAvailablePowerSchemeNames begin")
+      LOGN( "getAvailablePowerSchemeNames begin")
       std::set<std::wstring> stdset_std_wstrPowerSchemeName ;
       std::wstring wstrActivePowerScheme ;
       std::wstring std_wstrPowerSchemeNames;
@@ -944,7 +941,7 @@ CPUcontrolService::IPC_Message(
         {
           ui16ActivePowerSchemeIndex = ui16PowerSchemeIndex;
         }
-        LOGN( FULL_FUNC_NAME << "--adding power scheme name \"" <<
+        LOGN( "adding power scheme name \"" <<
           ::GetStdString(* c_iter_std_set_std_wstr_c_iterPowerSchemeName)
            << "\"." )
         std_wstrPowerSchemeNames +=
@@ -974,7 +971,7 @@ CPUcontrolService::IPC_Message(
         & ui16ActivePowerSchemeIndex, 2);
       //active scheme index number.
       dwByteSize += 2;
-      LOGN( FULL_FUNC_NAME << "--data to send via IPC: " <<
+      LOGN( "data to send via IPC: " <<
         ::format_output_data(r_ipc_data.m_ar_byDataToSend,
           dwByteSize, 80)
         )
@@ -1005,7 +1002,7 @@ CPUcontrolService::IPC_Message(
 
 SERVICE_STATUS_HANDLE CPUcontrolService::RegSvcCtrlHandlerAndHandleError()
 {
-  LOGN(FULL_FUNC_NAME << " begin")
+  LOGN("begin")
   DWORD dwLastError;
   //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/servicemain.htm:
   //"The ServiceMain function should immediately call the
@@ -1282,29 +1279,29 @@ void CPUcontrolService::OnEventLoopEnter( wxEventLoopBase *   loop)
 
 bool CPUcontrolService::OnInit()
 {
-  LOGN( FULL_FUNC_NAME)
-  std::cout << FULL_FUNC_NAME << "--# prog args:" << argc << "\n";
+  LOGN( "begin")
+  std::cout << "# prog args:" << argc << "\n";
 //  ::OpenLogFile(argv);
   std::cout << "after OpenLogFile\n";
 
-  //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "before CallFromMainFunction")
+  //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "before CallFromMainFunction")
 //  if( CallFromMainFunction(argc,argv, this) == 0)
   {
     //OnInit() must return true, else no wxWidgets socket events can be processed?!
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "return true")
+    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "return true")
     return true ;
   }
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME << "return false")
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "return false")
   return false ;
 }
 
 void CPUcontrolService::OnServerEvent(wxSocketEvent & event)
 {
-  LOGN( FULL_FUNC_NAME)
+  LOGN( "begin")
 }
 void CPUcontrolService::OnSocketEvent(wxSocketEvent & event)
 {
-  LOGN( FULL_FUNC_NAME)
+  LOGN( "begin")
 }
 
 void CPUcontrolService::AddConsoleLogEntryWriter()
@@ -1338,7 +1335,8 @@ void CPUcontrolService::AddConsoleLogEntryWriter()
     "txt",
   //      consoleformatter,
     100,
-    LogLevel::warning /*success*/
+    //Use minimum log level "success" to also output coloured success messages.
+    LogLevel::success/*warning*/
   //      LogLevel::GetAsNumber(m_model.m_logfileattributes.m_std_strLevel)
     );
   //    logfileappender->CreateFormatter("txt"/*, std_strLogTimeFormatString*/ );
@@ -1360,7 +1358,8 @@ bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
   std::string std_strLogFileName =
     //CPUcontrolBase::m_model.m_stdstrLogFilePath + "/" +
     ::GetStdString_Inline( argv[0] );
-  std::cout << "std_strLogFileName:" << std_strLogFileName << "\n";
+//  std::cout << "std_strLogFileName:" << std_strLogFileName << "\n";
+
 
   //  std::tstring std_tstrLogFileName;
   #if defined(__GNUC__) && __GNUC__ > 3 //GCC 3.4.5 does not have "psapi.a" lib.
@@ -1382,6 +1381,7 @@ bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
   //  std_tstrLogFileName = std::tstring( argv[0]) +
   //    std::tstring( L"_log.txt") ;
   #endif
+  std::wstring std_wstrLogFileName = ::GetStdWstring( std_strLogFileName );
 
   //The path must be set before the config files are accessed.
   if( ! ::SetExePathAsCurrentDir() )
@@ -1390,20 +1390,24 @@ bool CPUcontrolService::OpenLogFile(TCHAR * argv[])
       LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
       );
 
+  std::wstring std_wstrLogFileFolderPath;
+  std::wstring std_wstrFileNameWithoutDirs = GetExecutableFileName(
+    std_wstrLogFileName.c_str() );
   bool logFileIsOpen = CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
-    std_strLogFileName);
-  if( logFileIsOpen)
-  {
-    AddConsoleLogEntryWriter();
-  }
+    std_wstrLogFileFolderPath,
+    /*std_wstrLogFileName*/ std_wstrFileNameWithoutDirs
+    );
+//  if( logFileIsOpen)
+//  {
+//    AddConsoleLogEntryWriter();
+//  }
   return logFileIsOpen;
 }
 
 /**@ return true: already paused*/
-bool
-CPUcontrolService::Pause()
+bool CPUcontrolService::Pause()
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
   bool bAlreadyPaused = false;
   m_servicestatus.dwCurrentState = SERVICE_PAUSED;
   m_bProcess = false;
@@ -1660,7 +1664,8 @@ CPUcontrolService::requestOption(
 void WINAPI
 CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  I_Thread::SetCurrentThreadName("service main");
+  LOGN( "begin")
   BYTE byArgIndex = 0;
   DWORD dwStatus;
   std::string stdstrErrorDescripition;
@@ -1740,7 +1745,8 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   //  s_p_cpucontrolservice->mp_cpucontroller->EnableOwnDVFS() ;
 #ifdef COMPILE_WITH_IPC
   s_p_cpucontrolservice->m_x86iandc_threadGetCurrentCPUcoreData.start(
-      GetCurrentCPUcoreDataInLoopThreadFunc, s_p_cpucontrolservice);
+      GetCurrentCPUcoreDataInLoopThreadFunc, s_p_cpucontrolservice,
+      "GetCurrentCPUcoreInfo");
 //  StartwxSocketServerThread();
   StartIPCserverThread();
 #endif
@@ -1756,13 +1762,13 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
       LOGN("service main--current thread ID:" << ::GetCurrentThreadId() )
       s_p_cpucontrolservice->m_vbServiceInitialized = true;
 
-      LOGN( FULL_FUNC_NAME << "--before waiting for the end condition to "
+      LOGN( "before waiting for the end condition to "
         "become signalled." )
       //If not waiting the thread object is destroyed at end of block.
       ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
           INFINITE);
       //    WaitForEndOfDVFSthread() ;
-      LOGN( FULL_FUNC_NAME << "--after waiting for the end condition to "
+      LOGN( "after waiting for the end condition to "
         "become signalled." )
     }
 
@@ -1792,7 +1798,7 @@ CPUcontrolService::ServiceMain(DWORD argc, LPTSTR *argv)
   //DEBUG("Service main function--end\n",argc)
   LOGN( "Service main function--end"//\n"
   )
-  LOGN( FULL_FUNC_NAME << "--return")
+  LOGN( "return")
   return;
 }
 
@@ -1936,7 +1942,7 @@ CPUcontrolService::ShouldStartAsNormalApp(
   if (IsWithinStrings(vecstdstrParams, "-a") )
     bShouldStartAsNormalApp = true;
 
-  LOGN( FULL_FUNC_NAME << "--return" << bShouldStartAsNormalApp )
+  LOGN( "return" << bShouldStartAsNormalApp )
   return bShouldStartAsNormalApp;
 }
 
@@ -1992,7 +1998,7 @@ void
 CPUcontrolService::StartwxSocketServerThread()
 {
   DWORD dwThreadId;
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
   //  s_p_cpucontrolservice->m_wxservicesocketserver.Init() ;
   //IPC_servers wait for client and are often BLOCKING, so THIS
@@ -2032,12 +2038,12 @@ CPUcontrolService::StartwxSocketServerThread()
   //  wxAppTraits::CreateEventLoop() ;
   //The socket events need to be processed in a thread!
   //  wxEventLoopBase * p = wxConsoleAppTraits::CreateEventLoop() ;
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void CPUcontrolService::StartAsNonService()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
 
 #ifdef COMPILE_WITH_IPC
   s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
@@ -2051,12 +2057,12 @@ void CPUcontrolService::StartAsNonService()
       //m_p_lptstrArgument
       argv
     );
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void CPUcontrolService::StartServiceCtrlDispatcherInSeparateThread()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   Windows_API::Thread x86iandc_threadServiceMain;
   x86iandc_threadServiceMain.start(
     CPUcontrolService::StartServiceCtrlDispatcher_static, NULL);
@@ -2067,7 +2073,7 @@ void CPUcontrolService::StartServiceCtrlDispatcherInSeparateThread()
   s_p_cpucontrolservice->m_wxservicesocketserver.Init();
 #endif //#ifdef COMPILE_WITH_IPC
 
-  LOGN( FULL_FUNC_NAME << "--Waiting for the stop service condition to become "
+  LOGN( "Waiting for the stop service condition to become "
     "true")
 
   //http://msdn.microsoft.com/en-us/library/ms686324%28v=VS.85%29.aspx
@@ -2079,13 +2085,13 @@ void CPUcontrolService::StartServiceCtrlDispatcherInSeparateThread()
   //If not waiting the service control dispatcher thread ends!.
   ::WaitForSingleObject(s_p_cpucontrolservice->m_hEndProcessingEvent,
       INFINITE);
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 DWORD THREAD_FUNCTION_CALLING_CONVENTION CPUcontrolService::
   StartServiceCtrlDispatcher_static(void * p_v)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //SERVICE_TABLE_ENTRYA ("char") or SERVICE_TABLE_ENTRYW ( wchar_t )
   SERVICE_TABLE_ENTRY ar_service_table_entry[] =
     {
@@ -2146,7 +2152,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION CPUcontrolService::
       return 1;
     }
 #endif //#ifdef EMULATE_EXECUTION_AS_SERVICE
-  LOGN( FULL_FUNC_NAME << "--return 0")
+  LOGN( "return 0")
   return 0;
 }
 
@@ -2177,7 +2183,7 @@ DWORD WINAPI
 CPUcontrolService::ServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType,
     LPVOID lpEventData, LPVOID lpContext)
 {
-  LOGN("service control handler begin control code:" << dwControl
+  LOGN(/*"service control handler "*/ "begin control code:" << dwControl
     /* << " current thread id:" << ::GetCurrentThreadId() */ );
   //  LOGN("service ctrl handler--current thread id:" << ::GetCurrentThreadId() )
   //DWORD status;
@@ -2210,7 +2216,7 @@ CPUcontrolService::ServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType,
         //if( s_p_cpucontrolservice->mp_cpucontroller )
         //  s_p_cpucontrolservice->mp_cpucontroller->EnableOwnDVFS() ;
       case SERVICE_CONTROL_STOP:
-        LOGN("service control handler--received stop control code")
+        LOGN(/*"service control handler--"*/ "received stop control code")
         // Do whatever it takes to stop here. 
         s_p_cpucontrolservice->Stop();
         //ms-help://MS.VSCC.v80/MS.MSDN.v80/MS.WIN32COM.v10.en/dllproc/base/handlerex.htm
@@ -2251,7 +2257,8 @@ CPUcontrolService::ServiceCtrlHandlerEx(DWORD dwControl, DWORD dwEventType,
           }
         break;
       default:
-        LOGN("service control handler--call not impl.")
+        LOGN(//"service control handler--"
+            "call not impl.")
         //SvcDebugOut(" [MY_SERVICE] Unrecognized opcode %ld\n",
         //    dwControl);
         //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
@@ -2352,7 +2359,7 @@ CPUcontrolService::ShowMessage(const std::tstring & cr_std_tstrMessage)
 void
 CPUcontrolService::Stop()
 {
-  LOGN("CPUcontrolService::Stop() begin")
+  LOGN(/*"CPUcontrolService::Stop() "*/ "begin")
   if (mp_dynfreqscalingthreadbase)
     mp_dynfreqscalingthreadbase->Stop();
   //TODO implement
@@ -2368,7 +2375,7 @@ CPUcontrolService::Stop()
   //   s_p_cpucontrolservice->
   m_servicestatus.dwWaitHint = 0;
 
-  LOGN("CPUcontrolService::Stop()--signalling the main thread to continue")
+  LOGN(/*"CPUcontrolService::Stop()--"*/ "signalling the main thread to continue")
   //WaitForSingleObject(m_eventStopped);
   ::SetEvent(m_hEndProcessingEvent);
 
@@ -2410,8 +2417,8 @@ CPUcontrolService::WakeUpCreateIPCdataThread()
   //
   ////    mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.Broadcast() ;
   ////    mp_cpucoredata->m_win32eventCPUdataCanBeSafelyRead.ResetEvent() ;
-  //    LOGN("DynFreqScalingThreadBase::Entry(): after "
-  //        "mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
+  //    LOGN(//"DynFreqScalingThreadBase::Entry():"
+  //      "after mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()")
   LOGN("before waking up the CPU core data to IPC data thread")
 
   //This would happen if the pipe client thread would Lock() the mutex

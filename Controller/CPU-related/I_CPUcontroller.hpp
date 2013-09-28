@@ -117,7 +117,7 @@ public:
   //in order for ~wxDynLibController to be called
   virtual ~I_CPUcontroller()
   {
-    LOGN("~I_CPUcontroller()")
+    LOGN(/*"~I_CPUcontroller()"*/ "begin")
   }
   UserInterface * GetUserInterface() { return mp_userinterface ; }
 
@@ -195,7 +195,7 @@ public:
     )
   {
     LOGN(//"StoreCurrentVoltageAndFreqInArray"
-      FULL_FUNC_NAME << " begin")
+      "begin")
 //    LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequency("
 //      << wCoreID << ") begin" )
     return 0 ;

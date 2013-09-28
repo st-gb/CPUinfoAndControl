@@ -92,7 +92,7 @@ MainController::MainController(const MainController& orig) {
 }
 
 MainController::~MainController() {
-  LOGN("~MainController")
+  LOGN("" /*"~MainController"*/ )
 }
 
 void MainController::CreateBuiltInCPUcontrollerAndUsageGetter(
@@ -213,7 +213,7 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
 //#endif
   }
   else
-    LOGN( FULL_FUNC_NAME << "--number of CPU cores:"
+    LOGN( "number of CPU cores:"
       <<
       //Cast to integer to not output the value as character
       (WORD) mp_model->m_cpucoredata.m_byNumberOfCPUCores )
@@ -256,12 +256,12 @@ void MainController::SetCPUaccess(
 
 bool MainController::GetCPUvendorFamilyModelStepping()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   std::string strVendorID ;
   if( //May be NULL
      ! mp_cpuaccess )
   {
-    LOGN_ERROR( FULL_FUNC_NAME << "mp_cpuaccess is NULL")
+    LOGN_ERROR( "mp_cpuaccess is NULL")
     return false;
   }
   if(mp_cpuaccess->GetVendorID(strVendorID) )
@@ -299,7 +299,7 @@ bool MainController::GetCPUvendorFamilyModelStepping()
 BYTE MainController::GetPstatesDirPath(
   std::string & r_strCPUtypeRelativeDirPath )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   BYTE byRet = 0 ;
 //  if( GetCPUvendorFamilyModelStepping() )
   {
@@ -354,7 +354,7 @@ BYTE MainController::ReadPstateConfig(
   , UserInterface * p_userinterface 
   )
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
   BYTE byRet = 0 ;
   std::string strCPUtypeRelativeDirPath ;
   if( GetCPUvendorFamilyModelStepping() &&
@@ -441,12 +441,12 @@ BYTE MainController::ReadMainAndPstateConfig(
   , UserInterface * p_userinterface
   )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   BYTE byRet = 255 ;
   mp_model = & model ;
   ReadMainConfig(model, p_userinterface) ;
   byRet = ReadPstateConfig(model, p_userinterface) ;
-  LOGN( FULL_FUNC_NAME << "--return " << (WORD) byRet)
+  LOGN( "return " << (WORD) byRet)
   return byRet ;
 }
 
@@ -455,12 +455,11 @@ void MainController::ReadMainConfig(
   , UserInterface * p_userinterface
   )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   std::string stdstrMainConfigFileName = model.m_std_strConfigFilePath + "/" +
     GetStdString(model.m_stdtstrProgramName ) + "_config.xml" ;
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME <<
-    "Reading main config file \"" <<
-      stdstrMainConfigFileName << "\"" )
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "Reading main config file \"" <<
+    stdstrMainConfigFileName << "\"" )
   //The main cfg also contains the exclusion log message filter--load it in any
   //case.
   SAX2MainConfigHandler sax2mainconfighandler( model, p_userinterface );
@@ -505,7 +504,7 @@ void MainController::ReadRegisterDataConfig(
       ) == Apache_Xerces::readingXMLdocFailed
     )
     {
-      LOGN_ERROR(FULL_FUNC_NAME << " reading XML document \"" +
+      LOGN_ERROR("reading XML document \"" +
         strFamilyAndModelFilePath + "\" failed")
     }
 #endif //#ifdef COMPILE_AS_SERVICE

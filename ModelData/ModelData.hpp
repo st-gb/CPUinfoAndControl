@@ -65,7 +65,23 @@ public:
    *  use sizeof(Model) to store the size in dyn libs.
    *  for exe: use address of "m_logfileattributes"- address of "this". */
   //unsigned sizeInBytes;
+  fastestUnsignedDataType GetSizeForCPUcontroller() const
+  {
+    void * addressOfModelofCPUcoreData = //& mp_model->p_cpucoredata->m_r_model
+      //(*mp_model).*p_cpucoredata,m_r_model;
+  //    & (r_CPUcoreData.//p_model;
+  //    & (r_CPUcoreData.*p_m_byNumberOfCPUCores);
+      (void*) & m_cpucoredata./*m_byNumberOfCPUCores*/ m_MD5checksum;
+      //mp_model->m_cpucoredata.//p_m_std_vec_voltageandfreqInsertedByCPUcontroller;
+  //    & (r_CPUcoreData.*p_m_b1CPUcorePowerPlane);
 
+    unsigned numBytesForCPUcontrollersModel = (unsigned) (
+      //& p_model->m_logfileattributes
+      (BYTE *) addressOfModelofCPUcoreData - (BYTE *) this
+      );
+    return numBytesForCPUcontrollersModel;
+  }
+  void GetCPUcontrollerModelMD5checkSum(BYTE []) const;
 #ifdef COMPILE_AS_EXECUTABLE
   LogFileAttributes m_logfileattributes;
   BYTE m_byNumberOfCPUCores ;
@@ -97,7 +113,6 @@ public:
   //->Insert/ change additional data here.
 
   std::string m_std_strConfigFilePath;
-  Windows::InstableCPUcoreOperationDetection m_instablecpucorevoltagedetection;
   uint16_t m_StableCPUcoreVoltageWaitTimeInMillis;
 
 //  #include "GUI_member_variables.hpp"
@@ -107,6 +122,11 @@ public:
   //of _this_ class because all members that are used in the dynamic
   //library must be aligned as in the executable(!)
 #ifdef COMPILE_AS_GUI
+#ifdef _WIN32
+  Windows::InstableCPUcoreOperationDetection m_instablecpucorevoltagedetection;
+#else
+  //InstableCPUcoreOperationDetection m_instablecpucorevoltagedetection;
+#endif
   std::wstring m_stdwstrPipeName ;
 //  ValueTables m_valuetables ;
   std::vector<MSRdata> m_stdvector_msrdata ;
@@ -133,7 +153,11 @@ public:
     , mp_cpucontroller (NULL)
     , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
     , m_std_strConfigFilePath( CONFIG_FILE_PATH )
+#ifdef COMPILE_AS_GUI
+#ifdef _WIN32
     , m_instablecpucorevoltagedetection(m_cpucoredata)
+#endif
+#endif //#ifdef COMPILE_AS_GUI
     , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
   {}
 //  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
@@ -172,7 +196,11 @@ public:
   {
     mp_cpucontroller = p_cpucontroller ;
     m_cpucoredata.SetCPUcontroller( p_cpucontroller ) ;
+#ifdef COMPILE_AS_GUI
+#ifdef _WIN32
     m_instablecpucorevoltagedetection.m_p_cpucontroller = p_cpucontroller;
+#endif
+#endif //#ifdef COMPILE_AS_GUI
   }
   void SetNumberOfCPUCores(BYTE byNumberOfCPUCores) ;
   void SetSkipCPUTypeCheck(bool bSkipCPUtypeCheck) ;

@@ -176,16 +176,28 @@ inline bool PossiblyHandleLoggingExclusionFilter_Inline(
     std::string stdstrValue ;
     bRet = true ;
     if( XercesAttributesHelper::GetAttributeValue(
-      cr_xercesc_attributes ,
-      //Use "( char * )" to avoid g++ Linux compiler warning
-      // "deprecated conversion from string constant to ‘char*’ "
-      ( char * ) "exclude" ,
-      stdstrValue )
+        cr_xercesc_attributes ,
+        //Use "( char * )" to avoid g++ Linux compiler warning
+        // "deprecated conversion from string constant to ‘char*’ "
+        ( char * ) "exclude" /*"message"*/,
+        stdstrValue )
       )
     {
       LOGN("string to exclude from logging:" << stdstrValue )
 //        g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
-      g_logger.AddExcludeFromLogging(stdstrValue) ;
+      g_logger./*AddExcludeFromLogging*/ExcludeFunctionFromLogging(stdstrValue) ;
+    }
+    if( XercesAttributesHelper::GetAttributeValue(
+        cr_xercesc_attributes ,
+        //Use "( char * )" to avoid g++ Linux compiler warning
+        // "deprecated conversion from string constant to ‘char*’ "
+        ( char * ) /*"exclude"*/ /*"message"*/ "function",
+        stdstrValue )
+      )
+    {
+      LOGN("string to exclude from logging:" << stdstrValue )
+//        g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
+      g_logger./*AddExcludeFromLogging*/ExcludeFunctionFromLogging(stdstrValue) ;
     }
   }
   return bRet ;

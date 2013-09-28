@@ -56,7 +56,7 @@ CPUcontrolServiceBase::CPUcontrolServiceBase(UserInterface * p_userinterface)
 //    //wxThread::Wait() only works for joinable threads
 //    I_Thread::joinable)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
 }
 
 CPUcontrolServiceBase::~CPUcontrolServiceBase()
@@ -116,8 +116,8 @@ bool CPUcontrolServiceBase::HandleStartDynVoltAndFreqScalingThread(
   )
 {
   DisableOtherVoltageOrFrequencyChange() ;
-  LOGN("service HandleStartDynVoltAndFreqScalingThread--CPU controller: "
-    << mp_cpucontroller
+  LOGN(/*"service HandleStartDynVoltAndFreqScalingThread--"*/
+    "CPU controller: " << mp_cpucontroller
     << "CPU usage getter: " << mp_cpucoreusagegetter )
 //#ifdef __linux__
   CreateDVFSthreadObject_Inline(//byVoltageAndFrequencyScalingType
@@ -174,7 +174,7 @@ DWORD CPUcontrolServiceBase::Initialize(
   //argv;
 //  LPTSTR  ** ppartch ;
   //std::vector<std::string> stdvecstdstrFurtherCmdLineArgs ;
-  LOGN( "initializing the service--begin. argument count:" << argc )
+  LOGN( /*"initializing the service--"*/ "begin. argument count:" << argc )
 //  if( argc < 2 )
 //  {
 //    LPTSTR ptchFirstArg
@@ -255,8 +255,8 @@ DWORD CPUcontrolServiceBase::Initialize(
       }
       int nCPUcount = //wxThread::GetCPUcount();
         GetNumberOfLogicalCPUcores();
-//      LOGN( FULL_FUNC_NAME << "# CPU cores via wxWidgets:" << nCPUcount)
-      LOGN( FULL_FUNC_NAME << "# CPU cores from Operating System:" << nCPUcount)
+//      LOGN( "# CPU cores via wxWidgets:" << nCPUcount)
+      LOGN( "# CPU cores from Operating System:" << nCPUcount)
       if( nCPUcount != -1 )
         m_model.m_cpucoredata.m_byNumberOfCPUCores = nCPUcount;
       //if( !
@@ -313,7 +313,7 @@ DWORD CPUcontrolServiceBase::Initialize(
     ShowMessage( cr_cpuaccessexception.m_stdstrErrorMessage ) ;
     //delete e ;
   }
-  LOGN(FULL_FUNC_NAME << "-return " << dwReturnValue)
+  LOGN("return " << dwReturnValue)
   return dwReturnValue;
 }
 
@@ -337,7 +337,7 @@ bool CPUcontrolServiceBase::StartDynVoltnFreqScaling()
   //If allocating memory succeeded.
   if( mp_dynfreqscalingthreadbase )
   {
-    LOGN( FULL_FUNC_NAME << "--already running: " <<
+    LOGN( "already running: " <<
       (mp_dynfreqscalingthreadbase->m_vbRun ? "yes" : "no") )
     if( mp_dynfreqscalingthreadbase->m_vbRun )
       bAlreadyContinued = true ;
@@ -366,7 +366,8 @@ DWORD CPUcontrolServiceBase::StartDVFSviaThreadType(//bool & bContinue
   DWORD dwRet = m_x86iandc_thread_typeDVFSthread.start(
     //DynFreqScalingThreadBaseNameSpace::ThreadFunction,
     DynFreqScalingThreadBase::ThreadFunction,
-    mp_dynfreqscalingthreadbase ) ;
+    mp_dynfreqscalingthreadbase,
+    "DynVoltnFreqScal") ;
   if( dwRet == //EXIT_SUCCESS
       I_Thread::no_error)
   {

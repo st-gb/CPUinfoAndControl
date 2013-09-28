@@ -20,15 +20,6 @@
   #define BITMASK_FOR_HIGHMOST_32_BIT_FOR_MIN_VID 130048 //=11111110000000000bin
   #define BITMASK_FOR_STABILIZATION_TIME 7 //=111bin
 
-  //Use prefix "COFVID_STATUS_REGISTER" to be eindeutig (because there may
-  //also be a field with the same meaning in e.g. another register, but at
-  //another start address)
-  #define COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VOLTAGE 42
-  #define COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID \
-      COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VOLTAGE
-  #define COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VOLTAGE 35
-  #define COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID \
-      COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VOLTAGE
   #define COFVID_STATUS_REGISTER_START_BIT_FOR_MAIN_PLL_OP_FREQ_ID_MAX 49
 
   #define START_BIT_FOR_CPU_CORE_DIVISOR_ID 6
@@ -50,9 +41,6 @@
   #define MAXIMUM_VID_FOR_ZM82 64
 
   #define MSR_TIME_STAMP_COUNTER_REGISTER 0x10
-
-  #define COFVID_CONTROL_REGISTER 0xC0010070 //"MSRC001_0070 COFVID Control Register"
-  #define COFVID_STATUS_REGISTER 0xC0010071
 
   //for PCI configuration space:
   #define F3xA0_POWER_CONTROL_MISCELLANEOUS_REGISTER 0xA0
@@ -91,7 +79,7 @@
   #define GET_MULTIPLIER_DID(frequencyID, divisorID) \
     ( (float) (frequencyID + 8) / (float) ( 1 << divisorID ) )
   namespace AMD { namespace family17 {
-     float GetMultiplier2(unsigned frequencyID, unsigned divisorID)
+     inline float GetMultiplier2(unsigned frequencyID, unsigned divisorID)
      {
        return (float) (frequencyID + 8) / (float) ( 1 << divisorID );
      }

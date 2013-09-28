@@ -69,11 +69,10 @@ typedef void (
       I_CPUaccess *
       //BYTE
       );
+typedef void ( DYN_LIB_CALLING_CONVENTION * pfn_GetMD5_type)(unsigned char * md5);
 //#define INIT_FUNCTION_DECLARATION(var_name) void ( I_CPUaccess * var_name)
 
-typedef void (
-  DYN_LIB_CALLING_CONVENTION
-  * dll_DeInit_type)(void );
+typedef void ( DYN_LIB_CALLING_CONVENTION * dll_DeInit_type)(void );
 typedef DWORD (
   DYN_LIB_CALLING_CONVENTION
   * dll_getMulti_type)(WORD );

@@ -14,12 +14,8 @@
 #include <string.h> //strcat(...)
 #include <windef.h> //for DWORD
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
-//http://en.wikipedia.org/wiki/CPUID
-// #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
-//"48-byte null-terminated ASCII processor brand string."
-// 4 byte per CPUID register * 4 CPUID registers (EAX,EBX,ECX,EDX) * 3 CPUID
-//  functions/ addresses = 4*4*3=16*3=48 byte
-#define CPUID_PROCESSOR_NAME_CHAR_NUMBER 48
+#include <hardware/CPU/x86/CPUID_addresses.h> //EXTENDED_L2_CACHE_FEATURES
+#include <Aladdin_Enterprises/md5_implementation/GenerateMD5checksum.hpp>
 
 /*//ULONG ulECX ;
 NTSTATUS
@@ -109,9 +105,20 @@ ReadMsr(void	*lpInBuffer, //index/offset as 4 byte value.
 ////        : "a" (0));
 //}
 
-//Implement the CPUID instruction here.
-//It may be overridden for subclasses that allow ring0 access because the
-//"cpuid" instruction may be restricted to ring0 access.
+/** http://en.wikipedia.org/wiki/CPUID#Calling_CPUID:
+ * "In assembly language the CPUID instruction takes no parameters as CPUID
+ * implicitly uses the EAX register. The EAX register should be loaded with a
+ * value specifying what information to return.
+ * CPUID should be called with EAX = 0 first, as this will return the highest
+ * calling parameter that the CPU supports.
+ * To obtain extended function information CPUID should be called with bit 31
+ * of EAX set. To determine the highest extended function calling parameter,
+ * call CPUID with EAX = 80000000h."
+ * ->
+ *
+ * Implement the CPUID instruction here.
+* It may be overridden for subclasses that allow ring0 access because the
+* "cpuid" instruction may be restricted to ring0 access. */
 BOOL I_CPUaccess::CpuidEx(
   DWORD dwIndex,
   PDWORD p_dwEAX,
@@ -149,6 +156,38 @@ BOOL I_CPUaccess::CpuidEx(
   return TRUE ;
 }
 
+/** @brief get CPU Level 2 cache size in _Kibi_ (1024) bytes.
+ *  May be useful for buffer size for instable CPU core operation detection
+ *  see http://en.wikipedia.org/wiki/CPUID#EAX.3D80000006h:_Extended_L2_Cache_Features
+ * */
+fastestUnsignedDataType I_CPUaccess::GetL2cacheSizeInKiB()
+{
+  DWORD ECX, dummy, EAX;
+  fastestUnsignedDataType L2cacheSizeInKiB = 0;
+//  CpuidEx(GET_HIGHEST_EXTENDED_FUNCTION_SUPPORTED, &EAX, &dummy, &dummy, &dummy, 1);
+  EAX = GetHighestExtendedFunctionSupported();
+  if( EAX >= EXTENDED_L2_CACHE_FEATURES )
+  {
+    /** http://en.wikipedia.org/wiki/CPUID#EAX.3D80000006h:_Extended_L2_Cache_Features:
+    * "Returns details of the L2 cache in ECX, including the line size in
+    * bytes, type of associativity (encoded by a 4 bits) and the cache size." */
+    CpuidEx(EXTENDED_L2_CACHE_FEATURES, &dummy, &dummy, &ECX, &dummy, 1);
+    //Intel® Processor Identification and the CPUID Instruction Application
+    //Note 485 August 2009 Order Number: 241618-036  :
+    //"ECX[7:0] L2 Cache Line Size in bytes."
+    //"ECX[31:16] L2 Cache size described in 1024-byte units."
+    fastestUnsignedDataType L2cacheSizeInKiB = ECX >> 16;
+  }
+  return L2cacheSizeInKiB;
+}
+
+void I_CPUaccess::GetMD5checkSum(void * beginOfMD5InputData,
+  unsigned numBytesMD5InputData, BYTE arbyMD5checksum[16])
+{
+  Aladdin_Enterprises::md5_implementation::GenerateMD5checkSum(
+    beginOfMD5InputData, numBytesMD5InputData, arbyMD5checksum);
+}
+
 //Is the same for AMD and Intel.
 bool //ISpecificController
   I_CPUaccess::GetProcessorNameByCPUID( std::string & r_stdstr )
@@ -160,7 +199,7 @@ bool //ISpecificController
   {
     r_stdstr = std::string( archCPUID ) ;
     //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
-    delete archCPUID ;
+    delete [] archCPUID ;
   }
   return bSuccess ;
 }
@@ -172,21 +211,34 @@ bool I_CPUaccess::GetProcessorNameWithoutLeadingSpaces( std::string & r_stdstr )
   bSuccess = GetProcessorNameByCPUID(archCPUID) ;
   if( bSuccess )
   {
+    //Skip leading space characters.
+    while( * archCPUID == ' ' )
+      ++ archCPUID;
     r_stdstr = std::string( archCPUID ) ;
     //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
-    delete archCPUID ;
-    while( r_stdstr.size() > 0 && r_stdstr.at(0) == ' '  )
-      r_stdstr.erase ( 0 ,
-      //delete 1 char.
-      1 );
+    delete [] archCPUID ;
+//    while( r_stdstr.size() > 0 && r_stdstr.at(0) == ' '  )
+//      r_stdstr.erase ( 0 ,
+//      //delete 1 char.
+//      1 );
   }
   return bSuccess ;
 }
 
-//Is the same for AMD and Intel.
-//Use the method with std::string parameter rather than this 
-//version with "char * &" where the
-//memory is allocated inside the function!
+//http://en.wikipedia.org/wiki/CPUID#EAX.3D80000000h:_Get_Highest_Extended_Function_Supported
+/** @return data type must have at least 32 bit:= 80000000h: */
+fastestUnsignedDataType I_CPUaccess::GetHighestExtendedFunctionSupported()
+{
+  DWORD EAX, dummy;
+  CpuidEx(GET_HIGHEST_EXTENDED_FUNCTION_SUPPORTED, & EAX, & dummy, & dummy, & dummy, 1);
+  return EAX;
+}
+
+/** @brief get processor name/ "Processor Brand String"
+ * Is the same for AMD and Intel.
+* Use the method with std::string parameter rather than this
+* version with "char * &" where the
+* memory is allocated inside the function! */
 bool //ISpecificController
   I_CPUaccess::GetProcessorNameByCPUID(
   //Use a pointer to an array in order to allocate the array within 
@@ -200,7 +252,7 @@ bool //ISpecificController
   //Intel CPUID (doc # 241618) August 2009: for brand string:
   //"1. Execute the CPUID instruction with EAX=80000000h"
   if( CpuidEx( 
-      0x80000000 
+      GET_HIGHEST_EXTENDED_FUNCTION_SUPPORTED
       , & dwEAX
       , & dw
       , & dw
@@ -211,7 +263,7 @@ bool //ISpecificController
   {
     //Intel CPUID (doc # 241618) August 2009: for brand string:
     //"3. The processor brand string feature is supported if EAX >= 80000004h"
-    if( dwEAX >= 0x80000004 )
+    if( dwEAX >= LAST_PROCESSOR_BRAND_STRING_INDEX )
     {
       BYTE byCPUID_Address = 0, byCharIndex = 0;
       //char archCPUID[//4*4
@@ -232,7 +284,7 @@ bool //ISpecificController
             // #EAX.3D80000002h.2C80000003h.2C80000004h:_Processor_Brand_String:
             // "EAX=80000002h,80000003h,80000004h: Processor Brand String"
             //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
-            0x80000002 + byCPUID_Address,
+            FIRST_PROCESSOR_BRAND_STRING_INDEX + byCPUID_Address,
             ((DWORD *)(archCPUID + byCharIndex) ),
             ((DWORD *)(archCPUID + byCharIndex + 4 )),
             ((DWORD *)(archCPUID + byCharIndex + 8 )),
@@ -241,7 +293,7 @@ bool //ISpecificController
             )
             )
           {
-            byCharIndex += 16 ;
+            byCharIndex += NUMBER_OF_CPUID_REGISTER_BYTES ;
             //DEBUG("CPUID address:%lu "
             //  //"EAX:%lu,EBX:%lu ECX:%lu,EDX:%lu "
             //  //"%s\n"
@@ -270,12 +322,16 @@ bool //ISpecificController
   return bSuccess ;
 }
 
-//It makes sense to implement the get family and model as a
-//method of the base CPU access class (instead of e.g. as a method 
-//of a CPU controller class) for the following reason:
-//the family and model is the PREREQUISITE to select the CPU 
-//controller class, e.g for vendor AMD, family 17 use the 
-//"GriffinController" class.
+/** It makes sense to implement the get family and model as a
+* method of the base CPU access class (instead of e.g. as a method
+* of a CPU controller class) for the following reason:
+* the family and model are the PREREQUISITE to select the CPU
+* controller class, e.g for vendor AMD, family 17 use the
+* "GriffinController" class.
+ *
+ * @param r_str the vendor ID (manufacturer name)
+ * @return
+ */
 bool //ISpecificController
   I_CPUaccess::GetVendorID( std::string & r_str )
 {
@@ -289,7 +345,7 @@ bool //ISpecificController
   DWORD dw ;
   //Intel: EBX: "Genu" EDX: "ineI" ECX: "ntel"
   bRet = CpuidEx( 
-    0x00000000 
+    VENDOR_ID_INDEX
     , & dw
     //Vendor ID is stored in EBX, ECX, EDX
     , //(DWORD *) archCPUID //EBX
@@ -302,6 +358,9 @@ bool //ISpecificController
     ) ;
   if( bRet )
   {
+    /** http://en.wikipedia.org/wiki/CPUID#EAX.3D0:_Get_vendor_ID:
+    * "a twelve character ASCII string stored in EBX, EDX, ECX - in that order."
+    * */
     strcat( archCPUID, archEBX ) ;
     strcat( archCPUID, archEDX ) ;
     strcat( archCPUID, archECX ) ;
@@ -310,12 +369,12 @@ bool //ISpecificController
   return bRet ;
 }
 
-//It makes sense to implement the get family and model as a
-//method of the base CPU access class (instead of e.g. as a method 
-//of a CPU controller class) for the following reason:
-//the family and model is the PREREQUISITE to select the CPU 
-//controller class, e.g for vendor AMD, family 17 use the 
-//"GriffinController" class.
+/** It makes sense to implement the get family and model as a
+* method of the base CPU access class (instead of e.g. as a method
+* of a CPU controller class) for the following reason:
+* the family and model is the PREREQUISITE to select the CPU
+* controller class, e.g for vendor "AuthenticAMD", family "17" use the
+* "GriffinController" class. */
 bool I_CPUaccess::GetFamilyAndModel(
   //BYTE & byFamily
   // values may be > 8 bits : bits 20:27 = 8 bits, + 4 bit value
@@ -332,7 +391,7 @@ bool I_CPUaccess::GetFamilyAndModel(
   bool bRet = CpuidEx
     (
       //Query CPUID Function 0000_0001 for CPU model and family.
-      0x00000001
+      PROCESSOR_INFO_AND_FEATURE_BITS
       , & dwEAX
       , & dwEBX
       , & dwECX
@@ -435,7 +494,7 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
   bool bRet = CpuidEx
     (
       //Query CPUID Function 0000_0001 for CPU model and family.
-      0x00000001
+      PROCESSOR_INFO_AND_FEATURE_BITS
       , & dwEAX
       , & dwEBX
       , & dwECX
@@ -542,9 +601,9 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
   return byCoreNumber ;
 }
 
-//Implement the rdTSC instruction here.
-//It may be overridden for subclasses that allow ring0 access because the
-//"rdTSC" instruction may be restricted to ring0 access.
+/** @brief Implement the rdTSC instruction here.
+* It may be overridden for subclasses that allow ring0 access because the
+* "rdTSC" instruction may be restricted to ring0 access via a CPU register. */
 BOOL I_CPUaccess::ReadTSC(
   DWORD & r_dwLowEAX ,
   DWORD & r_dwHighEDX
@@ -554,6 +613,10 @@ BOOL I_CPUaccess::ReadTSC(
   return TRUE ;
 }
 
+/** @brief Execute the "read TSC" instruction in order and not out of order.
+ *  Important for counting clock tick on out-of-order (able to execute
+ *  instructions out of order related to the order of program code
+ *  instructions) CPUs. */
 BOOL I_CPUaccess::ReadTSCinOrder(
   DWORD & r_dwLowEAX ,
   DWORD & r_dwHighEDX ,

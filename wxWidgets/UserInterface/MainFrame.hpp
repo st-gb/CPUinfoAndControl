@@ -237,6 +237,7 @@ public:
   wxMenu * mp_wxmenuFile ;
 private:
   wxMenu * p_wxmenuService ;
+  wxMenu * m_p_wxmenuCore;
 //  wxMenuItem ** m_arp_wxmenuitemPstate ;
   wxMenuItem * mp_wxmenuitemOtherDVFS ;
   wxMenuItem * mp_wxmenuitemOwnDVFS ;

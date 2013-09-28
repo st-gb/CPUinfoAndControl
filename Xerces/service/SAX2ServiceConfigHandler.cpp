@@ -35,36 +35,37 @@
 //  #include <sstream> //for class std::istringstream
 //  #include <iostream>
 
-	//#define MB_CUR_MAX 1 
-	
-	//With Xerces < Version 2.8:
-	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
-	// statically (else many "LNK2001" and "LNK2019" and linker errors).
-	//with Xerces 3.0: "XERCES_STATIC_LIBRARY"
-	//And: Add "Advapi32.lib" as additional dependancy for the linker.
-	//zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst:
-	// "LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
-	//MSVCRT.lib(MSVCR80.dll) definiert."
-	
+  //#define MB_CUR_MAX 1
+
+  //With Xerces < Version 2.8:
+  //  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
+  // statically (else many "LNK2001" and "LNK2019" and linker errors).
+  //with Xerces 3.0: "XERCES_STATIC_LIBRARY"
+  //And: Add "Advapi32.lib" as additional dependancy for the linker.
+  //zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst:
+  // "LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
+  //MSVCRT.lib(MSVCR80.dll) definiert."
+
 //  using namespace std;
-  //	//to NOT need to prefix the xerces classes with the "xercesc...::"
+//	//to NOT need to prefix the xerces classes with the "xercesc...::"
 //	XERCES_CPP_NAMESPACE_USE
 
-	SAX2ServiceConfigHandler::SAX2ServiceConfigHandler(
-	  Model & model ,
-	  UserInterface * p_userinterface //,
-    //I_CPUcontroller * p_cpucontroller
-	  )
-	{
-	  LOGN_DEBUG("SAX2ServiceConfigHandler c'tor--address of model:" << & model )
-	  m_p_model = & model ;
-	  m_p_userinterface = p_userinterface ;
-    //p_cpucontroller = p_cpucontroller ;
-	}
+  SAX2ServiceConfigHandler::SAX2ServiceConfigHandler(
+    Model & model ,
+    UserInterface * p_userinterface //,
+//I_CPUcontroller * p_cpucontroller
+    )
+  {
+    LOGN_DEBUG(/*"SAX2ServiceConfigHandler c'tor--"*/
+      "address of model:" << & model )
+    m_p_model = & model ;
+    m_p_userinterface = p_userinterface ;
+//p_cpucontroller = p_cpucontroller ;
+  }
 
-	void SAX2ServiceConfigHandler::HandleGUIpathesXMLelement(
-	  const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
-	{
+  void SAX2ServiceConfigHandler::HandleGUIpathesXMLelement(
+    const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes)
+  {
     if( m_strElementName == "GUI_pathes" )
     {
       std::wstring stdwstrValue ;
@@ -86,17 +87,16 @@
         LOGWN_WSPRINTF(L"Before setting current dir for GUI to \"%ls\"" ,
           stdwstrValue.c_str()
           )
-        LOGN_DEBUG(//"SAX2ServiceConfigHandler"
-          FULL_FUNC_NAME << "--address of model:" << m_p_model)
-        LOGN_DEBUG(//"SAX2ServiceConfigHandler"
-          FULL_FUNC_NAME << "--address of service attributes:"
+        LOGN_DEBUG(//"SAX2ServiceConfigHandler--"
+          "address of model:" << m_p_model)
+        LOGN_DEBUG(//"SAX2ServiceConfigHandler--"
+          "address of service attributes:"
           << & m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo )
-        LOGN_DEBUG(//"SAX2ServiceConfigHandler"
-          FULL_FUNC_NAME << "--address of GUI current dir:"
-          << & m_p_model->m_serviceattributes.
+        LOGN_DEBUG(//"SAX2ServiceConfigHandler--"
+          "address of GUI current dir:" << & m_p_model->m_serviceattributes.
           m_stdwstrGUICurrentDirFullPathTo )
 //        LOGN(//"SAX2ServiceConfigHandler"
-//          FULL_FUNC_NAME << "--address of GUI current dir char ptr:"
+//          "--address of GUI current dir char ptr:"
 //          << m_p_model->m_serviceattributes.
 //          m_stdwstrGUICurrentDirFullPathTo.c_str() )
   //          LOGN("SAX2ServiceConfigHandler--model->m_strProcessorName :"
@@ -106,8 +106,7 @@
         //TODO program crash here
         m_p_model->m_serviceattributes.m_stdwstrGUICurrentDirFullPathTo =
           stdwstrValue ;
-        LOGN(FULL_FUNC_NAME << "--after assigning " << stdstrAttributeName
-          << " to model")
+        LOGN("after assigning " << stdstrAttributeName << " to model")
         //Use wide string because the character set for the language may
         //need more than 256 characters.
         LOGWN_WSPRINTF(L"set current dir for GUI to \"%ls\"" ,
@@ -166,12 +165,12 @@
     const XMLCh * const cpc_xmlchLocalName,
     const XMLCh * const cp_xmlchQualifiedName,
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes
-	  )
-	{
-	  char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
-	    cpc_xmlchLocalName);
-	  if( pchXMLelementName )
-	  {
+    )
+  {
+    char * pchXMLelementName = XERCES_CPP_NAMESPACE::XMLString::transcode(
+      cpc_xmlchLocalName);
+    if( pchXMLelementName )
+    {
       LOGN( "XML element: " << pchXMLelementName );
       m_strElementName = std::string(pchXMLelementName) ;
       /** The log exclusion filter exists for possibility of different entries
@@ -188,18 +187,18 @@
 
       //Release memory AFTER comparing.
       XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
-	  }
-	}
-	
-	void SAX2ServiceConfigHandler::fatalError(
-	  const XERCES_CPP_NAMESPACE::SAXParseException &
-	    cr_xercesc_sax_parse_exception
-	  )
-	{
-    LOG( "SAX2 handler: Fatal Error: "
+    }
+  }
+
+  void SAX2ServiceConfigHandler::fatalError(
+    const XERCES_CPP_NAMESPACE::SAXParseException &
+      cr_xercesc_sax_parse_exception
+    )
+  {
+    LOGN_ERROR( /*"SAX2 handler: Fatal Error: "*/
       << XercesHelper::ToStdString(cr_xercesc_sax_parse_exception.getMessage()
         )
      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber()
-     << "\n" ) ;
-	}
+     /*<< "\n"*/ )
+  }
 //#endif //#ifdef COMPILE_WITH_XERCES

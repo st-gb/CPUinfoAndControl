@@ -1,19 +1,10 @@
-/* Do not remove this header/ copyright information.
+/*
+ * dynlib_main.cpp
  *
- * Copyright © Trilobyte Software Engineering GmbH, Berlin, Germany 2010-2012.
- * You are allowed to modify and use the source code from
- * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
- * making profit with it or its adaption. Else you may contact Trilobyte SE.
+ *  Created on: Aug 28, 2013
+ *      Author: Stefan
  */
-//This file is intellectual property of Trilobyte SE GmbH, Berlin, Germany.
-//Copyright 2010 by Trilobyte SE GmbH, Berlin, Germany.
-//It must not be used commercially without the permission of Trilobyte
-//SE GmbH, Berlin, Germany.
-//It may be used for educational / academic purposes for free.
-//It may be used for personal use for free.
-//If you want to publish (parts) this source code or generated binaries for other
-// purposes than for a DLL for x86Info&Control you have to ask Trilobyte.
-//If you use (parts) of this source code then this license text must be contained.
+
 #ifdef _MSC_VER //MicroSoft compiler
 #include "stdafx.h"
 #endif
@@ -25,15 +16,15 @@
 #endif //#ifdef INSERT_DEFAULT_P_STATES
 //#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
 //  #include <Controller/CPU-related/Intel/Intel_registers.h>
-#include <Controller/CPU-related/Intel/Core2/Core2.hpp>
+//#include <Controller/CPU-related/Intel/Core2/Core2.hpp>
 // Intel::Pentium_M::GetAvailableMultipliers(...)
-#include <Controller/CPU-related/Intel/Core/CoreAndCore2.hpp>
+//#include <Controller/CPU-related/Intel/Core/CoreAndCore2.hpp>
 //  #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 //  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
-#include <Controller/CPU-related/Intel/Core/Core2_GetConfigurableMultipliers.hpp>
-#include <Controller/CPU-related/Intel/HyperThreading.hpp> //Intel::IsHyperThreaded()
+//#include <Controller/CPU-related/Intel/Core/Core2_GetConfigurableMultipliers.hpp>
+//#include <Controller/CPU-related/Intel/HyperThreading.hpp> //Intel::IsHyperThreaded()
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
 #ifdef _DEBUG
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
@@ -130,7 +121,7 @@ EXPORT float * DLL_CALLING_CONVENTION
     , WORD * p_wNumberOfArrayElements
     )
 {
-  DEBUGN( FULL_FUNC_NAME << " begin")
+  DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
   //see "Intel(R) 64 and IA-32 Architectures Software Developer's Manual,
   // Volume 3B: System Programming Guide, Part 2"
   //  B-38Vol. 3
@@ -160,7 +151,7 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
   WORD wCoreID
   , WORD * p_wNum )
 {
-  DEBUGN( FULL_FUNC_NAME << " begin")
+  DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
   //See "Intel® Core™2 Duo Mobile Processor, Intel® Core™2 Solo Mobile
   //Processor and Intel® Core™2 Extreme Mobile Processor on 45-nm Process
   //Datasheet Doc#320120-004.32012001
@@ -183,7 +174,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin core ID:" << wCoreID)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin core ID:" << wCoreID)
   return Intel::Core2::GetCurrentVoltageAndFrequency(
     * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -274,7 +265,7 @@ float GetReferenceClockMultiplier(DWORD affMask)
     IA32_PLATFORM_ID, & l, & h, affMask
     );
   multi = (l >> 8) & BITMASK_FOR_LOWMOST_5BIT;
-  DEBUGN( FULL_FUNC_NAME << " multiplier:" << multi)
+  DEBUGN( /*FULL_FUNC_NAME <<*/ "multiplier:" << multi)
   return multi;
 }
 
@@ -296,9 +287,9 @@ bool Init()
     g_pfn_write_msr
     ) ;
   g_fReferenceClockMultiplier = GetReferenceClockMultiplier(1);
-  DEBUGN( FULL_FUNC_NAME <<  "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
-      << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
-      )
+  DEBUGN( /*FULL_FUNC_NAME <<*/ "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
+    << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
+    )
 #ifdef _DEBUG
   g_std_ofstream << "after AssignPointersToExportedExeMSRfunctions_inline(...)"
     << std::endl;
@@ -319,7 +310,7 @@ bool Init()
     return FALSE ;
   }
   Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
-  DEBUGN( FULL_FUNC_NAME << "ref. clock in MHz:" << g_fReferenceClockInMHz)
+  DEBUGN( /*FULL_FUNC_NAME <<*/ "ref. clock in MHz:" << g_fReferenceClockInMHz)
 
   //      //Force the cond. "< min. time diff" to become true.
   //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
@@ -372,7 +363,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION //can be omitted.
     , WORD wCoreID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--" */ "begin")
 //    g_byValue1 = SetCurrentVoltageAndMultiplierIntelCore(
 //      fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
   return Intel::Core2::SetCurrentVoltageAndMultiplier(
@@ -406,3 +397,6 @@ EXPORT BOOL APIENTRY DllMain(
 #endif //#ifdef _WIN32
 
 //#define DLL_CALLING_CONVENTION __stdcall
+
+
+

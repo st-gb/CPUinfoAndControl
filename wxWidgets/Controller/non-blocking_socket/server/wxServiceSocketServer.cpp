@@ -70,22 +70,22 @@ wxServiceSocketServer::wxServiceSocketServer(
   , m_p_serverprocess( p_serverprocess)
   , m_p_wxsocketserver(NULL)
 {
-  LOGN( FULL_FUNC_NAME)
+  LOGN( "begin")
   //m_usServerPortNumber = wPortNumber ;
 }
 
 wxServiceSocketServer::~wxServiceSocketServer()
 {
-  LOGN( FULL_FUNC_NAME)
+  LOGN( "begin")
   if( m_p_wxsocketserver )
     delete m_p_wxsocketserver;
 }
 
 BYTE wxServiceSocketServer::Init()
 {
+  LOGN( "begin")
   // Create the address - defaults to localhost:0 initially
   wxIPV4address wxipv4address;
-  LOGN( FULL_FUNC_NAME << "--begin")
 
   //http://docs.wxwidgets.org/trunk/classwx_i_p_v4address.html
   // #3833c1ce1a49de08c5a906410a8bb4e3:
@@ -125,17 +125,17 @@ BYTE wxServiceSocketServer::Init()
     bool bwxWidgetsMainLoopRunning = wxAppConsole::IsMainLoopRunning();
     LOGN("wxAppConsole::IsMainLoopRunning():"
       << bwxWidgetsMainLoopRunning )
-    LOGN( FULL_FUNC_NAME << "--return 0")
+    LOGN( "return 0")
     return 0 ;
   }
-  LOGN( FULL_FUNC_NAME << "--return 3")
+  LOGN( "return 3")
   return 3 ;
 }
 
 void wxServiceSocketServer::OnServerEvent(wxSocketEvent & event)
 {
 //  LOGN("wxServiceSocketServer::OnServerEvent begin")
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
 
   //wxString s = _("OnServerEvent: ");
   wxSocketBase * p_wxsocketbase ;
@@ -202,8 +202,8 @@ void wxServiceSocketServer::OnServerEvent(wxSocketEvent & event)
 void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
 {
 //  LOGN("wxServiceSocketServer::OnSocketEventt begin")
-  LOGN( FULL_FUNC_NAME << "--begin")
-  DEBUG_COUTN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
+  DEBUG_COUTN( "begin")
 
   //wxString s = _("OnSocketEvent: ");
   wxSocketBase * p_wxsocketbase = r_wxsocket_event.GetSocket();
@@ -211,7 +211,7 @@ void wxServiceSocketServer::OnSocketEvent(wxSocketEvent & r_wxsocket_event)
 //    //seconds
 //    10);
 
-  DEBUG_COUTN( FULL_FUNC_NAME << "--from ")
+  DEBUG_COUTN( "from ")
   // Now we process the event
 //  BYTE bySocketEvent = r_wxsocket_event.GetSocketEvent();
   enum wxSocketNotify e_wxsocketnotify = r_wxsocket_event.GetSocketEvent();

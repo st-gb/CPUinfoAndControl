@@ -36,8 +36,8 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   // #wxdynamiclibraryload:
   //"Returns true if the library was successfully loaded, false otherwise."
   if( m_wxdynamiclibraryCPUcoreUsage.Load( r_wxstrFilePath
-    //strDLLname 
-    ) 
+      //strDLLname
+      )
     )
   {
     mp_cpucoredata = & cpucoredata ;
@@ -48,31 +48,14 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     {
       LOGN_TYPE("CPU core usage getter Dyn lib successfully loaded",
         LogLevel::success)
-      m_pfngetcpucoreusage = (_GetCPUcoreUsage) 
-        m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
-          //Use wxT() macro to enable to compile with both unicode and ANSI.
-          wxT( "GetCPUcoreUsage" ) ) ;
-      if( m_wxdynamiclibraryCPUcoreUsage.HasSymbol(
-          //Use wxT() macro to enable to compile with both unicode and ANSI.
-          wxT("GetNumberOfLogicalCPUcores")
-          )
-        )
-        m_pfn_dll_usage_getter_num_logical_cpu_cores_type =
-          (dll_usage_getter_num_logical_cpu_cores_type)
-          m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
-            //Use wxT() macro to enable to compile with both unicode and ANSI.
-            wxT("GetNumberOfLogicalCPUcores") ) ;
-      else
-        m_pfn_dll_usage_getter_num_logical_cpu_cores_type = NULL ;
-      m_pfn_dll_init_type = (dll_usage_getter_init_type)
-        m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
-          //Use wxT() macro to enable to compile with both unicode and ANSI.
-          wxT(INIT_LITERAL) ) ;
+
+      PossiblyAssignFunctionPointers();
+
       LOGN("address of CPU access object: " << mp_cpuaccess )
       if( m_pfn_dll_init_type )
       {
         if( ! mp_cpuaccess )
-          LOGN_TYPE( FULL_FUNC_NAME << " pointer to hardware access object is "
+          LOGN_TYPE( "pointer to hardware access object is "
             "0->may crash when dyn lib's \"" << INIT_LITERAL << "\" function "
             "derefers it", LogLevel::warning)
         BYTE byRet = (*m_pfn_dll_init_type) ( //p_cpuaccess
@@ -98,20 +81,20 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
         mp_cpuaccess
 //#endif
         ) ;
-        LOGN( FULL_FUNC_NAME << "--return value of DLL's " << INIT_LITERAL
+        LOGN( "return value of DLL's " << INIT_LITERAL
           << " function:" << (WORD) byRet)
         if( byRet )
-          LOGN_TYPE( FULL_FUNC_NAME << "--DLL's " << INIT_LITERAL
+          LOGN_TYPE( "DLL's " << INIT_LITERAL
             << " function failed", LogLevel::error)
       }
-      LOGN("after calling DLL's " << INIT_LITERAL <<  "function")
+      LOGN("after calling DLL's " << INIT_LITERAL <<  " function")
       if( m_pfngetcpucoreusage //&& m_pfn_dll_init_type
           )
       {
         //(*m_pfn_dll_init_type) ( p_cpuaccess ) ;
         bSuccess = true ;
-        LOGN("CPU core usage getter dyn lib: function pointers to its "
-          "functions assigned")
+        LOGN("CPU core usage getter dyn lib: assigned function pointers to its "
+          "functions")
       }
     }
   }
@@ -135,16 +118,16 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
     //initialisation failed. So throw an exception.
     throw CPUaccessException(stdstrErrMsg) ;
   }
-  LOGN("End of dyn lib CPU core usage getter constructor")
+  LOGN("End" /*" of dyn lib CPU core usage getter constructor"*/ )
 }
 
 wxDynLibCPUcoreUsageGetter::~wxDynLibCPUcoreUsageGetter()
 {
+  DEBUGN(/*"~wxDynLibCPUcoreUsageGetter()"*/ "begin")
   m_wxdynamiclibraryCPUcoreUsage.Unload() ;
   //TODO crashed here under Linux if dyn lib uses global logger as in this exe
   // (the logger object is destroyed at end of dyn lib and then this exe tries
   // to access it)
-  DEBUGN("~wxDynLibCPUcoreUsageGetter()")
   LOGN("Unloaded the CPU core usage getter dynamic library")
 }
 
@@ -156,7 +139,7 @@ WORD wxDynLibCPUcoreUsageGetter::GetNumberOfCPUcores()
 WORD wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores()
 {
   //DEBUG_COUTN(
-  DEBUGN( "wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
+  DEBUGN( //"wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
     "function pointer for # CPU cores : " <<
     m_pfn_dll_usage_getter_num_logical_cpu_cores_type )
   if( m_pfn_dll_usage_getter_num_logical_cpu_cores_type )
@@ -164,7 +147,7 @@ WORD wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores()
     WORD wNumLogCPUcores =
         (*m_pfn_dll_usage_getter_num_logical_cpu_cores_type)() ;
     //DEBUG_COUTN(
-    DEBUGN( "wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
+    DEBUGN( //"wxDynLibCPUcoreUsageGetter::GetNumberOfLogicalCPUcores "
       "# CPU cores : " << wNumLogCPUcores )
     return wNumLogCPUcores ;
   }
@@ -176,19 +159,51 @@ BYTE wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores( float arf [] )
   //m_pfngetcpucoreusage should be valid if an object could be created.
   //if( m_pfngetcpucoreusage )
   {
-    for(BYTE byCPUcoreNumber = 0 ; byCPUcoreNumber < 
-      mp_cpucoredata->GetNumberOfCPUcores() ; ++ byCPUcoreNumber 
+    for(fastestUnsignedDataType CPUcoreNumber = 0 ; CPUcoreNumber <
+      mp_cpucoredata->GetNumberOfCPUcores() ; ++ CPUcoreNumber
       )
 #ifdef _DEBUG
     {
-      float f = (*m_pfngetcpucoreusage)(byCPUcoreNumber) ;
-      LOGN( "wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
-        "usage for core" << (WORD)byCPUcoreNumber << ":" << f )
-      arf[byCPUcoreNumber] = f ;
+      float f = (*m_pfngetcpucoreusage)(CPUcoreNumber) ;
+      LOGN( //"wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:"
+        "usage for core" << CPUcoreNumber << ":" << f )
+      arf[CPUcoreNumber] = f ;
     }
 #else
-      arf[byCPUcoreNumber] = (*m_pfngetcpucoreusage)(byCPUcoreNumber);
+      arf[CPUcoreNumber] = (*m_pfngetcpucoreusage)(CPUcoreNumber);
 #endif
   }
   return 1 ;
+}
+
+void wxDynLibCPUcoreUsageGetter::PossiblyAssignFunctionPointers()
+{
+  m_pfngetcpucoreusage = (_GetCPUcoreUsage)
+    m_wxdynamiclibraryCPUcoreUsage.GetSymbol( //strDLLfunctionName
+      //Use wxT() macro to enable to compile with both unicode and ANSI.
+      wxT( "GetCPUcoreUsage" ) ) ;
+
+  PossiblyAssignFunctionPointer(
+    //Use wxT() macro to enable to compile with both unicode and ANSI.
+    wxT("GetNumberOfLogicalCPUcores"),
+    m_pfn_dll_usage_getter_num_logical_cpu_cores_type);
+
+  m_pfn_dll_init_type = (dll_usage_getter_init_type)
+    m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
+      //Use wxT() macro to enable to compile with both unicode and ANSI.
+      wxT(INIT_LITERAL) ) ;
+}
+
+/** @brief template function for ease to assign function pointers from a dyn lib
+ *  @param p_function must be passed in order to get its type */
+template <typename func_type> void wxDynLibCPUcoreUsageGetter::
+  PossiblyAssignFunctionPointer(
+  const wxString & wxstrFuncName, func_type & p_function//, func_type functyp
+  )
+{
+  if( m_wxdynamiclibraryCPUcoreUsage.HasSymbol( wxstrFuncName ) )
+    p_function = (func_type) m_wxdynamiclibraryCPUcoreUsage.GetSymbol(
+      wxstrFuncName );
+  else
+    p_function = NULL ;
 }

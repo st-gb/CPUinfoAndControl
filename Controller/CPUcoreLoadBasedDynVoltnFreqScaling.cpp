@@ -22,7 +22,7 @@ CPUcoreLoadBasedDynVoltnFreqScaling::CPUcoreLoadBasedDynVoltnFreqScaling(
   :
   DynFreqScalingThreadBase(r_cpucontrolbase, r_cpucoredata)
 {
-  LOGN( FULL_FUNC_NAME)
+  LOGN( "begin")
 }
 
 //CPUcoreLoadBasedDynVoltnFreqScaling::CPUcoreLoadBasedDynVoltnFreqScaling()
@@ -39,18 +39,19 @@ void CPUcoreLoadBasedDynVoltnFreqScaling::HandleCPUnotTooHot()
 {
   //Assign for the next time it gets too hot.
   m_b1stTimeInRowTooHot = true ;
-  LOGN( /*" too hot:no"*/ FULL_FUNC_NAME << " begin")
+  LOGN( /*" too hot:no"*/ "begin # CPU cores:"
+    << m_wNumCPUcores)
   DynFreqScalingThreadBase::HandleCPUnotTooHot();
   //        if( mp_icpu->//GetPercentalUsageForBothCores
   //            GetPercentalUsageForAllCores(mp_cpucoredata->
   //            m_arfCPUcoreLoadInPercent)
   //          )
-  for( byCoreID = 0 ; byCoreID < m_wNumCPUcores ; ++ byCoreID )
+  for( coreID = 0 ; coreID < m_wNumCPUcores ; ++ coreID )
   {
-    ChangeOperatingPointByLoad( byCoreID ,
+    ChangeOperatingPointByLoad( coreID ,
       //mp_cpucoredata->m_arp_percpucoreattributes[byCoreID]
   //                mp_cpucoredata->m_arfCPUcoreLoadInPercent [byCoreID]
-      m_ar_fCPUcoreLoadInPercent [byCoreID]
+      m_ar_fCPUcoreLoadInPercent [coreID]
     ) ;
   }
 }

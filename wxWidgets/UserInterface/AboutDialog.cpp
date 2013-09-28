@@ -27,9 +27,13 @@
 #include <wx/string.h> //class wxString
 #include <wx/sizer.h> //class wxBoxSizer
 
-#include <preprocessor_macros/enable_disable_write_strings_warning.h>
+#include <compiler/GCC/enable_disable_write_strings_warning.h>
 
-IGNORE_WRITE_STRINGS_WARNING
+//IGNORE_WRITE_STRINGS_WARNING
+//GCC_DIAG_ON(write-strings)
+//GCC_DIAG_PRAGMA(ignored GCC_DIAG_JOINSTR(-W,write-strings))
+//GCC_DIAG_DO_PRAGMA(GCC diagnostic x)
+_Pragma("GCC diagnostic ignored \"-Wwrite-strings\"")
 #include <images/street_lamp_80x321_256_indexed_colors.xpm>
 ENABLE_WRITE_STRINGS_WARNING
 
@@ -55,7 +59,7 @@ wxString GetRandomWorldlyWisdom(
 //  m_c_r_model_data.m_std_vec_WisdomStrings.
 
   return //g_ar_wxstrWorldlyWisdom[nRandomNumber];
-    GetwxString_Inline(c_r_std_set_WisdomStrings.find(nRandomNumber)->second.
+    wxWidgets::GetwxString_Inline(c_r_std_set_WisdomStrings.find(nRandomNumber)->second.
       c_str() );
 }
 

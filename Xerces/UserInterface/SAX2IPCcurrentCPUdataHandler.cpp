@@ -37,11 +37,9 @@
 
 void SAX2IPCcurrentCPUdataHandler::endDocument()
 {
-  LOGN("SAX2IPCcurrentCPUdataHandler endDocument: before leaving IPC to "
-    "in-program data crit sec")
+  LOGN("before leaving IPC to in-program data crit sec")
   m_cpc_cpucoredata->wxconditionIPC2InProgramData.Leave() ;
-  LOGN("SAX2IPCcurrentCPUdataHandler endDocument: after leaving IPC to "
-    "in-program data crit sec")
+  LOGN("after leaving IPC to in-program data crit sec")
 }
 
 BYTE SAX2IPCcurrentCPUdataHandler::GetCurrentVoltageAndFrequency(
@@ -52,12 +50,11 @@ BYTE SAX2IPCcurrentCPUdataHandler::GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
-  LOGN("SAX2IPCcurrentCPUdataHandler GetCurrentVoltageAndFrequency before entering "
-    "critical section")
+  LOGN("before entering critical section")
   //Prevent the concurrent modification of the map.
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-  LOGN("SAX2IPCcurrentCPUdataHandler GetCurrentVoltageAndFrequency after entering "
-    "critical section")
+  LOGN("after entering critical section")
+
   std::map<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>::
     const_iterator c_iter =
       m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.find(wCoreID) ;
@@ -73,25 +70,24 @@ BYTE SAX2IPCcurrentCPUdataHandler::GetCurrentVoltageAndFrequency(
 
 BYTE SAX2IPCcurrentCPUdataHandler::GetPercentalUsageForAllCores(float arf[] )
 {
-  LOGN("SAX2IPCcurrentCPUdataHandler GetPercentalUsageForAllCores before entering "
-    "critical section")
 #ifdef _DEBUG
   float fLoad ;
 #endif
   WORD wIndex = 0 ;
+  LOGN("before entering critical section")
   //Prevent the concurrent modification of the map.
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-  LOGN("SAX2IPCcurrentCPUdataHandler GetPercentalUsageForAllCores after entering "
-    "critical section")
+  LOGN("after entering critical section")
+
   //e.g. if called before the map has been filled.
   if( m_stdmap_wCoreNumber2fUsage.empty() )
     return 0 ;
   else
     for( //std::set<float>::const_iterator c_iter = m_stdset_fUsage.begin() ;
-        std::map<WORD,float>::const_iterator c_iter =
-        m_stdmap_wCoreNumber2fUsage.begin() ;
-        c_iter != //m_stdset_fUsage.end()
-            m_stdmap_wCoreNumber2fUsage.end() ; ++ c_iter, ++ wIndex  )
+      std::map<WORD,float>::const_iterator c_iter =
+      m_stdmap_wCoreNumber2fUsage.begin() ;
+      c_iter != //m_stdset_fUsage.end()
+        m_stdmap_wCoreNumber2fUsage.end() ; ++ c_iter, ++ wIndex  )
     {
   #ifdef _DEBUG
       fLoad = c_iter->second ;
@@ -106,24 +102,22 @@ BYTE SAX2IPCcurrentCPUdataHandler::GetPercentalUsageForAllCores(float arf[] )
 
 WORD SAX2IPCcurrentCPUdataHandler::GetNumberOfLogicalCPUcores()
 {
-  LOGN("SAX2IPCcurrentCPUdataHandler GetNumberOfLogicalCPUcores before entering "
-    "critical section")
+  LOGN("before entering critical section")
   //Prevent the concurrent modification of the map.
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-  LOGN("SAX2IPCcurrentCPUdataHandler GetNumberOfLogicalCPUcores after entering "
-    "critical section")
+  LOGN("after entering critical section")
+
   WORD wSize = m_stdmap_wCoreNumber2fUsage.size() ;
   return wSize ;
 }
 
 float SAX2IPCcurrentCPUdataHandler::GetTemperatureInCelsius( WORD wCoreID )
 {
-  LOGN("SAX2IPCcurrentCPUdataHandler GetTemperatureInCelsius before entering "
-    "critical section")
+  LOGN("before entering critical section")
   //Prevent the concurrent modification of the map.
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-  LOGN("SAX2IPCcurrentCPUdataHandler GetTemperatureInCelsius after entering "
-    "critical section")
+  LOGN("after entering critical section")
+
   std::map<WORD,float>::const_iterator c_iter =
       m_stdmap_wCoreNumber2fTempInDegCelsius.find(wCoreID) ;
   if( c_iter != m_stdmap_wCoreNumber2fTempInDegCelsius.end() )
@@ -135,9 +129,10 @@ float SAX2IPCcurrentCPUdataHandler::GetTemperatureInCelsius( WORD wCoreID )
 
 float SAX2IPCcurrentCPUdataHandler::GetThrottleLevel(unsigned coreID)
 {
-  LOGN(FULL_FUNC_NAME <<  " before entering critical section")
+  LOGN( "before entering critical section")
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-  LOGN(FULL_FUNC_NAME <<  " after entering critical section")
+  LOGN( "after entering critical section")
+
   std::map<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>::
     const_iterator c_iter =
       m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.find(coreID) ;
@@ -163,13 +158,11 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
   {
     //While modifying the map prevent the concurrent reading of the map.
   //      wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-    LOGN("SAX2IPCcurrentCPUdataHandler startElement before entering "
-      "critical section")
+    LOGN("before entering critical section")
     m_wxcriticalsection.Enter() ;
-    LOGN("SAX2IPCcurrentCPUdataHandler startElement after entering "
-      "critical section")
+    LOGN("after entering critical section")
 
-    LOGN("SAX2IPCcurrentCPUdataHandler core"
+    LOGN("core"
   #ifdef _DEBUG
       ":" << wValue
   #endif
@@ -226,7 +219,7 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
       (const XMLCh *) L"reference_clock_in_MHz" )
       )
     {
-      LOGN("SAX2IPCcurrentCPUdataHandler reference_clock_in_MHz attribute"
+      LOGN("reference_clock_in_MHz attribute"
   #ifdef _DEBUG
         ":" << fValue
   #endif
@@ -243,21 +236,20 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
       (const XMLCh *) L"voltage_in_Volt" )
       )
     {
-      LOGN("SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute")
+      LOGN("voltage_in_Volt attribute")
   //          m_stdmap_wCoreNumber2fVoltageInVolt.insert( std::pair<WORD,float> (
   //              wValue, fValue ) ) ;
     /*voltageandmultiandrefclock*/cpucorevoltageandfrequency.m_fVoltageInVolt
       = fValue ;
     }
-    LOGN("SAX2IPCcurrentCPUdataHandler before inserting into container")
+    LOGN("before inserting into container")
     m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.insert(
       std::pair<WORD,/*VoltageAndMultiAndRefClock*/ CPUcoreVoltageAndFrequency>
       ( wValue, /*voltageandmultiandrefclock*/ cpucorevoltageandfrequency ) );
-    LOGN("SAX2IPCcurrentCPUdataHandler startElement before leaving "
-      "critical section")
+
+    LOGN("before leaving critical section")
     m_wxcriticalsection.Leave() ;
-    LOGN("SAX2IPCcurrentCPUdataHandler startElement after leaving "
-      "critical section")
+    LOGN("after leaving critical section")
   }
   //      if( ConvertXercesAttributesValue<float>(
   //          cr_xerces_attributes
@@ -271,23 +263,20 @@ inline void SAX2IPCcurrentCPUdataHandler::HandleCoreXMLelement_Inline(
 
 SAX2IPCcurrentCPUdataHandler::~SAX2IPCcurrentCPUdataHandler()
 {
-  LOGN("~SAX2IPCcurrentCPUdataHandler")
+  LOGN("")
 }
 
 void SAX2IPCcurrentCPUdataHandler::startDocument()
 {
 //  m_stdset_fUsage.clear() ;
-  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: before entering IPC to "
-    "in-program data crit sec")
+  LOGN("before entering IPC to in-program data crit sec")
   m_cpc_cpucoredata->wxconditionIPC2InProgramData.Enter() ;
-  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: after entering IPC to "
-    "in-program data crit sec")
-  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: before locking "
-    "data crit sec")
+  LOGN("after entering IPC to in-program data crit sec")
+
+  LOGN("before locking data crit sec")
   //While modifying the map prevent the concurrent reading of the map.
   wxCriticalSectionLocker wxcriticalsectionlocker( m_wxcriticalsection ) ;
-  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: after locking "
-    "the data crit sec")
+  LOGN("after locking the data crit sec")
 
   m_stdmap_wCoreNumber2fUsage.clear() ;
 //  m_stdmap_wCoreNumber2fMultiplier.clear() ;
@@ -295,8 +284,7 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
   m_stdmap_wCoreNumber2fTempInDegCelsius.clear() ;
 //  m_stdmap_wCoreNumber2fVoltageInVolt.clear() ;
   m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.clear() ;
-  LOGN("SAX2IPCcurrentCPUdataHandler startDocument: before destroying the  "
-    "data crit sec locking object")
+  LOGN("before destroying the data crit sec locking object")
 }
 
   void SAX2IPCcurrentCPUdataHandler::startElement

@@ -39,6 +39,8 @@ int main
   //TCHAR * ar_p_chProgramArguments[]
   )
 {
+  I_Thread::SetCurrentThreadName("main");
+  CPUcontrolService::AddConsoleLogEntryWriter();
   TCHAR ** ar_tchProgramArguments = ::GetTCHARarray_Inline(
     (const char **) ar_p_chProgramArguments, argc);
   LPTSTR ptstrProgramName = _T("X86_info_and_control") ;

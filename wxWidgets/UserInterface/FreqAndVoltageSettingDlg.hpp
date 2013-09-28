@@ -21,6 +21,7 @@
 #include "wx/power.h" //for power mgmt notification (wxPowerType etc.)
 #include <wx/tglbtn.h> //wxHAS_BITMAPTOGGLEBUTTON
 #include <windef.h> //for BYTE etc.
+#include <fastest_data_type.h> //typedef fastestUnsignedDataType
 
 #define USE_BITMAP_TOGGLE_BTN
 

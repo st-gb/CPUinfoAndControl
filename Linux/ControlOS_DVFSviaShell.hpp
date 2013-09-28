@@ -21,13 +21,22 @@ public:
   virtual
   ~ControlOS_DVFSviaShell();
   bool ChangeOtherDVFSaccessPossible() { //from www.yolinux.com
-    int ret = system("./cmd/changing_OS's_DVFS_is_possible.sh");
-    return ret != -1;
+//    int ret = system("./cmd/changing_OS\'s_DVFS_is_possible.sh");
+    //TODO call shell script that checks whether the DVFS (e.g. if a cpufreq's
+    //scaling_governour can be set.
+    return //ret /*!= -1*/ == 0;
+      true;
 }
   bool DisableFrequencyScalingByOS(const char * const shellfilePath) {
     //from www.yolinux.com
     int ret = system(/*"./cmd/disable_OS's_DVFS.sh"*/ shellfilePath);
-    return ret != -1;
+    //"/bin/sh" exit codes:
+    // 512<=>sh: 1: Syntax error: Unterminated quoted string
+    // 127: Permission denied?
+    return ret /* != -1*/ == 0;
+  }
+  bool DisableFrequencyScalingByOS() {
+    return DisableFrequencyScalingByOS("./cmd/disable_OSs_DVFS.sh");
   }
 
   //Return value:
@@ -35,7 +44,7 @@ public:
   //-
   unsigned char EnableFrequencyScalingByOS() {
     //from www.yolinux.com
-    int ret = system("./cmd/enable_OS's_DVFS.sh");
+    int ret = system("./cmd/enable_OSs_DVFS.sh");
     return ret != -1;
   }
   virtual bool EnablingIsPossible() { return false ; }
@@ -48,7 +57,7 @@ public:
   bool OtherDVFSisEnabled()
   {
     //from www.yolinux.com
-    int ret = system("./cmd/disable_OS's_DVFS.sh");
+    int ret = system("./cmd/disable_OS\'s_DVFS.sh");
     return ret != -1;
   }
 };

@@ -56,6 +56,8 @@ public:
 #ifdef _WIN32
   //TODO replace with wxDynLib
   typedef HMODULE dynlibType;
+#else
+  typedef int dynlibType;
 #endif
   typedef wxX86InfoAndControlApp userinterface_type;
   //UserInterface * m_p_userinterface;
@@ -118,11 +120,11 @@ public:
     //Exit the "find lowest stable voltage" thread.
     m_vbExitFindLowestStableVoltage = true;
   //          wxGetApp().m_wxconditionFindLowestStableVoltage.Signal();
-    LOGN( FULL_FUNC_NAME << "--signalling the condition to end finding the"
+    LOGN( "signalling the condition to end finding the"
         " lowest stable voltage thread")
     //Wake up all threads waiting on the condition.
     m_conditionFindLowestStableVoltage.Broadcast();
-    LOGN( FULL_FUNC_NAME << " after signalling the condition to end finding the"
+    LOGN( "after signalling the condition to end finding the"
         " lowest stable voltage thread")
   }
 
@@ -137,7 +139,7 @@ public:
     void * p_v );
   DWORD FindLowestStableVoltage();
 
-  virtual ULONG64 GetThreadUserModeStartTime(/*void **/) = 0;
+  virtual /*ULONG64*/ unsigned long long GetThreadUserModeStartTime(/*void **/) = 0;
   virtual float GetCPUcoreUsageForDynLibThread() = 0;
 
   void HandleVoltageTooLow();

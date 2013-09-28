@@ -128,7 +128,8 @@ namespace Xerces
     }
     catch( const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception )
     {
-      LOGN("AddFrequencyToDOMtree: DOMException while creating, appending DOM "
+      LOGN(//"AddFrequencyToDOMtree: "
+          "DOMException while creating, appending DOM "
         "element or setting attribute value: "
         << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
         Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
@@ -173,7 +174,7 @@ namespace Xerces
     //Avoid g++ warning " 'p_dom_xpath_ns_resolver' might be used
     //uninitialized in this function"
     XERCES_CPP_NAMESPACE::DOMXPathNSResolver * p_dom_xpath_ns_resolver = NULL ;
-    LOGN("begin of freq in MHz to DOM index")
+    LOGN("begin" /* " of freq in MHz to DOM index" */ )
     // "/*": das Wurzel-Element unabhaengig vom Namen
     //  (jedes wohlgeformte XML-Dokument hat genau ein Wurzel-Element)
 //    char * archXPath = XPATH_EXPRESSION_FREQ_AND_VOLTAGE ;
@@ -236,7 +237,7 @@ namespace Xerces
         WORD wResultSetIndex = 0; wResultSetIndex < nDOMqueryResultsetLength;
         wResultSetIndex ++ )
       {
-        LOGN_DEBUG( FULL_FUNC_NAME << "--at \""
+        LOGN_DEBUG( "at \""
           << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI
           << "\" element # " << wResultSetIndex )
         //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMXPathResult.html:
@@ -262,7 +263,7 @@ namespace Xerces
           cp_xmlchAttrValue = p_domnodeAttribute->getNodeValue() ;
           std::string stdstr = //XercesHelper::ToStdString(cp_xmlchAttrValue) ;
             Xerces::ToStdString(cp_xmlchAttrValue) ;
-          LOGN_DEBUG(FULL_FUNC_NAME << "--attribute value for " << //arp_chAttributeName
+          LOGN_DEBUG("attribute value for " << //arp_chAttributeName
             FREQUENCY_IN_MHZ_ANSI_LITERAL
             << ": " << stdstr )
           //cp_xmlchAttrValue = cp_xmlchAttrValue ;
@@ -283,7 +284,8 @@ namespace Xerces
     catch( const XERCES_CPP_NAMESPACE::DOMXPathException &
       cr_xercesc_dom_xpath_exception )
     {
-      LOGN("BuildStdmapFreqInMHzInDOMtree2DOMindex: DOMXPathException: "
+      LOGN(//"BuildStdmapFreqInMHzInDOMtree2DOMindex: "
+        "DOMXPathException: "
         << //XercesHelper::ToStdString(
             //cr_xercesc_dom_xpath_exception.getMessage() )
         Xerces::ToStdString(cr_xercesc_dom_xpath_exception.getMessage() )
@@ -291,14 +293,15 @@ namespace Xerces
     }
     catch( const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception )
     {
-      LOGN("BuildStdmapFreqInMHzInDOMtree2DOMindex: DOMException: "
+      LOGN(//"BuildStdmapFreqInMHzInDOMtree2DOMindex: "
+        "DOMException: "
         << //XercesHelper::ToStdString(cr_xercesc_dom_exception.getMessage() )
         Xerces::ToStdString(cr_xercesc_dom_exception.getMessage() )
         )
     }
     LOGN_DEBUG("mp_domxpathresult: " << mp_domxpathresult )
 
-    LOGN(FULL_FUNC_NAME << "--end")
+    LOGN("end")
     return p_dom_xpath_ns_resolver ;
   }
 
@@ -466,7 +469,7 @@ namespace Xerces
     catch(const XERCES_CPP_NAMESPACE::DOMXPathException &
       cr_xercesc_dom_xpath_exception)
     {
-      LOGN("GetDOM_XPathResultForFrequencies: DOMXPathException. "
+      LOGN( /* "GetDOM_XPathResultForFrequencies: " */ "DOMXPathException. "
         "An error occurred during processing of the "
         "XPath expression." // Msg is:"
         << //XercesHelper::ToStdString( cr_xercesc_dom_xpath_exception.
@@ -477,7 +480,7 @@ namespace Xerces
     }
     catch(const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception)
     {
-      LOGN("GetDOM_XPathResultForFrequencies: "
+      LOGN(//"GetDOM_XPathResultForFrequencies: "
         "An error occurred during processing of the XPath expression: "
         << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
           Xerces::ToStdString( cr_xercesc_dom_exception.getMessage() )
@@ -596,7 +599,7 @@ namespace Xerces
     catch(const XERCES_CPP_NAMESPACE::DOMXPathException &
         cr_xercesc_dom_xpath_exception)
     {
-      LOGN( "GetFreqnVoltDOMelement:"
+      LOGN( //"GetFreqnVoltDOMelement:"
         "An error occurred during processing of the XPath expression. Msg is:"
         << //XercesHelper::ToStdString(cr_xercesc_dom_xpath_exception.
           //getMessage() )
@@ -606,7 +609,8 @@ namespace Xerces
     }
     catch(const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception)
     {
-      LOGN( "GetFreqnVoltDOMelement:An error occurred during processing of the "
+      LOGN( //"GetFreqnVoltDOMelement:"
+        "An error occurred during processing of the "
         "XPath expression. Msg is:"
         << //XercesHelper::ToStdString(cr_xercesc_dom_exception.getMessage() )
           Xerces::ToStdString(cr_xercesc_dom_exception.getMessage() )
@@ -628,7 +632,7 @@ namespace Xerces
     , bool bOnlySimulate
     )
   {
-    LOGN("begin of PossiblyAddVoltages(\"" << cpc_XMLAttrName << "\")")
+    LOGN("begin" /*" of PossiblyAddVoltages(\"" */ << cpc_XMLAttrName << "\")")
     bool bDOMtreeDifferedFromModelData = false ;
 
     bool bCreateVoltageAttribute = false ;
@@ -889,11 +893,11 @@ namespace Xerces
           parseURI( //p_chFullXMLFilePath
             mpc_chFullXMLFilePath );
         if( mp_dom_document )
-          LOGN( FULL_FUNC_NAME //__FUNCTION__ //<< __func__
-            << ": File \"" << mpc_chFullXMLFilePath << "\" "
+          LOGN( //__FUNCTION__ //<< __func__
+            ": File \"" << mpc_chFullXMLFilePath << "\" "
             "successfully parsed.")
         else
-          LOGN( __FUNCTION__ << ": Failed to parse file \""
+          LOGN( /* __FUNCTION__ << */ ": Failed to parse file \""
               << mpc_chFullXMLFilePath << "\".")
         //If parseURI throws an exception this instruction is not executed.
         byRet = 1 ;
@@ -937,7 +941,7 @@ namespace Xerces
     } //    if( mp_dom_implementation )
     else
     {
-      LOGN("readXMLfileDOM: DOMImplementationRegistry returned NULL")
+      LOGN(/*"readXMLfileDOM: "*/ "DOMImplementationRegistry returned NULL")
     }
     //delete errHandler;
     return byRet;
@@ -946,7 +950,8 @@ namespace Xerces
   BYTE * VoltageForFrequencyConfiguration::SerializeConfigToMemoryBuffer(
     DWORD & r_dwByteSize )
   {
-    LOGN("XercesConfigurationHandler::SerializeConfigToMemoryBuffer")
+    LOGN(/*"XercesConfigurationHandler::SerializeConfigToMemoryBuffer"*/
+      "begin")
     BYTE * ar_by = NULL ;
     mp_dom_implementation = XERCES_CPP_NAMESPACE::DOMImplementationRegistry::
       //"Return the first registered implementation that has the desired features,
@@ -1050,8 +1055,7 @@ namespace Xerces
     )
   {
     BYTE byReturnValue = 255;
-    LOGN( //"WriteDOM"
-        FULL_FUNC_NAME << "--begin" )
+    LOGN( /*"WriteDOM--"*/ "begin" )
     if( mp_dom_implementation )
     {
       XERCES_CPP_NAMESPACE::DOMLSSerializer * p_dom_ls_serializer =
@@ -1091,7 +1095,7 @@ namespace Xerces
       {
         char * p_chMessage = XERCES_CPP_NAMESPACE::XMLString::transcode(
           cr_xercesc_xml_exception.getMessage());
-        LOGN(  "XMLException Exception message is: \n"
+        LOGN( "XMLException Exception message is: \n"
              << p_chMessage << "\n" )
         m_p_userinterface->MessageWithTimeStamp(
           (wchar_t *) cr_xercesc_xml_exception.getMessage() );
@@ -1128,15 +1132,15 @@ namespace Xerces
     return byReturnValue ;
   }
 
-  //Put the "test for change" and the "change" code into the same function
-  //because both depends (exactly) on the same attributes.
+  /** Put the "test for change" and the "change" code into the same function
+  * because both depends (exactly) on the same attributes. */
 //  bool
   BYTE VoltageForFrequencyConfiguration::TestIfCfgIsChangedOrChangeCfg(
     //true: do not change, only test if it would be changed.
     bool bTest
     )
   {
-    LOGN( FULL_FUNC_NAME << "--begin")
+    LOGN( "begin")
     //Reset because this method may be called more than once for the same
     // VoltageForFrequencyConfiguration object.
 //    bool bDOMtreeModified = false ;
@@ -1210,7 +1214,7 @@ namespace Xerces
     catch(const XERCES_CPP_NAMESPACE::DOMXPathException &
       cr_xercesc_dom_xpath_exception)
     {
-      LOGN( "TestIfCfgIsChangedOrChangeCfg:"
+      LOGN( //"TestIfCfgIsChangedOrChangeCfg:"
         "An error occurred during processing of the XPath expression. "
         "Msg is:"
         << //XercesHelper::ToStdString( cr_xercesc_dom_xpath_exception.
@@ -1221,7 +1225,7 @@ namespace Xerces
     }
     catch(const XERCES_CPP_NAMESPACE::DOMException & cr_xercesc_dom_exception)
     {
-      LOGN( "TestIfCfgIsChangedOrChangeCfg:"
+      LOGN( //"TestIfCfgIsChangedOrChangeCfg:"
         "An error occurred during processing of the XPath expression. "
         "Msg is:"
         << //XercesHelper::ToStdString( cr_xercesc_dom_exception.getMessage() )
@@ -1245,7 +1249,7 @@ namespace Xerces
   {
     bool bDOMtreeModified = false ;
     m_bOnlySimulate = bTest ;
-    LOGN( FULL_FUNC_NAME << "--begin")
+    LOGN( "begin")
     PossiblyReleaseDOM_XPathResult() ;
 
     //A DOM tree may already exist( if read from an XML file). So build a map
@@ -1422,7 +1426,8 @@ namespace Xerces
       catch (const XERCES_CPP_NAMESPACE::XMLException &
           cr_xercesc_xml_exception )
       {
-        LOG( "MergeWithExistingConfigFile: XMLException:"
+        LOGN( //"MergeWithExistingConfigFile: "
+            "XMLException:"
           << //XercesHelper::ToStdString( cr_xercesc_xml_exception.getMessage() )
             Xerces::ToStdString( cr_xercesc_xml_exception.getMessage() )
             //<< "\n"
@@ -1462,7 +1467,7 @@ namespace Xerces
 
   VoltageForFrequencyConfiguration::~VoltageForFrequencyConfiguration()
   {
-    LOGN("~XercesConfigurationHandler")
+    LOGN(/*"~XercesConfigurationHandler"*/ "begin")
 //    if( mp_dom_ls_parser )
 //    {
 //      LOGN("Before releasing DOM parser")
@@ -1491,7 +1496,7 @@ namespace Xerces
       LOGN("before releasing DOMXPathResult")
       mp_domxpathresult->release();
     }
-    LOGN("~XercesConfigurationHandler end")
+    LOGN(/*"~XercesConfigurationHandler "*/ "end")
 //    x86InfoAndControl::TerminateXerces() ;
   }
 }//namespace Xerces
