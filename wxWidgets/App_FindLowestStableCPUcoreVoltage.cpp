@@ -104,7 +104,7 @@ void wxX86InfoAndControlApp::InitUnstableCPUcoreOperationDetection()
 
 BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 {
-  LOGN( FULL_FUNC_NAME << " --begin")
+  LOGN( "begin")
 //  LPTSTR lptstrUnstableVoltageDetectionDynLib = _T(//"Prime95.DLL"
 //    //"UnstableVoltageDetection.dll"
 //      "InstableCPUcoreOperationDetection.dll"
@@ -128,7 +128,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
     );
   if( m_model.m_instablecpucorevoltagedetection.DynLibSuccessFullyLoaded() )
   {
-    LOGN(FULL_FUNC_NAME << "--Successfully loaded \"" <<
+    LOGN("Successfully loaded \"" <<
       std_strUnstableVoltageDetectionDynLib << "\"")
 
     if( m_model.m_instablecpucorevoltagedetection.AssignStartFunctionPointer() )
@@ -163,7 +163,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
   }
   else
   {
-    LOGN(FULL_FUNC_NAME << "--Failed to load \"" //"Prime95 DLL""
+    LOGN("Failed to load \"" //"Prime95 DLL""
       << std_strUnstableVoltageDetectionDynLib
       << "\"" )
     std::wstring std_wstrMessage = L"Loading unstable voltage detection "
@@ -184,7 +184,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
     const FreqAndVoltageSettingDlg * c_p_freqandvoltagesettingdlg)
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
   BYTE ret = 1;
   //wxGetApp().
 //    InitUnstableVoltageDetectionDynLibAccess();
@@ -212,7 +212,7 @@ void wxX86InfoAndControlApp::StopInstableCPUcoreVoltageDetection()
 
 void wxX86InfoAndControlApp::UnloadDetectInstableCPUcoreVoltageDynLib()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
 #ifdef _WIN32
   m_model.m_instablecpucorevoltagedetection.UnloadDynLib();
 #endif

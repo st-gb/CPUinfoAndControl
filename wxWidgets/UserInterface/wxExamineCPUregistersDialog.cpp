@@ -59,6 +59,8 @@ BEGIN_EVENT_TABLE(wxExamineCPUregistersDialog, wxDialog)
     wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig )
 END_EVENT_TABLE()
 
+using namespace wxWidgets; //wxWidgets::Get...
+
 wxExamineCPUregistersDialog::wxExamineCPUregistersDialog(//RegisterData 
   wxWindow * parent ,
   //MSRdata & r_regdata ,
@@ -125,7 +127,7 @@ inline void wxExamineCPUregistersDialog::InsertIntoLeftColumn(
     wxALIGN_TOP
     | wxALIGN_RIGHT //| wxALIGN_CENTER_VERTICAL
     ;
-  LOGN( FULL_FUNC_NAME << "--text:" << GetStdString(cr_wxstr) )
+  LOGN( "text:" << GetStdString(cr_wxstr) )
   if(mp_wxcheckboxPrefixWithRegisterID->IsChecked() &&
       m_p_cpuregisterproperties )
   {
@@ -315,7 +317,7 @@ void wxExamineCPUregistersDialog::AddCPUIDdataControls()
     m_stdvector_cpuiddata;
   std::vector<CPUIDdata>::iterator iter_cpuiddata = c_r_std_vector_cpuiddata.
     begin() ;
-  LOGN( FULL_FUNC_NAME << "--# CPUID data objects:"
+  LOGN( "# CPUID data objects:"
     << c_r_std_vector_cpuiddata.size() )
   std::vector<CPUIDdata>::const_iterator c_iter_cpuiddataEnd =
     c_r_std_vector_cpuiddata.end();
@@ -337,7 +339,7 @@ void wxExamineCPUregistersDialog::AddMSRdataControls()
   std::vector<MSRdata>::const_iterator iter_msrdata = c_r_std_vector_msrdata.
     begin() ;
 
-  LOGN( FULL_FUNC_NAME << "--# MSR data objects:"
+  LOGN( "# MSR data objects:"
     << c_r_std_vector_msrdata.size() )
   std::vector<MSRdata>::const_iterator c_iter_msrdata =
     c_r_std_vector_msrdata.end();
@@ -354,7 +356,7 @@ void wxExamineCPUregistersDialog::AddMSRdataControls()
 
 void wxExamineCPUregistersDialog::BuildCPUregisterControls()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   mp_sizerLeftColumn = new wxBoxSizer(wxVERTICAL);
   mp_sizerRightColumn = new wxBoxSizer(wxVERTICAL);
   mp_sizerTop->Add( mp_sizerLeftColumn );
@@ -373,7 +375,7 @@ void wxExamineCPUregistersDialog::BuildCPUregisterControls()
   AddCPUIDdataControls();
   AddMSRdataControls();
 
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void wxExamineCPUregistersDialog::BuildGUI()
@@ -496,7 +498,7 @@ void wxExamineCPUregistersDialog::BuildGUI()
 
 void wxExamineCPUregistersDialog::BuildGUI(const MSRdata & r_msrdata )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
   const std::vector<RegisterData> & c_r_std_vector_registerdata = r_msrdata.
     m_stdvec_registerdata;
@@ -504,12 +506,12 @@ void wxExamineCPUregistersDialog::BuildGUI(const MSRdata & r_msrdata )
     //mp_msr_data->m_stdvec_registerdata.begin() ;
       c_r_std_vector_registerdata.begin() ;
 
-  LOGN( FULL_FUNC_NAME << "--# of register data elements:"
+  LOGN( "# of register data elements:"
     << c_r_std_vector_registerdata.size() )
   while( iter_registerdata != //mp_msr_data->
     c_r_std_vector_registerdata.end() )
   {
-    LOGN( FULL_FUNC_NAME << "--adding " << (*iter_registerdata).m_strDataName)
+    LOGN( "adding " << (*iter_registerdata).m_strDataName)
     //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
     AddStatictext(getwxString( (*iter_registerdata).m_strDataName )) ;
      ++ iter_registerdata ;
@@ -550,12 +552,12 @@ void wxExamineCPUregistersDialog::BuildGUI(const MSRdata & r_msrdata )
   //Create(this,wxID_ANY, _T("gg"));
    //p_wxdlg->AddChild(new wxStaticText(p_wxdlg, wxID_ANY, _T("sdsd") ) );
    //p_wxdlg->Add(new wxStaticText(p_wxdlg, wxID_ANY, _T("sdsd") ) );
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void wxExamineCPUregistersDialog::BuildGUI(const CPUIDdata & r_cpuiddata )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //wxBoxSizer * p_sizerTop = new wxBoxSizer(wxVERTICAL);
   wxString wxstrDataName ;
   const std::vector<RegisterData> & c_r_std_vector_registerdata = r_cpuiddata.
@@ -564,18 +566,18 @@ void wxExamineCPUregistersDialog::BuildGUI(const CPUIDdata & r_cpuiddata )
     //mp_msr_data->m_stdvec_registerdata.begin() ;
     c_r_std_vector_registerdata.begin() ;
 
-  LOGN( FULL_FUNC_NAME << "--# of register data elements:"
+  LOGN( "# of register data elements:"
     << c_r_std_vector_registerdata.size() )
   while( iter_registerdata != //mp_msr_data->
     c_r_std_vector_registerdata.end() )
   {
-    LOGN( FULL_FUNC_NAME << "--adding " << (*iter_registerdata).m_strDataName)
+    LOGN( "adding " << (*iter_registerdata).m_strDataName)
     //wxBoxSizer * p_sizerHorizontal = new wxBoxSizer(wxHORIZONTAL);
     wxstrDataName = getwxString( (*iter_registerdata).m_strDataName ) ;
     AddStatictext(wxstrDataName ) ;
      ++ iter_registerdata ;
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void wxExamineCPUregistersDialog::DisplayTSCvalues()
@@ -864,11 +866,11 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(MSRdata & r_msrdata)
 
 void wxExamineCPUregistersDialog::OnClose( wxCloseEvent & wxcmd )
 {
-  LOGN( FULL_FUNC_NAME << "--begin--stopping timer")
+  LOGN( "begin--stopping timer")
   m_wxtimer.Stop();
   //see http://docs.wxwidgets.org/2.8/wx_windowdeletionoverview.html:
   this->Destroy() ;
-  LOGN( FULL_FUNC_NAME << "--end--after stopping timer")
+  LOGN( "end--after stopping timer")
 }
 
 void wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig(
@@ -880,7 +882,7 @@ void wxExamineCPUregistersDialog::OnReloadCPUregisterToReadConfig(
 void wxExamineCPUregistersDialog::OnRuntimeCreatedControls(
   wxCommandEvent & wxevent)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   int nControlID = wxevent.GetId() ;
 
   if( nControlID == ID_IntervalCheckbox )
@@ -975,13 +977,13 @@ void wxExamineCPUregistersDialog::OnSize( wxSizeEvent & //WXUNUSED(
 
 void wxExamineCPUregistersDialog::OnTimerEvent(wxTimerEvent &event)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   DisplayRegisterData() ;
 }
 
 inline void wxExamineCPUregistersDialog::ReBuildGUI()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //delete all contained UI controls.
   //delete mp_sizerTop ;
   //while( mp_sizerTop->m_children.GetCount() &&
@@ -1010,7 +1012,7 @@ inline void wxExamineCPUregistersDialog::ReBuildGUI()
 //  mp_sizerTop->Layout() ;
   mp_wxboxsizerOutmost->Layout() ;
   mp_sizerTop->Layout() ;
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 inline void wxExamineCPUregistersDialog::ReloadCPUregisterToReadConfig()
@@ -1040,7 +1042,7 @@ inline void wxExamineCPUregistersDialog::ReloadCPUregisterToReadConfig()
 bool wxExamineCPUregistersDialog::StartTimerWithIntervalTime()
 {
   bool bChecked = mp_wxcheckboxInterval->GetValue();
-  LOGN( FULL_FUNC_NAME << "--begin--checkbox is checked?:"
+  LOGN( "begin--checkbox is checked?:"
     << bChecked)
   if( bChecked )
   {
@@ -1055,7 +1057,7 @@ bool wxExamineCPUregistersDialog::StartTimerWithIntervalTime()
       mp_wxtextctrlUpdateIntervalInMs->SetToolTip(wxT("not a number") ) ;
       dwTimerIntervalInMilliseconds = 1000 ;
     }
-    LOGN( FULL_FUNC_NAME << "--starting timer with "
+    LOGN( "starting timer with "
       << dwTimerIntervalInMilliseconds << " milliseconds")
     m_wxtimer.Start(dwTimerIntervalInMilliseconds) ;
     return true;

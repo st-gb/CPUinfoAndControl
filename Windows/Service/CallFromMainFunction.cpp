@@ -273,6 +273,14 @@ void NoProgramArgumentsSpecified(int argc, TCHAR * argv[],
 
   if( bStartServiceWithinThisProcess )
   {
+    std::vector<FormattedLogEntryProcessor *>::iterator
+      firstFormattedLogEntryProcessor =
+      (std::vector<FormattedLogEntryProcessor *>::iterator) g_logger./*m_formattedLogEntryProcessors*/
+      GetFormattedLogEntryProcessors().begin();
+    //Remove console log writer
+    ( (std::vector<FormattedLogEntryProcessor *>) g_logger.
+      GetFormattedLogEntryProcessors()).erase(
+      firstFormattedLogEntryProcessor);
     LOGN("Starting service inside _this_ process.")
 //    if( p_cpucontrolservice == NULL )
     {
@@ -318,10 +326,10 @@ void AtLeast1ProgramArgumentSpecified(int argc, TCHAR * argv[],
   if( argc > 2 && ShouldDeleteService(argc, argv) )
   {
     DWORD dwErrorCodeFor1stError ;
-      ServiceBase::DeleteService( //argv[2]
-        GetStdTstring_Inline( argv[2]).c_str()
-        , dwErrorCodeFor1stError
-        ) ;
+    ServiceBase::DeleteService( //argv[2]
+      GetStdTstring_Inline( argv[2]).c_str()
+      , dwErrorCodeFor1stError
+      ) ;
   }
   if( argc > 2 && ShouldCreateService(argc, argv) )
   {
@@ -344,7 +352,7 @@ int CallFromMainFunction(
    )
 {
   int nRet = 1;
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   try
   {
     DEBUG("Begin of main program entry point\n");
@@ -385,7 +393,7 @@ int CallFromMainFunction(
       )
   }
   std::cout << //"Waiting for input in order for the output to be readable."
-    " Hit any key to exit this program\n" ;
+    " Hit any key to exit this program" << std::endl;
   ::getche() ;
   LOGN("end of main program entry point--return " << nRet);
   return //0 ;

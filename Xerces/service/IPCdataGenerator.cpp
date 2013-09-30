@@ -46,13 +46,13 @@ namespace Xerces
     mr_model (r_model ),
     m_r_cpucontrolservicebase(cpucontrolservicebase)
   {
-    LOGN( FULL_FUNC_NAME << "--begin")
+    LOGN( "begin")
     //Initialize here. If Xerces initialized in "GetCurrentCPUcoreAttributeValues"
     //: program crash if more than 1 thread entered
     //"GetCurrentCPUcoreAttributeValues" and so more than 1 time Initalize() was
     // called.
     m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
-    LOGN( FULL_FUNC_NAME << "--end")
+    LOGN( "end")
   }
 
   IPCdataHandler::~IPCdataHandler()

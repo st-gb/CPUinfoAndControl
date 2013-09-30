@@ -8,6 +8,8 @@
 #include "ModelData.hpp"
 //#include "RegisterData.hpp" //class MSRdata
 #include <Controller/MSVC_adaption/tchar.h>
+//Aladdin_Enterprises::md5_implementation::GenerateMD5checkSum(...)
+#include <Aladdin_Enterprises/md5_implementation/GenerateMD5checksum.hpp>
 
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
@@ -110,6 +112,16 @@
   {
     //return m_byNumberOfCPUCores ;
     return m_cpucoredata.m_byNumberOfCPUCores ;
+  }
+
+  void Model::GetCPUcontrollerModelMD5checkSum(BYTE ar_byMD5checksum []) const
+  {
+    const unsigned numBytesForCPUcontrollerModel = //(unsigned) (
+      GetSizeForCPUcontroller();
+    Aladdin_Enterprises::md5_implementation::GenerateMD5checkSum(
+      this,
+      numBytesForCPUcontrollerModel,
+      ar_byMD5checksum);
   }
 
   void Model::SetNumberOfCPUCores(BYTE byNumberOfCPUCores)

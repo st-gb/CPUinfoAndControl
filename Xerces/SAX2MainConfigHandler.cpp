@@ -29,31 +29,31 @@
 
   #include <preprocessor_macros/operating_system_name.h> //OS_NAME
 
-	//#define MB_CUR_MAX 1 
+//#define MB_CUR_MAX 1
 //  extern FULLY_QUALIFIED_LOGGER_CLASS_NAME g_logger ;
-	
-	//With Xerces < Version 2.8:
-	//  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
+
+  //With Xerces < Version 2.8:
+  //  Add "XML_LIBRARY" to "Preprocessor Definitions" to compile with Xerces
   // statically (else many "LNK2001" and "LNK2019" and linker errors).
-	//with Xerces 3.0: "XERCES_STATIC_LIBRARY"
-	//And: Add "Advapi32.lib" as additional dependancy for the linker.
-	//zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst:
+  //with Xerces 3.0: "XERCES_STATIC_LIBRARY"
+  //And: Add "Advapi32.lib" as additional dependancy for the linker.
+  //zu Linker->Bibliothek ignorieren hinzufgen:"LIBCMT.lib", sonst:
   //"LIBCMT.lib(_ctype.obj) : error LNK2005: _isspace ist bereits in
   //MSVCRT.lib(MSVCR80.dll) definiert."
 	
 //  //to NOT need to prefix the xerces classes with the "xercesc_...::"
 //	XERCES_CPP_NAMESPACE_USE
-	
-	SAX2MainConfigHandler::SAX2MainConfigHandler(
-	  Model & model ,
-	  UserInterface * p_userinterface //,
-    //I_CPUcontroller * p_cpucontroller
-	  )
-	{
-	  m_p_model = & model ;
-	  m_p_userinterface = p_userinterface ;
-    //p_cpucontroller = p_cpucontroller ;
-	}
+
+  SAX2MainConfigHandler::SAX2MainConfigHandler(
+    Model & model ,
+    UserInterface * p_userinterface //,
+  //I_CPUcontroller * p_cpucontroller
+    )
+  {
+    m_p_model = & model ;
+    m_p_userinterface = p_userinterface ;
+  //p_cpucontroller = p_cpucontroller ;
+  }
 	
   void SAX2MainConfigHandler::HandleDynamicVoltage_and_FrequencyScaling(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
@@ -62,10 +62,10 @@
     float fValue, * p_fValue ;
     std::string strAttributeName = "enable" ;
     WORD wValue ;
-	  if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
-	    strAttributeName.c_str(), bEnableDVFS )
-	    )
-	  {
+    if( XercesAttributesHelper::GetAttributeValue(cr_xercesc_attributes,
+      strAttributeName.c_str(), bEnableDVFS )
+      )
+    {
       m_p_model->m_cpucoredata.m_bEnableDVFS = bEnableDVFS ;
     }
     strAttributeName = "usage_poll_wait_time_in_ms" ;
@@ -137,7 +137,7 @@
           )
       )
     {
-      LOGN( FULL_FUNC_NAME << "--successfully got XML attribute value: \""
+      LOGN( "successfully got XML attribute value: \""
         << r_StableCPUcoreVoltageWaitTimeInMillis << "\"")
     }
   }
@@ -145,6 +145,8 @@
   void SAX2MainConfigHandler::HandleInstableCPUcoreVoltageDetection(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
+#ifdef COMPILE_AS_GUI
+#ifdef _WIN32
     std::string std_strAttributeName = "seconds_until_voltage_decrease" ;
     DWORD dwValue;
     if( ::ConvertXercesAttributesValue(
@@ -168,8 +170,10 @@
     {
 
     }
+#endif
+#endif //#ifdef COMPILE_AS_GUI
   }
-	
+
   void SAX2MainConfigHandler::HandleTopmostXMLelement(
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
@@ -215,14 +219,12 @@
           m_p_model->m_logfileattributes.m_std_wstrLogFilePath
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
-      LOGN_TYPE( FULL_FUNC_NAME << "--got attribute value for \""
-        << std_strAttributeName << "\":" << m_p_model->m_logfileattributes.
-        m_std_wstrLogFilePath,
+      LOGN_TYPE( "got attribute value for \"" << std_strAttributeName
+        << "\":" << m_p_model->m_logfileattributes.m_std_wstrLogFilePath,
         LogLevel::success)
     else
-      LOGN_TYPE( FULL_FUNC_NAME << "--getting attribute value for \""
-        << std_strAttributeName << "\" failed",
-        LogLevel::info)
+      LOGN_TYPE( "getting attribute value for \"" << std_strAttributeName
+        << "\" failed", LogLevel::info)
   }
 
   void SAX2MainConfigHandler::startElement
@@ -274,12 +276,12 @@
             ) == XercesAttributesHelper::getting_attribute_value_succeeded
           )
         {
-          LOGN_INFO( FULL_FUNC_NAME << "--getting attribute value for \""
+          LOGN_INFO( "getting attribute value for \""
             << std_strAttributeName << "\" succeeded:"
             << m_p_model->m_std_strDefaultCPUcoreUsageGetter)
         }
         else
-          LOGN_WARNING( FULL_FUNC_NAME << "--getting attribute value for \""
+          LOGN_WARNING( "getting attribute value for \""
             << std_strAttributeName << "\" failed")
       }
       else if( m_strElementName == "resume_from_standby_or_hibernation")
@@ -295,15 +297,15 @@
         HandleDynamicVoltage_and_FrequencyScaling(cr_xercesc_attributes) ;
       //Release memory AFTER comparing.
       XERCES_CPP_NAMESPACE::XMLString::release( & pchXMLelementName);
-	  } //if( pchXMLelementName )
-	}
-	
+    } //if( pchXMLelementName )
+  }
+
 //	void SAX2MainConfigHandler::fatalError(
 //	  const XERCES_CPP_NAMESPACE::SAXParseException &
 //	    cr_xercesc_sax_parse_exception
 //	  )
 //	{
-//    LOGN_TYPE( FULL_FUNC_NAME << " Fatal Error: "
+//    LOGN_TYPE( " Fatal Error: "
 //      << XercesHelper::ToStdString( cr_xercesc_sax_parse_exception.getMessage()
 //        )
 //      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber(),

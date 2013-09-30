@@ -13,7 +13,7 @@
 bool wxX86InfoAndControlApp::ContinueServiceViaIPC(wxString & r_wxstrMessage)
 {
   std::string stdstrMessage ;
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //Lock concurrent access to p_i_ipcclient from another thread.
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     //mp_wxx86infoandcontrolapp->
@@ -31,27 +31,27 @@ bool wxX86InfoAndControlApp::ContinueServiceViaIPC(wxString & r_wxstrMessage)
       IPC_ClientIsConnected()
     )
   {
-    LOGN( FULL_FUNC_NAME << " IPC is connected")
+    LOGN( "IPC is connected")
   //    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(continue_service) ;
   //    wxString wxstr = getwxString( ::wxGetApp().m_ipcclient.m_stdwstrMessage ) ;
   //    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
 //    if( //mp_wxx86infoandcontrolapp->
 //        m_p_i_ipcclient )
 //    {
-      LOGN( FULL_FUNC_NAME << " before sending the continue command")
+      LOGN( "before sending the continue command")
       //mp_wxx86infoandcontrolapp->
 //        m_p_i_ipcclient->SendCommandAndGetResponse(
 //      IPC_ClientSendCommandAndGetResponse_Inline(
       IPC_ClientSendCommandAndGetResponse(
         continue_service) ;
-      LOGN( FULL_FUNC_NAME << " after sending the continue command")
+      LOGN( "after sending the continue command")
       r_wxstrMessage = getwxString( //mp_wxx86infoandcontrolapp->
         m_p_i_ipcclient->m_stdwstrMessage ) ;
       return true;
 //    }
   }
   else
-    LOGN( FULL_FUNC_NAME << " IPC is NOT connected")
+    LOGN( "IPC is NOT connected")
   return false;
 }
 
@@ -63,7 +63,7 @@ bool wxX86InfoAndControlApp::GetAvailablePowerSchemesViaIPC(
   //Important if appended to multiple times.
   r_std_vec_std_wstrPowerSchemeName.clear();
   std::string stdstrMessage ;
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //Lock concurrent access to p_i_ipcclient from another thread.
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
     //mp_wxx86infoandcontrolapp->
@@ -83,26 +83,26 @@ bool wxX86InfoAndControlApp::GetAvailablePowerSchemesViaIPC(
       IPC_ClientIsConnected()
     )
   {
-    LOGN( FULL_FUNC_NAME << " IPC is connected")
+    LOGN( "IPC is connected")
   //    ::wxGetApp().m_ipcclient.SendCommandAndGetResponse(continue_service) ;
   //    wxString wxstr = getwxString( ::wxGetApp().m_ipcclient.m_stdwstrMessage ) ;
   //    ::wxMessageBox( wxT("message from the service:\n") + wxstr ) ;
 //    if( //mp_wxx86infoandcontrolapp->
 //        m_p_i_ipcclient )
 //    {
-      LOGN( FULL_FUNC_NAME << " before sending the getAvailablePowerSchemeNames command")
+      LOGN( "before sending the getAvailablePowerSchemeNames command")
       //mp_wxx86infoandcontrolapp->
 //        m_p_i_ipcclient->SendCommandAndGetResponse(
 //      IPC_ClientSendCommandAndGetResponse_Inline(
       IPC_ClientSendCommandAndGetResponse(
         getAvailablePowerSchemeNames) ;
-      LOGN( FULL_FUNC_NAME << " after sending the getAvailablePowerSchemeNames command")
+      LOGN( "after sending the getAvailablePowerSchemeNames command")
 
       wchar_t wch;
       std::wstring std_wstrPowerSchemeName;
-      LOGN( FULL_FUNC_NAME << "--# of data bytes:" <<
+      LOGN( "# of data bytes:" <<
           m_p_i_ipcclient->m_dwIPCdataSizeInByte)
-      LOGN( FULL_FUNC_NAME << "--data from IPC: " <<
+      LOGN( "data from IPC: " <<
         ::format_output_data(m_p_i_ipcclient->m_arbyIPCdata,
           m_p_i_ipcclient->m_dwIPCdataSizeInByte, 80)
         )
@@ -117,14 +117,14 @@ bool wxX86InfoAndControlApp::GetAvailablePowerSchemesViaIPC(
         wch = * p_wch;
         if( wch == L'\n')
         {
-          LOGN( FULL_FUNC_NAME << "--adding power scheme name \"" <<
+          LOGN( "adding power scheme name \"" <<
             ::GetStdString_Inline( std_wstrPowerSchemeName) << "\" to memory." )
           r_std_vec_std_wstrPowerSchemeName.push_back(std_wstrPowerSchemeName);
           std_wstrPowerSchemeName.clear();
         }
         else
         {
-//          LOGN(FULL_FUNC_NAME << "--adding character "
+//          LOGN("adding character "
 //            "\"" << wch << "\""
 //            << "(" << (char)wch << ")"
 //            << " to power scheme name")
@@ -136,20 +136,20 @@ bool wxX86InfoAndControlApp::GetAvailablePowerSchemesViaIPC(
         (m_p_i_ipcclient->m_arbyIPCdata + m_p_i_ipcclient->
         m_dwIPCdataSizeInByte - 2)
         );
-      LOGN( FULL_FUNC_NAME << "--active power scheme index:" <<
+      LOGN( "active power scheme index:" <<
           r_ui16ActivePowerSchemeIndex)
     return true;
 //    }
   }
   else
-    LOGN( FULL_FUNC_NAME << " IPC is NOT connected")
+    LOGN( "IPC is NOT connected")
   return false;
 }
 
 bool wxX86InfoAndControlApp::SetPowerSchemeViaIPC(
     const std::wstring & r_std_wstrPowerSchemeName)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   std::string stdstrMessage ;
   //Lock concurrent access to p_i_ipcclient from another thread.
   wxCriticalSectionLocker wxcriticalsectionlockerIPCobject(
@@ -168,7 +168,7 @@ bool wxX86InfoAndControlApp::SetPowerSchemeViaIPC(
       IPC_ClientIsConnected()
     )
   {
-    LOGN( FULL_FUNC_NAME << " IPC is connected")
+    LOGN( "IPC is connected")
 
     IPC_ClientSendCommandAndGetResponse(
         setActivePowerScheme,
@@ -178,7 +178,7 @@ bool wxX86InfoAndControlApp::SetPowerSchemeViaIPC(
         + 1,
         (BYTE *) r_std_wstrPowerSchemeName.data()
         );
-    LOGN( FULL_FUNC_NAME << " after sending the continue command")
+    LOGN( "after sending the continue command")
     return true;
   }
   return false;

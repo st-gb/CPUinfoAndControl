@@ -61,7 +61,8 @@ WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
 //#ifdef _DEBUG
 //  std::stringstream stdstrstream ;
   //For checking if the members are on the same RAM address between MSVC and MinGW:
-  LOGN_DEBUG( "WinRing0_1_3RunTimeDynLinked c'tor (...)--Address of this:"
+  LOGN_DEBUG( //"WinRing0_1_3RunTimeDynLinked c'tor (...)--"
+    "address of this:"
     << this
     << "address of I_CPUaccess::mp_model: " << & mp_model <<"\n"
     << "address in I_CPUaccess::mp_model: " << mp_model
@@ -72,7 +73,7 @@ WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
     ) ;
 //#endif //#ifdef _DEBUG
   Init(pui) ;
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 {
@@ -126,7 +127,7 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
   {
 //    InitOpenLibSysFailed();
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void WinRing0_1_3RunTimeDynLinked::InitOpenLibSysFailed()
@@ -290,7 +291,7 @@ void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
 void WinRing0_1_3RunTimeDynLinked::GetDriverPath()
 {
   const std::string stdstrFunctionName = "GetDriverPath" ;
-  LOGN( FULL_FUNC_NAME << "--checking if the WinRing0 DLL contains a \""
+  LOGN( "checking if the WinRing0 DLL contains a \""
     << stdstrFunctionName << "\" function")
   _GetWinRing0DriverPath pfnGetWinRing0DriverPath =
     (_GetWinRing0DriverPath)
@@ -658,8 +659,7 @@ WinRing0_1_3RunTimeDynLinked::WrmsrEx(
 )
 {
   BOOL bReturn = FAILURE ;
-  LOGN_DEBUG( FULL_FUNC_NAME
-    << " index:" << dwIndex
+  LOGN_DEBUG( " index:" << dwIndex
     << " EAX (bytes 1-4):" << dwEAX
     << " EDX (bytes 5-8):" << dwEDX
     << " affinity mask:" << dwAffinityMask)

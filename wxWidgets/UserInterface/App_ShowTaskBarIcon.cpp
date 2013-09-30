@@ -19,7 +19,7 @@
 #include <wx/filename.h> //wxFileName::GetPathSeparator(...)
 //#include <wx/bitmap.h> //wxBITMAP_DEFAULT_TYPE
 
-#include <preprocessor_macros/enable_disable_write_strings_warning.h>
+#include <compiler/GCC/enable_disable_write_strings_warning.h>
 
 IGNORE_WRITE_STRINGS_WARNING
   #include <images/x86IandC.xpm>
@@ -33,7 +33,7 @@ ENABLE_WRITE_STRINGS_WARNING
 
 bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
 {
-  LOGN("App::ShowTaskBarIcon() begin")
+  LOGN(/*"App::ShowTaskBarIcon() "*/ "begin")
 //      m_systemtray_icon_notification_window = mp_frame->GetHandle() ;
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
@@ -44,7 +44,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIcon(MainFrame * p_mf )
   #endif //#ifdef USE_WINDOWA_API_SYSTEM_TRAY_ICON
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 
-  LOGN("App::ShowTaskBarIcon() end")
+  LOGN(/*"App::ShowTaskBarIcon() "*/ "end")
   return false ;
 }
 
@@ -57,7 +57,7 @@ TaskBarIcon * wxX86InfoAndControlApp::CreateTaskBarIcon(
   {
     r_p_taskbaricon = new TaskBarIcon(mp_frame);
     if( r_p_taskbaricon )
-      LOGN(FULL_FUNC_NAME << "--successfully created \"" << p_chTaskBarIconName
+      LOGN("successfully created \"" << p_chTaskBarIconName
         << "\" task bar icon.")
   }
   return r_p_taskbaricon;
@@ -83,9 +83,7 @@ void wxX86InfoAndControlApp::DeleteTaskBarIcon(
 void wxX86InfoAndControlApp::DeleteTaskBarIcons()
 {
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
-  LOGN(//"wxX86InfoAndControlApp::DeleteTaskBarIcons()"
-    FULL_FUNC_NAME <<
-    "--begin" )
+  LOGN( "begin" )
   if( m_p_HighestCPUcoreTemperatureTaskBarIcon )
   {
     //Removing the icon is neccessary to exit the app/
@@ -117,9 +115,7 @@ void wxX86InfoAndControlApp::DeleteTaskBarIcons()
   DeleteTaskBarIcon(m_p_CPUcoreUsagesTaskbarIcon, "CPU core usages");
   DeleteTaskBarIcon(m_p_CPUcoresMultipliersTaskbarIcon, "CPU cores multipliers");
 
-  LOGN(//"wxX86InfoAndControlApp::DeleteTaskBarIcons()"
-    FULL_FUNC_NAME <<
-    "--end")
+  LOGN("end")
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 }
 
@@ -155,7 +151,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
   //from wxWidgets sample tbtest.cpp
   // Created:     01/02/97
   // RCS-ID:      $Id: tbtest.cpp 36336 2005-12-03 17:55:33Z vell $
-  LOGN( FULL_FUNC_NAME << "--begin" )
+  LOGN( "begin" )
 
   if( mp_modelData->m_userinterfaceattributes.m_bShowCPUcoreUsagesIconInTaskBar)
     CreateTaskBarIcon(m_p_CPUcoreUsagesTaskbarIcon, "CPU core usages");
@@ -209,7 +205,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
             )
           )
         {
-          LOGN(FULL_FUNC_NAME << "--successfully set system tray icon.")
+          LOGN("successfully set system tray icon.")
           return true ;
         }
         else
@@ -224,7 +220,7 @@ bool wxX86InfoAndControlApp::ShowTaskBarIconUsingwxWidgets()
       }
   }
   else
-    LOGN( FULL_FUNC_NAME << "--failed to create task bar icon object")
+    LOGN( "failed to create task bar icon object")
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
   return false;
 }

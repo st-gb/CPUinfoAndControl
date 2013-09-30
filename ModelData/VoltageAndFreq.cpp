@@ -50,14 +50,14 @@ void VoltageAndFreq::GetLinearExtrapolatedVoltage(
   float fVoltageFromFreqAboveAndBelowDiff =
     fVoltageInVoltFromHigherFreq -
     fVoltageInVoltFromLowerFreq ;
-  LOGN( FULL_FUNC_NAME << "--higher and lower voltage diff:" <<
+  LOGN( "higher and lower voltage diff:" <<
     fVoltageFromFreqAboveAndBelowDiff << "V")
 
   //ex.: 1800-800 = 1000
   WORD wFreqInMHzFromNearFreqsWantedFreqDiff =
     wFreqInMHzFromNearFreqAboveWantedFreq -
    wFreqInMHzFromNearFreqBelowWantedFreq ;
-  LOGN( FULL_FUNC_NAME << "--higher and lower frequency diff:" <<
+  LOGN( "higher and lower frequency diff:" <<
     wFreqInMHzFromNearFreqsWantedFreqDiff << "MHz")
 
 //  float fVoltageInVoltFromHigherFreqMinusWantedVoltage =
@@ -67,7 +67,7 @@ void VoltageAndFreq::GetLinearExtrapolatedVoltage(
   float fVoltageInVoltPerMHz =
     fVoltageFromFreqAboveAndBelowDiff /
       wFreqInMHzFromNearFreqsWantedFreqDiff ;
-  LOGN( FULL_FUNC_NAME << "--voltage/frequency="
+  LOGN( "voltage/frequency="
     << fVoltageFromFreqAboveAndBelowDiff << "V / "
     << wFreqInMHzFromNearFreqsWantedFreqDiff << "MHz ="
     << fVoltageInVoltPerMHz << "V/MHz")
@@ -76,7 +76,7 @@ void VoltageAndFreq::GetLinearExtrapolatedVoltage(
   WORD wFreqAboveMinusWantedFreq =
     (wFreqInMHzFromNearFreqAboveWantedFreq - wFreqInMHzToGetVoltageFrom
      ) ;
-  LOGN( FULL_FUNC_NAME << "--higher frequency-wanted frequency:" <<
+  LOGN( "higher frequency-wanted frequency:" <<
     wFreqInMHzFromNearFreqsWantedFreqDiff << "MHz")
 
   //ex.: 1.148 V  - 0.000416V * 1200 MHz = 0.6488V
@@ -84,7 +84,7 @@ void VoltageAndFreq::GetLinearExtrapolatedVoltage(
     fVoltageInVoltFromHigherFreq -
     fVoltageInVoltPerMHz * (float) wFreqAboveMinusWantedFreq
     ;
-  LOGN( FULL_FUNC_NAME << "--(higher-wanted voltage) - voltage/freq * "
+  LOGN( "(higher-wanted voltage) - voltage/freq * "
       " (higher - wanted freq) =" << fVoltageInVoltFromHigherFreq
       << "MHz-" << fVoltageInVoltPerMHz << "V/MHz * " << wFreqAboveMinusWantedFreq
       << "MHZ =" << fVoltageInVoltFromHigherFreq << "-"

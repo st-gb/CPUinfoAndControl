@@ -14,6 +14,7 @@
 //#include <ModelData/PerCPUcoreAttributes.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <fastest_data_type.h> //typedef fastestUnsignedDataType
 typedef void *ExitCode;
 
 //Forward declarations (faster than #include)
@@ -31,7 +32,9 @@ class DynFreqScalingThreadBase
 protected:
   bool m_b1stTimeInRowTooHot ;
   bool m_bGotCPUcoreDataAtLeast1Time ;
-  BYTE byCoreID ;
+  /** Used in several methods. So not for every method a counter var is used.
+   * disadvantage: if concurrent threads access this variable.*/
+  fastestUnsignedDataType coreID ;
   CPUcoreData * mp_cpucoredata ;
   CPUcontrolBase & mr_cpucontrolbase ;
   DWORD m_dwBeginInMillisOfTooHot ;
@@ -53,10 +56,10 @@ protected:
   WORD m_wMilliSecondsPassed ;
   WORD m_wMilliSecondsToWaitForCoolDown ;
 //  WORD m_wMilliSecondsToWait ;
-  WORD m_wNumCPUcores ;
+  fastestUnsignedDataType m_wNumCPUcores ;
   void ChangeOperatingPointByLoad( 
-    BYTE byCoreID 
-    , float fLoad 
+    const fastestUnsignedDataType coreID
+    , const float fLoad
     ) ;
 public:
   enum ThreadStartReturnCode {
@@ -119,7 +122,7 @@ public:
   void Stop() ;
   virtual void * WaitForTermination()
   {
-    LOGN("DynFreqScalingThreadBase::WaitForTermination")
+    LOGN(/*"DynFreqScalingThreadBase::WaitForTermination"*/ "begin")
     return 0 ;
   }
   static DWORD //__stdcall is important for Windows' ::CreateThread()

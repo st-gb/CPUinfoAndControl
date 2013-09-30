@@ -22,6 +22,7 @@ protected:
 //  dll_SetCurrentPstate_type m_pfnsetcurrentpstate ;
   pfnSetCurrentVoltageAndMultiplier_type m_pfnSetCurrentVoltageAndMultiplier ;
   pfnGetAvailableMultipliers_type m_pfnGetAvailableMultipliers ;
+  pfn_GetMD5_type m_pfnGetMD5;
   pfnGetAvailableMultipliers_type m_pfnGetAvailableThrottleLevels ;
   pfnGetAvailableMultipliers_type m_pfnGetAvailableVoltages ;
   pfnSetThrottleLevel_type m_pfnSetThrottleLevel;

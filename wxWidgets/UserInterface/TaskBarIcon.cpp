@@ -102,7 +102,7 @@ void TaskBarIcon::OnMenuExit(wxCommandEvent& )
 
 wxMenu * TaskBarIcon::CreateSetThrottleTemperatureMenu()
 {
-  LOGN("CreateSetThrottleTemperatureMenu begin")
+  LOGN(/*"CreateSetThrottleTemperatureMenu "*/ "begin")
   bool bSetCheckMarkForTemperature = false;
 //  wxMenu * m_p_wxmenuThrottleTemperatures = new wxMenu();
 //  if( ! m_p_wxmenuThrottleTemperatures )
@@ -150,7 +150,7 @@ wxMenu * TaskBarIcon::CreateSetThrottleTemperatureMenu()
 
 wxMenu * TaskBarIcon::CreateSetMaximumCPUcoreMultiplierMenu()
 {
-  LOGN("CreateSetMaximumCPUcoreMultiplierMenu begin")
+  LOGN(/*"CreateSetMaximumCPUcoreMultiplierMenu "*/ "begin")
 //  bool bSetCheckMarkForCPUcoreMultiplier = false;
 //  wxMenu * m_p_wxmenuThrottleTemperatures = new wxMenu();
 //  if( ! m_p_wxmenuThrottleTemperatures )
@@ -209,7 +209,7 @@ wxMenu * TaskBarIcon::CreateSetMaximumCPUcoreMultiplierMenu()
 //wxTaskBarIcon.
 wxMenu * TaskBarIcon::CreatePopupMenu()
 {
-  LOGN("TaskBarIcon::CreatePopupMenu() begin")
+  LOGN(/*"TaskBarIcon::CreatePopupMenu() "*/ "begin")
   // Try creating menus different ways
   // TODO: Probably try calling SetBitmap with some XPMs here
 
@@ -223,7 +223,8 @@ wxMenu * TaskBarIcon::CreatePopupMenu()
   p_wxmenu->AppendSeparator();
 //  if( ! m_p_wxmenuThrottleTemperatures )
     CreateSetThrottleTemperatureMenu();
-  LOGN("TaskBarIcon::CreatePopupMenu()--before appending the throttle menu "
+  LOGN(//"TaskBarIcon::CreatePopupMenu()--"
+    "before appending the throttle menu "
     << m_p_wxmenuThrottleTemperatures << " to the root menu")
   p_wxmenu->Append(SELECT_CPU_THROTTLE_TEMPERATURE,
     wxT("select CPU core throttle temperature"),
@@ -250,14 +251,14 @@ wxMenu * TaskBarIcon::CreatePopupMenu()
     p_wxmenu->AppendSeparator();
     p_wxmenu->Append(PU_EXIT,    _T("E&xit"));
 #endif
-  LOGN("TaskBarIcon::CreatePopupMenu() end")
+  LOGN(/*"TaskBarIcon::CreatePopupMenu() "*/ "end")
   return p_wxmenu;
 }
 
 wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
 {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
-  LOGN("TaskBarIcon::CreatePowerSchemesMenu() begin")
+  LOGN(/*"TaskBarIcon::CreatePowerSchemesMenu() "*/ "begin")
 
   wxMenu * p_wxmenuPowerSchemes = new wxMenu;
 
@@ -271,7 +272,7 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
   wxX86InfoAndControlApp & r_wxx86infoandcontrolapp = wxGetApp();
   int nNumPowerSchemeNamesFromMemory = r_wxx86infoandcontrolapp.
     m_std_vec_std_wstrPowerSchemeName.size();
-  LOGN( FULL_FUNC_NAME << "--# power scheme names from memory: " <<
+  LOGN( "# power scheme names from memory: " <<
     nNumPowerSchemeNamesFromMemory)
   if( nNumPowerSchemeNamesFromMemory > 0)
   {
@@ -281,8 +282,8 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
     CreatePowerSchemeMenuByRetrieving(p_wxmenuPowerSchemes);
 
   m_wAfterLastSelectPowerSchemeMenuEventID = s_wEventID;
-  LOGN("TaskBarIcon::CreatePowerSchemesMenu() --return " <<
-    p_wxmenuPowerSchemes )
+  LOGN(//"TaskBarIcon::CreatePowerSchemesMenu() --"
+    "return " << p_wxmenuPowerSchemes )
 //  wxmenuPowerSchemes->Check( lastStaticEventID , true ) ;
   return p_wxmenuPowerSchemes;
 #else //#ifdef _WIN32
@@ -294,7 +295,7 @@ wxMenu * TaskBarIcon::CreatePowerSchemesMenu()
 void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
   wxMenu * p_wxmenuPowerSchemes)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   wxX86InfoAndControlApp & r_wxx86infoandcontrolapp = wxGetApp();
 
   std::vector<std::wstring> & r_std_vec_std_wstrPowerSchemeName =
@@ -308,7 +309,7 @@ void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
     c_iter_std_wstr_c_iterPowerSchemeName =
     r_std_vec_std_wstrPowerSchemeName.begin();
   uint16_t ui16Index = 0;
-  LOGN( FULL_FUNC_NAME << "--active power scheme index:" <<
+  LOGN( "active power scheme index:" <<
       r_wxx86infoandcontrolapp.m_ui16ActivePowerSchemeIndex)
 //  std::wstring * p_wstrActivePowerScheme = NULL;
   while( c_iter_std_wstr_c_iterPowerSchemeName !=
@@ -325,8 +326,8 @@ void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
 
     m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
       (s_wEventID, * c_iter_std_wstr_c_iterPowerSchemeName) ) ;
-    LOGN("TaskBarIcon::CreatePowerSchemesMenu()--adding event with event ID "
-      << s_wEventID )
+    LOGN(//"TaskBarIcon::CreatePowerSchemesMenu()--"
+      "adding event with event ID " << s_wEventID )
     Connect( s_wEventID ++ , //wxID_ANY,
       wxEVT_COMMAND_MENU_SELECTED ,
       wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
@@ -335,13 +336,13 @@ void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
     ++ ui16Index;
     ++ c_iter_std_wstr_c_iterPowerSchemeName;
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void TaskBarIcon::CreatePowerSchemeMenuByRetrieving(
     wxMenu * p_wxmenuPowerSchemes)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   std::set<std::wstring> stdset_std_wstrPowerSchemeName ;
   std::wstring wstrActivePowerScheme ;
   PowerProfDynLinked * p_powerprofdynlinked =
@@ -369,27 +370,27 @@ void TaskBarIcon::CreatePowerSchemeMenuByRetrieving(
       p_wxmenuPowerSchemes->Check( s_wEventID, true ) ;
     m_stdmap_eventid2powerschemename.insert(std::pair<WORD,std::wstring>
       (s_wEventID, * c_iter_std_set_std_wstr_c_iterPowerSchemeName) ) ;
-    LOGN("TaskBarIcon::CreatePowerSchemesMenu()--adding event with event ID "
-      << s_wEventID )
+    LOGN(//"TaskBarIcon::CreatePowerSchemesMenu()--"
+      "adding event with event ID " << s_wEventID )
     Connect( s_wEventID ++ , //wxID_ANY,
       wxEVT_COMMAND_MENU_SELECTED ,
       wxCommandEventHandler(TaskBarIcon::OnDynamicallyCreatedUIcontrol)
       );
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 #endif //#ifdef _WIN32
 
 void TaskBarIcon::FreeRessources()
 {
-  LOGN("TaskBarIcon::FreeRessources() begin--m_p_wxicon_drawer:"
+  LOGN(/*"TaskBarIcon::FreeRessources() "*/ "begin--m_p_wxicon_drawer:"
     << m_p_wxicon_drawer)
   if( m_p_wxicon_drawer )
   {
 //    delete m_p_wxicon_drawer;
 //    m_p_wxicon_drawer = NULL;
   }
-  LOGN("TaskBarIcon::FreeRessources() end")
+  LOGN(/*"TaskBarIcon::FreeRessources() "*/ "end")
 }
 
 float TaskBarIcon::GetTemperatureViaMenuLabel(
@@ -406,9 +407,8 @@ float TaskBarIcon::GetTemperatureViaMenuLabel(
   wxstrMenuLabel = m_p_wxmenuThrottleTemperatures->
     //see http://docs.wxwidgets.org/trunk/classwx_menu.html#e912f9dec96a0bd585fe562938447d7d
     GetLabel(nEventID);
-  LOGN("taskbar icon--requested to set CPU core throttle temperature of "
-    << GetStdString( wxstrMenuLabel) << " degrees Celsius"
-    )
+  LOGN(/*"taskbar icon--"*/ "requested to set CPU core throttle temperature of "
+    << wxWidgets::GetStdString( wxstrMenuLabel) << " degrees Celsius" )
   double dTemperatureInDegC;
   wxstrMenuLabel.ToDouble( & dTemperatureInDegC);
   float fTemperatureInDegC = (float) dTemperatureInDegC;
@@ -418,7 +418,7 @@ float TaskBarIcon::GetTemperatureViaMenuLabel(
 void TaskBarIcon::OnSetMaximumCPUcoreMultiplier(wxCommandEvent & wxevent)
 {
   int nEventID = wxevent.GetId() ;
-  LOGN( FULL_FUNC_NAME << " event ID:" << nEventID)
+  LOGN( "event ID:" << nEventID)
 //  wxString wxstrMenuLabel;
 //  GetTemperatureViaMenuLabel(nEventID, wxstrMenuLabel);
 
@@ -426,12 +426,12 @@ void TaskBarIcon::OnSetMaximumCPUcoreMultiplier(wxCommandEvent & wxevent)
   float fMaximumCPUcoreMultiplier = wxGetApp().m_model.m_cpucoredata.
     m_arfAvailableMultipliers[nEventID -
                               m_1stSetMaximumCPUcoreMultiplierEventID];
-  LOGN( FULL_FUNC_NAME << "--requested to set maximum CPU core multiplier to "
+  LOGN( "requested to set maximum CPU core multiplier to "
     << fMaximumCPUcoreMultiplier )
   std::string std_str = format_output_data(
     (BYTE *) & fMaximumCPUcoreMultiplier, sizeof(fMaximumCPUcoreMultiplier),
     80);
-  LOGN( FULL_FUNC_NAME << "--data to send to the service:" << std_str)
+  LOGN( "data to send to the service:" << std_str)
   wxGetApp().IPC_ClientSendCommandAndGetResponse(
     setMaximumCPUcoreMultplier, //4
     //size of float(4 byte) + command byte
@@ -446,7 +446,7 @@ void TaskBarIcon::OnSetMaximumCPUcoreMultiplier(wxCommandEvent & wxevent)
 void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
 {
   int nEventID = wxevent.GetId() ;
-  LOGN( FULL_FUNC_NAME << " event ID:" << nEventID)
+  LOGN( "event ID:" << nEventID)
 //  wxString wxstrMenuLabel;
 //  GetTemperatureViaMenuLabel(nEventID, wxstrMenuLabel);
 
@@ -454,12 +454,14 @@ void TaskBarIcon::OnSetThrottleTemperature(wxCommandEvent & wxevent)
   float fTemperatureInDegC = //(float) dTemperatureInDegC;
     FIRST_CPU_CORE_THROTTLE_TEMPERATURE + ( nEventID -
       m_1stThrottleCPUcoreTemperatureEventID ) * 2;
-  LOGN("taskbar icon--requested to set CPU core throttle temperature of "
+  LOGN(//"taskbar icon--"
+      "requested to set CPU core throttle temperature of "
     << fTemperatureInDegC << " degrees Celsius"
     )
   std::string std_str = format_output_data( (BYTE *) & fTemperatureInDegC, 4,
     80);
-  LOGN("TaskBarIcon::OnSetThrottleTemperature--data to send to the service:"
+  LOGN(//"TaskBarIcon::OnSetThrottleTemperature--"
+      "data to send to the service:"
     << std_str)
   wxGetApp().IPC_ClientSendCommandAndGetResponse(
     setCPUcoreThrottleTemperature, //4,
@@ -475,7 +477,7 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
 {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   int nEventID = wxevent.GetId() ;
-  LOGN( "taskbar icon event proc " )
+  LOGN( /*"taskbar icon event proc "*/ "begin" )
 
   std::map<WORD,std::wstring>::const_iterator c_iter =
     m_stdmap_eventid2powerschemename.find(nEventID) ;
@@ -547,10 +549,10 @@ void TaskBarIcon::OnLeftButtonClick(wxTaskBarIconEvent&)
 // pointer to this window result in a difficult to diagnose crash later on."
 void TaskBarIcon::DisconnectEventHandlers()
 {
-  LOGN("TaskBarIcon::DisconnectEventHandlers() begin")
+  LOGN(/*"TaskBarIcon::DisconnectEventHandlers() "*/ "begin")
   DisconnectSelectPowerSchemeEventHandlers();
   DisconnectOnSetThrottleTemperatureEventHandlers();
-  LOGN("TaskBarIcon::DisconnectEventHandlers() end")
+  LOGN(/*"TaskBarIcon::DisconnectEventHandlers() "*/ "end")
 }
 
 void TaskBarIcon::DisconnectSelectPowerSchemeEventHandlers()
@@ -562,7 +564,7 @@ void TaskBarIcon::DisconnectSelectPowerSchemeEventHandlers()
     )
     LOGN("OnDynamicallyCreatedUIcontrol() has been removed as event handler.")
   else
-    LOGN("Failed to remove \"OnDynamicallyCreatedUIcontrol()\" as event "
+    LOGN_ERROR("Failed to remove \"OnDynamicallyCreatedUIcontrol()\" as event "
       "handler.")
   //If the 1st event ID was set.
   if( m_1stThrottleCPUcoreTemperatureEventID )
@@ -574,7 +576,7 @@ void TaskBarIcon::DisconnectSelectPowerSchemeEventHandlers()
         LOGN("\"OnDynamicallyCreatedUIcontrol\" has been removed as event "
           "handler for event ID \"" << wEventID << "\"" )
       else
-        LOGN("Failed to remove \"OnDynamicallyCreatedUIcontrol\" as event "
+        LOGN_ERROR("Failed to remove \"OnDynamicallyCreatedUIcontrol\" as event "
           "handler for event ID \"" << wEventID << "\"" )
     }
   }
@@ -582,7 +584,7 @@ void TaskBarIcon::DisconnectSelectPowerSchemeEventHandlers()
 
 void TaskBarIcon::DisconnectOnSetThrottleTemperatureEventHandlers()
 {
-  LOGN("DisconnectOnSetThrottleTemperatureEventHandlers begin")
+  LOGN(/*"DisconnectOnSetThrottleTemperatureEventHandlers "*/ "begin")
   if( Disconnect( //s_wEventID ++ , //wxID_ANY,
       wxEVT_COMMAND_MENU_SELECTED ,
       wxCommandEventHandler(TaskBarIcon::OnSetThrottleTemperature)
@@ -590,7 +592,7 @@ void TaskBarIcon::DisconnectOnSetThrottleTemperatureEventHandlers()
     )
     LOGN("\"OnSetThrottleTemperature\" has been removed as event handler.")
   else
-    LOGN("Failed to remove \"OnSetThrottleTemperature\" as event handler.")
+    LOGN_ERROR("Failed to remove \"OnSetThrottleTemperature\" as event handler.")
   //If the 1st event ID was set.
   if( m_1stThrottleCPUcoreTemperatureEventID )
   {
@@ -601,12 +603,12 @@ void TaskBarIcon::DisconnectOnSetThrottleTemperatureEventHandlers()
         LOGN("\"OnSetThrottleTemperature\" has been removed as event handler "
           "for event ID \"" << wEventID << "\"" )
       else
-        LOGN("Failed to remove \"OnSetThrottleTemperature\" as event handler "
+        LOGN_ERROR("Failed to remove \"OnSetThrottleTemperature\" as event handler "
           "for event ID \"" << wEventID << "\"" )
 
     }
   }
-  LOGN("DisconnectOnSetThrottleTemperatureEventHandlers end")
+  LOGN(/*"DisconnectOnSetThrottleTemperatureEventHandlers "*/ "end")
 }
 
 void TaskBarIcon::ShowMainFrame()
@@ -637,7 +639,7 @@ void TaskBarIcon::ShowMainFrame()
 
 TaskBarIcon::~TaskBarIcon()
 {
-  LOGN("~TaskBarIcon() (" << this << ") begin")
+  LOGN(/*"~TaskBarIcon() "*/ "(" << this << ") begin")
   //Disconnect event handlers to avoid a program crash:
   // when exiting in wxWidgets' /src/common/wincmn.cpp, Zeile 334:
      //(Event-) handler ist nicht mehr da:
@@ -646,7 +648,7 @@ TaskBarIcon::~TaskBarIcon()
   DisconnectEventHandlers();
   //  m_wxicon_drawer.ReleaseRessources();
   FreeRessources();
-  LOGN("~TaskBarIcon() end")
+  LOGN(/*"~TaskBarIcon() "*/ "end")
 }
 //void TaskBarIcon::SetMainFrame(MainFrame * p_mf )
 //{

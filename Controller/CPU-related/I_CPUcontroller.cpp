@@ -66,9 +66,7 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsAboveDefaultVoltage(
       )
     )
   {
-    LOGN(//"VoltageIsValid"
-      FULL_FUNC_NAME <<
-        "--interpolated voltage:" << fInterpolatedVoltage )
+    LOGN( "interpolated voltage:" << fInterpolatedVoltage )
     if(//Voltage to set is _above_ default voltage (-> too high/ dangerous).
       fVoltageInVolt > fInterpolatedVoltage )
     {
@@ -89,7 +87,7 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsBelowLowestStableVoltage(
 {
   BYTE bVoltageIsValid = //not_below ;
     in_safe_range ;
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
   float fInterpolatedVoltage ;
   if( //mp_cpucontroller->GetInterpolatedVoltageFromFreq(
     GetInterpolatedVoltageFromFreq(
@@ -99,7 +97,7 @@ BYTE I_CPUcontroller::CheckWhetherVoltageIsBelowLowestStableVoltage(
       )
     )
   {
-    LOGN("VoltageIsValid--interpolated voltage:" << fInterpolatedVoltage )
+    LOGN(/*"VoltageIsValid--" */ "interpolated voltage:" << fInterpolatedVoltage )
     if(//Voltage to set is _below_ lowest settable voltage (-> too low/
       //device may freeze/ malfunction/ can cause wrong CPU cache content).
       fVoltageInVolt < fInterpolatedVoltage )
@@ -133,19 +131,19 @@ BYTE I_CPUcontroller::CheckWhetherCPUcoreVoltageIsBelowHighestInstableVoltage(
   {
     const WORD voltageInVoltArrayIndex = mp_model->m_cpucoredata.
       GetIndexForClosestVoltage(fInterpolatedVoltage);
-    LOGN( FULL_FUNC_NAME << " interpolated voltage:" << fInterpolatedVoltage
+    LOGN( "interpolated voltage:" << fInterpolatedVoltage
       << " array index:" << voltageInVoltArrayIndex )
     if( voltageInVoltArrayIndex > 0 )
     {
       const float highestInstableCPUcoreVoltage = mp_model->m_cpucoredata.
         m_arfAvailableVoltagesInVolt[voltageInVoltArrayIndex - 1];
-      LOGN( FULL_FUNC_NAME << " highestInstableCPUcoreVoltage:"
+      LOGN( "highestInstableCPUcoreVoltage:"
         << highestInstableCPUcoreVoltage )
       if(//Voltage to set is _below_ lowest settable voltage (-> too low/
         //device may freeze/ malfunction/ can cause wrong CPU cache content).
         fVoltageInVolt < highestInstableCPUcoreVoltage )
       {
-        LOGN(FULL_FUNC_NAME << " voltage is below highest instable voltage-> invalid")
+        LOGN("voltage is below highest instable voltage-> invalid")
         bVoltageIsValid = //VoltageIsBelowLowestStableVoltage ;
           VoltageIsOutsideSafeRange ;
       }
@@ -197,7 +195,7 @@ float I_CPUcontroller::GetClosestMultiplier(WORD wFrequencyInMHz//, float fMulti
 {
   float fMultiplierFromCoreFreq = (float) wFrequencyInMHz /
     m_fReferenceClockInMHz;
-  LOGN( FULL_FUNC_NAME << " multiplier from " << wFrequencyInMHz << " Mhz="
+  LOGN( "multiplier from " << wFrequencyInMHz << " Mhz="
     << fMultiplierFromCoreFreq)
   if( mp_model )
   {
@@ -231,12 +229,12 @@ float I_CPUcontroller::GetClosestMultiplier(WORD wFrequencyInMHz//, float fMulti
 //          return * c_iter;
 //        }
 //      }
-    WORD wArrayIndexForClosestValue = mp_model->m_cpucoredata.
-      GetIndexForClosestMultiplier(
+    const fastestUnsignedDataType arrayIndexForClosestValue =
+      mp_model->m_cpucoredata.GetIndexForClosestMultiplier(
       fMultiplierFromCoreFreq);
-    if( wArrayIndexForClosestValue != MAXWORD)
+    if( arrayIndexForClosestValue != BinarySearch::no_element)
       return mp_model->m_cpucoredata.m_arfAvailableMultipliers[
-        wArrayIndexForClosestValue];
+        arrayIndexForClosestValue];
   }
   return 0.0f;
 }
@@ -275,14 +273,12 @@ float I_CPUcontroller::GetCPUcoreFrequencyInMHz( WORD wMultiplierIndex )
 BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
   WORD wCoreID )
 {
-  LOGN("I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues("
-    << " core ID:"
-    << wCoreID << ") begin" )
+  LOGN( "begin core ID:" << wCoreID)
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
     m_arp_percpucoreattributes ;
 //  LOGN(" I_CPUcontroller:GetCurrentVoltageAndFrequencyAndStoreValues")
   arp_percpucoreattributes[wCoreID].m_fThrottleLevel = GetThrottleLevel(wCoreID);
-  LOGN_INFO( FULL_FUNC_NAME << "throttle_ratio:"
+  LOGN_INFO( "throttle_ratio:"
     << arp_percpucoreattributes[wCoreID].m_fThrottleLevel )
   return GetCurrentVoltageAndFrequency(
     arp_percpucoreattributes[wCoreID].m_fVoltageInVolt,
@@ -294,12 +290,12 @@ BYTE I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues(
 void I_CPUcontroller::GetCurrentTemperatureInCelsiusAndStoreValues(
   WORD wCoreID )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   PerCPUcoreAttributes * arp_percpucoreattributes = mp_model->m_cpucoredata.
     m_arp_percpucoreattributes ;
   arp_percpucoreattributes[wCoreID].m_fTempInDegCelsius =
     GetTemperatureInCelsius(wCoreID) ;
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 //BYTE I_CPUcontroller::GetInterpolatedVoltageFromFreq(
@@ -609,9 +605,9 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
 {
   BYTE byRet ;
 //  DEBUGN(
-  LOGN(" I_CPUcontroller::SetFreqAndVoltageFromFreq("
+  LOGN(//"I_CPUcontroller::SetFreqAndVoltageFromFreq(" <<
 //#ifdef _DEBUG
-    << "freq in MHZ:" << wFreqInMHz << ","
+    "freq in MHZ:" << wFreqInMHz << ","
     << "core ID:" << (WORD) byCoreID << ")"
 //#endif
     )
@@ -753,16 +749,17 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
     //      GetNearestMultiplier() ;
           float fCalculatedMultiplier = wFreqInMHz /
             m_fReferenceClockInMHz ;
-          WORD wMultiplierArrayIndex = mp_model->m_cpucoredata.
+          const fastestUnsignedDataType multiplierArrayIndex =
+            mp_model->m_cpucoredata.
             GetIndexForClosestMultiplier( fCalculatedMultiplier) ;
-          if( wMultiplierArrayIndex != MAXWORD )
+          if( multiplierArrayIndex != BinarySearch::no_element )
           {
             float fMultiplier = mp_model->m_cpucoredata.
-              m_arfAvailableMultipliers[wMultiplierArrayIndex] ;
+              m_arfAvailableMultipliers[multiplierArrayIndex] ;
 //            LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(WORD, std::set, BYTE):"
 //              " lower and higher element -> calc. multi:"
 //              << fCalculatedMultiplier
-//              << "multi array index:" << wMultiplierArrayIndex
+//              << "multi array index:" << multiplierArrayIndex
 //              << "closest avail. multi:" << fMultiplier )
             wFreqInMHz = (WORD) ( m_fReferenceClockInMHz * fMultiplier ) ;
             //As we have the Freq now: calc the voltage from it.
@@ -806,18 +803,18 @@ BYTE I_CPUcontroller::SetFreqAndVoltageFromFreq(
                 "ret val: " << (WORD) byRet )
             }
             else
-              LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,"
+              LOGN(//"I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,"
                 "...): voltage not set because "
                 "\"GetInterpolatedVoltageFromFreq(...)\" returned false")
           }
           else
-            LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,"
+            LOGN(//"I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,"
               "...): no array index for multiplier \""
               << fCalculatedMultiplier << "\"found")
         }
         else
         {
-          LOGN("I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,...):"
+          LOGN(//"I_CPUcontroller::SetFreqAndVoltageFromFreq(..., std::set,...):"
             "reference clock is 0 _and_ no available multipliers")
         }
       }
@@ -887,10 +884,10 @@ void I_CPUcontroller::SetModelData(
   //to show that there is no object.
   Model * p_model )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   m_p_std_set_voltageandfreqUseForDVFS = & p_model->m_cpucoredata.
     m_stdsetvoltageandfreqWanted;
-  LOGN( FULL_FUNC_NAME << "--after assigning desired voltages for DVFS")
+  LOGN( "after assigning desired voltages for DVFS")
   mp_model = p_model ;
   WORD w = GetNumberOfCPUcores() ;
   if( w )
@@ -901,7 +898,7 @@ void I_CPUcontroller::SetNextLowerThrottleLevel(unsigned coreID,
   float fCPUcoreMultiplierToUse)
 {
   float fThrottleLevel = mp_model->m_cpucoredata.GetNextLowerThrottleLevel(coreID);
-  LOGN( FULL_FUNC_NAME << "-next lower throttle level:" << fThrottleLevel)
+  LOGN( "next lower throttle level:" << fThrottleLevel)
   if( fThrottleLevel != -1.0f)
   {
     const std::set<VoltageAndFreq> & r_std_set_voltageandfreqDefault =
@@ -911,7 +908,7 @@ void I_CPUcontroller::SetNextLowerThrottleLevel(unsigned coreID,
       r_std_set_voltageandfreqDefault.begin();
     const float resultingFreqInMHZ = fThrottleLevel * fCPUcoreMultiplierToUse *
       m_fReferenceClockInMHz;
-    LOGN_DEBUG( FULL_FUNC_NAME << "-resulting effective frequency is "
+    LOGN_DEBUG( "resulting effective frequency is "
       << fThrottleLevel << "*" << fCPUcoreMultiplierToUse << "*"
       << m_fReferenceClockInMHz << "=" << resultingFreqInMHZ)
     if( c_iter != r_std_set_voltageandfreqDefault.end() )
@@ -922,7 +919,7 @@ void I_CPUcontroller::SetNextLowerThrottleLevel(unsigned coreID,
       }
       else
       {
-        LOGN_DEBUG(FULL_FUNC_NAME << "-not setting throttle ratio to "
+        LOGN_DEBUG("not setting throttle ratio to "
           << fThrottleLevel <<
           " because the effective frequency (" << resultingFreqInMHZ
           << "MHz)  would be < lowest frequency with default voltage set ("
@@ -930,7 +927,7 @@ void I_CPUcontroller::SetNextLowerThrottleLevel(unsigned coreID,
       }
     }
     else
-      LOGN_WARNING(FULL_FUNC_NAME << "-no default voltage available")
+      LOGN_WARNING("no default voltage available")
   }
 }
 

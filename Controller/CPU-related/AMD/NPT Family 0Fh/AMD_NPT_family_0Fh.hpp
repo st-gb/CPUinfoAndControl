@@ -125,7 +125,7 @@ static float s_maxVoltageInVolt;
 
 inline float GetMultiplier_AMD_NPT_family_0FH(BYTE frequencyID)
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--FID:" << (WORD) frequencyID)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin--FID:" << (WORD) frequencyID)
   //BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
   // Processors 32559 Rev. 3.16 November 2009
   // "Table 83. FID Code Translations" :
@@ -152,33 +152,32 @@ inline BYTE GetFrequencyID_AMD_NPT_family_0FH(float fMultiplier)
   return frequencyID;
 }
 
+/** see "BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
+* Processors 32559 Rev. 3.16 November 2009"
+* "Table 74. VID Code Voltages" :
+* VID 0 -> 1.550 V = 1.550 V - VID * 0.25 V = 4 + 0 * 0.5
+* VID 1 -> 1.525 V = 4.5 = FID + 4 * 0.5
+* VID 01_1111b -> 0.775 V = 5 multi = FID + 4 * 0.5
+* VID 31 -> 0.775 V = 1.550 V - VID(31) * 0.025 = 1.550 V - 0,775
 
+* 10_0101b 0.7000 V
+* 11_1111b (=63 dec) -> 0.3750 V */
 inline float GetVoltageInVolt_AMD_NPT_family_0FH(BYTE voltageID)
 {
   static float fVoltageInVolt;
-  //BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
-  // Processors 32559 Rev. 3.16 November 2009
-  //Table 74. VID Code Voltages
-  // VID 0 -> 1.550 V = 1.550 V - VID * 0.25 V = 4 + 0 * 0.5
-  //VID 1 -> 1.525 V = 4.5 = FID + 4 * 0.5
-  //VID 01_1111b -> 0.775 V = 5 multi = FID + 4 * 0.5
-  //VID 31 -> 0.775 V = 1.550 V - VID(31) * 0.025 = 1.550 V - 0,775
 
-  // 10_0101b 0.7000 V
-  // 11_1111b (=63 dec) -> 0.3750 V
-
-  //voltage_in_Volt = 1.550 V - VID * 0.025 V | VID <= 01_1111b
-  if( voltageID < 32)
+  if( voltageID < 32) //voltage >= 0.775 V
   {
+    //voltage_in_Volt = 1.550 V - VID * 0.025 V | VID <= 01_1111b
     fVoltageInVolt = (1.550f - (float) voltageID * 0.025);
-    DEBUGN( FULL_FUNC_NAME << " voltage=1.550f-VID("
+    DEBUGN( /*FULL_FUNC_NAME <<*/ "voltage=1.550f-VID("
       << (WORD) voltageID << ")*0.025=" << fVoltageInVolt)
   }
   else
   {
     //voltage_in_Volt = 0.7625 V - (VID - 32) * 0.0125 V | VID > 01_1111b
     fVoltageInVolt = 0.7625f - (voltageID - 32) * 0.0125f;
-    DEBUGN( FULL_FUNC_NAME << " voltage=0.7625-(VID(" << (WORD) voltageID
+    DEBUGN( /*FULL_FUNC_NAME <<*/ "voltage=0.7625-(VID(" << (WORD) voltageID
       << ")-32) * 0.0125=" << fVoltageInVolt)
   }
   return fVoltageInVolt;
@@ -217,8 +216,8 @@ inline BYTE GetVoltageID_AMD_NPT_family_0FH(float fVoltageInVoltToSet)
   fMaxVoltageMinusVoltageInVoltToSet = fSubtrahent -
     fVoltageInVoltToSet;
   fQuotient = fMaxVoltageMinusVoltageInVoltToSet / fDivisor;
-  DEBUGN( FULL_FUNC_NAME << "--difference:" << fMaxVoltageMinusVoltageInVoltToSet
-    << " Quotient:" << fQuotient)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "difference:" <<
+    fMaxVoltageMinusVoltageInVoltToSet << " Quotient:" << fQuotient)
 #endif
   float fVoltageID = fVoltageInVoltToSet >= 0.775f ?
     //where VID <= 01_1111b
@@ -247,11 +246,11 @@ inline BYTE GetVoltageID_AMD_NPT_family_0FH(float fVoltageInVoltToSet)
     (BYTE) fVoltageID;
   if( fVoltageID - voltageID > 0.5 )
   {
-    DEBUGN( FULL_FUNC_NAME << "--float voltage ID - integer voltage ID > 0.5")
+    DEBUGN( /*FULL_FUNC_NAME << "--"*/ "float voltage ID - integer voltage ID > 0.5")
     ++ voltageID;
   }
-  DEBUGN( FULL_FUNC_NAME << "--voltage ID for " << fVoltageInVoltToSet <<
-    " Volt=" << (WORD) voltageID)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "voltage ID for " << fVoltageInVoltToSet
+    << " Volt=" << (WORD) voltageID)
   return voltageID;
 }
 
@@ -284,8 +283,8 @@ inline BYTE GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
   BYTE & r_byCurrentVoltageID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
-//  DEBUGN_LOGGER_NAME( g_windows_api_logger, FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
+//  DEBUGN_LOGGER_NAME( g_windows_api_logger, /*FULL_FUNC_NAME << "--"*/ "begin")
   static BYTE readMSRreturnValue;
 
   readMSRreturnValue = GetCurrentVoltageIDAndFrequencyID_AMD_NPT_family_0Fh(
@@ -296,7 +295,7 @@ inline BYTE GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
   * p_fMultiplier = GetMultiplier_AMD_NPT_family_0FH( r_byCurrentFrequencyID);
 
   * p_fReferenceClockInMHz = 200.0f;
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) readMSRreturnValue
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return " << (WORD) readMSRreturnValue
     << " ref.clock:" << * p_fReferenceClockInMHz
     << " multi: " << * p_fMultiplier
     << " " << * p_fVoltageInVolt << "V"
@@ -337,7 +336,7 @@ inline BYTE GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
 inline float * GetAvailableMultipliersAMD_NPT_family0F(
   uint16_t & r_wNumberOfArrayElements)
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
   static uint32_t lowmostMSRbits;
   static uint32_t highmostMSRbits;
   ReadMSR(
@@ -348,7 +347,7 @@ inline float * GetAvailableMultipliersAMD_NPT_family0F(
     );
   BYTE maxFID = ( lowmostMSRbits >> MAX_FID_START_ADDRESS_IN_BIT ) &
     BITMASK_FOR_LOWMOST_6BIT;
-  DEBUGN( FULL_FUNC_NAME << "--maximum FID:" << (WORD) maxFID)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "maximum FID:" << (WORD) maxFID)
 //  float maxMultiplier = GetMultiplier_AMD_NPT_family_0FH(maxFID);
   BYTE FIDstep = 1;
   if( g_s_stepping < 3 )
@@ -363,7 +362,7 @@ inline float * GetAvailableMultipliersAMD_NPT_family0F(
   }
   else
     r_wNumberOfArrayElements = maxFID + 1;
-  DEBUGN( FULL_FUNC_NAME << " # array elements:" << r_wNumberOfArrayElements)
+  DEBUGN( /*FULL_FUNC_NAME << */ "# array elements:" << r_wNumberOfArrayElements)
   float * multipliers = new float[ r_wNumberOfArrayElements];
   if( multipliers)
   {
@@ -379,19 +378,19 @@ inline float * GetAvailableMultipliersAMD_NPT_family0F(
 #ifndef ALLOW_ODD_FIDS_FOR_STEPPING_NUMBER_BELOW_3
 //      multipliers[currentFID + 1] = multipliers[currentFID];
 #endif
-      DEBUGN( FULL_FUNC_NAME << "--added multiplier " << multipliers[arrayIndex]
+      DEBUGN( /*FULL_FUNC_NAME << "--"*/ "added multiplier " << multipliers[arrayIndex]
         << " for FID:" << (WORD) currentFID << " at array index "
         << (WORD) arrayIndex)
     }
   }
-  DEBUGN( FULL_FUNC_NAME << "--return " << multipliers)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return " << multipliers)
   return multipliers;
 }
 
 inline float * GetAvailableVoltagesAMD_NPT_family0F(
   uint16_t & r_wNumberOfArrayElements)
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
   static uint32_t lowmostMSRbits;
   static uint32_t highmostMSRbits;
   ReadMSR(
@@ -408,16 +407,16 @@ inline float * GetAvailableVoltagesAMD_NPT_family0F(
   const BYTE MaxRampVID = ( lowmostMSRbits >> MAX_RAMP_VID_START_ADDRESS_IN_BIT
     ) & BITMASK_FOR_LOWMOST_6BIT;
 #endif
-  DEBUGN(FULL_FUNC_NAME << "--MaxRampVID:" << (WORD) MaxRampVID << "^=" <<
+  DEBUGN(/*FULL_FUNC_NAME << "--"*/ "MaxRampVID:" << (WORD) MaxRampVID << "^=" <<
     GetVoltageInVolt_AMD_NPT_family_0FH(MaxRampVID) << " Volt")
 
 //  BYTE startVID = ( highmostMSRbits >>
 //    START_VID_START_ADDRESS_IN_BIT_IN_HIGHMOST_BYTES ) &
 //    BITMASK_FOR_LOWMOST_6BIT;
-  DEBUGN(FULL_FUNC_NAME << "--highmost bits:"
+  DEBUGN(/*FULL_FUNC_NAME << "--"*/ "highmost bits:"
     << getBinaryRepresentation(highmostMSRbits) )
-  DEBUGN(FULL_FUNC_NAME << "--VID for maximum voltage:" << (WORD) maximumVoltageVID)
-//  DEBUGN(FULL_FUNC_NAME << "--StartVID:" << (WORD) startVID)
+  DEBUGN(/*FULL_FUNC_NAME << "--"*/ "VID for maximum voltage:" << (WORD) maximumVoltageVID)
+//  DEBUGN(/*FULL_FUNC_NAME << "--"*/ "StartVID:" << (WORD) startVID)
 //  BYTE maximumVID = maximumVoltageVID > startVID ? maximumVoltageVID : startVID;
 //  float maxVoltage = GetVoltageInVolt_AMD_NPT_family_0FH(maximumVoltageVID);
 
@@ -426,7 +425,7 @@ inline float * GetAvailableVoltagesAMD_NPT_family0F(
     //32
     VIDforLowestVoltage
     - maximumVoltageVID + 1;
-  DEBUGN(FULL_FUNC_NAME << "--# array elements:" << r_wNumberOfArrayElements)
+  DEBUGN(/*FULL_FUNC_NAME << "--"*/ "# array elements:" << r_wNumberOfArrayElements)
   float * voltages = new float[r_wNumberOfArrayElements];
   if(voltages)
   {
@@ -440,7 +439,7 @@ inline float * GetAvailableVoltagesAMD_NPT_family0F(
     {
       voltages[arrayIndexForCurrentVoltage] =
         GetVoltageInVolt_AMD_NPT_family_0FH(currentVID);
-      DEBUGN( FULL_FUNC_NAME << "--added #"
+      DEBUGN( /*FULL_FUNC_NAME << "--"*/ "added #"
         << (WORD) arrayIndexForCurrentVoltage
         << " : "
         << voltages[arrayIndexForCurrentVoltage]
@@ -450,13 +449,13 @@ inline float * GetAvailableVoltagesAMD_NPT_family0F(
 //      ++ arrayIndexForCurrentVoltage;
     }
   }
-  DEBUGN( FULL_FUNC_NAME << "--return " << voltages)
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return " << voltages)
   return voltages;
 }
 
 inline BYTE GetStepping()
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
   DWORD dwEAX, dwEBX, dwECX , dwEDX ;
   bool bRet = CPUID(
     //http://en.wikipedia.org/wiki/CPUID#EAX.3D1:_Processor_Info_and_Feature_Bits:
@@ -474,10 +473,10 @@ inline BYTE GetStepping()
     //"The format of the information in EAX is as follows:"
     //"3:0 - Stepping"
     BYTE byStepping = dwEAX & BITMASK_FOR_LOWMOST_4BIT ;
-    DEBUGN(FULL_FUNC_NAME << "--stepping via CPUID:" << (WORD) byStepping )
+    DEBUGN(/*FULL_FUNC_NAME << "--"*/ "stepping via CPUID:" << (WORD) byStepping )
     return byStepping;
   }
-  DEBUGN( FULL_FUNC_NAME << "--return 0" )
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return 0" )
   return 0;
 }
 
@@ -510,14 +509,14 @@ void GetAdvancedPowerManagementInformationViaCPUID()
 #ifdef _DEBUG
     BYTE byStepping = dwEAX & BITMASK_FOR_LOWMOST_4BIT ;
 #endif
-    DEBUGN(FULL_FUNC_NAME << "--stepping via CPUID:" << (WORD) byStepping )
+    DEBUGN(/*FULL_FUNC_NAME << "--"*/ "stepping via CPUID:" << (WORD) byStepping )
 //    return byStepping;
   }
 }
 
 float GetTemperatureAccordingToStepping(BYTE stepping, DWORD dwValue)
 {
-//  DEBUGN( FULL_FUNC_NAME << "--begin")
+//  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
   float fTempInDegCelsius;
   if( //revision == 'F'
       stepping == 2 )
@@ -543,14 +542,14 @@ float GetTemperatureAccordingToStepping(BYTE stepping, DWORD dwValue)
       ;
     // "1.4 Register Differences in Revisions of AMD NPT Family 0Fh Processors"
   }
-//  DEBUGN( FULL_FUNC_NAME << "--return " << fTempInDegCelsius)
+//  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return " << fTempInDegCelsius)
   return fTempInDegCelsius;
 }
 
 inline float GetTemperatureInDegCelsiusAMD_NPT_family0F()
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
-//  DEBUGN_LOGGER_NAME( g_windows_api_logger, FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
+//  DEBUGN_LOGGER_NAME( g_windows_api_logger, /*FULL_FUNC_NAME << "--"*/ "begin")
   DWORD dwValue ;
   ( * g_pfnReadPCIconfigSpace) (
     CONFIGURATION_ACCESS_BUS_NUMBER, //8-bit PCI bus number
@@ -569,7 +568,7 @@ inline float GetTemperatureInDegCelsiusAMD_NPT_family0F()
 
   float fTempInDegCelsius = GetTemperatureAccordingToStepping(//stepping,
     g_s_stepping, dwValue);
-  DEBUGN( FULL_FUNC_NAME << "--return")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return")
   return fTempInDegCelsius;
 }
 

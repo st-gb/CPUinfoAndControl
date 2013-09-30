@@ -37,6 +37,7 @@ inline_register_access_functions.hpp>
   #include "GetMaxMultiIfGreaterCurrentPstateLimitMulti.hpp"
 #endif
 #include <fastest_data_type.h> //fastestUnsignedDataType
+#include "../from_K10.h"
 
 extern BYTE g_byFreqID,g_byDivisorID ;
 extern BYTE g_byValue1 , g_byValue2, g_byValue3 ;
@@ -108,7 +109,7 @@ extern float g_fReferenceClockInMHz;
         ar_f[ wIndex ++ ] = g_fValue1 ;
       }
     }
-    DEBUGN( FULL_FUNC_NAME << "returning " << ar_f)
+    DEBUGN( /*FULL_FUNC_NAME <<*/ "returning " << ar_f)
     return ar_f ;
   }
 
@@ -119,7 +120,19 @@ namespace AMD
     WORD GetMaximumVoltageID() ;
     WORD GetMinimumVoltageID() ;
 
-    inline void GetVoltageFromVoltageID(BYTE byVoltageID, float * p_fVoltageInVolt)
+    /** 41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG
+     *   chapter "2.4.1.2 Serial VID Interface" :
+     *  "The processor includes an interface, intended to control external
+     *  voltage regulators, called the serial VID inter-face (SVI)."
+     *
+     *  see "31116  Rev 3.00 - September 07, 2007  AMD Family 10h Processor BKDG"
+     *    chapter "2.4.1.6.3 Serial VID (SVI) Encodings"
+     *
+     *  see Intersil "ISL6265 FN6599.0 Data Sheet May 7, 2008",
+     *     "TABLE 3. SERIAL VID CODES"
+     *  */
+    inline void GetVoltageFromVoltageID(const BYTE byVoltageID,
+      float * p_fVoltageInVolt)
     {
       //Diff 1.0875 (VID 30) & 0.925 (VID=17) = 0.1625V
       //1 voltage ID step = 0.1625V / (30-17) = 0.1625V / 13 = 0.0125
@@ -129,33 +142,20 @@ namespace AMD
         1.55f - ( (float)( byVoltageID ) * 0.0125f ) ;
     }
 
-    inline void GetVoltageIDfromCOFVIDstatusRegisterBits(DWORD dwMSRlowmost,
-      BYTE & byVoltageID)
-    {
-      //voltage ID "15:9 CurCpuVid: current core VID. Read-only."
-      byVoltageID = //(BYTE) (
-      //      (g_dwLowmostBits & BITMASK_FOR_CPU_CORE_VOLTAGE_ID//=1111111000000000bin
-      //    ) >> 9 ) ; //<=>bits 9-15 shifted   }
-        ( dwMSRlowmost >> 9 ) & BITMASK_FOR_LOWMOST_7BIT ;
-    }
-
-    inline void GetDivisorID(DWORD dwMSRlowmost, BYTE & byDivisorID)
-    {
-      //Divisor ID. "8:6 CurCpuDid: current core divisor ID. Read-only."
-      byDivisorID = //(BYTE)(
-      //      (g_dwLowmostBits & 448//=111000000bin
-      //      ) >> START_BIT_FOR_CPU_CORE_DIVISOR_ID ) ; //<=>bits 6-8 shifted to     }
-        ( dwMSRlowmost >> START_BIT_FOR_CPU_CORE_DIVISOR_ID ) &
-        BITMASK_FOR_LOWMOST_3BIT ;
-    }
-
-    inline void GetFrequencyID(DWORD dwMSRlowmost, BYTE & byFrequencyID)
-    {
-      //Frequency ID. "5:0 CurCpuFid: current core frequency ID. Read-only."
-      byFrequencyID = (BYTE)( dwMSRlowmost & BITMASK_FOR_LOWMOST_6BIT ) ;
-    }
-
-    inline void GetMultiplier(BYTE byFrequencyID, BYTE byDivisorID,
+    /** 42301  Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models
+     *    00h-0Fh Processors:
+     *  "Core current operating frequency in MHz. CoreCOF = 100 *
+     *   (MSRC001_00[6B:64][CpuFid] + 10h) / (2^MSRC001_00[6B:64][CpuDid])."
+     *
+     *  31116  Rev 3.00 - September 07, 2007  AMD Family 10h Processor BKDG:
+     *  "The CPU COF specified by CpuFid and CpuDid is: CPU COF = 100 MHz *
+     *   (CpuFid + 10h) / (2^CpuDid)"
+     *
+     *  FID+16 / 2^DID
+     * */
+    inline void GetMultiplier(
+      const BYTE byFrequencyID,
+      const BYTE byDivisorID,
       float * p_fMultiplier)
     {
       //41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG:
@@ -180,15 +180,14 @@ namespace AMD
       DWORD dwMSRlowmost, float * p_fMultiplier)
     {
       static BYTE byFrequencyID, byDivisorID;
-      GetFrequencyID(dwMSRlowmost, byFrequencyID);
-      DEBUGN( FULL_FUNC_NAME << "--current core frequency ID:"
-        << (WORD) byFrequencyID)
+      byFrequencyID = AMD::fromK10::GetFrequencyID(dwMSRlowmost);
+      DEBUGN( "current core frequency ID:" << (WORD) byFrequencyID)
 
-      GetDivisorID(dwMSRlowmost, byDivisorID);
-      DEBUGN( FULL_FUNC_NAME << "--current core divisor ID:" << (WORD) byDivisorID)
+      AMD::fromK10::GetDivisorID(dwMSRlowmost, byDivisorID);
+      DEBUGN( "current core divisor ID:" << (WORD) byDivisorID)
 
       GetMultiplier(byFrequencyID, byDivisorID, p_fMultiplier);
-      DEBUGN( FULL_FUNC_NAME << "--multiplier= (frequency_ID + 8) / 1 << divisor_ID ="
+      DEBUGN( "multiplier= (frequency_ID + 8) / 1 << divisor_ID ="
         << * p_fMultiplier)
     }
 
@@ -229,7 +228,7 @@ namespace AMD
         10000  //max. timespan in ms
         ) ;
 
-      DEBUGN(FULL_FUNC_NAME << "calculated reference clock:"
+      DEBUGN(/*FULL_FUNC_NAME <<*/ "calculated reference clock:"
         << * p_fReferenceClockInMHz)
       //  if( * p_fReferenceClockInMHz == 0.0f )
       //    * p_fReferenceClockInMHz =
@@ -249,7 +248,7 @@ namespace AMD
       DWORD dwMSRlowmost, float * p_fVoltageInVolt)
     {
       static BYTE byVoltageID;
-      GetVoltageIDfromCOFVIDstatusRegisterBits(dwMSRlowmost, byVoltageID);
+      AMD::fromK10::GetVoltageIDfromCOFVIDstatusRegisterBits(dwMSRlowmost, byVoltageID);
 
       GetVoltageFromVoltageID(byVoltageID, p_fVoltageInVolt);
     }
@@ -284,14 +283,14 @@ namespace AMD
       WORD wCoreID
       )
     {
-      DEBUGN( FULL_FUNC_NAME << "--begin core ID:" << wCoreID )
+      DEBUGN( "begin core ID:" << wCoreID )
     //  static BYTE g_byValue1;
       static BYTE byReadMSRreturnValue;
 
       byReadMSRreturnValue =
     //    (*g_pfnreadmsr) (
         ReadMSR(
-        COFVID_STATUS_REGISTER ,    // MSR index
+        COFVID_STATUS_REGISTER_MSR_ADDRESS,    // MSR index
       //      P_STATE_STATUS_REGISTER
         & g_dwMSRlowmost,// bit  0-31 (register "EAX")
         & g_dwMSRhighmost,
@@ -302,8 +301,8 @@ namespace AMD
       GetVoltageFromCOFVIDstatusRegisterBits(g_dwMSRlowmost, p_fVoltageInVolt);
 
       GetReferenceClock(p_fReferenceClockInMHz, wCoreID);
-      DEBUGN( FULL_FUNC_NAME << "--reference clock:" << * p_fReferenceClockInMHz )
-      DEBUGN( FULL_FUNC_NAME << "--returning" << (WORD) byReadMSRreturnValue )
+      DEBUGN( "reference clock:" << * p_fReferenceClockInMHz )
+      DEBUGN( "returning" << (WORD) byReadMSRreturnValue )
       return byReadMSRreturnValue ;
     }
 
@@ -312,7 +311,7 @@ namespace AMD
     //Gets the max. multiplier.
     inline void GetMainPllOpFreqIdMax()
     {
-      DEBUGN("GetMainPllOpFreqIdMax")
+      DEBUGN(/*"GetMainPllOpFreqIdMax"*/ "begin")
       ReadMSR(
         COFVID_STATUS_REGISTER ,
         & g_dwMSRlowmost ,
@@ -321,65 +320,7 @@ namespace AMD
       //"54:49 MainPllOpFreqIdMax"
       g_fMainPllOpFreqIdMax = (g_dwMSRhighmost >> (49-32) &
         BITMASK_FOR_LOWMOST_6BIT );
-      DEBUGN("MainPllOpFreqIdMax:" << g_fMainPllOpFreqIdMax)
-    }
-
-    inline void GetMinAndMaxVoltageID(BYTE & byMaxVID,BYTE & byMinVID)
-    {
-      ReadMSR(
-        COFVID_STATUS_REGISTER,
-        & g_dwMSRlowmost,
-        & g_dwMSRhighmost,
-        1 ) ;
-      byMaxVID = ( g_dwMSRhighmost >>
-        //"48:42 [...]: minimum voltage. Read-only. Specifies the VID code
-        //corresponding to the minimum voltage (highest VID code) that the processor
-        //drives. 00h indicates that no minimum VID code is specified.
-        //See section 2.4.1 [Processor Power Planes And Voltage Control]."
-        ( COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID - 32 )
-        ) & BITMASK_FOR_LOWMOST_7BIT;
-      DEBUGN("highest VID:" << (WORD) byMaxVID )
-      byMinVID = ( g_dwMSRhighmost >>
-      //"41:35 [...]: maximum voltage. Read-only. Specifies the VID code
-      //corresponding to the maximum voltage (lowest VID code) that the processor
-      //drives. 00h indicates that no maximum VID code is specified.
-      //See section 2.4.1 [Processor Power Planes And Voltage Control].
-        ( COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID - 32 )
-        ) & BITMASK_FOR_LOWMOST_7BIT;
-      DEBUGN("lowest VID:" << (WORD) byMinVID )
-    }
-
-    inline WORD GetMaximumVoltageID()
-    {
-    //    return 64 ;
-      uint32_t dwEAXlowMostBits, dwEDXhighMostBits ;
-      ReadMSR(
-        COFVID_STATUS_REGISTER,
-        & dwEAXlowMostBits,
-        & dwEDXhighMostBits,
-        1 ) ;
-      BYTE byHighestVID = ( dwEDXhighMostBits >>
-          ( COFVID_STATUS_REGISTER_START_BIT_FOR_MAX_VID - 32 )
-          ) & BITMASK_FOR_LOWMOST_7BIT;
-      DEBUGN("highest VID:" << (WORD)byHighestVID)
-      return byHighestVID ;
-    }
-
-    inline WORD GetMinimumVoltageID()
-    {
-    //    return 36 ;
-      uint32_t dwEAXlowMostBits, dwEDXhighMostBits ;
-      ReadMSR(
-        COFVID_STATUS_REGISTER,
-        & dwEAXlowMostBits,
-        & dwEDXhighMostBits,
-        1
-        ) ;
-      BYTE byLowestVID = ( dwEDXhighMostBits >>
-          ( COFVID_STATUS_REGISTER_START_BIT_FOR_MIN_VID - 32 )
-          ) & BITMASK_FOR_LOWMOST_7BIT;
-      DEBUGN("lowest VID:" << (WORD)byLowestVID)
-      return byLowestVID ;
+      DEBUGN(/*"MainPllOpFreqIdMax:" <<*/ g_fMainPllOpFreqIdMax)
     }
 
     //inline void GetMSRregisterValue(
@@ -392,10 +333,10 @@ namespace AMD
     //    ) ;
     //inline WORD GetVoltageID(float fVoltageInVolt ) ;
     inline void GetMSRregisterValue(
-      BYTE byVoltageID,
+      const BYTE byVoltageID,
     //  const DIDandFID & didandfid ,
-      BYTE byFrequencyID ,
-      BYTE byDivisorID ,
+      const BYTE byFrequencyID ,
+      const BYTE byDivisorID ,
       uint32_t & dwHighmostMSRvalue ,
       uint32_t & dwLowmostMSRvalue
       )
@@ -416,25 +357,27 @@ namespace AMD
       dwLowmostMSRvalue |= ( ( (WORD) byVoltageID ) << 9) ; //<=>bits 9-15 shifted
     }
 
-    inline WORD GetVoltageID(float fVoltageInVolt )
+    /** Uses table "Table 5: SVI and internal VID codes" (7 bit) because same
+     *  bit width as "15:9 CurCpuVid: current CPU core VID." (7 bit) ? */
+    inline fastestUnsignedDataType GetVoltageID(const float fVoltageInVolt )
     {
       //E.g. for "1.1" V the float value is 1.0999999
       // (because not all numbers are representable with a 8 byte value)
       // so the voltage ID as float value gets "36.000004".
       float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f ;
-      WORD wVoltageID =
+      fastestUnsignedDataType voltageID =
         //without explicit cast: compiler warning
         //Avoid g++ warning "warning: converting to `WORD' from `float'"
-        (WORD)
+        (fastestUnsignedDataType)
         //ceil( (fVoltageInVolt - 1.55f) * -1.0f / 0.0125f ) ;
         //ceil( //(fVoltageInVolt - 1.55f) / -0.0125f
           fVoltageID //)
         ;
       //Check to which integer voltage ID the float value is nearer.
       //E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36"
-      if( fVoltageID - (float) wVoltageID >= 0.5 )
-        ++ wVoltageID ;
-      return wVoltageID ;
+      if( fVoltageID - (float) voltageID >= 0.5 )
+        ++ voltageID ;
+      return voltageID ;
     }
 
     //inline unsigned long GetMSRregisterForPstate(
@@ -460,7 +403,7 @@ namespace AMD
       BYTE & r_byDivisorID
       )
     {
-      DEBUGN("GetFreqIDandDivisorIDfromMulti("
+      DEBUGN(//"GetFreqIDandDivisorIDfromMulti("
         << fMultiplier )
 
       r_byDivisorID = 0 ;
@@ -480,7 +423,7 @@ namespace AMD
         //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
         //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))."
         (BYTE) (fMultiplier * 2.0f) - 8 ;
-      DEBUGN("GetFreqIDandDivisorIDfromMulti(...)"
+      DEBUGN(//"GetFreqIDandDivisorIDfromMulti(...)"
         << "FID:" << (WORD) r_byFreqID
         << "DID:" << (WORD) r_byDivisorID
         //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
@@ -570,7 +513,8 @@ namespace AMD
       return byReturn ;
     }
 
-    /** AMD K10 doc:
+    /** see "2.4.2.3 P-state Transition Behavior"
+     * AMD K10 doc:
      * 2.4.1.9.2 Software-Initiated CPU Voltage Transitions
      * "NewCpuVid = the destination CPU VID.
       F3xA0[SlamVidMode]=1:
@@ -598,7 +542,7 @@ namespace AMD
       //    g_byValue1 = GetVoltageID( fVoltageInVolt ) ;
 
       //BYTE byFrequencyID , byDivisorID ;
-      DEBUGN("SetVoltageAndMultiplier("
+      DEBUGN(//"SetVoltageAndMultiplier("
         << fVoltageInVolt
         << "," << fMultiplier
         << "," << (WORD) byCoreID )
@@ -626,7 +570,7 @@ namespace AMD
         dwMSRregisterIndex = GetMSRregisterForPstate(
           g_byDivisorID
           ) ;
-        DEBUGN("SetVoltageAndMultiplier(...)"
+        DEBUGN(//"SetVoltageAndMultiplier(...)"
           "before WriteMSR" )
         if( WriteMSR(
             dwMSRregisterIndex
@@ -636,6 +580,8 @@ namespace AMD
             )
           )
         {
+          //see "2.4.1.9 Software-Initiated Voltage Transitions"
+          //TODO "2. Wait the specified F3xD8[VSSlamTime]."
     //      if(
           SetPstateViaPstateControlRegister(
             g_byDivisorID ,

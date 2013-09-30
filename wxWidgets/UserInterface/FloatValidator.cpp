@@ -79,7 +79,7 @@ bool CfloatValidator::TransferFromWindow()
   bool bSuccess;
   double dNumber ;
 
-  std::string stdstr = GetStdString(wxstr) ;
+  std::string stdstr = wxWidgets::GetStdString(wxstr) ;
 
   bSuccess = ConvertStdStringToTypename<double>( dNumber, stdstr ) ;
 
@@ -119,7 +119,7 @@ bool CfloatValidator::Validate(wxWindow * parent)
   bool ret;
   double dNumber ;
 
-  std::string stdstr = GetStdString(wxstr) ;
+  std::string stdstr = wxWidgets::GetStdString(wxstr) ;
 
   ret = ( ConvertStdStringToTypename<double>( dNumber, stdstr ) &&
     ( dNumber >= m_lBound ) && ( dNumber <= m_hBound ) ) ;

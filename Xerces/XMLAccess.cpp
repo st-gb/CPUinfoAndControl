@@ -47,7 +47,7 @@ char Apache_Xerces::ReadXMLfileInitAndTermXerces(
   )
 {
 //  LOG( "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" );
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( FULL_FUNC_NAME <<
+  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
     "read XML configuration--filename: \"" << cp_chXMLfilePath << "\"" )
   bool bXercesSuccessfullyInitialized = false ;
   //from http://xerces.apache.org/xerces-c/program-sax2-3.html:
@@ -59,7 +59,7 @@ char Apache_Xerces::ReadXMLfileInitAndTermXerces(
     //Initialize() must be called _before_ any Xerces function call, else SIGSEV
     // /program crash.
     XMLPlatformUtils::Initialize();
-    LOGN( FULL_FUNC_NAME << "Xerces access successfully initialized"//"\n"
+    LOGN( "Xerces access successfully initialized"//"\n"
       )
     bXercesSuccessfullyInitialized = true ;
   }
@@ -85,7 +85,7 @@ char Apache_Xerces::ReadXMLfileInitAndTermXerces(
     {
       XERCES_CPP_NAMESPACE::LocalFileInputSource xerces_localfileinputsource(
         p_xmlchXMLfilePath ) ;
-      LOGN( FULL_FUNC_NAME << "--after creating a LocalFileInputSource obj");
+      LOGN( "after creating a LocalFileInputSource obj");
       Apache_Xerces::ReadXMLdocument(
         xerces_localfileinputsource ,
 //        model,
@@ -286,7 +286,7 @@ enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
   , XERCES_CPP_NAMESPACE::DefaultHandler * const errorHandler// = NULL
   )
 {
-    LOGN( FULL_FUNC_NAME << "--begin" );
+    LOGN( "begin" );
 //    BYTE byReturn = readingXMLdocFailed ;
     enum Apache_Xerces::ReadXMLdocumentRetCodes returnCode =
       readingXMLdocFailed;
@@ -318,7 +318,7 @@ enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
         p_sax2xmlreader->setErrorHandler(& r_defaulthandler);
       try
       {
-        LOGN( FULL_FUNC_NAME << "--before parsing XML document "
+        LOGN( "before parsing XML document "
           << GetStdString_Inline(
             GET_WCHAR_STRING_FROM_XERCES_STRING(
               r_inputsource.getSystemId()

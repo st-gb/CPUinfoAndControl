@@ -16,7 +16,7 @@
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 //SUPPRESS_UNUSED_VARIABLE_WARNING(...)
-#include <preprocessor_macros/suppress_unused_variable.h>
+#include <compiler/GCC/suppress_unused_variable.h>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <Xerces/UserInterface/SAX2UserInterfaceConfigHandler.hpp>
 //PossiblyHandleLoggingExclusionFilter_Inline(...)
@@ -121,7 +121,7 @@ namespace Xerces
       std_strAttributeValue
       ) == XercesAttributesHelper::getting_attribute_value_succeeded )
     {
-      LOGN_DEBUG( FULL_FUNC_NAME << " successfully got font size for \""
+      LOGN_DEBUG( "successfully got font size for \""
         << attrName << "\"")
       bool convertError = false;
       if( std_strAttributeValue.length() > 0 && std_strAttributeValue.at(0)
@@ -146,7 +146,7 @@ namespace Xerces
             m_p_model->m_userinterfaceattributes.s_defaultFontSizeInPoint -
             nSubtractFromFontSize;
         else
-          LOGN_ERROR( FULL_FUNC_NAME << "Failed to get font size for "
+          LOGN_ERROR( "Failed to get font size for "
             << attrName)
       }
       else
@@ -154,11 +154,11 @@ namespace Xerces
             std_strAttributeValue.substr(1) ) )
           convertError = true;
       if( convertError )
-        LOGN_ERROR( FULL_FUNC_NAME << " Failed to get font size for \""
+        LOGN_ERROR( "Failed to get font size for \""
           << attrName << "\"")
     }
     else
-      LOGN_ERROR( FULL_FUNC_NAME << " Failed to get XML attr val for \""
+      LOGN_ERROR( "Failed to get XML attr val for \""
         << attrName << "\"")
  }
 
@@ -249,14 +249,14 @@ namespace Xerces
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
     {
-      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+      LOGN( "Getting attribute value for \"" <<
         std_strXMLattributeName << "\" succeeded: "
         "value is:" << stdstrAttributeValue )
 //      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
     }
     else
     {
-      LOGN_ERROR(FULL_FUNC_NAME << "--Getting attribute value for \""
+      LOGN_ERROR("Getting attribute value for \""
         << std_strXMLattributeName << "\" failed")
     }
     std_strXMLattributeName = "show_CPU_cores_multipliers" ;
@@ -270,7 +270,7 @@ namespace Xerces
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
     {
-      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+      LOGN( "Getting attribute value for \"" <<
         std_strXMLattributeName << "\" succeeded: "
         "value is:" << r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue )
 //      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
@@ -295,7 +295,7 @@ namespace Xerces
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
     {
-      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+      LOGN( "Getting attribute value for \"" <<
         std_strXMLattributeName << "\" succeeded: "
         "value is:" << r_bAttributeValue )
 //      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
@@ -316,7 +316,7 @@ namespace Xerces
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
     {
-      LOGN( FULL_FUNC_NAME << "--Getting attribute value for \"" <<
+      LOGN( "Getting attribute value for \"" <<
         std_strXMLattributeName << "\" succeeded: "
         "value is:" << r_bShowCPUcoresMultipliersIconInTaskBarAttributeValue )
 //      m_p_model->m_userinterfaceattributes.m_wToolTipDelay = w ;
@@ -362,11 +362,11 @@ namespace Xerces
 //       , value )
 //     )
     {
-      LOGN_DEBUG( FULL_FUNC_NAME << " value for \"" << pchAttributeName
+      LOGN_DEBUG( "value for \"" << pchAttributeName
         << "\":" << value )
     }
     else
-      LOGN_WARNING(FULL_FUNC_NAME << " getting value for \""
+      LOGN_WARNING("getting value for \""
         << pchAttributeName << "\" failed ")
   }
 
@@ -387,6 +387,7 @@ namespace Xerces
        ,f )
      )
       m_p_model->m_userinterfaceattributes.m_fOperatingSafetyMarginInVolt = f ;
+#ifdef _WIN32
     if( ConvertXercesAttributesValue<float>(
       cr_xercesc_attributes
        ,"min_usage_percentage_for_find_voltage_for_lowest_stable_CPU_core_"
@@ -394,6 +395,7 @@ namespace Xerces
        ,f )
      )
       m_p_model->m_instablecpucorevoltagedetection.m_fMinCPUcoreUsage = f ;
+#endif
 
     p_bValue = & m_p_model->m_userinterfaceattributes.
         m_bPreventVoltageAboveDefaultVoltage;
@@ -431,7 +433,7 @@ namespace Xerces
         ) == XercesAttributesHelper::getting_attribute_value_succeeded
       )
     {
-      LOGN( FULL_FUNC_NAME << "--got attribute value for \""
+      LOGN( "got attribute value for \""
           << stdstrAttributeName << "\" attribute:"
           << std_strWisdomText )
       m_p_model->m_userinterfaceattributes.m_std_vec_WisdomStrings.//push_back(

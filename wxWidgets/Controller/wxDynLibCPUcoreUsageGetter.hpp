@@ -61,6 +61,11 @@ public:
 
   BYTE GetPercentalUsageForAllCores( float arf [] ) ;
 
+  void PossiblyAssignFunctionPointers();
+  template <typename func_type> void PossiblyAssignFunctionPointer(
+    const wxString & wxstrFuncName, func_type & p_function//, func_type functyp
+    );
+
   BYTE Init() { return 0 ; }
 
 };

@@ -42,8 +42,7 @@ namespace Windows
           START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
           //)
           );
-      LOGN( FULL_FUNC_NAME <<  "--\"" <<
-        START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
+      LOGN( /* "--\"" << */ START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
         << "\" function pointer: "
         << (void *) m_pfnStartInstableCPUcoreVoltageDetection)
       return m_pfnStartInstableCPUcoreVoltageDetection;
@@ -58,8 +57,7 @@ namespace Windows
         //"StopInstableVoltageDetection"
         STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
         );
-      LOGN(FULL_FUNC_NAME << "--\"" <<
-        STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
+      LOGN( /*"--\"" << */ STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME
         << "\" function pointer: "
         << (void *) m_pfnStopInstableCPUcoreVoltageDetection )
       return m_pfnStopInstableCPUcoreVoltageDetection;
@@ -75,7 +73,7 @@ namespace Windows
           //lptstrUnstableVoltageDetectionDynLib
         ::LoadLibraryW( //m_std_wstrInstableCPUcoreVoltageDynLibPath.c_str()
           m_std_wstrDynLibPath.c_str() );
-      LOGN( FULL_FUNC_NAME << " --after loading the dyn lib")
+      LOGN( "after loading the dyn lib")
       return m_hmoduleUnstableVoltageDetectionDynLib;
     }
   };

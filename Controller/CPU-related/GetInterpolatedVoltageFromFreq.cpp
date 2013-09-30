@@ -19,11 +19,7 @@ BYTE //I_CPUcontroller::
   , const std::set<VoltageAndFreq> & r_stdsetvoltageandfreq
   )
 {
-  LOGN("GetInterpolatedVoltageFromFreq("
-#ifdef _DEBUG
-    << wFreqInMHzToGetVoltageFrom
-#endif
-    << ", ..." )
+  LOGN( "wFreqInMHzToGetVoltageFrom:" << wFreqInMHzToGetVoltageFrom << ", ..." )
   std::set<VoltageAndFreq>::const_iterator ci_stdsetvoltageandfreq =
     r_stdsetvoltageandfreq.begin() ;
   std::set<VoltageAndFreq>::const_iterator

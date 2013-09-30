@@ -159,7 +159,7 @@ wxListBox * CPUregisterReadAndWriteDialog::CreateRegisterIDlistBox()
       // g++ warning: "taking addesss of temporary".
       wxString wxstr =
         //& wxString::Format("%u",itermsrdata->m_dwIndex )
-        getwxString( itermsrdata->m_stdstrRegisterName ) ;
+        wxWidgets::getwxString( itermsrdata->m_stdstrRegisterName ) ;
       p_wxlistbox->InsertItems( 1, & wxstr , p_wxlistbox->GetCount() ) ;
     }
     ++ itermsrdata ;
@@ -207,7 +207,7 @@ void CPUregisterReadAndWriteDialog::ShowRegisterAttributes( //const
     //mp_sizerLeftColumn->Add( 
     //p_wxsizerAttributeNameAndValue->Add(
     wxStaticText * p_wxstatictext = new wxStaticText(this, wxID_ANY ,
-      getwxString( iter_registerdata->m_strDataName )
+      wxWidgets::getwxString( iter_registerdata->m_strDataName )
       );
     p_wxstatictext->SetForegroundColour(*wxBLUE);
     mp_wxgridsizerAttributeNameAndValue->Add(
@@ -291,7 +291,7 @@ void CPUregisterReadAndWriteDialog::OnChangedText(wxCommandEvent & wxevent )
       //ToULongLong() always returned false with MinGW (+ unicode)
 //        ToULongLong( & ullFromChangedTextCtrl )
 //        )
-      std::string stdstrFromTextControl = GetStdString(wxstrChanged ) ;
+      std::string stdstrFromTextControl = wxWidgets::GetStdString(wxstrChanged ) ;
       ConvertStdTStringToTypename<ULONGLONG>( ullFromChangedTextCtrl,
           stdstrFromTextControl) ;
       {
@@ -338,7 +338,7 @@ void CPUregisterReadAndWriteDialog::OnChangedText(wxCommandEvent & wxevent )
 //                  //ToULongLong() always returned false with MinGW (+ unicode)
 //                ToULongLong( & ullFromTextCtrlToChange )
 //                )
-              std::string stdstrValueToModify = GetStdString(wxstrValueToModify) ;
+              std::string stdstrValueToModify = wxWidgets::GetStdString(wxstrValueToModify) ;
               ConvertStdTStringToTypename<ULONGLONG>( ullFromTextCtrlToChange,
                   stdstrValueToModify) ;
               {
@@ -539,7 +539,7 @@ void CPUregisterReadAndWriteDialog::OnReadFromMSR(
 void CPUregisterReadAndWriteDialog::OnWriteToMSR(
   wxCommandEvent & evt )
 {
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( /*FULL_FUNC_NAME <<*/ "begin")
   if( mp_msrdata )
   {
     ULONGLONG ullWriteToMSR = 0ULL ;
@@ -566,7 +566,7 @@ void CPUregisterReadAndWriteDialog::OnWriteToMSR(
 //        char * p_ch = (char *) wxstr.fn_str() ;
 //        vec_wxstr.push_back(wxstr) ;
         wxstrAllValues += wxstr + wxT(" ") ;
-        stdstrFromTextControl = GetStdString(wxstr) ;
+        stdstrFromTextControl = wxWidgets::GetStdString(wxstr) ;
         //ullMSR = 
 //        if( wxstr.
 //          //http://docs.wxwidgets.org/2.8.4/wx_wxstring.html#wxstringtoulong:

@@ -26,6 +26,7 @@
   #define WINAPI __stdcall
 #endif
 #include <exception> //for exception
+#include <fastest_data_type.h> //typedef fastestUnsignedDataType
 //#include "UserInterface.hpp" //for class "UserInterface"
 
 //Base class for every single CPU access exception type as e.g.
@@ -112,6 +113,9 @@ public:
     DWORD_PTR affinityMask
   ) //= 0
   ;
+
+  fastestUnsignedDataType GetL2cacheSizeInKiB();
+  static void GetMD5checkSum(void * begin, unsigned numBytes, BYTE arb[16]);
   virtual BYTE GetNumberOfCPUCores() ;
 
   //It makes sense to implement the get family and model as a
@@ -144,6 +148,8 @@ public:
     , BYTE & r_byModel
     , BYTE & r_byStepping
     ) ;
+
+  fastestUnsignedDataType GetHighestExtendedFunctionSupported();
   //Is the same for AMD and Intel.
   bool GetProcessorNameByCPUID( std::string & r_stdstr ) ;
   //Use the method with std::string parameter rather than this 

@@ -91,7 +91,7 @@ bool NamedPipeClient::GetConnectionStateViaGetNamedPipeHandleState()
 //  )
 BYTE NamedPipeClient::ConnectToDataProvider(std::string & r_stdstrMessage)
 {
-  LOGN( FULL_FUNC_NAME)
+  LOGN( "begin")
   m_bConnected = false ;
   LPTSTR lptstrPipename ;
   if( m_r_model.m_stdwstrPipeName.empty() )
@@ -192,7 +192,7 @@ BYTE NamedPipeClient::ConnectToDataProvider(std::string & r_stdstrMessage)
 
 bool NamedPipeClient::IsConnected()
 {
-  LOGN("IsConnected begin")
+  LOGN("begin")
   bool bConnected = false ;
 //  LOGN("IsConnected before GetNamedPipeHandleState")
 
@@ -224,7 +224,7 @@ bool NamedPipeClient::IsConnected()
     //    LOGN("IsConnected after GetNamedPipeHandleState")
     return bConnected ;
   }
-  LOGN("IsConnected end")
+  LOGN("end")
   return bConnected ;
 }
 
@@ -251,7 +251,7 @@ NamedPipeClient::~NamedPipeClient()
   ::CloseHandle(m_handleClientPipe);
   if( m_arbyIPCdata )
   {
-    LOGN("freeing IPC data")
+    LOGN("releasing memory for IPC data")
     delete [] m_arbyIPCdata ;
   }
   LOGN("end of named pipe client")
@@ -293,7 +293,8 @@ BOOL NamedPipeClient::Read(
   if( m_bool)
     if( nNumberOfBytesToRead != * lpNumberOfBytesRead)
     {
-      LOGN("NamedPipeClient::Read(...)--# of bytes to read <> # of bytes that "
+      LOGN(//"NamedPipeClient::Read(...)--"
+          "# of bytes to read <> # of bytes that "
         "were read.")
       m_bool = FALSE;
     }
@@ -380,7 +381,7 @@ BOOL NamedPipeClient::Read(
 
 inline BYTE NamedPipeClient::WriteDataSizeInByte(IPC_data & r_ipc_data)
 {
-  LOGN("WriteDataSizeInByte begin--command: "
+  LOGN("begin--command: "
     << (WORD) r_ipc_data.m_byCommand )
 //  switch( //byCommand
 //    r_ipc_data.m_byCommand )
@@ -453,7 +454,7 @@ inline BYTE NamedPipeClient::WriteCommand(BYTE byCommand)
 
 inline BYTE NamedPipeClient::WriteDataBelongingToCommand(IPC_data & r_ipc_data)
 {
-  LOGN("WriteDataBelongingToCommand begin")
+  LOGN(/*"WriteDataBelongingToCommand "*/ "begin")
   DWORD dwNumberOfBytesWritten;
 #ifdef COMPILE_WITH_LOG
   std::string stdstrBytes //( (char *) arbyPipeDataToSend, dwByteSize ) ;
@@ -467,7 +468,7 @@ inline BYTE NamedPipeClient::WriteDataBelongingToCommand(IPC_data & r_ipc_data)
     NULL)
     )
     return WritingIPCdataFailed;
-  LOGN("WriteDataBelongingToCommand end")
+  LOGN(/*"WriteDataBelongingToCommand " */ "end")
   return WritingIPCdataSucceeded;
 }
 
@@ -476,7 +477,7 @@ inline BYTE NamedPipeClient::WriteDataBelongingToCommand(IPC_data & r_ipc_data)
 BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
   IPC_data & r_ipc_data)
 {
-  LOGN("SendCommandAndGetResponse(...) begin")
+  LOGN("begin")
   static BOOL fSuccess;
 //  DWORD dwNumberOfBytesWritten ;
   DWORD dwNumBytesRead ;
@@ -487,7 +488,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
   m_stdwstrMessage = L"" ;
   if( WriteDataSizeInByte(r_ipc_data) == WritingIPCdataFailed)
   {
-    LOGN("WriteDataSizeInByte failed")
+    LOGN_WARNING("WriteDataSizeInByte failed")
     return WritingIPCdataFailed;
   }
   LOGN("size in byte of data to write:" << r_ipc_data.m_wDataToWriteSizeInByte )
@@ -495,7 +496,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
   {
     if( WriteCommand(r_ipc_data.m_byCommand) == WritingIPCdataFailed)
     {
-      LOGN("WriteCommand failed.")
+      LOGN_WARNING("WriteCommand failed.")
       return WritingIPCdataFailed;
     }
     if( r_ipc_data.m_wDataToWriteSizeInByte > 1)
@@ -550,7 +551,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
      if( m_arbyIPCdata )
        delete [] m_arbyIPCdata ;
      m_arbyIPCdata = new BYTE[ m_dwIPCdataSizeInByte ] ;
-     LOGN(FULL_FUNC_NAME <<  " before reading "
+     LOGN( " before reading "
 //#ifdef _DEBUG //because the own logger can only filter strings that match
     //full log messages
        << m_dwIPCdataSizeInByte
@@ -568,7 +569,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
         & dwNumBytesRead,  // number of bytes read
         NULL // NULL = not overlapped
         );
-     LOGN( FULL_FUNC_NAME << " " << (fSuccess ? "successfully got" :
+     LOGN( " " << (fSuccess ? "successfully got" :
        "failed to read")
 //#ifdef _DEBUG //because the own logger can only filter strings that matcb
     //full log messages
@@ -601,7 +602,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
    }
    else
      m_vbIsGettingCPUcoreData = false ;
-   LOGN("SendCommandAndGetResponse end")
+   LOGN("end")
    return IPC_Client::FailedToGetResponse ;
 }
 
@@ -610,7 +611,7 @@ inline DWORD NamedPipeClient::SendDataSizeInByte(
   DWORD dwByteSize
   )
 {
-  LOGN("SendDataSizeInByte(" << dwByteSize << ")--begin")
+  LOGN("begin data size:" << dwByteSize )
   DWORD dwNumberOfBytesWritten;
   BOOL fSuccess = //::WriteFile(
 //    m_handleClientPipe        // pipe handle
@@ -631,13 +632,12 @@ inline DWORD NamedPipeClient::SendDataSizeInByte(
 #endif //#ifdef COMPILE_WITH_LOG
     //http://msdn.microsoft.com/en-us/library/aa365747%28VS.85%29.aspx:
     //"To get extended error information, call the GetLastError function."
-    LOGN("WriteFile failed:" << LocalLanguageMessageFromErrorCodeA(
+    LOGN_WARNING("WriteFile failed:" << LocalLanguageMessageFromErrorCodeA(
       dwLastError) );
     m_bConnected = false ;
     return 0;
   }
-  LOGN("SendDataSizeInByte(" << dwByteSize << ")--return " <<
-      dwNumberOfBytesWritten)
+  LOGN("return " << dwNumberOfBytesWritten)
   return dwNumberOfBytesWritten;
 }
 
@@ -655,7 +655,7 @@ BOOL NamedPipeClient::Write(
   m_criticalsection_typeIOandIsconnected.Enter() ;
   m_vbIsReadingOrWriting = true ;
   m_criticalsection_typeIOandIsconnected.Leave() ;
-  LOGN("NamedPipeClient::Write(...)--before ::WriteFile(...," << lpBuffer
+  LOGN("before ::WriteFile(...," << lpBuffer
     << "," << nNumberOfBytesToWrite << ",..)")
   m_bool =
   ::WriteFile(

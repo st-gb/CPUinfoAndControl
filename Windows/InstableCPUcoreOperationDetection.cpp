@@ -69,31 +69,31 @@ namespace Windows
   //      & ul64ThreadTimeAfter);
   //    if( b)
   //    {
-  //      LOGN( FULL_FUNC_NAME << " QueryThreadCycleTime for thread "
+  //      LOGN( "QueryThreadCycleTime for thread "
   //        << handleThread << "(ID: " //<< ::GetThreadId(handleThread)
   //        << ") :"
   //        << ul64ThreadTimeAfter)
   //      ULONGLONG ull = ReadTSCinOrder( 1 );
-  //      LOGN( FULL_FUNC_NAME << " timestampcounter:" << ull)
+  //      LOGN( "timestampcounter:" << ull)
   //      ULONG64 ul64NumCPUcyclesElapsedForCPUcore0 = ull -
   //        gs_NumCPUcyclesElapsedForCPUcore0;
   //
-  //      LOGN( FULL_FUNC_NAME << " timestampcounter diff:"
+  //      LOGN( "timestampcounter diff:"
   //        << ul64NumCPUcyclesElapsedForCPUcore0)
   //
   //      ULONG64 ul64ThreadTimeDiff = ul64ThreadTimeAfter - ul64ThreadTimeBefore;
-  //      LOGN( FULL_FUNC_NAME << " thread cycle time diff:"
+  //      LOGN( "thread cycle time diff:"
   //        << ul64ThreadTimeDiff)
   //
   //      fCPUcoreUsage = (float) ( (double) ul64ThreadTimeDiff /
   //          (double) ul64NumCPUcyclesElapsedForCPUcore0);
-  //      LOGN( FULL_FUNC_NAME << " CPU core usage = cycle time diff/"
+  //      LOGN( "CPU core usage = cycle time diff/"
   //        "timestampcounter diff =" << fCPUcoreUsage)
   //
   //      gs_NumCPUcyclesElapsedForCPUcore0 = ull;
   //    }
   //    else
-  //      LOGN( FULL_FUNC_NAME << " QueryThreadCycleTime failed:"
+  //      LOGN( "QueryThreadCycleTime failed:"
   //        << GetErrorMessageFromLastErrorCodeA() )
   //  }
   //  else
@@ -107,7 +107,7 @@ namespace Windows
           ul64KernelTimeAfter);
         if( b)
         {
-          LOGN_DEBUG( FULL_FUNC_NAME << " user time [100 ns steps] for instable CPU "
+          LOGN_DEBUG( "user time [100 ns steps] for instable CPU "
             "core operation detection dyn lib "
             " procedure before: " //<< userTimeBefore.dwHighDateTime
             //<< " " << userTimeBefore.dwLowDateTime
@@ -117,25 +117,25 @@ namespace Windows
     //        << userTimeAfter.dwLowDateTime
             << ul64ThreadTimeAfter
             )
-          LOGN_DEBUG( FULL_FUNC_NAME << " kernel time for instable CPU "
+          LOGN_DEBUG( "kernel time for instable CPU "
             "core operation DLL "
             " procedure after:" << ul64KernelTimeAfter )
 
         //ULARGE_INTEGER uli = GetTimeDiff(userTimeBefore,userTimeAfter);
         ULARGE_INTEGER uli;
         uli.QuadPart = ul64ThreadTimeAfter - ul64ThreadTimeBefore;
-        LOGN( FULL_FUNC_NAME << " user time diff for instable CPU core operation DLL "
+        LOGN( "user time diff for instable CPU core operation DLL "
           " procedure [100ns]: " << uli.QuadPart)
         fCPUcoreUsage = //100-nanosecond intervals
           (float) ( (double) uli.QuadPart / (double) (dwMilliSecondsToWait
           //get in 100 ns: ms (10^-3) -> 100ns (10^-7) => 10^-3 - 10^-7=10^5
           * 10000) );
-        LOGN( FULL_FUNC_NAME << " CPU core usage:"//"= user time diff/"
+        LOGN( "CPU core usage:"//"= user time diff/"
           //"# 100 nanoseconds to wait ="
           << fCPUcoreUsage)
       }
       else
-        LOGN_WARNING( " calling \"GetThreadTimes\" failed: "
+        LOGN_WARNING( "calling \"GetThreadTimes\" failed: "
           << ::GetErrorMessageFromLastErrorCodeA() )
     }
   //  userTimeBefore = userTimeAfter;
@@ -196,13 +196,13 @@ namespace Windows
   //      & ul64 //_Out_  PULONG64 CycleTime
   //    );
   //    if( b )
-  //      LOGN( FULL_FUNC_NAME << " QueryThreadCycleTime:" << ul64)
+  //      LOGN( "QueryThreadCycleTime:" << ul64)
   //    else
-  //      LOGN_TYPE( " calling GetThreadTimes failed: "
+  //      LOGN_TYPE( "calling GetThreadTimes failed: "
   //        << ::GetErrorMessageFromLastErrorCodeA(),
   //        I_LogFormatter::log_message_typeWARNING)
   //    gs_NumCPUcyclesElapsedForCPUcore0 = ReadTSCinOrder( 1 );
-  //    LOGN( FULL_FUNC_NAME << " timestampcounter for 1st measurement:"
+  //    LOGN( "timestampcounter for 1st measurement:"
   //      << gs_NumCPUcyclesElapsedForCPUcore0)
   //  }
     return ul64;

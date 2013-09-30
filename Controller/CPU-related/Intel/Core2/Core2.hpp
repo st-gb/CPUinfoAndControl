@@ -51,8 +51,9 @@ inline float GetVoltageAndMultiplier(
     g_fReferenceClockMultiplier;
 }
 
-#ifdef BUSY_TSC_DIFF
-#include <Controller/CPU-related/GetCPUclockAndMultiplier.hpp>
+#ifdef TSC_DIFF_WHILE_BUSY_WAITING
+//#include <Controller/CPU-related/GetCPUclockAndMultiplier.hpp>
+#include <hardware/CPU/x86/GetCPUclockAndMultiplier.hpp>
 #endif
 
 namespace Intel
@@ -188,20 +189,20 @@ namespace Intel
       )
     {
       static BYTE retVal;
-#ifdef BUSY_TSC_DIFF
+#ifdef TSC_DIFF_WHILE_BUSY_WAITING
       static unsigned numTimerSteps;
       numTimerSteps = 100;
       static float waitTimeInSeconds = 0.00001;
       static double CPUclock;
-#ifdef SLEEP_ON_BUSY_WAITING
-      CPUclock = CPU::OneLogicalCore::GetClockWithLoad(
-        1 << wCoreID
-        , r_fMultiplier //float & multiplier
-        , numTimerSteps //unsigned & numMinimumSteps,
-        , waitTimeInSeconds //float & waitTimeInSeconds,
-        , r_fVoltageInVolt //float & r_fVoltageInVolt
-        );
-#else
+//#ifdef SLEEP_ON_BUSY_WAITING
+//      CPUclock = CPU::OneLogicalCore::GetClockWithLoad(
+//        1 << wCoreID
+//        , r_fMultiplier //float & multiplier
+//        , numTimerSteps //unsigned & numMinimumSteps,
+//        , waitTimeInSeconds //float & waitTimeInSeconds,
+//        , r_fVoltageInVolt //float & r_fVoltageInVolt
+//        );
+//#else
       CPUclock = CPU::GetClockWithLoad(
         1 << wCoreID
         , r_fMultiplier //float & multiplier
@@ -209,7 +210,6 @@ namespace Intel
         , waitTimeInSeconds //float & waitTimeInSeconds,
         , r_fVoltageInVolt //float & r_fVoltageInVolt
         );
-#endif
       if( r_fReferenceClockInMHz < 0.0f )
         r_fReferenceClockInMHz = 0.0f;
       else
@@ -217,12 +217,14 @@ namespace Intel
         r_fReferenceClockInMHz = CPUclock / r_fMultiplier;
       }
       return 1;
-//#else
-#endif
+#else
       retVal = GetVoltageAndMultiplier(1 << wCoreID, & r_fVoltageInVolt,
         & r_fMultiplier);
       r_fReferenceClockInMHz = g_fReferenceClockInMHz ;
       return retVal;
+#endif
+//#else
+//#endif
 
         //Although (see http://en.wikipedia.org/wiki/Time_Stamp_Counter:
         // paragraph "Implementation in various processors")
@@ -345,7 +347,7 @@ namespace Intel
       BYTE byCoreID
       )
     {
-      DEBUGN( FULL_FUNC_NAME << "--begin")
+      DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
       DWORD dwLowmostBits //, dwHighmostBits = 0
         ;
   //    dwLowmostBits =

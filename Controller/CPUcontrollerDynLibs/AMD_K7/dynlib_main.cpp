@@ -7,6 +7,7 @@
 
   #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
   #include <Controller/CPU-related/AMD/K7/AMD_K7.hpp>
+  #include <Controller/CPU-related/AMD/K7/AMD_K7_GetAvailableVoltages.hpp>
   //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
   #include <Controller/CPU-related/AMD/K7/AMD_K7_SetVoltage.hpp>
 
@@ -15,17 +16,18 @@
   #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
   #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
-//  #include <Controller/AssignPointersToExportedExeFunctions/\
-//AssignPointerToExportedExeReadPCIconfig.h>
+/*  #include <Controller/AssignPointersToExportedExeFunctions/\
+//AssignPointerToExportedExeReadPCIconfig.h> */
 
   #include <typeinfo> //for typeid<>
 #ifdef _WIN32
   #include <windows.h> //for
   #include <winuser.h> //MessageBox
-  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
+  #include <Windows/Logger/LogEntryOutputter.hpp> //class Windows_API::Logger
   #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
 #ifdef _DEBUG
-  static HMODULE gs_hModule;
+/** static global variable: limit variable visibility to this source file. */
+  static HMODULE gs_hModuleThisDLL;
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 #endif
@@ -52,6 +54,9 @@ AssignPointersToExportedExeMSRfunctions.h>
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
   ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+  ReadMSR_func_type g_pfnreadmsr;
+  WriteMSR_func_type g_pfn_write_msr;
+
   //static
     BYTE s_minimumFID;
 
@@ -88,7 +93,7 @@ AssignPointersToExportedExeMSRfunctions.h>
     case DLL_PROCESS_ATTACH:
 #ifdef _DEBUG
       //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll:
-      gs_hModule = hModule;
+      gs_hModuleThisDLL = hModule;
 #endif //#ifdef _DEBUG
 //      //Force the cond. "< min. time diff" to become true.
 //      g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
@@ -98,7 +103,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 //      //The reference clock is needed for setting the current frequency. So it
 //      //must be determined prior to any call of this function.
 //      GetCurrentReferenceClock(12.0, 100 , MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF ) ;
-
+      break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
@@ -108,38 +113,35 @@ AssignPointersToExportedExeMSRfunctions.h>
   }
 #endif //#ifdef _WIN32
 
-  //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
-  #define NEHALEM_DLL_CALLING_CONVENTION
+  //#define DYN_LIB_CALLING_CONVENTION __stdcall
+  #define DYN_LIB_CALLING_CONVENTION
 
-  EXPORT
-  //The array pointed to by the return value must be freed by the caller (i.e.
-  //x86I&C GUI or service) of this function.
-  float *
-    NEHALEM_DLL_CALLING_CONVENTION
-    //The reference clock might change, also during runtime.
-    //This is why it is a good idea to get the possible multipliers.
+  /**
+   * The reference clock might change, also during runtime.
+   * This is why it is a good idea to get the possible multipliers.
+   *
+   * @return The array pointed to must be freed by the caller (i.e.
+  *     x86I&C GUI or service) of this function. */
+  EXPORT float * DYN_LIB_CALLING_CONVENTION
     GetAvailableMultipliers(
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements
       )
   {
     DEBUGN("DLL's GetAvailableMultipliers")
-    return GetAvailableMultipliersAMD_K7( * p_wNumberOfArrayElements) ;
+    return AMD::K7::GetAvailableMultipliers( * p_wNumberOfArrayElements) ;
   }
 
-  EXPORT
-  //The array pointed to by the return value must be freed by the caller (i.e.
-  //x86I&C GUI or service) of this function.
-  float * GetAvailableVoltagesInVolt(
+  /** @return The array pointed to by the return value must be freed by the
+  *    caller (i.e. x86I&C GUI or service) of this function. */
+  EXPORT float * GetAvailableVoltagesInVolt(
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements )
   {
-    return GetAvailableVoltagesAMD_K7( * p_wNumberOfArrayElements) ;
+    return AMD::K7::GetAvailableVoltages( * p_wNumberOfArrayElements) ;
   }
 
-  EXPORT
-    BYTE
-    NEHALEM_DLL_CALLING_CONVENTION
+  EXPORT BYTE DYN_LIB_CALLING_CONVENTION
     GetCurrentVoltageAndFrequency(
       float * p_fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -149,7 +151,7 @@ AssignPointersToExportedExeMSRfunctions.h>
     )
   {
     static BYTE byRet;
-    static BYTE byCurrentFrequencyID, byCurrentVoltageID;
+    static fastestUnsignedDataType byCurrentFrequencyID, byCurrentVoltageID;
     byRet = GetCurrentVoltageAndFrequency_AMD_K7(
       p_fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -161,9 +163,7 @@ AssignPointersToExportedExeMSRfunctions.h>
     return byRet;
   }
 
-  EXPORT
-  float
-    NEHALEM_DLL_CALLING_CONVENTION
+  EXPORT float DYN_LIB_CALLING_CONVENTION
     GetTemperatureInCelsius ( WORD wCoreID
     )
   {
@@ -174,6 +174,8 @@ AssignPointersToExportedExeMSRfunctions.h>
   }
 
   //#define DLL_CALLING_CONVENTION __stdcall
+  /** Calling convention--must be the same as in the DLL
+  * function signature that calls this function?! */
   #define DLL_CALLING_CONVENTION
 
   void InsertDefaultVoltageForStartUpFID(I_CPUaccess * pi_cpuaccess)
@@ -189,21 +191,22 @@ AssignPointersToExportedExeMSRfunctions.h>
       1
       );
     //"Startup VID (StartVID)—Bits 45–40."
-    BYTE StartupVID = (highmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
-    float fVoltageInVolt = GetVoltageInVolt_AMD_K7( StartupVID);
+    const fastestUnsignedDataType StartupVID = (highmostMSRbits >> 8 ) &
+      BITMASK_FOR_LOWMOST_6BIT;
+    const float fVoltageInVoltForStartupVID = AMD::K7::GetVoltageInVolt( StartupVID);
 
     //"Startup FID (StartFID)—Bit 13–8"
-    BYTE StartupFID = (lowmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
+    const fastestUnsignedDataType StartupFID = (lowmostMSRbits >> 8 ) &
+      BITMASK_FOR_LOWMOST_6BIT;
 #ifdef USE_STARTUP_FID_AS_MIN_FID
     s_minimumFID = StartupFID;
 #endif //#ifdef USE_STARTUP_FID_AS_MIN_FID
-    float fMultiplier = GetMultiplier_AMD_K7(StartupFID);
+    float fMultiplierForStartupFID = AMD::K7::GetMultiplier(StartupFID);
     pi_cpuaccess->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.insert(
-      VoltageAndFreq(fVoltageInVolt, (WORD) ( fMultiplier * //g_fReferenceClockInMHz
+      VoltageAndFreq(fVoltageInVoltForStartupVID, (WORD) ( fMultiplierForStartupFID * //g_fReferenceClockInMHz
         100.0f)
         )
       );
-
   }
 
 #if defined (_DEBUG) && defined(USE_LOG4CPLUS)
@@ -236,7 +239,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 
   void AssignPointersToExportedExefunctions()
   {
-    AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
+    AssignPointersToExportedExeMSRfunctions_inline(g_pfnreadmsr, g_pfn_write_msr) ;
 //    AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
     DEBUGN( "g_pfnReadPCIconfigSpace:" << (void *) g_pfnReadPCIconfigSpace )
 
@@ -272,7 +275,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif
     std::tstring std_tstrDLLfileName
 #ifdef _WIN32 //win 32 or 64 bit
-    = GetDLLfileName(gs_hModule, fileName)
+    = GetDLLfileName(gs_hModuleThisDLL, fileName)
 #endif //#ifdef _WIN32
 #ifdef __linux__
     = "AMD_NPT_family_0F"
@@ -281,7 +284,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 
     std::string strExeFileNameWithoutDirs
 #ifdef _WIN32
-      = GetExeFileNameWithoutDirs()
+      = CurrentProcess::GetExeFileNameWithoutDirs()
 #endif
       ;
     std::string stdstrFilename;
@@ -320,12 +323,8 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif //#ifdef _DEBUG
 
   /** All init code into this function and not into "DLLMain" because Dllmain can
-  * blocks other processes from load a DLL according to U. Pohl. */
-  EXPORT void
-    //Calling convention--must be the same as in the DLL
-    //function signature that calls this function?!
-    //WINAPI
-    DLL_CALLING_CONVENTION
+  * blocks other processes from loading a DLL according to U. Pohl. */
+  EXPORT void /*WINAPI*/ DLL_CALLING_CONVENTION
     Init( //I_CPUcontroller * pi_cpu
     //CPUaccess object inside the exe.
     I_CPUaccess * pi_cpuaccess
@@ -335,7 +334,7 @@ AssignPointersToExportedExeMSRfunctions.h>
     )
   {
 #ifdef __linux__
-    AssignPointersToExportedExeMSRfunctions(
+    AssignPointersToExportedExeMSRfunctions_inline(
       g_pfnreadmsr , g_pfn_write_msr ) ;
 #else
     DEBUGN("after GetMainPllOpFreqIdMax")
@@ -390,9 +389,7 @@ AssignPointersToExportedExeMSRfunctions.h>
     //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
   }
 
-  EXPORT
-    BYTE
-    NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
+  EXPORT BYTE DYN_LIB_CALLING_CONVENTION //can be omitted.
     SetCurrentVoltageAndMultiplier(
       float fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -403,14 +400,15 @@ AssignPointersToExportedExeMSRfunctions.h>
 #ifdef _DEBUG
 //    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
 #endif //#ifdef _DEBUG
-    DEBUGN( FULL_FUNC_NAME << "--begin--fVoltageInVolt:" << fVoltageInVolt
-      << " fMultiplier:" << fMultiplier)
+    DEBUGN( /*FULL_FUNC_NAME << "--" */
+      "begin--fVoltageInVolt:" << fVoltageInVolt
+      << " fMultiplier:" << fMultiplier )
     // see "10.5 Processor Performance States"
         //10.5.1.1 P-state Recognition Algorithm
     //"10.5.7.2 P-state Transition Algorithm"
     //"Note: Software must hold the FID constant when changing the VID."
 
-    SetCurrentVoltageAndMultiplier_AMD_K7( fVoltageInVolt ,
+    AMD::K7::SetCurrentVoltageAndMultiplier( fVoltageInVolt ,
       fMultiplier ,
       wCoreID ) ;
     return 1 ;

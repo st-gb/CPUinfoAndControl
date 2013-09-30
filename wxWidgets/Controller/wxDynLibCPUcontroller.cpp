@@ -6,6 +6,8 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "wxDynLibCPUcontroller.hpp"
+//format_output_data(...)
+#include <Controller/character_string/format_as_string.hpp>
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
 //GetErrorMessageFromErrorCodeA(...)
 #include <Controller/GetErrorMessageFromLastErrorCode.hpp>
@@ -33,6 +35,10 @@
   #include <limits> //float>::min()
 #endif
 
+#define NUM_MD5_BYTES 16
+
+using namespace wxWidgets; //wxWidgets::Get...
+
 void wxDynLibCPUcontroller::GetCurrentReferenceClock()
 {
   //Get the reference clock at first for being able to interpolate default
@@ -53,17 +59,25 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   , Model * p_model
   )
   :
+//  CPUcoreUsageGetterAndControllerBase(p_cpuaccess),
 //  m_fReferenceClockInMHz(0.0) ,
   mp_userinterface (p_userinterface)
-  , m_wNumberOfLogicalCPUcores ( 1 )
+  , m_wNumberOfLogicalCPUcores ( 1 )//,
+//  mp_cpuaccess(p_cpuaccess)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
+  SetCPUaccess(p_cpuaccess);
   if( ! p_cpuaccess )
   {
+#ifdef _DEBUG
+    mp_model = p_model ;
+    PossiblyCompareMD5checkSums();
+#else
     std::string std_str = "can't create CPU controller because the hardware/ "
       "CPU access not initialized/ the pointer is NULL";
     p_userinterface->Confirm(std_str);
     throw new CPUaccessException(std_str);
+#endif
   }
   //TODO crashes here if the CPU access initialization failed.
 //  mp_model = p_cpuaccess->mp_model ;
@@ -76,7 +90,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   if( m_wxdynamiclibraryCPUctl.Load(r_wxstrFilePath) 
     )
   {
-    LOGN( FULL_FUNC_NAME << "--successfully loaded dyn lib")
+    LOGN( "successfully loaded dyn lib")
     //TODO dyn lib name in "File" menu when loading failed and the old dyn lib
     //is used.
     AssignPointersToDynLibFunctions(p_cpuaccess);
@@ -106,20 +120,20 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     mp_userinterface->MessageWithTimeStamp(std_wstrErrMsg);
     throw CPUaccessException( std_strErrMsg);
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 wxDynLibCPUcontroller::~wxDynLibCPUcontroller()
 {
-  LOGN( FULL_FUNC_NAME << " before unloading the CPU controller dynamic library")
+  LOGN( "before unloading the CPU controller dynamic library")
   m_wxdynamiclibraryCPUctl.Unload() ;
-  LOGN( FULL_FUNC_NAME << " unloaded the CPU controller dynamic library")
+  LOGN( "unloaded the CPU controller dynamic library")
 }
 
 void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
   I_CPUaccess * p_cpuaccess)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   //wxdynamiclibraryCPUctl.
   wxString wxstrFuncName = //(
     //Use wxT() to enable to compile with both unicode and ANSI.
@@ -151,14 +165,15 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       EXPAND_AND_STRINGIFY(DYN_LIB_INIT_FUNCTION_NAME)
       " address of function:" << (void *) pfnInit
       )
-    LOGN( FULL_FUNC_NAME << " p_cpuaccess: " << p_cpuaccess
+    LOGN( "p_cpuaccess: " << p_cpuaccess
       << " size of \"CPUaccess\" class/ structure in byte: "
       << sizeof(*p_cpuaccess) )
-    LOGN(FULL_FUNC_NAME << " \"attributes\" pointer address: "
+#ifndef _DEBUG
+    LOGN(" \"attributes\" pointer address: "
       << p_cpuaccess->mp_model
       << " size of \"Model\" class/ structure in byte: "
       << sizeof(*p_cpuaccess->mp_model) )
-
+#endif
     LOGN_WARNING("before calling Dyn Lib's \""
       //Convert to std::string, else g++ linker error:
       //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
@@ -171,7 +186,14 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
   //      //TODO
   //      p_cpuaccess->mp_cpucontroller = NULL ;
     //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
-
+    /** Copy MD5 to model so that the dyn lib can compare it if it generates its
+     * own MD5 checksum. */
+    mp_model->GetCPUcontrollerModelMD5checkSum(mp_model->m_cpucoredata.m_MD5checksum);
+    BYTE MD5checksumOfExcutable[NUM_MD5_BYTES];
+    /** Create copy in order to compare to with the one that may have been
+     * written by the dyn lib after calling "Init". */
+    memcpy(MD5checksumOfExcutable,
+      mp_model->m_cpucoredata.m_MD5checksum, NUM_MD5_BYTES);
     //IMPORTANT: the class "Model" should have the same structure as in the
     //dynamic (link) library, else the executable file (i.e. GUI or service)
     //may malfunction:
@@ -190,6 +212,19 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
   //        , & ::ReadMSR
   //        )
       ) ;
+    /** Compare with the one that may have been written by the dyn lib inside
+     * "Init". */
+    if( memcmp(mp_model->m_cpucoredata.m_MD5checksum,
+        MD5checksumOfExcutable, NUM_MD5_BYTES) != 0 )
+    {
+      /** Restore with the executable's MD5 checksum. */
+      memcpy(mp_model->m_cpucoredata.m_MD5checksum,
+        MD5checksumOfExcutable, NUM_MD5_BYTES);
+      std::string std_str = "mismatch between dyn lib's and "
+          "executable's MD5 checksums for the attributes data";
+//      mp_userinterface->MessageWithTimeStamp(std_str);
+      throw new CPUaccessException(std_str);
+    }
     LOGN_TYPE("after calling Dyn Lib's \""
       //Convert to std::string, else g++ linker error:
       //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
@@ -212,7 +247,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
       ++ c_iter;
     }
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void wxDynLibCPUcontroller::AssignPointerToDynLibsGetAvailableMultipliersFunction()
@@ -301,14 +336,75 @@ template <typename func_type> void wxDynLibCPUcontroller::PossiblyAssign(
     p_function = NULL ;
 }
 
+/** @return true: */
+bool wxDynLibCPUcontroller::PossiblyCompareMD5checkSums()
+{
+  PossiblyAssign( wxT("GetMD5"), m_pfnGetMD5);
+  if( m_pfnGetMD5 == NULL)
+    return true;
+
+  unsigned char MD5checksumOfdynLib[NUM_MD5_BYTES];
+
+  CPUcoreData & r_CPUcoreData = mp_model->m_cpucoredata;
+
+  //From http://stackoverflow.com/questions/670734/c-pointer-to-class-data-member
+  CPUcoreData Model:: * p_cpucoredata = & Model::m_cpucoredata;
+//  Model CPUcoreData::* p_model = & CPUcoreData::m_r_model;
+  BYTE CPUcoreData::* p_m_byNumberOfCPUCores = & CPUcoreData::m_byNumberOfCPUCores;
+//  std::vector<VoltageAndFreq> CPUcoreData:: *
+//    p_m_std_vec_voltageandfreqInsertedByCPUcontroller = & CPUcoreData::
+//    m_std_vec_voltageandfreqInsertedByCPUcontroller;
+
+  bool CPUcoreData:: *p_m_b1CPUcorePowerPlane = & CPUcoreData::m_b1CPUcorePowerPlane;
+
+  void * addressOfModelofCPUcoreData = //& mp_model->p_cpucoredata->m_r_model
+    //(*mp_model).*p_cpucoredata,m_r_model;
+//    & (r_CPUcoreData.//p_model;
+//    & (r_CPUcoreData.*p_m_byNumberOfCPUCores);
+    & r_CPUcoreData./*m_byNumberOfCPUCores*/ m_MD5checksum;
+    //mp_model->m_cpucoredata.//p_m_std_vec_voltageandfreqInsertedByCPUcontroller;
+//    & (r_CPUcoreData.*p_m_b1CPUcorePowerPlane);
+
+//  unsigned numBytesForCPUcontrollersModel = //(unsigned) (
+////    //& p_model->m_logfileattributes
+////    (BYTE *) addressOfModelofCPUcoreData - (BYTE *) mp_model
+////    );
+  unsigned char MD5checksumOfExecutable[16];
+  mp_model->GetCPUcontrollerModelMD5checkSum(mp_model->m_cpucoredata.m_MD5checksum);
+  std::string std_str = format_output_data(MD5checksumOfExecutable,
+    NUM_MD5_BYTES, 80);
+  LOGN("MD5 checksum of executable" << std_str)
+
+  m_pfnGetMD5(MD5checksumOfdynLib);
+  if( /*m_pfnGetMD5 == NULL || */ memcmp(MD5checksumOfExecutable,
+    MD5checksumOfdynLib, NUM_MD5_BYTES) == 0 )
+    return true;
+  return false;
+}
+
 void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
   I_CPUaccess * p_cpuaccess)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
-  AssignPointerToDynLibsInitFunction(p_cpuaccess);
-  AssignPointerToDynLibsGetAvailableMultipliersFunction();
-  AssignPointerToDynLibsGetAvailableVoltagesFunction();
-  AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
+  LOGN( "begin")
+  if( PossiblyCompareMD5checkSums() )
+  {
+    AssignPointerToDynLibsInitFunction(p_cpuaccess);
+#ifdef _DEBUG
+    if( ! mp_cpuaccess )
+    {
+      std::string std_str = "can't create CPU controller because the hardware/ "
+        "CPU access not initialized/ the pointer is NULL";
+      mp_userinterface->Confirm(std_str);
+      throw new CPUaccessException(std_str);
+    }
+#endif
+    AssignPointerToDynLibsGetAvailableMultipliersFunction();
+    AssignPointerToDynLibsGetAvailableVoltagesFunction();
+    AssignPointerToDynLibsGetTemperatureInCelsiusFunction();
+  }
+  else
+    mp_userinterface->MessageWithTimeStamp("mismatch between DynLib's and "
+      "Executables' MD5 sum");
 //#endif
 //      wxDYNLIB_FUNCTION(dll_init_type, Init, m_wxdynamiclibraryCPUctl) ;
 //      LOGN("Dyn Lib assigned fct ptr to symbol " <<
@@ -338,13 +434,8 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
 //        m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetMinimumFrequencyInMHz")
 //        ) ;
 
-  wxString wxstrFuncName = wxT("PrepareForNextPerformanceCounting") ;
-  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-    m_pfn_preparefornextperformancecounting =
-      (dll_PrepareForNextPerformanceCounting)
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
-  else
-    m_pfn_preparefornextperformancecounting = NULL ;
+  PossiblyAssign( wxT("PrepareForNextPerformanceCounting"),
+    m_pfn_preparefornextperformancecounting);
 
   //Do not use wxDYNLIB_FUNCTION: it shows a wxWidgets error message if
   // a DLL function does not exist.
@@ -389,7 +480,7 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
   //m_pfn_too_hot = (dll_TooHot_type)
   //  m_wxdynamiclibraryCPUctl.GetSymbol( wxT("GetCPUcoreTooHot") ) ;
 
-  wxstrFuncName = wxT("WriteMSR") ;
+  wxString wxstrFuncName = wxT("WriteMSR") ;
   if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
     m_pfn_write_msr = (dll_WriteMSR_type)
       m_wxdynamiclibraryCPUctl.GetSymbol( wxT("WriteMSR") ) ;
@@ -398,21 +489,9 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
   //wxDYNLIB_FUNCTION(dll_GetNumberOfCPUcores_type, GetNumberOfCPUcores,
   //  m_wxdynamiclibraryCPUctl) ;
 
-  wxstrFuncName = wxT("GetNumberOfCPUcores") ;
-  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-//        m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
-    m_pfnGetNumberOfCPUcores = (dll_GetNumberOfCPUcores_type)
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
-  else
-    m_pfnGetNumberOfCPUcores = NULL ;
+  PossiblyAssign( wxT("GetNumberOfCPUcores"), m_pfnGetNumberOfCPUcores);
 
-  wxstrFuncName = wxT("SetThrottleLevel") ;
-  if( m_wxdynamiclibraryCPUctl.HasSymbol( wxstrFuncName ) )
-//        m_pfnGetNumberOfCPUcores = pfnGetNumberOfCPUcores ;
-    m_pfnSetThrottleLevel = (pfnSetThrottleLevel_type)
-      m_wxdynamiclibraryCPUctl.GetSymbol( wxstrFuncName ) ;
-  else
-    m_pfnSetThrottleLevel = NULL ;
+  PossiblyAssign( wxT("SetThrottleLevel"), m_pfnSetThrottleLevel);
 
   PossiblyAssign//<pfnGetAvailableMultipliers_type>
     (wxT("GetAvailableThrottleLevels"),
@@ -443,7 +522,7 @@ void wxDynLibCPUcontroller::AssignPointersToDynLibFunctions(
   AssignAvailableThrottleLevels();
 //      LOGN("")
   AssignAvailableVoltages();
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void wxDynLibCPUcontroller::AssignAvailableMultipliers()
@@ -475,10 +554,10 @@ void wxDynLibCPUcontroller::AssignAvailableThrottleLevels()
   // previous multipliers, else the result is the intersection of the
   //current and the next multipliers.
   availableThrottleLevels.clear() ;
-  LOGN(FULL_FUNC_NAME << " before DLL::GetAvailableMultipliers")
+  LOGN("before DLL::GetAvailableMultipliers")
   GetAvailableThrottleLevels(availableThrottleLevels) ;
   mp_model->m_cpucoredata.AvailableThrottleLevelsToArray() ;
-  LOGN(FULL_FUNC_NAME << " Available throttle levels:")
+  LOGN("Available throttle levels:")
   for( WORD wIndex = 0 ; wIndex < availableThrottleLevels.size() ; ++ wIndex )
   {
     LOGN( mp_model->m_cpucoredata.m_arfAvailableThrottleLevels[ wIndex ]
@@ -563,15 +642,15 @@ void wxDynLibCPUcontroller::GetAvailableThrottleLevels(
 {
   if( m_pfnGetAvailableThrottleLevels )
   {
-    LOGN( FULL_FUNC_NAME << " getting available ThrottleLevels")
+    LOGN( "getting available throttle levels")
     float * ar_fThrottleLevels ;
     WORD wNum ;
     ar_fThrottleLevels = (* m_pfnGetAvailableThrottleLevels) (
         0 ,
         & wNum
         ) ;
-    LOGN(FULL_FUNC_NAME << " float array address allocated by DLL:"
-      << ar_fThrottleLevels  << "num eles:" << wNum )
+    LOGN("float array address allocated by dynamic (link) library:"
+      << ar_fThrottleLevels  << "# elements:" << wNum )
     //If alloc. by DLL succeeded.
     if( ar_fThrottleLevels )
     {
@@ -579,12 +658,12 @@ void wxDynLibCPUcontroller::GetAvailableThrottleLevels(
       {
         r_stdset_float.insert(ar_fThrottleLevels[wIndex]) ;
       }
-      LOGN(FULL_FUNC_NAME << " Before deleting the array that should have "
+      LOGN("Before deleting the array that should have "
         "been allocated by the dynamic (link) library")
       //Was dyn. allocated by the DLL.
       delete [] ar_fThrottleLevels ;
-      LOGN(FULL_FUNC_NAME << " After deleting the array that should have been "
-        "allocated by the DLL")
+      LOGN("After deleting the array that should have been "
+        "allocated by the dynamic (link) library")
     }
   }
 }
@@ -630,9 +709,7 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
   )
 {
   BYTE by = 0 ;
-  LOGN(//"wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier("
-    FULL_FUNC_NAME <<
-    "voltage in Volt:" << fVoltageInVolt
+  LOGN( "voltage in Volt:" << fVoltageInVolt
     << "multiplier:" << fMultiplier
     << "core ID:" << wCoreID )
   CPUcoreData & r_cpucoredata = mp_model->m_cpucoredata ;
@@ -707,7 +784,7 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
     if( c_r_percpucoreattributes.m_fMultiplier != fMultiplier ||
         c_r_percpucoreattributes.m_fVoltageInVolt != fVoltageInVolt )
     {
-      LOGN( FULL_FUNC_NAME << "--multiplier or voltage differs from current "
+      LOGN( "multiplier or voltage differs from current "
           "settings->writing/ setting both")
       by = ( * m_pfnSetCurrentVoltageAndMultiplier)(
         fVoltageInVolt
@@ -718,7 +795,7 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
         ) ;
     }
     else
-      LOGN( FULL_FUNC_NAME << "--not writing new p-state because multiplier "
+      LOGN( "not writing new p-state because multiplier "
         "and voltage are equal to current settings")
     DEBUGN("return value of DLL's function SetCurrentVoltageAndMultiplier( "
       << fVoltageInVolt << "," << //(WORD) byMultiplierToUse
@@ -729,7 +806,7 @@ inline BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier
   else
     LOGN(//"wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAnd"
       //"Multiplier(...): "
-      FULL_FUNC_NAME << "function pointer for settting voltage and multiplier "
+      "function pointer for settting voltage and multiplier "
       "is NULL or no available multipliers")
   return by ;
 }
@@ -781,9 +858,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
-  LOGN(//"wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency("
-    FULL_FUNC_NAME
-    << " core ID:" << wCoreID << ") begin"
+  LOGN( "core ID:" << wCoreID << ") begin"
     "--m_pfnGetCurrentVoltageAndFrequency:" //<< std::ios::hex
     //see http://stackoverflow.com/questions/2064692/
     //  how-to-print-function-pointers-with-cout:
@@ -800,8 +875,7 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
        ) ;
 //    BYTE byReturn = 1 ;
     LOGN(//"dyn lib CPU controller: "
-      FULL_FUNC_NAME <<
-      " after calling (return value:" << (WORD) byReturn << ") "
+      "after calling (return value:" << (WORD) byReturn << ") "
       "DLL's "
       "GetCurrentVoltageAndFrequency function for "
       << " core: " << wCoreID
@@ -860,11 +934,11 @@ BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency(
 //        << "):" <<
 //        r_wFreqInMHz << " " << r_fVolt << "\n" ) ;
 //     LOGN("dyn lib CPU controller: GetCurrentVoltageAndFrequency end")
-     LOGN( FULL_FUNC_NAME << " return " << (WORD)byReturn)
+     LOGN( "return " << (WORD)byReturn)
      return byReturn ;
   }
   LOGN(//"dyn lib CPU controller: GetCurrentVoltageAndFrequency end"
-    FULL_FUNC_NAME << " return 0")
+    "return 0")
   return 0 ;
 }
 
@@ -933,7 +1007,7 @@ WORD wxDynLibCPUcontroller::GetNumberOfCPUcores()
 
 float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 {
-  LOGN( FULL_FUNC_NAME << "--begin--dyn lib function's address: "
+  LOGN( "begin--dyn lib function's address: "
     << (void *) m_pfngettemperatureincelsius)
   if( m_pfngettemperatureincelsius )
   {
@@ -956,11 +1030,11 @@ float wxDynLibCPUcontroller::GetTemperatureInCelsius( WORD wCoreID )
 
 float wxDynLibCPUcontroller::GetThrottleLevel(unsigned coreID)
 {
-  LOGN_DEBUG(FULL_FUNC_NAME << coreID << ") func ptr:" <<
+  LOGN_DEBUG(coreID << ") func ptr:" <<
     (void *) m_pfngethrottlelevel )
   if( m_pfngethrottlelevel)
     return ( * m_pfngethrottlelevel ) ( coreID ) ;
-//  LOGN(FULL_FUNC_NAME << coreID << ") func ptr:" <<
+//  LOGN(coreID << ") func ptr:" <<
   return -1.0f;
 }
 
@@ -1017,7 +1091,7 @@ BYTE wxDynLibCPUcontroller::SetCurrentVoltageAndMultiplier(
 /** @return enum DynLibCPUcontroller::state */
 BYTE wxDynLibCPUcontroller::SetThrottleLevel(float level, unsigned coreID)
 {
-  LOGN_DEBUG( FULL_FUNC_NAME << "-level:" << level << " func. pointer:"
+  LOGN_DEBUG( "level:" << level << " func. pointer:"
     << (void *) m_pfnSetThrottleLevel )
   if( m_pfnSetThrottleLevel )
   {
@@ -1112,7 +1186,7 @@ BYTE wxDynLibCPUcontroller::
 
 BYTE wxDynLibCPUcontroller::GetCPUcoreTooHot() 
 { 
-  LOGN( FULL_FUNC_NAME << " begin")
+  LOGN( "begin")
   BYTE by = 0 ;
   float fTemperatureInCelsius ;
   m_wNumberOfLogicalCPUcores = mp_model->m_cpucoredata.m_byNumberOfCPUCores ;
@@ -1148,7 +1222,7 @@ BYTE wxDynLibCPUcontroller::GetCPUcoreTooHot()
 #endif
     }
   }
-  LOGN( FULL_FUNC_NAME << " return " << (WORD) by)
+  LOGN( "return " << (WORD) by)
   return by ;
 }
 
@@ -1157,8 +1231,8 @@ BOOL // TRUE: success, FALSE: failure
   //WINAPI
   wxDynLibCPUcontroller::WrmsrEx(
     DWORD index,		// MSR index
-    DWORD dwLow ,//eax,			// bit  0-31
-    DWORD dwHigh, //edx,			// bit 32-63
+    DWORD dwLow ,//eax,		// bit  0-31
+    DWORD dwHigh, //edx,	// bit 32-63
     DWORD affinityMask	// Thread Affinity Mask
     )
 {
@@ -1171,8 +1245,8 @@ BOOL // TRUE: success, FALSE: failure
     if( mp_cpuaccess )
       boolRet = mp_cpuaccess->WrmsrEx(
         index,		// MSR index
-        dwLow ,//eax,			// bit  0-31
-        dwHigh, //edx,			// bit 32-63
+        dwLow ,//eax,	// bit  0-31
+        dwHigh, //edx,	// bit 32-63
         affinityMask	// Thread Affinity Mask
         ) ;
   return boolRet ;

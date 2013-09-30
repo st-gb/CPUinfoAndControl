@@ -121,10 +121,8 @@ public:
     , WORD wNumCPUcores
     )
   {
-    LOGN(//"CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores(...,"
-      FULL_FUNC_NAME <<
-      //<< wNumCPUcores << ")"
-      "--before GetPercentalUsageForAllCores" )
+    LOGN(//<< wNumCPUcores << ")"
+      "before GetPercentalUsageForAllCores" )
     //TODO exit thread when getting CPU core load fails?
     if( ! mp_cpucoreusagegetter ||
         //Use brackets to avoid g++ warning
@@ -139,16 +137,16 @@ public:
         )
       )
     {
-      LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
-        "after GetPercentalUsageForAllCores")
+      LOGN("after GetPercentalUsageForAllCores")
       //Get the current voltage etc. for ALL cores for sending the data for
       // all cores via IPC, even if not needed for
       //DVFS (if single power plane / all cores always at the same p-state
       // then only the frequency for the core with the highest load is
       //needed).
-      for( BYTE byCoreID = 0 ; byCoreID < wNumCPUcores ; ++ byCoreID )
+      for( fastestUnsignedDataType coreID = 0; coreID < wNumCPUcores;
+          ++ coreID )
       {
-        mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(byCoreID) ;
+        mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(coreID) ;
   //            float fVoltageInVolt ;
   //            float fMultiplier ;
   //            float fReferenceClockInMhz ;
@@ -156,17 +154,14 @@ public:
   //              fVoltageInVolt,
   //              fMultiplier,
   //              fReferenceClockInMhz ,
-  //              byCoreID ) ;
+  //              coreID ) ;
       }
 //      m_criticalsection_typeCPUcoreData.Leave() ;
-      LOGN("CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores--"
-        "return true")
+      LOGN("return true")
       return true ;
     }
 //    m_criticalsection_typeCPUcoreData.Leave() ;
-    LOGN( //"CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores"
-      FULL_FUNC_NAME <<
-      "--return false")
+    LOGN("return false")
     return false ;
   }
   inline bool GetUsageAndVoltageAndFreqAndTempForAllCores(
@@ -188,14 +183,14 @@ public:
     float ar_fCPUcoreLoadInPercent []
     , WORD wNumCPUcores )
   {
-    LOGN( FULL_FUNC_NAME << " begin")
+    LOGN( "begin")
     bool b ;
     m_criticalsection_typeCPUcoreData.Enter() ;
     b = //GetUsageAndVoltageAndFreqAndTempForAllCores(
       GetUsageAndVoltageAndFreqForAllCores(
       ar_fCPUcoreLoadInPercent , wNumCPUcores ) ;
     m_criticalsection_typeCPUcoreData.Leave() ;
-    LOGN( FULL_FUNC_NAME << " return " << (b ? "true" : "false") )
+    LOGN( "return " << (b ? "true" : "false") )
     return b ;
   }
 //  BYTE CreateCPUcontrollerAndUsageGetter(

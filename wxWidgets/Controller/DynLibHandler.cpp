@@ -48,7 +48,7 @@ namespace wxWidgets
     )
   {
     I_CPUcontroller * p_cpucontroller = NULL;
-    LOGN( FULL_FUNC_NAME << "--begin")
+    LOGN( "begin")
     bool bSuccess = false ;
     wxString wxstrFilePath = getwxString( r_stdstrDynLibFilePath );
     try
@@ -82,8 +82,7 @@ namespace wxWidgets
   //          mp_model->m_cpucoredata.m_stdset_floatAvailableVoltagesInVolt) ;
   //        mp_model->m_cpucoredata.AvailableVoltagesToArray() ;
       LOGN_TYPE(//"CPU controller DynLib "
-        FULL_FUNC_NAME
-        << "\"" << mr_cpucontrolbase.m_model.m_stdstrCPUcontrollerDynLibPath
+        "\"" << mr_cpucontrolbase.m_model.m_stdstrCPUcontrollerDynLibPath
         << "\""
         << ": successfully loaded and function pointers assigned to it.",
         LogLevel::success)
@@ -96,11 +95,11 @@ namespace wxWidgets
       //This number is important for CPU core creating usage getter.
       WORD wNumberOfLogicalCPUcores =
         mr_cpucontrolbase.m_p_cpucontrollerDynLib->GetNumberOfCPUcores() ;
-      LOGN( FULL_FUNC_NAME << " # CPU cores from CPU controller:"
+      LOGN( "# CPU cores from CPU controller:"
         << wNumberOfLogicalCPUcores)
       if( wNumberOfLogicalCPUcores ) // <> 0
       {
-        LOGN( FULL_FUNC_NAME << " setting CPU core number to "
+        LOGN( "setting CPU core number to "
           << wNumberOfLogicalCPUcores)
         mr_cpucontrolbase.m_model.m_cpucoredata.m_byNumberOfCPUCores =
           wNumberOfLogicalCPUcores ;
@@ -121,7 +120,7 @@ namespace wxWidgets
         << mr_cpucontrolbase.m_p_cpucontrollerDynLib )
 //      r_p_cpucontroller = NULL ;
     }
-    LOGN( FULL_FUNC_NAME << "--return " << p_cpucontroller)
+    LOGN( "return " << p_cpucontroller)
     return p_cpucontroller ;
   }
 
@@ -171,7 +170,7 @@ namespace wxWidgets
 //      r_p_icpucoreusagegetter = NULL ;
     }
 //    return bSuccess ;
-    LOGN( FULL_FUNC_NAME << "--return " << p_icpucoreusagegetter)
+    LOGN( "return " << p_icpucoreusagegetter)
     return p_icpucoreusagegetter;
   }
 

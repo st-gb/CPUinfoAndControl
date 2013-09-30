@@ -48,7 +48,7 @@ __stdcall
 #endif
 StartGUIdelayed_ThreadFunc(void * p_v)
 {
-  LOGN( FULL_FUNC_NAME << "--begin" )
+  LOGN( "begin" )
   //  Windows_API::CreateProcess * p_create_gui_process =
   //    (Windows_API::CreateProcess *) p_v;
   CreateProcessAttributesAndDelayTime * p_createprocessattributesanddelaytime =
@@ -56,12 +56,12 @@ StartGUIdelayed_ThreadFunc(void * p_v)
   if ( //p_create_gui_process
       p_createprocessattributesanddelaytime)
     {
-      LOGN( FULL_FUNC_NAME << " before sleeping " <<
+      LOGN( "before sleeping " <<
         p_createprocessattributesanddelaytime->m_dwDelayTimeInMillis
         << " milliseconds" )
       ::Sleep(//p_create_gui_process->m_
           p_createprocessattributesanddelaytime->m_dwDelayTimeInMillis);
-      LOGN( FULL_FUNC_NAME << " after sleeping " <<
+      LOGN( "after sleeping " <<
         p_createprocessattributesanddelaytime->m_dwDelayTimeInMillis
         << " milliseconds" )
       p_createprocessattributesanddelaytime->m_p_create_gui_process->
@@ -102,7 +102,7 @@ void
 StartGUIprocessDelayedAsync(ServiceAttributes & r_service_attributes,
     DWORD dwSessionID)
 {
-  LOGN( FULL_FUNC_NAME << "--begin" )
+  LOGN( "begin" )
 //  CreateProcessAsUserAttributesW * p_createprocessasuserattributesw =
 //    new CreateProcessAsUserAttributesW();
 //  p_createprocessasuserattributesw->m_stdwstrCommandLine

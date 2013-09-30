@@ -87,11 +87,11 @@ public:
     const float fVoltageInVolt,
     const float fMultiplier,
     const float fReferenceClockInMHz
-    ) = 0;
+    ) { };
   //TODO undefined if more than 1 inst detect. at the same time.
   //More than 1 inst detect. at the same time could make sense for multi plane
   // voltage CPUs (e.g. Phenom 1, AMD K11).
   /** E.g. update number of seconds until the voltage is reduced. */
   virtual void UpdateInstableCPUcoreOpDetectInfo(
-    /*InstableCPUcoreOperationDetection &*/) = 0;
+    /*InstableCPUcoreOperationDetection &*/) { };
 };

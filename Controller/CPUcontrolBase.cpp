@@ -83,10 +83,10 @@ TCHAR CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning [] =
 //  m_dynlibhandler ( * this ) ,
 //  mp_userinterface ( NULL )
 //{
-//  LOGN("CPUcontrolBase()")
+//  LOGN(/*"CPUcontrolBase()"*/ "begin")
 //  InitMemberVariables() ;
 //  m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
-//  LOGN("CPUcontrolBase() end")
+//  LOGN(/*"CPUcontrolBase()"*/ "end")
 //}
 
 extern std::basic_string<LOGGING_CHARACTER_TYPE> g_std_basicstring_log_char_typeLog;
@@ -105,13 +105,12 @@ CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
 {
   if( LogLevel::s_nodetrieLogLevelStringToNumber.size() == 0)
     LogLevel::CreateLogLevelStringToNumberMapping();
-  LOGN(//"CPUcontrolBase()"
-    FULL_FUNC_NAME << "--begin")
+  LOGN(/*"CPUcontrolBase()--"*/ "begin")
     /* E.g. do not log "info" messages if level is "warning". */
 //    if( LogLevel::log_message_typeINFO  >= g_logger.GetLogLevel() ) {
-////      WRITE_INTO_STRING_STREAM(g_logger, FULL_FUNC_NAME << "--begin)
+////      WRITE_INTO_STRING_STREAM(g_logger, "--begin)
 //      css::basic_stringstream<LOGGING_CHARACTER_TYPE> stringstream ;
-//      stringstream << FULL_FUNC_NAME << "--begin";
+//      stringstream << "--begin";
 //      OWN_LOGGER_LOG_ENTER_CRIT_SEC_LOGGER_NAME(g_logger)
 //      g_std_basicstring_log_char_typeLog = stringstream.str() ;
 //
@@ -122,19 +121,18 @@ CPUcontrolBase::CPUcontrolBase(const UserInterface * const cpc_userinterface )
   g_p_user_interface = (UserInterface *) cpc_userinterface;
   InitMemberVariables() ;
   m_bXercesSuccessfullyInitialized = x86InfoAndControl::InitializeXerces() ;
-  LOGN(//"CPUcontrolBase() end"
-    FULL_FUNC_NAME << "--end")
+  LOGN(/*"CPUcontrolBase() end--"*/ "end")
 }
 
 CPUcontrolBase::~CPUcontrolBase()
 {
-  LOGN("~CPUcontrolBase() begin")
+  LOGN(/*"~CPUcontrolBase() "*/ "begin")
   FreeRessources() ;
   if( m_bXercesSuccessfullyInitialized )
   {
     x86InfoAndControl::TerminateXerces();
   }
-  LOGN("~CPUcontrolBase() end")
+  LOGN(/*"~CPUcontrolBase() "*/ "end")
 }
 
 I_CPUcontroller * CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
@@ -163,7 +161,7 @@ I_CPUcontroller * CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
   std::set<VoltageAndFreq> std_set_voltageandfreqDefaultAfterAttach =
     m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault;
 
-  LOGN( FULL_FUNC_NAME << "--before getting the difference of between the "
+  LOGN( "before getting the difference of between the "
     "default voltages before:"
     << std_set_voltageandfreqDefaultBeforeAttach.size()
     << " and after:" << std_set_voltageandfreqDefaultAfterAttach.size()
@@ -195,7 +193,7 @@ I_CPUcontroller * CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
     //crash.
     m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller.
       reserve(std_set_voltageandfreqDefaultAfterAttach.size() );
-    LOGN( FULL_FUNC_NAME << " both sets are not empty")
+    LOGN( "both sets are not empty")
     //http://www.cplusplus.com/reference/algorithm/set_difference/:
     //"The difference of two sets is formed by the elements that are present
     //in the first set, but not in the second one. "
@@ -235,7 +233,7 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
       CreateDynLibCPUcontroller_DynLibName(std_strCPUcontrollerDynLibName);
     }
   }
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
@@ -243,7 +241,7 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
 //  , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter
   )
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
   std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
     "CPUcoreUsageGetter.cfg" ;
   std::string stdstr = stdstrFilePath ;
@@ -254,7 +252,7 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
   else
   {
     stdstr = m_model.m_std_strDefaultCPUcoreUsageGetter;
-    LOGN( FULL_FUNC_NAME << "--using default CPU core usage getter \""
+    LOGN( "using default CPU core usage getter \""
       << stdstr << "\"")
   }
   {
@@ -306,7 +304,7 @@ void CPUcontrolBase::CreateHardwareAccessObject_Windows()
 
 void CPUcontrolBase::CreateHardwareAccessObject()
 {
-  LOGN_INFO( FULL_FUNC_NAME << "--begin")
+  LOGN_INFO( "begin")
   try //catch CPUaccessexception
   {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -339,7 +337,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //      << r_cpuaccessexception.m_stdstrErrorMessage,
 //      I_LogFormatter::log_message_typeERROR )
     LOGN_DEBUG("mp_i_cpuaccess:" << mp_i_cpuaccess)
-    LOGN_ERROR( FULL_FUNC_NAME << r_cpuaccessexception.m_stdstrErrorMessage)
+    LOGN_ERROR( r_cpuaccessexception.m_stdstrErrorMessage)
     g_p_cpuaccess = NULL;
     //Important: show the message to the user so that he knows that there is
     //a problem.
@@ -350,13 +348,13 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     //already be NULL.
 //        mp_i_cpuaccess = NULL ;
   }
-  LOGN_INFO( FULL_FUNC_NAME << "--end")
+  LOGN_INFO( "end")
 }
 
 
   void CPUcontrolBase::DeleteCPUcontroller()
   {
-    LOGN("CPUcontrolBase::DeleteCPUcontroller cpu controller:"
+    LOGN(/*"CPUcontrolBase::DeleteCPUcontroller "*/ "cpu controller:"
       << mp_cpucontroller )
     if( mp_cpucontroller )
       //Release memory.
@@ -365,14 +363,14 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
       mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
-    LOGN("CPUcontrolBase::DeleteCPUcontroller() end:" )
+    LOGN(/*"CPUcontrolBase::DeleteCPUcontroller() "*/ "end" )
   }
 
   void CPUcontrolBase::EndDVFS()
   {
-    LOGN("CPUcontrolBase::EndDVFS begin")
+    LOGN(/*"CPUcontrolBase::EndDVFS "*/ "begin")
     mp_dynfreqscalingthreadbase->m_vbRun = false ;
-    LOGN("CPUcontrolBase::EndDVFS end")
+    LOGN(/*"CPUcontrolBase::EndDVFS "*/ "end")
   }
 
   //Freeing the resources can't be placed into the destructor because if
@@ -380,7 +378,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   // destructor( but in wxApp::OnExit(...) ).
   void CPUcontrolBase::FreeRessources()
   {
-    LOGN("FreeRessources begin")
+    LOGN(/*"FreeRessources "*/ "begin")
     //If pointer is not NULL.
     if( mp_cpucontroller )
     {
@@ -417,9 +415,10 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     if( m_handleMapFile != NULL )
       ::CloseHandle(m_handleMapFile);
   #endif //#ifdef COMPILE_WITH_MEMORY_MAPPED_FILE
-    LOGN("FreeRessources end")
+    LOGN(/*"FreeRessources "*/ "end")
   }
 
+  /** @brief Gets file name _without any directory path: prefix from e.g. a full path */
   std::wstring CPUcontrolBase::GetExecutableFileName(
     const wchar_t * const executableFilePath )
   {
@@ -453,15 +452,16 @@ void CPUcontrolBase::CreateHardwareAccessObject()
         "warning";
   }
 
+  /** */
   bool CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
-    std::wstring & std_wstrLogFilePath,
+    std::wstring & std_wstrLogFileDirectoryPath,
     std::wstring & std_wstrLogFileName)
   {
-//    std::wstring std_wstrLogFilePath = GetStdWstring(std_wstrLogFilePath);
+//    std::wstring std_wstrLogFileDirectoryPath = GetStdWstring(std_wstrLogFileDirectoryPath);
     ReadLogConfig(//r_std_tstrLogFilePath
-      std_wstrLogFilePath//, std_wstrLogFileName
+      std_wstrLogFileDirectoryPath//, std_wstrLogFileName
       );
-    std_wstrLogFilePath += std_wstrLogFileName;
+    std_wstrLogFileDirectoryPath += std_wstrLogFileName;
 
     std::string std_strFileExt;
     CPUcontrolBase::GetLogFileExtension(std_strFileExt);
@@ -472,7 +472,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //    std::string std_strLogLevelString;
 //    CPUcontrolBase::GetLogLevel(std_strLogLevelString);
 
-    std_wstrLogFilePath += GetStdWstring(std_strFileExt);
+    std_wstrLogFileDirectoryPath += GetStdWstring(std_strFileExt);
   #ifdef USE_LOG4CPLUS
     init_log4cplus() ;
   #endif
@@ -484,7 +484,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
   //  AppendingFileOutput * logfileappender = new AppendingFileOutput(
     RollingFileOutput * logfileappender = new RollingFileOutput(
       g_logger,
-      GetStdString(std_wstrLogFilePath),
+      GetStdString(std_wstrLogFileDirectoryPath),
       logentryoutputter,
   //    new I_LogFormatter(),
 //      "txt",
@@ -500,7 +500,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //      std_strFileExt.c_str(), std_strLogTimeFormatString);
 //    g_logger.AddFormattedLogEntryProcessor( logfileappender);
 //    std::string actualFilepath;
-    std::string actualFilepath = GetStdString(std_wstrLogFilePath);
+    std::string actualFilepath = GetStdString(std_wstrLogFileDirectoryPath);
     bool logFileIsOpen = //logentryoutputter->OpenA( std_strLogFileName );
       logfileappender->Open(/*actualFilepath*/ actualFilepath );
     if( logFileIsOpen )
@@ -516,6 +516,9 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 //      g_logger.SetLogLevel(std_strLogLevelString);
       logfileappender->SetLogLevel(m_model.m_logfileattributes.m_std_strLevel);
     }
+    else
+      LOGN_ERROR( "failed to open log file \""
+        << actualFilepath << "\"")
     //TODO show message to user and/ or create window event log or return
     //error code for starting the service
   //  else
@@ -606,7 +609,7 @@ void CPUcontrolBase::OutputLinkageWarning()
 
 void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
 {
-  LOGN( FULL_FUNC_NAME << "--begin--# default voltages:" <<
+  LOGN( "begin--# default voltages:" <<
     m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
   std::vector<VoltageAndFreq> & r_std_vec_voltageandfreqInsertedByCPUcontroller =
     m_model.m_cpucoredata.m_std_vec_voltageandfreqInsertedByCPUcontroller;
@@ -620,7 +623,7 @@ void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
   {
 //    const VoltageAndFreq & c_r_voltageandfreqDefaultByCPUcontroller =
 //      iterDefaultVoltagesInsertedByCPUcontroller;
-    LOGN( FULL_FUNC_NAME << "--deleting ("
+    LOGN( "deleting ("
       << iterDefaultVoltagesInsertedByCPUcontroller->m_fVoltageInVolt << "V;"
       << iterDefaultVoltagesInsertedByCPUcontroller->m_wFreqInMHz << "MHz)"
       //" from the default voltages inserted by the CPU controller"
@@ -630,7 +633,7 @@ void CPUcontrolBase::RemoveDefaultVoltagesInsertedByCPUcontroller()
     ++ iterDefaultVoltagesInsertedByCPUcontroller;
   }
   r_std_vec_voltageandfreqInsertedByCPUcontroller.clear();
-  LOGN( FULL_FUNC_NAME << "--end--# default voltages:" <<
+  LOGN( "end--# default voltages:" <<
     m_model.m_cpucoredata.m_stdsetvoltageandfreqDefault.size() )
 }
 
@@ -640,7 +643,7 @@ void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
   //I_CPUcontroller * i_cpucontrollerDynLib =
     //m_dynlibhandler.GetDynLibCPUcontroller() ;
   LOGN( //"PossiblyDeleteCPUcontroller"
-      FULL_FUNC_NAME << " begin--cpu controller:" << mp_cpucontroller
+      " begin--cpu controller:" << mp_cpucontroller
     << "dyn lib controller:" << //i_cpucontrollerDynLib
     m_p_cpucontrollerDynLib )
   if( //This may either point to a built-in CPU controller or to a dyn lib
@@ -671,8 +674,7 @@ void CPUcontrolBase::PossiblyDeleteCPUcontrollerDynLib()
       //E.g. do stuff like disable "unload dyn lib CPU controller" in menu.
       mp_userinterface->CPUcontrollerDeleted() ;
   }
-  LOGN(//"CPUcontrolBase::PossiblyDeleteCPUcontroller()
-      FULL_FUNC_NAME << "end" )
+  LOGN(/*"CPUcontrolBase::PossiblyDeleteCPUcontroller()"*/ "end" )
 }
 
 //TODO delete CPU controller _dynlib_ or CPU controller?
@@ -963,7 +965,7 @@ extern "C"
 
 void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
 {
-  LOGN("SetDynVoltnFreqScalingType_Inline begin")
+  LOGN(/*"SetDynVoltnFreqScalingType_Inline "*/ "begin")
   m_byVoltageAndFrequencyScalingType = CPUcontrolBase::none ;
   if( ! mp_cpucontroller )
   {
@@ -1021,7 +1023,7 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
         > 1
       )
     {
-      LOGN_TYPE( FULL_FUNC_NAME << "--# of preferred voltages < 2 and # of "
+      LOGN_TYPE( "# of preferred voltages < 2 and # of "
         " available voltages > 1->can only "
         "use default/max voltages for DVFS if there are at least 2 of them",
         LogLevel::warning)
@@ -1029,7 +1031,7 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
           .size() < 2
         )
       {
-        LOGN_TYPE(FULL_FUNC_NAME << "--# of default voltages < 2"
+        LOGN_TYPE("# of default voltages < 2"
           "->no Dynamic Voltage and Frequency Scaling at all possible "
           , LogLevel::warning
           )
@@ -1039,7 +1041,7 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
       }
       else
       {
-        LOGN( FULL_FUNC_NAME << "--Using default voltages as preferred voltages.");
+        LOGN( "Using default voltages as preferred voltages.");
         m_model.m_cpucoredata.CopyDefaultVoltageToPreferredVoltages();
       }
     }
@@ -1050,13 +1052,13 @@ void CPUcontrolBase::SetDynVoltnFreqScalingType_Inline()
 //      m_byVoltageAndFrequencyScalingType = CPUcontrolBase::TemperatureBased ;
 //    }
   }
-  LOGN("SetDynVoltnFreqScalingType_Inline end--DVFS type:" <<
+  LOGN(/*"SetDynVoltnFreqScalingType_Inline "*/ "end--DVFS type:" <<
     (WORD) m_byVoltageAndFrequencyScalingType )
 }
 
 void CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling()
 {
-  LOGN("CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling() begin")
+  LOGN(/*"CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling() "*/ "begin")
   if( m_model.m_cpucoredata.m_stdsetvoltageandfreqWanted.empty() )
   {
     mp_userinterface->Confirm( "No wanted voltages for frequencies available->"
@@ -1152,7 +1154,7 @@ void CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling()
       "usage getter dynamic library (menu \"File\") "
       ) ;
   }
-  LOGN("CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling() end")
+  LOGN(/*"CPUcontrolBase::StartDynamicVoltageAndFrequencyScaling() "*/ "end")
 }
 
 //bool I_CPUcontroller::CmdLineParamsContain(

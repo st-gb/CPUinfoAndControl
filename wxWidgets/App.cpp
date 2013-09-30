@@ -104,6 +104,8 @@ wxServiceSocketClient.hpp>
 //easy logging.
 //extern Logger g_logger ;
 
+extern char * g_ar_chBuildTimeString;
+
 CPUcontrolBase * gp_cpucontrolbase ;
 ////Needed for the exported functions.
 //I_CPUaccess * g_p_cpuaccess ;
@@ -118,6 +120,8 @@ BEGIN_EVENT_TABLE(wxX86InfoAndControlApp, wxApp)
     wxX86InfoAndControlApp::OnShowMessage)
 END_EVENT_TABLE()
 
+using namespace wxWidgets; //wxWidgets::Get...
+
 void wxX86InfoAndControlApp::OnShowMessage(wxCommandEvent & wxcmdevt)
 {
   MessageWithTimeStamp( GetStdWstring(wxcmdevt.GetString()).c_str() );
@@ -128,7 +132,7 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndShowVoltageSettingsChanges(
   const float fMultiplier,
   const float fReferenceClockInMHz)
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
 //  float fVoltageInVolt;
 //  float fMultiplier;
   StabilizeVoltage(fVoltageInVolt, fMultiplier, fReferenceClockInMHz);
@@ -140,13 +144,13 @@ void wxX86InfoAndControlApp::StabilizeVoltageAndShowVoltageSettingsChanges(
 //  wxPostEvent(mp_frame, wxcommand_event);
 //  mp_frame->Refresh() ; //force paint event/ call of "OnPaint()".
 
-  LOGN( FULL_FUNC_NAME << "--adding size event (in order to redraw everything)"
+  LOGN( "adding size event (in order to redraw everything)"
     " to the event queue to execute the redraw in the GUI thread")
   //Don't execute GUI functions in non-GUI thread.
   wxSizeEvent evt;
   wxPostEvent(//MainFrame::OnSize
     mp_frame, evt);
-  LOGN( FULL_FUNC_NAME << "--end")
+  LOGN( "end")
 }
 
 wxX86InfoAndControlApp::wxX86InfoAndControlApp()
@@ -158,9 +162,11 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 //      mp_cpucontroller(NULL)
 //    ,
   CPUcontrolBase(this) ,
+#ifdef _WIN32
   m_wxstrDirectoryForLastSelectedInstableCPUcoreVoltageDynLib(
     //For a default value for file seperator.
     wxEmptyString),
+#endif
 //  m_std_wstrInstableCPUcoreVoltageDynLibPath(
 //    L"InstableCPUcoreOperationDetection.dll"),
 //  m_wxconditionFindLowestStableVoltage(m_wxmutexFindLowestStableVoltage),
@@ -200,7 +206,9 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 #endif
 //  m_external_caller.m_pfnVoltageTooLow = & VoltageTooLow;
   I_Thread::SetCurrentThreadName("main");
+#ifdef _WIN32
   m_model.m_instablecpucorevoltagedetection.m_p_userinterface = this;
+#endif
 //  g_logger.SetCurrentThreadName("main");
 }
 
@@ -221,8 +229,9 @@ wxX86InfoAndControlApp::~wxX86InfoAndControlApp()
 
 void wxX86InfoAndControlApp::CheckForChangedVoltageForFrequencyConfiguration()
 {
-  LOGN("wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
-    "Configuration() begin");
+  LOGN(//"wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
+    //"Configuration() "
+    "begin");
   std::string std_strCPUtypeRelativeDirPath ;
   std::string strPstateSettingsFileName ;
   if( //wxGetApp().m_maincontroller.GetPstatesDirPath(
@@ -267,8 +276,9 @@ void wxX86InfoAndControlApp::CheckForChangedVoltageForFrequencyConfiguration()
       }
     }
   }
-  LOGN("wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
-    "Configuration() end");
+  LOGN(//"wxX86InfoAndControlApp::CheckForChangedVoltageForFrequency"
+    //"Configuration() "
+    "end");
 }
 
 bool wxX86InfoAndControlApp::Confirm(const std::string & str)
@@ -416,8 +426,10 @@ bool wxX86InfoAndControlApp::Confirm(
 void wxX86InfoAndControlApp::CreateAndShowMainFrame()
 {
   LOGN("before creating the main frame")
+  wxString BuildTime = wxWidgets::getwxString(g_ar_chBuildTimeString);
   wxString wxstrMainFrameTitle = //wxT("GUI") ;
-    wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI") ;
+    wxString(mp_modelData->m_stdtstrProgramName) + wxT(" GUI ")
+    += wxT(__DATE__) wxT(" ") wxT(__TIME__) wxT(" GMT + 1");
   ////The user interface must be created before the controller because
   ////it should show error messages because of e.g. missing privileges.
   //p_frame = new MyFrame(
@@ -642,8 +654,8 @@ void wxX86InfoAndControlApp::CurrenCPUfreqAndVoltageUpdated()
 
 void wxX86InfoAndControlApp::DeleteCPUcontroller( )
 {
-  LOGN_DEBUG("wxX86InfoAndControlApp::DeleteCPUcontroller() cpu controller:"
-    << mp_cpucontroller )
+  LOGN_DEBUG(//"wxX86InfoAndControlApp::DeleteCPUcontroller() "
+    "cpu controller:" << mp_cpucontroller )
   //if( p_cpucontroller )
   //{
     //Avoid program crash because of the mainframe tries to get the current
@@ -661,10 +673,10 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
     //May be NULL at startup.
     if( mp_cpucoreusagegetter )
     {
-      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--before "
+      DEBUGN(/*"wxX86InfoAndControlApp::DeleteCPUcontroller()--"*/"before "
           "setting CPU controller access for the usage getter")
       mp_cpucoreusagegetter->SetCPUcontroller( NULL ) ;
-      DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
+      DEBUGN(/*"wxX86InfoAndControlApp::DeleteCPUcontroller()--"*/ "after "
           "setting CPU controller access for the usage getter")
     }
     //mp_i_cpucontroller->SetModelData( //& m_modelData
@@ -673,12 +685,13 @@ void wxX86InfoAndControlApp::DeleteCPUcontroller( )
     //For the draw functions to function properly.
     mp_frame->SetCPUcontroller( mp_cpucontroller ) ;
     mp_frame->AllowCPUcontrollerAccess() ;
-    DEBUGN("wxX86InfoAndControlApp::DeleteCPUcontroller()--after "
+    DEBUGN(/*"wxX86InfoAndControlApp::DeleteCPUcontroller()--"*/"after "
         "calling AllowCPUcontrollerAccess()")
     //Force an update of the canvas.
     mp_frame->RedrawEverything() ;
   //}
-  LOGN_DEBUG("wxX86InfoAndControlApp::DeleteCPUcontroller() end")
+  LOGN_DEBUG(//"wxX86InfoAndControlApp::DeleteCPUcontroller() "
+      "end")
 }
 
 void wxX86InfoAndControlApp::DynVoltnFreqScalingEnabled()
@@ -688,15 +701,15 @@ void wxX86InfoAndControlApp::DynVoltnFreqScalingEnabled()
 
 void wxX86InfoAndControlApp::EndAllAccessToCPUcontroller()
 {
-  LOGN( FULL_FUNC_NAME << "begin--before stopping the \"update view\" timer")
+  LOGN( "begin--before stopping the \"update view\" timer")
   //End timer event (calls to "OnTimerEvent()").
   mp_frame->m_wxtimer.Stop();
-  LOGN( FULL_FUNC_NAME << "end")
+  LOGN( "end")
 }
 
 void wxX86InfoAndControlApp::EndDVFS()
 {
-  LOGN("wxX86InfoAndControlApp::EndDVFS() begin")
+  LOGN(/*"wxX86InfoAndControlApp::EndDVFS() "*/"begin")
   PerCPUcoreAttributes * p_percpucoreattributes = & //mp_cpucoredata->
     mp_modelData->m_cpucoredata.
     m_arp_percpucoreattributes[ //p_atts->m_byCoreID
@@ -707,7 +720,7 @@ void wxX86InfoAndControlApp::EndDVFS()
   if ( p_percpucoreattributes->mp_dynfreqscalingthread )
     mp_frame->
     EndDynVoltAndFreqScalingThread(p_percpucoreattributes) ;
-  LOGN("wxX86InfoAndControlApp::EndDVFS() end")
+  LOGN(/*"wxX86InfoAndControlApp::EndDVFS() "*/"end")
 }
 
 //http://docs.wxwidgets.org/stable/wx_wxappoverview.html:
@@ -718,13 +731,13 @@ void wxX86InfoAndControlApp::EndDVFS()
 //In particular, do not destroy them from application class' destructor!"
 int wxX86InfoAndControlApp::OnExit()
 {
-  LOGN_DEBUG("OnExit() begin")
+  LOGN_DEBUG(/*"OnExit() "*/"begin")
 #ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 
 //    //Also deleted in the tbtest sample (not automatically deleted?!).
 //    delete m_p_HighestCPUcoreTemperatureTaskBarIcon;
   DeleteTaskBarIcons();
-  LOGN_DEBUG("OnExit() after deleting the system tray icon(s)")
+  LOGN_DEBUG(/*"OnExit() "*/ "after deleting the system tray icon(s)")
 
 #endif //#ifdef COMPILE_WITH_TASKBAR
 
@@ -758,7 +771,7 @@ int wxX86InfoAndControlApp::OnExit()
   if( m_handleMapFile != NULL )
     ::CloseHandle(m_handleMapFile);
 #endif //#ifdef COMPILE_WITH_SHARED_MEMORY
-  LOGN("OnExit() before return 0")
+  LOGN(/*"OnExit() "*/"before return 0")
   return 0;
 }
 
@@ -766,7 +779,8 @@ int wxX86InfoAndControlApp::OnExit()
 void //wxX86InfoAndControlApp::
   FetchCPUcoreDataFromIPC(wxX86InfoAndControlApp * p_wxx86infoandcontrolapp)
 {
-  LOGN("FetchCPUcoreDataFromIPC begin")
+  LOGN(//"FetchCPUcoreDataFromIPC "
+    "begin")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 //  NamedPipeClient & r_namedpipeclient = p_wxx86infoandcontrolapp->
 //      m_ipcclient ;
@@ -888,8 +902,8 @@ DWORD THREAD_PROC_CALLING_CONVENTION
 DWORD THREAD_PROC_CALLING_CONVENTION
   GetCurrentCPUcoreDataViaIPCinLoopThreadFunc(void * p_v )
 {
-  LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc begin")
   I_Thread::SetCurrentThreadName("IPC");
+  LOGN("begin")
   wxX86InfoAndControlApp * p_wxx86infoandcontrolapp =
     ( wxX86InfoAndControlApp * ) p_v ;
   if( p_wxx86infoandcontrolapp )
@@ -913,7 +927,7 @@ DWORD THREAD_PROC_CALLING_CONVENTION
 //    p_wxx86infoandcontrolapp->m_wxmutexIPCthread.Lock() ;
 
 //    Sleep(4000) ;
-    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Lock()")
+    LOGN("after Lock()")
 
     //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
     //"This method atomically releases the lock on the mutex associated with
@@ -923,11 +937,11 @@ DWORD THREAD_PROC_CALLING_CONVENTION
     //After waking up from Wait() the mutex is locked by this thread:
     //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
     //"It then locks the mutex again and returns."
-    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc retrieve CPU core data?"
+    LOGN("retrieve CPU core data?"
       << p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
     while( p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
     {
-      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Wait()")
+      LOGN("after Wait()")
       FetchCPUcoreDataFromIPC( p_wxx86infoandcontrolapp ) ;
       p_wxx86infoandcontrolapp->m_vbGotCPUcoreData = true ;
 //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Enter")
@@ -955,7 +969,7 @@ DWORD THREAD_PROC_CALLING_CONVENTION
       if( ! p_wxx86infoandcontrolapp->m_vbRetrieveCPUcoreData )
         break ;
 //      DEBUGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
-      LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()")
+      LOGN("before Wait()")
       //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxconditionwait:
       //"This method atomically releases the lock on the mutex associated with
       //this condition (this is why it must be locked prior to calling Wait)
@@ -967,7 +981,7 @@ DWORD THREAD_PROC_CALLING_CONVENTION
     LOGN("InterProcessCommunication client thread: ended get CPU core data loop")
   }
   else
-    LOGN("GetCurrentCPUcoreDataViaIPCinLoopThreadFunc app pointer == NULL")
+    LOGN("app pointer == NULL")
   return 2 ;
 }
 
@@ -1031,9 +1045,11 @@ void wxX86InfoAndControlApp::EndGetCPUcoreDataViaIPCthread()
  */
 void wxX86InfoAndControlApp::ExitFindLowestStableVoltageThread()
 {
-  LOGN( FULL_FUNC_NAME << "--begin")
+  LOGN( "begin")
+#ifdef _WIN32
   m_model.m_instablecpucorevoltagedetection.ExitFindLowestStableVoltageThread();
-  LOGN( FULL_FUNC_NAME << "--end")
+#endif
+  LOGN( "end")
 }
 
 //Getting the CPU core data (->depends on the implementation) can take many
@@ -1070,7 +1086,7 @@ bool wxX86InfoAndControlApp::GetX86IandCiconFromFile(wxIcon & r_wxicon )
     //wxBITMAP_DEFAULT_TYPE
   #endif
     );
-  LOGN( FULL_FUNC_NAME << "--loading icon from file " << (bLoadFileRetVal ?
+  LOGN( "loading icon from file " << (bLoadFileRetVal ?
       " succeeded" : "failed") )
   return bLoadFileRetVal;
 }
@@ -1078,8 +1094,7 @@ bool wxX86InfoAndControlApp::GetX86IandCiconFromFile(wxIcon & r_wxicon )
 //milliseconds, especially via IPC. So start a thread for this.
 void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
 {
-  LOGN("GetCurrentCPUcoreDataViaIPCNonBlocking before possibly waking up the "
-    "\"get current CPU core data\" thread" )
+  LOGN("before possibly waking up the \"get current CPU core data\" thread" )
 //  //Let the IPC thread waiting on "Enter()" continue.
 //  m_wxcriticalsectionIPCthread.Leave() ;
 //  DEBUGN("GetCurrentCPUcoreDataViaIPCNonBlocking before Enter")
@@ -1095,8 +1110,7 @@ void wxX86InfoAndControlApp::GetCurrentCPUcoreDataViaIPCNonBlocking()
   //Wake up the thread
 //  m_wxconditionIPCthread.Signal();
   m_condition_type_eventIPCthread.Broadcast() ;
-  LOGN("GetCurrentCPUcoreDataViaIPCNonBlocking after possibly waking up the "
-    "\"get current CPU core data\" thread" )
+  LOGN("after possibly waking up the \"get current CPU core data\" thread" )
 }
 
 void wxX86InfoAndControlApp::InitSharedMemory()
@@ -1163,7 +1177,8 @@ void wxX86InfoAndControlApp::InitSharedMemory()
 //@return 0=success
 BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
 {
-  LOGN("GetConfigDataViaInterProcessCommunication begin")
+  LOGN(//"GetConfigDataViaInterProcessCommunication "
+    "begin")
 #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
   SAX2VoltagesForFrequencyHandler sax2voltages_for_frequency_handler(
     * this ,
@@ -1180,7 +1195,8 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
     m_p_i_ipcclient->m_dwIPCdataSizeInByte
     )
   {
-    LOGN("GetConfigDataViaInterProcessCommunication-- number of IPC bytes:"
+    LOGN(//"GetConfigDataViaInterProcessCommunication-- "
+      "number of IPC bytes:"
       //<< m_ipcclient.m_dwIPCdataSizeInByte
       << m_p_i_ipcclient->m_dwIPCdataSizeInByte
       )
@@ -1221,7 +1237,8 @@ BYTE wxX86InfoAndControlApp::GetConfigDataViaInterProcessCommunication()
       return 0 ;
   }
 #endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
-  LOGN("GetConfigDataViaInterProcessCommunication return 2")
+  LOGN(//"GetConfigDataViaInterProcessCommunication "
+    "return 2")
   return 2 ;
 }
 
@@ -1247,7 +1264,7 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
   const float fReferenceClockInMHz
   )
 {
-  LOGN( FULL_FUNC_NAME << " begin " << fVoltageInVolt << "V,multi:"
+  LOGN( "begin " << fVoltageInVolt << "V,multi:"
     << fMultiplier)
   //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
 //  float fMultiplier;
@@ -1260,7 +1277,7 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
     m_model.GetVoltageWithOperatingSafetyMargin(
       fLowestStableVoltageInVolt);
 
-  LOGN( FULL_FUNC_NAME << "--writing " << fStableVoltageInVolt << " Volt,"
+  LOGN( "writing " << fStableVoltageInVolt << " Volt,"
     << fMultiplier << " for stabilizing CPU operation")
 //  mp_cpucontroller->GetCurrentVoltageAndFrequencyAndStoreValues(0);
   mp_cpucontroller->SetCurrentVoltageAndMultiplier(
@@ -1269,7 +1286,7 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
 
   WORD wFrequencyInMHz = (WORD)(fMultiplier * fReferenceClockInMHz);
 
-  LOGN( FULL_FUNC_NAME << "--setting " << //fVoltageInVolt
+  LOGN( "setting " << //fVoltageInVolt
     fLowestStableVoltageInVolt << " Volt,"
     << wFrequencyInMHz << " MHz for minimum voltage")
   SetAsMinimumVoltage(//fVoltageInVolt
@@ -1277,7 +1294,7 @@ void wxX86InfoAndControlApp::StabilizeVoltage(
 
 //  if( mp_wxcheckboxAlsoSetWantedVoltage->IsChecked() )
   {
-    LOGN( FULL_FUNC_NAME << "--setting " << fStableVoltageInVolt << " Volt,"
+    LOGN( "setting " << fStableVoltageInVolt << " Volt,"
       << wFrequencyInMHz << " MHz for wanted voltage")
     SetAsWantedVoltage( fStableVoltageInVolt, wFrequencyInMHz) ;
   }
@@ -1356,7 +1373,8 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
   BYTE ar_byDataToSend [] /* = NULL */
   )
 {
-  LOGN("IPC_ClientSendCommandAndGetResponse_Inline(" << (WORD) byCommand
+  LOGN(//"IPC_ClientSendCommandAndGetResponse_Inline(" <<
+    (WORD) byCommand
     << "," << dwSizeOfDataToSendInBytes << "," << ar_byDataToSend
     << ") begin")
   //Lock concurrent access to p_i_ipcclient from another thread.
@@ -1581,7 +1599,7 @@ bool wxX86InfoAndControlApp::OnInit()
 ////      std_strLogFile = std_wstrLogFilePath;
     BYTE & r_byNumberOfCPUCores = m_model.m_cpucoredata.m_byNumberOfCPUCores;
     int nCPUCount = wxThread::GetCPUCount();
-    LOGN( FULL_FUNC_NAME << " # CPUs reported by wxWidgets: " << nCPUCount)
+    LOGN( "# CPUs reported by wxWidgets: " << nCPUCount)
     if( nCPUCount != -1 )
       r_byNumberOfCPUCores = nCPUCount;
 //    g_logger.OpenFile( std_tstrLogFilePath ) ;
@@ -1755,6 +1773,7 @@ bool wxX86InfoAndControlApp::OnInit()
 //          ) ;
 //        return FALSE ;
 //      }
+#ifdef _WIN32
     //TODO program hangs when message that DLL function is missing
     const char * const threadName = "IPC";
     m_x86iandc_threadIPC.start( GetCurrentCPUcoreDataViaIPCinLoopThreadFunc ,
@@ -1762,6 +1781,7 @@ bool wxX86InfoAndControlApp::OnInit()
 //      , threadName
 //      , I_Thread::default_priority
       ) ;
+#endif
 
     if( m_model.m_userinterfaceattributes.m_bStartDVFSatStartup )
       StartDynamicVoltageAndFrequencyScaling() ;
@@ -1832,11 +1852,11 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //      m_model.m_logfileattributes.m_std_strTimeFormat
 //      );
 //    if( typeid(g_logger) == typeid(Logger) )
-//      LOGN(FULL_FUNC_NAME << "--the log file is open according to the C++ API.")
+//      LOGN("--the log file is open according to the C++ API.")
 //    if( typeid(g_logger.GetFormatter() ) == typeid(I_LogFormatter *) )
-//      LOGN(FULL_FUNC_NAME << " formatter is I_LogFormatter" )
+//      LOGN(" formatter is I_LogFormatter" )
 //    else if( typeid(g_logger.GetFormatter() ) == typeid(HTMLlogFormatter *) )
-//      LOGN(FULL_FUNC_NAME << " formatter is HTMLlogFormatter" )
+//      LOGN(" formatter is HTMLlogFormatter" )
 
   }
   else
@@ -1868,7 +1888,7 @@ void wxX86InfoAndControlApp::PauseService(
   bool bTryToPauseViaServiceControlManagerIfViaIPCfails
   )
 {
-  LOGN(FULL_FUNC_NAME << " begin")
+  LOGN("begin")
   bool bTryToPauseViaServiceControlManager = false ;
   //The connection may have broken after it was established, so check it here.
   if( ! IPC_ClientIsConnected_Inline() )
@@ -1882,7 +1902,8 @@ void wxX86InfoAndControlApp::PauseService(
   }
   if( IPC_ClientIsConnected_Inline() )
   {
-    LOGN("OnPauseService--connected to the service")
+    LOGN(//"OnPauseService--"
+      "connected to the service")
     //TODO possibly make IPC communication into a separate thread because it
     // may freeze the whole GUI.
     IPC_ClientSendCommandAndGetResponse_Inline(pause_service) ;
@@ -1931,7 +1952,7 @@ void wxX86InfoAndControlApp::PauseService(
           )
         ) ;
     }
-  LOGN(FULL_FUNC_NAME << " end")
+  LOGN("end")
 }
 #endif //#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
 
@@ -1950,15 +1971,15 @@ void wxX86InfoAndControlApp::PossiblyAskForOSdynFreqScalingDisabling()
   if( mp_dynfreqscalingaccess->OtherDVFSisEnabled()
     )
     if( ::wxMessageBox(
-      //We need a _T() macro (wide char-> L"", char->"") for EACH
+      //We need a wxT() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
-      _T("The OS's dynamic frequency scaling must be disabled ")
-      _T("in order that the p-state isn't changed by the OS afterwards.")
-      _T("If the OS's dynamic frequency isn't disabled, should it be done now?")
+      wxT("The OS's dynamic frequency scaling must be disabled ")
+      wxT("in order that the p-state isn't changed by the OS afterwards.")
+      wxT("If the OS's dynamic frequency isn't disabled, should it be done now?")
       ,
       //We need a _T() macro (wide char-> L"", char->"") for EACH
       //line to make it compatible between char and wide char.
-      _T("Question")
+      wxT("Question")
       , wxYES_NO | wxICON_QUESTION )
       == wxYES
      )
@@ -2118,7 +2139,16 @@ void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings(
     wxstrCurrentWorkingDir );
   if( //GetAbsoluteCPUspecificDirPath() &&
       m_maincontroller.GetPstateSettingsFileName(
-    strPstateSettingsFileName )
+      strPstateSettingsFileName )
+      //TODO use file name like:
+      //<<vendor>> family model stepping L1 cache ... last level (L3) cache.xml
+      //because all this information is relevant for determining a minimum
+      //voltage;
+      //Also the CPUID EAX=80000002h,80000003h,80000004h: Processor Brand String
+      //is set via BIOS afaik and is writable and may return "Athlon" for a
+      //Duron.
+      //EAX=80000005h: L1 Cache and TLB Identifiers
+      //EAX=80000006h: Extended L2 Cache Features
     )
   {
     if( ! //AbsoluteCPUspecificDirPathExists(wxstrAbsoluteCPUspecificDirPath)
@@ -2156,7 +2186,7 @@ void wxX86InfoAndControlApp::SaveVoltageForFrequencySettings(
         }
         else
         {
-          LOGN("Failed to create directory \""
+          LOGN_ERROR("Failed to create directory \""
             << GetStdString(wxstrAbsoluteCPUspecificDirPath) << "\"." )
           ::wxMessageBox(wxT("Failed to create directory " +
             wxstrAbsoluteCPUspecificDirPath
@@ -2276,7 +2306,7 @@ void wxX86InfoAndControlApp::SetCPUcontroller(
     {
       //Release memory.
       delete mp_cpucontroller ;
-      LOGN(" current CPU controller deleted")
+      LOGN("current CPU controller deleted")
     }
     LOGN("address of model: " << mp_modelData )
     mp_cpucontroller = p_cpucontrollerNew ;
@@ -2331,7 +2361,7 @@ void wxX86InfoAndControlApp::StartService()
 
 void wxX86InfoAndControlApp::StopService()
 {
-  LOGN(FULL_FUNC_NAME << "--begin")
+  LOGN("begin")
 #ifdef _WIN32 //pre-defined preprocessor macro for (also 64 bit) Windows
   //The connection may have broken after it was established, so check it here.
   if( ! //::wxGetApp().
@@ -2354,7 +2384,7 @@ void wxX86InfoAndControlApp::StopService()
       IPC_ClientIsConnected_Inline()
     )
   {
-    LOGN(FULL_FUNC_NAME << "--connected to the service")
+    LOGN("connected to the service")
     //TODO possibly make IPC communication into a separate thread because it
     // may freeze the whole GUI.
     //::wxGetApp().
