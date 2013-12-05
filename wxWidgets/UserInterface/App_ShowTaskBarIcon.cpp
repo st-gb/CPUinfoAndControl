@@ -55,7 +55,17 @@ TaskBarIcon * wxX86InfoAndControlApp::CreateTaskBarIcon(
 {
   if( ! r_p_taskbaricon )
   {
-    r_p_taskbaricon = new TaskBarIcon(mp_frame);
+#ifdef _WIN32
+    /** Get the real taskbar icon size. else icons are scaled and look ugly */
+    //int x = GetSystemMetrics(SM_CXICON);
+    const int taskbariconWidthInPixels = GetSystemMetrics(SM_CXSMICON);
+    const int taskbariconHeightInPixels = GetSystemMetrics(SM_CYSMICON);
+#else
+    const int taskbariconWidthInPixels = 16;
+    const int taskbariconHeightInPixels = 16;
+#endif
+    r_p_taskbaricon = new TaskBarIcon(mp_frame, taskbariconWidthInPixels,
+      taskbariconHeightInPixels);
     if( r_p_taskbaricon )
       LOGN("successfully created \"" << p_chTaskBarIconName
         << "\" task bar icon.")

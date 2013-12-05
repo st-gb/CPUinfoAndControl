@@ -59,12 +59,15 @@ public:
     TaskBarIcon(wxTaskBarIconType iconType = DEFAULT_TYPE)
     :   wxTaskBarIcon(iconType)
 #else
-    TaskBarIcon(MainFrame * p_mainframe)
+    TaskBarIcon(
+      MainFrame * p_mainframe,
+      const int taskbariconWidthInPixels,
+      const int taskbariconHeightInPixels)
       :
       m_1stSetMaximumCPUcoreMultiplierEventID(0),
       m_1stThrottleCPUcoreTemperatureEventID(0),
       m_1stSelectPowerSchemeMenuEventID(0),
-      m_wxicon_drawer(16, 16//,8
+      m_wxicon_drawer(taskbariconWidthInPixels, taskbariconHeightInPixels//,8
     //    ,wxBITMAP_SCREEN_DEPTH
         )
 //      , m_colouredBarsIconDrawer(16, 16//,8
@@ -74,13 +77,13 @@ public:
       , m_p_wxmenuThrottleTemperatures(NULL)
 #endif
     {
-      LOGN("TaskBarIcon() begin")
+      LOGN(/*"TaskBarIcon() "*/ "begin")
 //      m_p_wxicon_drawer = new wxIconDrawer(16, 16//,8
 //        //,wxBITMAP_SCREEN_DEPTH
 //        );
       m_p_wxicon_drawer = & m_wxicon_drawer;
       mp_mainframe = p_mainframe ;
-      LOGN("TaskBarIcon() end")
+      LOGN(/*"TaskBarIcon() "*/ "end")
     }
     ~TaskBarIcon() ;
 

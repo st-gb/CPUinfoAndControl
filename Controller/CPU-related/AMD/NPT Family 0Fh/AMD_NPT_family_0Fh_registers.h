@@ -10,6 +10,8 @@
 
 #include "AMD_NPT_family_0Fh_FIDVID_STATUS_register.h"
 #include <Controller/CPU-related/AMD/AMD_MSR_adresses.h>
+//CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER, ...
+#include "../configuration_space_addresses.h"
 
 //10.5 Processor Performance States:
 //MSR C001_0041h (FIDVID_CTL) and MSR C001_0042h (FIDVID_STATUS) are used for
@@ -19,19 +21,13 @@
 #define EVENT_SELECT 07Fh //[L2 Fill/Writeback],
 // "CPUID Fn8000_0008 Address Size And Physical Core Count Information"
 
-//Thermtrip Status Register Function 3: Offset E4h
-#define CPU_TEMPERATURE_OFFSET 0xE4
+/** "BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh Processors"
+ *  "32559 Rev. 3.16 November 2009" :
+ *  "Thermtrip Status Register Function 3: Offset E4h" */
+#define AMD_FAMILY_F_HEX_CPU_TEMPERATURE_OFFSET 0xE4
 
 //#define CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER 3
-//Device number 24, Function 3 is "CPU Miscellaneous Control"
-// ( 24 << 3 ) | 3 = 192 | 3 = 192 + 3 = 195
-#define CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER 195
 
-//"23-14 CurTmp Current Temperature"
-// 4.6 Function 3—Miscellaneous Control
-#define MISCELLANEOUS_CONTROL_FUNCTION_NUMBER 3
-//4.1 Configuration Space Accesses : "[...]Configuration accesses to Bus 0[...]"
-#define CONFIGURATION_ACCESS_BUS_NUMBER 0
 //see Table 74. VID Code Voltages
 #define MAXIMUM_VOLTAGE_ID 63
 

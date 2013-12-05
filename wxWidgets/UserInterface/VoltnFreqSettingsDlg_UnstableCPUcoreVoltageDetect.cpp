@@ -8,11 +8,13 @@
 //#include <wx/dialog.h> //class wxDialog
 #include <wxWidgets/App.hpp> //for wxGetApp()
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
+#include <compiler/GCC/enable_disable_write_strings_warning.h>
 #include "MainFrame.hpp" //for class MainFrame
-
+GCC_DIAG_OFF(write-strings)
 #include <images/find_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/stop_finding_lowest_stable_CPU_core_voltage16x16.xpm>
 #include <images/auto-configure_CPU_core_voltage_settings16x16.xpm>
+GCC_DIAG_ON(write-strings)
 
 #include <wx/bmpbuttn.h> //class wxBitmapButton
 //#include <wx/button.h> //for class wxButton

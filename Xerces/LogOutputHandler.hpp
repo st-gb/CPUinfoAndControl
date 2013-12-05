@@ -10,6 +10,7 @@
 
 //base class XERCES_CPP_NAMESPACE::DefaultHandler
 #include <xercesc/sax2/DefaultHandler.hpp>
+#include <Xerces/DocumentLocationSAX2Handler.hpp>
 
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.
@@ -26,7 +27,8 @@ namespace Xerces
 {
 
   class LogOutputHandler
-    : public XERCES_CPP_NAMESPACE::DefaultHandler
+    : public //XERCES_CPP_NAMESPACE::DefaultHandler
+      Apache_Xerces::DocumentLocationSAX2Handler
   {
   private:
     bool m_bSuitableFileFormat;
@@ -44,7 +46,7 @@ namespace Xerces
       const XMLCh* const localname,
       const XMLCh* const qname );
     void HandleLoggingXMLelement(const XERCES_CPP_NAMESPACE::Attributes & );
-//    void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException & exception) ;
+    void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException & exception) ;
     void startElement(
       const XMLCh * const cpc_xmlchURI ,
       const XMLCh * const cpc_xmlchLocalName ,

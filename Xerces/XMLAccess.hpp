@@ -46,9 +46,9 @@ namespace Apache_Xerces
     const char * xmlFile,//PStates & pstates
     Model & model,
     UserInterface * p_userinterface ,
-   //Base class of implementing Xerces XML handlers.
-   //This is useful because there may be more than one XML file to read.
-   //So one calls this functions with different handlers passed.
+   /** Base class of implementing Xerces XML handlers.
+   * This is useful because there may be more than one XML file to read.
+   * So one calls this functions with different handlers passed. */
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     );
   char ReadXMLdocumentInitAndTermXerces(
@@ -57,9 +57,9 @@ namespace Apache_Xerces
     const LPWSTR lpwstrBufferIdentifier ,
     Model & model,
     UserInterface * p_userinterface ,
-   //Base class of implementing Xerces XML handlers.
-   //This is useful because there may be more than one XML file to read.
-   //So one calls this functions with different handlers passed.
+   /** Base class of implementing Xerces XML handlers.
+   * This is useful because there may be more than one XML file to read.
+   * So one calls this functions with different handlers passed. */
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
     ) ;
   enum ReadXMLdocumentRetCodes { readingXMLdocSucceeded = 0,
@@ -76,8 +76,8 @@ namespace Apache_Xerces
     , XERCES_CPP_NAMESPACE::DefaultHandler * const errorHandler = NULL
     ) ;
 
-  /** Warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been
-  * called before calling this function.
+  /** @brief Warning: Xerces init (XMLPlatformUtils::Initialize(); ) must have been
+  *   called before calling this function.
   * @return readingXMLdocSucceeded, readingXMLdocFailed*/
   inline char ReadXMLdocumentWithoutInitAndTermXerces(
     BYTE arbyXMLdata [] ,
@@ -108,15 +108,17 @@ namespace Apache_Xerces
       r_defaulthandler
       ) ;
   }
+
   /** @return: readingXMLdocSucceeded, readingXMLdocFailed */
   inline BYTE ReadXMLfileWithoutInitAndTermXercesInline(
     const char * cp_chXMLfilePath,
 //    Model & model,
     UserInterface * p_userinterface ,
-   //Base class of implementing Xerces XML handlers.
-   //This is useful because there may be more than one XML file to read.
-   //So one calls this functions with different handlers passed.
+   /** Base class of implementing Xerces XML handlers.
+   * This is useful because there may be more than one XML file to read.
+   * So one calls this functions with different handlers passed. */
     XERCES_CPP_NAMESPACE::DefaultHandler & r_defaulthandler
+    , XERCES_CPP_NAMESPACE::DefaultHandler * const errorHandler = NULL
     )
   {
     BYTE byReturn = Apache_Xerces::readingXMLdocFailed ;

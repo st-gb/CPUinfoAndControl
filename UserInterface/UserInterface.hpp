@@ -71,14 +71,15 @@ public:
   * string on our own in order to display it. */
   virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr
     //Flag like "OK_BUTTON"
-    , unsigned flags = 0) const /*{}*/ = 0;
-  void MessageWithTimeStamp(const std::string & message) const
+    , unsigned flags = 0) /*const {}*/ = 0;
+  void MessageWithTimeStamp(const std::string & message) //const
   {
     const std::wstring & std_wstrMessage = GetStdWstring(message);
-    MessageWithTimeStamp(std_wstrMessage);
+    MessageWithTimeStamp(std_wstrMessage.c_str() );
   }
-
-  virtual void MessageWithTimeStamp(const wchar_t * cp_wch) const {}
+  /** Cannot be "const" because of critical section member variable in sub
+   * class implementation. */
+  virtual void MessageWithTimeStamp(const wchar_t * cp_wch, unsigned flags = 0) {}
   virtual void outputAllPstates(unsigned char byCurrentP_state, int & vid) = 0;//{};
   void outputOtherRelevantVoltageInfo(){};
   virtual void RedrawEverything() {} ;

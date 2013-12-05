@@ -342,7 +342,7 @@ void wxServiceSocketClient::SetServerHostname(const char * c_p_ch )
 {
 //  std::string std_strServerHostname(c_p_ch);
   m_wxstrServerHostname = //getwxString(std_strServerHostname);
-    GetwxString_Inline(c_p_ch);
+    wxWidgets::GetwxString_Inline(c_p_ch);
 }
 
 BYTE wxServiceSocketClient::SendMessage(BYTE by)
@@ -369,17 +369,17 @@ void wxServiceSocketClient::GetServerPathAndPort(
     )
   {
     m_wxstrServerHostname = cr_wxstrURL.substr( 0, size_tIndexOfColon ) ;
-    LOGN("GetServerPathAndPort()--server host name:"
-      << GetStdString( m_wxstrServerHostname) )
+    LOGN(/*"GetServerPathAndPort()--"*/ "server host name:"
+      << wxWidgets::GetStdString( m_wxstrServerHostname) )
     wxString wxstrPortNumber = cr_wxstrURL.substr( size_tIndexOfColon + 1 ) ;
-    LOGN("GetServerPathAndPort()--server port number:"
-      << GetStdString( wxstrPortNumber) )
+    LOGN(/*"GetServerPathAndPort()--"*/ "server port number:"
+      << wxWidgets::GetStdString( wxstrPortNumber) )
     //see http://wiki.wxwidgets.org/Converting_everything_to_and_from_wxString
     // #wxString_to_integer_number:
     if( ! wxstrPortNumber.ToULong( ( unsigned long *) & m_usServerPortNumber )
       )
     { /* error! */
-      LOGN("Error converting the port number string to an unsigned long "
+      LOGN_ERROR("Error converting the port number string to an unsigned long "
           "number")
     }
     else

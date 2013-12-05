@@ -295,6 +295,8 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
       const XERCES_CPP_NAMESPACE::Attributes & cr_xerces_attributes
     )
   {
+    std::string std_strLocalName = Xerces::ToStdString(cp_xmlchLocalName);
+    LOGN_DEBUG("XML element: " << std_strLocalName)
     if( //If strings equal.
         ! Xerces::ansi_or_wchar_string_compare(
         //Explicitly cast to "wchar_t *" to avoid Linux g++ warning.
@@ -313,8 +315,10 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         )
       )
     {
+      LOGN_DEBUG("before locking")
       wxCriticalSectionLocker wxcriticalsectionlocker(m_wxcriticalsection) ;
 //      bool bRunning;
+      LOGN_DEBUG("after locking")
       if( ConvertXercesAttributesValue<bool>(
           cr_xerces_attributes
           //This value is the last timecode of the last overheat at the time
@@ -324,7 +328,7 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
           (const XMLCh *) L"running" )
         )
       {
-
+        LOGN_DEBUG("running:" << m_bDVFSfromServiceIsRunning)
       }
     }
     if( //If strings equal.
@@ -335,7 +339,7 @@ void SAX2IPCcurrentCPUdataHandler::startDocument()
         )
       )
     {
-      LOGN("\"too hot\" XML element")
+//      LOGN("\"too hot\" XML element")
       wxCriticalSectionLocker wxcriticalsectionlocker(m_wxcriticalsection) ;
       wxLongLong_t wxlonglong_t;
       if( ConvertXercesAttributesValue<wxLongLong_t>(

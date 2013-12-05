@@ -1,4 +1,4 @@
-/*#include "version_info_GUI.rc"*/
+//#include "version_info_GUI.rc"
 #include "version_info_GUI_preprocessed.rc"
 
 #ifndef COMPILE_WITHOUT_CURSOR

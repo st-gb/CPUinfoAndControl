@@ -67,6 +67,8 @@ namespace Attributes
 
     bool m_bSelectAllCPUcores ;
     bool m_bShowMainFrameAtStartup ;
+    bool m_bShowCPUcoreUsagesIconInTaskBar;
+    bool m_bShowCPUcoresMultipliersIconInTaskBar;
     bool m_bStartDVFSatStartup ;
     bool m_bTryToPauseViaServiceControlManagerIfViaIPCfails ;
     float m_fOperatingSafetyMarginInVolt ;
@@ -81,8 +83,6 @@ namespace Attributes
 
     std::map<uint16_t,std::string> m_std_vec_WisdomStrings;
 
-    bool m_bShowCPUcoreUsagesIconInTaskBar;
-    bool m_bShowCPUcoresMultipliersIconInTaskBar;
 
     std::wstring m_std_wstrServiceAddress;
 

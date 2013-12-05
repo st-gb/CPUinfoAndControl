@@ -49,7 +49,7 @@ namespace Intel
         1 //m_dwAffinityMask
         ) ;
       if(boolReturnValue)
-        return g_ui32Value2 >> 8;
+        return (g_ui32Value2 >> 8) & BITMASK_FOR_LOWMOST_8BIT;
       return 0;
     }
 

@@ -147,6 +147,7 @@ namespace wxWidgets
         , mr_cpucontrolbase.m_model.m_cpucoredata
         ) ;
       bSuccess = true ;
+      p_icpucoreusagegetter = mr_cpucontrolbase.m_p_cpucoreusagegetterDynLib;
       LOGN("after allocating dyn lib CPU core usage getter")
       //gp_cpucontrolbase->mp_wxdynlibcpucoreusagegetter = r_p_icpucoreusagegetter ;
 //      r_p_icpucoreusagegetter = mr_cpucontrolbase.

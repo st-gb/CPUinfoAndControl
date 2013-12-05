@@ -452,7 +452,7 @@ void CPUcontrolBase::CreateHardwareAccessObject()
         "warning";
   }
 
-  /** */
+  /** @param std_wstrLogFileDirectoryPath: out: full log file path */
   bool CPUcontrolBase::GetLogFilePropertiesAndOpenLogFile(
     std::wstring & std_wstrLogFileDirectoryPath,
     std::wstring & std_wstrLogFileName)
@@ -721,25 +721,31 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
   std::string std_strFilePath = m_model.m_std_strConfigFilePath
     + "/logging.xml";
   const char * c_ar_chXMLfileName = std_strFilePath.c_str();
-  if( //return value: 0 = success
+  fastestUnsignedDataType readXMLfileWithoutInitAndTermXercesInlineRetVal =
     Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
       c_ar_chXMLfileName,
       //this,
       mp_userinterface,
       logoutputhandler
-      ) == Apache_Xerces::readingXMLdocFailed
+      //, errorHandler
+      );
+  //Apache_Xerces::readingXMLdocFailed;
+  if( //return value: 0 = success
+      readXMLfileWithoutInitAndTermXercesInlineRetVal ==
+      Apache_Xerces::readingXMLdocFailed
     )
   {
   //      Confirm( "loading UserInterface.xml failed" ) ;
     mp_userinterface->MessageWithTimeStamp(L"loading \"" +
       GetStdWstring( std::string(c_ar_chXMLfileName) ) +
       L"\" failed" ) ;
-    LOGN("loading \"" << c_ar_chXMLfileName << "\" failed") }
+    LOGN("loading \"" << c_ar_chXMLfileName << "\" failed")
+  }
   //      OUTPUT_WITH_TIMESTAMP
 //    r_std_tstrLogFilePath = m_model.m_logfileattributes.m_std_wstrLogFilePath +
 //      r_std_tstrLogFilePath;
-    const std::wstring & std_wstrLogFilePathFromConfig= m_model.m_logfileattributes.
-      m_std_wstrLogFilePath;
+    const std::wstring & std_wstrLogFilePathFromConfig =
+      m_model.m_logfileattributes.m_std_wstrLogFilePath;
     if( ! std_wstrLogFilePathFromConfig.empty() )
     {
 //      wchar_t wch =
@@ -767,7 +773,8 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
           EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
       }
       else
-        r_std_wstrLogFilePath += m_model.m_logfileattributes.
+        r_std_wstrLogFilePath += //EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI ) +
+          m_model.m_logfileattributes.
           m_std_wstrLogFilePath + //L"/";
           EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
     }

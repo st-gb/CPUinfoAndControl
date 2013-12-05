@@ -21,24 +21,24 @@ class UserInterface ;
 namespace Xerces
 {
 
-  class SAX2CPUcontrollerConfiguration
+  class SAX2CPUtypeConfiguration
     : public //XERCES_CPP_NAMESPACE::DefaultHandler
       Apache_Xerces::DocumentLocationSAX2Handler
   {
-  private:
-    Model & m_r_model;
-    const UserInterface & m_r_userinterface;
+  private: /** Members Sorted lexikographically. */
     const CPUcoreData & m_c_r_cpucoredata;
+    Model & m_r_model;
     unsigned m_SuitabilityLevel, m_HighestSuitability;
+    UserInterface & m_r_userinterface;
 //    const Model & m_r_model;
   public:
     enum suitabilityLevel { vendor = 1, family, model, stepping };
     std::string m_mostSuitableCPUinfoGetterAndOrController;
     std::string m_mostSuitableCPUcoreUsageGetter;
     std::string m_mostSuitableCPUregisterDataFile;
-    SAX2CPUcontrollerConfiguration( const UserInterface & , const Model & );
+    SAX2CPUtypeConfiguration( UserInterface & , const Model & );
     virtual
-    ~SAX2CPUcontrollerConfiguration();
+    ~SAX2CPUtypeConfiguration();
     void startElement(
       const XMLCh * const cpc_xmlchURI ,
       const XMLCh * const cpc_xmlchLocalName ,

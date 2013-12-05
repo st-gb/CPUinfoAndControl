@@ -191,59 +191,6 @@ namespace AMD
         << * p_fMultiplier)
     }
 
-    #ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
-    inline void GetSameReferenceClockForAllCPUcores(
-      float * p_fReferenceClockInMHz)
-    {
-      //TODO "41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG",
-      //  "MSRC001_0015 Hardware Configuration Register (HWCR)":
-      //"TscFreqSel: TSC frequency select. Read-write. BIOS: 1.
-      // 0= The TSC increments at the rate of the REFCLK frequency.
-      // 1=The TSC increments at the rate of the core P-state 0 COF specified by
-      //   MSRC001_0064."
-
-      //TODO "41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG",
-      // "CPUID Fn8000_0007 Advanced Power Management Information" :
-      // Register EDX; bit # 8, value = 1: "TscInvariant"
-      //  : "The TSC rate is ensured to be invariant across all P-states, C-States,
-      //  and stop-grant transitions (such as STPCLK Throttling)."
-
-      //#ifdef _DEBUG
-      //This call sets g_fReferenceClockInMHz to the current reference clock.
-      //This update of the value would be senseful for setting the CPU core
-      //via "frequency" as parameter value the next time.
-      GetCurrentReferenceClock(
-        //TODO what is the reference clock/ max multiplier?
-        // http://en.wikipedia.org/wiki/List_of_AMD_Turion_microprocessors#.22Lion.22_.2865_nm.29
-        // says: max multi = ( "Performance State 0's Frequency ID" + 8 ) / 2,
-        //http://en.wikipedia.org/wiki/List_of_AMD_Turion_microprocessors#fn_1:
-        //  "The multiplier here applies to the 200 MHz system clock frequency"
-
-        // "41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG", page 14:
-        // "CLKIN. The reference clock provided to the processor, nominally 200Mhz."
-        g_fMaxMultiplier , //divide TSC diff by this divisor
-        * p_fReferenceClockInMHz ,
-      //    fReferenceClockInMHz,
-        1000 , //min. timespan in ms
-        10000  //max. timespan in ms
-        ) ;
-
-      DEBUGN(/*FULL_FUNC_NAME <<*/ "calculated reference clock:"
-        << * p_fReferenceClockInMHz)
-      //  if( * p_fReferenceClockInMHz == 0.0f )
-      //    * p_fReferenceClockInMHz =
-      //      //Default reference clock in MHz for Griffin CPUs.
-      //      100.0f;
-
-      //Time span too high or too low.
-      if( * p_fReferenceClockInMHz == 0.0 )
-        * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
-      else
-        //Save the current reference clock as last retrieved reference clock.
-        g_fReferenceClockInMHz = * p_fReferenceClockInMHz ;
-    }
-    #endif //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
-
     inline void GetVoltageFromCOFVIDstatusRegisterBits(
       DWORD dwMSRlowmost, float * p_fVoltageInVolt)
     {
@@ -251,29 +198,6 @@ namespace AMD
       AMD::fromK10::GetVoltageIDfromCOFVIDstatusRegisterBits(dwMSRlowmost, byVoltageID);
 
       GetVoltageFromVoltageID(byVoltageID, p_fVoltageInVolt);
-    }
-
-    inline void GetReferenceClock(float * p_fReferenceClockInMHz, unsigned coreID)
-    {
-      //TODO better use APIC Timer Operation?
-      //BIOS and Kernel Developer’s Guide (BKDG) For AMD Family 11h Processors:
-      // "The pro-cessor bus clock is divided by the value in APIC3E0[Div] to
-      //obtain a time base for the timer."
-
-    #ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
-      //Only get ref. clock if 1st core (else may be too small because the time
-      //diff between core 0 and 1 may be taken)
-      if( coreID == 0)
-        GetSameReferenceClockForAllCPUcores(p_fReferenceClockInMHz);
-      else
-        * p_fReferenceClockInMHz = g_fReferenceClockInMHz;
-    #else //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
-      #ifdef MAX_MULTI_IS_MAIN_PLL_OP_FREQ_ID_MAX_PLUS_8
-      * p_fReferenceClockInMHz = 100.0f ;
-      #else
-      * p_fReferenceClockInMHz = 200.0f ;
-      #endif
-    #endif //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
     }
 
     inline BYTE GetCurrentVoltageAndFrequency(
@@ -300,7 +224,7 @@ namespace AMD
       GetMultiplierfromCOFVIDstatusRegisterBits(g_dwMSRlowmost, p_fMultiplier);
       GetVoltageFromCOFVIDstatusRegisterBits(g_dwMSRlowmost, p_fVoltageInVolt);
 
-      GetReferenceClock(p_fReferenceClockInMHz, wCoreID);
+      AMD::fromK10::GetReferenceClock(p_fReferenceClockInMHz, wCoreID);
       DEBUGN( "reference clock:" << * p_fReferenceClockInMHz )
       DEBUGN( "returning" << (WORD) byReadMSRreturnValue )
       return byReadMSRreturnValue ;
@@ -403,8 +327,8 @@ namespace AMD
       BYTE & r_byDivisorID
       )
     {
-      DEBUGN(//"GetFreqIDandDivisorIDfromMulti("
-        << fMultiplier )
+      DEBUGN(//"GetFreqIDandDivisorIDfromMulti(" <<
+        fMultiplier )
 
       r_byDivisorID = 0 ;
       g_fMaxMultiDiv2 = ( //g_fMainPllOpFreqIdMax + 8
@@ -542,8 +466,8 @@ namespace AMD
       //    g_byValue1 = GetVoltageID( fVoltageInVolt ) ;
 
       //BYTE byFrequencyID , byDivisorID ;
-      DEBUGN(//"SetVoltageAndMultiplier("
-        << fVoltageInVolt
+      DEBUGN(//"SetVoltageAndMultiplier(" <<
+        fVoltageInVolt
         << "," << fMultiplier
         << "," << (WORD) byCoreID )
 

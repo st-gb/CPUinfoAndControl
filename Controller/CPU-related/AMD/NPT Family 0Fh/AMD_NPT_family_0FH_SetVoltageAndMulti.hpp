@@ -66,12 +66,12 @@ void WaitNanoSeconds(uint64_t WaitTimeInNanoseconds)
   long double initialTimeCountInSeconds;
 //  GetTimeCountInNanoSeconds(//LARGE_INTEGER *lpPerformanceCount
 //    initialTimeCountInNanoSeconds );
-  GetTimeCountInSeconds( initialTimeCountInSeconds );
+  OperatingSystem::GetTimeCountInSeconds( initialTimeCountInSeconds );
   do
   {
 //    GetTimeCountInNanoSeconds(//LARGE_INTEGER *lpPerformanceCount
 //      currentTimeCountInNanoSeconds );
-    GetTimeCountInSeconds( currentTimeCountInSeconds );
+    OperatingSystem::GetTimeCountInSeconds( currentTimeCountInSeconds );
     DEBUGN( FULL_FUNC_NAME << "time count in s:" << currentTimeCountInSeconds)
   }while( //(currentTimeCountInNanoSeconds - initialTimeCountInNanoSeconds)
     ( currentTimeCountInSeconds - initialTimeCountInSeconds ) * 1000000000.0
@@ -148,14 +148,14 @@ inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
   long double currentTimeCountInSeconds;
   long double initialTimeCountInSeconds;
 
-  GetTimeCountInSeconds( initialTimeCountInSeconds );
+  OperatingSystem::GetTimeCountInSeconds( initialTimeCountInSeconds );
   while( (MSRaccessRetVal = ReadMSR(FIDVID_STATUS_MSR_ADDRESS, & lowmostMSRbits,
       & highmostMSRbits, 1) )
     )
   {
     DEBUGN( FULL_FUNC_NAME << "--lowmost bits:" << getBinaryRepresentation(
       lowmostMSRbits) )
-    GetTimeCountInSeconds( currentTimeCountInSeconds );
+    OperatingSystem::GetTimeCountInSeconds( currentTimeCountInSeconds );
     //"Loop on reading the FidVidPending bit (bit 31) of FIDVID_STATUS
     //(MSR C001_0042h) until the bit returns 0. The FidVidPending bit stays set
     //to 1 until the new FID code is in effect."
@@ -235,7 +235,7 @@ inline BYTE SetVIDorFID_AMD_NPT_family_0FH(
     VoltageID, byFrequencyIDtoSet, StpGntTOCnt);
 
 //  //2. Fetch VID from MSR value that should be written.
-//  float fVoltageInVoltFromVIDcode = GetVoltageInVolt_AMD_NPT_family_0FH(
+//  float fVoltageInVoltFromVIDcode = GetVoltageInVolt(
 //    (lowmostMSRbits >>
 //    FIDVID_CTL_VOLTAGE_ID_START_BIT ) &
 //    BITMASK_FOR_LOWMOST_6BIT);
@@ -243,7 +243,7 @@ inline BYTE SetVIDorFID_AMD_NPT_family_0FH(
 //    << fVoltageInVoltFromVIDcode
 //    << " fVoltageInVoltToSet:" << fVoltageInVoltToSet)
 
-//  float fVoltageInVoltFromVoltageID = GetVoltageInVolt_AMD_NPT_family_0FH(VoltageID);
+//  float fVoltageInVoltFromVoltageID = GetVoltageInVolt(VoltageID);
 
 //  if( fVoltageInVoltFromVIDcode == fVoltageInVoltToSet)
   {
@@ -656,7 +656,7 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
     // case of: decrement voltage: while ( 1 * 0 < 1 * 5)
   }while( voltageIDdirection * currentVoltageID < voltageIDdirection * voltageIDtoSet);
 
-  fCurrentVoltageInVolt = GetVoltageInVolt_AMD_NPT_family_0FH(currentVoltageID);
+  fCurrentVoltageInVolt = AMD::family0F::GetVoltageInVolt(currentVoltageID);
 
   DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal
     << " current voltage:" << fCurrentVoltageInVolt << "V")
@@ -675,7 +675,7 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
 inline float SetToClosestConfigurableVoltage(float fCurrentVoltageInVolt)
 {
   BYTE VID = GetVoltageID_AMD_NPT_family_0FH(fCurrentVoltageInVolt);
-  float fVoltageInVoltFromVID = GetVoltageInVolt_AMD_NPT_family_0FH(VID);
+  float fVoltageInVoltFromVID = AMD::family0F::GetVoltageInVolt(VID);
   if( fCurrentVoltageInVolt != fCurrentVoltageInVolt)
   {
     DEBUGN( FULL_FUNC_NAME << "--"

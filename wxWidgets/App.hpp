@@ -112,6 +112,7 @@ class wxX86InfoAndControlApp
 {
 private:
   TCHAR ** m_arartchCmdLineArgument ;
+  fastestUnsignedDataType m_GUIthreadID;
 //  wxThread m_wxthreadIPC ;
   void * m_systemtray_icon_notification_window ;
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -144,6 +145,7 @@ private:
   ////an exception (that should be caught, else runtime error) when it is created.
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
+  nativeCriticalSection m_critSecShowMessage;
 public:
   IPC_data s_ipc_data;
   wxString m_wxstrCPUcontrollerDynLibFilePath ;
@@ -327,9 +329,15 @@ public:
       1,
     BYTE ar_byDataToSend [] = NULL);
   void MessageWithTimeStamp(const std::wstring & cr_stdwstr,
-    unsigned flags = 0) const;
+    unsigned flags = 0)
+    /** Cannot be "const", else the "wchar_t" version is not called? */
+    /*const*/ ;
   void MessageWithTimeStamp(//const LPWSTR
-      const wchar_t * cp_lpwstrMessage, unsigned flags = 0) const;
+      const wchar_t * cp_lpwstrMessage, unsigned flags = 0);
+  void MessageWithTimeStampGUIthreadUnsafe(
+    const wchar_t * const c_wch_wstrMessage,
+    unsigned flags = 0
+    ) const;
   bool OpenLogFile(//std::tstring & r_std_tstrLogFilePath
     std::wstring & r_std_wstrLogFilePath,
     std::wstring & std_wstrExecutableFileName,

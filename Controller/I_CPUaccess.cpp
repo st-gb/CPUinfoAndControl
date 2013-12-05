@@ -207,16 +207,17 @@ bool //ISpecificController
 bool I_CPUaccess::GetProcessorNameWithoutLeadingSpaces( std::string & r_stdstr ) 
 {
   bool bSuccess ;
-  char * archCPUID ;
-  bSuccess = GetProcessorNameByCPUID(archCPUID) ;
+  char * p_chProcessorNameCurrentChar;
+  bSuccess = GetProcessorNameByCPUID(p_chProcessorNameCurrentChar) ;
   if( bSuccess )
   {
+    const char * c_p_chProcessorNameBegin = p_chProcessorNameCurrentChar;
     //Skip leading space characters.
-    while( * archCPUID == ' ' )
-      ++ archCPUID;
-    r_stdstr = std::string( archCPUID ) ;
+    while( * p_chProcessorNameCurrentChar == ' ' )
+      ++ p_chProcessorNameCurrentChar;
+    r_stdstr = std::string( p_chProcessorNameCurrentChar ) ;
     //Was allocated on heap inside "GetProcessorNameByCPUID(char * &)".
-    delete [] archCPUID ;
+    delete [] c_p_chProcessorNameBegin ;
 //    while( r_stdstr.size() > 0 && r_stdstr.at(0) == ' '  )
 //      r_stdstr.erase ( 0 ,
 //      //delete 1 char.

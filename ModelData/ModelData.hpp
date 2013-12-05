@@ -153,12 +153,12 @@ public:
     , mp_cpucontroller (NULL)
     , m_stdtstrProgramName( _T_LITERAL_PROGRAM_NAME )
     , m_std_strConfigFilePath( CONFIG_FILE_PATH )
+    , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
 #ifdef COMPILE_AS_GUI
 #ifdef _WIN32
     , m_instablecpucorevoltagedetection(m_cpucoredata)
 #endif
 #endif //#ifdef COMPILE_AS_GUI
-    , m_StableCPUcoreVoltageWaitTimeInMillis(10000)
   {}
 //  void AddMaxVoltageForFreq(WORD wFreqInMHz,float fValue) ;
   void AddValueTableRow(std::vector<std::string [2]>

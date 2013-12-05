@@ -9,6 +9,10 @@
 #include "stdafx.h"
 #endif
 
+#include <Controller/CPU-related/AMD/from_K10.h>
+#include <Controller/CPU-related/AMD/beginningWithFam10h/GetAvailableMultipliers.hpp>
+#include <preprocessor_macros/bitmasks.h>
+#include <Controller/CPU-related/AMD/family15h/family15h.hpp>
 #ifdef INSERT_DEFAULT_P_STATES
   #include <ModelData/ModelData.hpp>
   //A I_CPUaccess pointer is passed as parameter in Init(...)
@@ -23,11 +27,15 @@
 //  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
+  #include <Controller/AssignPointersToExportedExeFunctions/\
+AssignPointerToExportedExeReadPCIconfig.h>
 //#include <Controller/CPU-related/Intel/Core/Core2_GetConfigurableMultipliers.hpp>
 //#include <Controller/CPU-related/Intel/HyperThreading.hpp> //Intel::IsHyperThreaded()
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
 #ifdef _DEBUG
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+#else
+  #define DEBUGN() /* empty */
 #endif
 //#include <Windows/GetNumberOfLogicalCPUs.h>
 //  #include <preprocessor_helper_macros.h>  //for BITMASK_FOR_LOWMOST_5BIT
@@ -48,7 +56,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 
 #ifdef _DEBUG
 //Logger g_logger ;
-std::ofstream g_std_ofstream;
+//std::ofstream g_std_ofstream;
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
   #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
   static HMODULE g_hModuleThisDLL;
@@ -62,9 +70,13 @@ std::ofstream g_std_ofstream;
 
 float g_fReferenceClockInMHz;
 float g_fReferenceClockMultiplier;
+fastestUnsignedDataType g_MaxCPU_Cof;
+float g_fMaxMultiplier;
 BYTE g_byValue1;
 ReadMSR_func_type g_pfnreadmsr ;
 WriteMSR_func_type g_pfn_write_msr ;
+ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+
 //This flag is for ODCM.
 bool g_IsHyperThreaded = false;
 
@@ -111,38 +123,23 @@ void OpenLogFile()
 #define DLL_CALLING_CONVENTION
 #define DYN_LIB_CALLING_CONVENTION
 
-/** The array pointed to by the return value must be freed by the caller (i.e.
+/** @brief The reference clock might change, also during runtime.
+* This is why it is a good idea to get the possible multipliers.
+* @return The array pointed to by the return value must be freed by the caller (i.e.
 * x86I&C GUI or service) of this function. */
-EXPORT float * DLL_CALLING_CONVENTION
-  //The reference clock might change, also during runtime.
-  //This is why it is a good idea to get the possible multipliers.
-  GetAvailableMultipliers(
-    WORD wCoreID
-    , WORD * p_wNumberOfArrayElements
-    )
+EXPORT float * DLL_CALLING_CONVENTION GetAvailableMultipliers(
+  WORD wCoreID
+  , WORD * p_wNumberOfArrayElements
+  )
 {
   DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
-  //see "Intel(R) 64 and IA-32 Architectures Software Developer's Manual,
-  // Volume 3B: System Programming Guide, Part 2"
-  //  B-38Vol. 3
-  // "Table B-3.  MSRs in Processors Based on Intel Core Microarchitecture"
-  // "17H 23 MSR_PLATFORM_I
-  //  D"
-  // "12:8 Maximum Qualified Ratio. (R)
-  //  The maximum allowed bus ratio."
-
-  //see "Intel(R) 64 and IA-32 Architectures Software Developer's Manual,
-  // Volume 3B: System Programming Guide, Part 2"
-  //  B-38Vol. 3
-  // "Table B-3.  MSRs in Processors Based on Intel Core Microarchitecture"
-  //198H 408 MSR_PERF_STATUS
-  //"44:40" "Maximum Bus Ratio (R/O)"
-  //"Indicates maximum bus ratio configured for
-  // the processor."
 
 //  * p_wNumberOfArrayElements = 0 ;
 //  return NULL ;
-  return Intel::Core2::GetAvailableMultipliers( * p_wNumberOfArrayElements ) ;
+//  return Intel::Core2::GetAvailableMultipliers( * p_wNumberOfArrayElements ) ;
+  float fMainPllOpFreqIdMax = AMD::fromK10::GetMaxCPU_COF();
+  return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements,
+    fMainPllOpFreqIdMax);
 }
 
 /** @return The array pointed to by the return value must be freed by the caller (i.e.
@@ -152,16 +149,16 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
   , WORD * p_wNum )
 {
   DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
-  //See "Intel® Core™2 Duo Mobile Processor, Intel® Core™2 Solo Mobile
-  //Processor and Intel® Core™2 Extreme Mobile Processor on 45-nm Process
-  //Datasheet Doc#320120-004.32012001
-  //For platforms based on Mobile Intel® 4 Series Express Chipset Family
-  //March 2009",
-  //chapter "3.10Processor DC Specification"
-
 //  * p_wNum = 0 ;
 //  return NULL ;
-  return Intel::Core2::GetAvailableVoltagesInVolt( * p_wNum ) ;
+//  return Intel::Core2::GetAvailableVoltagesInVolt( * p_wNum ) ;
+  fastestUnsignedDataType minVID, VIDforLowestVoltage;
+  /** "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models
+   *    00h-0Fh Processors":
+   *   "MSRC001_0071 COFVID Status:"
+   *   "48:42 MinVid: minimum voltage."  "41:35 MaxVid: maximum voltage." */
+  AMD::fromK10::GetMinAndMaxVoltageID(VIDforLowestVoltage, minVID);
+  return 0;
 }
 
 //for getting ref clock:  Vol 3B
@@ -174,22 +171,48 @@ EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
   , WORD wCoreID
   )
 {
-  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin core ID:" << wCoreID)
-  return Intel::Core2::GetCurrentVoltageAndFrequency(
-    * p_fVoltageInVolt
+//    return byRet ;
+  return AMD::family15h::GetCurrentVoltageAndFrequency(
+    p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
-    , * p_fMultiplier
-    , * p_fReferenceClockInMHz
+    , p_fMultiplier
+    , p_fReferenceClockInMHz
     , wCoreID
     ) ;
-//    return byRet ;
 }
 
 EXPORT float DLL_CALLING_CONVENTION GetTemperatureInCelsius ( WORD wCoreID
   )
 {
-  return //(float) byTempInDegCelsius ;
-    Intel::CoreAndCore2::GetTemperatureInDegCelsius( wCoreID ) ;
+  DEBUGN( "begin")
+  const fastestUnsignedDataType CurTmpRawValue = AMD::fromK10::GetCurrentTemperatureRawValue();
+  const fastestUnsignedDataType CurTmp = CurTmpRawValue >>
+    AMD_FROM_K10_CURTMP_START_BIT;
+  DEBUGN( "CurrentTemperatureRawValue:" << CurTmp)
+  fastestUnsignedDataType CurTmpTjSel = (CurTmp >>
+    AMD_FROM_K10_CURR_TEMP_TJ_SELECT_START_BIT) & BITMASK_FOR_LOWMOST_2BIT;
+  DEBUGN( "CurTmpTjSel:" << CurTmpTjSel)
+  /** "IF (D18F3xA4[CurTmpTjSel]!=11b) THEN" */
+  if( CurTmpTjSel == 3 )
+  {
+    /** "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models
+     *   00h-0Fh Processors", chapter "D18F3xA4 Reported Temperature Control"
+     *  "<(CurTmp[10:2]*0.5)-49>" */
+#ifdef _DEBUG
+    DEBUGN( "CurTmp >> 2:" << (CurTmp >> 2) )
+#else
+#endif
+    float fTempInDegCelsius = (float) ( (CurTmp >> 2) &
+      BITMASK_FOR_LOWMOST_9BIT) * 0.5f - 49.0f;
+    DEBUGN( " fTempInDegCelsius:" << fTempInDegCelsius)
+    return fTempInDegCelsius;
+  }
+  else
+  {
+    float fTempInDegCelsius = AMD::fromK10::GetTemperatureInDegCelsius(CurTmp );
+    DEBUGN( " fTempInDegCelsius:" << fTempInDegCelsius)
+    return fTempInDegCelsius;
+  }
 }
 
 #ifdef INSERT_DEFAULT_P_STATES
@@ -249,26 +272,6 @@ void InsertDefaultPstates(I_CPUaccess * pi_cpuaccess)
 }
 #endif //INSERT_DEFAULT_P_STATES
 
-float GetReferenceClockMultiplier(DWORD affMask)
-{
-  float multi;
-  static uint32_t h, l;
-//  Intel::Core2::GetVoltageAndMultiplier(//coreID
-//    affMask, & r_fVoltageInVolt,
-//    & multi);
-
-  //see Intel 30.10.5
-  //The multiplier for Intel Celeron 900 whose product with the reference clock
-  // matches its core clock equals :
-  //-MSR_PLATFORM_ID:MaximumQualifiedBusRatio
-  ::ReadMSR(
-    IA32_PLATFORM_ID, & l, & h, affMask
-    );
-  multi = (l >> 8) & BITMASK_FOR_LOWMOST_5BIT;
-  DEBUGN( /*FULL_FUNC_NAME <<*/ "multiplier:" << multi)
-  return multi;
-}
-
 bool Init()
 {
   //#ifdef COMPILE_WITH_LOG
@@ -278,22 +281,23 @@ bool Init()
   //Intel Core 2 CPU aren't hyperthreaded.
   g_IsHyperThreaded = /*Intel::IsHyperThreaded()*/ false;
 #ifdef _DEBUG
-  g_std_ofstream << "before AssignPointersToExportedExeMSRfunctions_inline(...)"
-    << std::endl;
-  g_std_ofstream.flush();
+//  g_std_ofstream << "before AssignPointersToExportedExeMSRfunctions_inline(...)"
+//    << std::endl;
+//  g_std_ofstream.flush();
 #endif
   AssignPointersToExportedExeMSRfunctions_inline(
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;
-  g_fReferenceClockMultiplier = GetReferenceClockMultiplier(1);
+  AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
+//  g_fReferenceClockMultiplier = GetReferenceClockMultiplier(1);
   DEBUGN( /*FULL_FUNC_NAME <<*/ "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
     << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
     )
 #ifdef _DEBUG
-  g_std_ofstream << "after AssignPointersToExportedExeMSRfunctions_inline(...)"
-    << std::endl;
-  g_std_ofstream.flush();
+//  g_std_ofstream << "after AssignPointersToExportedExeMSRfunctions_inline(...)"
+//    << std::endl;
+//  g_std_ofstream.flush();
 #endif
   if( ! g_pfnreadmsr || ! g_pfn_write_msr )
   {
@@ -309,7 +313,7 @@ bool Init()
 #endif
     return FALSE ;
   }
-  Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
+//  Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
   DEBUGN( /*FULL_FUNC_NAME <<*/ "ref. clock in MHz:" << g_fReferenceClockInMHz)
 
   //      //Force the cond. "< min. time diff" to become true.
@@ -324,8 +328,7 @@ bool Init()
   return true ;
 }
 
-EXPORT void DLL_CALLING_CONVENTION
-  Init( //I_CPUcontroller * pi_cpu
+EXPORT void DLL_CALLING_CONVENTION Init( //I_CPUcontroller * pi_cpu
 #ifdef INSERT_DEFAULT_P_STATES
   /** CPUaccess object inside the exe.*/
   I_CPUaccess * pi_cpuaccess
@@ -336,6 +339,9 @@ EXPORT void DLL_CALLING_CONVENTION
   //BYTE by
   )
 {
+  Init() ;
+  g_MaxCPU_Cof = AMD::fromK10::GetMaxCPU_COF();
+  g_fMaxMultiplier = AMD::fromK10::GetMaximumMultiplier(g_MaxCPU_Cof);
 #ifdef INSERT_DEFAULT_P_STATES
   #ifdef _DEBUG
 //  g_std_ofstream << "Init(*)--pi_cpuaccess:" << pi_cpuaccess
@@ -345,13 +351,12 @@ EXPORT void DLL_CALLING_CONVENTION
 //  g_std_ofstream.flush();
   #endif
 #endif
-  Init() ;
 #ifdef INSERT_DEFAULT_P_STATES
   InsertDefaultPstates(pi_cpuaccess);
 #endif
 #ifdef _DEBUG
-  g_std_ofstream << "Init(*)--end:" << std::endl;
-  g_std_ofstream.flush();
+//  g_std_ofstream << "Init(*)--end:" << std::endl;
+//  g_std_ofstream.flush();
 #endif
 }
 
@@ -366,11 +371,12 @@ EXPORT BYTE DLL_CALLING_CONVENTION //can be omitted.
   DEBUGN( /*FULL_FUNC_NAME << "--" */ "begin")
 //    g_byValue1 = SetCurrentVoltageAndMultiplierIntelCore(
 //      fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
-  return Intel::Core2::SetCurrentVoltageAndMultiplier(
-      fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
+//  return Intel::Core2::SetCurrentVoltageAndMultiplier(
+//    fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
+  return 0;
 }
 
-#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
+//#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 EXPORT BOOL APIENTRY DllMain(
@@ -397,6 +403,3 @@ EXPORT BOOL APIENTRY DllMain(
 #endif //#ifdef _WIN32
 
 //#define DLL_CALLING_CONVENTION __stdcall
-
-
-

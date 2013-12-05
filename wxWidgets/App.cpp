@@ -206,6 +206,7 @@ wxX86InfoAndControlApp::wxX86InfoAndControlApp()
 #endif
 //  m_external_caller.m_pfnVoltageTooLow = & VoltageTooLow;
   I_Thread::SetCurrentThreadName("main");
+  m_GUIthreadID = OperatingSystem::GetCurrentThreadNumber();
 #ifdef _WIN32
   m_model.m_instablecpucorevoltagedetection.m_p_userinterface = this;
 #endif
@@ -1398,32 +1399,89 @@ inline BYTE wxX86InfoAndControlApp::IPC_ClientSendCommandAndGetResponse_Inline(
   return 0 ;
 }
 
+/** Cannot be const because of critical section member variable. */
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
   //const LPWSTR
   const wchar_t * cp_lpwstrMessage,
   unsigned flags //=0
-  ) const
+  )
 {
 //  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
 //    ::wxNow() + wxT(" ") + getwxString( cp_lpwstrMessage),
 //     getwxString(m_stdtstrProgramName)
 //     );
-  const std::wstring c_std_wstrMessage(cp_lpwstrMessage);
-  MessageWithTimeStamp(c_std_wstrMessage);
+//  const std::wstring c_std_wstrMessage(cp_lpwstrMessage);
+//  MessageWithTimeStamp(c_std_wstrMessage);
+
+  /** Avoid putting to much "show message" events/ showing too much messages at
+  * once: else if this message is called very often then a lot of message
+  * queue entries would be inserted-> a lot of dialogs are shown. */
+  const DWORD dwCurrentThreadNumer = OperatingSystem::GetCurrentThreadNumber();
+  if( dwCurrentThreadNumer == m_GUIthreadID)
+  {
+//    wxString wxstrMessage = wxWidgets::getwxString( cr_stdstr);
+    MessageWithTimeStampGUIthreadUnsafe(cp_lpwstrMessage);
+  }
+  else
+  {
+    /** Pauses here if a dialog is currently being shown modally until it is
+     * closed. */
+    /** Avoid putting to much "show message" events/ showing too much messages at
+    * once: else if this message is called very often then a lot of message
+    * queue entries would be inserted-> a lot of dialogs are shown. */
+    m_critSecShowMessage.Enter();
+
+    //TODO Multiple "show message dialog" messages are added before a dialog
+    //is shown.
+//      if( m_atLeast1MessageToShow )
+//        //Waits until dialog is closed.
+//        m_conditionShowMessage.Wait();
+
+    //Another than GUI thread->put into message queue to avoid program crash.
+//    wxCommandEvent wxcommand_event(MessageEvent);
+//    wxcommand_event.SetString(GetwxString_Inline(cr_stdstr));
+
+  //    AsyncMessage(cr_stdstr);
+  //    QueueEvent  (       wxEvent *       event   );
+    //FIXME: http://docs.wxwidgets.org/trunk/classwx_evt_handler.html#a0737c6d2cbcd5ded4b1ecdd53ed0def3
+    //"[...] can't be used to post events from worker threads for the event
+    //objects with wxString fields (i.e. in practice most of them) [...]"
+//    AddPendingEvent(wxcommand_event);
+    ShowMessageGUIsafe(cp_lpwstrMessage);
+
+    m_critSecShowMessage.Leave();
+  }
 }
 
 void wxX86InfoAndControlApp::MessageWithTimeStamp(
   const std::wstring & c_r_std_wstrMessage,
   unsigned flags //=0
+  ) /** Cannot be "const", else the "wchar_t" version is not called? */
+  //const
+{
+/** If defined it does not call the "wchar_t" version, but only calls this
+ *   function again->infinite recursion. */
+  const wchar_t * p_wchMessage = (const wchar_t *) c_r_std_wstrMessage.c_str();
+  MessageWithTimeStamp( p_wchMessage, flags );
+}
+
+/** @brief This method should only be called from the GUI thread because it
+ *  creates a window. If it is called from a non-GUI thread then this
+ *  application crahes/ may crash. If a message should be shown from another
+ *  thread than the GUI thread then you should call "MessageWithTimeStamp(...)"
+ *  or "ShowMessageGUIsafe(...) */
+void wxX86InfoAndControlApp::MessageWithTimeStampGUIthreadUnsafe(
+  const wchar_t * const c_wch_wstrMessage,
+  unsigned flags //=0
   ) const
 {
-//  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
-//    ::wxNow() + wxT(" ") + getwxString( c_r_std_wstrMessage),
-//     getwxString(m_stdtstrProgramName)
-//     );
+  //  ::wxMessageBox( //::wxGetCurrentTime() ::wxGetLocalTimeMillis
+  //    ::wxNow() + wxT(" ") + getwxString( c_r_std_wstrMessage),
+  //     getwxString(m_stdtstrProgramName)
+  //     );
 
   wxString wxstrMessage = ::wxNow() + wxT(" ") + ::getwxString(
-      c_r_std_wstrMessage);
+    /*c_r_std_wstrMessage*/ c_wch_wstrMessage);
 
   //Advantage in contrast to a message box: the textual content can be copied
   //into th clipboard (e.g. for translating it).
@@ -1517,7 +1575,7 @@ bool wxX86InfoAndControlApp::OnInit()
 
 //    std_wstrLogFilePath += std_wstrProgramPath.substr(lastBackSlash + 1);
     std::wstring std_wstrLogFileDirPath = GetStdWstring(wxCurrentWorkingDir)
-      + wxFILE_SEP_PATH;
+      /*+ wxFILE_SEP_PATH*/;
     if( OpenLogFile(std_wstrLogFileDirPath, std_wstrExecutableFileName,
         m_model.m_logfileattributes.m_bAppendProcessID, false) )
     {
@@ -1529,11 +1587,11 @@ bool wxX86InfoAndControlApp::OnInit()
       ;
 #endif //#ifdef _WIN32
     }
-    else
-      MessageWithTimeStamp( L"creating the log file \"" + //std_strLogFile +
-        std_wstrLogFilePath +
-        "\" failed: " +
-        GetStdWstring( GetErrorMessageFromLastErrorCodeA() ) );
+//    else
+//      MessageWithTimeStamp( L"creating the log file \"" + //std_strLogFile +
+//        std_wstrLogFilePath +
+//        "\" failed: " +
+//        GetStdWstring( GetErrorMessageFromLastErrorCodeA() ) );
 #ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
 //    else
     {
@@ -1865,7 +1923,7 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //      GetStdWstring(/*r_std_tstrLogFilePath*/ std_strLogFilePath)
       r_std_wstrLogFilePath + L"\":\n"
       //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
-      + GetErrorMessageFromLastErrorCodeA() );
+      + GetStdWstring(std::string( GetErrorMessageFromLastErrorCodeA() ) ) );
   }
   //from http://www.kharchi.eu/algierlib/tips.html:
   //If using MinGW then pass "-mwindows" as linker flag in order to hide the

@@ -15,6 +15,7 @@
 #include <Xerces/XercesString.hpp> //ansi_or_wchar_string_compare(...)
 #include <xercesc/sax2/Attributes.hpp>//class XERCES_CPP_NAMESPACE::Attributes
 #include <preprocessor_macros/operating_system_name.h> //OS_NAME
+#include <Xerces/GetErrorDescripton.hpp>
 
 namespace Xerces
 {
@@ -47,6 +48,25 @@ namespace Xerces
     {
       m_bSuitableFileFormat = false;
     }
+  }
+
+  void LogOutputHandler::fatalError(
+      const XERCES_CPP_NAMESPACE::SAXParseException & exception)
+  {
+//    OutputSAXExceptionErrorMessage(exception,
+    std::wstring stdwstrMessage;
+    GetDocumentIDandLocation(stdwstrMessage);
+    if( stdwstrMessage.empty() )
+    {
+      stdwstrMessage = Xerces::GetErrorDescription(
+        exception.getColumnNumber(),
+        exception.getLineNumber(),
+        exception.getSystemId(),
+        exception
+        );
+    }
+    m_r_userinterface.MessageWithTimeStamp(stdwstrMessage.c_str(), 0 );
+//    int i = 0;
   }
 
   void LogOutputHandler::HandleLoggingXMLelement(

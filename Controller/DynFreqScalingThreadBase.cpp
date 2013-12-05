@@ -79,13 +79,12 @@ DynFreqScalingThreadBase::DynFreqScalingThreadBase(
 //  //http://docs.wxwidgets.org/stable/wx_wxcondition.html#wxcondition:
 //  // the mutex should be initially locked
 //  mp_cpucoredata->m_mutexDVFSthreadMayChangeData.Lock() ;
-  LOGN( //"--"
-    << "CPU control base: " << & r_cpucontrolbase
+  LOGN( /*"--" <<*/ "CPU control base: " << & r_cpucontrolbase
     << "CPU controller:" << r_cpucontrolbase.mp_cpucontroller
     << "CPU usage getter: " << r_cpucontrolbase.mp_cpucoreusagegetter )
 
-  DEBUG(//"constructor of freq scaling thread base--"
-      "begin\n");
+  DEBUGN(//"constructor of freq scaling thread base--"
+      "begin");
 //  mp_icpu = p_icpu ;
 //  LOGN(//"dyn freq scaling thread base constructor--"
       //"core usage address: "
@@ -831,7 +830,7 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
   {
     LOGN("1st time too hot")
     m_dwBeginInMillisOfTooHot = //::GetTickCount() ;
-      OperatingSystem::GetTimeCountInMilliSeconds();
+      OperatingSystem/*OPERATING_SYSTEM_NAME*/::GetTimeCountInMilliSeconds();
     m_b1stTimeInRowTooHot = false ;
     m_wMilliSecondsPassed = 0 ;
     //In order to calc the difference between the temperature where it
@@ -842,7 +841,8 @@ void DynFreqScalingThreadBase::HandleCPUtooHotDVFS()
   {
     LOGN("at least 2nd time too hot")
 //    dwCurrentTimeInMillis = ::GetTickCount() ;
-    m_dwCurrentTimeInMillis = OperatingSystem::GetTimeCountInMilliSeconds() ;
+    m_dwCurrentTimeInMillis = OperatingSystem
+      /*OPERATING_SYSTEM_NAME*/::GetTimeCountInMilliSeconds() ;
 //    m_wMilliSecondsPassed = ULONG_VALUE_DIFF( dwCurrentTimeInMillis
 //      , m_dwBeginInMillisOfTooHot ) ;
     m_wMilliSecondsPassed = ULONG_VALUE_DIFF( m_dwCurrentTimeInMillis

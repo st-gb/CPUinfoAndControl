@@ -52,6 +52,10 @@ uint32_t g_dwValue1, g_dwValue2 ;
 //#define DLL_CALLING_CONVENTION __stdcall
 #define DLL_CALLING_CONVENTION
 
+float g_fReferenceClockInMHz;
+ReadMSR_func_type g_pfnreadmsr ;
+WriteMSR_func_type g_pfn_write_msr ;
+
 #ifdef COMPILE_WITH_LOG
 //g_logger, DEBUGN()
 #include <preprocessor_macros/logging_preprocessor_macros.h>
@@ -136,12 +140,11 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
 #define NEHALEM_DLL_CALLING_CONVENTION
 
-EXPORT
-/** The array pointed to by the return value must be freed by the caller (i.e.
-* x86I&C GUI or service) of this function. */
-float * DLL_CALLING_CONVENTION
-  //The reference clock might change, also during runtime.
-  //This is why it is a good idea to get the possible multipliers.
+/** @brief The reference clock might change, also during runtime.
+*   This is why it is a good idea to get the possible multipliers.
+* @return The array pointed to by the return value must be freed by the caller (i.e.
+*   x86I&C GUI or service) of this function. */
+EXPORT float * DLL_CALLING_CONVENTION
   GetAvailableMultipliers(
     WORD wCoreID
     , WORD * p_wNumberOfArrayElements
@@ -244,7 +247,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION SetCurrentVoltageAndMultiplier(
     , WORD wCoreID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin")
   return Intel::Core::SetCurrentVoltageAndMultiplier(
     fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
   return 1;

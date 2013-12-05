@@ -76,7 +76,7 @@ bool InitWindows()
   }
   gs_fTimeStampCounterMultiplier = Intel::Nehalem::GetTimeStampCounterMultiplier();
   //Force the cond. "< min. time diff" to become true.
-  g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
+//  g_dwPreviousTickCountInMilliseconds = ::GetTickCount() ;
   g_dwPreviousTickCountInMilliseconds
     //->time diff gets > max. time diff, so it calcs a ref clock.
     -= ( MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF + 1 );

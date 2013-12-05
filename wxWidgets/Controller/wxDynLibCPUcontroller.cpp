@@ -117,7 +117,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
     LOGN_ERROR( std_wstrErrMsg )
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) ,
 //    wxT("loading DLL failed") ) ;
-    mp_userinterface->MessageWithTimeStamp(std_wstrErrMsg);
+    mp_userinterface->MessageWithTimeStamp(std_wstrErrMsg.c_str() );
     throw CPUaccessException( std_strErrMsg);
   }
   LOGN( "end")
@@ -348,20 +348,20 @@ bool wxDynLibCPUcontroller::PossiblyCompareMD5checkSums()
   CPUcoreData & r_CPUcoreData = mp_model->m_cpucoredata;
 
   //From http://stackoverflow.com/questions/670734/c-pointer-to-class-data-member
-  CPUcoreData Model:: * p_cpucoredata = & Model::m_cpucoredata;
+//  CPUcoreData Model:: * p_cpucoredata = & Model::m_cpucoredata;
 //  Model CPUcoreData::* p_model = & CPUcoreData::m_r_model;
-  BYTE CPUcoreData::* p_m_byNumberOfCPUCores = & CPUcoreData::m_byNumberOfCPUCores;
+//  BYTE CPUcoreData::* p_m_byNumberOfCPUCores = & CPUcoreData::m_byNumberOfCPUCores;
 //  std::vector<VoltageAndFreq> CPUcoreData:: *
 //    p_m_std_vec_voltageandfreqInsertedByCPUcontroller = & CPUcoreData::
 //    m_std_vec_voltageandfreqInsertedByCPUcontroller;
 
-  bool CPUcoreData:: *p_m_b1CPUcorePowerPlane = & CPUcoreData::m_b1CPUcorePowerPlane;
+//  bool CPUcoreData:: *p_m_b1CPUcorePowerPlane = & CPUcoreData::m_b1CPUcorePowerPlane;
 
-  void * addressOfModelofCPUcoreData = //& mp_model->p_cpucoredata->m_r_model
-    //(*mp_model).*p_cpucoredata,m_r_model;
-//    & (r_CPUcoreData.//p_model;
-//    & (r_CPUcoreData.*p_m_byNumberOfCPUCores);
-    & r_CPUcoreData./*m_byNumberOfCPUCores*/ m_MD5checksum;
+//  void * addressOfModelofCPUcoreData = //& mp_model->p_cpucoredata->m_r_model
+//    //(*mp_model).*p_cpucoredata,m_r_model;
+////    & (r_CPUcoreData.//p_model;
+////    & (r_CPUcoreData.*p_m_byNumberOfCPUCores);
+//    & r_CPUcoreData./*m_byNumberOfCPUCores*/ m_MD5checksum;
     //mp_model->m_cpucoredata.//p_m_std_vec_voltageandfreqInsertedByCPUcontroller;
 //    & (r_CPUcoreData.*p_m_b1CPUcorePowerPlane);
 

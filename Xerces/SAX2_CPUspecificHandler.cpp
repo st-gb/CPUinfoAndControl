@@ -553,17 +553,18 @@ void SAX2_CPUspecificHandler::startElement
 void SAX2_CPUspecificHandler::fatalError(
   const XERCES_CPP_NAMESPACE::SAXParseException & r_xercesc_sax_parse_exception)
 {
-  LOGN_DEBUG( FULL_FUNC_NAME << " begin")
+  LOGN_DEBUG( /*FULL_FUNC_NAME <<*/ "begin")
   std::wstring stdwstrDocumentIDandLocation;
   GetDocumentIDandLocation(stdwstrDocumentIDandLocation);
 //  const std::string & stdstrSAXParseExceptionMessage = XercesHelper::ToStdString(
 //     ) + stdwstrDocumentIDandLocation;
 
-  const std::wstring stdwstrSAXParseExceptionMessage = Xerces::
-    ConvertXercesStringToStdWstring_inline(
+  const std::wstring stdwstrSAXParseExceptionMessage = L"Apache Xerces (XML "
+    L"library) error message:\n" +
+    Xerces::ConvertXercesStringToStdWstring_inline(
     r_xercesc_sax_parse_exception.getMessage() ) + stdwstrDocumentIDandLocation;
 
-  LOGN_ERROR( FULL_FUNC_NAME << ": fatal error: "
+  LOGN_ERROR( /*FULL_FUNC_NAME << ": "*/ "fatal error: "
     << stdwstrSAXParseExceptionMessage
     << " at line: " << r_xercesc_sax_parse_exception.getLineNumber() )
   //stdstrSAXParseExceptionMessage;

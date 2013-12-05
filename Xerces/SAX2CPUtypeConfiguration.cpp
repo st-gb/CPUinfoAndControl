@@ -1,5 +1,5 @@
 /*
- * SAX2CPUcontrollerConfiguration.cpp
+ * SAX2CPUtypeConfiguration.cpp
  *
  *  Created on: 01.01.2013
  *      Author: Stefan
@@ -8,39 +8,40 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/UserInterface.hpp> //class UserInterface
-#include "Xerces/SAX2CPUcontrollerConfiguration.hpp"
+#include "Xerces/SAX2CPUtypeConfiguration.hpp"
 #include <Xerces/XercesAttributesHelper.hpp>
 #include <Xerces/XercesString.hpp> //Xerces::ansi_or_wchar_string_compare(...)
 
 namespace Xerces
 {
 
-  SAX2CPUcontrollerConfiguration::SAX2CPUcontrollerConfiguration(
-    const UserInterface & r_userinterface,
+  SAX2CPUtypeConfiguration::SAX2CPUtypeConfiguration(
+    UserInterface & r_userinterface,
     const Model & r_model )
-    : m_r_userinterface(r_userinterface),
+    :
 //      m_r_model(r_model),
       m_c_r_cpucoredata(r_model.m_cpucoredata),
-      m_SuitabilityLevel(0),
       m_r_model( (Model &) r_model),
+      m_SuitabilityLevel(0),
       m_HighestSuitability(
-        //Set the minumum match to model, else if e.g. no controller for
-        // Intel Core (fam 6, model 14) and Controller for Pentium M (fam 6, model 13):
-        // it uses the Pentium M controller and the OS crashes
-        SAX2CPUcontrollerConfiguration::/*model family*/ vendor
+        /** Set the minumum match to model, else if e.g. no controller for
+        *  Intel Core (family 6, model 14) and Controller for Pentium M (family 6, model 13):
+        *  it uses the Pentium M controller and the OS crashes */
+        SAX2CPUtypeConfiguration::/*model family*/ vendor
         )
+      , m_r_userinterface(r_userinterface)
   {
     LOGN_INFO(//"minimum suitability level: "
       "suitability level below minimum: "
       << m_HighestSuitability )
   }
 
-  SAX2CPUcontrollerConfiguration::~SAX2CPUcontrollerConfiguration()
+  SAX2CPUtypeConfiguration::~SAX2CPUtypeConfiguration()
   {
     // TODO Auto-generated destructor stub
   }
 
-  void SAX2CPUcontrollerConfiguration::startElement(
+  void SAX2CPUtypeConfiguration::startElement(
     const XMLCh * const cpc_xmlchURI ,
     const XMLCh * const cpc_xmlchLocalName ,
     const XMLCh * const cpc_xmlchQualifiedName ,
@@ -188,8 +189,8 @@ namespace Xerces
       }
     }
   }
-  void SAX2CPUcontrollerConfiguration::ShowMessage(const std::wstring & message)
+  void SAX2CPUtypeConfiguration::ShowMessage(const std::wstring & message)
   {
-    m_r_userinterface.MessageWithTimeStamp(message);
+    m_r_userinterface.MessageWithTimeStamp(message.c_str() );
   }
 } /* namespace Xerces */

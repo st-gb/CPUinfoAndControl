@@ -174,8 +174,8 @@ inline void wxExamineCPUregistersDialog::AddStatictext( const wxString & cr_wxst
     //(*iter).m_str
     , wxString(wxT("") )
     ) ;
-  wxRect wxrect = mp_wxstatictext->GetRect() ;
 #ifdef _DEBUG
+  wxRect wxrect = mp_wxstatictext->GetRect() ;
   wxrect = mp_wxstatictext->GetRect() ;
   wxPoint wxpoint = mp_wxstatictext->GetPosition() ;
   wxpoint = mp_wxboxsizerOutmost->GetPosition() ;

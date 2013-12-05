@@ -239,8 +239,9 @@ inline void OutputSAXParseExceptionErrorMessage(
   std::string std_strMessage;
   getUTF8string_inline(stdwstrMessage, std_strMessage);
   g_logger.Log_inline( std_strMessage,
-    LogLevel::error);
-  p_userinterface->MessageWithTimeStamp(stdwstrMessage);
+    LogLevel::error, /*FULL_PUNC_NAME*/ __PRETTY_FUNCTION__);
+  /** From non-GUI thread */
+  p_userinterface->/*ShowMessageGUIsafe*/MessageWithTimeStamp(stdwstrMessage.c_str() );
 }
 
 inline void OutputSAXExceptionErrorMessage(
@@ -286,7 +287,7 @@ enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
   , XERCES_CPP_NAMESPACE::DefaultHandler * const errorHandler// = NULL
   )
 {
-    LOGN( "begin" );
+    LOGN( "begin contenthandler:" << & r_defaulthandler);
 //    BYTE byReturn = readingXMLdocFailed ;
     enum Apache_Xerces::ReadXMLdocumentRetCodes returnCode =
       readingXMLdocFailed;
@@ -307,15 +308,23 @@ enum Apache_Xerces::ReadXMLdocumentRetCodes Apache_Xerces::ReadXMLdocument(
       * the Xerces framework. */
       p_sax2xmlreader->setContentHandler(//&sax2
         & r_defaulthandler );
-      //Calls "XERCES_CPP_NAMESPACE::DefaultHandler"(-derived)
-      // "fatalError(const XERCES_CPP_NAMESPACE::SAXParseException &)" method
-      // instead of throwing an exception within this method.
+      /** Calls "XERCES_CPP_NAMESPACE::DefaultHandler"(-derived)
+      * "fatalError(const XERCES_CPP_NAMESPACE::SAXParseException &)" method
+      * instead of throwing an exception within this method. */
       if( errorHandler)
+        /**http://xerces.apache.org/xerces-c/apiDocs-3/classSAX2XMLReader.html#910e9acbec9c8bbd4ff3fdb92c76cf0e
+         * "If the application does not register an error event handler, all
+         * error events reported by the SAX parser will be silently ignored,
+         * except for fatalError, which will throw a SAXException */
         p_sax2xmlreader->setErrorHandler(//& r_defaulthandler
           errorHandler
           );
       else
+        /** error handler must provide*/
         p_sax2xmlreader->setErrorHandler(& r_defaulthandler);
+      XERCES_CPP_NAMESPACE::ErrorHandler * sax2errorHandler =
+        p_sax2xmlreader->getErrorHandler();
+      LOGN( "error handler:" << sax2errorHandler );
       try
       {
         LOGN( "before parsing XML document "

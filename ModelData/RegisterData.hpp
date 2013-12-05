@@ -120,8 +120,8 @@ public:
   CPUIDdata(//DWORD
     unsigned /*long*/ dwIndex
     )
-    : m_byCoreID(0),
-    CPUregisterProperties(dwIndex, "")
+    : CPUregisterProperties(dwIndex, "")
+    , m_byCoreID(0)
   {
     //m_dwIndex = dwIndex ;
   }
@@ -136,8 +136,8 @@ public:
     ////This is the general register the bit range applies to.
     //, std::string & stdstrGenPurposeRegName 
     )
-    : m_byCoreID(0)
-    , CPUregisterProperties(dwIndex, stdstrRegisterName)
+    : CPUregisterProperties(dwIndex, stdstrRegisterName)
+    , m_byCoreID(0)
   {
 //    m_dwIndex = dwIndex ;
 //    m_stdstrRegisterName = stdstrRegisterName ;
@@ -182,8 +182,8 @@ class MSRdata
   std::vector<RegisterDataTable> m_stdvector_registerdatatable ;
   MSRdata(//DWORD
     unsigned /*long*/ dwIndex)
-    : m_byCoreID(0)
-    , CPUregisterProperties(dwIndex, "")
+    : CPUregisterProperties(dwIndex, "")
+    ,  m_byCoreID(0)
   {
     //m_dwIndex = dwIndex ;
   }

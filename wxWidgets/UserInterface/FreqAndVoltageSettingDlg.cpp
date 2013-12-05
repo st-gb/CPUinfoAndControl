@@ -255,16 +255,16 @@ FreqAndVoltageSettingDlg::FreqAndVoltageSettingDlg(
   , mp_cpucontroller (p_cpucontroller)
   , mp_mainframe( (MainFrame *) p_wxwindowParent )
   , mp_model ( p_cpucontroller->mp_model )
-  , mp_wxsliderCPUcoreVoltage(NULL)
-  , mp_wxsliderFreqInMHz(NULL)
-  , mp_wxstatictextVoltageInVolt(NULL)
-  , m_wxstrIconFilesPrefix( wxT("icons/") )
 #ifdef _DEBUG
   , mp_wxbuttonApply (NULL)
   , m_p_wxbitmaptogglebuttonAlsoSetWantedVoltage(NULL)
   , m_p_wxbitmaptogglebuttonPreventVoltageAboveDefaultVoltage(NULL)
   , m_p_wxbitmaptogglebuttonPreventVoltageBelowLowestStableVoltage(NULL)
 #endif
+  , mp_wxsliderCPUcoreVoltage(NULL)
+  , mp_wxsliderFreqInMHz(NULL)
+  , mp_wxstatictextVoltageInVolt(NULL)
+  , m_wxstrIconFilesPrefix( wxT("icons/") )
   , m_p_wxtextctrlInstableCPUcoreVoltageWarning(NULL)
 {
   LOGN_DEBUG( "begin")
@@ -1051,7 +1051,7 @@ void FreqAndVoltageSettingDlg::OnClose( wxCloseEvent & wxcmd )
 //     if(
          //::wxMessageBox( wxT(
 //         (const wchar_t *)
-         msg//)
+         msg.c_str() //)
 //           wxT("question")//,
   //         wxYES_NO
            );

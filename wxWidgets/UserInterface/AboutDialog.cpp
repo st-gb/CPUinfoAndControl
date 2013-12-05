@@ -48,19 +48,23 @@ WORD g_wNumberOfWorldlyWisdomStrings = 2;
 wxString GetRandomWorldlyWisdom(
   const std::map<uint16_t,std::string> & c_r_std_set_WisdomStrings)
 {
-  //from http://www.cplusplus.com/reference/clibrary/cstdlib/rand/:
-  /* initialize random seed: */
-  srand ( time(NULL) );
+  if( c_r_std_set_WisdomStrings.size() > 0 )
+  {
+    //from http://www.cplusplus.com/reference/clibrary/cstdlib/rand/:
+    /* initialize random seed: */
+    srand ( time(NULL) );
 
-  /* generate secret number: */
-  int nRandomNumber = rand() % //g_wNumberOfWorldlyWisdomStrings;
-    c_r_std_set_WisdomStrings.size();
+    /* generate random number: */
+    int nRandomNumber = rand() % //g_wNumberOfWorldlyWisdomStrings;
+      c_r_std_set_WisdomStrings.size();
 
-//  m_c_r_model_data.m_std_vec_WisdomStrings.
+  //  m_c_r_model_data.m_std_vec_WisdomStrings.
 
-  return //g_ar_wxstrWorldlyWisdom[nRandomNumber];
-    wxWidgets::GetwxString_Inline(c_r_std_set_WisdomStrings.find(nRandomNumber)->second.
-      c_str() );
+    return //g_ar_wxstrWorldlyWisdom[nRandomNumber];
+      wxWidgets::GetwxString_Inline(c_r_std_set_WisdomStrings.find(
+        nRandomNumber)->second.c_str() );
+  }
+  return wxT("");
 }
 
 void GetAboutMessage(wxString & wxstrMessage,

@@ -33,6 +33,10 @@ extern float g_fReferenceClockInMHz;
     #define JUNCTION_TEMPERATURE_IN_DEGREES_CELSIUS 100
   #endif
 #endif
+#if defined(COMPILE_FOR_INTEL_CORE2) || defined(COMPILE_FOR_INTEL_CORE)
+  /** Intel::CoreAndCore2::GetVoltage(...) */
+  #include "Core_and_Core2_GetVoltage.hpp"
+#endif
 
 namespace Intel
 {

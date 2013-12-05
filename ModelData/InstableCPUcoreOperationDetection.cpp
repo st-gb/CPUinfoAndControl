@@ -398,17 +398,17 @@ float InstableCPUcoreOperationDetection::DecreaseVoltageStepByStep(
 //        fVoltageInVoltToSet, fCPUcoreMultiplierToSet);
 //      wxGetApp().ShowMessageGUIsafe(wxstr);
       //wxString::Format()
-      wchar_t ar_wchMessage[500];
       const wchar_t * p_wchMessage;
-#ifdef _WIN32
-      ::wsprintf(ar_wchMessage,
-        500,
-        L"for instable CPU core operation detection:"
-        L"setting voltage to %f and/or multiplier to %f failed"
-        L"->aborting instable CPU core operation detection",
-        fVoltageInVoltToSet, fCPUcoreMultiplierToSet);
-      p_wchMessage = ar_wchMessage;
-#else
+//#ifdef _WIN32
+//        wchar_t ar_wchMessage[500];
+//      ::wsprintf(ar_wchMessage,
+//        500,
+//        L"for instable CPU core operation detection:"
+//        L"setting voltage to %f and/or multiplier to %f failed"
+//        L"->aborting instable CPU core operation detection",
+//        fVoltageInVoltToSet, fCPUcoreMultiplierToSet);
+//      p_wchMessage = ar_wchMessage;
+//#else
       std::ostringstream std_oss;
       std_oss << "for instable CPU core operation detection:"
         "setting voltage to " << fVoltageInVoltToSet <<
@@ -416,7 +416,7 @@ float InstableCPUcoreOperationDetection::DecreaseVoltageStepByStep(
         "->aborting instable CPU core operation detection";
       const std::string std_str = std_oss.str();
       p_wchMessage = GetStdWstring(std_str).c_str();
-#endif
+//#endif
       ShowMessage(p_wchMessage);
       //break;
       return 0.0f;

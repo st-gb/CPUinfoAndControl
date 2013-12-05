@@ -239,8 +239,8 @@ namespace Xerces
     const XERCES_CPP_NAMESPACE::Attributes & cr_xercesc_attributes )
   {
     std::string std_strXMLattributeName = "colour" ;
-    bool & r_bAttributeValue = m_p_model->m_userinterfaceattributes.
-      m_bShowCPUcoreUsagesIconInTaskBar;
+//    bool & r_bAttributeValue = m_p_model->m_userinterfaceattributes.
+//      m_bShowCPUcoreUsagesIconInTaskBar;
     std::string stdstrAttributeValue;
     if( XercesAttributesHelper::GetAttributeValue(
         cr_xercesc_attributes

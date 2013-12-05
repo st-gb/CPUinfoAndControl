@@ -22,7 +22,6 @@
 
   #define COFVID_STATUS_REGISTER_START_BIT_FOR_MAIN_PLL_OP_FREQ_ID_MAX 49
 
-  #define START_BIT_FOR_CPU_CORE_DIVISOR_ID 6
   #define START_BIT_FOR_CURRENT_DIVISOR_ID 40
 
   //=1111111000000000bin <= VID value is from 10th to 16th(=7 bit)
@@ -48,7 +47,6 @@
   // ( 24 << 3 ) | 3 = 192 | 3 = 192 + 3 = 195
   #define CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER 195
 
-  #define F3xA4_REPORTED_TEMPERATURE_CONTROL_REGISTER 0xA4
   #define F3xDC_CLOCK_POWER_TIMING_CONTROL_2_REGISTER_ADDRESS 0xDC
   #define F3xD4_CLOCK_POWER_TIMING_CONTROL_0_REGISTER 0xD4
 
@@ -67,53 +65,11 @@
   //#define SET_P_STATE_TO_VALID(dword) ( dword = ( 1 << 31) )
   #define MAX_VALUE_FOR_DID 7//=7 hex//=111 bin; has bits 8:6 = 3 bits
 
-  //41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG p.236:
-  //"5:0 CpuFid: core frequency ID." ->
-  //  highest value for 6 bits is 111111bin = 63dec
-  #define MAX_VALUE_FOR_FID 63//=0x3F hex//=111111 bin; has bits 5:0 = 6 bits
   #define MAX_VALUE_FOR_VID 127//=0x7F hex//=1111111 bin; has bits 15:9 = 7 bits
 
   #define MAX_NUMERIC_POSSIBLE_MULTI ( MAX_VALUE_FOR_FID + 8 )
   #define MAX_MULTI_DIV2 ( MAX_VALUE_FOR_FID + 8 ) / 2
 
-  #define GET_MULTIPLIER_DID(frequencyID, divisorID) \
-    ( (float) (frequencyID + 8) / (float) ( 1 << divisorID ) )
-  namespace AMD { namespace family17 {
-     inline float GetMultiplier2(unsigned frequencyID, unsigned divisorID)
-     {
-       return (float) (frequencyID + 8) / (float) ( 1 << divisorID );
-     }
-  } }
-  //multi = Frequency IDentifier + 8 / 2 ^ "Divisor IDentifier"
-//  #ifdef MAX_MULTI_IS_FREQUENCY_ID_PLUS_8
-  #ifdef MAX_MULTI_IS_MAIN_PLL_OP_FREQ_ID_MAX_PLUS_8
-    #define GET_MULTIPLIER(frequencyID, divisorID) \
-      /*( (float) (frequencyID + 8) / (float) ( 1 << divisorID ) ) */ \
-      GET_MULTIPLIER_DID(frequencyID, divisorID )
-    namespace AMD { namespace family17 {
-      float GetMultiplier(unsigned frequencyID, unsigned divisorID)
-      {
-        return GetMultiplier2(frequencyID, divisorID);
-      }
-    } }
-//    #define GET_MAX_MULTIPLIER(frequencyID) GET_MULTIPLIER( frequencyID + 8, 1)
-    #define GET_FREQUENCY_ID(multiplier, max_multiplier) ( \
-      (max_multiplier / multiplier) - 8
-  #else //Maximum multiplier is "MainPLLOpFreqIDMax / 2"
-    // "41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG", page 14:
-    // "CLKIN. The reference clock provided to the processor, nominally 200Mhz."
-    // For ZM-82: 2200 TSC/ second, max_freqID=14 -> max multi = (14+8)/2=22/2=11
-//    #define GET_MAX_MULTIPLIER(frequencyID) ( ( frequencyID + 8) / 2)
-    #define GET_MULTIPLIER(frequencyID, divisorID) \
-      /*( (float) (frequencyID + 8) / (float) ( 1 << (divisorID + 1) ) )*/ \
-      GET_MULTIPLIER_DID(frequencyID, (divisorID + 1))
-    namespace AMD { namespace family17 {
-      float GetMultiplier(unsigned frequencyID, unsigned divisorID)
-      {
-        return GetMultiplier2(frequencyID, divisorID + 1);
-      }
-    } }
-  #endif
-  #define GET_MAX_MULTIPLIER(frequencyID) GET_MULTIPLIER( frequencyID, 0)
+
 
 #endif //AMD_FAMILY_17_H_

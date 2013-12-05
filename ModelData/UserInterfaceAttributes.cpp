@@ -37,12 +37,12 @@ namespace Attributes
       // service control manager failed:[...]")
       false ) ,
     m_fOperatingSafetyMarginInVolt(
-      //0.1 Volt is a good margin/ minimum for also taking into account (an)
-      //attached USB device(s) that else may cause an Operating System freeze/
-      //restart.
-      //With voltages below, e.g. 0.7 V margin, Ubuntu failed to start on a Pentium
-      //M 745 (1.8 GHz). Possibly because of voltage peeks due to powering on
-      //many devices (CCFL backlight etc.) at the same time at startup.
+      /** 0.1 Volt is a good margin/ minimum for also taking into account (an)
+      *  attached USB device(s) that else may cause an Operating System freeze/
+      * restart.
+      * With voltages below, e.g. 0.7 V margin, Ubuntu failed to start on a Pentium
+      * M 745 (1.8 GHz). Possibly because of voltage peeks due to powering on
+      * many devices (CCFL backlight etc.) at the same time at startup. */
       0.1) ,
     m_wToolTipDelay( MAXWORD) ,
     m_nCPUcoreTempTaskBarIconFontSizeInPoint(10),

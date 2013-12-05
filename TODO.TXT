@@ -1,6 +1,11 @@
+-stürzt ab, wenn Fehler beim Laden der "CPUmodelConfig.xml"
+-stürzt ab, wenn in CPUmodelConfig.xml keine "CPUregisterData"-Datei für die aktuelle CPU eingetragen ist und
+ wenn als Admin gestartet wird
+-XML-Dateien sind schlecht bearbeitbar im Windows-Editor, wenn UNIX-Format-Zeilenenden (\r)
+
 -beim Suchen der niedrigsten stabilen Spannung sollte darauf geachtet werden, dass der Prime95-thread eine hohe CPU-Auslastung hat. 
 Ansonsten schlägt Prime95 möglicherweise erst zu spät an (bei Pentium M: 1.116V höchste instabile Spannung, als noch ein anderer Prozess es hohe CPU-Last hatte,
-sonst 1.32 V als höchste instabile Spannung.
+sonst 1.132 V als höchste instabile Spannung.
 
 
 Seide soll Den x86I&C-Sourcecode auf dem Stick loeschen, da unverschlüsselt

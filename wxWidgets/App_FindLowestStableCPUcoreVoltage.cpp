@@ -149,7 +149,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
         std_wstrMessage +=
             _T(STOP_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME);
         std_wstrMessage += L"\" failed.";
-        MessageWithTimeStamp( std_wstrMessage);
+        MessageWithTimeStamp( std_wstrMessage.c_str() );
       }
     }
     else
@@ -158,7 +158,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
       std_wstrMessage +=
           _T(START_INSTABLE_CPU_CORE_VOLTAGE_DETECTION_FCT_NAME);
       std_wstrMessage += L"\" failed.";
-      MessageWithTimeStamp( std_wstrMessage);
+      MessageWithTimeStamp( std_wstrMessage.c_str() );
     }
   }
   else
@@ -176,7 +176,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
       ::GetErrorMessageFromLastErrorCodeA();
     std_wstrMessage += GetStdWstring(
       std_strErrorMessageFromLastErrorCode);
-    MessageWithTimeStamp( std_wstrMessage);
+    MessageWithTimeStamp( std_wstrMessage.c_str() );
   }
   return 1;
 }

@@ -834,8 +834,8 @@ void MainFrame::CreateServiceMenuItems()
 //  if( mp_wxx86infoandcontrolapp->m_ipcclient.IsConnected() )
 //    wxstrConnectOrDisconnect = wxT("disconnect") ;
 //  else
-    wxstrConnectOrDisconnect = wxT("c&onnect to ") + getwxString(mp_model->
-      m_userinterfaceattributes.m_std_wstrServiceAddress);
+    wxstrConnectOrDisconnect = wxT("c&onnect to ") + wxWidgets::getwxString(
+      mp_model->m_userinterfaceattributes.m_std_wstrServiceAddress);
   p_wxmenuService->Append( ID_ConnectToOrDisconnectFromService,
     wxstrConnectOrDisconnect, wxT("connect to the (x86IandC) "
       "CPU core data provider/ server/ service"

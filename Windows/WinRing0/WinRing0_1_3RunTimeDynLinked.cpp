@@ -18,11 +18,14 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //for BITMASK_FOR_LOWMOST_7BIT
 #include <preprocessor_macros/bitmasks.h>
+/** GetErrorMessageFromErrorCodeW(...) */
+#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
  //convertToStdString(typename )
 #include <Controller/character_string/stdstring_format.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //GetCharPointer(...)
-#include <UserInterface/UserInterface.hpp> //for class "UserInterface"
+#include <UserInterface/UserInterface.hpp> /** for class "UserInterface" */
+#include <Windows/DLLloadError.hpp> /** DLLloadError::GetPossibleSolution */
 #include <Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
 #include <Windows/HardwareAccess/HardwareAccessError/\
 GetHardwareAccessErrorDescription.hpp>
@@ -75,6 +78,7 @@ WinRing0_1_3RunTimeDynLinked::WinRing0_1_3RunTimeDynLinked(UserInterface * pui)
   Init(pui) ;
   LOGN( "end")
 }
+
 void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 {
   //Initialize just to avoid (g++) compiler warning.
@@ -84,48 +88,74 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 
   ::SetLastError(0) ;
 
-  //WinRing0 Run-Time Dynamic Linking docu step 2: "Call InitOpenLibSys(). "
+  /** WinRing0 Run-Time Dynamic Linking docu step 2: "Call InitOpenLibSys(). "
+   * InitOpenLibSys returns false when it could not load the "WinRing0" DLL */
   BOOL boolInit = InitOpenLibSys( & m_hModuleWinRing0DLL ) ;
-
-  //WinRing0 documentation "How to Use"->"Run-Time Dynamic Linking"
-  // step 3: "Call GetDllStatus() to check error."
-  dwDllStatus = GetDllStatus() ;
-  if( dwDllStatus == OLS_DLL_NO_ERROR )
+  DWORD dwLastError = ::GetLastError() ;
+  std::cout << "return value of InitOpenLibSys:" << boolInit
+    << " m_hModuleWinRing0DLL:" << m_hModuleWinRing0DLL << std::endl;
+  if(m_hModuleWinRing0DLL != NULL)
   {
-     LOGN_TYPE("WinRing0 successfully initialized",
-       LogLevel::success)
-     //UIconfirm("WinRing0 successfully initialized") ;
+    //WinRing0 documentation "How to Use"->"Run-Time Dynamic Linking"
+    // step 3: "Call GetDllStatus() to check error."
+    dwDllStatus = GetDllStatus() ;
+    if( dwDllStatus == OLS_DLL_NO_ERROR )
+    {
+       LOGN_TYPE("WinRing0 successfully initialized",
+         LogLevel::success)
+       //UIconfirm("WinRing0 successfully initialized") ;
+    }
+    else
+    {
+  //        DWORD dwLastError = ::GetLastError() ;
+  //        _GetDetailedWinRing0Error pfnGetDetailedWinRing0Error =
+  //          (_GetDetailedWinRing0Error)
+  //          ::GetProcAddress(m_hModuleWinRing0DLL,"GetDetailedWinRing0Error");
+      DLLerror(dwDllStatus);
+    }
+    //TRUE  if loading WinRing0 DLL succeeded and all function pointers are
+    // assigned/ <> NULL.
+    if( boolInit )
+    {
+      BYTE major;
+      BYTE minor;
+      BYTE revision;
+      BYTE release ;
+      std::string strFuncName ;
+      LOGN_TYPE( "InitOpenLibSys succeeded", LogLevel::success )
+
+      GetDllVersion (& major, & minor, & revision, & release);
+      LOGN("using WinRing0 DLL version "
+        << (WORD)major << " "
+        << (WORD)minor << " "
+        << (WORD)revision << " "
+        << (WORD) release
+        )
+    }
+    else
+    {
+  //    InitOpenLibSysFailed();
+    }
   }
   else
   {
-//        DWORD dw = ::GetLastError() ;
-//        _GetDetailedWinRing0Error pfnGetDetailedWinRing0Error =
-//          (_GetDetailedWinRing0Error)
-//          ::GetProcAddress(m_hModuleWinRing0DLL,"GetDetailedWinRing0Error");
-    DLLerror(dwDllStatus);
-  }
-  //TRUE  if loading WinRing0 DLL succeeded and all function pointers are
-  // assigned/ <> NULL.
-  if( boolInit )
-  {
-    BYTE major;
-    BYTE minor;
-    BYTE revision;
-    BYTE release ;
-    std::string strFuncName ;
-    LOGN_TYPE( "InitOpenLibSys succeeded", LogLevel::success )
-
-    GetDllVersion (& major, & minor, & revision, & release);
-    LOGN("using WinRing0 DLL version "
-      << (WORD)major << " "
-      << (WORD)minor << " "
-      << (WORD)revision << " "
-      << (WORD) release
-      )
-  }
-  else
-  {
-//    InitOpenLibSysFailed();
+#ifdef _M_X64
+    #define WINRING0_DLL_FILE_NAME_WIDE_STRING L"WinRing0x64.dll"
+#else
+  #define WINRING0_DLL_FILE_NAME_WIDE_STRING L"WinRing0.dll"
+#endif
+    wchar_t wchDLLfileName [] = WINRING0_DLL_FILE_NAME_WIDE_STRING;
+    wchar_t currentPath[MAX_PATH];
+    std::wstring std_wstrErrorMessage = GetErrorMessageFromErrorCodeW(dwLastError);
+    GetCurrentDirectoryW(MAX_PATH, currentPath);
+    std::wstring std_wstrDLLloadErrorPossibleSolution = GetStdWstring(
+      DLLloadError::GetPossibleSolution(dwLastError) );
+    mp_userinterface->MessageWithTimeStamp(
+      std::wstring(L"Failed to initialize WinRing0: failed to load file \"")
+      + std::wstring(currentPath) + L"\\" + std::wstring(wchDLLfileName) + L"\":"
+      + std_wstrErrorMessage + L" Windows error code: " +
+      convertToStdWstring(dwLastError) + std_wstrDLLloadErrorPossibleSolution);
+    throw CPUaccessException("initializing WinRing0 failed");
   }
   LOGN( "end")
 }

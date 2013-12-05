@@ -21,6 +21,9 @@
 
 //  #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
+//AMD::fromK10::GetCurrentTemperatureRawValue()
+  #include <Controller/CPU-related/AMD/from_K10.h>
+  #include <Controller/CPUcontrollerDynLib/calling_convention.h>
 
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
   #include <preprocessor_macros/show_via_GUI.h> //SHOW_VIA_GUI
@@ -70,7 +73,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #include <sstream> //std::stringstream
   #include <tchar.h> //_T()
 //  #include <global.h> //logging
-  #include <Controller/CPU-related/AMD/Griffin/GetAvailableMultipliers.hpp>
+  #include <Controller/CPU-related/AMD/beginningWithFam10h/GetAvailableMultipliers.hpp>
 
 //  extern ReadMSR_func_type g_pfnreadmsr ;
 //  extern WriteMSR_func_type g_pfn_write_msr ;
@@ -215,26 +218,23 @@ void Init()
   //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
   #define NEHALEM_DLL_CALLING_CONVENTION
 
-  /** @return the array pointed to by the return value must be freed by the
-  *    caller (i.e. x86I&C GUI or service) of this function. */
-  EXPORT float *
-    NEHALEM_DLL_CALLING_CONVENTION
-    //The reference clock might change, also during runtime.
-    //This is why it is a good idea to get the possible multipliers.
-    GetAvailableMultipliers(
-      WORD wCoreID
-      , WORD * p_wNumberOfArrayElements
-      )
+  /** @brief The reference clock might change, also during runtime.
+   *  This is why it is a good idea to get the possible multipliers.
+   * @return the array pointed to by the return value must be freed by the
+   *   caller (i.e. x86I&C GUI or service) of this function. */
+  EXPORT float * DYN_LIB_CALLING_CONVENTION GetAvailableMultipliers(
+    WORD wCoreID
+    , WORD * p_wNumberOfArrayElements
+    )
   {
     DEBUGN("DLL's GetAvailableMultipliers")
-    return GetAvailableMultipliersAMDfamilyFh(p_wNumberOfArrayElements) ;
+    return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements) ;
 //    return 0;
   }
 
-  EXPORT
   /** @return The array pointed to by the return value must be freed by the
   *   caller (i.e. x86I&C GUI or service) of this function. */
-  float * GetAvailableVoltagesInVolt(
+  EXPORT float * GetAvailableVoltagesInVolt(
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements )
   {
@@ -242,10 +242,7 @@ void Init()
 //    return 0;
   }
 
-  EXPORT
-    BYTE
-    NEHALEM_DLL_CALLING_CONVENTION
-    GetCurrentVoltageAndFrequency(
+  EXPORT BYTE DYN_LIB_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
       float * p_fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
       , float * p_fMultiplier
@@ -263,44 +260,29 @@ void Init()
 //    return 0;
   }
 
-//#ifdef _WIN32 //Under Linux accessing the PCI config space does not work yet.
-  EXPORT
-  float
-    NEHALEM_DLL_CALLING_CONVENTION
-    GetTemperatureInCelsius ( WORD wCoreID
+  EXPORT float DYN_LIB_CALLING_CONVENTION GetTemperatureInCelsius( WORD wCoreID
     )
   {
     DWORD dwValue ;
     float fTempInDegCelsius ;
 //    static BYTE g_byValue1 = ( 24 << 3 ) | 3 ;
-    DEBUGN("GetTemperatureInCelsius(...) device and function:"
+    DEBUGN( /*"GetTemperatureInCelsius(...) "*/ "device and function:"
       << (WORD) g_byValue1 )
+
+    dwValue = AMD::fromK10::GetCurrentTemperatureRawValue();
 //    BYTE byRet = //GetCPUMiscControlDWORD(
 
-    g_pfnReadPCIconfigSpace(
-      0, //bus number
-      //Bus 0, Device number 24, Function 3 is "CPU Miscellaneous Control"
-//      g_byValue1
-      CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER
-      ,//) ((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
-      F3xA4_REPORTED_TEMPERATURE_CONTROL_REGISTER ,
-      & dwValue
-      ) ;
+    /** "This is encoded as value = 1/8th degree *" */
     fTempInDegCelsius = (float)( dwValue >> 21 ) / 8.0f ;
     return fTempInDegCelsius ;
 //      0.0 ;
   }
-//#endif
 
   //#define DLL_CALLING_CONVENTION __stdcall
   #define DLL_CALLING_CONVENTION
 
-  EXPORT
-  void
-    //Calling convention--must be the same as in the DLL
-    //function signature that calls this function?!
-    //WINAPI
-    DLL_CALLING_CONVENTION
+  EXPORT void //WINAPI
+    DYN_LIB_CALLING_CONVENTION
     Init( //I_CPUcontroller * pi_cpu
     //CPUaccess object inside the exe.
     I_CPUaccess * pi_cpuaccess

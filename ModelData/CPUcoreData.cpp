@@ -936,9 +936,9 @@ void CPUcoreData::InterpolateDefaultVoltages()
 
   void CPUcoreData::SetCPUcoreNumber(BYTE byNumberOfCPUcores)
   {
-    LOGN(//"CPUcoreData::SetCPUcoreNumber("
+    LOGN(//"CPUcoreData::SetCPUcoreNumber(" <<
 //#ifdef _DEBUG
-      << (WORD) byNumberOfCPUcores
+      (WORD) byNumberOfCPUcores
 //#endif
       << ")" )
     m_byNumberOfCPUCores = byNumberOfCPUcores ;

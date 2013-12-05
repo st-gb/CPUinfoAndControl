@@ -315,7 +315,7 @@ void TaskBarIcon::CreatePowerSchemeMenuByNamesFromMemory(
   while( c_iter_std_wstr_c_iterPowerSchemeName !=
       r_std_vec_std_wstrPowerSchemeName.end() )
   {
-    wxString wxstrPowerSchemeName( getwxString(
+    wxString wxstrPowerSchemeName( wxWidgets::getwxString(
       * c_iter_std_wstr_c_iterPowerSchemeName) ) ;
 //    wxmenuPowerSchemes->Append( wEventID , wxstr );
     p_wxmenuPowerSchemes->AppendRadioItem( s_wEventID , wxstrPowerSchemeName );
@@ -362,7 +362,7 @@ void TaskBarIcon::CreatePowerSchemeMenuByRetrieving(
   {
     //TODO wxString should be unicode for e.g. Chinese language (more than 255
     // characters)
-    wxString wxstrPowerSchemeName( getwxString(
+    wxString wxstrPowerSchemeName( wxWidgets::getwxString(
       * c_iter_std_set_std_wstr_c_iterPowerSchemeName) ) ;
 //    wxmenuPowerSchemes->Append( wEventID , wxstr );
     p_wxmenuPowerSchemes->AppendRadioItem( s_wEventID , wxstrPowerSchemeName );
@@ -524,7 +524,7 @@ void TaskBarIcon::OnDynamicallyCreatedUIcontrol(wxCommandEvent & wxevent)
           {
             std::string stdstr = ::LocalLanguageMessageFromErrorCodeA( dw ) ;
             ::wxMessageBox( wxT("setting power scheme failed: ")
-              + getwxString(stdstr ) ) ;
+              + wxWidgets::getwxString(stdstr ) ) ;
             LOGN( "setting power scheme failed" )
           }
         }

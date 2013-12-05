@@ -15,6 +15,8 @@
  */
   #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
   #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
+  //DYN_LIB_CALLING_CONVENTION
+  #include <Controller/CPUcontrollerDynlib/calling_convention.h>
   //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
   #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
 
@@ -31,9 +33,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #include <windows.h> //for
   #include <winuser.h> //MessageBox
   static HMODULE g_hModule;
-  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
   #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
 #ifdef _DEBUG
+  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 #endif
 #endif
@@ -119,14 +121,11 @@ AssignPointerToExportedExeReadPCIconfig.h>
   //#define NEHALEM_DLL_CALLING_CONVENTION __stdcall
   #define NEHALEM_DLL_CALLING_CONVENTION
 
-  EXPORT
-  //The array pointed to by the return value must be freed by the caller (i.e.
-  //x86I&C GUI or service) of this function.
-  float *
-    NEHALEM_DLL_CALLING_CONVENTION
-    //The reference clock might change, also during runtime.
-    //This is why it is a good idea to get the possible multipliers.
-    GetAvailableMultipliers(
+  /** @brief The reference clock might change, also during runtime.
+  *   This is why it is a good idea to get the possible multipliers.
+  * @return The array pointed to by the return value must be freed by the
+  *  caller (i.e. x86I&C GUI or service) of this function. */
+  EXPORT float * DYN_LIB_CALLING_CONVENTION GetAvailableMultipliers(
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements
       )
@@ -135,19 +134,16 @@ AssignPointerToExportedExeReadPCIconfig.h>
     return GetAvailableMultipliersAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
   }
 
-  EXPORT
-  //The array pointed to by the return value must be freed by the caller (i.e.
-  //x86I&C GUI or service) of this function.
-  float * GetAvailableVoltagesInVolt(
-      WORD wCoreID
-      , WORD * p_wNumberOfArrayElements )
+  /** @return The array pointed to by the return value must be freed by the
+  *  caller (i.e. x86I&C GUI or service) of this function. */
+  EXPORT float * GetAvailableVoltagesInVolt(
+    WORD wCoreID
+    , WORD * p_wNumberOfArrayElements )
   {
-    return GetAvailableVoltagesAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
+    return AMD::family0F::GetAvailableVoltages( * p_wNumberOfArrayElements) ;
   }
 
-  EXPORT
-    BYTE
-    NEHALEM_DLL_CALLING_CONVENTION
+  EXPORT BYTE DYN_LIB_CALLING_CONVENTION
     GetCurrentVoltageAndFrequency(
       float * p_fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -163,17 +159,14 @@ AssignPointerToExportedExeReadPCIconfig.h>
       p_fReferenceClockInMHz ,
       wCoreID
       ) ;
-    DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) byRet << " ref.clock:"
+    DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return " << (WORD) byRet << " ref.clock:"
       << * p_fReferenceClockInMHz << "MHz multi:" << * p_fMultiplier
       << " " << * p_fVoltageInVolt << "V")
     return byRet;
   }
 
-  EXPORT
-  float
-    NEHALEM_DLL_CALLING_CONVENTION
-    GetTemperatureInCelsius ( WORD wCoreID
-    )
+  EXPORT float DYN_LIB_CALLING_CONVENTION GetTemperatureInCelsius(
+    WORD wCoreID )
   {
 //    DEBUGN( FULL_FUNC_NAME << "--begin ")
     return //fTempInDegCelsius ;
@@ -198,7 +191,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
       );
     //"Startup VID (StartVID)—Bits 45–40."
     BYTE StartupVID = (highmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
-    float fVoltageInVolt = GetVoltageInVolt_AMD_NPT_family_0FH( StartupVID);
+    float fVoltageInVolt = AMD::family0F::GetVoltageInVolt( StartupVID);
 
     //"Startup FID (StartFID)—Bit 13–8"
     BYTE StartupFID = (lowmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
@@ -329,12 +322,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
   /** All init code into this function and not into "DLLMain" because Dllmain can
   * blocks other processes from load a DLL according to U. Pohl. */
-  EXPORT void
-    //Calling convention--must be the same as in the DLL
-    //function signature that calls this function?!
-    //WINAPI
-    DLL_CALLING_CONVENTION
-    Init( //I_CPUcontroller * pi_cpu
+  EXPORT void /*WINAPI*/ DYN_LIB_CALLING_CONVENTION Init( //I_CPUcontroller * pi_cpu
     //CPUaccess object inside the exe.
     I_CPUaccess * pi_cpuaccess
   //  Trie *
@@ -349,13 +337,11 @@ AssignPointerToExportedExeReadPCIconfig.h>
     DEBUGN("after GetMainPllOpFreqIdMax")
     AssignPointersToExportedExefunctions();
 #endif
-
 #ifdef _DEBUG
     OpenLogFile();
     //  LPSTR = new STR[dwChars] ;
     //  DEBUGN()
 #endif
-
   g_s_stepping = GetStepping();
   GetAdvancedPowerManagementInformationViaCPUID();
 //  s_maxVoltageInVolt = GetMaxVoltage();
@@ -398,9 +384,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     //g_clocksnothaltedcpucoreusagegetter.SetCPUaccess( pi_cpuaccess ) ;
   }
 
-  EXPORT
-    BYTE
-    NEHALEM_DLL_CALLING_CONVENTION //can be omitted.
+  EXPORT BYTE DYN_LIB_CALLING_CONVENTION //can be omitted.
     SetCurrentVoltageAndMultiplier(
       float fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -411,7 +395,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 #ifdef _DEBUG
 //    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
 #endif //#ifdef _DEBUG
-    DEBUGN( FULL_FUNC_NAME << "--begin--fVoltageInVolt:" << fVoltageInVolt
+    DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin--fVoltageInVolt:" << fVoltageInVolt
       << " fMultiplier:" << fMultiplier)
     // see "10.5 Processor Performance States"
         //10.5.1.1 P-state Recognition Algorithm
@@ -419,7 +403,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
     //"Note: Software must hold the FID constant when changing the VID."
 
-    //"Odd FID values are supported in revision G and later revisions"
+    /** "Odd FID values are supported in revision G and later revisions" */
     SetCurrentVoltageAndMultiplier_AMD_NPT_family_0FH( fVoltageInVolt ,
       fMultiplier ,
       wCoreID ) ;

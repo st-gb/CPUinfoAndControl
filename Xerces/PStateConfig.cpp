@@ -733,7 +733,7 @@ namespace Xerces
 //                      std_wstr += GetStdw
                   m_p_userinterface->MessageWithTimeStamp(
                        //"to float"
-                       std_wstr);
+                       std_wstr.c_str());
                 }
 //                fVoltageFromDOMtree = atof(stdstrVoltageInVoltFromDOMtree.
 //                  c_str() );

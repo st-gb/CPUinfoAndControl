@@ -45,7 +45,7 @@ bool wxX86InfoAndControlApp::ContinueServiceViaIPC(wxString & r_wxstrMessage)
       IPC_ClientSendCommandAndGetResponse(
         continue_service) ;
       LOGN( "after sending the continue command")
-      r_wxstrMessage = getwxString( //mp_wxx86infoandcontrolapp->
+      r_wxstrMessage = wxWidgets::getwxString( //mp_wxx86infoandcontrolapp->
         m_p_i_ipcclient->m_stdwstrMessage ) ;
       return true;
 //    }
