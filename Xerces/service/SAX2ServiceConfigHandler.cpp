@@ -195,8 +195,8 @@
       cr_xercesc_sax_parse_exception
     )
   {
-    LOGN_ERROR( /*"SAX2 handler: Fatal Error: "*/
-      << XercesHelper::ToStdString(cr_xercesc_sax_parse_exception.getMessage()
+    LOGN_ERROR( /*"SAX2 handler: Fatal Error: << "*/
+      XercesHelper::ToStdString(cr_xercesc_sax_parse_exception.getMessage()
         )
      << " at line: " << cr_xercesc_sax_parse_exception.getLineNumber()
      /*<< "\n"*/ )

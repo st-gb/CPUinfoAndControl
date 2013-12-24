@@ -17,13 +17,27 @@
   //A I_CPUaccess pointer is passed as parameter in Init(...)
   #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
 #endif //#ifdef INSERT_DEFAULT_P_STATES
+#ifdef _WIN32
+  #include <windows.h> //for
+  #include <winuser.h> //MessageBox
+  #include <Windows/Logger/LogEntryOutputter.hpp> //class Windows_API::Logger
+  #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
+#ifdef _DEBUG
+/** static global variable: limit variable visibility to this source file. */
+  static HMODULE gs_hModuleThisDLL;
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+#endif
+#endif
 
+float g_fReferenceClockMultiplier = 0.0f;
 #include <Controller/CPU-related/Intel/Core/Core.hpp>
 
 #include <Controller/AssignPointersToExportedExeFunctions/\
 AssignPointersToExportedExeMSRfunctions.h>
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
-//#ifdef _DEBUG
+
+#include <preprocessor_macros/show_via_GUI.h>
+
 #ifdef COMPILE_WITH_LOG
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
 //  GLOBAL_LOGGER_FULLY_QUALIFIED_CLASS_NAME g_logger;
@@ -36,6 +50,7 @@ AssignPointersToExportedExeMSRfunctions.h>
 #endif
 #include <windef.h> //for BYTE; WORD
 
+bool g_IsHyperThreaded = false;
 uint32_t g_dwValue1, g_dwValue2 ;
 //Define global variables here, so that I_CPUcontroller-derived class and
 // DLL sourcecode both do not need to define them (or better in a file named
@@ -49,8 +64,8 @@ uint32_t g_dwValue1, g_dwValue2 ;
 #endif
 //Calling convention--must be the same as in the DLL
 //function signature that calls this function?!
-//#define DLL_CALLING_CONVENTION __stdcall
-#define DLL_CALLING_CONVENTION
+//#define DYN_LIB_CALLING_CONVENTION __stdcall
+#define DYN_LIB_CALLING_CONVENTION
 
 float g_fReferenceClockInMHz;
 ReadMSR_func_type g_pfnreadmsr ;
@@ -59,22 +74,96 @@ WriteMSR_func_type g_pfn_write_msr ;
 #ifdef COMPILE_WITH_LOG
 //g_logger, DEBUGN()
 #include <preprocessor_macros/logging_preprocessor_macros.h>
-void OpenLogFile()
-{
-  std::string strExeFileNameWithoutDirs = //GetExeFileNameWithoutDirs() ;
-    //"Intel_Core_controller_log.txt"
-    "";
-  std::string stdstrFilename = strExeFileNameWithoutDirs +
-    ("CoreControllerDLL_log.txt") ;
-  g_logger.OpenFileA( stdstrFilename ) ;
-  DEBUGN("this Log file is open")
-  DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
-      << strExeFileNameWithoutDirs )
-}
+
 #endif
+
+#ifdef _DEBUG
+  void OpenLogFile()
+  {
+#ifdef _WIN32
+    TCHAR fileName[MAX_PATH];
+#endif
+    std::tstring std_tstrDLLfileName
+#ifdef _WIN32 //win 32 or 64 bit
+    = GetDLLfileName(gs_hModuleThisDLL, fileName)
+#endif //#ifdef _WIN32
+#ifdef __linux__
+    = "CoreControllerDLL_log"
+#endif //#ifdef __linux__
+    ;
+
+    std::string strExeFileNameWithoutDirs
+#ifdef _WIN32
+      = CurrentProcess::GetExeFileNameWithoutDirs()
+#endif
+      ;
+    std::string stdstrFilename;
+//    if( typeid(g_logger) == typeid(::Logger) )
+//      stdstrFilename = //strExeFileNameWithoutDirs +
+//        //("AMD_NPT_ControllerDLL_log.txt") ;
+//        std_tstrDLLfileName + "_std_ofstream_logger.txt";
+//    if( typeid(g_logger) == typeid(Windows_API::Logger) )
+//      stdstrFilename =
+//        std_tstrDLLfileName + "_Windows_API_logger.txt";
+    stdstrFilename = std_tstrDLLfileName + strExeFileNameWithoutDirs +
+      "_log.txt";
+    SHOW_VIA_GUI(stdstrFilename.c_str() )
+//      g_logger.OpenFile2( stdstrFilename ) ;
+    bool bLogFileOpen = g_logger.OpenFileA(stdstrFilename);
+    if( bLogFileOpen)
+      SHOW_VIA_GUI( "open")
+    else
+      SHOW_VIA_GUI( "closed")
+
+//    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
+//          << strExeFileNameWithoutDirs )
+//    g_windows_api_logger.OpenFile2(
+//      std_tstrDLLfileName + "Windows_API_logger2.txt") ;
+
+#ifdef _WIN32
+    DEBUGN( "this module's file name:" << fileName)
+#endif
+  }
+#endif //#ifdef _DEBUG
+
+/** @brief Get multiplier for dividing the TSC frequency by:
+ *  e.g. for T2400:
+ *   -the TSC frequency is ~1830M/s,
+ *   -the reference clock multiplier is 11
+ *  ->so the ref. clock is calculated via 1830/11~=166,45 */
+float GetReferenceClockMultiplier(DWORD affMask)
+{
+  float multi = 0.0f;
+//  static uint32_t h, l;
+////  Intel::Core2::GetVoltageAndMultiplier(//coreID
+////    affMask, & r_fVoltageInVolt,
+////    & multi);
+//
+//  //see Intel 30.10.5
+//  //The multiplier for Intel Celeron 900 whose product with the reference clock
+//  // matches its core clock equals :
+//  //-MSR_PLATFORM_ID:MaximumQualifiedBusRatio
+//  ::ReadMSR(
+//    IA32_PLATFORM_ID, & l, & h, affMask
+//    );
+//  multi = (l >> 8) & BITMASK_FOR_LOWMOST_5BIT;
+
+  uint32_t ui32LowmostBits, ui32HighmostBits;
+  BYTE by = ::ReadMSR(
+    IA32_PERF_STATUS ,
+    & ui32LowmostBits,// bit  0-31 (register "EAX")
+    & ui32HighmostBits,
+    affMask
+    );
+  if(by)
+    multi = Intel::Pentium_M_and_Core1::GetMaximumMultiplier(ui32HighmostBits);
+  DEBUGN( " multiplier:" << multi)
+  return multi;
+}
 
 bool Init()
 {
+  SHOW_VIA_GUI("hh")
   #ifdef COMPILE_WITH_LOG
   OpenLogFile() ;
   #endif
@@ -82,6 +171,7 @@ bool Init()
     g_pfnreadmsr ,
     g_pfn_write_msr
     ) ;
+  g_fReferenceClockMultiplier = GetReferenceClockMultiplier(1);
   DEBUGN( FULL_FUNC_NAME <<  "ReadMSR fct. pointer :" << (void *) g_pfnreadmsr
       << " WriteMSR fct. pointer :" << (void *) g_pfn_write_msr
       )
@@ -99,6 +189,7 @@ bool Init()
 #endif
     return FALSE ;
   }
+  //TODO only call when using a fixed ref. clock?
   Intel::CoreAndCore2::GetReferenceClockFromMSR_FSB_FREQ() ;
   DEBUGN( FULL_FUNC_NAME << "ref. clock in MHz:" << g_fReferenceClockInMHz)
 
@@ -127,6 +218,11 @@ BOOL APIENTRY DllMain( HMODULE hModule,
   switch (ul_reason_for_call)
   {
   case DLL_PROCESS_ATTACH:
+#ifdef COMPILE_WITH_LOG
+    //see http://stackoverflow.com/questions/846044/how-to-get-the-filename-of-a-dll:
+    gs_hModuleThisDLL = hModule;
+    break;
+#endif //#ifdef _DEBUG
     //return Init() ;
   case DLL_THREAD_ATTACH:
   case DLL_THREAD_DETACH:
@@ -144,7 +240,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 *   This is why it is a good idea to get the possible multipliers.
 * @return The array pointed to by the return value must be freed by the caller (i.e.
 *   x86I&C GUI or service) of this function. */
-EXPORT float * DLL_CALLING_CONVENTION
+EXPORT float * DYN_LIB_CALLING_CONVENTION
   GetAvailableMultipliers(
     WORD wCoreID
     , WORD * p_wNumberOfArrayElements
@@ -178,7 +274,7 @@ EXPORT
 /** @return The array pointed to by the return value must be freed by the
 *     caller (i.e.x86I&C GUI or service) of this function. */
 float *
-  DLL_CALLING_CONVENTION
+  DYN_LIB_CALLING_CONVENTION
   GetAvailableVoltagesInVolt(
     WORD wCoreID
     , WORD * p_wNum )
@@ -195,7 +291,9 @@ float *
   return Intel::Core::GetAvailableVoltagesInVolt( * p_wNum ) ;
 }
 
-EXPORT BYTE DLL_CALLING_CONVENTION
+#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
+
+EXPORT BYTE DYN_LIB_CALLING_CONVENTION
   GetCurrentVoltageAndFrequency(
     float * p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -215,7 +313,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION
 //    return byRet ;
 }
 
-EXPORT float DLL_CALLING_CONVENTION
+EXPORT float DYN_LIB_CALLING_CONVENTION
   GetTemperatureInCelsius ( WORD wCoreID
   )
 {
@@ -223,7 +321,7 @@ EXPORT float DLL_CALLING_CONVENTION
     Intel::CoreAndCore2::GetTemperatureInDegCelsius( wCoreID ) ;
 }
 
-EXPORT void DLL_CALLING_CONVENTION
+EXPORT void DYN_LIB_CALLING_CONVENTION
   Init( //I_CPUcontroller * pi_cpu
 #ifdef INSERT_DEFAULT_P_STATES
   /** CPUaccess object inside the exe.*/
@@ -240,7 +338,7 @@ EXPORT void DLL_CALLING_CONVENTION
 #endif
 }
 
-EXPORT BYTE DLL_CALLING_CONVENTION SetCurrentVoltageAndMultiplier(
+EXPORT BYTE DYN_LIB_CALLING_CONVENTION SetCurrentVoltageAndMultiplier(
     float fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
     , float fMultiplier

@@ -70,5 +70,6 @@ int main
     if( (const char **) ar_tchProgramArguments != ar_p_chProgramArguments)
       ::DeleteTCHARarray(argc, ar_tchProgramArguments);
   }
+  LOGN("return " << n)
   return n;
 }

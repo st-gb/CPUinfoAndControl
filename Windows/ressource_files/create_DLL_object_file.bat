@@ -1,4 +1,6 @@
 
+REM from http://blogs.msdn.com/b/oldnewthing/archive/2005/01/28/362565.aspx
+set originalDir=%CD%
 REM set PATH = %1
 echo 1st arg: %1
 set out_file_name_prefix=%1
@@ -8,6 +10,7 @@ set file_description=\"%~2\"
 @REM "In Batch files the parameter delimiters are, besides spaces, comma, semicolon and equal sign, so there is no direct way to do that. The only option is to enclose the parameter between quotes: c:\text.bat "this,is,sample" and take the parameter with %~1 to eliminate the quotes: set test=%~1."
 echo 2nd arg:%~2
 echo file_description:%file_description%
+echo 3rd arg:%~3
 
 @REM changing the directory to the one where this files should be created is 
 @REM important if this batch file is being executed from another 
@@ -88,6 +91,12 @@ gcc -E -xc -DRC_INVOKED -DCOPYRIGHT_STRING=%copyright_string% -DBUILD_WITH_STRIN
 windres --use-temp-file %out_file_name_prefix%_preprocessed.rc %out_file_name_prefix%.opc
 
 REM windres --use-temp-file -D FILE_VERSION_NUMBER=%file_version_numeric% --define __WXMSW__ --define _UNICODE %include_wx_setup_h_dir% %include_wx_include_dir% --define NOPCH all_ressources_do_not_requ_admin_GUI.rc all_ressources_do_not_requ_admin_GUI.opc
+
+cd %originalDir%
+set drive=%originalDir:~0,2%
+@echo drive: %drive%
+@REM Finally move to to drive where %X86IANDC_ROOT_SOURCE_PATH% resides.
+%drive%
 
 @REM call bla.bat
 

@@ -3,6 +3,12 @@
 @REM important if this batch file is being executed from another 
 @REM (application's current working) directory
 cd %X86IANDC_ROOT_SOURCE_PATH%/Windows/ressource_files
+@set drive=%X86IANDC_ROOT_SOURCE_PATH:~0,2%
+@echo drive: %drive%
+@REM Finally move to to drive where %X86IANDC_ROOT_SOURCE_PATH% resides.
+@REM (it may differ from the current  drive(!)--it is important for ensuring
+@REM that the current dir is the desired one).
+%drive%
 
 @REM from http://de.wikibooks.org/wiki/Batch-Programmierung:_Programmierungshilfen#.C3.84ndern_des_Editors_zum_Bearbeiten_von_Batchdateien
 set current_date=%date:~0%

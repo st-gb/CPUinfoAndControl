@@ -53,7 +53,7 @@ public:
   * string on our own in order to display it. */
   void MessageWithTimeStamp(const std::wstring & c_r_std_wstrMessage
     //Flag like "OK_BUTTON"
-    , unsigned flags = 0) const
+    , unsigned flags = 0) /*const*/
   {
 //    std::string c_r_std_strMessage;
 //    getUTF8string_inline(c_r_std_wstrMessage, c_r_std_strMessage);

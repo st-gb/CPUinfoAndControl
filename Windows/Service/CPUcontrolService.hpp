@@ -262,6 +262,7 @@ public :
 
   bool Pause() ;
   SERVICE_STATUS_HANDLE RegSvcCtrlHandlerAndHandleError() ;
+  void RemoveConsoleLogWriter();
   void RenameLogOutputNames();
   static int requestOption(
     //Make as parameter as reference: more resource-saving than

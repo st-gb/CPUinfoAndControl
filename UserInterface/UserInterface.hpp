@@ -69,6 +69,8 @@ public:
   virtual void EndAllAccessToCPUcontroller() {};
   /** The following function are for ease to not need to create the time stamp
   * string on our own in order to display it. */
+  /** @brief cannot be declared const because an object member should be
+   *  possible to be altered in a subclass?! */
   virtual void MessageWithTimeStamp(const std::wstring & cr_stdwstr
     //Flag like "OK_BUTTON"
     , unsigned flags = 0) /*const {}*/ = 0;

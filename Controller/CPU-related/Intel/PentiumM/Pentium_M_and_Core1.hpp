@@ -28,12 +28,21 @@ namespace Intel
   #include <Controller/CPU-related/Intel/Core/Core_and_Core2_GetVoltage.hpp>
   using namespace Intel::CoreAndCore2;
 #endif
+
+    inline float GetMaximumMultiplier(fastestUnsignedDataType highmostBits)
+    {
+      float fMaximumMultiplier = (float)
+      //(BYTE) ( ui32LowmostBits & 255 ) ;
+         ( ( highmostBits >> 8 ) & 255 ) ;
+      return fMaximumMultiplier;
+    }
+
     float *
       //the reference clock might change. So better get the possible multipliers.
       GetAvailableMultipliers(
         WORD * p_wNum )
     {
-      BYTE byMaxMultiplier = 0 ;
+      float * ar_f = NULL;
       uint32_t ui32LowmostBits , ui32HighmostBits ;
     //  #ifdef _DEBUG
       //MSC-generated version has no problems
@@ -44,44 +53,48 @@ namespace Intel
     //  str << "address of g_pfnreadmsr: " << g_pfnreadmsr ;
     //  MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
     //  #endif
+      const fastestUnsignedDataType retVal =
        //g_pi_cpuaccess->RdmsrEx(
-      ( * g_pfnreadmsr) (
-        //MIN_AND_MAX_FID ,
-        //According to the MSR walker of CrystalCPUID:
-        //for Pentium M reg. addr. 0x198:
-        //Bit 24-32 showed hex "0E" for a max. multipl. "14" for 1.86 133 MHz FSB.
-        //Bit 24-32 showed hex "0C" for a max. multipl. "12" for 1.6 133 MHz FSB.
-        IA32_PERF_STATUS ,
-        & ui32LowmostBits,// bit  0-31 (register "EAX")
-        & ui32HighmostBits,
-        //m_dwAffinityMask
-        1
-        ) ;
+        ( * g_pfnreadmsr) (
+          //MIN_AND_MAX_FID ,
+          //According to the MSR walker of CrystalCPUID:
+          //for Pentium M reg. addr. 0x198:
+          //Bit 24-32 showed hex "0E" for a max. multipl. "14" for 1.86 133 MHz FSB.
+          //Bit 24-32 showed hex "0C" for a max. multipl. "12" for 1.6 133 MHz FSB.
+          IA32_PERF_STATUS ,
+          & ui32LowmostBits,// bit  0-31 (register "EAX")
+          & ui32HighmostBits,
+          //m_dwAffinityMask
+          1
+          ) ;
+      if( retVal)
+      {
 #ifdef EMULATE_N270
-      BYTE byMinMultiplier = 6;
-      byMaxMultiplier = 0xC;
+        const fastestUnsignedDataType minMultiplier = 6;
+        const fastestUnsignedDataType maxMultiplier = 0xC;
 #else
-       byMaxMultiplier = //(BYTE) ( ui32LowmostBits & 255 ) ;
-         ( ui32HighmostBits >> 8 ) & 255 ;
-       //According to the MSR walker of CrystalCPUID the min. multi is at the
-       //highmost byte: was "06" for every tested CPU (1.6GHz FSB133,
-       // 1.86 GHz FSB 133, 1.8GHz FSB 100)
-       BYTE byMinMultiplier = (BYTE) ( ui32HighmostBits >> 24 ) & 255 ;
+        const fastestUnsignedDataType maxMultiplier = GetMaximumMultiplier(
+          ui32HighmostBits);
+         //According to the MSR walker of CrystalCPUID the min. multi is at the
+         //highmost byte: was "06" for every tested CPU (1.6GHz FSB133,
+         // 1.86 GHz FSB 133, 1.8GHz FSB 100)
+        const fastestUnsignedDataType minMultiplier =
+          ( ui32HighmostBits >> 24 ) & 255 ;
 #endif
-       BYTE byNumMultis = byMaxMultiplier - byMinMultiplier
+      const fastestUnsignedDataType numMultis = maxMultiplier - minMultiplier
     #ifndef LEAVE_OUT_MULTIPLIER_7
            //add "+1" : if min and max identical, the array size must be "1"
            + 1
     #endif
            ;
-       float * ar_f = new float[byNumMultis] ;
+       ar_f = new float[numMultis] ;
        //Allocation of storage succeeded.
        if( ar_f )
        {
-         * p_wNum = byNumMultis ;
-         float fMulti = byMinMultiplier ;
+         * p_wNum = numMultis ;
+         float fMulti = minMultiplier ;
     //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
-         for( BYTE by = 0 ; by < byNumMultis ; ++ by )
+         for( BYTE by = 0 ; by < numMultis ; ++ by )
          {
            ar_f[by] = fMulti ;
     #ifdef LEAVE_OUT_MULTIPLIER_7
@@ -106,6 +119,9 @@ namespace Intel
       ////MessageBox( NULL, str.str().c_str() , TEXT("") , MB_OK) ;
       //}
     #endif
+      }
+      else
+        p_wNum = 0;
       return ar_f ;
     }
 

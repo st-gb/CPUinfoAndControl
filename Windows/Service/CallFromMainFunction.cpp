@@ -158,11 +158,9 @@ BYTE HandleProgramOptions(
         //CPUcontrolService::StartService( vecstdstrParams.at(1).c_str() ) ;
         if( ServiceBase::Start( GetStdTstring_Inline(
           std_vec_std_strParams.at(1) ).c_str() ) == ERROR_SUCCESS )
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-            "Starting the service succeeded.")
+          LOGN_SUCCESS("Starting the service succeeded.")
         else
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-            "Starting the service failed:" <<
+          LOGN_ERROR("Starting the service failed:" <<
             LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << "."
             )
       }
@@ -174,11 +172,9 @@ BYTE HandleProgramOptions(
       {
         if( ServiceBase::Stop( GetStdTstring_Inline(
           std_vec_std_strParams.at(1) ).c_str() ) == ERROR_SUCCESS )
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-            "Stopping the service succeeded.")
+          LOGN_SUCCESS("Stopping the service succeeded.")
         else
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-            "Stopping the service failed:" <<
+          LOGN_ERROR("Stopping the service failed:" <<
             LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << "."
             )
       }
@@ -186,7 +182,8 @@ BYTE HandleProgramOptions(
   }
   catch( ConnectToSCMerror & r_connect_to_scm_error )
   {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+    LOGN_ERROR(
       "Error connecting to the service control manager:\n"
       << LocalLanguageMessageFromErrorCodeA(
         r_connect_to_scm_error.m_dwErrorCode)
@@ -207,8 +204,18 @@ void PossiblyInteractWithUser(int argc, TCHAR * argv[],
 //  std::tstring stdtstrProgramArg = std::tstring( _T("-config=") )
 //    + ptstrProgramName + std::tstring( _T("_config.xml") ) ;
   int nOptionInUpperCase = 0;
-  nChar = CPUcontrolService::requestOption( vec_std_strParams
-    , std_tstrProgramName );
+//  if( argc > 1 && argv[1] )
+  if( p_cpucontrolservice->m_cmdlineargs.contains( _T("simulateService") ) <
+      UINT_MAX )
+    /** Simulate execution as a service:
+     *  When started as service then this process also can not read from
+     *  "stdin" */
+    nChar = CPUcontrolService::error_reading_from_STD_IN;
+  else
+  {
+    nChar = CPUcontrolService::requestOption( vec_std_strParams
+      , std_tstrProgramName );
+  }
   //LOGN("character entered:" << nChar )
 //        //The vector is empty when this program was executed/ invoked via the
 //        //service control manager.
@@ -273,14 +280,7 @@ void NoProgramArgumentsSpecified(int argc, TCHAR * argv[],
 
   if( bStartServiceWithinThisProcess )
   {
-    std::vector<FormattedLogEntryProcessor *>::iterator
-      firstFormattedLogEntryProcessor =
-      (std::vector<FormattedLogEntryProcessor *>::iterator) g_logger./*m_formattedLogEntryProcessors*/
-      GetFormattedLogEntryProcessors().begin();
-    //Remove console log writer
-    ( (std::vector<FormattedLogEntryProcessor *>) g_logger.
-      GetFormattedLogEntryProcessors()).erase(
-      firstFormattedLogEntryProcessor);
+    p_cpucontrolservice->RemoveConsoleLogWriter();
     LOGN("Starting service inside _this_ process.")
 //    if( p_cpucontrolservice == NULL )
     {
@@ -340,8 +340,8 @@ void AtLeast1ProgramArgumentSpecified(int argc, TCHAR * argv[],
     ServiceBase::CreateService( //argv[2]
       GetStdTstring_Inline( argv[2]).c_str(), by ) ;
   }
-  else
-      std::cout << "\nNOT installing the service\n" ;
+//  else
+//    std::cout << "\nNOT installing the service\n" ;
 }
 
 //Call this function e.g. from "int main()" or from "wxApp::OnInit()"
@@ -368,6 +368,9 @@ int CallFromMainFunction(
     LPTSTR ptstrProgramName = _T("X86_info_and_control") ;
 
     std::tstring std_tstrProgramName(ptstrProgramName) ;
+    if( p_cpucontrolservice->m_cmdlineargs.contains( _T("simulateService") )
+        < UINT_MAX )
+      argc = 1;
     if( argc == 1 ) // No program arguments passed.
     {
       NoProgramArgumentsSpecified(argc, argv, p_cpucontrolservice,
@@ -385,7 +388,8 @@ int CallFromMainFunction(
   }
   catch( ConnectToSCMerror & r_connect_to_scm_error )
   {
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
+    LOGN_ERROR(
       "Error connecting to the service control manager:\n"
       << LocalLanguageMessageFromErrorCodeA(
         r_connect_to_scm_error.m_dwErrorCode)

@@ -41,6 +41,44 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
   extern uint32_t g_dwValue1, g_dwValue2 ;
   float g_fValue1 ;
 
+namespace Intel { namespace Core {
+  inline float GetMultiplierAsEncodedInMSR(DWORD dwValue );
+  inline BYTE GetVoltageAndMultiplier(
+    float * p_fVoltageInVolt
+    //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+    , float * p_fMultiplier
+//    , float * p_fReferenceClockInMHz
+    , DWORD affMask
+    );
+} }
+
+/** @brief This function is called inside CPU::GetClockWithLoad(...) */
+float GetVoltageAndMultiplier(DWORD affMask, float & r_fVoltageInVolt)
+{
+#ifdef TSC_DIFF_WHILE_BUSY_WAITING
+  /** Use the highest multiplier in order to calculate the reference clock
+   *  inside CPU::GetClockWithLoad(...) :
+   *  e.g. for Core 1 2400: highest multplier = 11, 1831 TSC steps/s (=MHz)
+   *   1831 TSC steps/s / 11 = 166,45 MHz */
+  float fMultiplier = g_fReferenceClockMultiplier;
+#else
+  float fMultiplier = 0.0f;
+//  float fReferenceClockInMHz;
+  Intel::Core::GetVoltageAndMultiplier(
+    & r_fVoltageInVolt,
+    & fMultiplier,
+//    & fReferenceClockInMHz,
+    affMask
+    );
+#endif //#ifdef TSC_DIFF_WHILE_BUSY_WAITING
+  DEBUGN("fMultiplier: " << fMultiplier )
+  return fMultiplier;
+}
+
+#ifdef TSC_DIFF_WHILE_BUSY_WAITING
+#include <hardware/CPU/x86/GetCPUclockAndMultiplier.hpp>
+#endif
+
 namespace Intel
 {
   namespace Core
@@ -94,6 +132,35 @@ namespace Intel
       return ar_f ;
     }
 
+    /** @brief */
+    inline BYTE GetVoltageAndMultiplier(
+      float * p_fVoltageInVolt
+      //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
+      , float * p_fMultiplier
+//      , float * p_fReferenceClockInMHz
+      , DWORD affMask
+      )
+    {
+      g_byValue1 =
+        ReadMSR(
+        IA32_PERF_STATUS,
+        & g_dwValue1,// bit  0-31 (register "EAX")
+        & g_dwValue2,
+        affMask //m_dwAffinityMask
+        ) ;
+      if( g_byValue1 ) //success
+      {
+        g_byValue1 = (g_dwValue1 ) ;
+        * p_fVoltageInVolt = Intel::CoreAndCore2::GetVoltage(
+          g_byValue1 ) ;
+    //#ifndef TSC_DIFF_WHILE_BUSY_WAITING
+        * p_fMultiplier = Intel::Core::GetMultiplierAsEncodedInMSR(g_dwValue1) ;
+    //#endif
+        DEBUGN("FID:" << g_byValue1 << "multiplier: " << * p_fMultiplier )
+      }
+      return g_byValue1;
+    }
+
     inline BYTE GetCurrentVoltageAndFrequency(
       float * p_fVoltageInVolt
       //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
@@ -102,26 +169,36 @@ namespace Intel
       , WORD wCoreID
       )
     {
-  //    DWORD g_dwValue1 , g_dwValue2 ;
-      g_byValue1 =
-        ReadMSR(
-        IA32_PERF_STATUS,
-        & g_dwValue1,// bit  0-31 (register "EAX")
-        & g_dwValue2,
-        1 << wCoreID //m_dwAffinityMask
-        ) ;
-      if( g_byValue1 ) //success
-      {
-        g_byValue1 = (g_dwValue1 ) ;
-        * p_fVoltageInVolt = Intel::CoreAndCore2::GetVoltage(
-          g_byValue1 ) ;
-        * p_fMultiplier = GetMultiplierAsEncodedInMSR(g_dwValue1) ;
-        DEBUGN("FID:" << g_byValue1 << "multiplier: " << * p_fMultiplier )
-
+      #ifdef TSC_DIFF_WHILE_BUSY_WAITING
+        //warning: the TSC frequency changes wih the clock speed.
+        //so the reference clock may be calculated falsly (too high/ too low)
+        // and so a wrong voltage based
+        //on CPU frequ may be set.
+        CPU::CalculateReferenceClockViaTSCdiff(
+          * p_fVoltageInVolt,
+          * p_fMultiplier,
+          * p_fReferenceClockInMHz
+          );
+        /** Now get the real/ actual multiplier. */
+//        g_byValue1 =
+//          ::ReadMSR(
+//          IA32_PERF_STATUS,
+//          & g_dwValue1,// bit  0-31 (register "EAX")
+//          & g_dwValue2,
+//          1 << wCoreID //m_dwAffinityMask
+//          ) ;
+//        * p_fMultiplier = Intel::Core::GetMultiplierAsEncodedInMSR(g_dwValue1);
+        return GetVoltageAndMultiplier(p_fVoltageInVolt, p_fMultiplier, 1 << wCoreID);
+      #else
+        //    DWORD g_dwValue1 , g_dwValue2 ;
+//        * p_fMultiplier = ::GetVoltageAndMultiplier(1 << wCoreID, * p_fVoltageInVolt);
         * p_fReferenceClockInMHz = g_fReferenceClockInMHz ;
-        return 1 ;
-      }
+        return GetVoltageAndMultiplier(p_fVoltageInVolt, p_fMultiplier, 1 << wCoreID);
+      #endif
   //    else
+      if( * p_fMultiplier > 0.0f )
+        return 1;
+      else
         return 0 ;
     }
 

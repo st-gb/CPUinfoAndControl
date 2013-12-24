@@ -305,7 +305,7 @@ CPUcontrolService::CPUcontrolService(
 {
   //Time should be output (dumped) because the log time format may e.g. not the
   //contain year.
-  LOGN( "current date/time: " << GetStdString(wxNow() ) )
+  LOGN( "current date/time: " << wxWidgets::GetStdString(::wxNow() ) )
   //  LOGN("CPUcontrolService::CPUcontrolService(argc, argv, ...)")
   LOGN( "begin")
   m_stdtstrProgramName = Getstdtstring(r_stdwstrProgramName);
@@ -362,48 +362,47 @@ void
 CPUcontrolService::CreateService(const TCHAR * const cpc_tchServiceName)
 {
   LOGN( //"CPUcontrolService::CreateService(" <<
-    GetStdString_Inline(cpc_tchServiceName) << ")--begin" )
-  try
-    {
-      BYTE by;
-      DWORD dwLastError = ServiceBase::CreateService(cpc_tchServiceName, by);
-      if (dwLastError)
+    "begin--service name:" << GetStdString_Inline(cpc_tchServiceName) )
+//  try
+//  {
+    BYTE by;
+    DWORD dwLastError = ServiceBase::CreateService(cpc_tchServiceName, by);
+    if (dwLastError)
+      {
+        //DEBUG("Creating the service failed: error number:%d\n",
+        // dwLastError);
+        //LOG("Creating the service failed: error number:" << dwLastError
+        //    << "\n" );
+        //std::cout
+        /*WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE*/ LOGN_ERROR(
+            "Creating the service failed: error number:" <<
+            dwLastError << "\nError: " << //"\n"
+            LocalLanguageMessageFromErrorCodeA( dwLastError )
+        );
+        switch (by)
         {
-          //DEBUG("Creating the service failed: error number:%d\n",
-          // dwLastError);
-          //LOG("Creating the service failed: error number:" << dwLastError
-          //    << "\n" );
-          //std::cout
-          /*WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE*/ LOGN_ERROR(
-              "Creating the service failed: error number:" <<
-              dwLastError << "\nError: " << //"\n"
-              LocalLanguageMessageFromErrorCodeA( dwLastError )
-          );
-          switch (by)
-            {
-          case ServiceBase::GetModuleFileNameFailed:
-            //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
-            //LOG(
-            WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(
-                "Getting file name for THIS executable file failed: " <<
-                LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
-            )
-            ;
-            break;
-            }
-          std::string stdstrPossibleSolution;
-          ServiceBase::GetPossibleSolution(dwLastError, cpc_tchServiceName,
-              stdstrPossibleSolution);
-          WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE(stdstrPossibleSolution)
+        case ServiceBase::GetModuleFileNameFailed:
+          //DEBUG("GetModuleFileName failed (%d)\n", GetLastError());
+          //LOG(
+          LOGN_ERROR("Getting file name for THIS executable file failed: " <<
+              LocalLanguageMessageFromErrorCodeA( ::GetLastError() ) << ")" //<< \n"
+          )
+          ;
+          break;
         }
-      else
-        //printf("Creating service succeeded\n");
-        /*std::cout*/ LOGN_SUCCESS("Creating the service succeeded.");
-    }
-  catch (ConnectToSCMerror & ctscme)
-    {
-      WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE("");
-    }
+        std::string stdstrPossibleSolution;
+        ServiceBase::GetPossibleSolution(dwLastError, cpc_tchServiceName,
+            stdstrPossibleSolution);
+        LOGN_INFO(stdstrPossibleSolution)
+      }
+    else
+      //printf("Creating service succeeded\n");
+      /*std::cout*/ LOGN_SUCCESS("Creating the service succeeded.");
+//    }
+//  catch (ConnectToSCMerror & ctscme)
+//  {
+//    LOGN_ERROR("");
+//  }
   LOGN("end")
 }
 
@@ -1280,18 +1279,18 @@ void CPUcontrolService::OnEventLoopEnter( wxEventLoopBase *   loop)
 bool CPUcontrolService::OnInit()
 {
   LOGN( "begin")
-  std::cout << "# prog args:" << argc << "\n";
-//  ::OpenLogFile(argv);
-  std::cout << "after OpenLogFile\n";
+//  std::cout << "# prog args:" << argc << "\n";
+////  ::OpenLogFile(argv);
+//  std::cout << "after OpenLogFile\n";
 
   //WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "before CallFromMainFunction")
 //  if( CallFromMainFunction(argc,argv, this) == 0)
   {
     //OnInit() must return true, else no wxWidgets socket events can be processed?!
-    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "return true")
+//    WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "return true")
     return true ;
   }
-  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "return false")
+//  WRITE_TO_LOG_FILE_AND_STDOUT_NEWLINE( "return false")
   return false ;
 }
 
@@ -1340,7 +1339,7 @@ void CPUcontrolService::AddConsoleLogEntryWriter()
   //      LogLevel::GetAsNumber(m_model.m_logfileattributes.m_std_strLevel)
     );
   //    logfileappender->CreateFormatter("txt"/*, std_strLogTimeFormatString*/ );
-  /*Logger::*/ConsoleFormatter * consoleformatter = new /*Logger::*/ConsoleFormatter(
+  Windows::ConsoleFormatter * consoleformatter = new Windows::ConsoleFormatter(
     consoleappender);
   consoleappender->Open(std_strDummyLogFilePath);
   consoleappender->SetFormatter(consoleformatter);
@@ -1509,6 +1508,28 @@ bool CPUcontrolService::Pause()
 //        }
 //}
 //}
+
+void CPUcontrolService::RemoveConsoleLogWriter()
+{
+  std::vector<FormattedLogEntryProcessor *> & formattedLogEntryProcessors =
+    g_logger.GetFormattedLogEntryProcessors();
+  LOGN_DEBUG( "# log entry processors:" << formattedLogEntryProcessors.size() )
+  std::vector<FormattedLogEntryProcessor *>::iterator
+    firstFormattedLogEntryProcessor =
+    //(std::vector<FormattedLogEntryProcessor *>::iterator)
+    formattedLogEntryProcessors.begin();
+  FormattedLogEntryProcessor * p_formattedLogEntryProcessor =
+    * firstFormattedLogEntryProcessor;
+  FormattedLogEntryProcessor & r_formattedLogEntryProcessor =
+    ** firstFormattedLogEntryProcessor;
+//  LOGN_DEBUG( "should delete formatted log entry processor:" <<
+//    (const FormattedLogEntryProcessor &) r_formattedLogEntryProcessor )
+  /** Remove console log writer */
+  //( (std::vector<FormattedLogEntryProcessor *>)
+     formattedLogEntryProcessors
+    //)
+    .erase(firstFormattedLogEntryProcessor);
+}
 
 void CPUcontrolService::RenameLogOutputNames()
 {
@@ -2144,7 +2165,7 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION CPUcontrolService::
     {
       DWORD dw = ::GetLastError();
       std::string stdstr;
-      LOGN("StartServiceCtrlDispatcher failed:" <<
+      LOGN_ERROR("StartServiceCtrlDispatcher failed:" <<
         ::LocalLanguageMessageAndErrorCodeA( dw ) )
       ServiceBase::GetErrorDescriptionFromStartServiceCtrlDispatcherErrCode(dw,
           stdstr);
@@ -2158,13 +2179,13 @@ DWORD THREAD_FUNCTION_CALLING_CONVENTION CPUcontrolService::
 
 void CPUcontrolService::StartService()
 {
-  DEBUG("begin of starting service\n");
+  LOGN_DEBUG("begin");
   m_bStartedAsService = true;
 
 #ifdef COMPILE_WITH_IPC
-  s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
-  //wxWidgets seockets must be initialized in the main thread!
-  s_p_cpucontrolservice->m_wxservicesocketserver.Init();
+//  s_p_cpucontrolservice->m_wxservicesocketserver.SetServerPortNumber(5000);
+//  //wxWidgets seockets must be initialized in the main thread!
+//  s_p_cpucontrolservice->m_wxservicesocketserver.Init();
 #endif //#ifdef COMPILE_WITH_IPC
 
   StartServiceCtrlDispatcher_static(NULL);

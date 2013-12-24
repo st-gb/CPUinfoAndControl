@@ -86,7 +86,7 @@ BEGIN
             VALUE "LegalCopyright",  COPYRIGHT_STRING
             VALUE "OriginalFilename", ""
             VALUE "ProductName",    "x86Info&Control"
-            VALUE "ProductVersion",  "2012, codenamed ""Ocean Spray"""
+            VALUE "ProductVersion",  "2013, codenamed ""Glatzikowski"""
         END
     END
     
