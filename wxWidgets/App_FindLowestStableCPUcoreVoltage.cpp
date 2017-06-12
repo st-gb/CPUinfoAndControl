@@ -16,7 +16,7 @@
 //#include <algorithms/binary_search/binary_search.h>
 #include <algorithms/binary_search/binary_search.hpp>
 //::GetErrorMessageFromLastErrorCodeA();
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 //unsigned long int SetThreadAffinityMask(DWORD dwThreadAffinityMask)
 #include <Controller/SetThreadAffinityMask.h>
 //THREAD_PROC_CALLING_CONVENTION
@@ -51,7 +51,7 @@ void SetThreadAffinityMask()
     & dwProcessAffinityMask //_out  PDWORD_PTR lpProcessAffinityMask
     , & dwSystemAffinityMask // __out  PDWORD_PTR lpSystemAffinityMask
     );
-#endif
+  
   for( BYTE byCPUcoreIndex = 0; byCPUcoreIndex < sizeof(DWORD_PTR) * 8 ;
       ++ byCPUcoreIndex)
   {
@@ -62,12 +62,13 @@ void SetThreadAffinityMask()
       break;
     }
   }
-  //Must "pin" this thread to a specific CPU core. Else it usally is being
-  //executed on different CPU cores and the CPU load does not reach 100%.
-  //TODO: if this _process_ does not have affinity to core 0 (e.g. when changed
-  //in task manager), the call fails?!
+  /** Must "pin" this thread to a specific CPU core. Else it usally is being
+  * executed on different CPU cores and the CPU load does not reach 100%.
+  * TODO: if this _process_ does not have affinity to core 0 (e.g. when changed
+  * in task manager), the call fails?! */
   ::SetThreadAffinityMask(//1
       dwThreadAffinityMask);
+#endif
 }
 
 inline void updateUIforCountSecondsDown(
@@ -99,9 +100,12 @@ BYTE GetNumberOfSelectedCPUcores(uint32_t ui32CPUcoreMask)
 void wxX86InfoAndControlApp::InitUnstableCPUcoreOperationDetection()
 {
   PossiblyAskForOSdynFreqScalingDisabling();
+#ifdef _WIN32
   InitUnstableVoltageDetectionDynLibAccess();
+#endif
 }
 
+#ifdef _WIN32
 BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
 {
   LOGN( "begin")
@@ -180,7 +184,9 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
   }
   return 1;
 }
+#endif
 
+#ifdef _WIN32
 BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
     const FreqAndVoltageSettingDlg * c_p_freqandvoltagesettingdlg)
 {
@@ -198,6 +204,7 @@ BYTE wxX86InfoAndControlApp::StartInstableCPUcoreVoltageDetection(
 
   return ret;
 }
+#endif //#ifdef _WIN32
 
 void wxX86InfoAndControlApp::SetStartFindingLowestStableVoltageButton()
 {
@@ -207,7 +214,9 @@ void wxX86InfoAndControlApp::SetStartFindingLowestStableVoltageButton()
 
 void wxX86InfoAndControlApp::StopInstableCPUcoreVoltageDetection()
 {
+#ifdef _WIN32
   m_model.m_instablecpucorevoltagedetection.Stop();
+#endif //#ifdef _WIN32
 }
 
 void wxX86InfoAndControlApp::UnloadDetectInstableCPUcoreVoltageDynLib()
@@ -218,6 +227,7 @@ void wxX86InfoAndControlApp::UnloadDetectInstableCPUcoreVoltageDynLib()
 #endif
 }
 
+#ifdef _WIN32
 void wxX86InfoAndControlApp::UpdateInstableCPUcoreOpDetectInfo()
 {
   //    //http://wiki.wxwidgets.org/Custom_Events:
@@ -246,7 +256,9 @@ void wxX86InfoAndControlApp::UpdateInstableCPUcoreOpDetectInfo()
     m_p_freqandvoltagesettingdlgInstCPUcoreDetect,
     wxcommand_eventCountSecondsDown);
 }
+#endif //#ifdef _WIN32
 
+#ifdef _WIN32
 void wxX86InfoAndControlApp::LoadDetectInstableCPUcoreVoltageDynLib(
   //wxCommandEvent & event
   )
@@ -290,3 +302,4 @@ void wxX86InfoAndControlApp::LoadDetectInstableCPUcoreVoltageDynLib(
     }
   }
 }
+#endif

@@ -25,8 +25,8 @@
 #ifndef WINAPI 
   #define WINAPI __stdcall
 #endif
-#include <exception> //for exception
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+//#include <exception> //for class std::exception
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 //#include "UserInterface.hpp" //for class "UserInterface"
 
 //Base class for every single CPU access exception type as e.g.

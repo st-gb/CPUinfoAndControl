@@ -10,8 +10,8 @@
 #include <Controller/character_string/format_as_string.hpp>
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
 //GetErrorMessageFromErrorCodeA(...)
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
-#include <Controller/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+#include <OperatingSystem/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 //#include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp> //for passing to dyn libs "Init()"
 #include <ModelData/ModelData.hpp> //class Model
@@ -104,7 +104,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
       L"loading the CPU controller dynamic library\n\""
       + GetStdWstring( r_wxstrFilePath/*.ToUTF8()*/ )
       + L"\"\nfailed:"
-      + GetStdWstring(GetErrorMessageFromErrorCodeA(dw) );
+      + GetStdWstring(OperatingSystem::GetErrorMessageFromErrorCodeA(dw) );
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    DWORD dw = ::GetLastError() ;
@@ -186,6 +186,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
   //      //TODO
   //      p_cpuaccess->mp_cpucontroller = NULL ;
     //void * wxdynamiclibraryCPUctl.GetSymbol(wxT("Init")) ;
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
     /** Copy MD5 to model so that the dyn lib can compare it if it generates its
      * own MD5 checksum. */
     mp_model->GetCPUcontrollerModelMD5checkSum(mp_model->m_cpucoredata.m_MD5checksum);
@@ -194,6 +195,8 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
      * written by the dyn lib after calling "Init". */
     memcpy(MD5checksumOfExcutable,
       mp_model->m_cpucoredata.m_MD5checksum, NUM_MD5_BYTES);
+#endif //#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
+    
     //IMPORTANT: the class "Model" should have the same structure as in the
     //dynamic (link) library, else the executable file (i.e. GUI or service)
     //may malfunction:
@@ -212,6 +215,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
   //        , & ::ReadMSR
   //        )
       ) ;
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
     /** Compare with the one that may have been written by the dyn lib inside
      * "Init". */
     if( memcmp(mp_model->m_cpucoredata.m_MD5checksum,
@@ -225,6 +229,7 @@ void wxDynLibCPUcontroller::AssignPointerToDynLibsInitFunction(
 //      mp_userinterface->MessageWithTimeStamp(std_str);
       throw new CPUaccessException(std_str);
     }
+#endif //#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
     LOGN_TYPE("after calling Dyn Lib's \""
       //Convert to std::string, else g++ linker error:
       //"undefined reference to `operator<<(std::ostream&, wxString const&)'"
@@ -369,6 +374,7 @@ bool wxDynLibCPUcontroller::PossiblyCompareMD5checkSums()
 ////    //& p_model->m_logfileattributes
 ////    (BYTE *) addressOfModelofCPUcoreData - (BYTE *) mp_model
 ////    );
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
   unsigned char MD5checksumOfExecutable[16];
   mp_model->GetCPUcontrollerModelMD5checkSum(mp_model->m_cpucoredata.m_MD5checksum);
   std::string std_str = format_output_data(MD5checksumOfExecutable,
@@ -379,6 +385,7 @@ bool wxDynLibCPUcontroller::PossiblyCompareMD5checkSums()
   if( /*m_pfnGetMD5 == NULL || */ memcmp(MD5checksumOfExecutable,
     MD5checksumOfdynLib, NUM_MD5_BYTES) == 0 )
     return true;
+#endif //#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
   return false;
 }
 

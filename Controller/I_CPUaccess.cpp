@@ -15,7 +15,13 @@
 #include <windef.h> //for DWORD
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN(...)
 #include <hardware/CPU/x86/CPUID_addresses.h> //EXTENDED_L2_CACHE_FEATURES
+/** Creating the check sum should ensure that both CPU controller model data and
+ *  executable model data have the same version (else the program may crash
+ *  if the binary tries to access CPU controller model data with a different 
+ *  layout of its fields etc.) */
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
 #include <Aladdin_Enterprises/md5_implementation/GenerateMD5checksum.hpp>
+#endif //#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
 
 /*//ULONG ulECX ;
 NTSTATUS
@@ -184,8 +190,10 @@ fastestUnsignedDataType I_CPUaccess::GetL2cacheSizeInKiB()
 void I_CPUaccess::GetMD5checkSum(void * beginOfMD5InputData,
   unsigned numBytesMD5InputData, BYTE arbyMD5checksum[16])
 {
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
   Aladdin_Enterprises::md5_implementation::GenerateMD5checkSum(
     beginOfMD5InputData, numBytesMD5InputData, arbyMD5checksum);
+#endif //#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
 }
 
 //Is the same for AMD and Intel.

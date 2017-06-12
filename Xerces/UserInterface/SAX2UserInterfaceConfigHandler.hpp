@@ -22,10 +22,10 @@
 //more than once) is faster than to #include the while declaration file.
 class Model ;
 class UserInterface ;
-// need to properly scope any forward declarations
-XERCES_CPP_NAMESPACE_BEGIN
-  class Attributes;
-XERCES_CPP_NAMESPACE_END
+/** Need to properly scope any forward declarations */
+namespace Attributes {
+  class MainFrame;
+}
 
 #include <data_structures/Trie/NodeTrie/NodeTrie.hpp>
 

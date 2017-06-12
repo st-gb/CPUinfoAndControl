@@ -17,7 +17,7 @@
 //GetArrayIndexForClosestValue(...)
 #include <algorithms/binary_search/binary_search.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD etc.
-#include <fastest_data_type.h>
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 
 #define CPU_CORE_DATA_NOT_SET 255
 

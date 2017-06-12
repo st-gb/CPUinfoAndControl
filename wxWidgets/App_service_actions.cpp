@@ -10,6 +10,7 @@
 //::format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 
+#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
 bool wxX86InfoAndControlApp::ContinueServiceViaIPC(wxString & r_wxstrMessage)
 {
   std::string stdstrMessage ;
@@ -183,3 +184,4 @@ bool wxX86InfoAndControlApp::SetPowerSchemeViaIPC(
   }
   return false;
 }
+#endif //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE

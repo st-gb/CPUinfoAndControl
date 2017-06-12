@@ -119,7 +119,7 @@ wxServiceSocketClient.hpp>
 #include <valarray> //class std::valarray
 //#include <xercesc/framework/MemBufInputSource.hpp>
 
-#include <fastest_data_type.h>
+#include <hardware/CPU/fastest_data_type.h> //typedef 
 
 #ifdef USE_WINDOWS_API_DIRECTLY_FOR_SYSTEM_TRAY_ICON
   #include "SystemTrayAccess.hpp"
@@ -3558,10 +3558,11 @@ void MainFrame::GetCPUcoreInfoFromDataProvider(
     "after GetNumberOfLogicalCPUcores" )
 //      if( wNumCPUcores > mp_cpucoredata->m_byNumberOfCPUCores )
     mp_cpucoredata->SetCPUcoreNumber( wNumCPUcores ) ;
+  wxString wxstrTitle = mp_wxx86infoandcontrolapp->m_wxstrDataProviderURL + 
+    (p_cpucontroller->m_bDVFSfromServiceIsRunning ? wxT(" [DVFS]--") : 
+    wxT(" [no DVFS]--") );
   SetTitle( //wxT("--values from service")
-    mp_wxx86infoandcontrolapp->m_wxstrDataProviderURL + (p_cpucontroller->
-      m_bDVFSfromServiceIsRunning ? wxT(" [DVFS]--") : wxT(" [no DVFS]--") ) +
-    + m_wxstrTitle
+    wxstrTitle + m_wxstrTitle
     ) ;
 }
 

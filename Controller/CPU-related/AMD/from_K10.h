@@ -8,7 +8,7 @@
 #ifndef FROM_K10_H_
 #define FROM_K10_H_
 
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 #include <preprocessor_macros/bitmasks.h>
 #include <stdint.h> // uint32_t
 //ReadMSR(...)

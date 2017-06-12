@@ -27,7 +27,7 @@
 
 #if defined(__linux__) && defined(USE_PTHREAD)
   //class phreadBasedI_Thread
-  #include <Linux/multithread/pthreadBasedI_Thread.hpp>
+  #include <OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.hpp>
   namespace x86IandC { typedef Linux::pthreadBasedI_Thread thread_type ; }
 #else
   #ifdef _WIN32 //Defined for 32 and 64 bit Windows on MinGW/ MSVC.

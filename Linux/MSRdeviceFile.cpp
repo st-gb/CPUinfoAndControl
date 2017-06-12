@@ -18,7 +18,7 @@
 //Linker? error when <errno.h> was _also_ (->twice) included (indirectly) from
 // other include files before.
 //for GetErrorMessageFromLastErrorCodeA(...)
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 //convertToStdString(T )
 #include <Controller/character_string/stdstring_format.hpp>
 #include <ModelData/ModelData.hpp> //class Model
@@ -95,7 +95,7 @@ MSRdeviceFile::MSRdeviceFile(
     //printf("iopl: %d\n", n);
     std::ostringstream oss;
     oss << "setting IO privilege to level \"" << USER_MODE << "\" failed:" <<
-      GetErrorMessageFromErrorCodeA(errorCode) << std::endl;
+      OperatingSystem::GetErrorMessageFromErrorCodeA(errorCode) << std::endl;
     switch(errorCode)
     {
     case EPERM:
@@ -155,7 +155,8 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
       ) == -1
     )
   {
-    std::string stdstrErrorMessage = GetErrorMessageFromLastErrorCodeA() ;
+    std::string stdstrErrorMessage = OperatingSystem::
+      GetErrorMessageFromLastErrorCodeA() ;
     UIconfirm( "error executing load_kernel_module.sh: " + stdstrErrorMessage) ;
   }
   std::string stdstrMSRfilePath ;
@@ -198,7 +199,8 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
       std::string stdstrMessage = std::string("Failed to open the file \"") +
         stdstrMSRfilePath + "\" cause: " ;//" + e.what() ;
       int errorNumber = errno ;
-      stdstrMessage += GetErrorMessageFromErrorCodeA(errorNumber);
+      stdstrMessage += OperatingSystem::
+        GetErrorMessageFromErrorCodeA(errorNumber);
       switch ( errno
         //nErrno
         )
@@ -434,7 +436,7 @@ BOOL // TRUE: success, FALSE: failure
     std::string stdstrErrMsg = ("Seeking failed in file ") + getMSRdeviceFilePath(
       m_byCoreID) //+ std::string("\n")
       + "to offset" + convertToStdString(dwIndex) + ":"
-      + GetErrorMessageFromLastErrorCodeA() ;
+      + OperatingSystem::GetErrorMessageFromLastErrorCodeA() ;
     LOGN(stdstrErrMsg)
     UIconfirm( stdstrErrMsg );
     return FAILURE;
@@ -458,7 +460,7 @@ BOOL // TRUE: success, FALSE: failure
       getMSRdeviceFilePath(m_byCoreID) + //_T("\":")
       "\":"
       + "at offset " + convertToStdString(dwIndex)
-      + GetErrorMessageFromLastErrorCodeA() + std::string("\n");
+      + OperatingSystem::GetErrorMessageFromLastErrorCodeA() + std::string("\n");
     UIconfirm( std_strMessage
       );
 //    mp_userinterface->MessageWithTimeStamp(std_strMessage);
@@ -565,7 +567,7 @@ MSRdeviceFile::WrmsrEx(
   {
     UIconfirm( std::string("Seeking failed in file ")
       + getMSRdeviceFilePath(m_byCoreID)
-      + GetErrorMessageFromLastErrorCodeA()
+      + OperatingSystem::GetErrorMessageFromLastErrorCodeA()
       + std::string("\n")
       + std::string(POSSIBLE_SOLUTION_LITERAL)
       );
@@ -589,7 +591,7 @@ MSRdeviceFile::WrmsrEx(
       + getMSRdeviceFilePath(m_byCoreID)
       + " at offset " + convertToStdString(dwIndex)
       + std::string(" failed:\n")
-      + GetErrorMessageFromLastErrorCodeA()
+      + OperatingSystem::GetErrorMessageFromLastErrorCodeA()
       + std::string("\n")
       + std::string(POSSIBLE_SOLUTION_LITERAL)
       ) ;

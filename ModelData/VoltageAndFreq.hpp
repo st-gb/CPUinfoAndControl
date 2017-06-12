@@ -9,7 +9,7 @@
 
 #include <windef.h> //for BYTE, WORD
 #include <ostream> //class std::ostream
-#include <fastest_data_type.h> //fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 
 /** Models a performance state */
 class VoltageAndFreq

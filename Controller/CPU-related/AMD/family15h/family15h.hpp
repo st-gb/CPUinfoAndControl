@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fastest_data_type.h> //fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 
 namespace AMD
 {

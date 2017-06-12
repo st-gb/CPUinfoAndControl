@@ -175,6 +175,7 @@ inline bool PossiblyHandleLoggingExclusionFilter_Inline(
   {
     std::string stdstrValue ;
     bRet = true ;
+#ifdef COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
     if( XercesAttributesHelper::GetAttributeValue(
         cr_xercesc_attributes ,
         //Use "( char * )" to avoid g++ Linux compiler warning
@@ -199,6 +200,7 @@ inline bool PossiblyHandleLoggingExclusionFilter_Inline(
 //        g_logger.m_stdsetstdstrExcludeFromLogging.insert( strValue) ;
       g_logger./*AddExcludeFromLogging*/ExcludeFunctionFromLogging(stdstrValue) ;
     }
+#endif //#ifdef COMPILE_LOGGER_WITH_STRING_FILTER_SUPPORT
   }
   return bRet ;
 }

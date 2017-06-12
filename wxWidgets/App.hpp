@@ -145,7 +145,7 @@ private:
   ////an exception (that should be caught, else runtime error) when it is created.
   //I_CPUaccess * mp_i_cpuaccess ;
   Model * mp_modelData ;
-  nativeCriticalSection m_critSecShowMessage;
+  nativeCriticalSection_type m_critSecShowMessage;
 public:
   IPC_data s_ipc_data;
   wxString m_wxstrCPUcontrollerDynLibFilePath ;

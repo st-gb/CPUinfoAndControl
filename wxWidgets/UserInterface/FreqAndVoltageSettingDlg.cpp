@@ -31,7 +31,7 @@
 //  );
 #include <Controller/CPU-related/GetInterpolatedVoltageFromFreq.hpp>
 #include <compiler/GCC/enable_disable_write_strings_warning.h>
-#include <fastest_data_type.h>
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 
 IGNORE_WRITE_STRINGS_WARNING
 #include <images/cancel16x16.xpm>
@@ -84,7 +84,6 @@ ENABLE_WRITE_STRINGS_WARNING
 #include <wx/tooltip.h> //for wxToolTip::SetDelay(...)
 #include <wx/version.h>
 #include "MainFrame.hpp" //for class MainFrame
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
 
 wxString FreqAndVoltageSettingDlg::s_wxstrInstableCPUcoreVoltageWarning =
   CPUcontrolBase::s_ar_tchInstableCPUcoreVoltageWarning;

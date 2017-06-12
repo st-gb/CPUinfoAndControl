@@ -7,8 +7,8 @@
  */
 #include "wxDynLibCPUcoreUsageGetter.hpp"
 //GetErrorMessageFromErrorCodeA(...)
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
-#include <Controller/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+#include <OperatingSystem/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/Logger/LogLevel.hpp>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
@@ -102,7 +102,7 @@ wxDynLibCPUcoreUsageGetter::wxDynLibCPUcoreUsageGetter(
   {
     std::string stdstrErrMsg = "loading the dynamic library failed:" ;
     DWORD dw = OperatingSystem::GetLastErrorCode() ;
-    stdstrErrMsg += GetErrorMessageFromErrorCodeA(dw) ;
+    stdstrErrMsg += OperatingSystem::GetErrorMessageFromErrorCodeA(dw) ;
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    DWORD dw = ::GetLastError() ;

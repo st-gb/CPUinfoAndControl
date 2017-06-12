@@ -8,8 +8,14 @@
 #include "ModelData.hpp"
 //#include "RegisterData.hpp" //class MSRdata
 #include <Controller/MSVC_adaption/tchar.h>
+/** Creating the check sum should ensure that both CPU controller model data and
+ *  executable model data have the same version (else the program may crash
+ *  if the binary tries to access CPU controller model data with a different 
+ *  layout of its fields etc.) */
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
 //Aladdin_Enterprises::md5_implementation::GenerateMD5checkSum(...)
 #include <Aladdin_Enterprises/md5_implementation/GenerateMD5checksum.hpp>
+#endif //#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
 
 //#define _T_LITERAL_PROGRAM_NAME "x86InfoAndControl"
 
@@ -114,6 +120,7 @@
     return m_cpucoredata.m_byNumberOfCPUCores ;
   }
 
+#ifdef CREATE_CHECK_SUM_FOR_MODEL_DATA
   void Model::GetCPUcontrollerModelMD5checkSum(BYTE ar_byMD5checksum []) const
   {
     const unsigned numBytesForCPUcontrollerModel = //(unsigned) (
@@ -123,6 +130,7 @@
       numBytesForCPUcontrollerModel,
       ar_byMD5checksum);
   }
+#endif
 
   void Model::SetNumberOfCPUCores(BYTE byNumberOfCPUCores)
   {

@@ -32,8 +32,8 @@
 //#include "wxDynFreqScalingTimer.hpp"
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
 
-//for ::GetErrorMessageFromErrorCodeA(DWORD)
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+//for OperatingSystem::GetErrorMessageFromErrorCodeA(DWORD)
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
@@ -50,7 +50,7 @@ GetFilenameWithoutExtension.hpp>
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
 #include <Controller/Logger/Logger.hpp> //class Logger
 #include <Controller/X86InfoAndControlExceptions.hpp> //for VoltageSafetyException
-#include <Controller/multithread/I_Thread.hpp> //class I_Thread
+#include <OperatingSystem/multithread/I_Thread.hpp> //class I_Thread
 #include <ModelData/ModelData.hpp>
 #include <ModelData/PerCPUcoreAttributes.hpp> //class PerCPUcoreAttributes
 #include <preprocessor_macros/BuildTimeString.h> //"BUILT_TIME" macro
@@ -1923,7 +1923,7 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //      GetStdWstring(/*r_std_tstrLogFilePath*/ std_strLogFilePath)
       r_std_wstrLogFilePath + L"\":\n"
       //Idea from http://stackoverflow.com/questions/1725714/why-ofstream-would-fail-to-open-the-file-in-c-reasons
-      + GetStdWstring(std::string( GetErrorMessageFromLastErrorCodeA() ) ) );
+      + GetStdWstring(std::string( OperatingSystem::GetErrorMessageFromLastErrorCodeA() ) ) );
   }
   //from http://www.kharchi.eu/algierlib/tips.html:
   //If using MinGW then pass "-mwindows" as linker flag in order to hide the

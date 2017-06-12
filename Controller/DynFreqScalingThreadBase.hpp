@@ -14,7 +14,7 @@
 //#include <ModelData/PerCPUcoreAttributes.hpp>
 #include <preprocessor_macros/Windows_compatible_typedefs.h> //WORD
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 typedef void *ExitCode;
 
 //Forward declarations (faster than #include)

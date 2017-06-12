@@ -5,12 +5,9 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-/* 
- * File:   MainController.cpp
+/** File:   MainController.cpp
  * Author: Stefan
- * 
- * Created on 28. August 2009, 21:22
- */
+ * Created on 28. August 2009, 21:22 */
 
 #include "MainController.hpp"
 //GetStdString(const std::wstring & cr_wstr )
@@ -20,6 +17,8 @@
 #include <Controller/CPU-related/I_CPUcontroller.hpp> //class I_CPUcontroller
 #include <Controller/CPUcontrolBase.hpp> //class CPUcontrolBase
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
+//TODO include really neccessary?
+#include <UserInterface/UserInterface.hpp> //class UserInterface
 //#include <Controller/ReadFileContent.hpp> //ReadFileContent(...)
 ////for VoltageSafetyException
 //#include <Controller/X86InfoAndControlExceptions.hpp>

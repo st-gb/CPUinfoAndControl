@@ -5,11 +5,13 @@
  *      Author: Stefan
  */
 
-#include "Xerces/LogOutputHandler.hpp"
+#include "LogOutputHandler.hpp"
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //ConvertStdTStringToTypename(...)
 #include <Controller/character_string/ConvertStdStringToTypename.hpp>
 #include <ModelData/ModelData.hpp> //class Model
+//TODO include neccessary?
+#include <UserInterface/UserInterface.hpp> //class UserInterface
 //for XercesAttributesHelper::GetAttributeValue(...)
 #include <Xerces/XercesAttributesHelper.hpp>
 #include <Xerces/XercesString.hpp> //ansi_or_wchar_string_compare(...)
