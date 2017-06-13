@@ -9,7 +9,7 @@
 #define COREANDCORE2_HPP_
 
 #include <float.h> //FLT_MIN
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 
 extern BYTE g_byValue1;
 extern uint32_t g_dwValue1, g_dwValue2;

@@ -22,7 +22,7 @@ inline_register_access_functions.hpp> //ReadMSR(...), WriteMSR(...)
 #include <Controller/CPU-related/Intel/Core/CoreAndCore2.hpp>
 
 #include "Core2registers.h"
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 
 extern float g_fReferenceClockInMHz;
 extern float g_fReferenceClockMultiplier;

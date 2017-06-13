@@ -22,7 +22,9 @@ set(CPU_I_AND_C_SOURCE_DIR
 
 #add_definitions(-fPIC)
 #https://stackoverflow.com/questions/11783932/how-to-add-linker-or-compile-flag-in-cmake-file
-#SET( CMAKE_CXX_FLAGS "-fPIC")
+#"--no-undefined" reports errors while compiling
+#see https://stackoverflow.com/questions/2356168/force-gcc-to-notify-about-undefined-references-in-shared-libraries
+SET( CMAKE_CXX_FLAGS "-Wl,--no-undefined")
 
 set( INCLUDE_DIRS 
   ${COMMON_SOURCECODE_ROOT_PATH}

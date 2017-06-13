@@ -8,7 +8,7 @@
 #ifndef CORE_AND_CORE2_GETVOLTAGE_HPP_
 #define CORE_AND_CORE2_GETVOLTAGE_HPP_
 
-#include <fastest_data_type.h> //fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 
 namespace Intel
 {
