@@ -23,7 +23,7 @@
 //  extern DWORD g_ui32Value1, g_dwValue2 ;
 //from http://stackoverflow.com/questions/911035/uint32-int16-and-the-like-are-they-standard-c:
 #include <stdint.h>
-#include <fastest_data_type.h> //fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 
 //Use uint32_t to ensure its 32 bit on either platform (32, 64bit)
 extern uint32_t g_ui32Value1, g_ui32Value2 ;

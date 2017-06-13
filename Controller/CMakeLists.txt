@@ -6,6 +6,7 @@ set(SOURCE_FILE_PATHS
   ${CMAKE_CURRENT_SOURCE_DIR}/BuildTimeString.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CPUcontrolBase.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DynFreqScalingThreadBase.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/export_functions.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/I_CPUaccess.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MainController.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CPU-related/I_CPUcontroller.cpp

@@ -35,6 +35,7 @@
 //for OperatingSystem::GetErrorMessageFromErrorCodeA(DWORD)
 #include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/GetNumberOfLogicalCPUcores.h>
+#include <Controller/Logger/LogFileAccessException.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/character_string/stdstring_format.hpp> //convertToStdString()
@@ -1898,7 +1899,10 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //    m_model.m_logfileattributes.m_std_strFormat);
 
 //  std::string std_strLogFilePath = GetStdString(r_std_tstrLogFilePath);
-  bool fileIsOpen = //g_logger.OpenFileA( ,
+  bool fileIsOpen = false;
+  try
+  {
+   fileIsOpen = //g_logger.OpenFileA( ,
     //bRolling);
     GetLogFilePropertiesAndOpenLogFile(//std_strLogFilePath
       r_std_wstrLogFilePath, std_wstrLogFileName);
@@ -1917,7 +1921,9 @@ bool wxX86InfoAndControlApp::OpenLogFile(//std::tstring & r_std_tstrLogFilePath
 //      LOGN(" formatter is HTMLlogFormatter" )
 
   }
-  else
+//  else
+  }
+  catch(LogFileAccessException & lfae)
   {
     MessageWithTimeStamp( L"Failed to open log file \n\"" +
 //      GetStdWstring(/*r_std_tstrLogFilePath*/ std_strLogFilePath)

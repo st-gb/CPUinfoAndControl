@@ -505,6 +505,8 @@ void CPUcontrolBase::CreateHardwareAccessObject()
       logfileappender->Open(/*actualFilepath*/ actualFilepath );
     if( logFileIsOpen )
     {
+      //TODO is this method call needed? (already called in 
+      //   FormattedLogEntryProcessor::FormattedLogEntryProcessor(...)
       logfileappender->CreateFormatter(std_strFileExt.c_str(),
         std_strLogTimeFormatString);
       logfileappender->GetFormatter()->/*WriteHeader()*/Init();
@@ -773,10 +775,13 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
           EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
       }
       else
-        r_std_wstrLogFilePath += //EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI ) +
-          m_model.m_logfileattributes.
+      {
+        if(std_wstrLogFilePathFromConfig.substr(2) != L"./" )
+          r_std_wstrLogFilePath += EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI);
+        r_std_wstrLogFilePath += m_model.m_logfileattributes.
           m_std_wstrLogFilePath + //L"/";
           EXPAND_TO_WIDESTRING(PATH_SEPERATOR_CHAR_ANSI );
+      }
     }
 //  }
 }

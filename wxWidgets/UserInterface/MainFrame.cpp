@@ -3818,12 +3818,17 @@ void MainFrame::OnPaint(wxPaintEvent & r_wx_paint_event)
   //        ) ;
 
 #ifdef __WXGTK__
-      //The following lines are needed under Linux GTK for getting the text
-      //extent correctly (else the text extent width is to small->
-      //if e.g. drawing multiple text from left to right then the text
-      // overlaps.
-      wxFont wxfont ;
-      wxmemorydc.SetFont( wxfont) ;
+      /** The following lines are needed under Linux GTK for getting the text
+      *   extent correctly? (else the text extent width is to small->
+      *   if e.g. drawing multiple text from left to right then the text
+      *   overlaps. */
+//      wxFont wxfont ;
+      /** This line caused a runtime error in wxDC::GetTextExtent() within 
+       *   DrawCurrentCPUcoreInfo(...) :
+       *   "../src/gtk/dcclient.cpp(1480): assert "fontToUse->IsOk()" failed in DoGetTextExtent(): invalid font"
+       *   respectively then it did not show any CPU
+       *   information like CPU core frequency.  */
+//      wxmemorydc.SetFont( wxfont) ;
 #endif //#ifdef __WXGTK__
 
       DrawCurrentCPUcoreInfo(wxmemorydc) ;
@@ -5089,6 +5094,8 @@ void MainFrame::ShowHighestCPUcoreTemperatureInTaskBar(
         wxBLACK//,
 //        wxWHITE
         );
+    //TODO runtime error: "../src/gtk/bitmap.cpp(1328): assert "IsOk()" failed 
+    //   in wxBitmap::GetPixbuf(): invalid bitmap"
     if( mp_wxx86infoandcontrolapp->m_p_HighestCPUcoreTemperatureTaskBarIcon->SetIcon(
         s_wxiconTemperature, s_wxstrTaskBarIconToolTip )
       )

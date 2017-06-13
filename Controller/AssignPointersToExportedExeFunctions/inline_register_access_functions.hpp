@@ -48,13 +48,21 @@ inline BYTE CPUID(
 {
   DEBUGN("before executing the CPUID instruction")
   //TODO return error if calling CPUID fails
-  //from http://www.ibm.com/developerworks/library/l-ia.html:
-  asm ("cpuid"
+  /** from http://www.ibm.com/developerworks/library/l-ia.html:
+    * Did not compile on Ubuntu 14.04.3 with gcc/g++ version 4.8.4 */
+  /*asm ("cpuid"
         : "=a" (*p_dwEAX),
           "=b" (*p_dwEBX),
           "=c" (*p_dwECX),
           "=d" (*p_dwEDX)
-        : "a" (dwIndex));
+        : "a" (dwIndex));*/
+  /** from http://www.cs.usfca.edu/~cruse/cs630/cpuid.cpp */
+  asm(" movl %0, %%eax " :: "m" (dwIndex) );
+  asm(" cpuid ");
+  asm(" mov %%eax, %0 " : "=m" (*p_dwEAX) );
+  asm(" mov %%ebx, %0 " : "=m" (*p_dwEBX) );
+  asm(" mov %%ecx, %0 " : "=m" (*p_dwECX) );
+  asm(" mov %%edx, %0 " : "=m" (*p_dwEDX) );
   DEBUGN("after executing the CPUID instruction: "
     << "EAX: " << * p_dwEAX
     << "EBX: " << * p_dwEBX
