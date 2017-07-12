@@ -168,6 +168,14 @@ namespace Intel
     inline bool EISTenabled()
     {
       uint32_t lowmostBits, highmostBits;
+      /** See "Intel® 64 and IA-32 Architectures Software Developer’s Manual"
+          "Volume 3C: System Programming Guide, Part 3"
+       *  Order Number: 326019-060US  September 2016
+       *  "Table 35-2. IA-32 Architectural MSRs (Contd.)" 
+          "IA32_MISC_ENABLE" : 
+       *  16 Enhanced Intel SpeedStep Technology Enable (R/W) If CPUID.01H: ECX[7] =1
+          0=Enhanced Intel SpeedStep Technology disabled
+          1 = Enhanced Intel SpeedStep Technology enabled */
       BYTE byValue1 =
   //      (*g_pfnreadmsr) (
         ReadMSR(
@@ -178,7 +186,9 @@ namespace Intel
         ) ;
       if( byValue1 ) //successfully read from MSR.
       {
-        return highmostBits & 1;
+        bool EnhancedIntelSpeedStepTechnologyEnabled = (lowmostBits >> 
+          EnhancedIntelSpeedStepTechnologyEnable0basedBitIndex) & 1;
+        return EnhancedIntelSpeedStepTechnologyEnabled;
       }
       return false;
     }

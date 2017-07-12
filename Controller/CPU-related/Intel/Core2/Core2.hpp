@@ -150,11 +150,17 @@ namespace Intel
     {
       uint32_t lowmostBits, highmostBits;
       float * ar_f = NULL ;
-      //For Intel Core T2400: MSR reg.# 0xCE
-      //                    byte index:4  0
-      //ex.: "value at MSR address 408:2A 0D"
-      //0D=13:min. voltage: = 0.7125 + 13*0.0125V = 0.7125+0.1625V 0.95 V
-      //2C=42:max. voltage: 0.7125V + 42 * 0.0125V = 0.7125V + 0.525 = 1.2375V
+      /** For Intel Core 2 Q6600:
+       *  see http://www.cpu-world.com/sspec/SL/SL9UM.html :
+       *  B3 (105 W Thermal Design Power) stepping has core voltage from 1.1-1.372 V
+       *  see http://www.cpu-world.com/sspec/SL/SLACR.html :
+       *  G0 (95 W Thermal Design Power) stepping has core voltage from 1.1-1.372 V
+       *  http://www.cpu-world.com/sspec/SL/SLACR.html. see screenshot: 1.136V at ca. 1600 MHz
+      * values from MSR register # 0xCE for Q6600 G0 :
+      *                      byte index:4  0
+      //ex.: "value at MSR address 408:37 27"
+      //min. voltage: = 0.8V + 27*0.0125V = 0.8V+0,3375 V=1,1375 V
+      //max. voltage: 0.8V + 37 * 0.0125V = 0.8V + 0,4625V = 1,2625 V */
       BYTE byValue1 =
   //      (*g_pfnreadmsr) (
         ReadMSR(

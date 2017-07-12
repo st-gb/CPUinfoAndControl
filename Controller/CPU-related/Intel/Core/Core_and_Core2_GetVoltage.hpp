@@ -23,7 +23,14 @@ namespace Intel
       //Diff 1.0875 (VID 30) & 0.925 (VID=17) = 0.1625V
       //1 voltage ID step = 0.1625V / (30-17) = 0.1625V / 13 = 0.0125
       //0.925- 17 * 0.0125 = 0.7125 ;
-      return 0.7125f + (float) voltageID * 0.0125f ;
+      return 
+#ifdef COMPILE_FOR_INTEL_CORE2
+        /** For Core 2 Quad Q600 G0 stepping it seems to be 0.8V */
+        0.8f
+#else
+        0.7125f
+#endif
+       + (float) voltageID * 0.0125f ;
     }
   }
 }

@@ -5,6 +5,7 @@ set( ATTRIBUTE_DATA_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/LogFileAttributes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ModelData.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PerCPUcoreAttributes.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/RegisterData.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SpecificCPUcoreActionAttributes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/UserInterfaceAttributes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VoltageAndFreq.cpp

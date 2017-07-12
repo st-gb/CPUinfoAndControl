@@ -1,9 +1,13 @@
 
+#if COMPILE_WITH_MSR_EXAMINATION
+#SAX2_CPUspecificHandler
+
 #see http://stackoverflow.com/questions/8934295/add-source-in-a-subdirectory-to-a-cmake-project
 
 set(APACHE_XERCES_SOURCE_FILE_PATHS
   ${CMAKE_CURRENT_SOURCE_DIR}/LogOutputHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PStateConfig.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SAX2_CPUspecificHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SAX2CPUtypeConfiguration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SAX2MainConfigHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SAX2VoltagesForFrequencyHandler.cpp

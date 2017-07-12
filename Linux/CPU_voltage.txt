@@ -1,0 +1,2 @@
+#https://stackoverflow.com/questions/20453874/get-cpu-core-voltage-values-on-linux-servers
+sudo dmidecode --type processor | grep Voltage

@@ -623,10 +623,10 @@ void wxExamineCPUregistersDialog::DisplayTSCvalues()
   {
     m_ullValue2 = m_ullValue - m_ullPrevTSCvalue ;
     m_ullPrevTSCvalue = m_ullValue ;
-#ifdef __CYGWIN__
-    m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
-#else
+#ifdef _MSC_VER /** Microsoft does not know "ull" ss*/
     m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue2) ;
+#else
+    m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
 #endif
     (*m_stdvector_p_wxstatictextiter)->SetLabel(m_wxstrULL) ;
     ++ m_stdvector_p_wxstatictextiter ;
@@ -830,10 +830,10 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(MSRdata & r_msrdata)
         }
         else
         //mp_msr_data->GetTableContainingDataName(iter->m_strDataName);
-        #ifdef __CYGWIN__
-        m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
-        #else
+        #ifdef _MSC_VER
         m_wxstrULL = wxString::Format( wxString( wxT("%I64u") ), m_ullValue2) ;
+        #else
+        m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue2) ;
         #endif
         //(*iterp_wxstatictext)->SetLabel(//wxString::Format("%64u", m_ullValue2 )
         //  wxstrULL );

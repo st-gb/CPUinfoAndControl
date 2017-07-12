@@ -161,15 +161,19 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
   , WORD * p_wNum )
 {
   DEBUGN( FULL_FUNC_NAME << " begin")
-  //See "Intel® Core™2 Duo Mobile Processor, Intel® Core™2 Solo Mobile
-  //Processor and Intel® Core™2 Extreme Mobile Processor on 45-nm Process
-  //Datasheet Doc#320120-004.32012001
-  //For platforms based on Mobile Intel® 4 Series Express Chipset Family
-  //March 2009",
-  //chapter "3.10Processor DC Specification"
+  /** See "Intel® Core™2 Duo Mobile Processor, Intel® Core™2 Solo Mobile
+   * Processor and Intel® Core™2 Extreme Mobile Processor on 45-nm Process
+   * Datasheet
+   * For platforms based on Mobile Intel® 4 Series Express Chipset Family
+   * Document Number: 320120-004.32012001
+   * March 2009"
+   *
+   * chapter "3.10 Processor DC Specifications" */
 
 //  * p_wNum = 0 ;
 //  return NULL ;
+  /** Should return 0.8500V-1.500V according to 
+   * http://ark.intel.com/de/products/29765/Intel-Core2-Quad-Processor-Q6600-8M-Cache-2_40-GHz-1066-MHz-FSB */
   return Intel::Core2::GetAvailableVoltagesInVolt( * p_wNum ) ;
 }
 
