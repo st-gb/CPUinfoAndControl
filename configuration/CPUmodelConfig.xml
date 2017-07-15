@@ -1,0 +1,24 @@
+<!--info from http://www.sandpile.org/x86/cpuid.htm 
+   for each entry at least "vendor", "family" (and "model") attribute values are needed -->
+<CPUmodel_configuration>
+  <CPUID vendor="AuthenticAMD" family="6" model="7" CPUinfoGetterAndOrController="AMD_K7Controller_100MHz_ref.clock"/>
+  <!-- model="36, 76"  -->
+  <CPUID vendor="AuthenticAMD" family="15" CPUinfoGetterAndOrController="AMD_family15Controller_changeFIDInMax2FIDvaluesDiff"/>
+  <CPUID vendor="AuthenticAMD" family="17" model="3" CPUinfoGetterAndOrController="AMD_fam17Controller_Max.MultiCurrentPstateLimit_200MHzref.clock"/>
+  
+  <CPUID vendor="GenuineIntel" family="6" model="13" CPUinfoGetterAndOrController="PentiumMcontroller_FSB-stepp8=133,else100,insertDef.p-statesWoutMulti7"/>
+  <CPUID vendor="GenuineIntel" family="6" model="14" CPUinfoGetterAndOrController="IntelCoreController_InsertDefaultPstates"/>
+  <CPUID vendor="GenuineIntel" family="6" model="15" CPUinfoGetterAndOrController="Core2_IandC" CPUregisterData="Intel_Core2.xml"/>
+  <CPUID vendor="GenuineIntel" family="6" model="23" CPUinfoGetterAndOrController="IntelCore2Controller_InsertDefaultPstates"/>
+  <CPUID vendor="GenuineIntel" family="6" model="30" CPUinfoGetterAndOrController="IntelNehalemController"/>
+  <CPUID vendor="GenuineIntel" family="6" model="37" CPUinfoGetterAndOrController="IntelNehalemController"/>
+  <!-- http://en.wikipedia.org/wiki/Haswell_%28microarchitecture%29#New_features:
+       has a Fully integrated voltage regulator (FIVR) -->
+  <CPUID vendor="GenuineIntel" family="6" model="58" CPUregisterData="Intel_Core_i_4th_generation_('Haswell',since_2013).xml" CPUinfoGetterAndOrController="Intel_Haswell_CPU_IandC"/>
+  <CPUID vendor="GenuineIntel" family="15" model="0" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
+  <CPUID vendor="GenuineIntel" family="15" model="1" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
+  <CPUID vendor="GenuineIntel" family="15" model="2" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
+  <CPUID vendor="GenuineIntel" family="15" model="3" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
+  <CPUID vendor="GenuineIntel" family="15" model="4" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
+  <CPUID vendor="GenuineIntel" family="15" model="6" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
+</CPUmodel_configuration>

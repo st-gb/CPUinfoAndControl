@@ -1,0 +1,134 @@
+﻿<x86IandC_main_cfg>
+  <!--check_whether_temperature_decreased_wait_time_in_ms:
+       + if temperature > throttle_temp_in_deg_Celsius :
+         + if either:
+           + beginning of being above "throttle_temp_in_deg_Celsius"
+           + after "use next lower multiplier because of throttling"
+             : 
+             start_temperature = current (CPU core) temperature 
+             start_time = current time
+         + every ~ usage_poll_wait_time_in_ms milliseconds 
+           - temperature_diff = (start_temperature - current (CPU core) temperature)
+           - time_passed = (current time - start_time)
+           temperature_diff <= 0 AND time_passed > check_whether_temperature_decreased_wait_time_in_ms ?
+             yes: "use next lower multiplier because of throttling"
+       + of course it depends on the resolution of the temperature:
+         + e.g. AMD Griffin has ~ 0.1 °C steps, Intel has 1 °C steps,
+           so you may have to set a higher value to avoid a too fast
+             decrease of the multiplier value
+	 CPU_core_freq_reserve_in_MHz: 
+	   + if CPU core usage is < CPU_core_load_threshold_for_increase:
+	       then the new frequency gets "CPU core usage" * current_frequency
+  -->
+  <DynamicVoltage_and_FrequencyScaling 
+    check_whether_temperature_decreased_wait_time_in_ms="300"
+    usage_poll_wait_time_in_ms="150" 
+    CPU_core_load_threshold_for_increase="0.8" 
+    throttle_temp_in_deg_Celsius="80"
+    increase_factor="1.5" 
+	CPU_core_freq_reserve_in_MHz="300"
+	/>
+	
+  <resume_from_standby_or_hibernation
+    stable_CPU_core_voltage_wait_time_in_milliseconds="10000"
+  />
+  
+  <instable_CPU_core_voltage_detection seconds_until_voltage_decrease="150" 
+	dyn_lib_for_instable_voltage_detection="Prime95asDLL_TortureTest_1_thread.dll" />
+    
+  <!-- all other stuff-->
+  <etc 
+    log_file_path="log_files"
+  />
+  <Linux 
+    default_CPU_core_usage_getter="proc.statCPUusageGetter"
+  />
+  <Windows 
+  	default_CPU_core_usage_getter="PDH_CPUcoreUsageGetter_MinGW32bit"
+  />
+	
+  <!--filter for GUI _and_ service BEGIN--> 
+  <log_file_filter exclude="char ReadXMLdocument(xercesc_3_1::InputSource&amp;, UserInterface*, xercesc_3_1::DefaultHandler&amp;)--"/>
+  <log_file_filter exclude="virtual bool DynFreqScalingThreadBase::IsStopped()"/>
+  
+  <log_file_filter exclude="CPUcoreData::SetCPUcoreNumber("/>
+  <log_file_filter exclude="wxDynLibCPUcontroller::SetCurrentVoltageAndMultiplier begin"/>
+  <log_file_filter exclude="wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier"/>
+  <!--log_file_filter exclude="before calling Dynamic Library's function &quot;SetCurrentVoltageAndMultiplier("/>-->
+    
+  <log_file_filter exclude="Xerces access successfully initialized"/>
+  <log_file_filter exclude="Xerces access terminated"/>
+        
+  <log_file_filter exclude="readXMLConfig begin"/>
+  <log_file_filter exclude="before readXMLConfig (InputSource)"/>
+  <log_file_filter exclude="before parsing XML document"/>
+    
+  <log_file_filter exclude="DynLibCPUcontroller::GetTemperatureInCelsius--temperature for core"/>
+  <log_file_filter exclude="virtual float wxDynLibCPUcontroller::GetTemperatureInCelsius"/>
+  <!--log_file_filter exclude="DynFreqScalingThreadBase::SetLowerFrequency core "/>-->
+
+  <log_file_filter exclude="void DynFreqScalingThreadBase::ChangeOperatingPointByLoad"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::ChangeOperatingPointByLoad"/>
+  <!--log_file_filter exclude="I_CPUcontroller::SetFreqAndVoltageFromFreq("/>-->
+  <log_file_filter exclude="dyn lib CPU controller--calculated multiplier: "/>
+  <log_file_filter exclude="::WriteMSR("/>
+  <log_file_filter exclude="return value of DLL's function SetCurrentVoltageAndMultiplier("/>
+  <log_file_filter exclude="dyn lib CPU controller-- &lt; or = multiplier closest to calculated multiplier:"/>
+  <log_file_filter exclude="dyn lib CPU controller-- &gt; or = multiplier closest to calculated multiplier:"/>
+  <log_file_filter exclude="dyn lib CPU controller: after calling DLL's GetCurrentVoltageAndFrequency voltage:"/>
+  <log_file_filter exclude="I_CPUcontroller::GetCurrentVoltageAndFrequencyAndStoreValues("/>
+  <log_file_filter exclude="virtual BYTE wxDynLibCPUcontroller::GetCurrentVoltageAndFrequency"/>
+  <log_file_filter exclude=" &lt;= to calculated multiplier diff:"/>
+  <!--log_file_filter exclude="before calling DLL's function SetCurrentVoltageAndMultiplier("/-->
+  <log_file_filter exclude="BYTE wxDynLibCPUcontroller::GetClosestMultplierAndSetVoltageAndMultiplier"/>
+  <log_file_filter exclude="wxDynLibCPUcoreUsageGetter::GetPercentalUsageForAllCores:usage for core"/>
+  <log_file_filter exclude="dyn lib CPU controller: after calling DLL's GetCurrentVoltageAndFrequency r_fReferenceClockInMHz:"/>
+  
+  <!--<log_file_filter exclude="dyn lib CPU controller: GetCurrentVoltageAndFrequency"/>-->
+  <log_file_filter exclude="I_CPUcontroller::SetFreqAndVoltageFromFreq"/>
+  <log_file_filter exclude="dyn lib CPU controller--address of DLL's set multi fct"/>
+  
+  <log_file_filter exclude="DVFS thread running"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::Entry: confirmed yet"/>
+  
+  <log_file_filter exclude="before GetPercentalUsageForAllCores"/>
+  <log_file_filter exclude="after GetPercentalUsageForAllCores"/>
+  
+  <log_file_filter exclude="after GetCurrentVoltageAndFrequency"/>
+
+  <log_file_filter exclude="dyn lib CPU controller: GetCurrentVoltageAndFrequency"/>
+  <!--<log_file_filter exclude="dyn lib CPU controller: GetCurrentVoltageAndFrequency end"/>-->
+  <!--log_file_filter exclude="dyn lib CPU controller: after calling DLL's GetCurrentVoltageAndFrequency"/-->
+  
+  <log_file_filter exclude="too hot:no"/>
+  <log_file_filter exclude="virtual BYTE wxDynLibCPUcontroller::GetCPUcoreTooHot()"/>
+  <!-- log_file_filter exclude="DynFreqScalingThreadBase::HandleCPUnotTooHot()"/-->
+  <log_file_filter exclude="before calling Dynamic Library's function &quot;SetCurrentVoltageAndMultiplier("/>
+  <log_file_filter exclude=" I_CPUcontroller::SetFreqAndVoltageFromFreq(freq in MHZ:"/>
+  
+  <log_file_filter exclude="DynFreqScalingThreadBase::Entry() too hot"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::HandleCPUtooHotDVFS()-1st time too hot"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::HandleCPUtooHotDVFS()-at least 2nd time too hot"/>
+  <log_file_filter exclude=" milliseconds passed: "/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::HandleCPUtooHotDVFS()-temperature difference between prev and now:"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::Entry()-too hot"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::HandleCPUtooHotDVFS()-temperature increased more time passed than to wait for cooldown for core "/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::SetLowerFrequency core "/>
+  
+  <log_file_filter exclude="DynFreqScalingThreadBase::Entry(): after Sleep"/>
+  <log_file_filter exclude="after locking the mutex for &quot;IPC data thread finished&quot; condition"/>
+  <!--<log_file_filter exclude="GetCurrentCPUcoreDataInLoopThreadFunc after Wait()"/>-->
+  <log_file_filter exclude="After getting DOM implementation"/>
+  <log_file_filter exclude="After creating XML document"/>
+  <log_file_filter exclude="after waking up from &quot;IPC data thread finished&quot; condition"/>
+  
+  <log_file_filter exclude="void* DynFreqScalingThreadBase::Entry()"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::Entry(): before mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()"/>
+  <log_file_filter exclude="DynFreqScalingThreadBase::Entry(): after mp_cpucoredata->m_conditionCPUdataCanBeSafelyRead.Broadcast()"/>
+  
+  <log_file_filter exclude="wxConditionBasedI_Condition::"/>
+  <log_file_filter exclude="CPUcontrolBase::GetUsageAndVoltageAndFrequencyForAllCores"/>
+  <log_file_filter exclude="bool CPUcontrolBase::GetUsageAndVoltageAndFreqForAllCores"/>
+  
+  <log_file_filter exclude="GetInterpolatedVoltageFromFreq"/>
+</x86IandC_main_cfg>

@@ -1,0 +1,87 @@
+﻿<service>
+  <!--    
+    * service can start a Graphical User Interface (=GUI; application using widgets/ windows) 
+	   (only Windows >/>= Version 6, e.g. Vista, 7?!) 
+	   when a user logs on
+      o purpose:
+          + so you can start and stop the service (this also needs high privileges) via the GUI
+          + you do not need to accept the UAC dialog or to turn off UAC for an autostarted GUI
+          + this makes it easier to execute the higher privileged actions 
+			 than to delegate them to the service (that usually runs 
+			 high-privileged) via Inter Process Communication (IPC)
+          + if you have a DLL that needs high privileges from the GUI then 
+		    this should be possible
+      o you can specify which GUI exe
+      o so the GUI has the same user (usually Local System account) as the service and so it 
+        gets its rights (if LocalSystem or admin then it has elevated / high privileges)
+      o warning: when the GUI runs elevated this is also a security risk: 
+        it autostarts for ALL users that log on
+        
+    startup_wait_time_in_ms: 
+	  the GUI may display a message like "can't show task bar icon" probably 
+	    because the Task bar has not been initialized.
+      So specify a certain amount of time to let the Windows task bar be 
+	  ready before the GUI tries to show a task bar icon.
+  -->
+  <!--set path_to_GUI_exe to "" to avoid an autostart-->
+  <GUI_pathes 
+    current_dir_for_GUI="."
+    path_to_GUI_exe="x86IandC_GUI_unicode_wx2.8.10_register_exam.MinGW_GCC3.4.5_32bit.exe"
+    startup_wait_time_in_ms="3000"
+  />
+  
+  <log_file_filter exclude="ReadPipeData--return"/>
+  <log_file_filter exclude="Exe's exported ReadMSR(MSR index:"/>
+  <log_file_filter exclude="exe::ReadMSR after g_p_cpuaccess->RdmsrEx(Index,affinityMask): "/>
+  
+  <!--service-specific logging exclusion filters-->
+  <log_file_filter exclude="XML_IPC GetCurrentCPUcoreAttributeValues before ThreadFinishedAccess()"/>
+  <log_file_filter exclude="XML_IPC GetCurrentCPUcoreAttributeValues after ThreadFinishedAccess()"/>
+  <log_file_filter exclude="waiting blocked for reading from pipe client"/>
+
+  <log_file_filter exclude="XML_IPC GetCurrentCPUcoreAttributeValues before lock"/>
+  <log_file_filter exclude="XML_IPC GetCurrentCPUcoreAttributeValues after Lock()"/>
+  <log_file_filter exclude="XML_IPC GetCurrentCPUcoreAttributeValues before Wait()"/>
+  <log_file_filter exclude="XML_IPC GetCurrentCPUcoreAttributeValues after Wait()"/>
+  
+  <!--<log_file_filter exclude="GetCurrentCPUcoreDataInLoopThreadFunc after Wait()"/>-->
+  <log_file_filter exclude="GetCurrentCPUcoreDataInLoopThreadFunc after"/>
+  <log_file_filter exclude="GetCurrentCPUcoreDataInLoopThreadFunc before Lock"/>
+  <log_file_filter exclude="GetCurrentCPUcoreDataInLoopThreadFunc before Wait()"/>
+
+  <!--log_file_filter exclude="IPC: get_current_CPU_data"/-->
+ 
+  <log_file_filter exclude="get IPC data: before entering critical section for concurrent modification by in-program data to IPC data thread"/>
+  <log_file_filter exclude="get IPC data: after entering critical section for concurrent modification by in-program data to IPC data thread"/>
+
+  <log_file_filter exclude="get IPC data: before leaving critical section for concurrent modification by in-program data to IPC data thread"/>
+  <log_file_filter exclude="get IPC data: after leaving critical section for concurrent modification by in-program data to IPC data thread"/>
+
+  <log_file_filter exclude="in-program data to IPC data: before entering critical section for concurrent read by IPC thread"/>
+  <log_file_filter exclude="in-program data to IPC data: after entering critical section for concurrent read by IPC thread"/>
+  
+  <log_file_filter exclude="in-program data to IPC data: before leaving critical section for concurrent read by IPC thread"/>
+  <log_file_filter exclude="in-program data to IPC data: after leaving critical section for concurrent read by IPC thread"/>
+
+  <!--named pipe client thread BEGIN-->
+  <!--<log_file_filter exclude="waiting blocked for reading from pipe client with handle"/>-->
+  <log_file_filter exclude="waiting blocked for reading from pipe client"/>
+  <log_file_filter exclude="read message from pipe "/>
+  <log_file_filter exclude="send data to pipe:"/>
+  <log_file_filter exclude="ReadPipeData(...)--"/>
+  <log_file_filter exclude="ReadDataBelongingToTheCommand("/>
+  <!--log_file_filter exclude="before write the size(4 bytes) to pipe "/-->
+  <log_file_filter exclude="4 bytes written to pipe "/>
+  <log_file_filter exclude="before writing the actual data to the pipe "/>
+  <log_file_filter exclude=" bytes written to pipe "/>
+  <log_file_filter exclude="successfully written data to pipe"/>
+  <log_file_filter exclude="before write the size(4 bytes) to pipe size in byte:"/>
+  <log_file_filter exclude="WriteDataToPipe(...)--writing &quot;the size of data to write&quot; succeeded"/>
+  <!--named pipe client thread END-->
+  
+  <log_file_filter exclude="CPUcontrolService::IPC_Message(...)--size of data to read in byte:"/>
+  <log_file_filter exclude="IPC: get_current_CPU_data--mp_dynfreqscalingthreadbase:"/>
+  
+  <log_file_filter exclude="before waking up the CPU core data to IPC data thread"/>
+  <log_file_filter exclude="after waking up the CPU core data to IPC data thread"/>
+</service>

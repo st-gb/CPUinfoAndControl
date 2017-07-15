@@ -1,0 +1,212 @@
+﻿<x86IandC_UserInterface_configuration>
+  <wisdom text="Happiness is only real when shared--Alexander Supertramp"/>
+  <wisdom text="People (also criminal) usually are the result of the interaction between them and their environment--S. Gebauer"/>
+  <wisdom text="Prisons often have the opposite influence as it should be intended: 
+	the rough climate brutalizes people rather than assisting humanity--S. Gebauer"/>
+  <wisdom text="The idea of believing in a god that handles fate is like keeping one's immaturity--S. Gebauer"/>
+  <wisdom text="The country was founded on the principle that the primary role of government is to protect property from the majority - and so it remains--Noam Chomsky"/>
+  <!--Whether the GUI should start the Dynamic Voltage and Frequency Scaling (DVFS)
+   usually this should not be done by the GUI but by the service 
+   -If "true" the Dynamic Voltage and Frequency Scaling may be done by all GUIs concurrently 
+    that read this config file.-->
+  <Dynamic_Voltage_and_Frequency_Scaling 
+    start_at_startup="false"
+  />
+  <!--log_file_name: 
+      Because multiple GUI instances may run at the same time, a log file 
+      with a "process ID" can be appended to the log file name
+   "true": 
+      append a "process ID" to the log file name what may be regarded as 
+      annoying because the log files are not deleted, so up to ~ 65535 
+	  (as much numbers as processes are possible at the same time)
+      (at least for Windows) log files with the same prefix can reside in 
+      the same directory
+   "false": 
+      avoids appending a process ID to the log file name-->
+  <log_file_name append_process_ID="false"/>
+  <!--main_frame:
+     -CPU_core_voltage_scale_point_size: set to "0" to use the default size
+     -show_at_startup: "false": may be useful for the GUI as startup/ 
+       autostart application to not appear-->
+  <main_frame 
+    width_in_pixels="600" 
+    height_in_pixels="300"
+	CPU_core_frequency_scale_point_size="9"
+	CPU_core_voltage_scale_point_size="8"
+	current_CPU_core_info_point_size="10"
+    top_left_corner_x_coordinate_in_pixels="100"
+    top_left_corner_y_coordinate_in_pixels="100"
+    show_at_startup="true"
+  />
+  <task_bar
+	CPU_core_temperature_scale_point_size="10"
+  />
+  <!--see http://msdn.microsoft.com/en-us/library/aa365783%28v=VS.85%29.aspx 
+    for pipe names
+    -if the pipe is on a remote computer you may have to log onto this 
+     computer:
+     1. e.g. use the path "\\>>computer-name<<" in Windows explorer / file 
+        manager
+     2. enter user name and password
+     3. (re-)try to connect
+  -->
+  <service pipe_name="\\.\\pipe\\CPUcontrollerService" />
+  <!--If omitted then the default tooltip delay is used.-->
+  <tooltip delay_in_milliseconds="0" />
+  <!--voltage_and_frequency_settings_dialog:
+    "select_all_CPU_cores": 
+      if "true" _all_ CPU cores are checked when opening the "voltage and 
+      frequency settings" dialog
+    "operating_safety_margin_in_Volt": 
+      0.07 Volt is a good margin/ minimum for also taking into account 
+      (an) attached USB device(s) that else may cause an Operating System 
+      freeze/ restart.
+    "prevent_voltage_above_default_voltage": 
+      "true": prevents overvoltage
+         -therefore the core frequency must be between the frequency of 2 
+         "maximum voltage" values 
+    "prevent_voltage_below_lowest_stable_voltage": 
+      "true": prevents a device (e.g. notebook) malfunction 
+         (e.g. freeze or restart) because of a too low voltage
+         -therefore the core frequency must be between the frequency of 2 
+         "minimum voltage" values 
+  -->
+  <voltage_and_frequency_settings_dialog 
+    select_all_CPU_cores="true"
+    operating_safety_margin_in_Volt="0.10"
+    min_usage_percentage_for_find_voltage_for_lowest_stable_CPU_core_operation_thread="0.95"
+    prevent_voltage_above_default_voltage="true"
+    prevent_voltage_below_lowest_stable_voltage="true"
+  />
+  
+  <!--  Default attribute value (if attribute name omitted or attribute value <> "false" : "true" 
+        "false" : don't show (hide) icon
+  -->
+  <task_bar_icon
+     show_CPU_cores_usages="true"
+     show_CPU_cores_multipliers="true"
+  />
+  
+  <log_file_filter exclude="void CountSecondsDown(FreqAndVoltageSettingDlg*, DWORD, const x86IandC::thread_type&amp;) begin "/>
+  <log_file_filter exclude="void CountSecondsDown(FreqAndVoltageSettingDlg*, DWORD, const x86IandC::thread_type&amp;)--thread handle"/>
+  <log_file_filter exclude="void CountSecondsDown(FreqAndVoltageSettingDlg*, DWORD, const x86IandC::thread_type&amp;)--timed out"/>
+  <log_file_filter exclude="void CountSecondsDown(FreqAndVoltageSettingDlg*, DWORD, const x86IandC::thread_type&amp;)--after waiting"/>
+  <log_file_filter exclude="void MainFrame::OnMoveMouse"/>
+  <log_file_filter exclude="float MainFrame::GetClosestMultiplier"/>
+  <log_file_filter exclude="float GetCPUcoreUsageForUnstableCPUcoreOperationDetectionThread(ULONG64&amp;, void*, DWORD) user"/>
+  <log_file_filter exclude="float GetCPUcoreUsageForUnstableCPUcoreOperationDetectionThread(ULONG64&amp;, void*, DWORD) kernel"/>
+  <log_file_filter exclude="Successfully parsed XML document/ input source &quot;IPC_buffer&quot;"/>
+  <log_file_filter exclude="void MainFrame::ShowCPUcoresMultipliersInTaskBar(I_CPUcontroller*)"/>
+  <log_file_filter exclude="void MainFrame::ShowCPUcoreUsagesInTaskBar(I_CPUcontroller*)--mp_taskbaricon:"/>
+  <log_file_filter exclude="void wxIconDrawer::DrawColouredBarsIcon(wxIcon&amp;, const float*, BYTE)--numberOfBars:"/>
+  
+  <log_file_filter exclude="MainFrame::ShowHighestCPUcoreTemperatureInTaskBar--mp_taskbaricon:"/>
+  <log_file_filter exclude="MainFrame::DrawCurrentPstateInfo m_bCPUcoreUsageConsumed"/>
+  
+  <!--SAX2IPCcurrentCPUdataHandler BEGIN-->
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler startDocument: before entering IPC to in-program data crit sec"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler startDocument: after entering IPC to in-program data crit sec"/>
+  
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler startElement before entering critical section"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler startElement after entering critical section"/>
+    
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler startElement before leaving critical section"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler startElement after leaving critical section"/>
+  
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler endDocument: before leaving IPC to in-program data crit sec"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler endDocument: after leaving IPC to in-program data crit sec"/>
+  
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler core"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler before inserting into container"/>
+  
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetNumberOfLogicalCPUcores before entering critical section"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetNumberOfLogicalCPUcores after entering critical section"/>
+
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetPercentalUsageForAllCores before entering critical section"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetPercentalUsageForAllCores after entering critical section"/>
+  
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetCurrentVoltageAndFrequency before entering critical section"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetCurrentVoltageAndFrequency after entering critical section"/>
+  
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetTemperatureInCelsius before entering critical section"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler GetTemperatureInCelsius after entering critical section"/>
+  <!--SAX2IPCcurrentCPUdataHandler END-->
+  
+  
+  <log_file_filter exclude="GetCurrentCPUcoreDataViaIPCNonBlocking before possibly waking up the &quot;get current CPU core data&quot; thread"/>
+  <log_file_filter exclude="GetCurrentCPUcoreDataViaIPCNonBlocking after possibly waking up the &quot;get current CPU core data&quot; thread"/>
+
+  <!--IPC data 2 in-program data thread BEGIN-->
+  <log_file_filter exclude="GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Lock"/>
+  <log_file_filter exclude="GetCurrentCPUcoreDataViaIPCinLoopThreadFunc before Wait()"/>
+  <log_file_filter exclude="GetCurrentCPUcoreDataViaIPCinLoopThreadFunc after Wait()"/>
+  <log_file_filter exclude="FetchCPUcoreDataFromIPC begin"/>
+  <!--IPC data 2 in-program data thread END-->
+
+  <!-- named pipe client BEGIN-->
+  <log_file_filter exclude="NamedPipeClient::Write"/>
+  <log_file_filter exclude="SendDataSizeInByte("/>
+  <log_file_filter exclude="size in byte of data to write:"/>
+  <log_file_filter exclude="SendCommandAndGetResponse(...) begin"/>
+  <log_file_filter exclude="WriteDataSizeInByte begin--command:"/>
+  <log_file_filter exclude="successfully got bytes from pipe"/>
+  <log_file_filter exclude="successfully got  bytes from pipe "/>
+  <log_file_filter exclude="before read  bytes from pipe "/>
+  <log_file_filter exclude="SendCommandAndGetResponse end"/>
+  <log_file_filter exclude="SendCommandAndGetResponse begin"/>
+  <log_file_filter exclude="before write message to pipe "/>
+  <log_file_filter exclude="before read message size from pipe "/>
+      <!-- named pipe client END-->
+
+  <!-- IPC begin-->
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler reference_clock_in_MHz attribute"/>
+  <log_file_filter exclude="SAX2IPCcurrentCPUdataHandler voltage_in_Volt attribute"/>
+  <log_file_filter exclude="&quot;too hot&quot; XML element"/>
+  <log_file_filter exclude="Attribute value for &quot;last_time_too_hot&quot;:"/>
+  <!-- IPC end-->
+
+  <!--<log_file_filter exclude="successfully got  bytes from pipe "/>
+  <log_file_filter exclude="SAX2 handler: before entering IPC 2 in-program data crit sec"/>-->
+    
+  <!--main frame BEGIN-->
+  <log_file_filter exclude="void MainFrame::OnTimerEvent(wxTimerEvent&amp;)--begin"/>
+  <log_file_filter exclude="IsConnected begin"/>
+  <log_file_filter exclude="IsConnected end"/>
+  <log_file_filter exclude="void MainFrame::OnTimerEvent(wxTimerEvent&amp;)--end"/>
+  <log_file_filter exclude="OnPaint begin"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before drawing the CPU core frequency"/>
+  <log_file_filter exclude="StoreCurrentVoltageAndFreqInArray--fMultiplier"/>
+  <log_file_filter exclude="OnPaint end"/>  
+
+  <log_file_filter exclude="DrawVoltageFreqCross begin"/>
+  
+  <log_file_filter exclude="MainFrame::DrawCurrentPstateInfo m_bCPUcoreUsageConsumed"/>
+  <log_file_filter exclude="DrawCurrent CPU core info: entering IPC 2 in-program data crit sec"/>
+  <log_file_filter exclude="DrawCurrent CPU core info: After entering IPC 2 in-program data crit sec"/>
+  
+  <log_file_filter exclude="void MainFrame::DrawCurrentCPUcoreInfo"/>
+  <log_file_filter exclude="bool MainFrame::GetCPUcoreInfoDirectlyOrFromService"/>
+  <log_file_filter exclude="void MainFrame::GetCPUcoreInfoFromDataProvider"/>
+  <log_file_filter exclude="void MainFrame::StoreCurrentVoltageAndFreqInArray"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before GetNumberOfLogicalCPUcores"/>
+  <log_file_filter exclude="DrawCurrentPstateInfo: connected to the service"/>
+  <!--<log_file_filter exclude="MainFrame::DrawCurrentPstateInfo m_bCPUcoreUsageConsumed: 1"/>-->
+  <log_file_filter exclude="mp_wxx86infoandcontrolapp->m_vbGotCPUcoreData:1"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData after GetNumberOfLogicalCPUcores"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before GetPercentalUsageForAllCores"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before StoreCurrentVoltageAndFreqInArray"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData leaving IPC 2 in-program data crit sec"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData after leaving IPC 2 in-program data crit sec"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData after StoreCurrentVoltageAndFreqInArray"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before drawing the CPU core numbers"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before drawing the CPU core voltage"/>
+  <!--<log_file_filter exclude="DrawCurrentCPUcoreData before drawing the CPU core frequency"/>-->
+  <log_file_filter exclude="DrawCurrentCPUcoreData before drawing the CPU core data"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData before leaving IPC 2 in-program data crit sec"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData After leaving IPC 2 in-program data crit sec"/>
+  <log_file_filter exclude="DrawCurrentCPUcoreData end"/>
+  <!--<log_file_filter exclude="MainFrame::ShowHighestCPUcoreTemperatureInTaskBar--> <!--mp_taskbaricon:"/>-->
+  <log_file_filter exclude="diff between current time and last time too hot="/>  
+  <!--MainFrame::DrawCurrentPstateInfo END-->
+  
+</x86IandC_UserInterface_configuration>

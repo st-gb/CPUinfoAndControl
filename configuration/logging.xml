@@ -1,0 +1,36 @@
+<!-- time_format: possible variables/ place holders (between "%%" [including "%"] is replaced by current time):
+  -"{year}" : year as decimal number
+  -"{month}" : month as decimal number
+  -"{day}" : day as decimal number
+  -"{hour}" : hour as decimal number
+  -"{minute}" : minute as decimal number
+  -"{second}"
+  -"{millisecond}"
+  -"{microsecond}" : unusable on Windows because of time resolution?
+ * level:
+   -"debug" (logs all log entries with level >= debug = debug, info, warning, error)
+   -"info" (logs all log entries with level >= info = info, warning, error)
+   -"warning" (logs all log entries with level >= warning = warning, error)
+ * format: 
+   -"html": webpage with CSS file for log level highlighting 
+   -"txt": plain text format
+   -"log4j" log in Log4j format.
+       So a convenient log4j log file viewer like "Otros Log file viewer" 
+ * maxNumberOfLines: max. number of log file entries per log file
+  -->
+<logging 
+ format="html" 
+ path="log_files"
+ level="info"
+ maxNumberOfLines="2000"
+ >
+  <html>
+    <!-- "&amp;nbsp;" -> "&nbsp;"  "nbsp" means "Non-Breakable SPace" -->
+    <Linux time_format="{month}.{day}&amp;nbsp;{hour}:{minute}:{second}s{millisecond}ms{microsecond}us"/>
+    <Windows time_format="{month}.{day}&amp;nbsp;{hour}:{minute}:{second}s{millisecond}ms"/>
+  </html>
+  <txt>
+    <Linux time_format="{month}.{day} {hour}:{minute}:{second}s{millisecond}ms{microsecond}us"/>
+    <Windows time_format="{month}.{day} {hour}:{minute}:{second}s{millisecond}ms"/>
+  </txt>
+</logging>
