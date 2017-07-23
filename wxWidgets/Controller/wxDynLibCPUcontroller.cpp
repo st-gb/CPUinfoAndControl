@@ -684,17 +684,17 @@ void wxDynLibCPUcontroller::GetAvailableVoltagesInVolt(
   {
     LOGN("getting available voltages")
     float * arfVoltagesInVolt ;
-    WORD wNum ;
+    WORD wNumberOfVoltages ;
     arfVoltagesInVolt = (*m_pfnGetAvailableVoltages) (
         0 ,
-        & wNum
+        & wNumberOfVoltages
         ) ;
     LOGN("float array address allocated by DLL:" << arfVoltagesInVolt  << "num eles:"
-      << wNum )
+      << wNumberOfVoltages )
     //If alloc. by DLL succeeded.
     if( arfVoltagesInVolt )
     {
-      for( WORD wIndex = 0 ; wIndex < wNum ; ++ wIndex )
+      for( WORD wIndex = 0 ; wIndex < wNumberOfVoltages ; ++ wIndex )
       {
         r_stdset_float.insert(arfVoltagesInVolt[wIndex]) ;
       }

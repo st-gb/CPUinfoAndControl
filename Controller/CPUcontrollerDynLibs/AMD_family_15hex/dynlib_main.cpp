@@ -19,10 +19,6 @@
   #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
 #endif //#ifdef INSERT_DEFAULT_P_STATES
 //#include <Controller/CPU-related/GetCurrentReferenceClock.hpp>
-//  #include <Controller/CPU-related/Intel/Intel_registers.h>
-//#include <Controller/CPU-related/Intel/Core2/Core2.hpp>
-// Intel::Pentium_M::GetAvailableMultipliers(...)
-//#include <Controller/CPU-related/Intel/Core/CoreAndCore2.hpp>
 //  #include <Controller/ExportedExeFunctions.h> //ReadMSR(...) etc.
 //  #include <Controller/value_difference.h> //ULONG_VALUE_DIFF
 #include <Controller/AssignPointersToExportedExeFunctions/\
@@ -133,10 +129,7 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableMultipliers(
   )
 {
   DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
-
 //  * p_wNumberOfArrayElements = 0 ;
-//  return NULL ;
-//  return Intel::Core2::GetAvailableMultipliers( * p_wNumberOfArrayElements ) ;
   float fMainPllOpFreqIdMax = AMD::fromK10::GetMaxCPU_COF();
   return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements,
     fMainPllOpFreqIdMax);
@@ -148,17 +141,8 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableVoltagesInVolt(
   WORD wCoreID
   , WORD * p_wNum )
 {
-  DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
-//  * p_wNum = 0 ;
-//  return NULL ;
-//  return Intel::Core2::GetAvailableVoltagesInVolt( * p_wNum ) ;
-  fastestUnsignedDataType minVID, VIDforLowestVoltage;
-  /** "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models
-   *    00h-0Fh Processors":
-   *   "MSRC001_0071 COFVID Status:"
-   *   "48:42 MinVid: minimum voltage."  "41:35 MaxVid: maximum voltage." */
-  AMD::fromK10::GetMinAndMaxVoltageID(VIDforLowestVoltage, minVID);
-  return 0;
+  DEBUGN("begin")
+  return AMD::fromK10::GetAvailableVoltagesInVolt(wCoreID, p_wNum);
 }
 
 //for getting ref clock:  Vol 3B
@@ -172,7 +156,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
   )
 {
 //    return byRet ;
-  return AMD::family15h::GetCurrentVoltageAndFrequency(
+  return AMD::fromK10::GetCurrentVoltageAndFrequency(
     p_fVoltageInVolt
     //multipliers can also be floats: e.g. 5.5 for AMD Griffin.
     , p_fMultiplier
@@ -184,35 +168,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
 EXPORT float DLL_CALLING_CONVENTION GetTemperatureInCelsius ( WORD wCoreID
   )
 {
-  DEBUGN( "begin")
-  const fastestUnsignedDataType CurTmpRawValue = AMD::fromK10::GetCurrentTemperatureRawValue();
-  const fastestUnsignedDataType CurTmp = CurTmpRawValue >>
-    AMD_FROM_K10_CURTMP_START_BIT;
-  DEBUGN( "CurrentTemperatureRawValue:" << CurTmp)
-  fastestUnsignedDataType CurTmpTjSel = (CurTmp >>
-    AMD_FROM_K10_CURR_TEMP_TJ_SELECT_START_BIT) & BITMASK_FOR_LOWMOST_2BIT;
-  DEBUGN( "CurTmpTjSel:" << CurTmpTjSel)
-  /** "IF (D18F3xA4[CurTmpTjSel]!=11b) THEN" */
-  if( CurTmpTjSel == 3 )
-  {
-    /** "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models
-     *   00h-0Fh Processors", chapter "D18F3xA4 Reported Temperature Control"
-     *  "<(CurTmp[10:2]*0.5)-49>" */
-#ifdef _DEBUG
-    DEBUGN( "CurTmp >> 2:" << (CurTmp >> 2) )
-#else
-#endif
-    float fTempInDegCelsius = (float) ( (CurTmp >> 2) &
-      BITMASK_FOR_LOWMOST_9BIT) * 0.5f - 49.0f;
-    DEBUGN( " fTempInDegCelsius:" << fTempInDegCelsius)
-    return fTempInDegCelsius;
-  }
-  else
-  {
-    float fTempInDegCelsius = AMD::fromK10::GetTemperatureInDegCelsius(CurTmp );
-    DEBUGN( " fTempInDegCelsius:" << fTempInDegCelsius)
-    return fTempInDegCelsius;
-  }
+  return AMD::family15h::GetTemperatureInCelsius(wCoreID);
 }
 
 #ifdef INSERT_DEFAULT_P_STATES
@@ -278,7 +234,7 @@ bool Init()
 #ifdef _DEBUG
   OpenLogFile() ;
   #endif
-  //Intel Core 2 CPU aren't hyperthreaded.
+  /** AMD K10 CPUs aren't hyperthreaded. */
   g_IsHyperThreaded = /*Intel::IsHyperThreaded()*/ false;
 #ifdef _DEBUG
 //  g_std_ofstream << "before AssignPointersToExportedExeMSRfunctions_inline(...)"

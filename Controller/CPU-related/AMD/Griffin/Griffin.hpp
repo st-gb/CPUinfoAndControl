@@ -77,70 +77,12 @@ extern float g_fReferenceClockInMHz;
 //"unresolved external" error from the linker. "
 #define INLINE inline
 
-  namespace AMD
-  {
-    namespace K10_and_K11 {
-      void GetMinAndMaxVoltageID(BYTE &,BYTE &) ;
-  } }
-
-  inline float * GetAvailableVoltagesAMDfamilyFh(WORD & r_wNum )
-  {
-    static BYTE maximumVoltageID, minimumVoltageID;
-
-    AMD::K10_and_K11::GetMinAndMaxVoltageID(maximumVoltageID, minimumVoltageID) ;
-    r_wNum = ( maximumVoltageID - minimumVoltageID + 1 ) ;
-
-    DEBUGN("# VIDs: " << (WORD) r_wNum )
-    float * ar_f = new float[ r_wNum ] ;
-    DEBUGN("ar_f: " << ar_f )
-    if( ar_f )
-    {
-      WORD wIndex = 0 ;
-      for( BYTE wCurrentVoltageID =
-        //for AMD Griffin: max. VID = min voltage
-          maximumVoltageID ;
-        wCurrentVoltageID >= minimumVoltageID ; -- wCurrentVoltageID )
-      {
-        g_fValue1 =
-          //VID 28 = 1.2 = 1.55 - 28 * 0.0125 ;
-          //VID 64 = 0.75 = 1.55 - 64 * 0.0125
-          1.55f - wCurrentVoltageID * 0.0125f ;
-        DEBUGN("adding voltage # " << wIndex << " : " << g_fValue1 << " Volt")
-        ar_f[ wIndex ++ ] = g_fValue1 ;
-      }
-    }
-    DEBUGN( /*FULL_FUNC_NAME <<*/ "returning " << ar_f)
-    return ar_f ;
-  }
-
 namespace AMD
 {
   namespace K10_and_K11
   {
     WORD GetMaximumVoltageID() ;
     WORD GetMinimumVoltageID() ;
-
-    /** 41256  Rev 3.00 - July 07, 2008  AMD Family 11h Processor BKDG
-     *   chapter "2.4.1.2 Serial VID Interface" :
-     *  "The processor includes an interface, intended to control external
-     *  voltage regulators, called the serial VID inter-face (SVI)."
-     *
-     *  see "31116  Rev 3.00 - September 07, 2007  AMD Family 10h Processor BKDG"
-     *    chapter "2.4.1.6.3 Serial VID (SVI) Encodings"
-     *
-     *  see Intersil "ISL6265 FN6599.0 Data Sheet May 7, 2008",
-     *     "TABLE 3. SERIAL VID CODES"
-     *  */
-    inline void GetVoltageFromVoltageID(const BYTE byVoltageID,
-      float * p_fVoltageInVolt)
-    {
-      //Diff 1.0875 (VID 30) & 0.925 (VID=17) = 0.1625V
-      //1 voltage ID step = 0.1625V / (30-17) = 0.1625V / 13 = 0.0125
-      //0.925- 17 * 0.0125 = 0.7125 ;
-      * p_fVoltageInVolt = //0.7125 + g_byValue3 * 0.0125 ;
-        //The maximum possible voltage.
-        1.55f - ( (float)( byVoltageID ) * 0.0125f ) ;
-    }
 
     /** 42301  Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models
      *    00h-0Fh Processors:
@@ -197,7 +139,7 @@ namespace AMD
       static BYTE byVoltageID;
       AMD::fromK10::GetVoltageIDfromCOFVIDstatusRegisterBits(dwMSRlowmost, byVoltageID);
 
-      GetVoltageFromVoltageID(byVoltageID, p_fVoltageInVolt);
+      AMD::fromK10::GetVoltageInVolt(byVoltageID, p_fVoltageInVolt);
     }
 
     inline BYTE GetCurrentVoltageAndFrequency(

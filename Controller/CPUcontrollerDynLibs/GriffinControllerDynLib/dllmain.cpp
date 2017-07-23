@@ -22,7 +22,7 @@
 //  #include <Controller/CPU-related/AMD/Griffin/AMD_family17.h>
   #include <Controller/CPU-related/AMD/Griffin/Griffin.hpp>
 //AMD::fromK10::GetCurrentTemperatureRawValue()
-  #include <Controller/CPU-related/AMD/from_K10.h>
+  #include <Controller/CPU-related/AMD/beginningWithFam10h/from_K10.h>
   #include <Controller/CPUcontrollerDynLib/calling_convention.h>
 
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
@@ -73,7 +73,8 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #include <sstream> //std::stringstream
   #include <tchar.h> //_T()
 //  #include <global.h> //logging
-  #include <Controller/CPU-related/AMD/beginningWithFam10h/GetAvailableMultipliers.hpp>
+//  #include <Controller/CPU-related/AMD/beginningWithFam10h/GetAvailableMultipliers.hpp>
+  #include <Controller/CPU-related/AMD/Griffin/GetAvailableMultipliers.hpp>
 
 //  extern ReadMSR_func_type g_pfnreadmsr ;
 //  extern WriteMSR_func_type g_pfn_write_msr ;
@@ -228,7 +229,7 @@ void Init()
     )
   {
     DEBUGN("DLL's GetAvailableMultipliers")
-    return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements) ;
+    return AMD::family11h::GetAvailableMultipliers(p_wNumberOfArrayElements);
 //    return 0;
   }
 
@@ -238,8 +239,8 @@ void Init()
       WORD wCoreID
       , WORD * p_wNumberOfArrayElements )
   {
-    return GetAvailableVoltagesAMDfamilyFh(*p_wNumberOfArrayElements) ;
-//    return 0;
+    return AMD::fromK10::GetAvailableVoltagesInVolt(wCoreID, 
+      p_wNumberOfArrayElements) ;
   }
 
   EXPORT BYTE DYN_LIB_CALLING_CONVENTION GetCurrentVoltageAndFrequency(
@@ -263,19 +264,8 @@ void Init()
   EXPORT float DYN_LIB_CALLING_CONVENTION GetTemperatureInCelsius( WORD wCoreID
     )
   {
-    DWORD dwValue ;
-    float fTempInDegCelsius ;
-//    static BYTE g_byValue1 = ( 24 << 3 ) | 3 ;
-    DEBUGN( /*"GetTemperatureInCelsius(...) "*/ "device and function:"
-      << (WORD) g_byValue1 )
-
-    dwValue = AMD::fromK10::GetCurrentTemperatureRawValue();
 //    BYTE byRet = //GetCPUMiscControlDWORD(
-
-    /** "This is encoded as value = 1/8th degree *" */
-    fTempInDegCelsius = (float)( dwValue >> 21 ) / 8.0f ;
-    return fTempInDegCelsius ;
-//      0.0 ;
+    return AMD::fromK10::GetTemperatureInCelsius(wCoreID);
   }
 
   //#define DLL_CALLING_CONVENTION __stdcall
