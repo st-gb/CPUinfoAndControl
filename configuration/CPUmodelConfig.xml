@@ -5,6 +5,8 @@
   <!-- model="36, 76"  -->
   <CPUID vendor="AuthenticAMD" family="15" CPUinfoGetterAndOrController="AMD_family15Controller_changeFIDInMax2FIDvaluesDiff"/>
   <CPUID vendor="AuthenticAMD" family="17" model="3" CPUinfoGetterAndOrController="AMD_fam17Controller_Max.MultiCurrentPstateLimit_200MHzref.clock"/>
+<!-- AMD family 10h / K10 -->
+  <CPUID vendor="AuthenticAMD" family="0x10" CPUinfoGetterAndOrController="AMD_fam10h"/>
   
   <CPUID vendor="GenuineIntel" family="6" model="13" CPUinfoGetterAndOrController="PentiumMcontroller_FSB-stepp8=133,else100,insertDef.p-statesWoutMulti7"/>
   <CPUID vendor="GenuineIntel" family="6" model="14" CPUinfoGetterAndOrController="IntelCoreController_InsertDefaultPstates"/>

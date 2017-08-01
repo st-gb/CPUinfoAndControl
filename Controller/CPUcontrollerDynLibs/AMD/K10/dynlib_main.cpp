@@ -8,11 +8,14 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
 #define GET_REFERENCE_CLOCK_VIA_TSC_DIFF
 /** 31116 Rev 3.62 - January 11, 2013AMD Family 10h Processor BKDG :
- *   "CPU COF = 100 MHz * (CpuFid + 10h) / (2^CpuDid)."
- *  => 100 MHz The default reference clock frequency for K10 CPUs. */
-float g_fReferenceClockInMHz = 100.0f; 
+ *   2.4.2.1 Core P-states :
+ *   "The COF for core P-states is a function of half the CLKIN frequency
+     (nominally 100 MHz) [...]"
+ * =>200 MHz The default CLKIN frequency/reference clock frequency for K10 CPUs.*/
+float g_fReferenceClockInMHz = 200.0f; 
 #include <Controller/CPU-related/AMD/beginningWithFam10h/from_K10.h>
 #include <Controller/CPU-related/AMD/beginningWithFam10h/GetAvailableMultipliers.hpp>
+#include <Controller/CPU-related/AMD/beginningWithFam10h/temperature.hpp>
 
 ReadMSR_func_type g_pfnreadmsr;
 WriteMSR_func_type g_pfn_write_msr;
@@ -150,4 +153,18 @@ EXPORT float * /*DYN_LIB_CALLING_CONVENTION*/ GetAvailableMultipliers(
 {
   DEBUGN("dynamic library's GetAvailableMultipliers")
   return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements);
+}
+
+/** @param fMultiplier: multipliers can also be floats: e.g. 5.5 for AMD
+ *    Griffin. */
+EXPORT BYTE /*DYNLIB_CALLING_CONVENTION*/ //can be omitted.
+  SetCurrentVoltageAndMultiplier(
+    float fVoltageInVolt
+    , float fMultiplier
+    , WORD wCoreID
+  )
+{
+  DEBUGN("DLL fct SetCurrentVoltageAndMultiplier")
+  return AMD::fromK10::SetVoltageAndMultiplier(fVoltageInVolt, fMultiplier, 
+    wCoreID);;
 }

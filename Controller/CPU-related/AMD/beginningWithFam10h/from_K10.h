@@ -22,6 +22,8 @@
 #include "voltage.hpp"
 #include "GetMultiplier.hpp"
 
+#include "MSR_registers.h"	
+
 extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace;
 
 	/** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
@@ -34,34 +36,8 @@ extern ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace;
   #define START_BIT_FOR_CPU_CORE_DIVISOR_ID 6
   #define NUM_BITS_FOR_CPU_CORE_DIVISOR_ID 3
 
-  //"MSRC001_0070 COFVID Control Register"
-  #define COFVID_CONTROL_REGISTER_MSR_ADDRESS 0xC0010070
-  /** see "31116  Rev 3.00 - September 07, 2007  AMD Family 10h Processor BKDG"
-   * "MSRC001_0071 COFVID Status Register" */
-  #define COFVID_STATUS_REGISTER_MSR_ADDRESS 0xC0010071
-
-  #define F3xA4_REPORTED_TEMPERATURE_CONTROL_REGISTER 0xA4
-  /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG
-	 *    F3xA4 Reported Temperature Control Register :
-	 *    "31:21 CurTmp: current temperature"
-	 * 
-	 *  41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG 
-	 *    F3xA4 Reported Temperature Control Register  
-	 *    "31:21 CurTmp[10:0]: current temperature"
-	 * 
-   *  "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models 00h-0Fh
-   *     Processors" 
-	 *    "31:21 CurTmp: current temperature"  */
-  #define AMD_FROM_K10_CURTMP_START_BIT 21
-  /** 31116 Rev 3.62 - January 11, 2013  AMD Family 10h Processor BKDG
-	 *   F3xA4 Reported Temperature Control Register
-	 *   "17:16 CurTmpSel."
-	 * 
-	 *  "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models 00h-0Fh"
-   *   "17:16 CurTmpTjSel:"
-   *   "Tj" = "Junction Temperature" ?
-	 */
-  #define AMD_FROM_K10_CURR_TEMP_TJ_SELECT_START_BIT 16
+/** Does not apply to AMD family 11h! */
+#define FREQUENCY_ID_SUMMAND AMD_K10_CPU_FID_SUMMAND
 
 extern float g_fMaxMultiplier;
 
@@ -103,51 +79,6 @@ namespace AMD
       return (dwEDXhighMostBits >> 17) // bits "54:49" ^= 6 bit
         & BITMASK_FOR_LOWMOST_6BIT;
     }
-
-		/** Applies to AMD family 10h (K10), 11h (,15h?) */
-    inline fastestUnsignedDataType GetReportedTemperatureControlValue()
-    {
-      DWORD dwValue;
-			/** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
-			       F3xA4 Reported Temperature Control Register
-			 *  41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG
-			       F3xA4 Reported Temperature Control Register */
-      g_pfnReadPCIconfigSpace(
-        0, //bus number
-        //Bus 0, Device number 24, Function 3 is "CPU Miscellaneous Control"
-  //      g_byValue1
-        CPU_TEMPERATURE_DEVICE_AND_FUNCTION_NUMBER
-        ,//) ((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
-        F3xA4_REPORTED_TEMPERATURE_CONTROL_REGISTER ,
-        & dwValue
-        );
-      return dwValue;
-    }
-		
-		/** Applies to AMD family 10h (K10) and 11h */
-		float //DLL_CALLING_CONVENTION 
-			GetTemperatureInCelsius( WORD wCoreID
-			)
-		{
-			DEBUGN( "begin")
-			const fastestUnsignedDataType reportedTemperatureControlValue = 
-				AMD::fromK10::GetReportedTemperatureControlValue();
-			/** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
-				   F3xA4 Reported Temperature Control Register  
-			  *  "31:21 CurTmp: current temperature." */
-			/** 41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG 
-			 *    F3xA4 Reported Temperature Control Register
-			 *    "31:21 CurTmp[10:0]: current temperature." */
-			const fastestUnsignedDataType CurTmp = reportedTemperatureControlValue >>
-				AMD_FROM_K10_CURTMP_START_BIT;
-			DEBUGN( "CurrentTemperatureRawValue:" << CurTmp)
-//			fastestUnsignedDataType CurTmpTjSel = (reportedTemperatureControlValue >>
-//				AMD_FROM_K10_CURR_TEMP_TJ_SELECT_START_BIT) & BITMASK_FOR_LOWMOST_2BIT;
-//			DEBUGN( "CurTmpTjSel:" << CurTmpTjSel)
-			float fTempInDegCelsius = AMD::fromK10::GetTemperatureInDegCelsius(CurTmp );
-			DEBUGN( " fTempInDegCelsius:" << fTempInDegCelsius)
-			return fTempInDegCelsius;
-		}
 
     #ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
     inline void GetSameReferenceClockForAllCPUcores(
@@ -232,20 +163,6 @@ namespace AMD
     #endif //#ifdef GET_REFERENCE_CLOCK_VIA_TSC_DIFF
     }
 
-    inline float GetTemperatureInDegCelsius(const fastestUnsignedDataType CurTmp)
-    {
-			/** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
-			 *    F3xA4 Reported Temperature Control Register 
-			 *     "This is encoded as value = 1/8th degree * Tctl"
-			 *  41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG
-			 *    , F3xA4 Reported Temperature Control Register :
-			 *    "This is encoded as value = 1/8th degree * Tctl" */
-      /** "42301 Rev 3.14 - January 23, 2013 BKDG for AMD Family 15h Models"
-       *    "00h-0Fh Processors" "D18F3xA4 Reported Temperature Control"
-       *    "<CurTmp*0.125>" */
-      return (float) CurTmp * 0.125f;
-    }
-
 		/** Applies to AMD family 10h, 11h */
 		inline float * GetAvailableVoltagesInVolt(
 		  WORD wCoreID
@@ -316,6 +233,363 @@ namespace AMD
 //      * p_fReferenceClockInMHz = 0.0f;
       AMD::fromK10::GetReferenceClock(p_fReferenceClockInMHz, wCoreID);
       return by;
+    }
+
+    /** @brief AMD composes the multiplier from 2 operands: divisor ID and
+     *   frequency ID.
+     *   multiplier=(freqID+summand)/2^divisorID */
+    inline void GetFreqIDandDivisorIDfromMulti(
+      float fMultiplier,
+      fastestUnsignedDataType & r_frequencyID,
+      fastestUnsignedDataType & r_divisorID
+      )
+    {
+      DEBUGN(fMultiplier)
+
+      float fFrequencyID = fMultiplier * 2.0f;
+      r_divisorID = 0;
+      /*** E.g. multiplier 8.75 -> freq ~= 1750,00 MHz, AMD P960 : 
+       *    frequency ID = 8.75*4=35 , divisor ID = 2 */
+      while (fFrequencyID - (fastestUnsignedDataType) fFrequencyID > 0.0001)
+      {
+        fFrequencyID *= 2.0f;
+        r_divisorID++;
+      }
+      while (fFrequencyID < FREQUENCY_ID_SUMMAND) {
+        fFrequencyID *= 2.0f;
+        r_divisorID++;
+      }
+      r_frequencyID = fFrequencyID - FREQUENCY_ID_SUMMAND;
+
+      DEBUGN(//"GetFreqIDandDivisorIDfromMulti(...)"
+        << "CPU core Frequency ID:" << r_frequencyID
+        << "CPU core Divisor ID:" << r_divisorID
+        << "test (FID,DID)->multi: multi="
+        << GetMultiplier(r_frequencyID, r_divisorID)
+        )
+    }
+
+    /** Uses table "Table 5: SVI and internal VID codes" (7 bit) because same
+     *  bit width as "15:9 CurCpuVid: current CPU core VID." (7 bit) ? */
+    inline fastestUnsignedDataType GetVoltageID(const float fVoltageInVolt )
+    {
+      /** E.g. for "1.1" V the float value is 1.0999999
+       *  (because not all numbers are representable with a 8 byte value)
+       *  so the voltage ID as float value gets "36.000004". */
+      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG : 
+       *  "voltage = 1.550V - 0.0125V * SviVid[6:0];" 
+       *  voltage = 1,55V - 0.0125V * voltageID | - 1.55V 
+       *  voltage - 1.55 V = - 0.0125V * voltageID | : -0.0125V
+       *  (voltage - 1.55 V) / -0.0125V = voltageID   */
+      float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f;
+      fastestUnsignedDataType voltageID =
+        /** without explicit cast: compiler warning
+         * Avoid g++ warning "warning: converting to `WORD' from `float'"  */
+        (fastestUnsignedDataType)
+        fVoltageID;
+      /** Check to which integer voltage ID the float value is nearer.
+       * E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36" */
+      if (fVoltageID - (float) voltageID >= 0.5)
+        ++ voltageID;
+      return voltageID;
+    }
+
+    /** Applies to : 
+     *  -AMD family 10h,
+     *   -MSRC001_00[68:64] P-State [4:0] Registers
+     *   -MSRC001_0070 COFVID Control Register
+     *  -AMD family 11h, 
+     *   -MSRC001_00[6B:64] P-state [7:0] Registers 
+     *   -MSRC001_0070 COFVID Control Register  */
+    inline void GetMSRregisterValue(
+      const fastestUnsignedDataType voltageID,
+      const fastestUnsignedDataType frequencyID ,
+      const fastestUnsignedDataType divisorID ,
+      uint32_t & dwLowmostMSRvalue
+      )
+    {
+//      SET_P_STATE_TO_VALID(dwHighmostMSRvalue) ;
+
+      /** See AMD Family 11h Processor BKDG (document # 41256),
+			 *  31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG
+       *  "MSRC001_00[6B:64] P-state [7:0] Registers"
+       *  "5:0 CpuFid" */
+      dwLowmostMSRvalue |= ( frequencyID & 63) ;
+      /** "8:6 CpuDid: core divisor ID" */
+      dwLowmostMSRvalue |= ( divisorID << START_BIT_FOR_CPU_CORE_DIVISOR_ID );
+      /** "15:9 CpuVid: core VID" */
+      dwLowmostMSRvalue |= ( voltageID << 9) ; //<=>bits 9-15 shifted
+    }
+
+    /** */
+    fastestSignedDataType GetPstateAccordingToFrequency(const float multiplier)
+    {
+      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG : 
+       *  MSRC001_00[68:64] P-State [4:0] Registers */
+      //TODO make usable for AMD family 11h
+      fastestUnsignedDataType numberOfPstateRegisters = 5; //GetNumberOfPstateRegisters();
+      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG
+          "2.4.2.1.2.2 Hardware P-state Numbering" : 
+          "When referring to hardware P-state numbering, the following naming convention is used:
+          • All P-states are referred to as P0, P1, etc.
+          • P0 is the highest power, highest-performance P-state, regardless of whether it is a boosted P-state or a
+          non-boosted P-state.
+          • Each ascending P-state number represents a lower-power, lower-performance P-state, regardless of
+          whether it is a boosted P-state or not." */
+      //			float multiplierForDirectLowerPstate = 0.0f;
+      for (fastestUnsignedDataType pStateIndex = 0;
+              pStateIndex < numberOfPstateRegisters; ++pStateIndex)
+      {
+        uint32_t lowmostBits, highmostBits;
+        ReadMSR(
+          0xC0010064 + pStateIndex,
+          & lowmostBits, // bit  0-31
+          & highmostBits, // bit 32-63
+          //1bin =core 0; 10bin=2dec= core 1
+          1 //DWORD_PTR affinityMask  // Thread Affinity Mask
+          );
+        fastestUnsignedDataType divisorID;
+        AMD::fromK10::GetDivisorID(lowmostBits, divisorID);
+        fastestUnsignedDataType frequencyID = AMD::fromK10::GetFrequencyID(
+                                                                           lowmostBits);
+        float multiplierForCurrentPstate = AMD::fromK10::GetMultiplier(frequencyID, divisorID);
+        if (multiplier >= multiplierForCurrentPstate)
+          return pStateIndex;
+      }
+      return -1;
+    }
+
+    bool COFVIDcontrolRegisterSanityCheck(
+      const uint32_t MSRlowmost,
+      const float voltageInVoltToSet,
+      const float multiplierToSet,
+      const fastestUnsignedDataType northBridgeVoltageID,
+      const fastestUnsignedDataType northBridgeDivisorID,
+      const fastestUnsignedDataType performanceStateID
+      )
+    {
+      fastestUnsignedDataType northBridgeVoltageIDbeforeWrite = MSRlowmost >> 25;
+      fastestUnsignedDataType northBridgeDivisorIDbeforeWrite = (MSRlowmost >> 22) & 1;
+      fastestUnsignedDataType performanceStateIDbeforeWrite = (MSRlowmost >> 16) & 7;
+      fastestUnsignedDataType CPUcoreVoltageIDbeforeWrite = (MSRlowmost >> 9) & 127;
+      fastestUnsignedDataType CPUdivisorIDbeforeWrite = (MSRlowmost >> 6) & 7;
+      fastestUnsignedDataType CPUfrequencyIDbeforeWrite = MSRlowmost & 63;
+      float multiplierBeforeWrite = GetMultiplier(CPUfrequencyIDbeforeWrite,
+                                                  CPUdivisorIDbeforeWrite);
+      float voltageBeforeWrite = GetVoltageInVolt(CPUcoreVoltageIDbeforeWrite);
+      if (multiplierBeforeWrite == multiplierToSet &&
+        voltageBeforeWrite == voltageInVoltToSet &&
+        northBridgeVoltageIDbeforeWrite == northBridgeVoltageID &&
+        northBridgeDivisorIDbeforeWrite == northBridgeDivisorID &&
+        performanceStateIDbeforeWrite == performanceStateID
+        )
+        return true;
+      return false;
+    }
+		
+		bool PstateRegisterSanityCheck(
+			const uint32_t MSRlowmost,
+			const float voltageInVoltToSet,
+			const float multiplierToSet,
+			const fastestUnsignedDataType northBridgeVoltageID,
+			const fastestUnsignedDataType northBridgeDivisorID
+			) 
+		{
+			fastestUnsignedDataType northBridgeVoltageIDbeforeWrite = MSRlowmost >> 25;
+			fastestUnsignedDataType northBridgeDivisorIDbeforeWrite = (MSRlowmost >> 22) & 1;
+			fastestUnsignedDataType CPUcoreVoltageIDbeforeWrite = (MSRlowmost >> 9) & 127;
+			fastestUnsignedDataType CPUdivisorIDbeforeWrite = (MSRlowmost >> 6) & 7;
+			fastestUnsignedDataType CPUfrequencyIDbeforeWrite = MSRlowmost & 63;
+			float multiplierBeforeWrite = GetMultiplier(CPUfrequencyIDbeforeWrite, 
+				CPUdivisorIDbeforeWrite);
+			float voltageBeforeWrite = GetVoltageInVolt(CPUcoreVoltageIDbeforeWrite);
+			if( multiplierBeforeWrite == multiplierToSet && 
+					voltageBeforeWrite == voltageInVoltToSet &&
+					northBridgeVoltageIDbeforeWrite == northBridgeVoltageID &&
+					northBridgeDivisorIDbeforeWrite == northBridgeDivisorID
+					)
+				return true;
+			return false;
+		}
+        
+    /** It seems: setting a p-state for more than 1 core at a time does NOT work.
+    * so call this method "n" times if you want the same p-state for "n" cores.*/
+    inline BYTE SetPstateViaPstateControlRegister(
+			fastestUnsignedDataType PstateToSet, DWORD dwCoreBitmask)
+    {
+      bool byReturn = false;
+      /** Safety check. */
+      //TODO re-enable?
+//      if( PstateToSet < NUMBER_OF_PSTATES )
+      {
+        DWORD dwMSRlow = PstateToSet ;
+
+          dwMSRlow = (BYTE) PstateToSet ;
+          LOGN_VERBOSE( "For core bitmask " << dwCoreBitmask
+            << ": setting to pstate " << PstateToSet );
+          if( WriteMSR(
+              P_STATE_CONTROL_REGISTER,
+              dwMSRlow,
+              0,
+              dwCoreBitmask
+              )
+            )
+          {
+            LOGN_VERBOSE("Setting p-state succeeded.");
+            byReturn = true;
+            //Wait 1 millisecond (> maximum stabilization time).
+    //          SLEEP_1_MILLI_SECOND
+          }
+          else
+          {
+            DEBUGN("Setting p-state failed");
+          }
+          byReturn = true;
+      }
+      return byReturn ;
+    }
+		
+    /** 31116 Rev 3.62 - January 11, 2013 2.4.2.5 AMD Family 10h Processor BKDG:
+     * see "2.4.2.5 P-state Transition Behavior"
+     * see "2.4.1.9.2 Software-Initiated CPU Voltage Transitions"
+     *  "NewCpuVid = the destination CPU VID.
+        F3xA0[SlamVidMode]=1:
+        1. Write NewCpuVid to MSRC001_0070[CpuVid].
+        2. Wait the specified F3xD8[VSSlamTime].
+        F3xA0[SlamVidMode]=0:
+        Software must use the sequence for F3xA0[SlamVidMode]=0 defined in section 2.4.1.9.1 [Software-Initiated
+        NB Voltage Transitions] on page 30 to control the single-plane through NbVid."
+
+      @return use unsigned data type because it is the fastest data type. */
+    inline fastestUnsignedDataType SetVoltageAndMultiplier(
+      float fVoltageInVolt,
+      float fMultiplier ,
+      fastestUnsignedDataType coreID )
+    {
+      DEBUGN( fVoltageInVolt << "," << fMultiplier << "," << coreID )
+
+    #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+      if( g_fReferenceClockInMHz != 0.0f &&
+          GetMaxMultiIfGreaterCurrentPstateLimitMulti(byCoreID, fVoltageInVolt,
+        fMultiplier) &&
+        //fVoltageInVolt <> 0 (is 0 if GetInterpolated...(...) failed)
+        fVoltageInVolt
+        )
+    #endif
+      {
+				fastestUnsignedDataType CPUcorefrequencyID, divisorID;
+        GetFreqIDandDivisorIDfromMulti(fMultiplier, CPUcorefrequencyID, divisorID);
+				uint32_t MSRhighmost, MSRlowmost;
+//#define CHANGE_VOLT_N_FREQ_VIA_COFVID_CONTROL_REGISTER
+#ifdef CHANGE_VOLT_N_FREQ_VIA_COFVID_CONTROL_REGISTER
+				/** Must get the register content for MSRC001_0070 "COFVID Control 
+				 *   Register" in advance because of "31:25 NbVid: Northbridge VID." */
+				ReadMSR(
+					COFVID_CONTROL_REGISTER_MSR_ADDRESS,
+					& MSRlowmost,
+					& MSRhighmost,
+					1
+					);
+        MSRhighmost = 0;
+#else
+				fastestSignedDataType performanceStateID = 
+					GetPstateAccordingToFrequency(fMultiplier);
+				if( performanceStateID > -1 )
+				/** Must get the register content for MSRC001_0070 "COFVID Control 
+				 *   Register" in advance because of "31:25 NbVid: Northbridge VID." */
+				ReadMSR(
+					0xC0010064 + performanceStateID,
+					& MSRlowmost,
+					& MSRhighmost,
+					1
+					);
+#endif
+#ifdef DEBUG
+				fastestUnsignedDataType northBridgeVoltageID = MSRlowmost >> 25;
+				fastestUnsignedDataType northBridgeDivisorID = (MSRlowmost >> 22) & 1;
+#endif
+				MSRlowmost &= ~(127 >> 25); /** mask bits 25-31 **/
+				MSRlowmost &= ~(1 >> 22); /** mask bit 22 **/
+				
+				MSRlowmost &= ~(255); /** mask bits 0-7 **/
+				MSRlowmost &= ~(255 << 8); /** mask bits 8-15 **/
+
+        const fastestUnsignedDataType CPUcoreVoltageID = GetVoltageID( fVoltageInVolt ) ;
+        GetMSRregisterValue(
+          CPUcoreVoltageID,
+          CPUcorefrequencyID ,
+          divisorID,
+//          , MSRhighmost ,
+          MSRlowmost ) ;
+				uint32_t bitmask = ~(7 << 16);
+#ifdef CHANGE_VOLT_N_FREQ_VIA_COFVID_CONTROL_REGISTER
+				/** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG
+				 *   MSRC001_0070 COFVID Control Register
+				 *   "18:16 PstateId: P-state identifier." */
+				MSRlowmost &= bitmask; /** mask bits 16-18 **/
+				MSRlowmost |= (performanceStateID << 16);
+#ifdef DEBUG
+				if( COFVIDcontrolRegisterSanityCheck(
+							MSRlowmost, 
+							fVoltageInVolt, 
+							fMultiplier,
+							northBridgeVoltageID,
+							northBridgeDivisorID,
+						  performanceStateID
+						) 
+					)
+#endif
+        if( WriteMSR(
+            COFVID_CONTROL_REGISTER_MSR_ADDRESS
+            , MSRlowmost
+            , MSRhighmost
+            , 1 << coreID
+            )
+          )
+        {
+					
+				}
+#else
+    //#ifndef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
+//        static DWORD dwMSRregisterIndex;
+//        dwMSRregisterIndex = GetMSRregisterForPstate(
+//          g_byDivisorID
+//          ) ;
+//        DEBUGN(//"SetVoltageAndMultiplier(...)"
+//          "before WriteMSR" )
+#ifdef DEBUG
+				if( PstateRegisterSanityCheck(
+							MSRlowmost, 
+							fVoltageInVolt, 
+							fMultiplier,
+							northBridgeVoltageID,
+							northBridgeDivisorID
+						) 
+					)
+#endif
+        if( WriteMSR(
+            0xC0010064 + performanceStateID
+            , MSRlowmost
+            , MSRhighmost
+            , 1 << coreID
+            )
+          )
+        {
+          //see "2.4.1.9 Software-Initiated Voltage Transitions"
+          //TODO "2. Wait the specified F3xD8[VSSlamTime]."
+    //      if(
+          SetPstateViaPstateControlRegister(
+            performanceStateID ,
+            1 << coreID );
+    //        )
+    //        byRet = true ;
+          return 0;
+        }
+				
+    //#endif //#ifndef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT				
+#endif
+      }
+      return 1;
     }
   }
 }

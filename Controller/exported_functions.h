@@ -31,11 +31,13 @@ extern "C" {
   #define EXECUTABLE_EXPORT_DEFINITION //__attribute__ ((visibility("default")))
 #endif // _WIN32
 
+/** @param p_lowmostBits : Use data type "uint32_t" because this is the exact 
+ *   width of the CPU register  */
 //EXPORT
 EXECUTABLE_EXPORT_DEFINITION BOOL ReadMSR(
   DWORD dwIndex,		// MSR index
-  PDWORD p_dweax,			// bit  0-31
-  PDWORD p_dwedx,			// bit 32-63
+  uint32_t * p_lowmostBits,			// bit  0-31
+  uint32_t * p_highmostBits,			// bit 32-63
   DWORD_PTR affinityMask	// Thread Affinity Mask
 ) __attribute__ ((visibility("default"))) ;
 

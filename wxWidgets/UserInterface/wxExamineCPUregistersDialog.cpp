@@ -594,14 +594,14 @@ void wxExamineCPUregistersDialog::DisplayTSCvalues()
 //    mp_cpuaccess->CpuidEx( 1, & m_dwEAX, & m_dwEBX, & m_dwECX, & m_dwEDX, 1 ) ;
 //    mp_cpuaccess->ReadTSC(m_dwEAX,m_dwEDX) ;
     //TODO mp_cpuaccess may be NULL
-    if( mp_cpuaccess->ReadTSCinOrder(m_dwEAX,m_dwEDX,1) )
+    if( mp_cpuaccess->ReadTSCinOrder(m_EAX,m_EDX,1) )
     {
       //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
       //"force all previous instructions to complete"
   //    mp_cpuaccess->CpuidEx( 1, m_dwEAX, m_dwEBX, m_dwECX, m_dwEDX, 1 ) ;
-      m_ullValue = m_dwEDX ;
+      m_ullValue = m_EDX ;
       m_ullValue <<= 32 ;
-      m_ullValue |= m_dwEAX ;
+      m_ullValue |= m_EAX ;
   //#ifdef __CYGWIN__
   #ifndef _WIN32
       m_wxstrULL = wxString::Format( wxString( wxT("%llu") ), m_ullValue) ;
@@ -667,12 +667,12 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
   {
     mp_cpuaccess->CpuidEx(
       r_cpuiddata.m_dwIndex,
-      & m_dwEAX,
-      & m_dwEBX,
-      & m_dwECX,
-      & m_dwEDX,
+      & m_EAX,
+      & m_EBX,
+      & m_ECX,
+      & m_EDX,
       //dwAffMask
-			1 << r_cpuiddata.m_byCoreID
+      1 << r_cpuiddata.m_byCoreID
       );
     //This vector data is needed to get the replacement value for a table:
     //e.g. a value depends on more than 1 other value:
@@ -693,14 +693,14 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         if( br.m_byStartBit < 32 )
         {
           dwValue = //make bits from highmost zero
-            ( m_dwEAX << ( 32 - br.m_byStartBit - br.m_byBitLength ) )
+            ( m_EAX << ( 32 - br.m_byStartBit - br.m_byBitLength ) )
             //Bring value to least significant bit
             >> ( 32 - br.m_byBitLength ) ;
         }
         else if( br.m_byStartBit < 64 )
         {
           dwValue = //make bits from highmost zero
-            ( m_dwEBX << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) ;
+            ( m_EBX << ( 64 - br.m_byStartBit - br.m_byBitLength ) ) ;
             //Bring value to least significant bit
           dwValue >>= (
             //Number of bits for DWORD.
@@ -710,7 +710,7 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         else if( br.m_byStartBit < 96 )
         {
           dwValue = //make bits from highmost zero
-            ( m_dwECX << ( 96 - br.m_byStartBit - br.m_byBitLength ) )
+            ( m_ECX << ( 96 - br.m_byStartBit - br.m_byBitLength ) )
             //Bring value to least significant bit
             >> ( 
             //Number of bits for DWORD.
@@ -720,7 +720,7 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(CPUIDdata & r_cpuiddata)
         else if( br.m_byStartBit < 128 )
         {
           dwValue = //make bits from highmost zero
-            ( m_dwEDX << ( 128 - br.m_byStartBit - br.m_byBitLength ) )
+            ( m_EDX << ( 128 - br.m_byStartBit - br.m_byBitLength ) )
             //Bring value to least significant bit
             >> ( 
             //Number of bits for DWORD.
@@ -779,13 +779,13 @@ void wxExamineCPUregistersDialog::DisplayRegisterData(MSRdata & r_msrdata)
     //mp_i_cpucontroller->RdmsrEx(
     mp_cpuaccess->RdmsrEx(
       r_msrdata.m_dwIndex,
-      & m_dwEAX,
-      & m_dwEDX,
-			1 << r_msrdata.m_byCoreID
+      & m_EAX,
+      & m_EDX,
+       1 << r_msrdata.m_byCoreID
       );
-    m_ullValue = m_dwEDX  ;
+    m_ullValue = m_EDX  ;
     m_ullValue <<= 32 ;
-    m_ullValue |= m_dwEAX ;
+    m_ullValue |= m_EAX ;
     //This vector data is needed to get the replacement value for a table:
     //e.g. a value depends on more than 1 other value:
     //MHz | FID | DID

@@ -486,7 +486,9 @@ void CPUregisterReadAndWriteDialog::OnReadFromMSR(
 {
   if( mp_msrdata )
   {
-    DWORD dwLow, dwHigh ;
+    /** Use data type "uint32_t" because this is the exact width of a CPU 
+     *    register used by the "rdmsr" instruction */
+    uint32_t lowmostBits, highmostBits ;
     std::vector<RegisterData>::iterator iter_registerdata =
       mp_msrdata->m_stdvec_registerdata.begin() ;
     std::vector<wxTextCtrl * >::const_iterator c_iter_p_wxtextctrl = 
@@ -495,13 +497,13 @@ void CPUregisterReadAndWriteDialog::OnReadFromMSR(
     wxString wxstrULL ;
     mp_cpucontroller->RdmsrEx( 
       mp_msrdata->m_dwIndex
-      , dwLow
-      , dwHigh
+      , lowmostBits
+      , highmostBits
       , 1 << mp_msrdata->m_byCoreID
       ) ;
-    ullFromMSR = dwHigh ;
+    ullFromMSR = highmostBits ;
     ullFromMSR <<= 32 ;
-    ullFromMSR |= dwLow ;
+    ullFromMSR |= lowmostBits ;
     while( iter_registerdata != mp_msrdata->m_stdvec_registerdata.end() 
       && c_iter_p_wxtextctrl != m_stdvec_p_wxtextctrl.end() 
       )

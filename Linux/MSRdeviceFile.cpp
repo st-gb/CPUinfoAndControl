@@ -142,14 +142,14 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //  LOGN("Trying to set current working dir to \""
 //    << mp_model->m_stdstrExecutableStartupPath.c_str() << "\"" )
 //  chdir( mp_model->m_stdstrExecutableStartupPath.c_str() ) ;
-  int ret = system( "chmod 777 load_kernel_module.sh") ;
+  int ret = system( "chmod 777 ./Linux/load_kernel_module.sh") ;
 //  LOGN("Trying to set current working dir to \"/\"" )
 //  chdir( "/" ) ;
   //from www.opengroup.org:
   if( //execlp( "sh", "sh", "./load_kernel_module.sh"
       //from www.yolinux.com
       system(
-      "./load_kernel_module.sh"
+      "./Linux/load_kernel_module.sh"
 //      , //NULL
 //      (char *) 0
       ) == -1
@@ -389,10 +389,10 @@ std::string MSRdeviceFile::getMSRdeviceFilePath(BYTE byCPUcoreID )
 BOOL // TRUE: success, FALSE: failure
   MSRdeviceFile::RdmsrEx(
   DWORD dwIndex,		// MSR index
-  PDWORD p_dweax,			// bit  0-31
-  PDWORD p_dwedx,			// bit 32-63
+  uint32_t * p_lowmostBits,		// bit  0-31
+  uint32_t * p_highmostBits,		// bit 32-63
   DWORD_PTR dwAffinityMask	// Thread Affinity Mask
-)
+  )
 {
 //  BOOL bReturn = FAILURE ;
 //    //Show the detailed error message here because the details
@@ -452,7 +452,7 @@ BOOL // TRUE: success, FALSE: failure
     //"Regardless of the specified size, always 8 bytes (two long ints,
     //64 bits) are copied (actual size of a register).
     //The high dword (edx) is followed by the low dword (eax)."
-    & m_ullMSRvalue,
+    & m_MSRvalue,
     (size_t) 8 );
   if ( m_ssize_t == -1)
   {
@@ -466,8 +466,8 @@ BOOL // TRUE: success, FALSE: failure
 //    mp_userinterface->MessageWithTimeStamp(std_strMessage);
     return FAILURE;
   }
-  * p_dwedx = m_ullMSRvalue >> 32;
-  * p_dweax = m_ullMSRvalue;
+  * p_highmostBits = m_MSRvalue >> 32;
+  * p_lowmostBits = m_MSRvalue;
   return SUCCESS;
   //return bReturn ;
 }
@@ -573,15 +573,15 @@ MSRdeviceFile::WrmsrEx(
       );
     return FAILURE;
   }
-  m_ullMSRvalue = dwEDX ;
-  m_ullMSRvalue <<= 32 ;
-  m_ullMSRvalue |= dwEAX ;
+  m_MSRvalue = dwEDX ;
+  m_MSRvalue <<= 32 ;
+  m_MSRvalue |= dwEAX ;
   m_ssize_t = (int) write( m_arnFileHandle[m_byCoreID],
     //http://lkml.org/lkml/1997/2/27/59:
     //"Regardless of the specified size, always 8 bytes (two long ints,
     //64 bits) are copied (actual size of a register).
     //The high dword (edx) is followed by the low dword (eax)."
-    & m_ullMSRvalue,
+    & m_MSRvalue,
     (size_t) 8 );
 
   if ( m_ssize_t == -1 )

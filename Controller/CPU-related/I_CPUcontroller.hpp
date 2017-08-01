@@ -133,14 +133,16 @@ public:
   float GetClosestMultiplier(WORD wFrequencyInMHz//, float fMultiplier
     );
 
-  //This CPU instruction (in contrast to wrmsr) is not dangerous.
-  //So it can be implemented for every CPU controller in this base class.
+  /** @brief This CPU instruction (in contrast to wrmsr) is not dangerous.
+   * So it can be implemented for every CPU controller in this base class.
+   * @param p_EAX : Use data type "uint32_t" because this is the exact width  
+   *   of the CPU register */
   virtual BOOL CpuidEx(
     DWORD dwIndex,
-    PDWORD p_dwEAX,
-    PDWORD p_dwEBX,
-    PDWORD p_dwECX,
-    PDWORD p_dwEDX,
+    uint32_t * p_EAX,
+    uint32_t * p_EBX,
+    uint32_t * p_ECX,
+    uint32_t * p_EDX,
     DWORD_PTR affinityMask
   ) ;
 //  virtual bool CmdLineParamsContain( TCHAR * ptcharOption,

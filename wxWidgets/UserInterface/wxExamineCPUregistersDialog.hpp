@@ -21,6 +21,7 @@
 #endif
 
 #include <wx/dialog.h>
+#include <stdint.h> //uint32_t
 #include <windef.h> //for DWORD
 #include <winnt.h> //for ULONGLONG
 #include <vector>
@@ -49,10 +50,11 @@ class wxExamineCPUregistersDialog
   unsigned short m_wControlID ;
   //These member variables should be used for reading out CPU register data
   //because this is faster than to create local variables on stack.
-  DWORD m_dwEAX ;
-  DWORD m_dwEBX ;
-  DWORD m_dwECX ;
-  DWORD m_dwEDX ;
+  /** Use data type "uint32_t" because this is the exact width of the register*/
+  uint32_t m_EAX ;
+  uint32_t m_EBX ;
+  uint32_t m_ECX ;
+  uint32_t m_EDX ;
   //I_CPUcontroller * mp_i_cpucontroller ;
   I_CPUaccess * mp_cpuaccess ;
   //RegisterData * mp_regdata ;

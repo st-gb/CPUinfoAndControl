@@ -37,35 +37,33 @@ namespace AMD
 {
   namespace fromK10
   {
-		/** Applies to AMD family 10h, also to family 15 h? */
+    /** Applies to AMD family 10h, also to family 15h? */
     inline float * CreateMultiplierArray(
-      const fastestUnsignedDataType numMultis,
+      fastestUnsignedDataType & numMultis,
       const float fMaxMultiplier,
-			/** These 2 parameters are only necessary if also other CPU families like 
-			 *  11h are regarded. Maybe delete them. */
+      /** These 2 parameters are only necessary if also other CPU families like 
+       *  11h are regarded.->Maybe delete these parameters. */
       const fastestUnsignedDataType minCoreDivisorID,
       const fastestUnsignedDataType maxCoreDivisorID
       )
     {
-      DEBUGN( /* FULL_FUNC_NAME << "--" */ "begin--# multis:" << (WORD) numMultis
+      DEBUGN( "begin--# multis:" << numMultis
         << "max multi:" << fMaxMultiplier)
 			const fastestUnsignedDataType numDifferentMultipliersForDivisorID1 = 
-				(fMaxMultiplier * 2.0f - AMD_K10_CPU_FID_SUMMAND) + 1.0f;
+        /** E.g. for a P960 max. multiplier is 9.0 resulting ca. 1800 MHz using
+         * a 200 MHz reference clock. 
+         * So multiply: 9.0*4=36  36-16=20 */
+         (fMaxMultiplier * 4.0f - AMD_K10_CPU_FID_SUMMAND) + 1.0f;
+      numMultis = numDifferentMultipliersForDivisorID1;
       float * ar_f = new float[numDifferentMultipliersForDivisorID1] ;
-      DEBUGN( /*FULL_FUNC_NAME << "--"*/ "array address:" << ar_f)
-      //If allocating the array on the heap succeeded.
+      DEBUGN( "array address:" << ar_f)
+      /** If allocating the array on the heap succeeded. */
       if( ar_f )
       {
         fastestUnsignedDataType byMultiplierIndex = 0 ;
-//        float fDivisor ;
-        float fMultiplier //= //The minimum multiplier for Griffin
-          //(float) byMaxMultiDiv2
-    //      g_fMaxMultiplier / 8.0
-          ;
+        float fMultiplier;
     //     stdstrstream << "float array addr.:" << ar_f << " avail. multis:" ;
 
-//        static float fDoubleOfMaxMulti ;
-//        fDoubleOfMaxMulti = fMaxMultiplier * 2.0f;
     //    const float fLowestMultiplieForDID0 = fMaxMultiplier - ;
 //        for( fastestUnsignedDataType byDivisorIDIndex = maxCoreDivisorID ; 
 //            byDivisorIDIndex > minCoreDivisorID; -- byDivisorIDIndex )
@@ -80,8 +78,8 @@ namespace AMD
             ; ++ frequencyIDforDivisorID1 )
           {
             fMultiplier = (float) (frequencyIDforDivisorID1 + 
-							AMD_K10_CPU_FID_SUMMAND) / 2.0f ;
-            DEBUGN( "adding multi " << fMultiplier)
+              AMD_K10_CPU_FID_SUMMAND) / 4.0f ;
+            DEBUGN( "adding multiplier " << fMultiplier)
             ar_f[ byMultiplierIndex ] = fMultiplier ;
     //       stdstrstream << fMulti << " " ;
             ++ byMultiplierIndex ;
@@ -101,8 +99,9 @@ namespace AMD
       if( maxCPUcoreOperatingFrequency )
       {
         /** "41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG", page 14:
-        * "CLKIN. The reference clock provided to the processor, nominally 200Mhz." */
-        fMaxMultiplier = maxCPUcoreOperatingFrequency; //GetMultiplier(fMainPllOpFreqIdMax, 0);
+        * "CLKIN. The reference clock provided to the processor, nominally 200Mhz." 
+        *  */
+        fMaxMultiplier = (float) maxCPUcoreOperatingFrequency / 2.0f; //GetMultiplier(fMainPllOpFreqIdMax, 0);
         DEBUGN( /*FULL_FUNC_NAME << "--"*/
           "max multi from MainPllOpFreqIdMax ("
           << maxCPUcoreOperatingFrequency << "):" << fMaxMultiplier )
@@ -136,19 +135,19 @@ namespace AMD
       fMaxMultiplier = GetMaximumMultiplier(maxCPUcoreOperatingFrequency);
       g_fMaxMultiplier = fMaxMultiplier;
 
-      BYTE byNumMultis = GetNumberOfMultipliers(fMaxMultiplier);
+      fastestUnsignedDataType numMultis = GetNumberOfMultipliers(fMaxMultiplier);
       unsigned minCoreDivisor, maxCoreDivisor;
       GetMinAndMaxCoreDivisorID(minCoreDivisor, maxCoreDivisor);
 
       float * ar_f = CreateMultiplierArray(
-        byNumMultis,
+        numMultis,
     //    byMaxMultiDiv2
         fMaxMultiplier,
         minCoreDivisor,
         maxCoreDivisor
         );
       if(ar_f)
-        * p_wNumberOfArrayElements = byNumMultis ;
+        * p_wNumberOfArrayElements = numMultis ;
       else
         * p_wNumberOfArrayElements = 0 ;
       DEBUGN( /*FULL_FUNC_NAME << "--"*/ "returning " << ar_f)

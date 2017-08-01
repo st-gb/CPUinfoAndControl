@@ -127,10 +127,10 @@ ReadMsr(void	*lpInBuffer, //index/offset as 4 byte value.
 * "cpuid" instruction may be restricted to ring0 access. */
 BOOL I_CPUaccess::CpuidEx(
   DWORD dwIndex,
-  PDWORD p_dwEAX,
-  PDWORD p_dwEBX,
-  PDWORD p_dwECX,
-  PDWORD p_dwEDX,
+  uint32_t * p_EAX,
+  uint32_t * p_EBX,
+  uint32_t * p_ECX,
+  uint32_t * p_EDX,
   DWORD_PTR affinityMask
   )
 {
@@ -152,13 +152,13 @@ BOOL I_CPUaccess::CpuidEx(
   //// the stepping was "
   //from http://www.ibm.com/developerworks/library/l-ia.html:
   asm ("cpuid"
-        : "=a" (*p_dwEAX),
-          "=b" (*p_dwEBX),
-          "=c" (*p_dwECX),
-          "=d" (*p_dwEDX)
+        : "=a" (*p_EAX),
+          "=b" (*p_EBX),
+          "=c" (*p_ECX),
+          "=d" (*p_EDX)
         : "a" (dwIndex));
 //    *p_dwEAX = reg_eax ;
-  DEBUGN("after \"cpuid\": eax:" << *p_dwEAX << "stepping:" << (*p_dwEAX & 0xF) )
+  DEBUGN("after \"cpuid\": eax:" << *p_EAX << "stepping:" << (*p_EAX & 0xF) )
   return TRUE ;
 }
 
@@ -168,7 +168,7 @@ BOOL I_CPUaccess::CpuidEx(
  * */
 fastestUnsignedDataType I_CPUaccess::GetL2cacheSizeInKiB()
 {
-  DWORD ECX, dummy, EAX;
+  uint32_t ECX, dummy, EAX;
   fastestUnsignedDataType L2cacheSizeInKiB = 0;
 //  CpuidEx(GET_HIGHEST_EXTENDED_FUNCTION_SUPPORTED, &EAX, &dummy, &dummy, &dummy, 1);
   EAX = GetHighestExtendedFunctionSupported();
@@ -238,7 +238,7 @@ bool I_CPUaccess::GetProcessorNameWithoutLeadingSpaces( std::string & r_stdstr )
 /** @return data type must have at least 32 bit:= 80000000h: */
 fastestUnsignedDataType I_CPUaccess::GetHighestExtendedFunctionSupported()
 {
-  DWORD EAX, dummy;
+  uint32_t EAX, dummy;
   CpuidEx(GET_HIGHEST_EXTENDED_FUNCTION_SUPPORTED, & EAX, & dummy, & dummy, & dummy, 1);
   return EAX;
 }
@@ -256,23 +256,23 @@ bool //ISpecificController
   )
 {
   bool bSuccess = false ;
-  DWORD dwEAX ;
-  DWORD dw ;
+  uint32_t EAX ;
+  uint32_t dummy ;
   //Intel CPUID (doc # 241618) August 2009: for brand string:
   //"1. Execute the CPUID instruction with EAX=80000000h"
   if( CpuidEx( 
       GET_HIGHEST_EXTENDED_FUNCTION_SUPPORTED
-      , & dwEAX
-      , & dw
-      , & dw
-      , & dw 
+      , & EAX
+      , & dummy
+      , & dummy
+      , & dummy 
       , 1
       )
     )
   {
     //Intel CPUID (doc # 241618) August 2009: for brand string:
     //"3. The processor brand string feature is supported if EAX >= 80000004h"
-    if( dwEAX >= LAST_PROCESSOR_BRAND_STRING_INDEX )
+    if( EAX >= LAST_PROCESSOR_BRAND_STRING_INDEX )
     {
       BYTE byCPUID_Address = 0, byCharIndex = 0;
       //char archCPUID[//4*4
@@ -294,10 +294,10 @@ bool //ISpecificController
             // "EAX=80000002h,80000003h,80000004h: Processor Brand String"
             //AMD: "CPUID Fn8000_000[4:2] Processor Name String Identifier"
             FIRST_PROCESSOR_BRAND_STRING_INDEX + byCPUID_Address,
-            ((DWORD *)(archCPUID + byCharIndex) ),
-            ((DWORD *)(archCPUID + byCharIndex + 4 )),
-            ((DWORD *)(archCPUID + byCharIndex + 8 )),
-            ((DWORD *)(archCPUID + byCharIndex + 12 ))
+            ((uint32_t *)(archCPUID + byCharIndex) ),
+            ((uint32_t *)(archCPUID + byCharIndex + 4 )),
+            ((uint32_t *)(archCPUID + byCharIndex + 8 )),
+            ((uint32_t *)(archCPUID + byCharIndex + 12 ))
             , 1
             )
             )
@@ -351,18 +351,18 @@ bool //ISpecificController
   char archEBX[5]="    ", archECX[5] = "    " , archEDX[5] = "    " ;
   archCPUID[12] = '\0' ; //for (DWORD *) (archCPUID + 8)
   archCPUID[0] = '\0' ; //for strcat()
-  DWORD dw ;
+  uint32_t dummy ;
   //Intel: EBX: "Genu" EDX: "ineI" ECX: "ntel"
   bRet = CpuidEx( 
     VENDOR_ID_INDEX
-    , & dw
+    , & dummy
     //Vendor ID is stored in EBX, ECX, EDX
     , //(DWORD *) archCPUID //EBX
-      (DWORD *) archEBX
+      (uint32_t *) archEBX
     ,// ( (DWORD *) (archCPUID + 8)) //ECX
-      (DWORD *) archECX
+      (uint32_t *) archECX
     , //( (DWORD *) (archCPUID + 4)) //EDX
-      (DWORD *) archEDX
+      (uint32_t *) archEDX
     , 1
     ) ;
   if( bRet )
@@ -396,15 +396,16 @@ bool I_CPUaccess::GetFamilyAndModel(
   , BYTE & byModel
   )
 {
-  DWORD dwEAX, dwEBX, dwECX, dwEDX ;
+  /** These registers have a bit length of 32 bit. */
+  uint32_t EAX, EBX, ECX, EDX ;
   bool bRet = CpuidEx
     (
       //Query CPUID Function 0000_0001 for CPU model and family.
       PROCESSOR_INFO_AND_FEATURE_BITS
-      , & dwEAX
-      , & dwEBX
-      , & dwECX
-      , & dwEDX
+      , & EAX
+      , & EBX
+      , & ECX
+      , & EDX
       , 1
     ) ;
   if( bRet )
@@ -426,7 +427,7 @@ bool I_CPUaccess::GetFamilyAndModel(
     //      11h processors."
     //    "19:16 ExtendedModel."
     //byModel = 
-      (BYTE) ( ( dwEAX 
+      (BYTE) ( ( EAX 
         //Bits 19:16 are the ExtendedModel, so shift 16 bits right.
         >> 16 ) & 
         //0xF = 1111 bin
@@ -439,7 +440,7 @@ bool I_CPUaccess::GetFamilyAndModel(
       //  byExtendedModel << " ")
     //byModel <<= 4 ;
     //byModel |= 
-    byBaseModel = (dwEAX >> 4 & 0xF) ; //"7:4 BaseModel."
+    byBaseModel = (EAX >> 4 & 0xF) ; //"7:4 BaseModel."
     //  "Model is an 8-bit value and is defined as: Model[7:0] = 
     //      {ExtendedModel[3:0], BaseModel[3:0]}. 
     //     E.g. If ExtendedModel[3:0]=Eh and BaseModel[3:0]=8h, 
@@ -449,9 +450,9 @@ bool I_CPUaccess::GetFamilyAndModel(
     //DEBUG("Base Model: %u ",dwEAX>>4 & 0xF)
     //LOG("Base Model: " << ( dwEAX >> 4 & 0xF ) << " ")
     //byFamily 
-    byBaseFamily = (BYTE) ( ( dwEAX >> 8 ) & 0xF ) ; //"11:8 BaseFamily: Fh."
+    byBaseFamily = (BYTE) ( ( EAX >> 8 ) & 0xF ) ; //"11:8 BaseFamily: Fh."
     //byFamily += 
-    byExtendedFamily = (BYTE) ( ( dwEAX 
+    byExtendedFamily = (BYTE) ( ( EAX 
         ////"27:20 ExtendedFamily: 02h."
         >> 20 ) & 0xFF ) ; 
     //"Family is an 8-bit value and is defined as: 
@@ -499,15 +500,15 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
   , BYTE & r_byStepping
   )
 {
-  DWORD dwEAX, dwEBX, dwECX, dwEDX ;
+  uint32_t EAX, EBX, ECX, EDX ;
   bool bRet = CpuidEx
     (
       //Query CPUID Function 0000_0001 for CPU model and family.
       PROCESSOR_INFO_AND_FEATURE_BITS
-      , & dwEAX
-      , & dwEBX
-      , & dwECX
-      , & dwEDX
+      , & EAX
+      , & EBX
+      , & ECX
+      , & EDX
       , 1
     ) ;
   if( bRet )
@@ -529,14 +530,14 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
     //      11h processors."
     //    "19:16 ExtendedModel."
     //byModel = 
-      (BYTE) ( ( dwEAX 
+      (BYTE) ( ( EAX 
         //Bits 19:16 are the ExtendedModel, so shift 16 bits right.
         >> 16 ) & 
         //0xF = 1111 bin
         0xF) ;
     //byModel <<= 4 ;
     //byModel |= 
-    byBaseModel = (dwEAX >> 4 & 0xF) ; //"7:4 BaseModel."
+    byBaseModel = (EAX >> 4 & 0xF) ; //"7:4 BaseModel."
     //  "Model is an 8-bit value and is defined as: Model[7:0] = 
     //      {ExtendedModel[3:0], BaseModel[3:0]}. 
     //     E.g. If ExtendedModel[3:0]=Eh and BaseModel[3:0]=8h, 
@@ -546,9 +547,9 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
     //DEBUG("Base Model: %u ",dwEAX>>4 & 0xF)
     //LOG("Base Model: " << ( dwEAX >> 4 & 0xF ) << " ")
     //byFamily 
-    byBaseFamily = (BYTE) ( ( dwEAX >> 8 ) & 0xF ) ; //"11:8 BaseFamily: Fh."
+    byBaseFamily = (BYTE) ( ( EAX >> 8 ) & 0xF ) ; //"11:8 BaseFamily: Fh."
     //byFamily += 
-    byExtendedFamily = (BYTE) ( ( dwEAX 
+    byExtendedFamily = (BYTE) ( ( EAX 
         ////"27:20 ExtendedFamily: 02h."
         >> 20 ) & 0xFF ) ; 
     //"Family is an 8-bit value and is defined as: 
@@ -558,7 +559,7 @@ bool I_CPUaccess::GetFamilyAndModelAndStepping(
     //DEBUG(" model: %u family:%u\n",byModel,byFamily)
     r_byStepping =
       //3:0 Stepping: processor stepping (revision) for a specific model.
-      ( dwEAX & 0xF ) ;
+      ( EAX & 0xF ) ;
   }
   return bRet ;
 }
@@ -614,11 +615,11 @@ BYTE I_CPUaccess::GetNumberOfCPUCores()
 * It may be overridden for subclasses that allow ring0 access because the
 * "rdTSC" instruction may be restricted to ring0 access via a CPU register. */
 BOOL I_CPUaccess::ReadTSC(
-  DWORD & r_dwLowEAX ,
-  DWORD & r_dwHighEDX
+  uint32_t & r_lowmostBits ,
+  uint32_t & r_highmostBits
   )
 {
-  ReadTimeStampCounter(r_dwLowEAX, r_dwHighEDX ) ;
+  ReadTimeStampCounter(r_lowmostBits, r_highmostBits ) ;
   return TRUE ;
 }
 
@@ -627,8 +628,8 @@ BOOL I_CPUaccess::ReadTSC(
  *  instructions out of order related to the order of program code
  *  instructions) CPUs. */
 BOOL I_CPUaccess::ReadTSCinOrder(
-  DWORD & r_dwLowEAX ,
-  DWORD & r_dwHighEDX ,
+  uint32_t & r_lowmostBits ,
+  uint32_t & r_highmostBits ,
   DWORD dwThreadAffinityMask
   )
 {
@@ -636,7 +637,7 @@ BOOL I_CPUaccess::ReadTSCinOrder(
   {
     //http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf:
 //    CPUID(); //"force all previous instructions to complete"
-    ReadTSC(r_dwLowEAX, r_dwHighEDX ) ;
+    ReadTSC(r_lowmostBits, r_highmostBits ) ;
     return TRUE ;
   }
   return FALSE ;

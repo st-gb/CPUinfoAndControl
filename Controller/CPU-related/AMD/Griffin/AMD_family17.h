@@ -54,21 +54,19 @@
   //above 3 the core divisor IDs are reserved
   #define HIGHEST_EFFECTIVE_DIVISOR_ID 3
 
-  //(see AMDs "BIOS and Kernel Dev Guide")
-  #define P_STATE_CURRENT_LIMIT_REGISTER 0xC0010061 //"MSRC001_0061 P-state Current Limit Register"
-  #define P_STATE_CONTROL_REGISTER 0xC0010062 //"MSRC001_0062 P-state Control Register"
-  #define P_STATE_STATUS_REGISTER 0xC0010063 //"MSRC001_0063 P-state Status Register"
-
-  //2147483648 dec= 10000000 00000000 00000000 00000000 bin
-  //                --8 bit- --8 bit- --8 bit- --8 bit-
-  #define SET_P_STATE_TO_VALID(highDWORD) ( highDWORD |= 2147483648UL )
   //#define SET_P_STATE_TO_VALID(dword) ( dword = ( 1 << 31) )
   #define MAX_VALUE_FOR_DID 7//=7 hex//=111 bin; has bits 8:6 = 3 bits
 
   #define MAX_VALUE_FOR_VID 127//=0x7F hex//=1111111 bin; has bits 15:9 = 7 bits
 
-  #define MAX_NUMERIC_POSSIBLE_MULTI ( MAX_VALUE_FOR_FID + 8 )
-  #define MAX_MULTI_DIV2 ( MAX_VALUE_FOR_FID + 8 ) / 2
+	/** 41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG :
+	 * "The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
+	 *  ((100 MHz * (CpuFid + 08h)) / (2^CpuDid))." 
+	 *  => the suummand is 8  */
+  #define AMD_FAMILY_11H_FREQUENCY_ID_SUMMAND 8
+
+  #define MAX_NUMERIC_POSSIBLE_MULTI ( MAX_VALUE_FOR_FID + AMD_FAMILY_11H_FREQUENCY_ID_SUMMAND )
+  #define MAX_MULTI_DIV2 ( MAX_VALUE_FOR_FID + AMD_FAMILY_11H_FREQUENCY_ID_SUMMAND ) / 2
 
 
 

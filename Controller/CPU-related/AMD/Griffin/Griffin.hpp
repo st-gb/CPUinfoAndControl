@@ -36,8 +36,8 @@ inline_register_access_functions.hpp>
 #ifdef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
   #include "GetMaxMultiIfGreaterCurrentPstateLimitMulti.hpp"
 #endif
-#include <fastest_data_type.h> //fastestUnsignedDataType
-#include "../from_K10.h"
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
+#include "../beginningWithFam10h/from_K10.h"
 
 extern BYTE g_byFreqID,g_byDivisorID ;
 extern BYTE g_byValue1 , g_byValue2, g_byValue3 ;
@@ -198,53 +198,6 @@ namespace AMD
     //    DWORD & dwMSRlowmost
     //    ) ;
     //inline WORD GetVoltageID(float fVoltageInVolt ) ;
-    inline void GetMSRregisterValue(
-      const BYTE byVoltageID,
-    //  const DIDandFID & didandfid ,
-      const BYTE byFrequencyID ,
-      const BYTE byDivisorID ,
-      uint32_t & dwHighmostMSRvalue ,
-      uint32_t & dwLowmostMSRvalue
-      )
-    {
-      //GetFIDandDID( wFreqInMHz, byFrequencyID, byDivisorID ) ;
-      //didandfid
-      dwHighmostMSRvalue = 0 ;
-      SET_P_STATE_TO_VALID(dwHighmostMSRvalue) ;
-
-      //See AMD Family 11h Processor BKDG (document # 41256),
-      // "MSRC001_00[6B:64] P-state [7:0] Registers"
-      //5:0 CpuFid
-      dwLowmostMSRvalue = ( byFrequencyID & 63) ;
-      //CpuDid: core divisor ID.
-      dwLowmostMSRvalue |= ( ( (WORD) byDivisorID ) <<
-        START_BIT_FOR_CPU_CORE_DIVISOR_ID ) ;
-      //15:9 CpuVid: core VID.
-      dwLowmostMSRvalue |= ( ( (WORD) byVoltageID ) << 9) ; //<=>bits 9-15 shifted
-    }
-
-    /** Uses table "Table 5: SVI and internal VID codes" (7 bit) because same
-     *  bit width as "15:9 CurCpuVid: current CPU core VID." (7 bit) ? */
-    inline fastestUnsignedDataType GetVoltageID(const float fVoltageInVolt )
-    {
-      //E.g. for "1.1" V the float value is 1.0999999
-      // (because not all numbers are representable with a 8 byte value)
-      // so the voltage ID as float value gets "36.000004".
-      float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f ;
-      fastestUnsignedDataType voltageID =
-        //without explicit cast: compiler warning
-        //Avoid g++ warning "warning: converting to `WORD' from `float'"
-        (fastestUnsignedDataType)
-        //ceil( (fVoltageInVolt - 1.55f) * -1.0f / 0.0125f ) ;
-        //ceil( //(fVoltageInVolt - 1.55f) / -0.0125f
-          fVoltageID //)
-        ;
-      //Check to which integer voltage ID the float value is nearer.
-      //E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36"
-      if( fVoltageID - (float) voltageID >= 0.5 )
-        ++ voltageID ;
-      return voltageID ;
-    }
 
     //inline unsigned long GetMSRregisterForPstate(
     //  unsigned char byPstate ) ;
@@ -259,14 +212,15 @@ namespace AMD
         0xC0010064 + performanceStateIndex ;
     }
 
-    /** @brief AMD composes the multiplier from 2 operands: divisor ID and
-     *   frequency ID.
+    /** @brief This function is specific to AMD family 11h
+     *  AMD composes the multiplier from 2 operands: divisor ID and frequency ID.
      *   multiplier=freqID/2^divisorID
+     *  This function nearly equals AMD::fromK10::GetFreqIDandDivisorIDfromMulti(...) 
      */
     INLINE void GetFreqIDandDivisorIDfromMulti(
       float fMultiplier,
-      BYTE & r_byFreqID,
-      BYTE & r_byDivisorID
+      fastestUnsignedDataType & r_byFreqID,
+      fastestUnsignedDataType & r_byDivisorID
       )
     {
       DEBUGN(//"GetFreqIDandDivisorIDfromMulti(" <<
@@ -275,26 +229,37 @@ namespace AMD
       r_byDivisorID = 0 ;
       g_fMaxMultiDiv2 = ( //g_fMainPllOpFreqIdMax + 8
         g_fMaxMultiplier ) / 2.0 ;
-      //e.g. MaxMultiplier = 11, multiplier = 2,5:
-      // -> multiplierAboveMaxMultiplier = 2,5 * 2 * 2 * 2 = 2,5 * 8 = 20;
-      // DivisorID = 3 = log2(8)
+      /** e.g. MaxMultiplier = 11, multiplier = 2,5:
+       *  -> multiplierAboveMaxMultiplier = 2,5 * 2 * 2 * 2 = 2,5 * 8 = 20;
+       *  DivisorID = 3 = log2(8) */
       while( fMultiplier <= //g_fMaxMultiplier
           g_fMaxMultiDiv2)
       {
         fMultiplier *= 2.0f ;
+        //TODO: regard AMD_FAMILY_11H_MAXIMUM_CPU_CORE_DIVISOR_ID ?
         ++ r_byDivisorID ;
       }
-      //multiplier is in range ]1/2 max_multi...max_multi] now
-      r_byFreqID =
-        //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
-        //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))."
-        (BYTE) (fMultiplier * 2.0f) - 8 ;
+      //TODO ensure the following :
+      /** 41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG : 
+      * "•The frequency specified by (100 MHz * (CpuFid + 08h)) must always be >50%
+      *   of and <= 100% of the frequency specified by
+      *   F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]." */
+      // ReadPCIconfig(F3xD4) ;
+    //  r_byFreqID = fMultiplier * g_byDivisor ;
+    //  r_byDivisorID = log2(g_byDivisor) ;
+      /** multiplier is in range ]1/2 max_multi...max_multi] now */
+       r_byFreqID =
+        /** 41256 Rev 3.00 - July 07, 2008 AMD Family 11h Processor BKDG :
+         * "The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
+         *  ((100 MHz * (CpuFid + 08h)) / (2^CpuDid))." */
+        (BYTE) (fMultiplier * 2.0f) - AMD_FAMILY_11H_FREQUENCY_ID_SUMMAND ;
       DEBUGN(//"GetFreqIDandDivisorIDfromMulti(...)"
-        << "FID:" << (WORD) r_byFreqID
-        << "DID:" << (WORD) r_byDivisorID
+        << "Frequency ID:" << (WORD) r_byFreqID
+        << "Divisor ID:" << (WORD) r_byDivisorID
         //"The CPU COF specified by MSRC001_00[6B:64][CpuFid,CpuDid] is
         //((100 MHz * (CpuFid + 08h)) / (2^CpuDid))"
-        << "test (FID,DID)->multi: multi="//"FID+8/divisor=" << (r_byFreqID + 8) << "/"
+        << "test (Frequency ID,Divisor ID)->multi: multi="
+            //"FID+8/divisor=" << (r_byFreqID + 8) << "/"
     //    << pow(2.0,r_byDivisorID)
     //    << "=" << (r_byFreqID + 8)/pow(2.0,r_byDivisorID)
         << GetMultiplier(r_byFreqID, r_byDivisorID)
@@ -302,82 +267,12 @@ namespace AMD
       //multi = FID / 2^DID  divisor=2^DID   multi = FID / divisor | * divisor
       // FID=multi* divisor
       //lowest multi: minFID/8 (e.g. 12/8)
-
-      //TODO
-      //"•The frequency specified by (100 MHz * (CpuFid + 08h)) must always be >50%
-      //of and <= 100% of the frequency specified by
-      //F3xD4[MainPllOpFreqId, MainPllOpFreqIdEn]."
-      //ReadPCIconfig(F3xD4) ;
-    //  r_byFreqID = fMultiplier * g_byDivisor ;
-    //  "CpuDid: core divisor ID. Read-write. Specifies the CPU frequency divisor;
-      //see CpuFid.
-    //  0h=Divisor of 1     3h=Divisor of 8
-    //  1h=Divisor of 2     4h - 7h=Reserved
-    //  2h=Divisor of 4"
-    //  r_byDivisorID = log2(g_byDivisor) ;
     }
 
     //inline void SetVoltageAndMultiplier(
     //  float fVoltageInVolt,
     //  float fMultiplier ,
     //  BYTE byCoreID ) ;
-
-    //inline BYTE SetPstateViaPstateControlRegister(
-    //  BYTE byNewPstate,DWORD dwCoreBitmask);
-    //It seems: setting a p-state for more than 1 core at a time does NOT work.
-    //so call this method "n" times if you want the same p-state for "n" cores.
-    INLINE BYTE SetPstateViaPstateControlRegister(BYTE byNewPstate, DWORD dwCoreBitmask)
-    {
-      BYTE byReturn = EXIT_FAILURE ;
-
-      //Safety check.
-      if( byNewPstate < NUMBER_OF_PSTATES )
-      {
-        DWORD dwMSRlow = byNewPstate ;
-
-          dwMSRlow = (BYTE) byNewPstate ;
-          //DEBUG("For core bitmask %lu: setting to pstate %u\n", dwCoreBitmask, byNewPstate);
-          LOGN_VERBOSE( "For core bitmask " << dwCoreBitmask
-            << ": setting to pstate "
-            //Cast BYTE to WORD to output as number.
-            << (WORD) byNewPstate );
-          //DEBUG("the low 32 bits: %s\n", getBinaryRepresentation(arch,dwMSRlow) );
-          //printf("  would write:  %s to MSR %lx\n", getBinaryRepresentation(&msrvalue,arch), msr_register_number);
-          //waitForEnter("um in MSR zu schreiben") ;
-          //if ((msr_write(msrfile, msr_register_number, &msrvalue)) != OK)
-          //  printf("MSR write failed\n");
-
-          //DEBUG("Adress of mp_cpuaccess: %lx\n", mp_cpuaccess);
-    #ifndef _EMULATE_TURION_X2_ULTRA_ZM82
-          if(
-            //CONTROLLER_PREFIX
-    //          mp_cpuaccess->WrmsrEx(
-            WriteMSR(
-              P_STATE_CONTROL_REGISTER,
-              dwMSRlow,
-              0,
-              dwCoreBitmask
-              )
-    //          1
-            )
-          {
-            LOGN_VERBOSE("Setting p-state succeeded.");
-            byReturn = EXIT_SUCCESS ;
-            //Wait 1 millisecond (> maximum stabilization time).
-    //          SLEEP_1_MILLI_SECOND
-          }
-          else
-          {
-            DEBUG("Setting p-state failed\n");
-          }
-          byReturn = EXIT_SUCCESS ;
-    #endif //_EMULATE_TURION_X2_ULTRA_ZM82
-    //#ifndef LINK_TO_WINRING0_STATICALLY
-    //    }
-    //#endif //#ifdef LINK_TO_WINRING0_STATICALLY
-      }
-      return byReturn ;
-    }
 
     /** see "2.4.2.3 P-state Transition Behavior"
      * AMD K10 doc:
@@ -422,14 +317,16 @@ namespace AMD
         )
     #endif
       {
-        BYTE byVoltageID = GetVoltageID( fVoltageInVolt ) ;
+        fastestUnsignedDataType byVoltageID = AMD::fromK10::GetVoltageID( fVoltageInVolt ) ;
         GetFreqIDandDivisorIDfromMulti(fMultiplier, g_byFreqID, g_byDivisorID) ;
-        GetMSRregisterValue(
+        AMD::fromK10::GetMSRregisterValue(
           byVoltageID,
           g_byFreqID ,
           g_byDivisorID
-          , g_dwMSRhighmost ,
-          g_dwMSRlowmost ) ;
+//          , g_dwMSRhighmost ,
+          g_dwMSRlowmost );
+        g_dwMSRhighmost = 0;
+        SET_P_STATE_TO_VALID(g_dwMSRhighmost)
 
     //#ifndef COMPILE_WITH_MAX_MULTI_FOR_P_STATE_LIMIT
         static DWORD dwMSRregisterIndex;
@@ -449,7 +346,7 @@ namespace AMD
           //see "2.4.1.9 Software-Initiated Voltage Transitions"
           //TODO "2. Wait the specified F3xD8[VSSlamTime]."
     //      if(
-          SetPstateViaPstateControlRegister(
+          AMD::fromK10::SetPstateViaPstateControlRegister(
             g_byDivisorID ,
             1 << byCoreID ) ;
     //        )

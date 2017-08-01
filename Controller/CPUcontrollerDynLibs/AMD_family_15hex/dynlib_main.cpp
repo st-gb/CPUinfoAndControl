@@ -67,6 +67,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
 float g_fReferenceClockInMHz;
 float g_fReferenceClockMultiplier;
 fastestUnsignedDataType g_MaxCPU_Cof;
+/** this multiplier is used for:
+ *  -The TSC diff is divided by this multiplier to get the reference clock
+ *  -getting available multpliers */
 float g_fMaxMultiplier;
 BYTE g_byValue1;
 ReadMSR_func_type g_pfnreadmsr ;

@@ -853,8 +853,8 @@ extern "C"
   CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
   BOOL CPUcontrolBase::ReadMSR(
   DWORD dwIndex,    // MSR index
-  PDWORD p_dweax,     // bit  0-31
-  PDWORD p_dwedx,     // bit 32-63
+  uint32_t * p_lowmostBits,     // bit  0-31
+  uint32_t * p_highmostBits,     // bit 32-63
   DWORD_PTR affinityMask  // Thread Affinity Mask
   )
 {
@@ -875,8 +875,8 @@ extern "C"
 //      GetCPUaccess() ;
   DEBUGN("Exe's exported ReadMSR("
     << "MSR index:" << dwIndex
-    << " " << p_dweax
-    << " " << p_dwedx
+    << " " << p_lowmostBits
+    << " " << p_highmostBits
     << " Aff mask:" << affinityMask
     << ")"
     << " g_p_cpuaccess:" << g_p_cpuaccess
@@ -888,15 +888,15 @@ extern "C"
     boolRet = //p_cpuaccess->RdmsrEx(
       g_p_cpuaccess->RdmsrEx(
       dwIndex,
-      p_dweax,// bit  0-31 (register "EAX")
-      p_dwedx,
+      p_lowmostBits,// bit  0-31 (register "EAX")
+      p_highmostBits,
       //m_dwAffinityMask
       affinityMask
       ) ;
     DEBUGN( "exe::ReadMSR after g_p_cpuaccess->RdmsrEx(Index,affinityMask): "
       << dwIndex << " "
-      << * p_dweax << " "
-      << * p_dwedx << " "
+      << * p_lowmostBits << " "
+      << * p_highmostBits << " "
       << affinityMask
       //<< "\n"
       )

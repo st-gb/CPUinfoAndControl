@@ -28,10 +28,14 @@ namespace AMD
             page 428 : "MSRC001_00[68:64] P-State [4:0] Registers"
        *    "The CPU COF specified by CpuFid and CpuDid is: CPU COF = 
               100 MHz * (CpuFid + 10h) / (2^CpuDid)" 
-       *    => multiplier = (CpuFid + 10h) / (2^CpuDid) */
+       *    => multiplier = (CpuFid + 10h) / (2^CpuDid) 
+       *  If sum of frequency ID + FID summand is 18 and divisor ID is 0 then 
+       *  the multiplier is 18/2=9 because the reference clock is ca. 200 MHz. */
       return (float) (frequencyID + AMD_K10_CPU_FID_SUMMAND) / 
         /** 2^0=1<<0=1   2^1=1<<1=2  */
-        (float) ( 1 << divisorID );
+        (float) ( 1 << divisorID
+        /** Double the divisor to get a multiplier.lowered by 2 */
+        + 1);
     }
 
   } 

@@ -12,6 +12,7 @@
 
 //#include "global.h" //for BYTE etc.
 #include <windef.h> //BYTE, BOOL (etc.)
+#include <stdint.h> //uint32_t
 #include <string>
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <windef.h> //for BOOL etc.
@@ -104,12 +105,14 @@ public:
   //Program crash/ malfunction (RdmsrEX(): false values) if CPUID() is a member.
   //virtual void CPUID() {} ;
   //All methods must be "virtual": so they needn't have a definition HERE.
+  /** @param p_EAX : Use data type "uint32_t" because this is the exact width  
+   *   of the CPU register  */
   virtual BOOL CpuidEx(
     DWORD dwIndex,
-    PDWORD p_dwEAX,
-    PDWORD p_dwEBX,
-    PDWORD p_dwECX,
-    PDWORD p_dwEDX,
+    uint32_t * p_EAX,
+    uint32_t * p_EBX,
+    uint32_t * p_ECX,
+    uint32_t * p_EDX,
     DWORD_PTR affinityMask
   ) //= 0
   ;
@@ -190,10 +193,12 @@ public:
   virtual BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI
+  /** @param eax : Use data type "uint32_t" because this is the exact width  
+   *   of the CPU register  */
   RdmsrEx(
 	  DWORD index,		// MSR index
-	  PDWORD eax,			// bit  0-31
-	  PDWORD edx,			// bit 32-63
+	  uint32_t * eax,	/** bit 0-31 */
+	  uint32_t * edx,	/** bit bit 32-63 */
           //1bin =core 0; 10bin=2dec= core 1
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   ) //= 0 ;
@@ -232,12 +237,16 @@ public:
     ) //= 0 ;
     { return false; }
   //inline
-  virtual BOOL ReadTSC(DWORD & r_dwLow , DWORD & r_dwHigh ) //= 0
+  /** @param r_lowmostBits : Use data type "uint32_t" because this is the exact 
+   *   width of the CPU register  */
+  virtual BOOL ReadTSC(uint32_t & r_lowmostBits , uint32_t & r_highmostBits ) //= 0
     ;
+  /** @param r_lowmostBits : Use data type "uint32_t" because this is the exact 
+   *   width of the CPU register  */
   virtual
   BOOL ReadTSCinOrder(
-    DWORD & r_dwLowEAX ,
-    DWORD & r_dwHighEDX ,
+    uint32_t & r_lowmostBits ,
+    uint32_t & r_highmostBits ,
     DWORD dwThreadAffinityMask
     )
 //  { return FALSE ; }

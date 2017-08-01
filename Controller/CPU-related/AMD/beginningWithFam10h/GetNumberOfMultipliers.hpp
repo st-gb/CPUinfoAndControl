@@ -49,7 +49,7 @@ namespace AMD
 			fastestUnsignedDataType divisor, numMultipliersForDivisor, 
 				numDifferentMultipliers = 0;
 			//TODO test/verify
-			for(fastestUnsignedDataType currentDivisorID = 
+			for(fastestSignedDataType currentDivisorID = 
 				AMD_FAMILY10H_MAX_CORE_DIVISOR_ID; currentDivisorID >=
 				AMD_FAMILY10H_MIN_CORE_DIVISOR_ID; currentDivisorID -- )
 			{

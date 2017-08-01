@@ -244,11 +244,13 @@ public:
     DWORD dwRegisterAddress ,
     PDWORD p_dwValue
     );
+  /** @param p_EAX : Use data type "uint32_t" because this is the exact width  
+   *   of the CPU register  */
   static CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS
     BOOL ReadMSR(
     DWORD dwIndex,    // MSR index
-    PDWORD p_dweax,     // bit  0-31
-    PDWORD p_dwedx,     // bit 32-63
+    uint32_t * p_EAX,     // bit  0-31
+    uint32_t * p_EDX,     // bit 32-63
     DWORD_PTR affinityMask  // Thread Affinity Mask
     );
   static CPU_CONTROL_BASE_CLASS_FUNCTION_STORAGE_CLASS

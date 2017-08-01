@@ -158,10 +158,10 @@ BYTE I_CPUcontroller::CheckWhetherCPUcoreVoltageIsBelowHighestInstableVoltage(
  * CPU. So it can be implemented for every CPU controller in this base class. */
 BOOL I_CPUcontroller::CpuidEx(
   DWORD dwIndex,
-  PDWORD p_dwEAX,
-  PDWORD p_dwEBX,
-  PDWORD p_dwECX,
-  PDWORD p_dwEDX,
+  uint32_t * p_EAX,
+  uint32_t * p_EBX,
+  uint32_t * p_ECX,
+  uint32_t * p_EDX,
   DWORD_PTR affinityMask
 )
 {
@@ -170,10 +170,10 @@ BOOL I_CPUcontroller::CpuidEx(
   {
     return mp_cpuaccess->CpuidEx(
       dwIndex,
-      p_dwEAX,
-      p_dwEBX,
-      p_dwECX,
-      p_dwEDX,
+      p_EAX,
+      p_EBX,
+      p_ECX,
+      p_EDX,
       affinityMask
     ) ;
   }

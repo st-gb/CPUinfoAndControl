@@ -62,7 +62,8 @@ private:
   //to not create a variable on stack each time (faster).
   BYTE m_byCoreID ;
   ssize_t m_ssize_t ;
-  unsigned long long m_ullMSRvalue;
+  /** Use data type "uint64_t" because this is the exact width of an MSR value*/
+  uint64_t m_MSRvalue;
 public:
   MSRdeviceFile(UserInterface * pui) ;
   MSRdeviceFile(
@@ -96,12 +97,14 @@ public:
     PDWORD p_dwedx,			// bit 32-63
     DWORD_PTR affinityMask	// Thread Affinity Mask
     ) ;
+  /** @param eax : Use data type "uint32_t" because this is the exact 
+   *   width of the CPU register  */
   BOOL // TRUE: success, FALSE: failure
   //WINAPI
   RdmsrEx(
 	  DWORD index,		// MSR index
-	  PDWORD eax,			// bit  0-31
-	  PDWORD edx,			// bit 32-63
+	  uint32_t * eax,			// bit  0-31
+	  uint32_t * edx,			// bit 32-63
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   );
 
