@@ -25,7 +25,7 @@
   #include <Controller/CPU-related/AMD/family11h/GetMinAndMaxCoreDivisorID.hpp>
   using namespace AMD::family11h;
 #else
-  #include <Controller/CPU-related/AMD/beginningWithFam10h/GetMultiplier.hpp>
+  #include <Controller/CPU-related/AMD/beginningWithFam10h/CPUcoreMultiplier.hpp>
   #include <Controller/CPU-related/AMD/beginningWithFam10h/GetMinAndMaxCoreDivisorID.hpp>
   #include <Controller/CPU-related/AMD/beginningWithFam10h/GetNumberOfMultipliers.hpp>
   using namespace AMD::fromK10;

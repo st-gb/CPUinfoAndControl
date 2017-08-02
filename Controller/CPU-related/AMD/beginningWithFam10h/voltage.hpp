@@ -202,6 +202,59 @@ namespace AMD
         ( dwMSRlowmost >> 9 ) & BITMASK_FOR_LOWMOST_7BIT ;
     }
 
+    /** Uses table "Table 5: SVI and internal VID codes" (7 bit) because same
+     *  bit width as "15:9 CurCpuVid: current CPU core VID." (7 bit) ? */
+    inline fastestUnsignedDataType GetVoltageID(const float fVoltageInVolt )
+    {
+      /** E.g. for "1.1" V the float value is 1.0999999
+       *  (because not all numbers are representable with a 8 byte value)
+       *  so the voltage ID as float value gets "36.000004". */
+      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG : 
+       *  "voltage = 1.550V - 0.0125V * SviVid[6:0];" 
+       *  voltage = 1,55V - 0.0125V * voltageID | - 1.55V 
+       *  voltage - 1.55 V = - 0.0125V * voltageID | : -0.0125V
+       *  (voltage - 1.55 V) / -0.0125V = voltageID   */
+      float fVoltageID = (fVoltageInVolt - 1.55f) / -0.0125f;
+      fastestUnsignedDataType voltageID =
+        /** without explicit cast: compiler warning
+         * Avoid g++ warning "warning: converting to `WORD' from `float'"  */
+        (fastestUnsignedDataType)
+        fVoltageID;
+      /** Check to which integer voltage ID the float value is nearer.
+       * E.g. for: "36.0000008" - "36" = "0.0000008". -> use "36" */
+      if (fVoltageID - (float) voltageID >= 0.5)
+        ++ voltageID;
+      return voltageID;
+    }
+
+		/** Applies to AMD family 10h, 11h */
+		inline float * GetAvailableVoltagesInVolt(
+		  WORD wCoreID
+			, WORD * p_wNum )
+		{
+			fastestUnsignedDataType voltageIDforHighestVoltage, voltageIDforLowestVoltage;
+			GetMinAndMaxVoltageID(voltageIDforLowestVoltage, voltageIDforHighestVoltage);
+			const fastestUnsignedDataType numAvailableVoltages =  
+				voltageIDforLowestVoltage - voltageIDforHighestVoltage + 1;
+			float * ar_f = new float[numAvailableVoltages];
+			if( ar_f)
+			{
+				fastestUnsignedDataType arrayIndex = 0;
+				/** see 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG 
+				 *  , "Table 8: SVI and internal VID codes" :
+				 *   Higher voltage IDs mean lower voltages */
+			  for( fastestUnsignedDataType voltageID = voltageIDforLowestVoltage; 
+					voltageID >= voltageIDforHighestVoltage; voltageID --)
+				{
+					ar_f[arrayIndex ++] = GetVoltageInVolt(voltageID);
+				}
+				* p_wNum = numAvailableVoltages;
+			}
+			else
+				* p_wNum = 0;
+		  return ar_f;
+		}
+
   /*inline void GetAvailableVoltagesInVolt(VIDforLowestVoltage, minVID)
 	{
 	}*/
