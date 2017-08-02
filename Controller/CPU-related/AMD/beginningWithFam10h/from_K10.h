@@ -204,23 +204,25 @@ namespace AMD
           whether it is a boosted P-state or not." */
       //			float multiplierForDirectLowerPstate = 0.0f;
       for (fastestUnsignedDataType pStateIndex = 0;
-              pStateIndex < numberOfPstateRegisters; ++pStateIndex)
+          pStateIndex < numberOfPstateRegisters; ++pStateIndex)
       {
         uint32_t lowmostBits, highmostBits;
-        ReadMSR(
+        if( ReadMSR(
           0xC0010064 + pStateIndex,
           & lowmostBits, // bit  0-31
           & highmostBits, // bit 32-63
           //1bin =core 0; 10bin=2dec= core 1
           1 //DWORD_PTR affinityMask  // Thread Affinity Mask
-          );
-        fastestUnsignedDataType divisorID;
-        AMD::fromK10::GetDivisorID(lowmostBits, divisorID);
-        fastestUnsignedDataType frequencyID = AMD::fromK10::GetFrequencyID(
-                                                                           lowmostBits);
-        float multiplierForCurrentPstate = AMD::fromK10::GetMultiplier(frequencyID, divisorID);
-        if (multiplier >= multiplierForCurrentPstate)
-          return pStateIndex;
+          ) )
+        {
+          fastestUnsignedDataType divisorID;
+          AMD::fromK10::GetDivisorID(lowmostBits, divisorID);
+          fastestUnsignedDataType frequencyID = AMD::fromK10::GetFrequencyID(
+            lowmostBits);
+          float multiplierForCurrentPstate = AMD::fromK10::GetMultiplier(frequencyID, divisorID);
+          if (multiplier >= multiplierForCurrentPstate)
+            return pStateIndex;
+        }
       }
       return -1;
     }
@@ -315,27 +317,71 @@ namespace AMD
       return byReturn ;
     }
     
-    inline void CopyPstateRegister(
+    inline fastestUnsignedDataType CopyPstateRegister(
       fastestUnsignedDataType pstateOrig, 
       fastestUnsignedDataType pstateDest,
       const fastestSignedDataType coreID)
     {
       uint32_t MSRhighmost, MSRlowmost;
-      ReadMSR(
+      if( ReadMSR(
         0xC0010064 + pstateOrig,
         & MSRlowmost,
         & MSRhighmost,
         1 << coreID
-        );
-      WriteMSR(
-        0xC0010064 + pstateDest,
-        MSRlowmost,
-        MSRhighmost,
-        1 << coreID
-        );
+        ) )
+        if( WriteMSR(
+          0xC0010064 + pstateDest,
+          MSRlowmost,
+          MSRhighmost,
+          1 << coreID
+          ) )
+          return 0;
+      return 1;
     }
     
-    inline void ChangeVoltageAndFrequencyViaCOFVIDcontrolRegister(
+    inline fastestUnsignedDataType GetNorthbridgeVoltageID(const uint32_t MSRlowmost)
+    {
+      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
+        *   MSRC001_0070 COFVID Control Register :
+        *   "31:25 NbVid: Northbridge VID"  */
+      return MSRlowmost >> 25;
+    }
+    
+    inline fastestUnsignedDataType GetNorthbridgeDivisorID(const uint32_t MSRlowmost)
+    {
+      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
+        *   MSRC001_0070 COFVID Control Register :
+        *   "22 NbDid: Northbridge divisor ID"  */
+      return (MSRlowmost >> 22) & 1;
+    }
+
+    inline fastestUnsignedDataType EnsurePstateChanges(
+      const fastestSignedDataType currentPstateID, 
+      fastestSignedDataType & performanceStateIDAccordingToMultiplier,
+      fastestSignedDataType coreID
+      )
+    {
+      /** A multiplier change for a p-state is only applied if the 
+       *   p-state changes. */
+      if( currentPstateID == performanceStateIDAccordingToMultiplier)
+        if( performanceStateIDAccordingToMultiplier > 0)
+        {
+          performanceStateIDAccordingToMultiplier --;
+          return 0;
+        }
+        else
+        {
+          /** Because 0 is the highest p-state: copy to # 1 and set p-state 1
+            *  as the current p-state. */
+          if( ! CopyPstateRegister(0, 1, coreID) )
+            return SetPstateViaPstateControlRegister(
+              1 ,
+              1 << coreID );
+        }
+      return 1;
+    }
+  
+    inline fastestUnsignedDataType ChangeVoltageAndFrequencyViaCOFVIDcontrolRegister(
       const float fVoltageInVolt, 
       const float fMultiplier,
       const fastestSignedDataType coreID,
@@ -345,32 +391,21 @@ namespace AMD
       fastestSignedDataType performanceStateIDAccordingToMultiplier = 
         GetPstateAccordingToFrequency(fMultiplier);
       if( performanceStateIDAccordingToMultiplier == -1 )
-        return;
-      /** Voltage and multiplier for a p-state are only applied if the 
-       *   p-state changes.*/
-      if( currentPstateID == performanceStateIDAccordingToMultiplier)
-        if( performanceStateIDAccordingToMultiplier > 0)
-          performanceStateIDAccordingToMultiplier --;
-        else
-        {
-          /** Because 0 is the highest p-state: copy to # 1 and set p-state 1
-            *  as the current p-state. */
-          CopyPstateRegister(0, 1, coreID);
-          SetPstateViaPstateControlRegister(
-            1 ,
-            1 << coreID );
-        }
+        return 1;
+      EnsurePstateChanges(currentPstateID, 
+        performanceStateIDAccordingToMultiplier, coreID);
       fastestUnsignedDataType CPUcorefrequencyID, divisorID;
       GetFreqIDandDivisorIDfromMulti(fMultiplier, CPUcorefrequencyID, divisorID);
       uint32_t MSRhighmost, MSRlowmost;
       /** Must get the register content for MSRC001_0070 "COFVID Control 
        *   Register" in advance because of "31:25 NbVid: Northbridge VID." */
-      ReadMSR(
+      if( ! ReadMSR(
         COFVID_CONTROL_REGISTER_MSR_ADDRESS,
         & MSRlowmost,
         & MSRhighmost,
         1
-        );
+        ) )
+        return 2;
 //      MSRhighmost = 0;
 //      MSRlowmost &= ~(127 << 25); /** mask bits 25-31 **/
 //      MSRlowmost &= ~(1 << 22); /** mask bit 22 **/
@@ -392,14 +427,10 @@ namespace AMD
       MSRlowmost &= bitmask; /** mask bits 16-18 **/
       MSRlowmost |= (performanceStateIDAccordingToMultiplier << 16);
 #ifdef DEBUG
-      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
-        *   MSRC001_0070 COFVID Control Register :
-        *   "31:25 NbVid: Northbridge VID"  */
-      fastestUnsignedDataType northBridgeVoltageID = MSRlowmost >> 25;
-      /** 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG :
-        *   MSRC001_0070 COFVID Control Register :
-        *   "22 NbDid: Northbridge divisor ID"  */
-      fastestUnsignedDataType northBridgeDivisorID = (MSRlowmost >> 22) & 1;
+      fastestUnsignedDataType northBridgeVoltageID = GetNorthbridgeVoltageID(
+        MSRlowmost);;
+      fastestUnsignedDataType northBridgeDivisorID = GetNorthbridgeDivisorID(
+        MSRlowmost);
       if( COFVIDcontrolRegisterSanityCheck(
             MSRlowmost, 
             fVoltageInVolt, 
