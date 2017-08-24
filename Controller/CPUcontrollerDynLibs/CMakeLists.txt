@@ -1,5 +1,9 @@
 cmake_minimum_required (VERSION 2.6)
 
+#create dyn lib in appropriate directory
+#from https://stackoverflow.com/questions/6594796/how-do-i-make-cmake-output-into-a-bin-dir
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ../../CPUcontrollerDynLibs)
+
 if( NOT DEFINED DYN_LIB_FILE_NAME )
   message("warning: COMMON_SOURCECODE_ROOT_PATH is NOT defined")
   #TODO: set to folder name of the dyn lib main source file
@@ -37,3 +41,7 @@ message("include directories: ${INCLUDE_DIRS}")
 
 #from https://stackoverflow.com/questions/6499364/generating-dll-using-cmake
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILE_PATHS})
+
+#the following needs to be done with "--no-undefined" as compiler flag
+#see https://linux.die.net/man/3/dlopen: "Link with -ldl."
+target_link_libraries(${PROJECT_NAME} dl)

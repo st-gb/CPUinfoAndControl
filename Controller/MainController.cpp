@@ -36,6 +36,8 @@
   //only useful for user interface
   #include <Xerces/SAX2_CPUspecificHandler.hpp>
 #endif
+//OperatingSystem::GetCurrentWorkingDirA_inl
+#include <FileSystem/GetCurrentWorkingDir.hpp>
 
 #include <Xerces/SAX2MainConfigHandler.hpp> //class SAX2MainConfigHandler
 //class SAX2VoltagesForFrequencyHandler
@@ -149,8 +151,10 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     Xerces::SAX2CPUtypeConfiguration sax2cpucontrollerconfiguration(
       * mp_userinterface, * mp_model);
     const char archCPUmodelConfigFilePath [] = "/CPUmodelConfig.xml";
+    std::string relativeCPUmodelConfigFilePath = 
+      mp_model->m_std_strConfigFilePath + archCPUmodelConfigFilePath;
     if( Apache_Xerces::ReadXMLfileWithoutInitAndTermXercesInline(
-        (mp_model->m_std_strConfigFilePath + archCPUmodelConfigFilePath).c_str(),
+        relativeCPUmodelConfigFilePath.c_str(),
         mp_userinterface, sax2cpucontrollerconfiguration)
         == Apache_Xerces::readingXMLdocSucceeded )
     {
@@ -166,10 +170,13 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
         m_mostSuitableCPUinfoGetterAndOrController.empty() )
     {
       std::ostringstream oss;
+      std::string stdstrCurrWorkDir;
+      OperatingSystem::GetCurrentWorkingDirA_inl(stdstrCurrWorkDir);
+      //show full file path instead of relative file path
       oss << "no CPU controller and/or info getter defined in "
-        "configuration file \"" <<
-        //TODO show full file path instead of relative file path
-        archCPUmodelConfigFilePath << "\"";
+        "configuration file \n\n\"" << stdstrCurrWorkDir << "//" << 
+        relativeCPUmodelConfigFilePath << "\"\n\n"
+        "the CPU controller and/or info getter (dynamic library) may be attached (manually) afterwards";
       const std::string message = oss.str();
       LOGN_WARNING(message)
       mp_userinterface->MessageWithTimeStamp("warning:" + message);
@@ -187,9 +194,13 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     }
     else
     {
+#ifdef __linux__
+      std::string mostSuitableCPUinfoGetterAndOrController = "lib";        
+#endif
+      mostSuitableCPUinfoGetterAndOrController += sax2cpucontrollerconfiguration.
+        m_mostSuitableCPUinfoGetterAndOrController;
       r_p_cpucontroller = gp_cpucontrolbase->CreateDynLibCPUcontroller_DynLibName(
-        sax2cpucontrollerconfiguration.
-        m_mostSuitableCPUinfoGetterAndOrController);
+        mostSuitableCPUinfoGetterAndOrController);
     }
     std::string stdstrCPUtypeRelativeDirPath ;
     if( GetPstatesDirPath( stdstrCPUtypeRelativeDirPath ) )
@@ -521,10 +532,13 @@ void MainController::ReadRegisterDataConfig(
 
 void MainController::ReadRegisterDataConfig()
 {
-  const std::string & relFilePath = "CPUregisterData/" +
-    mp_model->m_mostSuitableCPUregisterDataFile;
-  ReadRegisterDataConfig(
-    (std::string & ) relFilePath,
-    mp_userinterface
-    );
+  if( ! mp_model->m_mostSuitableCPUregisterDataFile.empty() )
+  {
+    const std::string & relFilePath = "CPUregisterData/" +
+      mp_model->m_mostSuitableCPUregisterDataFile;
+    ReadRegisterDataConfig(
+      (std::string & ) relFilePath,
+      mp_userinterface
+      );
+  }
 }

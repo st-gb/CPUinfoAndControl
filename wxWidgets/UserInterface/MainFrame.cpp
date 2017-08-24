@@ -71,7 +71,7 @@
 //http://stackoverflow.com/questions/59670/how-to-get-rid-of-deprecated-conversion-from-string-constant-to-char-warning
 // : "I believe passing -Wno-write-strings to gcc will suppress this warning."
 #pragma GCC diagnostic ignored "-Wwrite-strings"
-  #include <images/x86IandC.xpm>
+  #include <x86IandC.xpm>
 //ENable g++ "deprecated conversion from string constant to 'char*'" warning
 #pragma GCC diagnostic warning "-Wwrite-strings"
 #include <ModelData/ModelData.hpp> //class CPUcoreData

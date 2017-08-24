@@ -9,7 +9,17 @@
 #include "stdafx.h"
 #endif
 
-#include <Controller/CPU-related/AMD/from_K10.h>
+/** the DEBUGN preprocessor macro needs to be declared on top of the source file, else:
+     "error: macro "DEBUGN" passed 1 arguments, but takes just 0"  or :
+     "error: ‘DEBUGN’ was not declared in this scope"   */
+#ifdef _DEBUG
+  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
+#else
+  #define DEBUGN() /* empty */
+#endif
+
+#include <Controller/CPU-related/AMD/beginningWithFam10h/from_K10.h>
+#include <Controller/CPU-related/AMD/beginningWithFam10h/temperature.hpp>
 #include <Controller/CPU-related/AMD/beginningWithFam10h/GetAvailableMultipliers.hpp>
 #include <preprocessor_macros/bitmasks.h>
 #include <Controller/CPU-related/AMD/family15h/family15h.hpp>
@@ -28,11 +38,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 //#include <Controller/CPU-related/Intel/Core/Core2_GetConfigurableMultipliers.hpp>
 //#include <Controller/CPU-related/Intel/HyperThreading.hpp> //Intel::IsHyperThreaded()
 #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
-#ifdef _DEBUG
-  #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
-#else
-  #define DEBUGN() /* empty */
-#endif
+
 //#include <Windows/GetNumberOfLogicalCPUs.h>
 //  #include <preprocessor_helper_macros.h>  //for BITMASK_FOR_LOWMOST_5BIT
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -133,9 +139,9 @@ EXPORT float * DLL_CALLING_CONVENTION GetAvailableMultipliers(
 {
   DEBUGN( /*FULL_FUNC_NAME <<*/ "begin")
 //  * p_wNumberOfArrayElements = 0 ;
-  float fMainPllOpFreqIdMax = AMD::fromK10::GetMaxCPU_COF();
-  return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements,
-    fMainPllOpFreqIdMax);
+//  float fMainPllOpFreqIdMax = AMD::fromK10::GetMaxCPU_COF();
+  return AMD::fromK10::GetAvailableMultipliers(p_wNumberOfArrayElements//,
+    /*fMainPllOpFreqIdMax*/);
 }
 
 /** @return The array pointed to by the return value must be freed by the caller (i.e.

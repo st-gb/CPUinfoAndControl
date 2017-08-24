@@ -103,7 +103,13 @@ namespace Xerces
               )
             {
               LOGN_DEBUG( std_strAttributeName << " attribute's value:" << std_str)
-              if( std_str == convertToStdString(m_c_r_cpucoredata.m_wFamily) )
+//              if( std_str == convertToStdString(m_c_r_cpucoredata.m_wFamily) )
+              unsigned valueFromXML;
+              /** Converting string to a number and then comparing the numbers
+                  has the advatage that also non-decimal number in the XML file 
+               *  can be compared to a decimal number. */
+              if( ConvertStdStringToTypename(valueFromXML, std_str) )
+                if( valueFromXML == m_c_r_cpucoredata.m_wFamily )
               {
                 m_SuitabilityLevel ++;
                 std_strAttributeName = "model";

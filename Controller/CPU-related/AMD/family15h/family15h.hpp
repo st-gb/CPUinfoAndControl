@@ -1,7 +1,7 @@
 #pragma once
 
 #include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
-#include <../beginningWithFam10h/from_K10.h>
+#include "../beginningWithFam10h/from_K10.h"
 
 namespace AMD
 {

@@ -232,8 +232,13 @@ namespace AMD
 		  WORD wCoreID
 			, WORD * p_wNum )
 		{
-			fastestUnsignedDataType voltageIDforHighestVoltage, voltageIDforLowestVoltage;
-			GetMinAndMaxVoltageID(voltageIDforLowestVoltage, voltageIDforHighestVoltage);
+     /** Must be a signed data type, else in the comparison in the loop the 
+      *  signed data type is converted to the data type of this variable 
+      *  (unsigned) */
+			fastestSignedDataType voltageIDforHighestVoltage;
+      fastestUnsignedDataType voltageIDforLowestVoltage;
+			GetMinAndMaxVoltageID(voltageIDforLowestVoltage, 
+        (fastestUnsignedDataType &) voltageIDforHighestVoltage);
 			const fastestUnsignedDataType numAvailableVoltages =  
 				voltageIDforLowestVoltage - voltageIDforHighestVoltage + 1;
 			float * ar_f = new float[numAvailableVoltages];
@@ -243,7 +248,9 @@ namespace AMD
 				/** see 31116 Rev 3.62 - January 11, 2013 AMD Family 10h Processor BKDG 
 				 *  , "Table 8: SVI and internal VID codes" :
 				 *   Higher voltage IDs mean lower voltages */
-			  for( fastestUnsignedDataType voltageID = voltageIDforLowestVoltage; 
+			  for( /** Use signed data type here, else the value wraps to the max 
+             * value for the data type if 0 is decremented. */ 
+          fastestSignedDataType voltageID = voltageIDforLowestVoltage; 
 					voltageID >= voltageIDforHighestVoltage; voltageID --)
 				{
 					ar_f[arrayIndex ++] = GetVoltageInVolt(voltageID);

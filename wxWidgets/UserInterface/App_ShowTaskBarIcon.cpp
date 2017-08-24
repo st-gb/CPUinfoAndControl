@@ -22,7 +22,7 @@
 #include <compiler/GCC/enable_disable_write_strings_warning.h>
 
 IGNORE_WRITE_STRINGS_WARNING
-  #include <images/x86IandC.xpm>
+  #include <x86IandC.xpm>
 //#pragma GCC diagnostic warning "-Wwrite-strings"
 ENABLE_WRITE_STRINGS_WARNING
 
