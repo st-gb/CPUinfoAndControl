@@ -142,22 +142,24 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
 //  LOGN("Trying to set current working dir to \""
 //    << mp_model->m_stdstrExecutableStartupPath.c_str() << "\"" )
 //  chdir( mp_model->m_stdstrExecutableStartupPath.c_str() ) ;
-  int ret = system( "chmod 777 ./Linux/load_kernel_module.sh") ;
+  
+  const std::string shellScriptPath = "./Linux/load_MSR_kernel_module.sh";
+  const std::string shellCommand = "chmod 777 " + shellScriptPath;
+  int ret = system(shellCommand.c_str() ) ;
 //  LOGN("Trying to set current working dir to \"/\"" )
 //  chdir( "/" ) ;
+  ret = system(shellScriptPath.c_str() );
   //from www.opengroup.org:
   if( //execlp( "sh", "sh", "./load_kernel_module.sh"
       //from www.yolinux.com
-      system(
-      "./Linux/load_kernel_module.sh"
-//      , //NULL
-//      (char *) 0
-      ) == -1
-    )
+      /** https://linux.die.net/man/3/system:"The value returned is -1 on error" */
+      ret == -1 )
   {
     std::string stdstrErrorMessage = OperatingSystem::
-      GetErrorMessageFromLastErrorCodeA() ;
-    UIconfirm( "error executing load_kernel_module.sh: " + stdstrErrorMessage) ;
+      GetErrorMessageFromLastErrorCodeA();
+    std::string message = "error executing \"" + shellScriptPath + "\":" + 
+      stdstrErrorMessage;
+    UIconfirm( message) ;
   }
   std::string stdstrMSRfilePath ;
 //  m_arfstreamMSR = new std::fstream [byNumCPUcores] ;
