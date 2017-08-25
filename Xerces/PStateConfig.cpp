@@ -89,16 +89,23 @@ namespace Xerces
     //DOMElement * p_dom_elementFreqnVolt ;
     try
     {
+      /** Need to convert to XMLCh, else if only casting from char to to XMLCh, 
+       *  (under Linux) only the first character was output. Also, a named 
+       *  object must be created because if using XERCES_STRING_FROM_ANSI_STRING
+       *  the destructor is called and the XMLCh string deleted immediately. */
+       Xerces::XercesString xercesString(FREQ_AND_VOLTAGE_LITERAL);
+      const XMLCh * freq_and_voltageXMLChLiteral = 
+        //XERCES_STRING_FROM_ANSI_STRING(FREQ_AND_VOLTAGE_LITERAL);
+        xercesString.unicodeForm();
       mp_dom_elementFreqnVolt = mp_dom_document->
         //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMDocument.html
         // #f5e93a6b757adb2544b3f6dffb4b461a:
         // "DOMException   INVALID_CHARACTER_ERR: Raised if the specified name
         //  contains an illegal character."
-        createElement(
-          //XERCES_STRING_FROM_ANSI_STRING(FREQ_AND_VOLTAGE_LITERAL)
+        createElement( freq_and_voltageXMLChLiteral
         //Avoid Linux g++ "no matching function for call to ‘xercesc_3_0::
         // DOMDocument::createElement(const wchar_t [17])’"
-        (const XMLCh * ) FREQ_AND_VOLTAGE_WCHAR_LITERAL );
+        /*(const XMLCh * ) FREQ_AND_VOLTAGE_WCHAR_LITERAL*/ );
       //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMNode.html:
       //"Adds the node newChild to the end of the list of children of this
       //node."
@@ -109,6 +116,14 @@ namespace Xerces
         appendChild( mp_dom_elementFreqnVolt);
 
       LOGN_DEBUG("appended " << FREQ_AND_VOLTAGE_LITERAL << " to the XML DOM tree" )
+      /** Need to convert to XMLCh, else if only casting from char to to XMLCh, 
+       *  (under Linux) only the first character was output. Also, a named 
+       *  object must be created because if using XERCES_STRING_FROM_ANSI_STRING
+       *  the destructor is called and the XMLCh string deleted immediately. */
+      Xerces::XercesString xercesString2(FREQUENCY_IN_MHZ_ANSI_LITERAL);
+      const XMLCh * freqInMHZ_XMLChLiteral = 
+        //XERCES_STRING_FROM_ANSI_STRING(FREQUENCY_IN_MHZ_ANSI_LITERAL);
+        xercesString2.unicodeForm();
       mp_dom_elementFreqnVolt->
         //http://xerces.apache.org/xerces-c/apiDocs-2/classDOMElement.html
         // #1a607d8c619c4aa4a59bc1a7bc5d4692
@@ -118,7 +133,8 @@ namespace Xerces
         //Avoid Linux g++ "no matching function for call to
         //‘xercesc_3_0::DOMElement::setAttribute(const wchar_t [17],
         //const XMLCh*)’ "
-        (const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL //attribute name
+        //(const XMLCh * ) FREQUENCY_IN_MHZ_WCHAR_LITERAL //attribute name
+        freqInMHZ_XMLChLiteral
         ,
         //attribute value
         XERCES_STRING_FROM_ANSI_STRING( convertToStdString<WORD>(wFreq).c_str() )
@@ -192,7 +208,12 @@ namespace Xerces
     {
 //      LOGWN_WSPRINTF(L"evaluating %ls", XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR)
       LOGN_DEBUG("evaluating \"" << XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI << "\"")
-      //Gets NULL on failure/ exception.
+      /** Need to convert to XMLCh, else if only casting from char to to XMLCh, 
+       *  (under Linux) only the first character was output. Also, a named 
+       *  object must be created because if using XERCES_STRING_FROM_ANSI_STRING
+       *  the destructor is called and the XMLCh string deleted immediately. */
+      Xerces::XercesString xpathXercesString(XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI);
+      /** Gets NULL on failure/ exception. */
       mp_domxpathresult = mp_dom_document->
         //http://xerces.apache.org/xerces-c/apiDocs-3/classDOMXPathEvaluator.html
         // #8785175b7f816234978a931a60000039:
@@ -205,7 +226,8 @@ namespace Xerces
         //xercesc_3_0::DOMElement*&, xercesc_3_0::DOMXPathNSResolver*&,
         //xercesc_3_0::DOMXPathResult::ResultType, NULL)’ "
 //        (const XMLCh * ) XPATH_EXPRESSION_FREQ_AND_VOLTAGE_WCHAR ,
-        XERCES_STRING_FROM_ANSI_STRING(XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI) ,
+        //XERCES_STRING_FROM_ANSI_STRING(XPATH_EXPRESSION_FREQ_AND_VOLTAGE_ANSI) ,
+        xpathXercesString.unicodeForm(),
         mp_dom_elementRoot,
         p_dom_xpath_ns_resolver,
         XERCES_CPP_NAMESPACE::DOMXPathResult::ORDERED_NODE_SNAPSHOT_TYPE,
@@ -252,10 +274,14 @@ namespace Xerces
         //for( XMLSize_t xmlsize_tAttIdx = 0 ; p_dom_namednodemap->getLength() ;
         //    ++ xmlsize_tAttIdx )
         //{
+      /** Need to convert to XMLCh, else if only casting from char to to XMLCh, 
+       *  (under Linux) only the first character was output. s*/
+        /** Must create named object, else with "XERCES_STRING_FROM_ANSI_STRING" 
+          * it is destructed immediately afterwards and so the xml string is invalid.*/
+        Xerces::XercesString xercesString(FREQUENCY_IN_MHZ_WCHAR_LITERAL);
         p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
-          //"frequency_in_MHz"
-//            xmlchAttributeName
-          XERCES_STRING_FROM_WCHAR_T_STRING(FREQUENCY_IN_MHZ_WCHAR_LITERAL)
+          //XERCES_STRING_FROM_WCHAR_T_STRING(FREQUENCY_IN_MHZ_WCHAR_LITERAL)
+          xercesString.unicodeForm()
           ) ;
         //Attribute exists.
         if ( p_domnodeAttribute )
@@ -707,11 +733,16 @@ namespace Xerces
             if( p_dom_namednodemap )
             {
 //              DOMNode * p_domnodeAttribute ;
-//              cp_xmlchAttrName = XERCES_STRING_FROM_ANSI_STRING(
-//                cpc_XMLAttrName) ;
+            /** Need to convert to XMLCh, else if only casting from char to to XMLCh, 
+             *  (under Linux) only the first character was output. s*/
+            /** Must create named object, else with "XERCES_STRING_FROM_ANSI_STRING" 
+              * it is destructed immediately afterwards and so the xml string is invalid.*/
+              Xerces::XercesString xercesString(cpc_XMLAttrName);
+              const XMLCh * cp_xmlchAttrName = xercesString.unicodeForm();
+//              XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName);
               p_domnodeAttribute = p_dom_namednodemap->getNamedItem(
-                //cp_xmlchAttrName
-                XERCES_STRING_FROM_ANSI_STRING(cpc_XMLAttrName) ) ;
+                cp_xmlchAttrName
+                 ) ;
               ////Attribute exists.
               if ( p_domnodeAttribute //&& c_iterator->m_fVoltageInVolt !=
                 )
@@ -1006,7 +1037,8 @@ namespace Xerces
     {
       LOGN("before setting attribute value " <<
        fVoltageFromModelData
-        << "for attribute name "        << cpc_XMLAttrName
+        << "for attribute name "
+        << cpc_XMLAttrName
         << " for freq "
         << //XercesHelper::ToStdString( mp_dom_elementFreqnVolt->getAttribute(
           Xerces::ToStdString( mp_dom_elementFreqnVolt->getAttribute(
