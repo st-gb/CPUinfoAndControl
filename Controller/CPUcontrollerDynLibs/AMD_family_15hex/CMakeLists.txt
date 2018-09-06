@@ -10,7 +10,6 @@ set(CPU_I_AND_C_SOURC_DIR
   ${PROJECT_SOURCE_DIR}/../../.. )
 
 set( INCLUDE_DIRS 
-  ${INCLUDE_DIRS} #inlcude the wxWidgets dirs from above
   ${COMMON_SOURCECODE_ROOT_PATH}
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
   ${CPU_I_AND_C_SOURC_DIR}
