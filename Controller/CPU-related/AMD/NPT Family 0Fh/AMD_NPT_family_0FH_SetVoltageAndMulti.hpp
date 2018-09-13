@@ -153,7 +153,7 @@ inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
       & highmostMSRbits, 1) )
     )
   {
-    DEBUGN( FULL_FUNC_NAME << "--lowmost bits:" << getBinaryRepresentation(
+    DEBUGN("lowmost bits:" << getBinaryRepresentation(
       lowmostMSRbits) )
     OperatingSystem::GetTimeCountInSeconds( currentTimeCountInSeconds );
     //"Loop on reading the FidVidPending bit (bit 31) of FIDVID_STATUS

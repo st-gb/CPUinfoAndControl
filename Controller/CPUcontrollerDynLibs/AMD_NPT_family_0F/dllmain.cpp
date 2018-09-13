@@ -5,14 +5,10 @@
  * You are allowed to modify and use the source code from
  * Trilobyte SE for free if you are not
  * making profit directly or indirectly with it or its adaption.
- * Else you may contact Trilobyte SE.
- */
-/*
- * dllmain.cpp
- *
+ * Else you may contact Trilobyte SE. */
+/** dllmain.cpp
  *  Created on: 03.05.2012
- *      Author: Stefan
- */
+ *      Author: Stefan */
   #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
   #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
   //DYN_LIB_CALLING_CONVENTION
@@ -31,13 +27,13 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #include <typeinfo> //for typeid<>
 #ifdef _WIN32
   #include <windows.h> //for
-  #include <winuser.h> //MessageBox
+  //#include <winuser.h> //MessageBox(...)
   static HMODULE g_hModule;
   #include <Windows/Process/GetDLLfileName.hpp> //GetDLLfileName(...)
-#ifdef _DEBUG
-  #include <Windows/Logger/Logger.hpp> //class Windows_API::Logger
+ #ifdef _DEBUG
+//  #include <Windows/Logger/LogEntryOutputter.hpp> //class Windows_API::LogEntryOutputter
   #include <Windows/Process/GetCurrentProcessExeFileNameWithoutDirs/GetCurrentProcessExeFileNameWithoutDirs.hpp>
-#endif
+ #endif
 #endif
 
 #if defined(COMPILE_WITH_LOG) && defined(USE_PANTHEIOS)
@@ -62,6 +58,9 @@ AssignPointerToExportedExeReadPCIconfig.h>
   #define MAX_TIME_SPAN_IN_MS_FOR_TSC_DIFF 10000
 
   ReadPCIconfigSpace_func_type g_pfnReadPCIconfigSpace ;
+/** Needed for call to AssignPointersToExportedExeMSRfunctions(...) */
+ReadMSR_func_type g_pfnreadmsr ;
+WriteMSR_func_type g_pfn_write_msr ;
   //static
     BYTE s_minimumFID;
 
@@ -282,7 +281,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
 
     std::string strExeFileNameWithoutDirs
 #ifdef _WIN32
-    = GetExeFileNameWithoutDirs()
+    = CurrentProcess::GetExeFileNameWithoutDirs_inline()
 #endif
       ;
     std::string stdstrFilename;
@@ -296,7 +295,7 @@ AssignPointerToExportedExeReadPCIconfig.h>
     stdstrFilename = std_tstrDLLfileName + strExeFileNameWithoutDirs +
       "_log.txt";
 //      g_logger.OpenFile2( stdstrFilename ) ;
-    g_logger.OpenFile2(stdstrFilename);
+    g_logger.OpenFileA(stdstrFilename);
 
 //    DEBUGN("chars for module name needed:" //<< dwChars //<< ar_strModuleName
 //          << strExeFileNameWithoutDirs )
@@ -330,13 +329,13 @@ AssignPointerToExportedExeReadPCIconfig.h>
     //BYTE by
     )
   {
-#ifdef __linux__
-    AssignPointersToExportedExeMSRfunctions(
-      g_pfnreadmsr , g_pfn_write_msr ) ;
-#else
-    DEBUGN("after GetMainPllOpFreqIdMax")
+//#ifdef __linux__
+//    AssignPointersToExportedExeMSRfunctions()
+//      g_pfnreadmsr , g_pfn_write_msr ) ;
+//#else
+//    DEBUGN("after GetMainPllOpFreqIdMax")
     AssignPointersToExportedExefunctions();
-#endif
+//#endif
 #ifdef _DEBUG
     OpenLogFile();
     //  LPSTR = new STR[dwChars] ;

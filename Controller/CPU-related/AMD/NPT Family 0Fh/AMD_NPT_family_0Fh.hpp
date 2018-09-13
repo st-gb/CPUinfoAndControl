@@ -31,7 +31,7 @@ inline_register_access_functions.hpp>
 //190 Memory System Configuration Chapter 4: Current Temperature (CurTmp)—Bits 23-14.
 #include "AMD_NPT_family_0Fh_registers.h"
 #include <math.h> //ceil(...)
-#include <fastest_data_type.h> //typedef fastestUnsignedDataType
+#include <hardware/CPU/fastest_data_type.h> //typedef fastestUnsignedDataType
 //FIDVID_STATUS_MSR_ADDRESS
 #include <Controller/CPU-related/AMD/K7/AMD_K7_MSR_addresses.h>
 //GetVoltageInVolt
@@ -420,13 +420,13 @@ namespace AMD
       const BYTE MaxRampVID = ( lowmostMSRbits >> MAX_RAMP_VID_START_ADDRESS_IN_BIT
         ) & BITMASK_FOR_LOWMOST_6BIT;
     #endif
-      DEBUGN(/*FULL_FUNC_NAME << "--"*/ "MaxRampVID:" << (WORD) MaxRampVID << "^=" <<
-        AMD::familyF::GetVoltageInVolt(MaxRampVID) << " Volt")
+      DEBUGN("MaxRampVID:" << (WORD) MaxRampVID << "^=" <<
+        AMD::family0F::GetVoltageInVolt(MaxRampVID) << " Volt")
 
     //  BYTE startVID = ( highmostMSRbits >>
     //    START_VID_START_ADDRESS_IN_BIT_IN_HIGHMOST_BYTES ) &
     //    BITMASK_FOR_LOWMOST_6BIT;
-      DEBUGN(/*FULL_FUNC_NAME << "--"*/ "highmost bits:"
+      DEBUGN("highmost bits:"
         << getBinaryRepresentation(highmostMSRbits) )
       DEBUGN(/*FULL_FUNC_NAME << "--"*/ "VID for maximum voltage:"
         << maximumVoltageVID)
