@@ -5,39 +5,36 @@
  * You are allowed to modify and use the source code from Trilobyte SE for free
  * if you are not making profit directly or indirectly with it or its adaption.
  * Else you may contact Trilobyte SE. */
-/*
- * AMD_NPT_family_0FH_SetVoltageAndMulti.hpp
- *
+/** AMD_NPT_family_0FH_SetVoltageAndMulti.hpp
  *  Created on: 13.06.2012
- *      Author: Stefan
- */
+ *  Author: Stefan */
 
 #ifndef AMD_NPT_FAMILY_0FH_SETVOLTAGEANDMULTI_HPP_
 #define AMD_NPT_FAMILY_0FH_SETVOLTAGEANDMULTI_HPP_
 
   static const float fRampVoltageOffsetInVolt =
-//    32559 Rev. 3.16 November 2009 BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
-//    Processors  Table 73. RVO Values
-//    "50 mV BIOS default"
+/** BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh Processors
+ *  (32559 Rev. 3.16 November 2009), Table 73. RVO Values :
+ *  "50 mV BIOS default" */
     0.05f;
 
   //TODO calculate/ get MVS
   static const float MaximumVoltageStepInVolt =
-  // 32559 Rev. 3.16 November 2009 BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
-  // Processors: Table 72. MVS Values:
-  // "25 mV BIOS default."
+  /** BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh Processors
+   *  32559 Rev. 3.16 November 2009: Table 72. MVS Values:
+   *  "25 mV BIOS default." */
     0.025f;
 
-//  "To translate the PLL lock time to an StpGntTOCnt value, multiply
-//  PLL_LOCK_TIME by 1000 to get nanoseconds, then divide by 5 which is the clock period of
-//  the counter in ns. Therefore, StpGntTOCnt value = PLL_LOCK_TIME * 1000/5. For example,
-//  a PLL lock time of 2 μs results in an StpGntTOCnt value of 400 decimal and 190h."
+/** "To translate the PLL lock time to an StpGntTOCnt value, multiply
+*   PLL_LOCK_TIME by 1000 to get nanoseconds, then divide by 5 which is the clock period of
+*   the counter in ns. Therefore, StpGntTOCnt value = PLL_LOCK_TIME * 1000/5. For example,
+*   a PLL lock time of 2 μs results in an StpGntTOCnt value of 400 decimal and 190h." */
 
-  //14.2.9.1 FIDVID_CTL Register p. 423:
-  //"The processor core clock PLL lock time is 2 μs for AMD NPT Family 0Fh
-  // Processors. This time
-//  refers to all components of PLL lock including frequency lock, phase lock,
-  //and settling time."
+ /** 14.2.9.1 FIDVID_CTL Register p. 423:
+  * "The processor core clock PLL lock time is 2 μs for AMD NPT Family 0Fh
+  *  Processors. This time
+  *  refers to all components of PLL lock including frequency lock, phase lock,
+  *  and settling time." */
   static uint16_t s_StpGntTOCnt = 400;
     //4000;
 
@@ -87,26 +84,26 @@ void WaitVoltageStabilizationTime()
   DEBUGN( FULL_FUNC_NAME << "--begin")
   //"The default is 05h (100 μs). All other values are reserved."
 //  ::Sleep(1);
-  //"Table 71. Sample VST Values"
-  //100000 nanoseconds = 100 μs
-  //http://en.wikipedia.org/wiki/%CE%9Cs:
-  // "A microsecond is equal to 1000 nanoseconds"
-  //Rightmark: VID transition statbilization time (us): "100"
+  /** "Table 71. Sample VST Values"
+  *   100000 nanoseconds = 100 μs
+  * http://en.wikipedia.org/wiki/%CE%9Cs:
+  *  "A microsecond is equal to 1000 nanoseconds"
+  * Rightmark: VID transition statbilization time (us): "100" */
   WaitNanoSeconds(100000
     //1000000
     );
 //  OperatingSystem::Sleep(10);
 }
 
-//"10.6.2.1.5 Isochronous Relief Time" :
-//"The Isochronous Relief Time (IRT) is the amount of time the processor driver must count after each
-//FID change step in a given P-state transition."
+/** "10.6.2.1.5 Isochronous Relief Time" :
+* "The Isochronous Relief Time (IRT) is the amount of time the processor driver must count after each
+* FID change step in a given P-state transition." */
 void WaitIsochronousReliefTime()
 {
   DEBUGN( FULL_FUNC_NAME << "--begin")
-  //Chapter 10 Power and Thermal Management page 321:  Table 75. IRT Values
-  //"80 μs (BIOS default)"
-  //" 10 μs ...80 μs"
+  /** Chapter 10 Power and Thermal Management page 321:  Table 75. IRT Values
+  * "80 μs (BIOS default)"
+  * " 10 μs ...80 μs" */
   //RMclock: FID transition stabilization time (us): "80"
   WaitNanoSeconds( //80000
     //Use more than default because the time count may be inadequate.
@@ -128,14 +125,11 @@ void WaitIsochronousReliefTime()
 //  Only sets the voltage, the multiplier must stay the same (else undefined
 //   * behaviour/ errors possible)
 
-/**
-  //32559 Rev. 3.16 November 2009 BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh:
-  //  10.5.7.2.1 Changing the VID
-  //  Note: Software must hold the FID constant when changing the VID.
- *
+/** BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh Processors
+    (32559 Rev. 3.16 November 2009), chapter "10.5.7.2.1 Changing the VID" :
+    "Note: Software must hold the FID constant when changing the VID."
   //p. 315:
-  //"Note: Software must hold the VID constant when changing the FID."
- * */
+  //"Note: Software must hold the VID constant when changing the FID." */
 inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
   uint32_t highmostMSRbits)
 {
@@ -409,8 +403,8 @@ BYTE TransitionToLowerFrequencyID(
   DEBUGN( FULL_FUNC_NAME << "--begin--byCurrentFrequencyID:"
     << (WORD) byCurrentFrequencyID << " ")
   BYTE retVal = 1;
-  BYTE FinalFID = GetFrequencyID_AMD_NPT_family_0FH(fMultiplierToSet);
-  const BYTE currentVoltageID = GetVoltageID_AMD_NPT_family_0FH(
+  BYTE FinalFID = AMD::family0Fh::GetFrequencyID(fMultiplierToSet);
+  const BYTE currentVoltageID = AMD::family0Fh::GetVoltageID(
     fCurrentVoltageInVolt);
 
 #ifdef ALLOW_ODD_FIDS_FOR_STEPPING_NUMBER_BELOW_3
@@ -477,8 +471,7 @@ BYTE TransitionToLowerFrequencyID(
  *  "The processor supports direct transitions between the minimum core
  *  frequency in Table 69 and any of the core frequencies from Table 70 listed
  *  in the Portal Core Frequencies column associated with the minimum core
- *  frequency."
- */
+ *  frequency." */
 inline BYTE GetVCOportalFrequencyID(
   BYTE byCurrentFrequencyID,
   BYTE byTargetFrequencyID
@@ -552,8 +545,8 @@ inline BYTE TransitionToHigherFrequencyID(
 {
   DEBUGN( FULL_FUNC_NAME << "--begin")
   BYTE retVal = 0;
-  BYTE FinalFID = GetFrequencyID_AMD_NPT_family_0FH(fMultiplierToSet);
-  const BYTE VoltageID = GetVoltageID_AMD_NPT_family_0FH(fVoltageInVoltToSet);
+  BYTE FinalFID = AMD::family0Fh::GetFrequencyID(fMultiplierToSet);
+  const BYTE VoltageID = AMD::family0Fh::GetVoltageID(fVoltageInVoltToSet);
   BYTE TargetFID = FinalFID % 2 == 1 ? FinalFID - 1 : FinalFID;
   DEBUGN( FULL_FUNC_NAME
     << "--TargetFID:" << (WORD) TargetFID
@@ -636,8 +629,8 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
     << "V VoltageToSet:" << fVoltageInVoltToSet << "V"
     << " currentFID:" << (WORD) byCurrentFrequencyID)
   BYTE retVal = 0;
-  BYTE voltageIDtoSet = GetVoltageID_AMD_NPT_family_0FH(fVoltageInVoltToSet);
-  BYTE currentVoltageID = GetVoltageID_AMD_NPT_family_0FH(fCurrentVoltageInVolt);
+  BYTE voltageIDtoSet = AMD::family0Fh::GetVoltageID(fVoltageInVoltToSet);
+  BYTE currentVoltageID = AMD::family0Fh::GetVoltageID(fCurrentVoltageInVolt);
   do
   {
     currentVoltageID += voltageIDdirection;
@@ -656,9 +649,9 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
     // case of: decrement voltage: while ( 1 * 0 < 1 * 5)
   }while( voltageIDdirection * currentVoltageID < voltageIDdirection * voltageIDtoSet);
 
-  fCurrentVoltageInVolt = AMD::family0F::GetVoltageInVolt(currentVoltageID);
+  fCurrentVoltageInVolt = AMD::family0Fh::GetVoltageInVolt(currentVoltageID);
 
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal
+  DEBUGN("return " << (WORD) retVal
     << " current voltage:" << fCurrentVoltageInVolt << "V")
   return retVal;
 }
@@ -674,15 +667,13 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
  * */
 inline float SetToClosestConfigurableVoltage(float fCurrentVoltageInVolt)
 {
-  BYTE VID = GetVoltageID_AMD_NPT_family_0FH(fCurrentVoltageInVolt);
-  float fVoltageInVoltFromVID = AMD::family0F::GetVoltageInVolt(VID);
+  BYTE VID = AMD::family0Fh::GetVoltageID(fCurrentVoltageInVolt);
+  float fVoltageInVoltFromVID = AMD::family0Fh::GetVoltageInVolt(VID);
   if( fCurrentVoltageInVolt != fCurrentVoltageInVolt)
   {
-    DEBUGN( FULL_FUNC_NAME << "--"
-      << getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
+    DEBUGN(getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
       << "--fCurrentVoltageInVolt")
-    DEBUGN( FULL_FUNC_NAME << "--"
-      << getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltFromVID) )
+    DEBUGN(getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltFromVID) )
       << "--fVoltageInVoltFromVID"
       )
   }
@@ -740,7 +731,7 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
     do
     {
       fCurrentVoltageInVolt += MaximumVoltageStepInVolt;
-      VoltageID = GetVoltageID_AMD_NPT_family_0FH(//fVoltageInVoltToSet
+      VoltageID = AMD::family0Fh::GetVoltageID(//fVoltageInVoltToSet
         fCurrentVoltageInVolt);
       retVal = SetVIDorFID_AMD_NPT_family_0FH(
 //        fCurrentVoltageInVolt,
@@ -878,7 +869,7 @@ inline BYTE TransitionToVoltageRequiredForFrequencyTransition(
   DEBUGN( FULL_FUNC_NAME << "--return "  << (WORD) MSRaccessRetVal
     << "voltage to set:" << fVoltageInVoltToSet
     << "V current voltage:" << fCurrentVoltageInVolt << "V"
-    << " current VID:" << (WORD) GetVoltageID_AMD_NPT_family_0FH(
+    << " current VID:" << (WORD) AMD::family0Fh::GetVoltageID(
       fCurrentVoltageInVolt)
     )
   return MSRaccessRetVal;
@@ -940,10 +931,10 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
 
 //  CalculateTargetVoltageID();
 
-//  "10.5.7.2 P-state Transition Algorithm" :
-//  "The P-state transition algorithm has three phases.
-//  1 During phase 1 the processor voltage is transitioned
-//    to the level required to support frequency transitions."
+/**  "10.5.7.2 P-state Transition Algorithm" :
+*   "The P-state transition algorithm has three phases.
+*   1 During phase 1 the processor voltage is transitioned
+*     to the level required to support frequency transitions." */
   TransitionToVoltageRequiredForFrequencyTransition(
     fVoltageInVoltToSet
     , fMultiplierToSet
@@ -953,9 +944,9 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
     );
 //  BYTE byCurrentFrequencyID;
 //  BYTE byCurrentVoltageID;
-  GetCurrentVoltageIDAndFrequencyID_AMD_NPT_family_0Fh(
+  AMD::family0Fh::GetCurrentVoltageIDAndFrequencyID(
     byCurrentVoltageID, byCurrentFrequencyID);
-  DEBUGN( FULL_FUNC_NAME << "--after TransitionToVoltageRequiredForFrequency"
+  DEBUGN("after TransitionToVoltageRequiredForFrequency"
     "Transition--curr VID:" << (WORD) byCurrentVoltageID << " curr FID:"
     << (WORD) byCurrentFrequencyID )
 //  "2 During phase 2 the processor frequency is transitioned to frequency
@@ -997,14 +988,14 @@ inline BYTE
   float fCurrentReferenceClockInMHz;
 
   BYTE byCurrentFrequencyID, byCurrentVoltageID;
-  BYTE MSRaccessRetVal = GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
+  BYTE MSRaccessRetVal = AMD::family0Fh::GetCurrentVoltageAndFrequency(
     & fCurrentVoltageInVolt,
     & fCurrentMultiplier,
     & fCurrentReferenceClockInMHz,
     wCoreID,
     byCurrentFrequencyID,
     byCurrentVoltageID);
-  DEBUGN( FULL_FUNC_NAME << "--fCurrentMultiplier:" << fCurrentMultiplier
+  DEBUGN("fCurrentMultiplier:" << fCurrentMultiplier
     << " fCurrentVoltageInVolt:" << fCurrentVoltageInVolt)
   if( fCurrentMultiplier == fMultiplierToSet)
   {

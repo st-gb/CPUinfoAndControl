@@ -129,8 +129,8 @@ WriteMSR_func_type g_pfn_write_msr ;
       , WORD * p_wNumberOfArrayElements
       )
   {
-    DEBUGN("DLL's GetAvailableMultipliers")
-    return GetAvailableMultipliersAMD_NPT_family0F( * p_wNumberOfArrayElements) ;
+    DEBUGN("inside DLL--begin")
+    return AMD::family0Fh::GetAvailableMultipliers( * p_wNumberOfArrayElements) ;
   }
 
   /** @return The array pointed to by the return value must be freed by the
@@ -139,7 +139,8 @@ WriteMSR_func_type g_pfn_write_msr ;
     WORD wCoreID
     , WORD * p_wNumberOfArrayElements )
   {
-    return AMD::family0F::GetAvailableVoltages( * p_wNumberOfArrayElements) ;
+    DEBUGN("begin")
+    return AMD::family0Fh::GetAvailableVoltages( * p_wNumberOfArrayElements) ;
   }
 
   EXPORT BYTE DYN_LIB_CALLING_CONVENTION
@@ -152,13 +153,13 @@ WriteMSR_func_type g_pfn_write_msr ;
     )
   {
     static BYTE byRet;
-    byRet = GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(
+    byRet = AMD::family0Fh::GetCurrentVoltageAndFrequency(
       p_fVoltageInVolt,
       p_fMultiplier ,
       p_fReferenceClockInMHz ,
       wCoreID
       ) ;
-    DEBUGN( /*FULL_FUNC_NAME << "--"*/ "return " << (WORD) byRet << " ref.clock:"
+    DEBUGN("return " << (WORD) byRet << " ref.clock:"
       << * p_fReferenceClockInMHz << "MHz multi:" << * p_fMultiplier
       << " " << * p_fVoltageInVolt << "V")
     return byRet;
@@ -167,10 +168,10 @@ WriteMSR_func_type g_pfn_write_msr ;
   EXPORT float DYN_LIB_CALLING_CONVENTION GetTemperatureInCelsius(
     WORD wCoreID )
   {
-//    DEBUGN( FULL_FUNC_NAME << "--begin ")
+//    DEBUGN("begin ")
     return //fTempInDegCelsius ;
       //0.0 ;
-      GetTemperatureInDegCelsiusAMD_NPT_family0F();
+      AMD::family0Fh::GetTemperatureInDegCelsius();
   }
 
   //#define DLL_CALLING_CONVENTION __stdcall
@@ -178,6 +179,7 @@ WriteMSR_func_type g_pfn_write_msr ;
 
   void InsertDefaultVoltageForStartUpFID(I_CPUaccess * pi_cpuaccess)
   {
+    DEBUGN("begin")
     uint32_t lowmostMSRbits;
     uint32_t highmostMSRbits;
     BYTE readMSRreturnValue;
@@ -190,20 +192,23 @@ WriteMSR_func_type g_pfn_write_msr ;
       );
     //"Startup VID (StartVID)—Bits 45–40."
     BYTE StartupVID = (highmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
-    float fVoltageInVolt = AMD::family0F::GetVoltageInVolt( StartupVID);
+    float fVoltageInVolt = AMD::family0Fh::GetVoltageInVolt( StartupVID);
 
     //"Startup FID (StartFID)—Bit 13–8"
     BYTE StartupFID = (lowmostMSRbits >> 8 ) & BITMASK_FOR_LOWMOST_6BIT;
 #ifdef USE_STARTUP_FID_AS_MIN_FID
     s_minimumFID = StartupFID;
 #endif //#ifdef USE_STARTUP_FID_AS_MIN_FID
-    float fMultiplier = GetMultiplier_AMD_NPT_family_0FH(StartupFID);
+    float fMultiplier = AMD::family0Fh::GetMultiplier(StartupFID);
+    DEBUGN("before inserting default voltage for frequency")
+    //TODO insert a check (check sum etc.) that ensures that both the executable
+    //(GUI or service) and the dynlib have the same here!
     pi_cpuaccess->mp_model->m_cpucoredata.m_stdsetvoltageandfreqDefault.insert(
       VoltageAndFreq(fVoltageInVolt, (WORD) ( fMultiplier * //g_fReferenceClockInMHz
         200.0f)
         )
       );
-
+    DEBUGN("end")
   }
 
 #if defined (_DEBUG) && defined(USE_LOG4CPLUS)
@@ -329,11 +334,11 @@ WriteMSR_func_type g_pfn_write_msr ;
     //BYTE by
     )
   {
+    DEBUGN("begin")
 //#ifdef __linux__
 //    AssignPointersToExportedExeMSRfunctions()
 //      g_pfnreadmsr , g_pfn_write_msr ) ;
 //#else
-//    DEBUGN("after GetMainPllOpFreqIdMax")
     AssignPointersToExportedExefunctions();
 //#endif
 #ifdef _DEBUG
@@ -370,8 +375,9 @@ WriteMSR_func_type g_pfn_write_msr ;
       m_stdsetvoltageandfreqWanted ;
   #endif //INSERT_DEFAULT_P_STATES
 //    CreateFIDtoPortalCoreFIDmapping();
-
+  #ifdef InsertDefaultVoltages
     InsertDefaultVoltageForStartUpFID(pi_cpuaccess);
+  #endif //#ifdef InsertDefaultVoltages
   //  AssignExeFunctionPointers() ;
     //g_nehalemcontroller.SetCPUaccess( pi_cpuaccess ) ;
     //MSC-generated version has no problems
@@ -394,14 +400,13 @@ WriteMSR_func_type g_pfn_write_msr ;
 #ifdef _DEBUG
 //    LOG4CPLUS_INFO(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
 #endif //#ifdef _DEBUG
-    DEBUGN( /*FULL_FUNC_NAME << "--"*/ "begin--fVoltageInVolt:" << fVoltageInVolt
+    DEBUGN("begin--fVoltageInVolt:" << fVoltageInVolt
       << " fMultiplier:" << fMultiplier)
-    // see "10.5 Processor Performance States"
-        //10.5.1.1 P-state Recognition Algorithm
-    //"10.5.7.2 P-state Transition Algorithm"
-
-    //"Note: Software must hold the FID constant when changing the VID."
-
+    //TODO move this documentation to the implementing function
+    /** see "10.5 Processor Performance States"
+     *  10.5.1.1 P-state Recognition Algorithm
+     *  "10.5.7.2 P-state Transition Algorithm"
+     * "Note: Software must hold the FID constant when changing the VID." */
     /** "Odd FID values are supported in revision G and later revisions" */
     SetCurrentVoltageAndMultiplier_AMD_NPT_family_0FH( fVoltageInVolt ,
       fMultiplier ,

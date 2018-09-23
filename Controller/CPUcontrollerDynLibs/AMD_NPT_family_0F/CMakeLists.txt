@@ -5,10 +5,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
 set( SOURCE_FILE_PATHS
   dllmain.cpp
   )
@@ -70,11 +66,19 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   #"-H" for g++ causes to show all the include files
   #add_definitions("-H")
 
+  #TODO: verify: If not added this may cause Windows error code 126:("The specified procedure 
+  #  could not be found."? 
   # "-Wno-undef" forces unresolved definitions to be reported at compile time
   #  instead of at dynamic link/load time.
-  #If not added this may cause Windows error code 126:("The specified procedure 
-  #  could not be found."? 
-  add_definitions("-Wno-undef")
+  #-fPIC: Position-Independent Code (necessary at all?)
+  add_definitions("-Wno-undef -fPIC")
+  #"-s": "Remove all symbol table and relocation information from the executable." 
+  #   (explanation from https://gcc.gnu.org/onlinedocs/gcc-5.5.0/gcc.pdf)
+  # This saves some space in the binary.
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s")
+
+  set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g")
 else()
   #add_definitions("-DCOMPILE_WITH_LOG")
 endif()
@@ -84,3 +88,6 @@ message("include directories: ${INCLUDE_DIRS}")
 
 #from https://stackoverflow.com/questions/6499364/generating-dll-using-cmake
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILE_PATHS})
+#Statically link necessary libraries in order to be independent on the ones from
+# GUI or service
+#target_link_libraries(${PROJECT_NAME} stdc++ gcc_s msvcrt)

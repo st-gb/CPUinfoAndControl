@@ -98,25 +98,30 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   }
   else
   {
-    DWORD dw = OperatingSystem::GetLastErrorCode() ;
+    DWORD OSlastErrorCode = OperatingSystem::GetLastErrorCode();
 //    std::basic_string<wxStringBase::char_type> wxchar_str;
     std::wstring std_wstrErrMsg = //EnglishMessageFromLastErrorCode() ;
       L"loading the CPU controller dynamic library\n\""
       + GetStdWstring( r_wxstrFilePath/*.ToUTF8()*/ )
-      + L"\"\nfailed:"
-      + GetStdWstring(OperatingSystem::GetErrorMessageFromErrorCodeA(dw) );
+      + L"\"\nfailed:\n"
+      + GetStdWstring(OperatingSystem::GetErrorMessageFromErrorCodeA(OSlastErrorCode) )
+      /** Also display the error code so the user may lookup possible errors 
+       * himself.*/
+      + L"(OS error code:" + convertToStdString(OSlastErrorCode) + L")"
+      ;
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //    DWORD dw = ::GetLastError() ;
     //std::string stdstrErrMsg = ::LocalLanguageMessageFromErrorCodeA( dw) ;
 //    std::string stdstrErrMsg = ::GetLastErrorMessageString(dw) ;
-    std_wstrErrMsg += GetStdWstring(DLLloadError::GetPossibleSolution( dw ) );
+    std_wstrErrMsg += GetStdWstring(DLLloadError::GetPossibleSolution( OSlastErrorCode ) );
 #else //#ifdef _WIN32
 #endif //#ifdef _WIN32
     std::string std_strErrMsg = GetStdString(std_wstrErrMsg);
     LOGN_ERROR( std_wstrErrMsg )
     //::wxMessageBox( wxT("Error message: ") + wxString(stdstrErrMsg) ,
 //    wxT("loading DLL failed") ) ;
+    //TODO show in a dialog that lets the message to be copied to the clipboard
     mp_userinterface->MessageWithTimeStamp(std_wstrErrMsg.c_str() );
     throw CPUaccessException( std_strErrMsg);
   }
