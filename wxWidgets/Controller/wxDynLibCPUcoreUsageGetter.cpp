@@ -6,8 +6,8 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "wxDynLibCPUcoreUsageGetter.hpp"
-//GetErrorMessageFromErrorCodeA(...)
-#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+//OperatingSystem::GetErrorMessageFromErrorCodeA(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
 #include <OperatingSystem/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/Logger/LogLevel.hpp>

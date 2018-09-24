@@ -17,8 +17,10 @@
 //#include <Controller/character_string/stdstring_format.hpp>
 //Linker? error when <errno.h> was _also_ (->twice) included (indirectly) from
 // other include files before.
-//for GetErrorMessageFromLastErrorCodeA(...)
+//for OperatingSystem::GetErrorMessageFromLastErrorCodeA()
 #include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+//OperatingSystem::GetErrorMessageFromErrorCodeA(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
 //convertToStdString(T )
 #include <Controller/character_string/stdstring_format.hpp>
 #include <ModelData/ModelData.hpp> //class Model

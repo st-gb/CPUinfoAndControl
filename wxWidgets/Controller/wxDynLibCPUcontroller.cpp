@@ -6,11 +6,13 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "wxDynLibCPUcontroller.hpp"
+//convertToStdString(...)
+#include <Controller/character_string/convertFromAndToStdString.hpp>
 //format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
-//GetErrorMessageFromErrorCodeA(...)
-#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+//OperatingSystem::GetErrorMessageFromErrorCodeA(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
 #include <OperatingSystem/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 //#include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp> //for passing to dyn libs "Init()"

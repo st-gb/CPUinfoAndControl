@@ -32,6 +32,7 @@
 //#include "wxDynFreqScalingTimer.hpp"
 //#include "wxDynLinkedCPUcoreUsageGetter.hpp"
 
+#include <data_structures/ByteArray.hpp> //class ByteArray
 //for OperatingSystem::GetErrorMessageFromErrorCodeA(DWORD)
 #include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/GetNumberOfLogicalCPUcores.h>
@@ -1566,7 +1567,10 @@ bool wxX86InfoAndControlApp::OnInit()
 //      HideMinGWconsoleWindow();
 
     std::string std_strAppendProcessID = m_model.m_std_strConfigFilePath + "/appendProcessID.cfg";
-    ReadFileContent(std_strAppendProcessID);
+    ByteArray byteArray;
+    if( ReadFileContent(std_strAppendProcessID.c_str(), byteArray) )
+      std_strAppendProcessID  = std::string( (char *) byteArray.GetArray(), 
+        byteArray.GetSize() );
     if( std_strAppendProcessID == "true")
       m_model.m_logfileattributes.m_bAppendProcessID = true;
     else

@@ -20,6 +20,7 @@
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
 #include <Controller/Logger/Appender/RollingFileOutput.hpp>
 #include <Controller/Logger/OutputHandler/StdOfStreamLogWriter.hpp>
+#include <data_structures/ByteArray.hpp> //class ByteArray
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //class PowerProfDynLinked
   #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
@@ -35,10 +36,11 @@
 #include <preprocessor_macros/make_widestring.h> //EXPAND_TO_WIDESTRING
 #include <preprocessor_macros/path_seperator.hpp> //for PATH_SEPERATOR_CHAR_ANSI
 #include <UserInterface/UserInterface.hpp>
+
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 #include <Xerces/LogOutputHandler.hpp> //class LogOutputHandler
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
-
+  
 #include <platformstl/filesystem/path.hpp>
 #include <iostream> //std::cout
 #include <algorithm> //std::set_difference(...)
@@ -219,9 +221,10 @@ void CPUcontrolBase::CreateDynLibCPUcontroller(
   stdstrFilePath = GetCPUcontrollerConfigFilePath(
     stdstrCPUtypeRelativeDirPath ) ;
   std::string std_strCPUcontrollerDynLibName = stdstrFilePath ;
-  if( ReadFileContent( std_strCPUcontrollerDynLibName ) )
+  ByteArray byteArray;
+  if( ReadFileContent(std_strCPUcontrollerDynLibName.c_str(), byteArray) )
   {
-    if( std_strCPUcontrollerDynLibName.empty() )
+    if( byteArray.GetSize() == 0 )
       LOGN("Do not load/ attach CPU core usage getter because string read "
         "from file \"" << stdstrFilePath
         << " that should contain the dynamic libary name seems to be empty" )
@@ -244,25 +247,31 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
   LOGN( "begin")
   std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
     "CPUcoreUsageGetter.cfg" ;
-  std::string stdstr = stdstrFilePath ;
-  if( ReadFileContent( stdstr ) )
-    //Linux text editors like "gedit" automatically add a carriage return
-    //character at the end of the (last) line.
-    RemoveCarriageReturn(stdstr) ;
+  std::string stdstrFileContent;// = (std::string) stdstrFilePath;
+  ByteArray byteArray;
+  if( ReadFileContent( stdstrFilePath.c_str(), byteArray) )
+  {
+    const fastestUnsignedDataType numChars = byteArray.GetSize();
+    /** Create a string object with n characters.*/
+    stdstrFileContent = std::string((char *) byteArray.GetArray(), numChars);
+    /** Linux text editors like "gedit" automatically add a carriage return
+        character at the end of the (last) line. */
+    RemoveCarriageReturn(stdstrFileContent);
+  }
   else
   {
-    stdstr = m_model.m_std_strDefaultCPUcoreUsageGetter;
+    stdstrFileContent = m_model.m_std_strDefaultCPUcoreUsageGetter;
     LOGN( "using default CPU core usage getter \""
-      << stdstr << "\"")
+      << stdstrFileContent << "\"")
   }
   {
-    if( stdstr.empty() )
+    if( stdstrFileContent.empty() )
       LOGN("Do not load/ attach CPU core usage getter because string read from "
         "file " << stdstrFilePath
         << " that should contain the dynamic libary name seems to be empty" )
     else
     {
-      std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstr ;
+      std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstrFileContent ;
       std::string stdstrFullFilePath = m_dynlibhandler.
         GetDynLibPath(stdstrFilePath) ;
       m_model.m_stdstrCPUcoreUsageGetterDynLibPath =
@@ -447,7 +456,11 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     std_strLogLevelString = m_model.m_std_strConfigFilePath +
       "/log_level.txt";
 
-    if( ! ReadFileContent(std_strLogLevelString) )
+    ByteArray byteArray;
+    if( ReadFileContent(std_strLogLevelString.c_str(), byteArray) )
+      std_strLogLevelString = std::string( (char *) byteArray.GetArray(), 
+        byteArray.GetSize() );
+    else
       std_strLogLevelString =
         "warning";
   }
