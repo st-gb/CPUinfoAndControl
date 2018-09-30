@@ -408,8 +408,10 @@ WriteMSR_func_type g_pfn_write_msr ;
      *  "10.5.7.2 P-state Transition Algorithm"
      * "Note: Software must hold the FID constant when changing the VID." */
     /** "Odd FID values are supported in revision G and later revisions" */
+    //TODO return return value of this function?
     SetCurrentVoltageAndMultiplier_AMD_NPT_family_0FH( fVoltageInVolt ,
       fMultiplier ,
       wCoreID ) ;
+    DEBUGN("end--return 1")
     return 1 ;
   }

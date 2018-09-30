@@ -40,6 +40,7 @@
 
 #include <Controller/time/GetTickCount.hpp> //DWORD ::GetTickCount()
 #include <Controller/Sleep.hpp> //OperatingSystem::Sleep()
+#include <hardware/CPU/fastest_data_type.h> //fastestUnsignedDataType
 
 //enum voltageIDincOrDec{ decrementVoltageID = -1, incrementVoltageID = 1};
 //enum incOrDecVoltage{ incrementVoltage = decrementVoltageID,
@@ -69,11 +70,11 @@ void WaitNanoSeconds(uint64_t WaitTimeInNanoseconds)
 //    GetTimeCountInNanoSeconds(//LARGE_INTEGER *lpPerformanceCount
 //      currentTimeCountInNanoSeconds );
     OperatingSystem::GetTimeCountInSeconds( currentTimeCountInSeconds );
-    DEBUGN( FULL_FUNC_NAME << "time count in s:" << currentTimeCountInSeconds)
+    DEBUGN("time count in s:" << currentTimeCountInSeconds)
   }while( //(currentTimeCountInNanoSeconds - initialTimeCountInNanoSeconds)
     ( currentTimeCountInSeconds - initialTimeCountInSeconds ) * 1000000000.0
     < WaitTimeInNanoseconds);
-  DEBUGN( FULL_FUNC_NAME << "--end--" << //currentTimeCountInNanoSeconds
+  DEBUGN( "end--" << //currentTimeCountInNanoSeconds
     //<< "-" << initialTimeCountInNanoSeconds << ">= " << WaitTimeInNanoseconds
     currentTimeCountInSeconds << "s-" << initialTimeCountInSeconds << "s >= "
     << ( WaitTimeInNanoseconds / 1000000000.0 ) << "s")
@@ -81,7 +82,7 @@ void WaitNanoSeconds(uint64_t WaitTimeInNanoseconds)
 
 void WaitVoltageStabilizationTime()
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN("begin")
   //"The default is 05h (100 μs). All other values are reserved."
 //  ::Sleep(1);
   /** "Table 71. Sample VST Values"
@@ -100,7 +101,7 @@ void WaitVoltageStabilizationTime()
 * FID change step in a given P-state transition." */
 void WaitIsochronousReliefTime()
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN("begin")
   /** Chapter 10 Power and Thermal Management page 321:  Table 75. IRT Values
   * "80 μs (BIOS default)"
   * " 10 μs ...80 μs" */
@@ -133,8 +134,8 @@ void WaitIsochronousReliefTime()
 inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
   uint32_t highmostMSRbits)
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
-  BYTE MSRaccessRetVal = WriteMSR(
+  DEBUGN("begin")
+  fastestUnsignedDataType MSRaccessRetVal = WriteMSR(
     FIDVID_CTL_MSR_ADDRESS,
     lowmostMSRbits,
     highmostMSRbits, 1);
@@ -150,9 +151,9 @@ inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
     DEBUGN("lowmost bits:" << getBinaryRepresentation(
       lowmostMSRbits) )
     OperatingSystem::GetTimeCountInSeconds( currentTimeCountInSeconds );
-    //"Loop on reading the FidVidPending bit (bit 31) of FIDVID_STATUS
-    //(MSR C001_0042h) until the bit returns 0. The FidVidPending bit stays set
-    //to 1 until the new FID code is in effect."
+    /** "Loop on reading the FidVidPending bit (bit 31) of FIDVID_STATUS
+     * (MSR C001_0042h) until the bit returns 0. The FidVidPending bit stays set
+     * to 1 until the new FID code is in effect." */
     if( ! ( lowmostMSRbits & BIT_31_SET )
       )
       break;
@@ -163,13 +164,13 @@ inline BYTE FinallyWriteVIDandFIDtoMSR( uint32_t lowmostMSRbits,
         (currentTimeCountInSeconds - initialTimeCountInSeconds) > 0.0001
       )
     {
-      DEBUGN( FULL_FUNC_NAME << "--timed out")
+      DEBUGN("timed out")
       break;
     }
     DEBUGN("VID code has NOT been driven to the voltage regulator")
   }
   DEBUGN("VID code has been driven to the voltage regulator")
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) MSRaccessRetVal)
+  DEBUGN("return " << MSRaccessRetVal)
   return MSRaccessRetVal;
 }
 
@@ -179,12 +180,11 @@ inline BYTE WriteVoltageIDandFID_AMD_NPT_family_0FH(
   uint16_t StpGntTOCnt
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--VoltageIDtoSet:"
-    << (WORD) byVoltageIDtoSet
+  DEBUGN("begin--VoltageIDtoSet:" << (WORD) byVoltageIDtoSet
     << " FrequencyIDtoSet: " << (WORD) byFrequencyIDtoSet )
   static uint32_t lowmostMSRbits;
   static uint32_t highmostMSRbits;
-  static BYTE MSRaccessRetVal;
+  static fastestUnsignedDataType MSRaccessRetVal;
 
   // "51–32 StpGntTOCnt"
   //"FIDVID_CTL Register MSR C001_0041h"
@@ -199,7 +199,7 @@ inline BYTE WriteVoltageIDandFID_AMD_NPT_family_0FH(
   lowmostMSRbits |= byFrequencyIDtoSet;
 
   MSRaccessRetVal = FinallyWriteVIDandFIDtoMSR(lowmostMSRbits, highmostMSRbits);
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) MSRaccessRetVal)
+  DEBUGN("return " << MSRaccessRetVal)
   return MSRaccessRetVal;
 }
 
@@ -216,11 +216,11 @@ inline BYTE SetVIDorFID_AMD_NPT_family_0FH(
   uint16_t StpGntTOCnt
   )
 {
-  DEBUGN( FULL_FUNC_NAME //<< "--fVoltageInVoltToSet:" << fVoltageInVoltToSet
+  DEBUGN( //<< "--fVoltageInVoltToSet:" << fVoltageInVoltToSet
     << "VoltageID:" << (WORD) VoltageID
     << " byFrequencyIDtoSet:" << (WORD) byFrequencyIDtoSet
     << " StpGntTOCnt:" << StpGntTOCnt)
-  static BYTE MSRaccessRetVal;
+  static fastestUnsignedDataType MSRaccessRetVal;
 //  float fMultiplierFromFID = GetMultiplier( lowmostMSRbits & BITMASK_FOR_LOWMOST_6BIT);
 
 //  BYTE FID = GetFrequencyID_AMD_NPT_family_0FH(fMultiplierToSet);
@@ -247,7 +247,7 @@ inline BYTE SetVIDorFID_AMD_NPT_family_0FH(
   }
 
 //  ChangeVoltageAndOrMultiplier();
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) MSRaccessRetVal)
+  DEBUGN("return " << MSRaccessRetVal)
   return MSRaccessRetVal;
 }
 
@@ -278,7 +278,8 @@ inline BYTE TransitionFrequencyID_StepByStep(
   char FIDstep // positive: increase FID; negative: decrease FID
   )
 {
-  BYTE retVal;
+  DEBUGN("begin")
+  fastestUnsignedDataType retVal;
   BYTE posFIDstep = makePositive(FIDstep);
   char direction = FIDstep / posFIDstep;
   do
@@ -293,6 +294,7 @@ inline BYTE TransitionFrequencyID_StepByStep(
       );
     WaitIsochronousReliefTime();
   } while( direction * byCurrentFrequencyID < direction * TargetFrequencyID);
+  DEBUGN("return " << retVal)
   return retVal;
 }
 
@@ -303,20 +305,21 @@ inline BYTE TransitionToLowerFrequencyID_StepByStep(
   BYTE TargetFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--byCurrentFrequencyID:"
-    << (WORD) byCurrentFrequencyID
-    << " TargetFrequencyID: " << (WORD) TargetFrequencyID )
+  DEBUGN("begin--current Frequency ID:" 
+    << (fastestUnsignedDataType) byCurrentFrequencyID
+    << " target Frequency ID:" << (fastestUnsignedDataType) TargetFrequencyID )
   //TODO FID steps may be "1" for certain CPU steppings/ revisions (see AMD
   //BIOS and kernel dev guide).
   static BYTE FIDstep = //1;
     2;
-  BYTE retVal = 1;
+  fastestUnsignedDataType retVal = 1;
   if( byCurrentFrequencyID - FIDstep >= TargetFrequencyID)
     do
     {
   //    -- byCurrentFrequencyID;
       byCurrentFrequencyID -= FIDstep; //next even lower FID.
-      DEBUGN( FULL_FUNC_NAME << "--byCurrentFrequencyID:" << (WORD) byCurrentFrequencyID)
+      DEBUGN("current Frequency ID:" 
+        << (fastestUnsignedDataType) byCurrentFrequencyID)
       retVal = SetVIDorFID_AMD_NPT_family_0FH(
 //        fCurrentVoltageInVolt,
         currentVoltageID,
@@ -325,7 +328,7 @@ inline BYTE TransitionToLowerFrequencyID_StepByStep(
         );
       WaitIsochronousReliefTime();
     } while(byCurrentFrequencyID > TargetFrequencyID);
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal)
+  DEBUGN("return " << retVal)
   return retVal;
 }
 
@@ -338,7 +341,8 @@ inline BYTE PossibyTransitionToMinimumFID(
   const BYTE currentVoltageID
   )
 {
-  BYTE retVal = 1;
+  DEBUGN("begin")
+  fastestUnsignedDataType retVal = 1;
   const MinAndMaxFID & minandmaxfidForMinimumFID =
     s_ar_minandmaxfid[s_minimumFID];
 //  BYTE VID = GetVoltageID_AMD_NPT_family_0FH(fCurrentVoltageInVolt);
@@ -389,6 +393,7 @@ inline BYTE PossibyTransitionToMinimumFID(
 //      //1
 //      )
   }
+  DEBUGN("return " << retVal)
   return retVal;
 }
 
@@ -400,9 +405,9 @@ BYTE TransitionToLowerFrequencyID(
 //  const BYTE currentVoltageID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--byCurrentFrequencyID:"
-    << (WORD) byCurrentFrequencyID << " ")
-  BYTE retVal = 1;
+  DEBUGN("begin--current Frequency ID:"
+    << (fastestUnsignedDataType) byCurrentFrequencyID << " ")
+  fastestUnsignedDataType retVal = 1;
   BYTE FinalFID = AMD::family0Fh::GetFrequencyID(fMultiplierToSet);
   const BYTE currentVoltageID = AMD::family0Fh::GetVoltageID(
     fCurrentVoltageInVolt);
@@ -413,8 +418,8 @@ BYTE TransitionToLowerFrequencyID(
   BYTE TargetFID = FinalFID % 2 == 1 ? // odd FID?
     FinalFID - 1 : FinalFID; // make even or already even FID
 #endif
-  DEBUGN( FULL_FUNC_NAME << "--begin--FinalFID:"
-    << (WORD) FinalFID << " TargetFID:" << (WORD) TargetFID)
+  DEBUGN("Final Frequency ID:" << (fastestUnsignedDataType) FinalFID 
+    << " target Frequency ID:" << (fastestUnsignedDataType) TargetFID)
 
 #ifdef USE_STARTUP_FID_AS_MIN_FID
   retVal = PossibyTransitionToMinimumFID(
@@ -461,7 +466,7 @@ BYTE TransitionToLowerFrequencyID(
 //      WaitIsochronousReliefTime();
 //    }
 //  }
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal)
+  DEBUGN("return " << retVal)
   return retVal;
 }
 
@@ -477,7 +482,8 @@ inline BYTE GetVCOportalFrequencyID(
   BYTE byTargetFrequencyID
   )
 {
-  BYTE retVal = 255;
+  DEBUGN("begin")
+  fastestUnsignedDataType retVal = 255;
   //"The processor supports direct transitions between the minimum core
   //frequency [...]"
   // but where stands the min FID? e.g. min FID can be = FID for 1400 MHz
@@ -495,7 +501,7 @@ inline BYTE GetVCOportalFrequencyID(
   //    else
   //      retVal = byCurrentFrequencyID;
   }
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal)
+  DEBUGN("return " << retVal)
   return retVal;
 }
 
@@ -506,14 +512,14 @@ inline BYTE TransitionToHigherFrequencyID_StepByStep(
   BYTE TargetFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
-  BYTE retVal = 0;
+  DEBUGN("begin")
+  fastestUnsignedDataType retVal = 0;
   do
   {
 //    ++ byCurrentFrequencyID; //higher FID <=> higher multiplier.
     byCurrentFrequencyID += 2; //next even higher FID <=> higher multiplier.
-    DEBUGN( FULL_FUNC_NAME << "byCurrentFrequencyID:"
-      << (WORD) byCurrentFrequencyID )
+    DEBUGN("current Frequency ID:"
+      << (unsigned) byCurrentFrequencyID )
     retVal = SetVIDorFID_AMD_NPT_family_0FH(
 //      fVoltageInVoltToSet,
       currentVoltageID,
@@ -524,7 +530,7 @@ inline BYTE TransitionToHigherFrequencyID_StepByStep(
 
   if( byCurrentFrequencyID < TargetFrequencyID )
   {
-    DEBUGN( FULL_FUNC_NAME << "--byCurrentFrequencyID < TargetFrequencyID" )
+    DEBUGN("current Frequency ID < target Frequency ID" )
     ++ byCurrentFrequencyID;
     retVal = SetVIDorFID_AMD_NPT_family_0FH(
 //      fVoltageInVoltToSet,
@@ -533,7 +539,7 @@ inline BYTE TransitionToHigherFrequencyID_StepByStep(
       s_StpGntTOCnt);
     WaitIsochronousReliefTime();
   }
-  DEBUGN( FULL_FUNC_NAME << "--return " << retVal)
+  DEBUGN("return " << retVal)
   return retVal;
 }
 
@@ -543,14 +549,13 @@ inline BYTE TransitionToHigherFrequencyID(
   , BYTE & byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin")
+  DEBUGN("begin")
   BYTE retVal = 0;
   BYTE FinalFID = AMD::family0Fh::GetFrequencyID(fMultiplierToSet);
   const BYTE VoltageID = AMD::family0Fh::GetVoltageID(fVoltageInVoltToSet);
   BYTE TargetFID = FinalFID % 2 == 1 ? FinalFID - 1 : FinalFID;
-  DEBUGN( FULL_FUNC_NAME
-    << "--TargetFID:" << (WORD) TargetFID
-    << "current FID: " << (WORD) byCurrentFrequencyID )
+  DEBUGN("target Frequency ID:" << (fastestUnsignedDataType) TargetFID
+    << "current Frequency ID:" << (fastestUnsignedDataType) byCurrentFrequencyID )
 
 //  //"Is CurrentFID in the “High FID Frequency Table”?"
 //  if( byCurrentFrequencyID > 7
@@ -601,7 +606,7 @@ inline BYTE TransitionToHigherFrequencyID(
 #ifdef USE_STARTUP_FID_AS_MIN_FID
   }
 #endif //USE_STARTUP_FID_AS_MIN_FID
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal)
+  DEBUGN("return " << (fastestUnsignedDataType) retVal)
   return retVal;
 }
 
@@ -624,10 +629,10 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
   BYTE byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--VIDdirection:" << (WORD) voltageIDdirection
-    << "fCurrVoltage:" << fCurrentVoltageInVolt
-    << "V VoltageToSet:" << fVoltageInVoltToSet << "V"
-    << " currentFID:" << (WORD) byCurrentFrequencyID)
+  DEBUGN("begin--VID direction:" << (fastestUnsignedDataType) voltageIDdirection
+    << "current voltage:" << fCurrentVoltageInVolt
+    << "V voltage to set:" << fVoltageInVoltToSet << "V"
+    << " current Frequency ID:" << (fastestUnsignedDataType) byCurrentFrequencyID)
   BYTE retVal = 0;
   BYTE voltageIDtoSet = AMD::family0Fh::GetVoltageID(fVoltageInVoltToSet);
   BYTE currentVoltageID = AMD::family0Fh::GetVoltageID(fCurrentVoltageInVolt);
@@ -651,7 +656,7 @@ inline BYTE TransitionToVoltageInSingleVIDsteps(
 
   fCurrentVoltageInVolt = AMD::family0Fh::GetVoltageInVolt(currentVoltageID);
 
-  DEBUGN("return " << (WORD) retVal
+  DEBUGN("return " << (fastestUnsignedDataType) retVal
     << " current voltage:" << fCurrentVoltageInVolt << "V")
   return retVal;
 }
@@ -690,17 +695,17 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
   float fVoltageInVoltToSet
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--CurrVoltage:"
-    << fCurrentVoltageInVolt << "V currFID:"
-    << (WORD) byCurrentFrequencyID
-    << " MaximumVoltageStep:" << MaximumVoltageStepInVolt << "V"
-    << " VoltageToSet:" << fVoltageInVoltToSet << "V"
+  DEBUGN("begin--current voltage:"
+    << fCurrentVoltageInVolt << "V current Frequency ID:"
+    << (fastestUnsignedDataType) byCurrentFrequencyID
+    << " maximum voltage step:" << MaximumVoltageStepInVolt << "V"
+    << " voltage to set:" << fVoltageInVoltToSet << "V"
     )
   BYTE retVal = 0;
 //  //Max exceed max voltage when the ramp voltage offset is added to a voltage.
 //  if( fVoltageInVoltToSet > s_maxVoltageInVolt)
 //  {
-//    DEBUGN( FULL_FUNC_NAME << " setting to max voltage")
+//    DEBUGN("setting to max voltage")
 //    fVoltageInVoltToSet = s_maxVoltageInVolt;
 //  }
   float comparativeVoltageInVoltToSet = fVoltageInVoltToSet;
@@ -719,11 +724,9 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
   float fBorderVoltage = comparativeVoltageInVoltToSet
     //Gets lower for decreasing voltage, higher for increasing voltage.
     - absoluteMaximumVoltageStepInVolt;
-  DEBUGN( FULL_FUNC_NAME << "--"
-    "comparativeVoltageToSet:" << comparativeVoltageInVoltToSet
-    << "V absoluteMaximumVoltageStep:" << absoluteMaximumVoltageStepInVolt
-    << "V fBorderVoltage:" << fBorderVoltage
-    )
+  DEBUGN("comparative voltage to set:" << comparativeVoltageInVoltToSet
+    << "V absolute maximum voltage step:" << absoluteMaximumVoltageStepInVolt
+    << "V border voltage:" << fBorderVoltage)
 
   if( fCurrentVoltageInVolt * direction <= fBorderVoltage)
   {
@@ -755,7 +758,7 @@ inline BYTE ChangeVoltageByMaximumVoltageStep(
       fBorderVoltage
       );
   }
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal
+  DEBUGN("return " << (fastestUnsignedDataType) retVal
     << "--current voltage:" << fCurrentVoltageInVolt << "V")
   return retVal;
 }
@@ -766,10 +769,8 @@ inline BYTE TransitionVoltage(
   BYTE byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin"
-    "--currentVoltage:" << fCurrentVoltageInVolt << "V"
-    << " VoltageToSet:" << fVoltageInVoltToSet << "V"
-    )
+  DEBUGN("begin--current voltage:" << fCurrentVoltageInVolt << "V"
+    << " voltage to set:" << fVoltageInVoltToSet << "V")
   BYTE retVal = 0;
 
   BYTE direction = incrementVoltage;
@@ -792,14 +793,11 @@ inline BYTE TransitionVoltage(
 //      direction * fCurrentVoltageInVolt < direction * fVoltageInVoltToSet
     )
   {
-    DEBUGN( FULL_FUNC_NAME << " did not reach fVoltageInVoltToSet")
-    DEBUGN( FULL_FUNC_NAME << "--"
-      << getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
+    DEBUGN("did not reach voltage to set")
+    DEBUGN( getBinaryRepresentation( * ((unsigned long *) & fCurrentVoltageInVolt) )
       << "--fCurrentVoltageInVolt")
-    DEBUGN( FULL_FUNC_NAME << "--"
-      << getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltToSet) )
-      << "--fVoltageInVoltToSet"
-      )
+    DEBUGN( getBinaryRepresentation( * ((unsigned long *) & fVoltageInVoltToSet) )
+      << "--fVoltageInVoltToSet")
     TransitionToVoltageInSingleVIDsteps(
 //      incrementVoltage,
       direction * -1,
@@ -807,8 +805,8 @@ inline BYTE TransitionVoltage(
       fVoltageInVoltToSet,
       byCurrentFrequencyID);
   }
-  DEBUGN( FULL_FUNC_NAME << "--fCurrentVoltageInVolt:" << fCurrentVoltageInVolt )
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) retVal )
+  DEBUGN("current voltage in Volt:" << fCurrentVoltageInVolt )
+  DEBUGN("return " << (fastestUnsignedDataType) retVal )
   return retVal;
 }
 
@@ -820,9 +818,9 @@ inline BYTE TransitionToVoltageRequiredForFrequencyTransition(
   , BYTE byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--voltage to set:" << fVoltageInVoltToSet
+  DEBUGN("begin--voltage to set:" << fVoltageInVoltToSet
     << "V current voltage:" << fCurrentVoltageInVolt << "V")
-  static BYTE MSRaccessRetVal;
+  static fastestUnsignedDataType MSRaccessRetVal;
   static float fVoltageToTransitionTo;
 
   //Cites from "BIOS and Kernel Developer’s Guide for AMD NPT Family 0Fh
@@ -855,7 +853,7 @@ inline BYTE TransitionToVoltageRequiredForFrequencyTransition(
   //Max exceed max voltage when the ramp voltage offset is added to a voltage.
   if( fVoltageToTransitionTo > s_maxVoltageInVolt)
   {
-    DEBUGN( FULL_FUNC_NAME << " setting to max voltage")
+    DEBUGN("setting to max voltage")
     fVoltageToTransitionTo = s_maxVoltageInVolt;
   }
   //"Software counts off voltage stabilization time (VST) after each voltage
@@ -864,13 +862,13 @@ inline BYTE TransitionToVoltageRequiredForFrequencyTransition(
     fCurrentVoltageInVolt,
     fVoltageToTransitionTo,
     byCurrentFrequencyID);
-//  DEBUGN( FULL_FUNC_NAME << "--fCurrentVoltageInVolt: "
+//  DEBUGN("current voltage in Volt: "
 //    << fCurrentVoltageInVolt)
-  DEBUGN( FULL_FUNC_NAME << "--return "  << (WORD) MSRaccessRetVal
+  DEBUGN("return " << MSRaccessRetVal
     << "voltage to set:" << fVoltageInVoltToSet
     << "V current voltage:" << fCurrentVoltageInVolt << "V"
-    << " current VID:" << (WORD) AMD::family0Fh::GetVoltageID(
-      fCurrentVoltageInVolt)
+    << " current Voltage ID:" << (fastestUnsignedDataType) 
+      AMD::family0Fh::GetVoltageID(fCurrentVoltageInVolt)
     )
   return MSRaccessRetVal;
 }
@@ -884,12 +882,11 @@ inline BYTE TransitionFrequency(
   , BYTE & byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--"
-    "CurrentFID: " << (WORD) byCurrentFrequencyID
-    << " fMultiplierToSet: " << fMultiplierToSet
-    << " current VID:" << (WORD) byCurrentVoltageID
+  DEBUGN("begin--current Frequency ID:" << (fastestUnsignedDataType) byCurrentFrequencyID
+    << " multiplier to set:" << fMultiplierToSet
+    << " current Voltage ID:" << (fastestUnsignedDataType) byCurrentVoltageID
     )
-  static BYTE MSRaccessRetVal = 0;
+  static fastestUnsignedDataType MSRaccessRetVal = 0;
 
   if( fMultiplierToSet < fCurrentMultiplier)
   {
@@ -911,7 +908,7 @@ inline BYTE TransitionFrequency(
 //      StpGntTOCnt
       );
   }
-  DEBUGN( FULL_FUNC_NAME << "--return " << (WORD) MSRaccessRetVal)
+  DEBUGN("return " << MSRaccessRetVal)
   return MSRaccessRetVal;
 }
 
@@ -924,8 +921,8 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
   , BYTE byCurrentFrequencyID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--")
-  static BYTE MSRaccessRetVal;
+  DEBUGN("begin")
+  static fastestUnsignedDataType MSRaccessRetVal;
 //  static uint32_t lowmostMSRbits;
 //  static uint32_t highmostMSRbits;
 
@@ -947,8 +944,9 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
   AMD::family0Fh::GetCurrentVoltageIDAndFrequencyID(
     byCurrentVoltageID, byCurrentFrequencyID);
   DEBUGN("after TransitionToVoltageRequiredForFrequency"
-    "Transition--curr VID:" << (WORD) byCurrentVoltageID << " curr FID:"
-    << (WORD) byCurrentFrequencyID )
+    "Transition--current Voltage ID:" 
+    << (fastestUnsignedDataType) byCurrentVoltageID 
+    << " current Frequency ID:" << (fastestUnsignedDataType) byCurrentFrequencyID )
 //  "2 During phase 2 the processor frequency is transitioned to frequency
 //    associated with the OS-requested P-state."
   TransitionFrequency(
@@ -968,6 +966,7 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
 
 //  MSRaccessRetVal = WriteMSR(FIDVID_CTL_MSR_ADDRESS, lowmostMSRbits,
 //    highmostMSRbits, 1);
+  DEBUGN("return " << MSRaccessRetVal)
   return MSRaccessRetVal;
 }
 
@@ -979,7 +978,7 @@ inline BYTE
     , WORD wCoreID
   )
 {
-  DEBUGN( FULL_FUNC_NAME << "--begin--should set" << fVoltageInVoltToSet
+  DEBUGN("begin--should set" << fVoltageInVoltToSet
     << "V, multiplier:" << fMultiplierToSet)
 //  DEBUGN_LOGGER_NAME(g_windows_api_logger, FULL_FUNC_NAME << "--begin--"
 //    << fVoltageInVoltToSet << "V, " << fMultiplierToSet)
@@ -988,7 +987,12 @@ inline BYTE
   float fCurrentReferenceClockInMHz;
 
   BYTE byCurrentFrequencyID, byCurrentVoltageID;
-  BYTE MSRaccessRetVal = AMD::family0Fh::GetCurrentVoltageAndFrequency(
+  /** As we need to know the current voltage and frequency we should not assume 
+   *  that the current voltage and frequency is the one
+   *  that was set or retrieved by this program because it may have 
+   *  changed by another program like RMClock etc. afterwards.
+   *  So the best is to retrieve it again shortly before setting it. */
+  fastestUnsignedDataType MSRaccessRetVal = AMD::family0Fh::GetCurrentVoltageAndFrequency(
     & fCurrentVoltageInVolt,
     & fCurrentMultiplier,
     & fCurrentReferenceClockInMHz,
@@ -1015,6 +1019,7 @@ inline BYTE
       byCurrentVoltageID,
       fCurrentMultiplier,
       byCurrentFrequencyID);
+  DEBUGN("return " << MSRaccessRetVal)
   return MSRaccessRetVal;
 }
 

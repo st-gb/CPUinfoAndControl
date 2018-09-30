@@ -14,8 +14,8 @@ set( COMMON_SOURCECODE_ROOT_PATH
 
 set(CPU_I_AND_C_SOURCE_DIR
   ${PROJECT_SOURCE_DIR}/../../.. )
+message("CPU_I_AND_C_SOURCE_DIR:${CPU_I_AND_C_SOURCE_DIR}")
 
-#  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
 set( INCLUDE_DIRS 
   ${COMMON_SOURCECODE_ROOT_PATH}
   ${CPU_I_AND_C_SOURCE_DIR}
@@ -47,6 +47,13 @@ set( SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${COMMON_SOURCECODE_ROOT_PATH}/Windows/Logger/LogEntryOutputter.cpp
   )
+else()
+ message("building for non-Microsoft Windows Operating System")
+ #non-Microsoft Windows Operating Systems do not have include files we need.
+ set( INCLUDE_DIRS
+  ${INCLUDE_DIRS}
+  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
+ )
 endif()
 
 #Necessary preprocessor macros for 
