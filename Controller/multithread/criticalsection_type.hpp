@@ -5,10 +5,12 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-#pragma once
+#pragma once  /** Include guard */
 
 #ifndef __X86I_AND_C_CRITICAL_SECTION_TYPE_HPP
   #define __X86I_AND_C_CRITICAL_SECTION_TYPE_HPP
+
+//#ifdef BUILD_AS_GUI
 
 //#ifdef __WXMSW__
 //because of c:\wxwidgets-2.9.0\include\wx\thread.h(453): error C2208: 
@@ -31,21 +33,23 @@
 #ifdef Yield
     #undef Yield
 #endif
-#include <wx/thread.h> //for class wxCriticalSection
 
 ////Fwd. decl.
 //class wxCriticalSection;
 
+/** Currently the wxWidgets type of critical section class even for the service
+ *  is used because the only dynamic library handler code which has more than 
+ *  1200 lines of code also uses wxWidgets.
+ *  So it can be exchanged if there is a native dynamic handler class. */
+#include <wx/thread.h> //for class wxCriticalSection
 typedef wxCriticalSection criticalsection_type ;
+//#endif
+//#ifdef BUILD_AS_UNIX_SERVICE
+//#include <OperatingSystem/POSIX/multithread/pthread_Based_I_CriticalSection.hpp>
+//typedef pthread_Based_I_CriticalSection criticalsection_type ;
+//#endif
 
 //#else
-//
-//class I_CriticalSection
-//{
-//  public:
-//  void Enter() {}
-//  void Leave() {}
-//} ;
 //
 //typedef I_CriticalSection criticalsection_type ;
 

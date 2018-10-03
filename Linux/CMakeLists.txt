@@ -10,3 +10,13 @@ set( CPU_ACCESS_SOURCE_FILES
   PARENT_SCOPE
   )
 
+if( ${EXE_TYPE} STREQUAL "UNIX_service")
+  set(SOURCE_FILE_PATHS
+    ${SOURCE_FILE_PATHS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/daemon/CPUcontrolDaemon.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/daemon/daemon_functions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/daemon/daemon_main.cpp
+    #PARENT_SCOPE makes changes made in this script visible to the caller of this file
+    PARENT_SCOPE
+  )
+endif()

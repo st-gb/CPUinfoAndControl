@@ -33,11 +33,24 @@ add_subdirectory(Xerces)
 #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(WXWIDGETS ON)
-  set(CXX_DEFINITIONS 
-    -DCOMPILE_AS_GUI)
+  set(CXX_DEFINITIONS
+    -DCOMPILE_AS_GUI
+    -DCOMPILE_WITH_MSR_EXAMINATION
+    )
   add_subdirectory(wxWidgets)
   set(EXE_NAME ${CPUinfoAndControl}_wxGUI)
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
+
+if( ${EXE_TYPE} STREQUAL "UNIX_service" )
+  set(WXWIDGETS ON)
+  set(CXX_DEFINITIONS
+    ${CXX_DEFINITIONS}
+    -DBUILD_AS_UNIX_SERVICE
+    -DCOMPILE_AS_SERVICE
+    )
+  add_subdirectory(wxWidgets)
+  set(EXE_NAME ${CPUinfoAndControl}_daemon)
+endif()
 
 if( DEFINED WXWIDGETS )
   message("WXWIDGETS is defined")
@@ -71,7 +84,6 @@ message("PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
 #  -DCOMPILE_AS_EXECUTABLE
 set( CXX_DEFINITIONS
   ${CXX_DEFINITIONS}
-  -DCOMPILE_WITH_MSR_EXAMINATION
   -DCOMPILE_LOGGER_MULTITHREAD_SAFE
   #-D__WXDEBUG__
   -DUSE_OWN_LOGGER
@@ -116,8 +128,8 @@ if (UNIX)
   set( CLIENT_SERVER_BASE_SOURCE_FILES
     ${CLIENT_SERVER_BASE_SOURCE_FILES}
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.cpp
-  	${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
-	  ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
+    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
   )
   #message("CLIENT_SERVER_BASE_SOURCE_FILES: ${CLIENT_SERVER_BASE_SOURCE_FILES}")
 endif (UNIX)
@@ -154,8 +166,7 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(SOURCE_FILE_PATHS
     ${SOURCE_FILE_PATHS}
     ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/daemon/daemon.cpp
-    ${PROJECT_SOURCE_DIR}/service/SMARTmonitorService.cpp
-    ${PROJECT_SOURCE_DIR}/service/service_main.cpp
+    ${PROJECT_SOURCE_DIR}/Controller/CPUcontrolServiceBase.cpp
   )
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
 
@@ -197,7 +208,12 @@ if(DEFINED WXWIDGETS)
   #set(wxWidgets_ROOT_DIR "C:/wxWidgets-2.8.10")
   message(wxWidgets_ROOT_DIR: ${wxWidgets_ROOT_DIR})
   message(wxWidgets_LIB_DIR: ${wxWidgets_LIB_DIR})
-  find_package(wxWidgets COMPONENTS core base adv REQUIRED)
+  if( ${EXE_TYPE} STREQUAL "wxGUI")
+    find_package(wxWidgets COMPONENTS core base adv REQUIRED)
+  endif()
+  if( ${EXE_TYPE} STREQUAL "UNIX_service")
+    find_package(wxWidgets COMPONENTS core base REQUIRED)
+  endif()
   message(wxWidgets_LIB_DIR: ${wxWidgets_LIB_DIR})
   if(wxWidgets_FOUND)
     message( "wxWidgets FOUND")
@@ -227,6 +243,7 @@ endif( ${EXE_TYPE} STREQUAL "UNIX_service" )
 if(DEFINED WXWIDGETS)
   #https://wiki.wxwidgets.org/CMake
   target_link_libraries(${EXE_NAME} ${wxWidgets_LIBRARIES})
+  message ("should also link to these wxWidgets libraries:${wxWidgets_LIBRARIES}")
 endif (DEFINED WXWIDGETS)
 
 message ("EXE_NAME: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")

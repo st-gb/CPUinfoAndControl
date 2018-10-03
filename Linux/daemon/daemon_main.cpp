@@ -10,13 +10,13 @@
 #include <Controller/DynFreqScalingThreadBase.hpp>
 #include <Controller/I_CPUaccess.hpp> //class I_CPUaccess
 #include <Controller/character_string/stdtstr.hpp> //std::tstring
-#include <Linux/daemon/daemon.h> //for daemonize(...)
+#include <OperatingSystem/Linux/daemon/daemon.h> //for daemonize(...)
 #include <Linux/daemon/daemon_functions.hpp> //init_daemon()
 #include <Linux/daemon/CPUcontrolDaemon.hpp>//class CPUcontrolDaemon
-//GetErrorMessageFromLastErrorCodeA()
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
-//GetCurrentWorkingDir(std::string & )
-#include <Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.hpp>
+//OperatingSystem::GetErrorMessageFromLastErrorCodeA()
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+//OperatingSystem::GetCurrentWorkingDirA_inl(std::string & )
+#include <OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.hpp>
 #include <ModelData/ModelData.hpp> //class Model
 #include <UserInterface/DummyUserInterface.hpp> //class DummyUserInterface
 //class wxConditionBasedI_Condition
@@ -42,7 +42,7 @@ bool init_logger(int argc, char *  argv[] )
 //    std::string( "_log." ) ;
 
   std::wstring std_wstrFullProgramPath = GetStdWstring(
-    g_commandlineargs.GetFullProgramPath() );
+    g_commandlineargs.GetProgramPath() );
 
   std::wstring std_wstrLogFilePath = L".";
   std::wstring std_wstrLogFileName = //GetStdWstring(std_strLogFileName);
@@ -57,7 +57,7 @@ bool init_logger(int argc, char *  argv[] )
   if( ! logFileIsOpen )
     std::wcerr << L"Failed to open log file \"" << //std_strLogFileName
       std_wstrLogFilePath << L"\":"
-      << GetStdWstring(::GetErrorMessageFromLastErrorCodeA()) << std::endl;
+      << GetStdWstring(OperatingSystem::GetErrorMessageFromLastErrorCodeA()) << std::endl;
   return logFileIsOpen;
 }
 
@@ -103,7 +103,7 @@ int main( int argc, char *  argv[] )
   bool bDVFSthreadSuccessfullyStarted = cpucontroldaemon.Start() ;
   LOGN(/*"main(..)-"*/ "return value of starting the daemon:"
     << bDVFSthreadSuccessfullyStarted )
-  GetCurrentWorkingDir(stdstrCurrentWorkingDir) ;
+  OperatingSystem::GetCurrentWorkingDirA_inl(stdstrCurrentWorkingDir) ;
   LOGN(/*"main(..)-"*/ "current working directory:" << stdstrCurrentWorkingDir )
   if( bDVFSthreadSuccessfullyStarted )
   {

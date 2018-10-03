@@ -5,19 +5,31 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-#pragma once
+#pragma once /* Include guard. */
 
-#ifdef _WIN32 //built-in define for MinGW/ eclipse CDT on Windows
+/** Currently the wxWidgets type of condition class even for the service
+ *  is used because the only dynamic library handler code which has more than 
+ *  1200 lines of code also uses wxWidgets.
+ *  So it can be exchanged if there is a native dynamic handler class. */
+#define CONDITION_TYPE_WXWIDGETS
+
+#ifdef COMPILE_AS_GUI
+ /** http://en.wikipedia.org/wiki/C_preprocessor#Conditional_compilation:
+  * "Note that comparison operations only work with integers" */
+ #define CONDITION_TYPE WXWIDGETS
+#else //#ifdef COMPILE_AS_GUI
+ #ifdef _WIN32 //built-in define for MinGW/ eclipse CDT on Windows
   #define CONDITION_TYPE_WIN32
-#else
-  #define CONDITION_TYPE_WXWIDGETS
-#endif
+ #endif
+ /** see https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
+  * built-in define for gcc under Linux */
+ #ifdef __linux__
+//  #define CONDITION_TYPE_PTHREAD
+ #endif
+#endif //#ifdef COMPILE_AS_GUI
 #ifdef _WINDOWS
 //  #define CONDITION_TYPE_WIN32
 #endif
-//http://en.wikipedia.org/wiki/C_preprocessor#Conditional_compilation:
-//"Note that comparison operations only work with integers"
-#define CONDITION_TYPE WXWIDGETS
 
 #if CONDITION_TYPE == WX
 
@@ -55,3 +67,8 @@
 
 //#endif //ifdef __WXMSW__
 #endif //#ifdef CONDITION_TYPE_WIN32
+
+#ifdef CONDITION_TYPE_PTHREAD
+  #include <OperatingSystem/POSIX/multithread/Event.hpp>
+  typedef pthread::Condition condition_type;
+#endif
