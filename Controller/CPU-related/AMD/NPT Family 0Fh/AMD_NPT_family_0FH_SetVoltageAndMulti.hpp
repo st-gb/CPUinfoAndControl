@@ -217,7 +217,7 @@ inline BYTE SetVIDorFID_AMD_NPT_family_0FH(
   )
 {
   DEBUGN( //<< "--fVoltageInVoltToSet:" << fVoltageInVoltToSet
-    << "VoltageID:" << (WORD) VoltageID
+    "VoltageID:" << (WORD) VoltageID
     << " byFrequencyIDtoSet:" << (WORD) byFrequencyIDtoSet
     << " StpGntTOCnt:" << StpGntTOCnt)
   static fastestUnsignedDataType MSRaccessRetVal;
@@ -874,8 +874,8 @@ inline BYTE TransitionToVoltageRequiredForFrequencyTransition(
 }
 
 inline BYTE TransitionFrequency(
-  float fVoltageInVoltToSet
-  , float fMultiplierToSet
+//  float fVoltageInVoltToSet
+  float fMultiplierToSet
   , float fCurrentVoltageInVolt
   , BYTE byCurrentVoltageID
   , float fCurrentMultiplier
@@ -950,8 +950,8 @@ inline BYTE SetCurrentMultiplier_AMD_NPT_family_0FH(
 //  "2 During phase 2 the processor frequency is transitioned to frequency
 //    associated with the OS-requested P-state."
   TransitionFrequency(
-    fVoltageInVoltToSet
-    , fMultiplierToSet
+//    fVoltageInVoltToSet,
+    fMultiplierToSet
     , fCurrentVoltageInVolt
     , byCurrentVoltageID
     , fCurrentMultiplier
