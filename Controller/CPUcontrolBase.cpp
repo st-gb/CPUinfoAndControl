@@ -5,14 +5,13 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-/*
- * CPUcontrolBase.cpp
- *
+/** CPUcontrolBase.cpp
  *  Created on: May 1, 2010
- *      Author: Stefan
- */
+ *  Author: Stefan */
 #include "CPUcontrolBase.hpp"
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
+#include <data_structures/ByteArray.hpp>///class ByteArray
+
 #include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <Controller/I_CPUaccess.hpp>
 //class DynFreqScalingThreadBase
@@ -22,7 +21,7 @@
 #include <Controller/Logger/OutputHandler/StdOfStreamLogWriter.hpp>
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //class PowerProfDynLinked
-  #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
+  #include <OperatingSystem/Windows/PowerProfAccess/PowerProfDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #else
   #include <Linux/MSRdeviceFile.hpp>
@@ -39,7 +38,12 @@
 #include <Xerces/LogOutputHandler.hpp> //class LogOutputHandler
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
 
-#include <platformstl/filesystem/path.hpp>
+#ifdef USE_PLATFORM_STL
+  ///platformstl::basic_path<[...]>::is_absolute()
+  #include <platformstl/filesystem/path.hpp>
+#else
+  #include <FileSystem/IsRelativePath.hpp>///FileSystem::IsRelativePathW(...)
+#endif
 #include <iostream> //std::cout
 #include <algorithm> //std::set_difference(...)
 
@@ -55,6 +59,8 @@ UserInterface * CPUcontrolBase::s_p_userinterface = NULL;
 Model CPUcontrolBase::m_model;
 
 //TODO is needed for reading from file?
+/** Linux text editors like "gedit" automatically add a carriage return
+* character at the end of the (last) line. */
 void RemoveCarriageReturn(std::string & r_stdstr )
 {
   std::string::size_type stdstrsizetype = r_stdstr.find( 0x0A ) ;
@@ -210,32 +216,35 @@ I_CPUcontroller * CPUcontrolBase::CreateDynLibCPUcontroller_DynLibName(
   return p_cpucontroller;
 }
 
+///Deprecated way of setting the CPU dynamic library file.
+///Process CPUmodelConfig.xml with Xerces::SAX2CPUtypeConfiguration instead.
 void CPUcontrolBase::CreateDynLibCPUcontroller(
   const std::string & stdstrCPUtypeRelativeDirPath
 //  , I_CPUcontroller * & r_p_cpucontroller
   )
 {
-  std::string stdstrFilePath ;
-  stdstrFilePath = GetCPUcontrollerConfigFilePath(
-    stdstrCPUtypeRelativeDirPath ) ;
-  std::string std_strCPUcontrollerDynLibName = stdstrFilePath ;
-  if( ReadFileContent( std_strCPUcontrollerDynLibName ) )
+  std::string std_strCPUctrlFilePath = GetCPUcontrollerConfigFilePath(
+    stdstrCPUtypeRelativeDirPath);
+  ByteArray byArrFileContent;
+  if( ReadFileContent(std_strCPUctrlFilePath.c_str(), byArrFileContent) )
   {
-    if( std_strCPUcontrollerDynLibName.empty() )
+    if( byArrFileContent.GetSize() == 0 )
       LOGN("Do not load/ attach CPU core usage getter because string read "
-        "from file \"" << stdstrFilePath
+        "from file \"" << std_strCPUctrlFilePath
         << " that should contain the dynamic libary name seems to be empty" )
     else
     {
-      //Linux text editors like "gedit" automatically add a carriage return
-      //character at the end of the (last) line.
-      RemoveCarriageReturn(std_strCPUcontrollerDynLibName) ;
-      CreateDynLibCPUcontroller_DynLibName(std_strCPUcontrollerDynLibName);
+      std::string std_strCPUctrlDynLibName( (const char *) byArrFileContent.
+        GetArray(), byArrFileContent.GetSize() );
+      RemoveCarriageReturn(std_strCPUctrlDynLibName) ;
+      CreateDynLibCPUcontroller_DynLibName(std_strCPUctrlDynLibName);
     }
   }
   LOGN( "end")
 }
 
+///Deprecated way of setting the CPU core usage dynamic library file.
+///Process CPUmodelConfig.xml with Xerces::SAX2CPUtypeConfiguration instead.
 void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
   const std::string & stdstrCPUtypeRelativeDirPath
 //  , ICPUcoreUsageGetter * & r_p_icpucoreusagegetter
@@ -244,25 +253,31 @@ void CPUcontrolBase::CreateDynLibCPUcoreUsageGetter(
   LOGN( "begin")
   std::string stdstrFilePath = stdstrCPUtypeRelativeDirPath +
     "CPUcoreUsageGetter.cfg" ;
-  std::string stdstr = stdstrFilePath ;
-  if( ReadFileContent( stdstr ) )
+  ByteArray byArrFileContent;
+  std::string stdstrCPUcoreUsageGetterName;
+  if( ReadFileContent(stdstrFilePath.c_str(), byArrFileContent) )
+  {
+    stdstrCPUcoreUsageGetterName = std::string( (const char *) byArrFileContent.
+      GetArray(), byArrFileContent.GetSize() );
     //Linux text editors like "gedit" automatically add a carriage return
     //character at the end of the (last) line.
-    RemoveCarriageReturn(stdstr) ;
+    RemoveCarriageReturn(stdstrCPUcoreUsageGetterName) ;
+  }
   else
   {
-    stdstr = m_model.m_std_strDefaultCPUcoreUsageGetter;
+    stdstrCPUcoreUsageGetterName = m_model.m_std_strDefaultCPUcoreUsageGetter;
     LOGN( "using default CPU core usage getter \""
-      << stdstr << "\"")
+      << stdstrCPUcoreUsageGetterName << "\"")
   }
   {
-    if( stdstr.empty() )
+    if( stdstrCPUcoreUsageGetterName.empty() )
       LOGN("Do not load/ attach CPU core usage getter because string read from "
         "file " << stdstrFilePath
         << " that should contain the dynamic libary name seems to be empty" )
     else
     {
-      std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + stdstr ;
+      std::string stdstrFilePath = "CPUcoreUsageGetterDynLibs/" + 
+        stdstrCPUcoreUsageGetterName ;
       std::string stdstrFullFilePath = m_dynlibhandler.
         GetDynLibPath(stdstrFilePath) ;
       m_model.m_stdstrCPUcoreUsageGetterDynLibPath =
@@ -441,15 +456,19 @@ void CPUcontrolBase::CreateHardwareAccessObject()
     std_strFileExt = m_model.m_logfileattributes.m_std_strFormat;
   }
 
+  //TODO obsolete function. Use GetLogFilePropertiesAndOpenLogFile(...) instead
   void CPUcontrolBase::GetLogLevel(
-    std::string & std_strLogLevelString)
+    std::string & std_strLogLevel)
   {
-    std_strLogLevelString = m_model.m_std_strConfigFilePath +
+    std::string std_strLogLvlFilePath = m_model.m_std_strConfigFilePath +
       "/log_level.txt";
 
-    if( ! ReadFileContent(std_strLogLevelString) )
-      std_strLogLevelString =
-        "warning";
+    ByteArray byArrFileCntnt;
+    if( ! ReadFileContent(std_strLogLvlFilePath.c_str(), byArrFileCntnt) )
+      std_strLogLevel = "warning";
+    else
+      std_strLogLevel = std::string((const char *) byArrFileCntnt.GetArray(), 
+        byArrFileCntnt.GetSize() );
   }
 
   /** @param std_wstrLogFileDirectoryPath: out: full log file path */
@@ -754,12 +773,17 @@ void CPUcontrolBase::ReadLogConfig(//std::tstring & r_std_tstrLogFilePath
 //        wxstr(PATH_SEPERATOR_CHAR_ANSI );
       //if relative path
 //      if( IsRelativePath(r_std_wstrLogFilePath) != L'/' )
+    //TODO maybe encapsulate this #ifdef section in an inline function
+#ifdef USE_PLATFORM_STL
       platformstl::basic_path<wchar_t> platformstl_basic_path(
         //r_std_wstrLogFilePath
         std_wstrLogFilePathFromConfig);
 //      platformstl::path platformstl_basic_path(r_std_wstrLogFilePath);
-
       if( platformstl_basic_path.is_absolute() )
+#else
+    ///If absolute path
+    if( ! FileSystem::IsRelativePathW(std_wstrLogFilePathFromConfig.c_str()) )
+#endif
       {
 //        std::wstring::size_type lastBackSlashCharIndex =
 //          r_std_wstrLogFilePath.rfind(

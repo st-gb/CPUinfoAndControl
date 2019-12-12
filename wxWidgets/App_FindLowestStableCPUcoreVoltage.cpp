@@ -35,39 +35,45 @@
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>
 #include <wxWidgets/UserInterface/MainFrame.hpp> //class MainFrame
 
+//TODO Windows-specific API -> move to this repository's "Windows" folder.
 void SetThreadAffinityMask()
 {
 #ifdef _WIN32
-  DWORD dwProcessAffinityMask;
-  DWORD dwSystemAffinityMask;
-  DWORD dwThreadAffinityMask = 1;
-  //http://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx:
-  //"A process affinity mask is a bit vector in which each bit represents the
-  //processors that a process is allowed to run on. A system affinity mask is
-  //a bit vector in which each bit represents the processors that are
-  //configured into a system."
+  DWORD_PTR processAffinityMask;
+  DWORD_PTR systemAffinityMask;
+  DWORD_PTR threadAffinityMask = 1;
+  /*https://docs.microsoft.com/de-de/windows/win32/api/winbase/nf-winbase-getprocessaffinitymask :
+  * "If the function fails, the return value is zero" */
   ::GetProcessAffinityMask(
-    ::GetCurrentThread(),
-    & dwProcessAffinityMask //_out  PDWORD_PTR lpProcessAffinityMask
-    , & dwSystemAffinityMask // __out  PDWORD_PTR lpSystemAffinityMask
+    //TODO have to use "::GetCurrentProcess()" here?
+    ::GetCurrentThread(),///HANDLE hProcess
+  /*http://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx:
+  * "A process affinity mask is a bit vector in which each bit represents the
+  * processors that a process is allowed to run on." */
+    processAffinityMask///_out PDWORD_PTR lpProcessAffinityMask
+  /*https://docs.microsoft.com/de-de/windows/win32/api/winbase/nf-winbase-getprocessaffinitymask :
+   * "A system affinity mask is a bit vector in which each bit represents the 
+   * processors that are configured into a system." */
+    , systemAffinityMask///__out PDWORD_PTR lpSystemAffinityMask
     );
   
-  for( BYTE byCPUcoreIndex = 0; byCPUcoreIndex < sizeof(DWORD_PTR) * 8 ;
-      ++ byCPUcoreIndex)
+  ///This _process_ may not have affinity to core 0 (e.g. when changed
+  //in task manager), so set thread affinity mask to 1st available CPU core.
+  for(fastestUnsignedDataType CPUcoreIdx = 0;CPUcoreIdx < sizeof(DWORD_PTR) * 8;
+      ++ CPUcoreIdx)
   {
-    //This process may run on core "byCPUcoreIndex".
-    if( ( (dwProcessAffinityMask >> byCPUcoreIndex) & 1) == 1)
-    {
-      dwThreadAffinityMask = (1 << byCPUcoreIndex);
+    ///This process may run on core "CPUcoreIdx".
+    if( ( (processAffinityMask >> CPUcoreIdx) & 1) == 1)
+    {///Sets thread affinity mask to 1st CPU core of the process affinity mask.
+      threadAffinityMask = (1 << CPUcoreIdx);
       break;
     }
   }
-  /** Must "pin" this thread to a specific CPU core. Else it usally is being
-  * executed on different CPU cores and the CPU load does not reach 100%.
-  * TODO: if this _process_ does not have affinity to core 0 (e.g. when changed
-  * in task manager), the call fails?! */
+  /** Must "pin" this thread to a specific CPU core? Else its execution may be 
+   * switched among different CPU cores to balance the load/keep the temperature
+   * for all CPU cores low. So the CPU load may not reach 100% for a core.*/
   ::SetThreadAffinityMask(//1
-      dwThreadAffinityMask);
+      threadAffinityMask /** DWORD_PTR*/);
 #endif
 }
 
@@ -177,7 +183,7 @@ BYTE wxX86InfoAndControlApp::InitUnstableVoltageDetectionDynLibAccess()
       m_model.m_instablecpucorevoltagedetection.m_std_wstrDynLibPath;
     std_wstrMessage += L"\" failed: ";
     std::string std_strErrorMessageFromLastErrorCode =
-      ::GetErrorMessageFromLastErrorCodeA();
+      OperatingSystem::GetErrorMessageFromLastErrorCodeA();
     std_wstrMessage += GetStdWstring(
       std_strErrorMessageFromLastErrorCode);
     MessageWithTimeStamp( std_wstrMessage.c_str() );

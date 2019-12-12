@@ -6,11 +6,13 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "wxDynLibCPUcontroller.hpp"
+///convertToStdString(...)
+#include <Controller/character_string/convertFromAndToStdString.hpp>
 //format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #include <Controller/exported_functions.h> //for "::ReadMSR(...)"
-//GetErrorMessageFromErrorCodeA(...)
-#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+///OperatingSystem::GetErrorMessageFromErrorCodeA(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
 #include <OperatingSystem/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 //#include "Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp"
 #include <Controller/I_CPUaccess.hpp> //for passing to dyn libs "Init()"
@@ -20,7 +22,8 @@
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
-  #include <Windows/DLLloadError.hpp>//DLLloadError::GetPossibleSolution(DWORD)
+  //DLLloadError::GetPossibleSolution(DWORD)
+  #include <OperatingSystem/Windows/DLLloadError.hpp>
 #endif //#ifdef _WIN32
 //for GetStdString(wxString &)
 #include <wxWidgets/Controller/character_string/wxStringHelper.hpp>

@@ -6,14 +6,16 @@ set( SOURCE_FILE_PATHS
 set( COMMON_SOURCECODE_ROOT_PATH 
   ${PROJECT_SOURCE_DIR}/../../../../common_sourcecode )
 
-set(CPU_I_AND_C_SOURC_DIR
+set(CPU_I_AND_C_SOURCE_DIR
   ${PROJECT_SOURCE_DIR}/../../.. )
 
 set( INCLUDE_DIRS 
   ${COMMON_SOURCECODE_ROOT_PATH}
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
-  ${CPU_I_AND_C_SOURC_DIR}
+  ${CPU_I_AND_C_SOURCE_DIR}
   )
+
+add_definitions("-DCOMPILE_WITH_LOG")
 
 include_directories( ${INCLUDE_DIRS} )
 message("include directories: ${INCLUDE_DIRS}")

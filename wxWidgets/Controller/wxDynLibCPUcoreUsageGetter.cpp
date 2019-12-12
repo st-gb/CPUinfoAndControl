@@ -6,15 +6,15 @@
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
 #include "wxDynLibCPUcoreUsageGetter.hpp"
-//GetErrorMessageFromErrorCodeA(...)
-#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+///OperatingSystem::GetErrorMessageFromErrorCodeA(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
 #include <OperatingSystem/GetLastErrorCode.hpp>//OperatingSystem::GetLastErrorCode()
 #include <Controller/I_CPUaccess.hpp>
 #include <Controller/Logger/LogLevel.hpp>
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 //  #include <Windows/ErrorCodeFromGetLastErrorToString.h>
-  #include <Windows/DLLloadError.hpp>
+  #include <OperatingSystem/Windows/DLLloadError.hpp>
 #endif //#ifdef _WIN32
 #include <string>
 //#include <global.h>

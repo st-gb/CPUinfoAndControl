@@ -47,7 +47,7 @@
 
 #ifdef CONDITION_TYPE_WIN32
 //#if CONDITION_TYPE == WINDOWS
-  #include <Windows/multithread/Win32EventBasedCondition.hpp>
+  #include <OperatingSystem/Windows/multithread/Win32EventBasedCondition.hpp>
 //#endif
   typedef Win32EventBasedCondition condition_type ;
 

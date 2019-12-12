@@ -1,12 +1,35 @@
 #from https://cmake.org/cmake-tutorial/
 
-cmake_minimum_required (VERSION 2.6)
-project (CPUinfoAndControl)
-
+#TODO Enable a minimal build (MinSizeRel CMAKE_BUILD_TYPE)
+# with omitted symbols (GCC: "-s" option)
+#TODO Really the minimal CMake version for this project?
+cmake_minimum_required(VERSION 2.6)
 if( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
-  message("warning: COMMON_SOURCECODE_ROOT_PATH is NOT defined")
+  message("warning: COMMON_SOURCECODE_ROOT_PATH is NOT defined->set to default")
   set(COMMON_SOURCECODE_ROOT_PATH ../common_sourcecode)
 endif( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+message("COMMON_SOURCECODE_ROOT_PATH: ${COMMON_SOURCECODE_ROOT_PATH}")
+
+include(${COMMON_SOURCECODE_ROOT_PATH}/CMake/MinGW_PATH_sh.exe_message.cmake)
+
+project(CPUinfoAndControl)
+
+#from http://stackoverflow.com/questions/12896988/passing-the-argument-to-cmake-via-command-prompt
+# on command line: "-DEXE_TYPE:STRING=wxGUI"
+message("executable type to build (\"EXE_TYPE\"):${EXE_TYPE}")
+message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
+message("Possibly use \"--log-level=\" for output")
+#https://stackoverflow.com/questions/22803607/how-do-i-debug-cmakelists-txt-files
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
+#show1ItmPerLne(...), showMsg(...)
+include(${COMMON_SOURCECODE_ROOT_PATH}/CMake/ShowMsg_CompLvl.cmake)
+
+#Include Operating System-specific CMake file here to keep _this_ file small.
+if(WIN32)
+  include(Windows/Windows.cmake)
+endif()
 
 if( DEFINED PLATFORM_STL_ROOT_PATH )
   message("PLATFORM_STL_ROOT_PATH defined")
@@ -18,14 +41,9 @@ set(CMAKE_LIST_FILE_PATHS
   ${CMAKE_CURRENT_LIST_FILE}
 )
 
-set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_DEBUG_POSTFIX "_debug")
+#set(CMAKE_BUILD_TYPE "Debug")
+#set(CMAKE_DEBUG_POSTFIX "_debug")
 #set(<variable> <value>  ... <valueN>)
-
-#from http://stackoverflow.com/questions/12896988/passing-the-argument-to-cmake-via-command-prompt
-# on command line: "-DEXE_TYPE:STRING=wxGUI"
-# #ET(EXE_TYPE "wxGUI")
-message("executable type to build:${EXE_TYPE}")
 
 add_subdirectory(Controller)
 add_subdirectory(Xerces)
@@ -41,6 +59,11 @@ endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 
 if( DEFINED WXWIDGETS )
   message("WXWIDGETS is defined")
+  if(CMAKE_COMPILER_IS_GNUCC)#put GCC-specific stuff in here
+    #"App.cpp:: error: cast from 'void*' to 'DWORD {aka long unsigned int}' 
+    # loses precision [-fpermissive]
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fpermissive")
+  endif()
   #see https://cmake.org/cmake/help/v3.0/command/add_subdirectory.html :
   #additionally use CMakeLists.txt from "wxWidgets" folder
 #  add_subdirectory(wxWidgets 
@@ -49,9 +72,10 @@ if( DEFINED WXWIDGETS )
 endif ( DEFINED WXWIDGETS )
 
 set( INCLUDE_DIRS 
-  ${INCLUDE_DIRS} #inlcude the wxWidgets dirs from above
+  ${INCLUDE_DIRS} #include the wxWidgets dirs from above
   ${COMMON_SOURCECODE_ROOT_PATH}
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
+  #only for Linux, Android?:
+  #${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
   ${PROJECT_SOURCE_DIR}
   ${PLATFORM_STL_ROOT_PATH}
   ${APACHE_XERCES_ROOT_PATH}
@@ -123,18 +147,15 @@ if (UNIX)
 endif (UNIX)
 
 #add_directory( ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
+include(${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Logger.cmake)
+set(CmnSrcLoggerDir ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
 set(LOGGER_SOURCE_FILES
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/preprocessor_logging_macros.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Logger.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/LogLevel.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Appender/FormattedLogEntryProcessor.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Appender/RollingFileOutput.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Formatter/I_LogFormatter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Formatter/HTMLlogFormatter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Formatter/Log4jFormatter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/I_LogEntryOutputter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/StdCoutLogWriter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/OutputHandler/StdOfStreamLogWriter.cpp
+  ${SG_BasicLoggerSrcFilePaths}
+  ${CmnSrcLoggerDir}/Appender/RollingFileOutput.cpp
+  ${CmnSrcLoggerDir}/Formatter/HTMLlogFormatter.cpp
+  ${CmnSrcLoggerDir}/Formatter/Log4jFormatter.cpp
+  ${CmnSrcLoggerDir}/OutputHandler/StdCoutLogWriter.cpp
+  ${CmnSrcLoggerDir}/OutputHandler/StdOfStreamLogWriter.cpp
 )
 
 #Source files needed for both client/GUI and server builds.
@@ -159,12 +180,6 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
   )
 endif(${EXE_TYPE} STREQUAL "UNIX_service")
 
-if( ${EXE_TYPE} STREQUAL "wxGUI")
-  set(SOURCE_FILE_PATHS
-    ${SOURCE_FILE_PATHS}
-  )
-endif(${EXE_TYPE} STREQUAL "wxGUI")
-
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${CLIENT_SERVER_BASE_SOURCE_FILES}
@@ -181,42 +196,22 @@ add_definitions(${CXX_DEFINITIONS})
 #target_link_libraries(${LIBRARIES})
 
 if(DEFINED WXWIDGETS)
-  message( wxWidgets_FIND_STYLE: ${wxWidgets_FIND_STYLE})
-  if(UNIX)
-    #https://wiki.wxwidgets.org/CMake
-    set(wxWidgets_CONFIGURATION gtkud)
-  endif()
-  if(WIN32)
-    message("setting wxWidgets_CONFIGURATION to mwsud")
-    set(wxWidgets_CONFIGURATION mwsud)
-    #https://cmake.org/cmake/help/v3.0/module/FindwxWidgets.html
-    #set(wxWidgets_CONFIG_OPTIONS --toolkit=base --prefix=/usr)
-  endif()
-  #SET(WX_ROOT_DIR "C:/wxWidgets-2.8.10")
-  #set( wxWidgets_LIB_DIR "C:/wxWidgets-2.8.10/MinGW_unicode_static_debug/lib" CACHE PATH "wxWidgets_LIB_DIR")
-  #set(wxWidgets_ROOT_DIR "C:/wxWidgets-2.8.10")
-  message(wxWidgets_ROOT_DIR: ${wxWidgets_ROOT_DIR})
-  message(wxWidgets_LIB_DIR: ${wxWidgets_LIB_DIR})
-  find_package(wxWidgets COMPONENTS core base adv REQUIRED)
-  message(wxWidgets_LIB_DIR: ${wxWidgets_LIB_DIR})
-  if(wxWidgets_FOUND)
-    message( "wxWidgets FOUND")
-    include("${wxWidgets_USE_FILE}")
-    SET(wxWidgets_USE_LIBS core base adv)
-    include(${wxWidgets_USE_FILE})
-    message("wxWidgets_LIBRARIES: ${wxWidgets_LIBRARIES}")
-  else()
-    message( warning "wxWidgets not FOUND")
-  endif()
+  #TODO move to wxWidgets/CMakeLists.txt?!
+  set(wxWidgets_ROOT_DIR ${WXWIDGETS_SETUP_H_PATH})
+  set(debugCallFindwxWidgets 1)
+
+  #TODO set wxWidgets_FIND_COMPONENTS ?
+  #SET(wxWidgets_FIND_COMPONENTS core base adv)
+  SET(wxWidgets_USE_LIBS core base adv)#"adv" for GUI.
+  include(${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/callFindwxWidgets.cmake)
+  #callFindwxWidgets("core base adv")
 endif (DEFINED WXWIDGETS)
 
-message ("SOURCE_FILE_PATHS: ${SOURCE_FILE_PATHS}")
+showMsg(3, "SOURCE_FILE_PATHS: ${SOURCE_FILE_PATHS}")
+showInclDirs(3)
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
-  set(EXE_NAME wx${PROJECT_NAME}_GUI)
-  set(SOURCE_FILE_PATHS 
-    ${SOURCE_FILE_PATHS}
-    )
+  set(EXE_NAME ${PROJECT_NAME}_wxGUI)
   add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
@@ -225,6 +220,8 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service")
 endif( ${EXE_TYPE} STREQUAL "UNIX_service" )
 
 if(DEFINED WXWIDGETS)
+  message("target_link_ibraries with wxWidgets_LIBRARIES")
+  show1ItmPerLne(5 "wxWidgets_LIBRARIES:" "${wxWidgets_LIBRARIES}")
   #https://wiki.wxwidgets.org/CMake
   target_link_libraries(${EXE_NAME} ${wxWidgets_LIBRARIES})
 endif (DEFINED WXWIDGETS)

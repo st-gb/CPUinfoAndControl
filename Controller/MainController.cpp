@@ -195,7 +195,9 @@ BYTE MainController::CreateCPUcontrollerAndUsageGetter(
     else
     {
 #ifdef __linux__
-      std::string mostSuitableCPUinfoGetterAndOrController = "lib";        
+      std::string mostSuitableCPUinfoGetterAndOrController = "lib";
+#else
+      std::string mostSuitableCPUinfoGetterAndOrController;
 #endif
       mostSuitableCPUinfoGetterAndOrController += sax2cpucontrollerconfiguration.
         m_mostSuitableCPUinfoGetterAndOrController;

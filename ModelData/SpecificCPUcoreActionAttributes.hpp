@@ -15,7 +15,9 @@
 #ifndef _SPECIFICCPUCOREACTIONDATA_HPP
 #define	_SPECIFICCPUCOREACTIONDATA_HPP
 
-#include "global.h" //for BYTE
+#ifndef _WIN32 ///Avoid GCC "warning: "_tcslen" redefined"
+  #include "global.h" //for BYTE
+#endif
 
 class SpecificCPUcoreActionAttributes
 {

@@ -8,6 +8,7 @@
 #include "CalculationThread.hpp"
 #include <Controller/CalculationThreadProc.h>
 #include <UserInterface/UserInterface.hpp>
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOG(...), LOGN(...)
 
 //class CalculationThread;
 //using namespace Windows_API;

@@ -83,10 +83,10 @@
 //Pre-defined preprocessor macro under MSVC, MinGW for 32 and 64 bit Windows.
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/CalculationThread.hpp>
-  #include <Windows/DLLloadError.hpp>
-  #include <Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
-  #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
-  #include <Windows/Service/ServiceBase.hpp>
+  #include <OperatingSystem/Windows/DLLloadError.hpp>
+  #include <OperatingSystem/Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
+  #include <OperatingSystem/Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+  #include <OperatingSystem/Windows/Service/ServiceBase.hpp>
 #endif
 #include <wxWidgets/App.hpp> //for wxGetApp() / DECLARE_APP
 #include <wxWidgets/Controller/wxDynLibCPUcontroller.hpp>
@@ -3917,9 +3917,9 @@ void MainFrame::DynVoltnFreqScalingEnabled()
 {
   ////Stop the timer (else the timer redraws additionally to the scaling thread).
   //m_wxtimer.Stop() ;
-  mp_wxmenuitemOwnDVFS->SetText(
-    //We need a _T() macro (wide char-> L"", char->"") for EACH
-    //line to make it compatible between char and wide char.
+  mp_wxmenuitemOwnDVFS->/*SetText*/SetItemLabel(
+    /** We need a _T() macro (wide char-> L"", char->"") for EACH
+     * line to make it compatible between char and wide char. */
     wxT("disable Own Dynamic Voltage and Frequency Scaling")
     ) ;
 }
@@ -3935,10 +3935,10 @@ void MainFrame::EndDynVoltAndFreqScalingThread(
   ////Start the timer (it should have been stopped before else the timer had redrawn 
   ////additonally to the scaling thread).
  // m_wxtimer.Start() ;
-  mp_wxmenuitemOwnDVFS->SetText(
+  mp_wxmenuitemOwnDVFS->/*SetText*/SetItemLabel(
     //We need a _T() macro (wide char-> L"", char->"") for EACH 
     //line to make it compatible between char and wide char.
-    _T("enable Own DVFS") 
+    wxT("enable Own DVFS") 
     ) ;
   LOGN( "end")
 }

@@ -6,8 +6,8 @@
  */
 
 #include "Windows/InstableCPUcoreOperationDetection.hpp"
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
-#include <Windows/multithread/GetThreadTimes_API.hpp>
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
+#include <OperatingSystem/Windows/multithread/GetThreadTimes_API.hpp>
 
 #include <windows.h> // QueryThreadCycleTime(...)
 #ifdef _MSC_VER
@@ -136,7 +136,7 @@ namespace Windows
       }
       else
         LOGN_WARNING( "calling \"GetThreadTimes\" failed: "
-          << ::GetErrorMessageFromLastErrorCodeA() )
+          << OperatingSystem::GetErrorMessageFromLastErrorCodeA() )
     }
   //  userTimeBefore = userTimeAfter;
     ul64ThreadTimeBefore = ul64ThreadTimeAfter;

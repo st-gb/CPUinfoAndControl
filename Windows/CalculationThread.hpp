@@ -15,7 +15,7 @@
 //#include "Controller/I_CPUcontrollerAction.hpp"
 #include <Controller/ICalculationThread.hpp>
 #include "ModelData/SpecificCPUcoreActionAttributes.hpp"
-
+#include <preprocessor_macros/logging_preprocessor_macros.h>///LOG(...)
 
 //Forward declaration (because _this_ header file may be included very often /
 //more than once) is faster than to #include the while declaration file.

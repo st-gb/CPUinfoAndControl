@@ -33,8 +33,8 @@
 //format_output_data(...)
 #include <Controller/character_string/format_as_string.hpp>
 #ifdef __WXMSW__
-  #include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
-  #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
+  #include <OperatingSystem/Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+  #include <OperatingSystem/Windows/PowerProfAccess/PowerProfDynLinked.hpp>
 #endif //#ifdef __WXMSW__
   #include <wxWidgets/App.hpp> //wxGetApp()
   //getwxString(...)

@@ -18,26 +18,31 @@
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
 //for BITMASK_FOR_LOWMOST_7BIT
 #include <preprocessor_macros/bitmasks.h>
-/** GetErrorMessageFromErrorCodeW(...) */
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/character_string/stdtstr.hpp> //GetStdString(...)
  //convertToStdString(typename )
 #include <Controller/character_string/stdstring_format.hpp>
 //#include <Controller/character_string/tchar_conversion.h> //GetCharPointer(...)
 #include <UserInterface/UserInterface.hpp> /** for class "UserInterface" */
-#include <Windows/DLLloadError.hpp> /** DLLloadError::GetPossibleSolution */
-#include <Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
-#include <Windows/HardwareAccess/HardwareAccessError/\
-GetHardwareAccessErrorDescription.hpp>
-#include <Windows/FileSystem/GetCurrentDirectory/GetCurrentDirectory.hpp>
 
-//WinRing0 docu:
-//Run-Time Dynamic Linking
-//Add #include "OlsApiInit.h" statement to your source file.
-//Call InitOpenLibSys().
-//Call GetDllStatus() to check error.
-//Call the library's functions. *
-//Call DeinitOpenLibSys().
+///OperatingSystem::GetCurrentWorkingDir_Inl(...)
+#include <FileSystem/GetCurrentWorkingDir.hpp>
+///OperatingSystem::GetErrorMessageFromErrorCodeW(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
+///DLLloadError::GetPossibleSolution(...)
+#include <OperatingSystem/Windows/DLLloadError.hpp>
+#include <OperatingSystem/Windows/ErrorCode/ErrorCodeFromGetLastErrorToString.h>
+#include <OperatingSystem/Windows/HardwareAccess/HardwareAccessError/\
+GetHardwareAccessErrorDescription.hpp>
+#include <OperatingSystem/Windows/FileSystem/GetCurrentDirectory/\
+GetCurrentDirectory.hpp>
+
+/** WinRing0 docu:
+* Run-Time Dynamic Linking
+* Add #include "OlsApiInit.h" statement to your source file.
+* Call InitOpenLibSys().
+* Call GetDllStatus() to check error.
+* Call the library's functions. *
+* Call DeinitOpenLibSys(). */
 
 //#include <OlsApiInitDef.h> //for _IsMsr
 #include <WinRing0_1_3_1b/source/dll/OlsApiInit.h>
@@ -146,7 +151,9 @@ void WinRing0_1_3RunTimeDynLinked::Init(UserInterface * pui)
 #endif
     wchar_t wchDLLfileName [] = WINRING0_DLL_FILE_NAME_WIDE_STRING;
     wchar_t currentPath[MAX_PATH];
-    std::wstring std_wstrErrorMessage = GetErrorMessageFromErrorCodeW(dwLastError);
+    std::wstring std_wstrErrorMessage
+      //TODO enable wide string error messages
+      /*= OperatingSystem::GetErrorMessageFromErrorCodeW(dwLastError)*/;
     GetCurrentDirectoryW(MAX_PATH, currentPath);
     std::wstring std_wstrDLLloadErrorPossibleSolution = GetStdWstring(
       DLLloadError::GetPossibleSolution(dwLastError) );
@@ -288,7 +295,7 @@ void WinRing0_1_3RunTimeDynLinked::DLLerror(DWORD dwDllStatus)
   std::string stdstrErrorMsg //("WinRing0 error ") ;
     ;
   std::tstring std_tstrCurrentDirectory;
-  if( ! Windows::GetCurrentDirectory(std_tstrCurrentDirectory) )
+  if( ! OperatingSystem::GetCurrentWorkingDir_Inl(std_tstrCurrentDirectory) )
   {
       stdstrErrorMsg +=
         "current working dir:\""

@@ -191,7 +191,8 @@ public:
   TaskBarIcon * m_p_CPUcoresMultipliersTaskbarIcon;
 #endif //#ifdef COMPILE_WITH_SYSTEM_TRAY_ICON
 //  TaskBarIcon m_taskbaricon ;
-  #ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  //#ifdef COMPILE_WITH_NAMED_WINDOWS_PIPE
+  #ifdef _WIN32
     //NamedPipeClient m_ipcclient ;
     //Must be a pointer because it is/ should be determined/ changeable at
     //_runtime_ .

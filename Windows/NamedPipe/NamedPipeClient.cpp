@@ -11,9 +11,9 @@
 #include <Controller/character_string/format_as_string.hpp>
 #include <preprocessor_macros/logging_preprocessor_macros.h> //DEBUGN()
 #include <ModelData/ModelData.hpp> //class Model
-#include <Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
+#include <OperatingSystem/Windows/ErrorCode/LocalLanguageMessageFromErrorCode.h>
 //GetErrorMessageFromLastErrorCodeA()
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 #include <sstream> //class std::ostringstream
 //including specstrings.h lead to error messages for std::string include files?!
 //#include <specstrings.h> //for __out
@@ -526,7 +526,7 @@ BYTE NamedPipeClient::SendCommandAndGetResponse(//BYTE byCommand,
    if( ! fSuccess )
    {
      LOGN("Failed to read the data size in bytes of possibly following data "
-       "to read:" << ::GetErrorMessageFromLastErrorCodeA() )
+       "to read:" << OperatingSystem::GetErrorMessageFromLastErrorCodeA() )
    }
    LOGN( (fSuccess ? "successfully got " : "failed to read ")
 #ifdef _DEBUG //because the own logger can only filter strings that matcb

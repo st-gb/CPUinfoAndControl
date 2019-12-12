@@ -21,7 +21,7 @@ if( ${EXE_TYPE} STREQUAL "wxGUI")
   add_subdirectory(UserInterface)
 endif(${EXE_TYPE} STREQUAL "wxGUI")
 
-message("WXWIDGETS_SOURCE_FILE_PATHS: ${WXWIDGETS_SOURCE_FILE_PATHS}" )
+showMsg(3, "WXWIDGETS_SOURCE_FILE_PATHS: ${WXWIDGETS_SOURCE_FILE_PATHS}" )
 
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
@@ -38,11 +38,12 @@ set(CMAKE_LIST_FILE_PATHS
 
 #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
 #Set wxWidgets_USE_DEBUG to "ON" to link against WxWidgets debug libraries.
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 set( wxWidgets_USE_DEBUG ON
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
   PARENT_SCOPE )
+endif()
 message("wxWidgets_USE_DEBUG: ${wxWidgets_USE_DEBUG}")
-
 #Set to appropriate version--releae, debug, 32/64 bit
 #Use wxWidgets >= v.2.9 as it provides an appropriate task bar support
 if( NOT DEFINED WXWIDGETS_SETUP_H_PATH )

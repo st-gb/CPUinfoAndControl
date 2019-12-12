@@ -37,6 +37,7 @@
 #include <Controller/GetNumberOfLogicalCPUcores.h>
 #include <Controller/Logger/LogFileAccessException.hpp>
 #include <Controller/CPU-related/I_CPUcontroller.hpp>
+#include <data_structures/ByteArray.hpp>///class ByteArray
 //#include <Controller/character_string/tchar_conversion.h> //for GetCharPointer(...)
 #include <Controller/character_string/stdstring_format.hpp> //convertToStdString()
 //GetFilenameWithoutExtension(const std::string &)
@@ -77,11 +78,12 @@ GetFilenameWithoutExtension.hpp>
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //#include <Windows/DynFreqScalingThread.hpp>
 //  #include <Windows/GetNumberOfLogicalCPUs.h>
-  #include <Windows/HideMinGWconsoleWindow.h>
+  #include <OperatingSystem/Windows/HideMinGWconsoleWindow.h>
 //#include <Windows/GetWindowsVersion.h>
 //#include <Windows/LocalLanguageMessageFromErrorCodeA.h>
-  #include <Windows/PowerProfAccess/PowerProfDynLinked.hpp>
-  #include <Windows/Service/ServiceBase.hpp> //ServiceBase::PauseService(...)
+  #include <OperatingSystem/Windows/PowerProfAccess/PowerProfDynLinked.hpp>
+  ///ServiceBase::PauseService(...)
+  #include <OperatingSystem/Windows/Service/ServiceBase.hpp>
   //#include <Windows/WinRing0dynlinked.hpp>
   //#include <Windows/WinRing0/WinRing0_1_3LoadTimeDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
@@ -1565,12 +1567,19 @@ bool wxX86InfoAndControlApp::OnInit()
 //    if( OpenLogFile(std_wstrLogFilePath) )
 //      HideMinGWconsoleWindow();
 
-    std::string std_strAppendProcessID = m_model.m_std_strConfigFilePath + "/appendProcessID.cfg";
-    ReadFileContent(std_strAppendProcessID);
-    if( std_strAppendProcessID == "true")
-      m_model.m_logfileattributes.m_bAppendProcessID = true;
-    else
-      m_model.m_logfileattributes.m_bAppendProcessID = false;
+    //TODO really 1 file for a single configuration?
+    const std::string std_strAppendProcIDcfgFilePath = m_model.
+      m_std_strConfigFilePath + "/appendProcessID.cfg";
+    ByteArray byArrFileContent;
+    if(ReadFileContent(std_strAppendProcIDcfgFilePath.c_str(), byArrFileContent) )
+    {
+      const std::string std_strAppendProcID( (const char*) byArrFileContent.
+        GetArray(), byArrFileContent.GetSize() );
+      if( std_strAppendProcID == "true")
+        m_model.m_logfileattributes.m_bAppendProcessID = true;
+      else
+        m_model.m_logfileattributes.m_bAppendProcessID = false;
+    }
 //      +  std_wstrProgramPath.substr(lastBackSlash + 1);
     std::wstring std_wstrExecutableFileName = GetExecutableFileName(argv[0]);
 
@@ -1794,7 +1803,8 @@ bool wxX86InfoAndControlApp::OnInit()
 //        mp_cpucontroller = & m_sax2_ipc_current_cpu_data_handler ;
         //For getting the reference clock.
         ::FetchCPUcoreDataFromIPC( this ) ;
-#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+//#ifdef _WIN32 //pre-defined preprocessor macro (also 64 bit) for Windows
+#ifdef COMPILE_WITH_INTER_PROCESS_COMMUNICATION
         if( m_sax2_ipc_current_cpu_data_handler.
           m_stdmap_wCoreNumber2CPUcoreVoltageAndFrequency.size() > 0 )
           m_sax2_ipc_current_cpu_data_handler.m_fReferenceClockInMHz =
@@ -2010,9 +2020,8 @@ void wxX86InfoAndControlApp::PauseService(
         //line to make it compatible between char and wide char.
         _T("connecting to service control manager failed: ")
         ) +
-        getwxString(
-          ::GetErrorMessageFromErrorCodeA( cr_connecttoscmerror.m_dwErrorCode ).
-          c_str()
+        getwxString(OperatingSystem::GetErrorMessageFromErrorCodeA(
+          cr_connecttoscmerror.m_dwErrorCode ).c_str()
           )
         ) ;
     }
@@ -2409,7 +2418,7 @@ void wxX86InfoAndControlApp::StartService()
     else
       ::wxMessageBox( wxT("error starting the service:") +
         getwxString( //::LocalLanguageMessageAndErrorCodeA( ::GetLastError() )
-          ::GetErrorMessageFromLastErrorCodeA()
+          OperatingSystem::GetErrorMessageFromLastErrorCodeA()
            )
         ) ;
   }
@@ -2470,7 +2479,7 @@ void wxX86InfoAndControlApp::StopService()
         ::wxMessageBox( wxT("stopping the service succeeded") ) ;
       else
         ::wxMessageBox( wxT("error stopping the service:") +
-          getwxString( ::GetErrorMessageFromLastErrorCodeA()
+          getwxString( OperatingSystem::GetErrorMessageFromLastErrorCodeA()
             //::LocalLanguageMessageAndErrorCodeA( ::GetLastError() )
              )
           ) ;
