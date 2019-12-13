@@ -11,8 +11,10 @@ C_COMPILER=/usr/bin/gcc
 CPP_COMPILER=/usr/bin/g++
 
 #change if necessary
-NUM_ARGS_NEEDED=4
 MINIMAL_NUM_ARGS_NEEDED=2
+NUM_ARGS_NEEDED=4
+#C and C++ compiler = 2 arguments -> add "2"
+NUM_ARGS_NEEDED_FOR_INCLUDING_COMPILERS=`expr $NUM_ARGS_NEEDED + 2`
 
 #IDEA: pass as args: <NAME=VALUE>, e.g. COMMON_SOURCECODE_ROOT_PATH=../common_sourcecode
 if [ $# -ge $MINIMAL_NUM_ARGS_NEEDED ]; then
@@ -26,6 +28,10 @@ if [ $# -ge $NUM_ARGS_NEEDED ]; then
   echo PLATFORM_STL_ROOT_PATH: $PLATFORM_STL_ROOT_PATH
   COMMON_SOURCECODE_ROOT_PATH=$4
   echo COMMON_SOURCECODE_ROOT_PATH: $COMMON_SOURCECODE_ROOT_PATH
+fi
+if [ $# -ge $NUM_ARGS_NEEDED_FOR_INCLUDING_COMPILERS ]; then
+  C_COMPILER=$5
+  CPP_COMPILER=$6
 fi
 
 # "-pg" option for "gprof" profiling
@@ -48,4 +54,3 @@ else
   echo "e.g. for Ubuntu Linux 32 bit:"$0 /usr/include/wx-3.0 /usr/lib/i386-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /usr/include/stlsoft-1.9.124/include ../common_sourcecode 
   echo "e.g. for 64 bit Linux Mint:"/usr/include/wx-3.0 /usr/lib/x86_64-linux-gnu/wx/include/gtk2-unicode-debug-3.0 /usr/include/stlsoft-1.9.124/include ../common_sourcecode 
 fi
-

@@ -61,6 +61,11 @@
       0.07 Volt is a good margin/ minimum for also taking into account 
       (an) attached USB device(s) that else may cause an Operating System 
       freeze/ restart.
+    "min_usage_percentage_for_find_voltage_for_lowest_stable_CPU_core_operation_thread":
+      the higher (directing 1.0) the safer it is that the lowest CPU core voltage where 
+      the CPU operates stable is found.
+      On the other hand it gets more difficult to reach a high percentage.
+      So ca. 0.95 is a good compromise/suitable value.
     "prevent_voltage_above_default_voltage": 
       "true": prevents overvoltage
          -therefore the core frequency must be between the frequency of 2 

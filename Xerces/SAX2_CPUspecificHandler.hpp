@@ -44,6 +44,9 @@ XERCES_CPP_NAMESPACE_END
 //import/export mechanism.
 //#define XERCES_STATIC_LIBRARY
 
+/** This class is for reading definitions (e.g. Frequency ID is in register x,
+ *  starting at bit y, ending at bit z) for CPU registers in order to display
+ *  them in the User Interface. */
 class SAX2_CPUspecificHandler
   : public //XERCES_CPP_NAMESPACE::DefaultHandler
   Apache_Xerces::DocumentLocationSAX2Handler

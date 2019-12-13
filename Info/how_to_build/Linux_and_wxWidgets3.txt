@@ -1,0 +1,30 @@
+
+
+install packages (as root, Debian-/Ubuntu-derived: "sudo apt-get install"):
+
+for both service/daemon and Graphical User Interface (GUI):
+-libxerces-c-dev   (Ubuntu e.g.: "sudo apt-get install libxerces-c-dev")
+-PSTLSoft/platformSTL headers:
+ -https://sourceforge.net/projects/stlsoft/files/latest/download
+ -extract all files
+ -for gcc version 5:
+  file "stlsoft-1.9.124/include/stlsoft/stlsoft.h", line 538:
+  -GNU C major version (1st digit from output of "gcc -v")
+  -e.g. for gcc version 7.3.0:
+  "     __GNUC__ != 4" -> 
+  "     __GNUC__ != 4 && __GNUC__ != 7"
+
+for the Graphical User Interface (GUI):
+-wx3.0-headers     (Ubuntu e.g.: "sudo apt-get install wx3.0-headers")
+-libwxgtk3-0       (Ubuntu e.g.: "sudo apt-get install libwxgtk3.0-0v5")
+-libwxbase3.0-dev  (Ubuntu e.g.: "sudo apt-get install libwxbase3.0-dev")
+ ( if not existent when calling "create_wxGUI.sh":
+  "CMake Error at /usr/share/cmake-3.10/Modules/FindPackageHandleStandardArgs.cmake:137 (message):
+  Could NOT find wxWidgets (missing: [...]
+  wxWidgets_INCLUDE_DIRS)" 
+  ) 
+-libwxgtk3.0-dev   (Ubuntu e.g.: "sudo apt-get install libwxgtk3.0-dev")
+ ( if not existent when calling "create_wxGUI.sh":
+  "CMake Error at /usr/share/cmake-3.10/Modules/FindPackageHandleStandardArgs.cmake:137 (message):
+  Could NOT find wxWidgets (missing: wxWidgets_LIBRARIES)"
+ )

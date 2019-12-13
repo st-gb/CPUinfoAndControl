@@ -7,7 +7,6 @@
 set(APACHE_XERCES_SOURCE_FILE_PATHS
   ${CMAKE_CURRENT_SOURCE_DIR}/LogOutputHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PStateConfig.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SAX2_CPUspecificHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SAX2CPUtypeConfiguration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SAX2MainConfigHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SAX2VoltagesForFrequencyHandler.cpp
@@ -23,10 +22,18 @@ set(APACHE_XERCES_SOURCE_FILE_PATHS
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(APACHE_XERCES_SOURCE_FILE_PATHS
     ${APACHE_XERCES_SOURCE_FILE_PATHS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/SAX2_CPUspecificHandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/UserInterface/SAX2IPCcurrentCPUdataHandler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/UserInterface/SAX2UserInterfaceConfigHandler.cpp
     )
 endif( ${EXE_TYPE} STREQUAL "wxGUI")
+
+if( ${EXE_TYPE} STREQUAL "UNIX_service")
+  set(APACHE_XERCES_SOURCE_FILE_PATHS
+    ${APACHE_XERCES_SOURCE_FILE_PATHS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/service/SAX2ServiceConfigHandler.cpp
+  )
+endif()
 
 set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}

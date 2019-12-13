@@ -18,9 +18,9 @@
 #include <Controller/CommandLineParams.h> //IsWithinCmdLineArgs(...)
 #include <Controller/Logger/Logger.hpp> //class Logger
 #include <preprocessor_macros/logging_preprocessor_macros.h> //LOGN(...)
-//GetCurrentWorkingDir(std::string & )
-#include <Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.hpp>
-#include <Linux/daemon/daemon.h> //daemonize(...)
+//OperatingSystem::GetCurrentWorkingDirA_inl(std::string & )
+#include <OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.hpp>
+#include <OperatingSystem/Linux/daemon/daemon.h> //daemonize(...)
 //class wxConditionBasedI_Condition
 #include <wxWidgets/multithread/wxConditionBasedI_Condition.hpp>
 
@@ -112,7 +112,7 @@ void init_daemon(//int argc, char * argv[],
 {
   const char * cp_chLockFileName = "x86IandC_daemon.lock" ;
 //  std::string stdstrCurrentWorkingDir ;
-  GetCurrentWorkingDir( stdstrCurrentWorkingDir) ;
+  OperatingSystem::GetCurrentWorkingDirA_inl( stdstrCurrentWorkingDir) ;
   signal(SIGTERM, child_handler);
   signal(SIGCONT, child_handler);
   signal(SIGUSR1, child_handler);

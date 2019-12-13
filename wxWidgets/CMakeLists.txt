@@ -3,22 +3,26 @@
 
 #  ${CMAKE_CURRENT_SOURCE_DIR}/wxDynFreqScalingTimer.cpp
 set( WXWIDGETS_SOURCE_FILE_PATHS
-  ${CMAKE_CURRENT_SOURCE_DIR}/App.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/App_FindLowestStableCPUcoreVoltage.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/App_service_actions.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DynFreqScalingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Controller/DynLibHandler.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Controller/wxDynLibCPUcontroller.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Controller/wxDynLibCPUcoreUsageGetter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/FileSystem/GetFilenameWithoutExtension/GetFilenameWithoutExtension.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/InputOutput/WriteFileContent/WriteFileContent.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/Controller/character_string/wxStringHelper.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/icon/IconDrawer.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/multithread/wxThreadBasedI_Thread.cpp
 )
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   add_subdirectory(UserInterface)
+set( WXWIDGETS_SOURCE_FILE_PATHS
+  ${WXWIDGETS_SOURCE_FILE_PATHS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/App.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/App_FindLowestStableCPUcoreVoltage.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/App_service_actions.cpp
+  ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/icon/IconDrawer.cpp
+  #NOT wxWidgets-related but necessary for the wxGUI
+  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/FileSystem/GetFilenameWithoutExtension/GetFilenameWithoutExtension.cpp
+  ${COMMON_SOURCECODE_ROOT_PATH}/InputOutput/WriteFileContent/WriteFileContent.cpp
+)
 endif(${EXE_TYPE} STREQUAL "wxGUI")
 
 showMsg(3, "WXWIDGETS_SOURCE_FILE_PATHS: ${WXWIDGETS_SOURCE_FILE_PATHS}" )
@@ -27,7 +31,7 @@ set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${WXWIDGETS_SOURCE_FILE_PATHS}
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
-  PARENT_SCOPE  
+  PARENT_SCOPE
   )
 
 set(CMAKE_LIST_FILE_PATHS
@@ -61,6 +65,7 @@ set(INCLUDE_DIRS
   ${WXWIDGETS_INCLUDE_DIR}
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
   PARENT_SCOPE)
+message("INCLUDE_DIRS set to:${INCLUDE_DIRS}")
 
 #include_directories( ${INCLUDE_DIRS} )
 

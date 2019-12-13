@@ -337,15 +337,15 @@ namespace AMD
       * p_fMultiplier = AMD::family0Fh::GetMultiplier( r_byCurrentFrequencyID);
 
       * p_fReferenceClockInMHz = 200.0f;
-      DEBUGN("return " << (WORD) readMSRreturnValue
-        << " ref.clock:" << * p_fReferenceClockInMHz
-        << " multi: " << * p_fMultiplier
-        << " " << * p_fVoltageInVolt << "V"
-        )
     //  pantheios::log(pantheios::notice, FULL_FUNC_NAME);
     #if defined(COMPILE_WITH_LOG) && defined(USE_LOG4CPLUS)
       LOG4CPLUS_WARN(log4cplus_logger, LOG4CPLUS_TEXT( FULL_FUNC_NAME ));
     #endif
+      DEBUGN("return " << (unsigned) readMSRreturnValue
+        << " ref.clock:" << * p_fReferenceClockInMHz
+        << " multi: " << * p_fMultiplier
+        << " " << * p_fVoltageInVolt << "V"
+        )
       return readMSRreturnValue;
     }
 
@@ -416,7 +416,10 @@ namespace AMD
         while( currentFID <= maxFID//--
            )
         {
-          arrayIndex = currentFID / 2;
+          if(FIDstep == 2)
+            arrayIndex = currentFID / 2;
+          else
+            arrayIndex = currentFID;
           multipliers[arrayIndex] = AMD::family0Fh::GetMultiplier(currentFID);
     #ifndef ALLOW_ODD_FIDS_FOR_STEPPING_NUMBER_BELOW_3
     //      multipliers[currentFID + 1] = multipliers[currentFID];

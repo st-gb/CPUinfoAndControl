@@ -10,11 +10,11 @@
  *  Created on: 03.05.2012
  *      Author: Stefan */
   #include <preprocessor_macros/logging_preprocessor_macros.h> ////DEBUGN(...)
-  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0Fh.hpp>
+  #include <Controller/CPU-related/AMD/NPT_family_0Fh/AMD_NPT_family_0Fh.hpp>
   //DYN_LIB_CALLING_CONVENTION
-  #include <Controller/CPUcontrollerDynlib/calling_convention.h>
+  #include <Controller/CPUcontrollerDynLib/calling_convention.h>
   //GetCurrentVoltageAndFrequencyAMD_NPT_family_0Fh(...)
-  #include <Controller/CPU-related/AMD/NPT family 0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
+  #include <Controller/CPU-related/AMD/NPT_family_0Fh/AMD_NPT_family_0FH_SetVoltageAndMulti.hpp>
 
   #include <preprocessor_macros/export_function_symbols.h> //EXPORT macro
   #include <preprocessor_macros/value_difference.h> //ULONG_VALUE_DIFF
@@ -241,7 +241,7 @@ WriteMSR_func_type g_pfn_write_msr ;
 
   void AssignPointersToExportedExefunctions()
   {
-    AssignPointersToExportedExeMSRfunctions(g_pfnreadmsr, g_pfn_write_msr) ;
+    AssignPointersToExportedExeMSRfunctions_inline(g_pfnreadmsr, g_pfn_write_msr) ;
     AssignPointerToExportedExeReadPCIconfig(g_pfnReadPCIconfigSpace) ;
     DEBUGN( "g_pfnReadPCIconfigSpace:" << (void *) g_pfnReadPCIconfigSpace )
 
@@ -408,8 +408,10 @@ WriteMSR_func_type g_pfn_write_msr ;
      *  "10.5.7.2 P-state Transition Algorithm"
      * "Note: Software must hold the FID constant when changing the VID." */
     /** "Odd FID values are supported in revision G and later revisions" */
+    //TODO return return value of this function?
     SetCurrentVoltageAndMultiplier_AMD_NPT_family_0FH( fVoltageInVolt ,
       fMultiplier ,
       wCoreID ) ;
+    DEBUGN("end--return 1")
     return 1 ;
   }

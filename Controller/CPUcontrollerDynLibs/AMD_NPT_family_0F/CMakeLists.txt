@@ -14,13 +14,27 @@ set( COMMON_SOURCECODE_ROOT_PATH
 
 set(CPU_I_AND_C_SOURCE_DIR
   ${PROJECT_SOURCE_DIR}/../../.. )
+message("CPU_I_AND_C_SOURCE_DIR:${CPU_I_AND_C_SOURCE_DIR}")
 
-#  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
 set( INCLUDE_DIRS 
   ${COMMON_SOURCECODE_ROOT_PATH}
   ${CPU_I_AND_C_SOURCE_DIR}
   )
 
+#TODO test this
+set(DEFINITIONS
+  "-DALLOW_ODD_FIDS_FOR_STEPPING_NUMBER_BELOW_3"
+  )
+
+message("CMAKE_BUILD_TYPE:${CMAKE_BUILD_TYPE}")
+#from https://cmake.org/pipermail/cmake/2012-March/049620.html
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("CMAKE_BUILD_TYPE is DEBUG")
+  #add_definitions("-DCOMPILE_WITH_LOG -DUSE_OWN_LOGGER -D_DEBUG")
+  set(DEFINITIONS
+    ${DEFINITIONS}
+    "-DCOMPILE_WITH_LOG -DUSE_OWN_LOGGER -D_DEBUG"
+  )
 #TODO :create a flag that is passed to cmake whether to build a logging dynamic 
 #  library or not
 #if(COMPILE WITH LOG
@@ -38,7 +52,9 @@ set( SOURCE_FILE_PATHS
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Logger.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/preprocessor_logging_macros.cpp
   )
-#endif()
+endif()#CMAKE_BUILD_TYPE MATCHES DEBUG
+message("using definitions ${DEFINITIONS}")
+add_definitions(${DEFINITIONS})
 
 #see https://cmake.org/cmake/help/v3.0/variable/WIN32.html
 if(WIN32)
@@ -47,6 +63,13 @@ set( SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${COMMON_SOURCECODE_ROOT_PATH}/Windows/Logger/LogEntryOutputter.cpp
   )
+else()
+ message("building for non-Microsoft Windows Operating System")
+ #non-Microsoft Windows Operating Systems do not have include files we need.
+ set( INCLUDE_DIRS
+  ${INCLUDE_DIRS}
+  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
+ )
 endif()
 
 #Necessary preprocessor macros for 

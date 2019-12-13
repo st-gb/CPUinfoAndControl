@@ -5,12 +5,9 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-/*
- * CPUcontrolServiceBase.cpp
- *
+/** CPUcontrolServiceBase.cpp
  *  Created on: Oct 11, 2010
- *      Author: Stefan
- */
+ *      Author: Stefan */
 #ifdef _WIN32
 //  #define USE_WINDOWS_THREAD
 #endif
@@ -21,8 +18,9 @@
 #include <Controller/DynFreqScalingThreadBase.hpp>
 //GetNumberOfLogicalCPUcores(...)
 #include <Controller/GetNumberOfLogicalCPUcores.h>
-//GetErrorMessageFromErrorCodeA(...)
-#include <Controller/GetErrorMessageFromLastErrorCode.hpp>
+//OperatingSystem::GetErrorMessageFromErrorCodeA(...)
+#include <OperatingSystem/GetErrorMessageFromErrorCode.h>
+//#include <OperatingSystem/GetErrorMessageFromLastErrorCode.hpp>
 #include <Controller/I_CPUaccess.hpp> //class CPUaccessException
 //class SAX2ServiceConfigHandler
 #include <Xerces/service/SAX2ServiceConfigHandler.hpp>
@@ -379,7 +377,7 @@ DWORD CPUcontrolServiceBase::StartDVFSviaThreadType(//bool & bContinue
   {
     LOGN_ERROR( "Error starting Dynamic Voltage and Frequency Scaling thread :"
   //        << LocalLanguageMessageFromErrorCodeA(dwRet)
-      << GetErrorMessageFromErrorCodeA(dwRet)
+      << OperatingSystem::GetErrorMessageFromErrorCodeA(dwRet)
       )
   }
 //  return bContinue ;

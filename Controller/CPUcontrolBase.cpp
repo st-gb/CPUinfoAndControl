@@ -34,10 +34,10 @@
 #include <preprocessor_macros/make_widestring.h> //EXPAND_TO_WIDESTRING
 #include <preprocessor_macros/path_seperator.hpp> //for PATH_SEPERATOR_CHAR_ANSI
 #include <UserInterface/UserInterface.hpp>
+
 #include <Xerces/XMLAccess.hpp> //for readXMLconfig()
 #include <Xerces/LogOutputHandler.hpp> //class LogOutputHandler
 #include <Xerces/XercesHelper.hpp> //for x86InfoAndControl::InitializeXerces()
-
 #ifdef USE_PLATFORM_STL
   ///platformstl::basic_path<[...]>::is_absolute()
   #include <platformstl/filesystem/path.hpp>
