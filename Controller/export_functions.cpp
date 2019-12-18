@@ -145,7 +145,7 @@ extern "C"
           "thread affinity mask" << affinityMask << "\n"
           "-This program needs elevated privileges for ring 0 / CPU "
           "access. So run it as administrator.\n";
-        g_p_user_interface->MessageWithTimeStamp(L"");
+        g_p_user_interface->MessageWithTimeStamp(stdostrstr.str());
         LOGN_ERROR("From exported ReadMSR function")
       }
       DEBUGN( "exe::ReadMSR after g_p_cpuaccess->RdmsrEx(Index,affinityMask): "

@@ -92,8 +92,8 @@ public:
   //WINAPI 
   RdmsrEx(
 	  DWORD index,		// MSR index
-	  PDWORD eax,			// bit  0-31
-	  PDWORD edx,			// bit 32-63
+	  /*PDWORD*/ uint32_t * eax,/// bit  0-31
+	  /*PDWORD*/ uint32_t * edx,/// bit 32-63
 	  DWORD_PTR affinityMask	// Thread Affinity Mask
   );
   inline BOOL

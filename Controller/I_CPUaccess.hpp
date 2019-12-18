@@ -193,8 +193,10 @@ public:
   virtual BOOL // TRUE: success, FALSE: failure
   //In g++ virtual methods can't be declared as stdcall
   //WINAPI
+  //TODO belegen dass 32 bit Breite:
   /** @param eax : Use data type "uint32_t" because this is the exact width  
    *   of the CPU register  */
+  //TODO rename to "ReadMSR" because MSR is an acronym?
   RdmsrEx(
 	  DWORD index,		// MSR index
 	  uint32_t * eax,	/** bit 0-31 */

@@ -27,7 +27,7 @@ GetCurrentProcessExeFileNameWithoutDirs.hpp>
 //extern ReadMSR_func_type g_pfnreadmsr ;
 //extern WriteMSR_func_type g_pfn_write_msr ;
 extern float gs_fTimeStampCounterMultiplier;
-//DWORD g_dwPreviousTickCountInMilliseconds;
+DWORD g_dwPreviousTickCountInMilliseconds;
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 bool InitWindows()

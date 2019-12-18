@@ -80,7 +80,14 @@ echo %define_file_version_string% > file_version_string.txt
 @REM better than replacing via "windres" ("gcc -E" is called by "windres")?!
 gcc -E -xc -D__WXMSW__ -DRC_INVOKED -DCOPYRIGHT_STRING=%copyright_string% -DBUILD_WITH_STRING=%built_with_string% -DFILE_VERSION_NUMBER=%file_version_numeric% -DFILE_VERSION_STRING=%file_version_string% %include_wx_setup_h_dir% %include_wx_include_dir% version_info_GUI_original.rc -o version_info_GUI_preprocessed.rc
 
-windres --use-temp-file --define __WXMSW__ %include_wx_setup_h_dir% %include_wx_include_dir% all_ressources_do_not_requ_admin_GUI.rc all_ressources_do_not_requ_admin_GUI.opc
+windres ^
+ --use-temp-file ^
+ --define ^
+ __WXMSW__ ^
+ %include_wx_setup_h_dir% ^
+ %include_wx_include_dir% ^
+ all_ressources_do_not_requ_admin_GUI.rc ^
+ all_ressources_do_not_requ_admin_GUI.opc
 
 @REM windres --use-temp-file -D FILE_VERSION_NUMBER=%file_version_numeric% --define __WXMSW__ --define _UNICODE %include_wx_setup_h_dir% %include_wx_include_dir% --define NOPCH all_ressources_do_not_requ_admin_GUI.rc all_ressources_do_not_requ_admin_GUI.opc
 

@@ -458,8 +458,8 @@ void WinRing0_1_3RunTimeDynLinked::GetErrorMessageForInitError(
 BOOL // TRUE: success, FALSE: failure
   WinRing0_1_3RunTimeDynLinked::RdmsrEx(
   DWORD dwIndex,		// MSR index
-  PDWORD p_dweax,			// bit  0-31
-  PDWORD p_dwedx,			// bit 32-63
+  /*PDWORD*/ uint32_t * p_dweax,/// bit  0-31
+  /*PDWORD*/ uint32_t * p_dwedx,/// bit 32-63
   DWORD_PTR affinityMask	// Thread Affinity Mask
 )
 {
