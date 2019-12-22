@@ -14,9 +14,9 @@
 //#endif
 //For non-MSVC add include dir "Controller/MSVC_adaption" in order to find
 //tchar.h .
-#ifdef __CYGWIN__ //does not have a "tchar.h" shipped.
+#ifndef _WIN32 //__CYGWIN__ //does not have a "tchar.h" shipped.
     #include <Controller/MSVC_adaption/tchar.h> //_tcsrchr()
-#else //MSC, MINGW (,...)
+#else //MSC, MinGW (,...)
     #include <tchar.h> ////for _T(), TCHAR
 #endif
 #include <Controller/CPU-related/UsageGetterAndControllerBase.hpp>

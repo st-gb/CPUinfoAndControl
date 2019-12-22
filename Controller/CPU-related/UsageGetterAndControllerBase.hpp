@@ -15,8 +15,9 @@
 #ifndef USAGEGETTERANDCONTROLLERBASE_H_
 #define USAGEGETTERANDCONTROLLERBASE_H_
 
-//#ifdef _WINDOWS
-  #include <windef.h>
+#ifndef _WIN32///If not Windows (also 64 bit)
+  #include <windef.h>///DWORD, DWORD_PTR
+#endif
 #include <stdint.h> //uint32_t
 //#endif
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)

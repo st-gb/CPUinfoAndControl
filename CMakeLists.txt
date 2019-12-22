@@ -87,12 +87,18 @@ endif ( DEFINED WXWIDGETS )
 set( INCLUDE_DIRS 
   ${INCLUDE_DIRS} #include the wxWidgets dirs from above
   ${COMMON_SOURCECODE_ROOT_PATH}
-  #only for Linux, Android?:
-  #${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption
   ${PROJECT_SOURCE_DIR}
   ${PLATFORM_STL_ROOT_PATH}
   ${APACHE_XERCES_ROOT_PATH}
 )
+
+if(NOT WIN32) 
+ set(INCLUDE_DIRS 
+  ${INCLUDE_DIRS}
+  #only for Cygwin, Linux, Android?:
+  ${COMMON_SOURCECODE_ROOT_PATH}/Controller/MSVC_adaption)
+endif()
+
 message("include directories: ${INCLUDE_DIRS}")
 
 #set(PROJECT_BINARY_DIR /home/sg/SourceCodeManagement/VTrans3/build)
@@ -159,8 +165,8 @@ if (UNIX)
 endif (UNIX)
 
 #add_directory( ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
-include(${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger/Logger.cmake)
 set(CmnSrcLoggerDir ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
+include(${CmnSrcLoggerDir}/Logger.cmake)
 set(LOGGER_SOURCE_FILES
   ${SG_BasicLoggerSrcFilePaths}
   ${CmnSrcLoggerDir}/Appender/RollingFileOutput.cpp
@@ -219,7 +225,7 @@ if(DEFINED WXWIDGETS)
 endif (DEFINED WXWIDGETS)
 
 showMsg(3, "SOURCE_FILE_PATHS: ${SOURCE_FILE_PATHS}")
-showInclDirs(3)
+showInclDirs(5)
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(EXE_NAME ${PROJECT_NAME}_wxGUI)
