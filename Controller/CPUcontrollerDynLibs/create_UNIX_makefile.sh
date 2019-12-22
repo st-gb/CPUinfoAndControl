@@ -8,17 +8,27 @@ if [ $# -ge $MINIMAL_NUM_ARGS_NEEDED ]; then
   DYN_LIB_MAIN_SOURCE_FILE=$1
   DYN_LIB_FILE_NAME=$2
   echo DYN_LIB_MAIN_SOURCE_FILE: $DYN_LIB_MAIN_SOURCE_FILE
+  echo DYN_LIB_FILE_NAME: $DYN_LIB_FILE_NAME
 
 if [ $# -ge $NUM_ARGS_NEEDED ]; then
-  COMMON_SOURCECODE_ROOT_PATH=$3
   echo COMMON_SOURCECODE_ROOT_PATH: $COMMON_SOURCECODE_ROOT_PATH
+  COMMON_SOURCECODE_ROOT_PATH=$3
 fi
 
+if [ $# -ge 4 ]; then
+  C_COMPILER=$4
+  CPP_COMPILER=$5
+else
 #Edit the following variables if needed!
-#If using a non-absolute path when setting the C Compiler causes this: http://public.kitware.com/Bug/view.php?id=13756
+#If using a non-absolute path when setting the C Compiler causes this:
+# http://public.kitware.com/Bug/view.php?id=13756
 #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294 proposes
 C_COMPILER=/usr/bin/gcc
 CPP_COMPILER=/usr/bin/g++
+fi
+
+echo C compiler: $C_COMPILER
+echo C++ compiler: $CPP_COMPILER
 
 #change if necessary
 #COMMON_SOURCECODE_ROOT_PATH=../../../common_sourcecode

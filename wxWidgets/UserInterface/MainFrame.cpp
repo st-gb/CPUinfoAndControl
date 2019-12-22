@@ -4302,7 +4302,8 @@ void MainFrame::OnIncreaseVoltageForCurrentPstate(wxCommandEvent& WXUNUSED(event
       //After a resume (from standby) the counter value for CPU core 1 did not
       //change.
       //So re-initialize it now.
-      ::wxGetApp().mp_cpucoreusagegetter->Init() ;
+      if(::wxGetApp().mp_cpucoreusagegetter)
+        ::wxGetApp().mp_cpucoreusagegetter->Init() ;
       //wxLogMessage(_T("System resumed from suspend."));
     } // if( mp_i_cpucontroller )
     LOGN( "end")

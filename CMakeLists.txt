@@ -223,12 +223,17 @@ showInclDirs(3)
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
   set(EXE_NAME ${PROJECT_NAME}_wxGUI)
-  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 endif( ${EXE_TYPE} STREQUAL "wxGUI" )
 if( ${EXE_TYPE} STREQUAL "UNIX_service")
   set(EXE_NAME ${PROJECT_NAME}_service)
-  add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 endif( ${EXE_TYPE} STREQUAL "UNIX_service" )
+
+#TODO also wxWidgets (and compiler) version in filename
+# CMAKE_CPP_COMPILER_ID  CMAKE_CPP_COMPILER_VERSION
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  SET(EXE_NAME ${EXE_NAME}_dbg)
+endif()
+add_executable(${EXE_NAME} ${SOURCE_FILE_PATHS})
 
 if(DEFINED WXWIDGETS)
   message("target_link_ibraries with wxWidgets_LIBRARIES")
