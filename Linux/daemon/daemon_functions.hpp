@@ -18,7 +18,7 @@
 #include <string> //class std::string
 
 //template<typename charType> class CommandLineArgs
-#include <Process/CommandLineArgs.hpp>
+#include <OperatingSystem/Process/CommandLineArgs.hpp>
 
 void init_daemon(//int argc, char *  argv[],
   std::string & stdstrCurrentWorkingDir ) ;

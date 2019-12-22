@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 2.6)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ../../CPUcontrollerDynLibs)
 
 if( NOT DEFINED DYN_LIB_FILE_NAME )
-  message("warning: COMMON_SOURCECODE_ROOT_PATH is NOT defined")
+  message("warning: DYN_LIB_FILE_NAME is NOT defined")
   #TODO: set to folder name of the dyn lib main source file
   #set(DYN_LIB_FILE_NAME )
 endif( NOT DEFINED DYN_LIB_FILE_NAME )
