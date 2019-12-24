@@ -1,6 +1,12 @@
 
 #see http://stackoverflow.com/questions/8934295/add-source-in-a-subdirectory-to-a-cmake-project
 
+#If this file was processed via add_subdirectory(...)
+#set(DirOfThisScript ${CMAKE_CURRENT_SOURCE_DIR})
+
+#If this file was processed via include(...)
+set(DirOfThisScript ${CMAKE_CURRENT_LIST_DIR})
+
 #  ${CMAKE_CURRENT_SOURCE_DIR}/wxDynFreqScalingTimer.cpp
 set( WXWIDGETS_SOURCE_FILE_PATHS
   ${CMAKE_CURRENT_SOURCE_DIR}/DynFreqScalingThread.cpp
@@ -40,12 +46,15 @@ set(CMAKE_LIST_FILE_PATHS
   PARENT_SCOPE
 )
 
+#TODO does not work?!
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 #see http://accountingplusplus.blogspot.de/2010/12/cmake-wxwidgets.html :
 #Set wxWidgets_USE_DEBUG to "ON" to link against WxWidgets debug libraries.
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#https://cmake.org/cmake/help/v3.0/module/FindwxWidgets.html :
 set( wxWidgets_USE_DEBUG ON
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
-  PARENT_SCOPE )
+  #PARENT_SCOPE
+  )
 endif()
 message("wxWidgets_USE_DEBUG: ${wxWidgets_USE_DEBUG}")
 #Set to appropriate version--releae, debug, 32/64 bit
@@ -74,11 +83,7 @@ message("INCLUDE_DIRS set to:${INCLUDE_DIRS}")
 #find_package(wxWidgets COMPONENTS core base REQUIRED)
 #include(${wxWidgets_USE_FILE})
 
-set( LIBRARIES
-  ${LIBRARIES}
-  ${wxWidgets_USE_FILE}
-  PARENT_SCOPE )
-
+#This should be done by "include(${wxWidgets_USE_FILE})" (UsewxWidgets.cmake)
 if (WIN32)
   add_definitions(-D__WXMSW__)
   set(CXX_DEFINITIONS

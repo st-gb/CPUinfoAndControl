@@ -147,9 +147,13 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
   
   const std::string shellScriptPath = "./Linux/load_MSR_kernel_module.sh";
   const std::string shellCommand = "chmod 777 " + shellScriptPath;
+  //TODO only needs to be done if MSR device file is not not accessible.
+  // ->check accessibility of MSR device files before (via C file API)
   int ret = system(shellCommand.c_str() ) ;
 //  LOGN("Trying to set current working dir to \"/\"" )
 //  chdir( "/" ) ;
+  //TODO only needs to be done if MSR device file is not not accessible.
+  // ->check accessibility of MSR device files before (via C file API)
   ret = system(shellScriptPath.c_str() );
   //from www.opengroup.org:
   if( //execlp( "sh", "sh", "./load_kernel_module.sh"
@@ -208,7 +212,17 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
       switch ( errno
         //nErrno
         )
-      {
+      {///http://man7.org/linux/man-pages/man2/open.2.html: 
+        /// "EPERM The operation was prevented by a file seal; see fcntl(2)."
+        /// https://astojanov.github.io/blog/2013/05/30/intel-pcm.html
+        /// "setcap cap_sys_rawio=ep foo" ?
+        /// /arch/x86/kernel/msr.c: "!capable(CAP_SYS_RAWIO) return -EPERM;"
+        /// https://lore.kernel.org/patchwork/patch/574100/:
+        /// -Alternatively, non-root users can be enabled to run turbostat this way:
+        /// -# setcap cap_sys_rawio=ep ./turbostat
+        /// -# chmod +r /dev/cpu/*/msr
+        /// https://lwn.net/Articles/542327/
+        ///EPERM happens even if file owner is process owner and has "rw" rights
         case EPERM:
         case EACCES:
           stdstrMessage += //"Permission denied."

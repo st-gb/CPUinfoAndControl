@@ -1,3 +1,12 @@
 Apache Xerces
 =============
  in MinGW: "sh ./configure CXXFLAGS=-fpermissive"
+ 
+#how to build Xerces: http://xerces.apache.org/xerces-c/build-3.html
+#E:\Libs\Apache_Xerces\xerces-c-3.2.2\src>cmake -G "MinGW Makefiles" -Dnetwork:BOOL=OFF 
+# -Dtranscoder=windows -Dmessage-loader=inmemory -Dxmlch-type=wchar_t 
+# -Dmutex-manager=windows
+# CC=E:\compilers\TDM-GCC-64\bin\gcc.exe
+# CXX=E:\compilers\TDM-GCC-64\bin\g++.exe
+# LDFLAGS=-no-undefined .
+

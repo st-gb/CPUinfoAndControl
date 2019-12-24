@@ -1,13 +1,17 @@
 #from https://cmake.org/cmake-tutorial/
 
+#https://stackoverflow.com/questions/48509911/cmake-add-subdirectory-vs-include
+# -> use include() instead of "add_subdirectory()" for the same target
+# Also a "PARENT_SCOPE" is neccessary in the CMakeLists.txt?!
+
 #TODO Enable a minimal build (MinSizeRel CMAKE_BUILD_TYPE)
 # with omitted symbols (GCC: "-s" option)
 #TODO Really the minimal CMake version for this project?
 cmake_minimum_required(VERSION 2.6)
-if( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+if(COMMON_SOURCECODE_ROOT_PATH STREQUAL "")
   message("warning: COMMON_SOURCECODE_ROOT_PATH is NOT defined->set to default")
   set(COMMON_SOURCECODE_ROOT_PATH ../common_sourcecode)
-endif( NOT DEFINED COMMON_SOURCECODE_ROOT_PATH )
+endif()
 message("COMMON_SOURCECODE_ROOT_PATH: ${COMMON_SOURCECODE_ROOT_PATH}")
 
 include(${COMMON_SOURCECODE_ROOT_PATH}/CMake/MinGW_PATH_sh.exe_message.cmake)
@@ -70,6 +74,7 @@ if( ${EXE_TYPE} STREQUAL "UNIX_service" )
   set(EXE_NAME ${CPUinfoAndControl}_daemon)
 endif()
 
+#TODO move to wxWidgets/wxWidgets.cmake
 if( DEFINED WXWIDGETS )
   message("WXWIDGETS is defined")
   if(CMAKE_COMPILER_IS_GNUCC)#put GCC-specific stuff in here
@@ -145,24 +150,16 @@ include_directories( ${INCLUDE_DIRS} )
 
 add_subdirectory("ModelData")
 
-if (UNIX)
-  message("UNIX defined")
-  add_subdirectory(Linux)
-  set( LIBRARIES
-    ${LIBRARIES}
-    pthread
-  )
+# https://cmake.org/cmake/help/latest/variable/UNIX.html : 
+# "target system is UNIX or UNIX-like (e.g. APPLE and CYGWIN)"
+if(UNIX)# "UNIX" must be written in capital letters else it does not work.
+  message("Unix defined")
 #  add_subdirectory(./Linux
 #    #EXCLUDE_FROM_ALL
 #    )
-  set( CLIENT_SERVER_BASE_SOURCE_FILES
-    ${CLIENT_SERVER_BASE_SOURCE_FILES}
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/POSIX/multithread/pthreadBasedI_Thread.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/EnglishMessageFromErrorCode/EnglishMessageFromErrorCode.cpp
-    ${COMMON_SOURCECODE_ROOT_PATH}/OperatingSystem/Linux/FileSystem/GetCurrentWorkingDir/GetCurrentWorkingDir.cpp
-  )
+  include(Linux/CMakeLists.txt)
   #message("CLIENT_SERVER_BASE_SOURCE_FILES: ${CLIENT_SERVER_BASE_SOURCE_FILES}")
-endif (UNIX)
+endif()
 
 #add_directory( ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
 set(CmnSrcLoggerDir ${COMMON_SOURCECODE_ROOT_PATH}/Controller/Logger)
@@ -222,6 +219,7 @@ if(DEFINED WXWIDGETS)
   SET(wxWidgets_USE_LIBS core base adv)#"adv" for GUI.
   include(${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/callFindwxWidgets.cmake)
   #callFindwxWidgets("core base adv")
+  message(STATUS "wxWidgets_CONFIGURATION: ${wxWidgets_CONFIGURATION}")
 endif (DEFINED WXWIDGETS)
 
 showMsg(3, "SOURCE_FILE_PATHS: ${SOURCE_FILE_PATHS}")
@@ -251,4 +249,3 @@ endif (DEFINED WXWIDGETS)
 message ("EXE_NAME: ${EXE_NAME} LIBRARIES: ${LIBRARIES}")
 
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
-message (STATUS "wxWidgets type: ${wxWidgets_CONFIGURATION}")
