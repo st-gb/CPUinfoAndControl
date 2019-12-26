@@ -2,33 +2,51 @@
 #see http://stackoverflow.com/questions/8934295/add-source-in-a-subdirectory-to-a-cmake-project
 
 #If this file was processed via add_subdirectory(...)
+#CMAKE_CURRENT_SOURCE_DIR is the path of the 1st processed CMakeLists.txt.
 #set(DirOfThisScript ${CMAKE_CURRENT_SOURCE_DIR})
 
 #If this file was processed via include(...)
 set(DirOfThisScript ${CMAKE_CURRENT_LIST_DIR})
 
+set(CmnSrcWx ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets)
 #  ${CMAKE_CURRENT_SOURCE_DIR}/wxDynFreqScalingTimer.cpp
 set( WXWIDGETS_SOURCE_FILE_PATHS
-  ${CMAKE_CURRENT_SOURCE_DIR}/DynFreqScalingThread.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Controller/DynLibHandler.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Controller/wxDynLibCPUcontroller.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Controller/wxDynLibCPUcoreUsageGetter.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/Controller/character_string/wxStringHelper.cpp
-  ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/multithread/wxThreadBasedI_Thread.cpp
+  ${DirOfThisScript}/DynFreqScalingThread.cpp
+  ${DirOfThisScript}/Controller/DynLibHandler.cpp
+  ${DirOfThisScript}/Controller/wxDynLibCPUcontroller.cpp
+  ${DirOfThisScript}/Controller/wxDynLibCPUcoreUsageGetter.cpp
+  ${CmnSrcWx}/Controller/character_string/wxStringHelper.cpp
+  ${CmnSrcWx}/multithread/wxThreadBasedI_Thread.cpp
 )
 
 if( ${EXE_TYPE} STREQUAL "wxGUI")
-  add_subdirectory(UserInterface)
+  if(CMAKE_COMPILER_IS_GNUCC)#put GCC-specific stuff in here
+    #"App.cpp:: error: cast from 'void*' to 'DWORD {aka long unsigned int}' 
+    # loses precision [-fpermissive]
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fpermissive")
+  endif()
+
 set( WXWIDGETS_SOURCE_FILE_PATHS
   ${WXWIDGETS_SOURCE_FILE_PATHS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/App.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/App_FindLowestStableCPUcoreVoltage.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/App_service_actions.cpp
+  ${DirOfThisScript}/App.cpp
+  ${DirOfThisScript}/App_FindLowestStableCPUcoreVoltage.cpp
+  ${DirOfThisScript}/App_service_actions.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/wxWidgets/icon/IconDrawer.cpp
   #NOT wxWidgets-related but necessary for the wxGUI
   ${COMMON_SOURCECODE_ROOT_PATH}/Controller/FileSystem/GetFilenameWithoutExtension/GetFilenameWithoutExtension.cpp
   ${COMMON_SOURCECODE_ROOT_PATH}/InputOutput/WriteFileContent/WriteFileContent.cpp
 )
+  #add_subdirectory(UserInterface)
+  #Include it after "DirOfThisScript" has been used in this file because the 
+  #included script alters this variable.
+  include(${DirOfThisScript}/UserInterface/CMakeLists.txt)
+
+  #TODO set wxWidgets_FIND_COMPONENTS ?
+  #SET(wxWidgets_FIND_COMPONENTS core base adv)
+  #for callFindwxWidgets.cmake
+  SET(wxWidgets_USE_LIBS core base adv)#"adv" for GUI.
+else()
+  SET(wxWidgets_USE_LIBS core base)#for callFindwxWidgets.cmake
 endif(${EXE_TYPE} STREQUAL "wxGUI")
 
 showMsg(3, "WXWIDGETS_SOURCE_FILE_PATHS: ${WXWIDGETS_SOURCE_FILE_PATHS}" )
@@ -37,13 +55,13 @@ set(SOURCE_FILE_PATHS
   ${SOURCE_FILE_PATHS}
   ${WXWIDGETS_SOURCE_FILE_PATHS}
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
-  PARENT_SCOPE
+  #PARENT_SCOPE
   )
 
 set(CMAKE_LIST_FILE_PATHS
   ${CMAKE_LIST_FILE_PATHS}
   ${CMAKE_CURRENT_LIST_FILE}
-  PARENT_SCOPE
+  #PARENT_SCOPE
 )
 
 #TODO does not work?!
@@ -73,40 +91,20 @@ set(INCLUDE_DIRS
   ${WXWIDGETS_SETUP_H_PATH}
   ${WXWIDGETS_INCLUDE_DIR}
   #PARENT_SCOPE makes changes made in this script visible to the caller of this file
-  PARENT_SCOPE)
+  #PARENT_SCOPE
+  )
 message("INCLUDE_DIRS set to:${INCLUDE_DIRS}")
 
 #include_directories( ${INCLUDE_DIRS} )
 
-#https://wiki.wxwidgets.org/CMake
-#set(wxWidgets_CONFIGURATION mswu)
-#find_package(wxWidgets COMPONENTS core base REQUIRED)
-#include(${wxWidgets_USE_FILE})
+if(setWxManually)
+  include(${CmnSrcWx}/setWxManually.cmake)
+else()
+  set(wxWidgets_ROOT_DIR ${WXWIDGETS_SETUP_H_PATH})
+  set(debugCallFindwxWidgets 1)
 
-#This should be done by "include(${wxWidgets_USE_FILE})" (UsewxWidgets.cmake)
-if (WIN32)
-  add_definitions(-D__WXMSW__)
-  set(CXX_DEFINITIONS
-    ${CXX_DEFINITIONS}
-    -D__WXMSW__
-    PARENT_SCOPE
-  )
-endif (WIN32)
+  include(${CmnSrcWx}/callFindwxWidgets.cmake)
+  #callFindwxWidgets("core base adv")#function call
+endif()
 
-if (UNIX)
-  #add_definitions(-D__WXGTK__)
-  set(CXX_DEFINITIONS
-    ${CXX_DEFINITIONS}
-    -D__WXGTK__
-    PARENT_SCOPE
-  )
-  set( LIBRARIES
-    ${LIBRARIES}
-    #libwx_gtk2ud_core-2.8.a
-    #wx_baseud-2.8
-    #wx_gtk2ud_adv-2.8
-    PARENT_SCOPE
-  )
-endif (UNIX)
-
-#add_executable(VTrans ${SOURCE_FILE_PATHS})
+message(STATUS "wxWidgets_CONFIGURATION: ${wxWidgets_CONFIGURATION}")
