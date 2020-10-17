@@ -383,7 +383,7 @@ EXPORT BYTE DLL_CALLING_CONVENTION //can be omitted.
       fVoltageInVolt , fMultiplier, (BYTE) wCoreID ) ;
 }
 
-#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
+#include "../ODCM/ThrottleRatioFunctions.hpp"
 
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
 EXPORT BOOL APIENTRY DllMain(
