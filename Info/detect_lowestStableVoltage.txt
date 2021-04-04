@@ -1,0 +1,7 @@
+detect lowest stable CPU core voltage:
+======================================
+Seems to work with Prime95's "in-place large FFTs" test best.
+https://en.wikipedia.org/wiki/In-place_algorithm :
+"An in-place algorithm updates its input sequence only through replacement or swapping of elements."
+
+So do it the same way?

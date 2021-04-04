@@ -1,0 +1,2 @@
+https://www.phoronix.com/scan.php?page=news_item&px=Intel-GUI-Linux-Undervolt
+https://github.com/lukechadwick/linux-intel-undervolt-gui
