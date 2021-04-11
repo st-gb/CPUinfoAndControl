@@ -1,9 +1,9 @@
-cmake_minimum_required (VERSION 2.6)
-project (Core2_IandC)
+cmake_minimum_required(VERSION 2.6)
+project(IntelCore2_IandC)
 
 set( SOURCE_FILE_PATHS
   dllmain.cpp 
-  ../../CPU-related/Intel/Core/Core.cpp)
+  ../../../Controller/CPU-related/Intel/Core/Core.cpp)
 
 message("SOURCE_FILE_PATHS: ${SOURCE_FILE_PATHS}")
 

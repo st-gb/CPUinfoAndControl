@@ -12,7 +12,7 @@
   
   <CPUID vendor="GenuineIntel" family="6" model="13" CPUinfoGetterAndOrController="PentiumMcontroller_FSB-stepp8=133,else100,insertDef.p-statesWoutMulti7"/>
   <CPUID vendor="GenuineIntel" family="6" model="14" CPUinfoGetterAndOrController="IntelCoreController_InsertDefaultPstates"/>
-  <CPUID vendor="GenuineIntel" family="6" model="15" CPUinfoGetterAndOrController="Core2_IandC" CPUregisterData="Intel_Core2.xml"/>
+  <CPUID vendor="GenuineIntel" family="6" model="15" CPUinfoGetterAndOrController="IntelCore2_IandC" CPUregisterData="Intel_Core2.xml"/>
   <CPUID vendor="GenuineIntel" family="6" model="23" CPUinfoGetterAndOrController="IntelCore2Controller_InsertDefaultPstates"/>
   <CPUID vendor="GenuineIntel" family="6" model="30" CPUinfoGetterAndOrController="IntelNehalemController"/>
   <CPUID vendor="GenuineIntel" family="6" model="37" CPUinfoGetterAndOrController="IntelNehalemController"/>

@@ -1,1 +1,2 @@
-for MinGW: "win32"
+for MinGW:
+style in findwxWidgets.cmake is "win32"
