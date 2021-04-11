@@ -15,6 +15,32 @@ if(COMMON_SOURCECODE_ROOT_PATH STREQUAL "" #works under Linux
   message("warning: COMMON_SOURCECODE_ROOT_PATH is NOT defined->set to default")
   set(COMMON_SOURCECODE_ROOT_PATH ../common_sourcecode)
 endif()
+
+if(UNIX)
+  if(NOT SET DCMAKE_C_COMPILER OR DCMAKE_C_COMPILER STREQUAL "")
+    #If using a non-absolute path when setting the C Compiler causes this:
+	# http://public.kitware.com/Bug/view.php?id=13756
+    #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294
+    # proposes.
+    set(DCMAKE_C_COMPILER "/usr/bin/gcc")
+    # "-pg" option for "gprof" profiling
+  endif()
+  if(NOT SET DCMAKE_CXX_COMPILER OR DCMAKE_CXX_COMPILER STREQUAL "")
+    #If using a non-absolute path when setting the C Compiler causes this:
+	# http://public.kitware.com/Bug/view.php?id=13756
+    #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294
+    # proposes.
+    set(DCMAKE_CXX_COMPILER "/usr/bin/g++"}
+  endif()
+endif()
+message("C compiler: ${DCMAKE_C_COMPILER}")
+message("C++ compiler: ${DCMAKE_CXX_COMPILER}")
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(DCMAKE_C_FLAGS_DEBUG "${DCMAKE_C_FLAGS_DEBUG} -g3 -gdwarf-2")
+  set(DCMAKE_CXX_FLAGS_DEBUG "${DCMAKE_CXX_FLAGS_DEBUG} -g3 -gdwarf-2")
+endif()
+
 message("COMMON_SOURCECODE_ROOT_PATH: ${COMMON_SOURCECODE_ROOT_PATH}")
 
 include(${COMMON_SOURCECODE_ROOT_PATH}/CMake/MinGW_PATH_sh.exe_message.cmake)
@@ -238,5 +264,9 @@ get_directory_property( _compile_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFI
 message("COMPILE_DEFINITIONS: ${_compile_defs}")
 
 message("CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
+
+set(varname CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE})
+message("${varname}: ${${varname}}")
+message("CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 target_link_libraries(${EXE_NAME} ${LIBRARIES})
