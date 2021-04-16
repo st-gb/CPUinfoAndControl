@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 #create dyn lib in appropriate directory
 #from https://stackoverflow.com/questions/6594796/how-do-i-make-cmake-output-into-a-bin-dir
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ../../CPUcontrollerDynLibs)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ../CPUcontrollerDynLibs)
 
 if( NOT DEFINED DYN_LIB_FILE_NAME )
   message("warning: DYN_LIB_FILE_NAME is NOT defined")
@@ -21,11 +21,11 @@ set( SOURCE_FILE_PATHS
 
 if( COMMON_SOURCECODE_ROOT_PATH STREQUAL "")
   message("warning: COMMON_SOURCECODE_ROOT_PATH is EMPTY")
-  set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../../common_sourcecode)
+  set(COMMON_SOURCECODE_ROOT_PATH ${PROJECT_SOURCE_DIR}/../../common_sourcecode)
 endif( COMMON_SOURCECODE_ROOT_PATH STREQUAL "")
 
 set(CPU_I_AND_C_SOURCE_DIR
-  ${PROJECT_SOURCE_DIR}/../.. )
+  ${PROJECT_SOURCE_DIR}/..)
 
 #add_definitions(-fPIC)
 

@@ -161,7 +161,7 @@ DLLMAIN_FRONT_SIGNATURE DllMain(
 //#define DYN_LIB_CALLING_CONVENTION __stdcall
 #define DYN_LIB_CALLING_CONVENTION
 
-#include "../Intel/ODCM/ThrottleRatioFunctions.hpp"
+#include "../ODCM/ThrottleRatioFunctions.hpp"
 
 
 /** @brief The reference clock might change, also during runtime.

@@ -19,6 +19,13 @@ Makefile
 #ignore thumbnails created by windows
 Thumbs.db
 
+#Linux NTFS driver (intermediate) files
+.fuse_hidden*
+
+#ignore GCC build files 
+*.o
+*.d
+
 #Ignore files build by Visual Studio
 *.obj
 *.exe
