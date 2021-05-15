@@ -48,7 +48,7 @@ namespace wxWidgets
     )
   {
     I_CPUcontroller * p_cpucontroller = NULL;
-    LOGN( "begin")
+    LOGN_DEBUG("begin")
     bool bSuccess = false ;
     wxString wxstrFilePath = getwxString( r_stdstrDynLibFilePath );
     try

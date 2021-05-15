@@ -5,12 +5,9 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-/* 
- * File:   MSRdeviceFile.cpp
- * Author: sgebauer
- * 
- * Created on 15. November 2009, 18:38
- */
+/** File:   MSRdeviceFile.cpp
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc. 
+ * Created on 15. November 2009, 18:38 */
 
 #include <global.h> //for SUCCESS, FAILURE
 #include "MSRdeviceFile.hpp" //header file of this class
@@ -29,13 +26,18 @@
 //#include <Linux/EnglishMessageFromErrorCode.h>
 #include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 
-#include <cpuid.h> //__get_cpuid(...)
+#include <hardware/CPU/x86/detect_architecture.h>///Intel_x86
+#ifdef Intel_x86
+  #include <cpuid.h>///__get_cpuid(...)
+#endif
 #include <errno.h> //for "errno"
 #include <fcntl.h> //O_RDONLY, ...
 #include <ios> //std::iosbase
 #include <sstream> //for class std::stringstream
 #include <stdlib.h> //system(...)
-#include <sys/io.h> //outl(...), iopl(...)
+#ifdef Intel_x86
+  #include <sys/io.h>///outl(...), iopl(...)
+#endif
 #include <unistd.h> // execvp(...)
 ////from www.xml.com/ldd/...:
 //#include <linux/kmod.h> //must be from an appropriate directory
@@ -86,9 +88,11 @@ MSRdeviceFile::MSRdeviceFile(
   InitPerCPUcoreAccess( byNumberOfLogicalCPUcores) ;
 
   int n = 0;
+#ifdef Intel_x86///Only for x86
   //Change IO privilege. level to "user mode" to avoid a Segmentation fault
   //when calling "outl".
   n = iopl(USER_MODE);
+#endif
   LOGN_DEBUG("return value of iopl():" << n )
   if( n != 0)
   {
@@ -290,7 +294,8 @@ BOOL MSRdeviceFile::CpuidEx(
 //  unsigned int uiEDX ;
   //TODO set CPU (core) affinity,
   //TODO use parameters _directly_ for "__get_cpuid(...)"
-  bReturn = __get_cpuid (
+#ifdef Intel_x86
+  bReturn = __get_cpuid(
 //    __cpuid(
     dwFunctionIndex //unsigned int __level,
 //    , & uiEAX //
@@ -302,6 +307,7 @@ BOOL MSRdeviceFile::CpuidEx(
 //    , & uiEDX //
     , (unsigned int *) p_dwEDX //unsigned int *__edx
     ) ;
+#endif
 //  if( bReturn == 0 )
 //    LOGN_ERROR("Calling \"__get_cpuid\" with index" << dwFunctionIndex
 //        << "failed")
@@ -516,8 +522,10 @@ BOOL MSRdeviceFile::ReadPciConfigDwordEx(
   // http://en.wikipedia.org/wiki/PCI_configuration_space
   const unsigned config_address = //0x80000000 | bus << 16 | device << 11 | function << 8 | offset;
     0x80000000 | dwPCIaddress << 8 | dwRegAddress;
+#ifdef Intel_x86
   outl_p(config_address, 0xcf8);
   * p_dwValue = inl_p(0xcfc);
+#endif
 //    float tempInDegCelsius = float ( value >> 21 ) / 8.0f;
 //    std::cout << "value: " << value << "temp:" << tempInDegCelsius << std::endl;
   return bReturn ;

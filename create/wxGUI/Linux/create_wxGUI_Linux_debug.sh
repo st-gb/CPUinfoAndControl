@@ -22,6 +22,6 @@ CMakeBuildGenerator=$1
 
 bash $dirPathOfThisScript/create_wxGUI_Linux.sh \
 "$CMakeBuildGenerator" \
-"-Dmultithread=ON -DCMAKE_BUILD_TYPE=Debug -DdirectSMARTaccess=ON" \
+"-DCMAKE_BUILD_TYPE=Debug" \
 $wxSetupHpath
 

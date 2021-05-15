@@ -9,6 +9,7 @@
 # with omitted symbols (GCC: "-s" option)
 #TODO Really the minimal CMake version for this project?
 cmake_minimum_required(VERSION 2.6)
+
 #Also <> "" if not passed to CMake but it is an environment variable?
 if(COMMON_SOURCECODE_ROOT_PATH STREQUAL "" #works under Linux
   OR NOT DEFINED COMMON_SOURCECODE_ROOT_PATH)
@@ -17,28 +18,30 @@ if(COMMON_SOURCECODE_ROOT_PATH STREQUAL "" #works under Linux
 endif()
 
 if(UNIX)
-  if(NOT SET DCMAKE_C_COMPILER OR DCMAKE_C_COMPILER STREQUAL "")
+  if(NOT DEFINED CMAKE_C_COMPILER OR CMAKE_C_COMPILER STREQUAL "")
     #If using a non-absolute path when setting the C Compiler causes this:
 	# http://public.kitware.com/Bug/view.php?id=13756
     #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294
     # proposes.
-    set(DCMAKE_C_COMPILER "/usr/bin/gcc")
+    message("compiler not defined->setting to default")
+    set(CMAKE_C_COMPILER "/usr/bin/gcc")
     # "-pg" option for "gprof" profiling
   endif()
-  if(NOT SET DCMAKE_CXX_COMPILER OR DCMAKE_CXX_COMPILER STREQUAL "")
+  if(NOT DEFINED CMAKE_CXX_COMPILER OR CMAKE_CXX_COMPILER STREQUAL "")
     #If using a non-absolute path when setting the C Compiler causes this:
 	# http://public.kitware.com/Bug/view.php?id=13756
     #So use an absolute path, as http://public.kitware.com/Bug/view.php?id=14294
     # proposes.
-    set(DCMAKE_CXX_COMPILER "/usr/bin/g++"}
+    message("compiler not defined->setting to default")
+    set(CMAKE_CXX_COMPILER "/usr/bin/g++")
   endif()
 endif()
-message("C compiler: ${DCMAKE_C_COMPILER}")
-message("C++ compiler: ${DCMAKE_CXX_COMPILER}")
+message("C compiler: ${CMAKE_C_COMPILER}")
+message("C++ compiler: ${CMAKE_CXX_COMPILER}")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(DCMAKE_C_FLAGS_DEBUG "${DCMAKE_C_FLAGS_DEBUG} -g3 -gdwarf-2")
-  set(DCMAKE_CXX_FLAGS_DEBUG "${DCMAKE_CXX_FLAGS_DEBUG} -g3 -gdwarf-2")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -gdwarf-2")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -gdwarf-2")
 endif()
 
 message("COMMON_SOURCECODE_ROOT_PATH: ${COMMON_SOURCECODE_ROOT_PATH}")
