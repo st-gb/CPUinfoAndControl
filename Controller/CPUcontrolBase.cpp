@@ -19,12 +19,17 @@
 #include <Controller/IDynFreqScalingAccess.hpp> //class IDynFreqScalingAccess
 #include <Controller/Logger/Appender/RollingFileOutput.hpp>
 #include <Controller/Logger/OutputHandler/StdOfStreamLogWriter.hpp>
+#include <hardware/CPU/x86/detect_architecture.h>///Intel_x86
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
   //class PowerProfDynLinked
   #include <OperatingSystem/Windows/PowerProfAccess/PowerProfDynLinked.hpp>
   #include <Windows/WinRing0/WinRing0_1_3RunTimeDynLinked.hpp>
 #else
-  #include <Linux/MSRdeviceFile.hpp>
+  #ifdef Intel_x86///MSR (and other?) is x86-specific
+   #include <Linux/MSRdeviceFile.hpp>///class MSRdeviceFile
+  #else
+   #include "DummyCPUaccess.hpp"///class DummyCPUaccess
+  #endif
 #endif
 #include <Controller/MainController.hpp>//MainController::GetSupportedCPUs(...)
 //ReadFileContent(std::string & )
@@ -319,7 +324,7 @@ void CPUcontrolBase::CreateHardwareAccessObject_Windows()
 
 void CPUcontrolBase::CreateHardwareAccessObject()
 {
-  LOGN_INFO( "begin")
+  LOGN_INFO("begin")
   try //catch CPUaccessexception
   {
 #ifdef _WIN32 //Built-in macro for MSVC, MinGW (also for 64 bit Windows)
@@ -328,11 +333,15 @@ void CPUcontrolBase::CreateHardwareAccessObject()
 #ifdef __linux__ //Pre-defined by Linux' g++ compiler?
     //m_maincontroller.SetCPUaccess(NULL) ;
     //m_MSRdeviceFile.SetUserInterface(this) ;
+    #ifdef Intel_x86///MSR (and other?) is x86-specific
     mp_i_cpuaccess = new MSRdeviceFile(//this,
       mp_userinterface ,
       GetNumberOfLogicalCPUcores() ,
       m_model
-      ) ;
+      );
+    #else///ARM etc.
+    mp_i_cpuaccess = new DummyCPUaccess;
+    #endif
     //m_maincontroller.SetCPUaccess(&m_MSRdeviceFile) ;
 #endif
     //Assign to the global variable so that the functions (ReadMSR(...) etc.)

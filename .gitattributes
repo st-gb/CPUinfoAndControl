@@ -1,0 +1,4 @@
+#Shell scripts must have Unix line endings (\n =LineFeed) under Linux else
+# "$'*\r': Kommando nicht gefunden."
+*.sh text eol=lf
+

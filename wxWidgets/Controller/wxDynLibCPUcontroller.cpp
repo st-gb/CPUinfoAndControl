@@ -68,7 +68,7 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   , m_wNumberOfLogicalCPUcores ( 1 )//,
 //  mp_cpuaccess(p_cpuaccess)
 {
-  LOGN( "begin")
+  LOGN_DEBUG("begin")
   SetCPUaccess(p_cpuaccess);
   if( ! p_cpuaccess )
   {
@@ -87,9 +87,10 @@ wxDynLibCPUcontroller::wxDynLibCPUcontroller(
   mp_model = p_model ;
   //m_wxdynamiclibraryCPUctl ;
 
-  //http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html
-  // #wxdynamiclibraryload :
-  //"Returns true if the library was successfully loaded, false otherwise."
+  LOGN_DEBUG("before loading dyn lib")
+  /** http://docs.wxwidgets.org/2.8.7/wx_wxdynamiclibrary.html
+   *  #wxdynamiclibraryload :
+   * "Returns true if the library was successfully loaded, false otherwise." */
   if( m_wxdynamiclibraryCPUctl.Load(r_wxstrFilePath) 
     )
   {

@@ -5,12 +5,9 @@
  * Trilobyte Software Engineering GmbH, Berlin, Germany for free if you are not
  * making profit with it or its adaption. Else you may contact Trilobyte SE.
  */
-/* 
- * File:   MSRdeviceFile.cpp
- * Author: sgebauer
- * 
- * Created on 15. November 2009, 18:38
- */
+/** File:   MSRdeviceFile.cpp
+ * Author: Stefan Gebauer, M.Sc. Comp.Sc. 
+ * Created on 15. November 2009, 18:38 */
 
 #include <global.h> //for SUCCESS, FAILURE
 #include "MSRdeviceFile.hpp" //header file of this class
@@ -29,13 +26,18 @@
 //#include <Linux/EnglishMessageFromErrorCode.h>
 #include <UserInterface/UserInterface.hpp> //for class "UserInterface"
 
-#include <cpuid.h> //__get_cpuid(...)
+#include <hardware/CPU/x86/detect_architecture.h>///Intel_x86
+#ifdef Intel_x86
+  #include <cpuid.h>///__get_cpuid(...)
+#endif
 #include <errno.h> //for "errno"
 #include <fcntl.h> //O_RDONLY, ...
 #include <ios> //std::iosbase
 #include <sstream> //for class std::stringstream
 #include <stdlib.h> //system(...)
-#include <sys/io.h> //outl(...), iopl(...)
+#ifdef Intel_x86
+  #include <sys/io.h>///outl(...), iopl(...)
+#endif
 #include <unistd.h> // execvp(...)
 ////from www.xml.com/ldd/...:
 //#include <linux/kmod.h> //must be from an appropriate directory
@@ -86,9 +88,11 @@ MSRdeviceFile::MSRdeviceFile(
   InitPerCPUcoreAccess( byNumberOfLogicalCPUcores) ;
 
   int n = 0;
+#ifdef Intel_x86///Only for x86
   //Change IO privilege. level to "user mode" to avoid a Segmentation fault
   //when calling "outl".
   n = iopl(USER_MODE);
+#endif
   LOGN_DEBUG("return value of iopl():" << n )
   if( n != 0)
   {
@@ -147,9 +151,13 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
   
   const std::string shellScriptPath = "./Linux/load_MSR_kernel_module.sh";
   const std::string shellCommand = "chmod 777 " + shellScriptPath;
+  //TODO only needs to be done if MSR device file is not not accessible.
+  // ->check accessibility of MSR device files before (via C file API)
   int ret = system(shellCommand.c_str() ) ;
 //  LOGN("Trying to set current working dir to \"/\"" )
 //  chdir( "/" ) ;
+  //TODO only needs to be done if MSR device file is not not accessible.
+  // ->check accessibility of MSR device files before (via C file API)
   ret = system(shellScriptPath.c_str() );
   //from www.opengroup.org:
   if( //execlp( "sh", "sh", "./load_kernel_module.sh"
@@ -208,7 +216,17 @@ void MSRdeviceFile::InitPerCPUcoreAccess(BYTE byNumCPUcores)
       switch ( errno
         //nErrno
         )
-      {
+      {///http://man7.org/linux/man-pages/man2/open.2.html: 
+        /// "EPERM The operation was prevented by a file seal; see fcntl(2)."
+        /// https://astojanov.github.io/blog/2013/05/30/intel-pcm.html
+        /// "setcap cap_sys_rawio=ep foo" ?
+        /// /arch/x86/kernel/msr.c: "!capable(CAP_SYS_RAWIO) return -EPERM;"
+        /// https://lore.kernel.org/patchwork/patch/574100/:
+        /// -Alternatively, non-root users can be enabled to run turbostat this way:
+        /// -# setcap cap_sys_rawio=ep ./turbostat
+        /// -# chmod +r /dev/cpu/*/msr
+        /// https://lwn.net/Articles/542327/
+        ///EPERM happens even if file owner is process owner and has "rw" rights
         case EPERM:
         case EACCES:
           stdstrMessage += //"Permission denied."
@@ -276,7 +294,8 @@ BOOL MSRdeviceFile::CpuidEx(
 //  unsigned int uiEDX ;
   //TODO set CPU (core) affinity,
   //TODO use parameters _directly_ for "__get_cpuid(...)"
-  bReturn = __get_cpuid (
+#ifdef Intel_x86
+  bReturn = __get_cpuid(
 //    __cpuid(
     dwFunctionIndex //unsigned int __level,
 //    , & uiEAX //
@@ -288,6 +307,7 @@ BOOL MSRdeviceFile::CpuidEx(
 //    , & uiEDX //
     , (unsigned int *) p_dwEDX //unsigned int *__edx
     ) ;
+#endif
 //  if( bReturn == 0 )
 //    LOGN_ERROR("Calling \"__get_cpuid\" with index" << dwFunctionIndex
 //        << "failed")
@@ -502,8 +522,10 @@ BOOL MSRdeviceFile::ReadPciConfigDwordEx(
   // http://en.wikipedia.org/wiki/PCI_configuration_space
   const unsigned config_address = //0x80000000 | bus << 16 | device << 11 | function << 8 | offset;
     0x80000000 | dwPCIaddress << 8 | dwRegAddress;
+#ifdef Intel_x86
   outl_p(config_address, 0xcf8);
   * p_dwValue = inl_p(0xcfc);
+#endif
 //    float tempInDegCelsius = float ( value >> 21 ) / 8.0f;
 //    std::cout << "value: " << value << "temp:" << tempInDegCelsius << std::endl;
   return bReturn ;

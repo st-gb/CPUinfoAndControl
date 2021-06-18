@@ -9,7 +9,10 @@
 #include "I_CPUaccess.hpp"
 //for BITMASK_FOR_LOWMOST_7BIT
 #include <preprocessor_macros/bitmasks.h>
-#include <Controller/CPU-related/ReadTimeStampCounter.h>
+#include <hardware/CPU/x86/detect_architecture.h>///Intel_x86
+#ifdef Intel_x86///If CPU architecture is "x86"
+ #include <hardware/CPU/x86/ReadTimeStampCounter.h>
+#endif
 #include <ModelData/ModelData.hpp> //class Model
 #include <string.h> //strcat(...)
 #include <windef.h> //for DWORD
@@ -148,6 +151,7 @@ BOOL I_CPUaccess::CpuidEx(
 //    asm(" mov %%edx, %0 " : "=m" (*p_dwEDX) );
 //    return TRUE ;
 //#else
+#ifdef Intel_x86///CPUID not available for ARM?
   ////When using "*p_dwEAX" etc. directly inside the CPUID instruction
   //// the stepping was "
   //from http://www.ibm.com/developerworks/library/l-ia.html:
@@ -159,6 +163,7 @@ BOOL I_CPUaccess::CpuidEx(
         : "a" (dwIndex));
 //    *p_dwEAX = reg_eax ;
   DEBUGN("after \"cpuid\": eax:" << *p_EAX << "stepping:" << (*p_EAX & 0xF) )
+#endif
   return TRUE ;
 }
 
@@ -619,7 +624,9 @@ BOOL I_CPUaccess::ReadTSC(
   uint32_t & r_highmostBits
   )
 {
+#ifdef Intel_x86
   ReadTimeStampCounter(r_lowmostBits, r_highmostBits ) ;
+#endif
   return TRUE ;
 }
 
