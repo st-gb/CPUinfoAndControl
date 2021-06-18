@@ -1,0 +1,6 @@
+https://stackoverflow.com/questions/25586320/you-must-select-a-host-application-to-run-a-commands-only-target-codeblocks :
+
+1. Project->Properties
+2. "Build Targets" tab
+3. "Type" drop-down box to "Console Application"
+4. Click the "...", select the output file that you want to run, and click "Save". If a box pops up asking about replacing the file, replace it.
