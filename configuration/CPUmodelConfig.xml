@@ -19,6 +19,7 @@
   <!-- http://en.wikipedia.org/wiki/Haswell_%28microarchitecture%29#New_features:
        has a Fully integrated voltage regulator (FIVR) -->
   <CPUID vendor="GenuineIntel" family="6" model="58" CPUregisterData="Intel_Core_i_4th_generation_('Haswell',since_2013).xml" CPUinfoGetterAndOrController="Intel_Haswell_CPU_IandC"/>
+  <CPUID vendor="GenuineIntel" family="6" model="142" CPUinfoGetterAndOrController="IntelSandyBridge"/>
   <CPUID vendor="GenuineIntel" family="15" model="0" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
   <CPUID vendor="GenuineIntel" family="15" model="1" CPUinfoGetterAndOrController="IntelPentium4Controller"/>
   <CPUID vendor="GenuineIntel" family="15" model="2" CPUinfoGetterAndOrController="IntelPentium4Controller"/>

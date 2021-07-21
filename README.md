@@ -3,16 +3,34 @@ https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 
 # CPU core voltage and frequency setting application 
 
-A tool to do dynamic voltage and frequency scaling on its own via dynamic (link)
+A tool mainly to do [dynamic voltage and frequency scaling](
+http://en.wikipedia.org/wiki/Dynamic_frequency_scaling) on its own via dynamic
 libraries that are often specific to a CPU model (and maybe stepping).
+Also other data like CPU core temperature or CPU core usage may be shown.
 The settings (interval, which dynamic library for which CPU model etc.) can be
 specified in configuration files.
 
-![here the screenshot of wxWidgets GUI in Linux Mint should appear](http://it-gebauer.de/CPUinfoAndCtl/CPUinfoAndCtl_i5-8250U_wxGUI_main_dialog_LinuxMint.png "screenshot of wxWidgets GUI's main dialog in Linux Mint")
+![here the screenshot of wxWidgets GUI in Linux Mint should appear](
+http://it-gebauer.de/CPUinfoAndCtl/CPUinfoAndCtl_i5-8250U_wxGUI_main_dialog_LinuxMint.png
+"screenshot of wxWidgets GUI's main dialog with Intel i5-8250U in Linux Mint")
 
 ## Building
 
 see [BUILD.md](BUILD.md)
+
+## Limitation of Liability
+
+You execute the software at your own risk. The manufacturer is not liable for
+any harm the software application may cause in any case.
+
+These may especially/for instance be:
+
+- a too low voltage so the CPU malfunctions or computer hangs up/crashes
+- a too high voltage so the CPU gets broken
+- wrong representation of data in User Interface
+- writing log files to disk may cause a worsening of a data carrier's health
+state
+- any other misbehaviour
 
 ## Authors
 

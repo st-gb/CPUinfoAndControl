@@ -22,8 +22,8 @@ repository from Stefan Gebauer
 
 ###  Linux
 
-- [Debian}(http://en.wikipedia.org/wiki/Debian)-/[APT](
-http://en.wikipedia.org/wiki/APT_(software))-based
+- [Debian](http://en.wikipedia.org/wiki/Debian)-/[APT](
+http://en.wikipedia.org/wiki/APT_(software\))-based
 
   command line to install C++ compiler and CMake (as root):
 
@@ -83,7 +83,7 @@ can be 1 of
 
 #### Linux
 
-The "xerces" package (for [Apache Xerces](
+The "xerces" package for [Apache Xerces](
 http://en.wikipedia.org/wiki/Apache_Xerces) is needed.
 
 - Debian-/APT-based
