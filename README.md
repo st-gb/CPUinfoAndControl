@@ -1,7 +1,7 @@
 this file is based on
 https://gist.github.com/PurpleBooth/109311bb0361f32d87a2#file-readme-template-md
 
-# CPU core voltage and frequency setting application 
+# CPU core voltage and frequency setting application
 
 A tool mainly to do [dynamic voltage and frequency scaling](
 http://en.wikipedia.org/wiki/Dynamic_frequency_scaling) on its own via dynamic
@@ -17,6 +17,39 @@ http://it-gebauer.de/CPUinfoAndCtl/CPUinfoAndCtl_i5-8250U_wxGUI_main_dialog_Linu
 ## Building
 
 see [BUILD.md](BUILD.md)
+
+## Execution
+
+### [Microsoft Windows](http://en.wikipedia.org/wiki/Microsoft_Windows)
+
+#### Execution Account/Rights
+
+If you want or need (for the [service](
+http://en.wikipedia.org/wiki/Windows_service)) to get the CPU data directly from
+the hardware then you need to execute the application with [administrative
+rights/as administrator](
+http://en.wikipedia.org/wiki/Superuser#Microsoft_Windows).
+
+#### Execution Environment
+
+In order to not need to place the neccessary [WinRing0](
+http://openlibsys.org/manual/WhatIsWinRing0.html) (and optionally the
+[wxWidgets](http://en.wikipedia.org/wiki/WxWidgets) and [Apache Xerces](
+http://xerces.apache.org/xerces-c/)) [dynamic libraries](
+http://en.wikipedia.org/wiki/Dynamic_loading#In_C/C++) you can extend the
+[PATH](http://en.wikipedia.org/wiki/PATH_\(variable\)#DOS,_OS/2,_and_Windows)
+[environment variable](
+http://en.wikipedia.org/wiki/Environment_variable#Assignment:_DOS,_OS/2_and_Windows)
+before calling the [executable](https://en.wikipedia.org/wiki/Executable)
+([service](http://en.wikipedia.org/wiki/Windows_service) or [GUI](
+http://en.wikipedia.org/wiki/Graphical_user_interface)).
+
+example:
+
+```
+PATH=%PATH%;E:\Libs\WinRing0_1_3_1b\release;E:\wxWidgets\MSW-3.1.0_gcc510TDM_x64_Dev\lib\gcc_dll
+CPUinfoAndControl_wxGUI_dbg.exe
+```
 
 ## Limitation of Liability
 

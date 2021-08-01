@@ -58,7 +58,7 @@ http://en.wikipedia.org/wiki/Graphical_user_interface) (and [service](
 http://en.wikipedia.org/wiki/Windows_service) ?) have been successfully built
 with [MinGW](http://en.wikipedia.org/wiki/MinGW)/ 64 bit [TDM-GCC](
 http://en.wikipedia.org/wiki/TDM-GCC) version 5.1.0 compiler suite )
-under under 64 bit [Microsoft Windows 7](http://en.wikipedia.org/wiki/Windows_7)
+under 64 bit [Microsoft Windows 7](http://en.wikipedia.org/wiki/Windows_7)
 and 64 bit "[g++](http://en.wikipedia.org/wiki/GNU_Compiler_Collection)" 7.5.0
 under 64 bit [Linux Mint](http://en.wikipedia.org/wiki/Linux_Mint) 19 (with
 "[Cinnamon](http://en.wikipedia.org/wiki/Cinnamon_\(desktop_environment\))"
@@ -88,7 +88,8 @@ instruction for determining the [CPU manufacturer](
 http://en.wikipedia.org/wiki/CPUID#EAX=0:_Highest_Function_Parameter_and_Manufacturer_ID),
 [family, model and stepping](
 http://en.wikipedia.org/wiki/CPUID#EAX=1:_Processor_Info_and_Feature_Bits) in
-order to load the appropriate "CPU info & control" dynamic library, often uses
+order to load the appropriate "CPU info & control" [dynamic library](
+http://en.wikipedia.org/wiki/Dynamic_loading#In_C/C++), often uses
 the "[rdmsr](http://en.wikipedia.org/wiki/Model-specific_register#Using_MSRs)" /
 "[wrmsr](http://en.wikipedia.org/wiki/Model-specific_register#Using_MSRs)\"
 (MSR=[_M_odel-_S_pecific _R_egister](
@@ -121,7 +122,7 @@ http://en.wikipedia.org/wiki/Software_release_life_cycle) of this
 [software library](http://en.wikipedia.org/wiki/Library_\(computing\)) you have
 find one on your own.
 
-#### [wxWidgets](http://en.wikipedia.org/wiki/WxWidgets) 3.x
+#### [wxWidgets](http://en.wikipedia.org/wiki/WxWidgets) 3.x for GUI
 
 For building you need the wxWidgets header files, for example from the
 [wxWidgets source code, here version 3.1.5](
@@ -137,10 +138,10 @@ You can get pre-built libraries for compilers:
 
 See [here regarding version 3.15](
 http://github.com/wxWidgets/wxWidgets/releases/tag/v3.1.5).\
-If these do not exist for the compiler version or your choice then you can build
+If these do not exist for the compiler version of your choice then you can build
 them manually from the wxWidgets source code.
 
-#### Apache Xerces 3.x for [XML](http://en.wikipedia.org/wiki/XML) processing
+#### [Apache Xerces](http://xerces.apache.org/xerces-c/) 3.x for GUI and service
 
 - if building with [Cygwin](http://en.wikipedia.org/wiki/Cygwin) then download
  [Cygwin binaries as proposed here](
@@ -151,9 +152,9 @@ them manually from the wxWidgets source code.
  [pre-built Microsoft Visual Studio files](
  http://archive.apache.org/dist/xerces/c/3/binaries/) for building the GUI/
  service easier/faster
-- Otherwise [Build the [static](http://en.wikipedia.org/wiki/Static_library)
+- Otherwise Build the [static](http://en.wikipedia.org/wiki/Static_library)
  and/or [dynamic](http://en.wikipedia.org/wiki/Dynamic_loading#In_C/C++)
- library manually](http://xerces.apache.org/xerces-c/build-3.html)
+ library [manually](http://xerces.apache.org/xerces-c/build-3.html)
 
 ### Invocation
 
@@ -219,11 +220,11 @@ http://en.wikipedia.org/wiki/Apache_Xerces) is needed.
   (package "xerces-c" contains class header files, dynamic libraries and
   examples--obtained via command "pacman -Ql xerces-c")
 
-### wxWidgets GUI
+### [wxWidgets](http://www.wxwidgets.org/downloads) GUI
 
-- [wxWidgets](http://www.wxwidgets.org/downloads) (tested with version 3)
+- tested with wxWidgets version 3.x
 
-  needed [libraries](http://docs.wxwidgets.org/3.0/page_libs.html):
+- needed [libraries](http://docs.wxwidgets.org/3.0/page_libs.html):
   - [base](http://docs.wxwidgets.org/3.0/page_libs.html#page_libs_wxbase)
     (For mandatory classes)
   - [core](http://docs.wxwidgets.org/3.0/page_libs.html#page_libs_wxcore)
@@ -254,6 +255,11 @@ http://github.com/st-gb/CPUinfoAndControl/blob/master/create/wxGUI/Windows/creat
 parameters there are shifted by 1 command line argument because the 1st
 parameter is given by the [direct batch file](
 http://github.com/st-gb/CPUinfoAndControl/blob/master/create/wxGUI/Windows/create_wxGUI_with_MinGW.bat).
+
+An [example to call the [...]MinGW.bat file](
+http://github.com/st-gb/CPUinfoAndControl/blob/master/create/wxGUI/Windows/build_with_64bitMinGW_TDM_720QM.bat).
+For comfort you may adapt this file so you don't need to write every parameter
+on the command line.
 
 Therefore pass as [command line arguments](
 http://en.wikipedia.org/wiki/Command-line_interface#Arguments) to the
